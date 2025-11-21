@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บริการรับงานคุณภาพ | ติดต่อ LINE @artap5321</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* เน้นใช้สีดำ (พื้นหลัง), เหลือง/ทอง (เน้นข้อความ), แดง (กระตุ้น) */
+        * { box-sizing: border-box; }
+        body {
+            font-family: "Sarabun", sans-serif; line-height: 2.0;
+            max-width: 900px; margin: 0 auto; padding: 20px;
+            background: #000000; /* ดำสนิท */
+            color: #FFFFFF; /* ขาว */
+            scroll-behavior: smooth;
+        }
+        h1 {
+            text-align: center;
+            font-weight: 800;
+            margin-bottom: 40px;
+            font-size: 36px;
+            letter-spacing: 1px;
+        }
+        h2 {
+            text-align: center;
+            color: hwb(0 63% 37%); /* แดงส้ม/เร่งเร้า */
+            margin-bottom: 30px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        h3 { color: #fff; margin: 0; }
+        p.intro {
+            text-align: center;
+            font-weight: 600;
+            margin-bottom: 30px;
+            background: #111111;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 22px;
+            border: 3px solid #FFD700; /* กรอบทอง */
+            line-height: 1.6;
+            color: #FFFFFF;
+        }
+        p.intro strong {
+            color: #FF0000; /* แดงเร่งเร้า */
+            font-size: 1.2em;
+        }
+        /* รายละเอียดงาน */
+        .paragraph {
+            margin: 30px 0; padding: 25px; border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            transition: all 0.5s ease; opacity: 0.2; filter: brightness(0.2);
+            min-height: 200px; display: flex; flex-direction: column; align-items: center;
+            color: #000;
+        }
+        @keyframes border-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .paragraph.active {
+            opacity: 1;
+            filter: brightness(1);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(28, 255, 7, 0.4);
+            position: relative;
+            z-index: 0;
+            overflow: hidden;
+            padding: 2px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+        }
+        .paragraph.active::before {
+            content: '';
+            position: absolute;
+            z-index: -2;
+            left: -50%; top: -50%;
+            width: 200%; height: 200%;
+            background: conic-gradient(
+                transparent 0deg,
+                transparent 270deg,
+                #3cff01 360deg
+            );
+            animation: border-spin 3s linear infinite;
+        }
+        .paragraph.active::after {
+            content: '';
+            position: absolute;
+            z-index: -1;
+            left: 2px; top: 2px;
+            right: 2px; bottom: 2px;
+            background: #1a1a1a;
+            border-radius: 6px;
+        }
+        .paragraph.active .text {
+            color: #FFFFFF;
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+        }
+        .text {
+            font-size: 20px; margin-bottom: 15px; font-weight: 400; text-align: center;
+            max-width: 100%; color: #000; padding: 10px 20px;
+            background-color: transparent;
+            border-radius: 20px; display: inline-block;
+        }
+        .paragraph.shorts { flex-direction: row; gap: 20px; align-items: center; justify-content: center; min-height: auto; }
+        .paragraph.shorts.reverse { flex-direction: row-reverse; }
+        .paragraph.shorts .text { flex: 1; margin-bottom: 0; text-align: center; color: #fff; }
+        .paragraph.shorts .youtube-embed { flex: 1; max-width: 300px; aspect-ratio: 9/16; }
+
+        /* Embed Styles */
+        .youtube-embed, .vimeo-embed {
+            position: relative; margin: 20px auto; border-radius: 12px; overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5); max-width: 100%;
+        }
+        .youtube-embed iframe, .vimeo-embed iframe {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;
+        }
+        .paragraph:not(.shorts) .youtube-embed { padding-bottom: 56.25%; height: 0; width: 100%; }
+        .vimeo-embed { padding-bottom: 56.25%; height: 0; width: 100%; }
+
+        /* Search Box */
+        .search-container { text-align: center; margin-bottom: 30px; }
+        .search-input {
+            width: 100%; max-width: 400px; padding: 12px 20px; border: 2px solid #FFD700; border-radius: 25px;
+            background: #111; color: #FFD700; font-size: 16px; font-family: inherit;
+        }
+        .search-input::placeholder { color: #FFD70088; }
+        .search-input:focus { outline: none; border-color: hsl(0, 0%, 37%); box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.3); }
+
+        /* Work Grid */
+        .work-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .work-grid a { text-decoration: none; color: inherit; }
+        .work-card {
+            background: #111;
+            padding: 20px;
+            border-radius: 26px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+            color: hsl(69, 100%, 50%);
+            border: 2px solid #333;
+            position: relative;
+            cursor: pointer;
+        }
+        .work-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px #51ff01b9;
+            border-color: hwb(91 0% 0%);
+        }
+        .work-card h3 { margin: 0 0 10px; color: hsl(66, 100%, 50%); font-weight: 700; }
+        .price-tag {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #ff4b2b, #ff416c);
+            color: #ffffff;
+            padding: 6px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 15px rgba(255, 75, 43, 0.4);
+            border: none;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        /* Fixed LINE Ad */
+        .line-ad-fixed {
+            position: fixed;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #00C300, hwb(120 2% 26% / 0.753));
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 8px 0 0 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            text-align: center;
+            z-index: 1000;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1.5;
+            transition: right 0.3s ease;
+            display: none;
+        }
+        .line-ad-fixed.show-ad { display: block; }
+        .line-ad-fixed:hover { right: -10px; }
+        .line-ad-fixed a { color: #fff; text-decoration: none; display: block; }
+        .line-ad-fixed img { width: 32px; height: 32px; display: block; margin: 0 auto 5px; }
+        #line-ad-fixed .add-line-text { font-size: 0.9em; display: block; line-height: 1.2; }
+        #line-ad-fixed .account-name {
+            font-size: 1.3em; font-weight: bold; background-color: #000; color: #ffffff;
+            display: inline-block; margin-top: 10px; padding: 3px 8px; border-radius: 12px;
+        }
+        #line-ad-fixed .price {
+            font-size: 1em; font-weight: bold; background-color: hsl(0, 100%, 50%); color: hsl(59, 100%, 50%);
+            display: inline-block; margin-top: 10px; padding: 3px 8px; border-radius: 10px;
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            h1 { font-size: 28px; }
+            p.intro { font-size: 18px; }
+            .work-grid { grid-template-columns: 1fr; }
+            .line-ad-fixed.show-ad {
+                right: 0; top: auto; bottom: 10px; transform: none; width: 100%; max-width: none;
+                border-radius: 0; padding: 10px; box-sizing: border-box; font-size: 14px;
+            }
+            .line-ad-fixed:hover { right: 0; }
+        }
+        .back-link a { color: hsl(50, 11%, 89%); text-decoration: none; font-weight: 700; }
+    </style>
+</head>
+<body>
+ <h1>
+  <img src="https://cdn-icons-png.flaticon.com/128/13540/13540872.png" alt="icon" style="width:72px; vertical-align:middle;">
+  <span style="vertical-align:middle; display:inline-block;">
+    ระบบจ้างงาน<br>
+    <span style="font-size:12px; font-weight:500; display:block;">
+      ควบคุมคุณภาพโดยผู้ก่อตั้ง Dosfixvirus และ Editus
+    </span>
+  </span>
+</h1>
+
+<div id="main-content"></div>
+
+<div class="line-ad-fixed" id="line-ad-fixed">
+    <p class="price">จ้างงาน 150.-</p>
+    <a href="https://line.me/ti/p/~@artap5321" target="_blank" title="คลิกเพื่อเพิ่ม LINE @artap5321">
+        <span class="add-line-text">ADD LINE</span>
+        <span class="account-name">artap5321</span>
+    </a>
+</div>
+
+<script>
+    const lineAdFixed = document.getElementById('line-ad-fixed');
+    let currentSearchQuery = '';
+    let currentSearchPage = 1;
+    let allwork = [];
+
+    function escapeHtml(text) {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return text.replace(/[&<>"']/g, m => map[m]);
+    }
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+    function getPlainText(html) {
+        if (!html) return '';
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        return doc.body.textContent || '';
+    }
+    function highlight(plainText, term) {
+        if (!term || !term.trim()) return escapeHtml(plainText);
+        const regex = new RegExp(escapeRegExp(term), 'gi');
+        let lastIndex = 0;
+        const parts = [];
+        let match;
+        while ((match = regex.exec(plainText)) !== null) {
+            const before = plainText.slice(lastIndex, match.index);
+            parts.push(escapeHtml(before));
+            parts.push(`<mark style="background-color: #FFD700; color: #000; font-weight: bold;">${escapeHtml(match[0])}</mark>`);
+            lastIndex = match.index + match[0].length;
+        }
+        parts.push(escapeHtml(plainText.slice(lastIndex)));
+        return parts.join('');
+    }
+    function linkifyAndHighlight(plainText, query) {
+        const urlRegex = /(https?:\/\/[^\s<]+[^<.,:;"'\)\]\s])/g;
+        const urls = [];
+        let placeholderText = plainText;
+        let index = 0;
+        let urlMatch;
+        const originalText = plainText;
+        while ((urlMatch = urlRegex.exec(originalText)) !== null) {
+            const placeholder = `__URL_${index}__`;
+            urls[index] = urlMatch[0];
+            placeholderText = placeholderText.slice(0, urlMatch.index) + placeholder + placeholderText.slice(urlMatch.index + urlMatch[0].length);
+            index++;
+        }
+        const highlighted = highlight(placeholderText, query);
+        let finalHtml = highlighted;
+        urls.forEach((url, i) => {
+            const placeholder = `__URL_${i}__`;
+            const linkHtml = `<a href="${escapeHtml(url)}" target="_blank" style="color: #FFD700; text-decoration: none;">${escapeHtml(url)}</a>`;
+            finalHtml = finalHtml.replace(new RegExp(escapeRegExp(placeholder), 'g'), linkHtml);
+        });
+        return finalHtml;
+    }
+    function highlightHtml(html, query) {
+        if (!query || !query.trim()) return html;
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const textNodes = [];
+        const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, null, false);
+        let node;
+        while (node = walker.nextNode()) {
+            textNodes.push(node);
+        }
+        const regex = new RegExp(escapeRegExp(query), 'gi');
+        textNodes.forEach((textNode) => {
+            const text = textNode.textContent;
+            let lastIndex = 0;
+            const parent = textNode.parentNode;
+            let match;
+            while ((match = regex.exec(text)) !== null) {
+                if (match.index > lastIndex) {
+                    const before = doc.createTextNode(text.slice(lastIndex, match.index));
+                    parent.insertBefore(before, textNode);
+                }
+                const mark = doc.createElement('mark');
+                mark.style.backgroundColor = '#FFD700';
+                mark.style.color = '#000';
+                mark.style.fontWeight = 'bold';
+                mark.textContent = match[0];
+                parent.insertBefore(mark, textNode);
+                lastIndex = match.index + match[0].length;
+            }
+            if (lastIndex < text.length) {
+                const after = doc.createTextNode(text.slice(lastIndex));
+                parent.insertBefore(after, textNode);
+            }
+            parent.removeChild(textNode);
+        });
+        return doc.body.innerHTML;
+    }
+    function extractYouTubeId(url) {
+        const pattern = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([a-zA-Z0-9_-]{11})/;
+        const match = url.match(pattern);
+        return match ? match[1] : null;
+    }
+
+    function showWorkDetail(slug, paraIndex = null) {
+        lineAdFixed.classList.add('show-ad');
+        document.title = decodeURIComponent(slug).replace(/_/g, ' ').toLocaleUpperCase('th-TH');
+
+        fetch(`${slug}.json`)
+            .then(r => r.json())
+            .then(data => {
+                document.title = escapeHtml(data.title);
+                let html = `<center><p class="back-link"><a href="#">← เมนูงานที่รับจ้าง</a></p></center>
+                            <h1>${escapeHtml(data.title)}</h1>`;
+
+                data.paragraphs.forEach((para, index) => {
+                    const processedText = highlightHtml(para.text || '', currentSearchQuery);
+                    let mediaEmbed = '';
+                    let shortsClass = '';
+
+                    if (para.media_url && para.media_type) {
+                        const url = para.media_url.trim();
+
+                        // === YouTube ===
+                        if (para.media_type === "youtube") {
+                            const videoId = extractYouTubeId(url);
+                            if (videoId) {
+                                const isShorts = url.includes('/shorts/');
+                                if (isShorts) {
+                                    shortsClass = Math.random() < 0.5 ? 'shorts' : 'shorts reverse';
+                                }
+                                const embedUrl = `https://www.youtube.com/embed/${videoId}?hl=th&cc_lang_pref=th`;
+                                mediaEmbed = `
+                                    <div class="youtube-embed ${isShorts ? 'shorts-embed' : ''}" data-embed-url="${embedUrl}">
+                                        <iframe loading="lazy" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+                                    </div>`;
+                            }
+                        }
+
+                        // === Vimeo ===
+                        if (para.media_type === "vimeo") {
+                            const vimeoId = url.match(/vimeo\.com\/(?:.*\/)?(\d+)/)?.[1];
+                            if (vimeoId) {
+                                const embedUrl = `https://player.vimeo.com/video/${vimeoId}?title=0&byline=0&portrait=0&badge=0`;
+                                mediaEmbed = `
+                                    <div class="vimeo-embed">
+                                        <iframe src="${embedUrl}" loading="lazy" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"></iframe>
+                                    </div>`;
+                            }
+                        }
+
+                        if (!mediaEmbed) {
+                            mediaEmbed = '<p style="color:#FF5555;text-align:center;">⚠️ URL วิดีโอไม่ถูกต้อง</p>';
+                        }
+                    }
+
+                    html += `<div id="para-${index}" class="paragraph ${shortsClass}">
+                                <div class="text">${processedText}</div>
+                                ${mediaEmbed}
+                             </div>`;
+                });
+
+                document.getElementById('main-content').innerHTML = html;
+
+                // Lazy load embed เมื่อเลื่อนมาเห็น
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(e => {
+                        if (e.isIntersecting) {
+                            e.target.classList.add('active');
+                            const embedDiv = e.target.querySelector('.youtube-embed[data-embed-url]');
+                            if (embedDiv) {
+                                const iframe = embedDiv.querySelector('iframe');
+                                if (iframe && !iframe.src) {
+                                    iframe.src = embedDiv.dataset.embedUrl;
+                                    delete embedDiv.dataset.embedUrl;
+                                }
+                            }
+                        } else {
+                            e.target.classList.remove('active');
+                        }
+                    });
+                }, { threshold: 0.6 });
+
+                document.querySelectorAll('.paragraph').forEach(p => observer.observe(p));
+
+                // Scroll ไปยัง paragraph ที่ระบุ (จากผลค้นหา)
+                if (paraIndex !== null) {
+                    setTimeout(() => {
+                        const el = document.getElementById(`para-${paraIndex}`);
+                        if (el) {
+                            el.classList.add('active');
+                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            const embedDiv = el.querySelector('.youtube-embed[data-embed-url]');
+                            if (embedDiv) {
+                                const iframe = embedDiv.querySelector('iframe');
+                                if (iframe) iframe.src = embedDiv.dataset.embedUrl;
+                            }
+                        }
+                    }, 200);
+                }
+
+                // ปุ่มย้อนกลับ
+                document.querySelector('.back-link a').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showWorkList(currentSearchQuery, currentSearchPage);
+                    location.hash = '';
+                });
+            })
+            .catch(() => {
+                document.getElementById('main-content').innerHTML = '<p style="text-align:center; color:#FF0000;">ไม่พบข้อมูลงานนี้</p>';
+            });
+    }
+
+    // ====================== ส่วนแสดงรายการงาน (เหมือนเดิมทุกบรรทัด) ======================
+    function showWorkList(query = '', page = 1) {
+        lineAdFixed.classList.remove('show-ad');
+        document.title = 'บริการรับงาน E-Worker';
+        currentSearchQuery = query;
+        currentSearchPage = page;
+        const itemsPerPage = 10;
+        const trimmedQuery = query.trim();
+        let html = `<div class="search-container"><input type="text" class="search-input" id="search-input" placeholder="ค้นหางานที่รับ..." value="${escapeHtml(query)}"></div>`;
+        let displayedItems = [];
+        let totalItems = 0;
+        let totalPages = 1;
+        let h2Text = 'งานที่เปิดรับล่าสุด';
+        let filteredItems = allwork;
+
+        if (trimmedQuery) {
+            const lowerQuery = query.toLowerCase();
+            let results = [];
+            allwork.forEach(work => {
+                let hasParaMatch = false;
+                work.paragraphs.forEach((para, i) => {
+                    const plainPara = getPlainText(para.text);
+                    if (plainPara.toLowerCase().includes(lowerQuery)) {
+                        let snippet = plainPara;
+                        const maxLen = 150;
+                        if (snippet.length > maxLen) {
+                            const escapedQ = escapeRegExp(query);
+                            const regex = new RegExp(escapedQ, 'i');
+                            let match = regex.exec(snippet);
+                            if (match) {
+                                let start = Math.max(0, match.index - 50);
+                                let end = Math.min(snippet.length, match.index + match[0].length + 50);
+                                snippet = snippet.substring(start, end);
+                                if (start > 0) snippet = '...' + snippet;
+                                if (end < plainPara.length) snippet += '...';
+                            } else {
+                                snippet = snippet.substring(0, maxLen) + '...';
+                            }
+                        }
+                        results.push({ work, paraIndex: i, snippet, matchType: 'para' });
+                        hasParaMatch = true;
+                    }
+                });
+                if (!hasParaMatch && work.title.toLowerCase().includes(lowerQuery)) {
+                    results.push({ work, paraIndex: null, snippet: work.title, matchType: 'title' });
+                }
+            });
+            results.sort((a, b) => new Date(b.work.updated) - new Date(a.work.updated));
+            filteredItems = results;
+            h2Text = `ผลการค้นหา "${escapeHtml(query)}" (${filteredItems.length} ผลลัพธ์)`;
+        }
+
+        totalItems = filteredItems.length;
+        totalPages = Math.ceil(totalItems / itemsPerPage);
+        displayedItems = filteredItems.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+
+        html += `<h2>${h2Text}</h2>`;
+
+        if (totalItems === 0) {
+            html += '<p style="text-align: center; color: #FFD700; font-size: 18px;">ไม่พบงานที่ตรงกับการค้นหา</p>';
+        } else {
+            html += '<div class="work-grid">';
+            displayedItems.forEach(item => {
+                let work, snippet, matchType, paraIndex;
+                if (!trimmedQuery) {
+                    work = item;
+                    const firstParaPlain = work.paragraphs.length > 0 ? getPlainText(work.paragraphs[0].text) : '';
+                    snippet = firstParaPlain.slice(0, 100) + (firstParaPlain.length > 100 ? '...' : '');
+                    matchType = null;
+                    paraIndex = null;
+                } else {
+                    work = item.work;
+                    snippet = item.snippet;
+                    matchType = item.matchType;
+                    paraIndex = item.paraIndex;
+                }
+                const hash = paraIndex !== null ? `${work.slug}|para-${paraIndex}` : work.slug;
+                const highlightedSnippet = linkifyAndHighlight(snippet, query);
+
+                let titleText = escapeHtml(work.title);
+                let smallHtml = '';
+
+                if (matchType === 'title') {
+                    titleText = highlight(work.title, query);
+                } else if (matchType === 'para') {
+                    smallHtml = `<small>ตรงกับย่อหน้า ${paraIndex + 1}</small>`;
+                }
+
+                html += `
+                    <a href="#${hash}" style="text-decoration:none; color:inherit;">
+                        <div class="work-card">
+                            <div class="price-tag">150 บาท</div>
+                            <h3><img src="https://cdn-icons-png.flaticon.com/128/3281/3281307.png" style="width:72px; vertical-align:middle; margin-right: 5%">${titleText}</h3>
+                            ${smallHtml}
+                        </div>
+                    </a>`;
+            });
+            html += '</div>';
+        }
+
+        // Pagination
+        if (totalPages > 1) {
+            html += '<div class="pagination" style="text-align:center; margin:30px 0;">';
+            if (page > 1) {
+                html += `<button class="page-btn" onclick="goToPage(${page - 1})" style="background:#FF4500; color:#fff; padding:10px 20px; border:none; border-radius:8px; margin:0 5px; cursor:pointer;">ก่อนหน้า</button>`;
+            }
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === page) {
+                    html += `<span style="background:#FFD700; color:#000; padding:10px 15px; border-radius:8px; margin:0 5px;">${i}</span>`;
+                } else {
+                    html += `<button class="page-btn" onclick="goToPage(${i})" style="background:#333; color:#FFD700; padding:10px 15px; border:none; border-radius:8px; margin:0 5px; cursor:pointer;">${i}</button>`;
+                }
+            }
+            if (page < totalPages) {
+                html += `<button class="page-btn" onclick="goToPage(${page + 1})" style="background:#FF4500; color:#fff; padding:10px 20px; border:none; border-radius:8px; margin:0 5px; cursor:pointer;">ถัดไป</button>`;
+            }
+            html += '</div>';
+        }
+
+        document.getElementById('main-content').innerHTML = html;
+
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.focus();
+            const len = searchInput.value.length;
+            searchInput.setSelectionRange(len, len);
+            searchInput.addEventListener('input', (e) => {
+                showWorkList(e.target.value, 1);
+            });
+        }
+    }
+
+    function goToPage(page) {
+        showWorkList(currentSearchQuery, page);
+    }
+
+    function handleHashChange() {
+        const hash = location.hash.slice(1);
+        if (!hash) {
+            showWorkList(currentSearchQuery, currentSearchPage);
+            return;
+        }
+        const parts = hash.split('|');
+        const slug = parts[0];
+        let paraIndex = null;
+        if (parts[1] && parts[1].startsWith('para-')) {
+            paraIndex = parseInt(parts[1].slice(5));
+        }
+        showWorkDetail(slug, paraIndex);
+    }
+
+    window.addEventListener('load', () => {
+        currentSearchQuery = '';
+        currentSearchPage = 1;
+        fetch('work.json')
+            .then(r => r.json())
+            .then(workList => {
+                const promises = workList.map(work =>
+                    fetch(`${work.slug}.json`)
+                        .then(r => { if (!r.ok) throw new Error('Not found'); return r.json(); })
+                        .then(fullData => ({
+                            ...work,
+                            paragraphs: fullData.paragraphs || []
+                        }))
+                        .catch(() => work)
+                );
+                return Promise.all(promises).then(loadedWork => {
+                    allwork = loadedWork.filter(w => w.paragraphs).sort((a, b) => new Date(b.updated) - new Date(a.updated));
+                    if (location.hash) {
+                        handleHashChange();
+                    } else {
+                        showWorkList('', 1);
+                    }
+                });
+            })
+            .catch(() => {
+                document.getElementById('main-content').innerHTML = '<p style="text-align:center; color:#FF0000;">ยังไม่มีประกาศรับงาน</p>';
+            });
+    });
+
+    window.addEventListener('hashchange', handleHashChange);
+</script>
+</body>
+</html>
