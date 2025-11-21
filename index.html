@@ -21,6 +21,7 @@
             margin-bottom: 40px;
             font-size: 36px;
             letter-spacing: 1px;
+            color: #f1da0a;
         }
         h2 {
             text-align: center;
@@ -29,7 +30,7 @@
             font-weight: 700;
             text-transform: uppercase;
         }
-        h3 { color: #fff; margin: 0; }
+        h3 { color: #f1da0a; margin: 0; }
         p.intro {
             text-align: center;
             font-weight: 600;
@@ -100,11 +101,32 @@
             border-radius: 0;
         }
         .text {
-            font-size: 20px; margin-bottom: 15px; font-weight: 400; text-align: center;
-            max-width: 100%; color: #000; padding: 10px 20px;
-            background-color: transparent;
-            border-radius: 20px; display: inline-block;
+            font-size: 20px;
+            margin-bottom: 15px;
+            font-weight: 400;
+            text-align: center;
+            max-width: 100%;
+            padding: 10px 20px;
+            border-radius: 20px;
+            display: inline-block;
+            font-style: italic;
+            quotes: "“" "”";
+            background: linear-gradient(to left, rgba(255,255,255,0.5), hsla(0, 0%, 31%, 0.753));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
+
+        .text::before,
+        .text::after {
+            content: open-quote; /* ::after จะใช้ close-quote */
+            color: #fff;          /* กำหนดสีขาว */
+            font-style: normal;   /* ให้ไม่เอียงเหมือนข้อความ */
+        }
+
+        .text::after {
+            content: close-quote;
+        }
+
         .paragraph.shorts { flex-direction: row; gap: 20px; align-items: center; justify-content: center; min-height: auto; }
         .paragraph.shorts.reverse { flex-direction: row-reverse; }
         .paragraph.shorts .text { flex: 1; margin-bottom: 0; text-align: center; color: #fff; }
@@ -369,7 +391,7 @@
                                 if (isShorts) {
                                     shortsClass = Math.random() < 0.5 ? 'shorts' : 'shorts reverse';
                                 }
-                                const embedUrl = `https://www.youtube.com/embed/${videoId}?hl=th&cc_lang_pref=th&rel=0&modestbranding=1&controls=1&showinfo=0`;
+                                const embedUrl = `https://www.youtube.com/embed/${videoId}?hl=th&cc_lang_pref=th&rel=0&modestbranding=1&controls=0&showinfo=0`;
                                 mediaEmbed = `
                                     <div class="youtube-embed ${isShorts ? 'shorts-embed' : ''}" data-embed-url="${embedUrl}">
                                         <iframe loading="lazy" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
