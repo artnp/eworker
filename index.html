@@ -369,7 +369,7 @@
                                 if (isShorts) {
                                     shortsClass = Math.random() < 0.5 ? 'shorts' : 'shorts reverse';
                                 }
-                                const embedUrl = `https://www.youtube.com/embed/${videoId}?hl=th&cc_lang_pref=th`;
+                                const embedUrl = `https://www.youtube.com/embed/${videoId}?hl=th&cc_lang_pref=th&rel=0&modestbranding=1&controls=1&showinfo=0`;
                                 mediaEmbed = `
                                     <div class="youtube-embed ${isShorts ? 'shorts-embed' : ''}" data-embed-url="${embedUrl}">
                                         <iframe loading="lazy" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
