@@ -212,7 +212,21 @@
             transition: all 0.3s ease;
             z-index: 10;
         }
-
+        .price-tag-free {
+        position: absolute;
+        top: 10px; 
+        right: 10px;
+        padding: 6px 18px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 14px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #ffffff;
+        background: linear-gradient(135deg, #00C300, #4CAF50); /* สีเขียวที่คุณต้องการ */
+        box-shadow: 0 4px 15px rgba(0, 195, 0, 0.4); /* เงาสีเขียว */
+        z-index: 11; /* มีค่าสูงกว่า z-index ของป้ายแดงเดิม */
+        }
         /* Fixed LINE Ad */
         .line-ad-fixed {
             position: fixed;
@@ -317,9 +331,9 @@
     // แปลงราคาให้สวย (สำหรับการ์ด + ปุ่ม LINE)
     function formatPriceForCard(price) {
         if (price === '0' || price === 0) {
-            return '<span>FREE</span>';
+            return '<span class="price-tag-free">FREE</span>';
         }
-        return `${price} บาท`;
+        return `<div class="price-tag">${price} บาท</div >`;
     }
 
     function formatPriceForLine(price) {
@@ -508,9 +522,9 @@
                             html += `
                                 <a href="#${hash}" style="text-decoration:none;color:inherit;">
                                     <div class="work-card">
-                                        <div class="price-tag">
+                                       
                                             ${formatPriceForCard(price)}
-                                        </div>
+                                       
                                         <h3>
                                             <img src="https://cdn-icons-png.flaticon.com/128/3281/3281307.png" style="width:36px;vertical-align:middle;margin-right:10px;">
                                             ${escapeHtml(work.title)}
