@@ -6,7 +6,9 @@
     <title>บริการรับงานคุณภาพ | ติดต่อ LINE @artap5321</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* เน้นใช้สีดำ (พื้นหลัง), เหลือง/ทอง (เน้นข้อความ), แดง (กระตุ้น) */
+        html, body {
+        scroll-behavior: smooth;
+        }
         * { box-sizing: border-box; }
         body {
             font-family: "Sarabun", sans-serif; line-height: 2.0;
@@ -47,22 +49,32 @@
             color: #FF0000; /* แดงเร่งเร้า */
             font-size: 1.2em;
         }
-        /* รายละเอียดงาน */
+
         .paragraph {
-            margin: 30px 0; padding: 25px; border-radius: 16px;
+            margin: 30px 0;
+            padding: 25px;
+            border-radius: 16px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            transition: all 0.5s ease; opacity: 0.2; filter: brightness(0.2);
-            min-height: 200px; display: flex; flex-direction: column; align-items: center;
+            transition: all 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+            opacity: 0; 
+            filter: brightness(0.1); 
+            transform: scale(0.95);
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             color: #000;
         }
-        @keyframes border-spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
+            @keyframes border-spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+
         .paragraph.active {
             opacity: 1;
             filter: brightness(1);
-            transform: translateY(-4px);
+            transform: scale(1);
+            transform: none;
             box-shadow: 0 8px 30px rgba(28, 255, 7, 0.4);
             position: relative;
             z-index: 0;
@@ -72,6 +84,12 @@
             border: none;
             background: transparent;
         }
+        .paragraph:not(.active) {
+        opacity: 0 !important; 
+        filter: brightness(0.1); 
+        transform: scale(0.95); 
+        }
+        
         .paragraph.active::before {
             content: '';
             position: absolute;
@@ -267,6 +285,7 @@
 </div>
 
 <script>
+    
     const lineAdFixed = document.getElementById('line-ad-fixed');
     const dynamicPriceEl = document.getElementById('dynamic-price');
     let currentSearchQuery = '';
@@ -365,20 +384,52 @@
 
                 document.getElementById('main-content').innerHTML = html;
 
-                // Lazy load YouTube/Vimeo
-                const observer = new IntersectionObserver(entries => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            entry.target.classList.add('active');
-                            const div = entry.target.querySelector('.youtube-embed[data-embed-url]');
-                            if (div) {
-                                const iframe = div.querySelector('iframe');
-                                if (iframe && !iframe.src) iframe.src = div.dataset.embedUrl;
-                            }
-                        }
-                    });
-                }, { threshold: 0.6 });
-                document.querySelectorAll('.paragraph').forEach(p => observer.observe(p));
+            
+
+        // Lazy load YouTube/Vimeo และ Focus Paragraph
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                const paragraph = entry.target;
+                if (entry.isIntersecting) {
+                    paragraph.classList.add('active');
+                    
+                    // โค้ด Lazy Load เดิม
+                    const div = paragraph.querySelector('.youtube-embed[data-embed-url]');
+                    if (div) {
+                        const iframe = div.querySelector('iframe');
+                        if (iframe && !iframe.src) iframe.src = div.dataset.embedUrl;
+                    }
+                } else {
+                    paragraph.classList.remove('active'); 
+                }
+            });
+        }, { threshold: 0.7 });
+        document.querySelectorAll('.paragraph').forEach(p => observer.observe(p));
+
+                        // ฟังก์ชันเลื่อนแบบ smooth + หน่วง
+                function smoothScrollTo(element) {
+                    const targetPosition = element.getBoundingClientRect().top + window.pageYOffset;
+                    const startPosition = window.pageYOffset;
+                    const distance = targetPosition - startPosition;
+                    const duration = 5000; 
+                    let start = null;
+
+                    function animation(currentTime) {
+                        if (!start) start = currentTime;
+                        const timeElapsed = currentTime - start;
+                        const run = easeOutCubic(timeElapsed, startPosition, distance, duration);
+                        window.scrollTo(0, run);
+                        if (timeElapsed < duration) requestAnimationFrame(animation);
+                    }
+                    requestAnimationFrame(animation);
+                }
+
+                // Easing หน่วงแบบนุ่ม
+                function easeOutCubic(t, b, c, d) {
+                    t /= d; t--;
+                    return c * (t * t * t + 1) + b;
+                }
+
 
                 // เลื่อนไปย่อหน้าที่ค้นหาเจอ
                 if (paraIndex !== null) {
@@ -386,7 +437,7 @@
                         const el = document.getElementById(`para-${paraIndex}`);
                         if (el) {
                             el.classList.add('active');
-                            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            smoothScrollTo(el);
                         }
                     }, 300);
                 }
