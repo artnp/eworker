@@ -298,13 +298,13 @@
     // แปลงราคาให้สวย (สำหรับการ์ด + ปุ่ม LINE)
     function formatPriceForCard(price) {
         if (price === '0' || price === 0) {
-            return '<span style="color:#000;background:linear-gradient(135deg,#00ff00,#00cc00);padding:8px 20px;border-radius:12px;font-weight:900;font-size:18px;animation:pulse 2s infinite;">ฟรี!</span>';
+            return '<span>FREE</span>';
         }
         return `${price} บาท`;
     }
 
     function formatPriceForLine(price) {
-        if (price === '0' || price === 0) return 'ฟรี!';
+        if (price === '0' || price === 0) return 'FREE';
         return `จ้างงาน ${price}.-`;
     }
 
@@ -320,7 +320,7 @@
 
                 document.title = escapeHtml(data.title);
 
-                let html = `<center><p class="back-link"><a href="#">กลับสู่หน้ารายการงาน</a></p></center>
+                let html = `<center><p class="back-link"><a href="#">← เมนูงานที่รับจ้าง</a></p></center>
                             <h1>${escapeHtml(data.title)}</h1>`;
 
                 data.paragraphs.forEach((para, index) => {
