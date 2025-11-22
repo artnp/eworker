@@ -155,14 +155,14 @@
         /* Work Grid */
         .work-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
             gap: 20px;
             margin: 20px 0;
         }
         .work-grid a { text-decoration: none; color: inherit; }
         .work-card {
             background: #111;
-            padding: 20px;
+            padding: 54px;
             border-radius: 26px;
             box-shadow: 0 8px 16px rgba(0,0,0,0.5);
             transition: all 0.3s ease;
@@ -176,7 +176,7 @@
             box-shadow: 0 12px 30px #51ff01b9;
             border-color: hwb(91 0% 0%);
         }
-        .work-card h3 { margin: 0 0 10px; color: hsl(66, 100%, 50%); font-weight: 700; }
+        .work-card h3 { margin: 0 0 10px; color: hsl(66, 100%, 50%); font-weight: 600; }
         .price-tag {
             position: absolute;
             top: 10px;
@@ -257,16 +257,18 @@
 
 <div id="main-content"></div>
 
+<!-- ปุ่ม LINE ขวามือ (จะเปลี่ยนราคาอัตโนมัติตามงานที่เปิดดู) -->
 <div class="line-ad-fixed" id="line-ad-fixed">
-    <p class="price">จ้างงาน 150.-</p>
-    <a href="https://line.me/ti/p/~@artap5321" target="_blank" title="คลิกเพื่อเพิ่ม LINE @artap5321">
-        <span class="add-line-text">ADD LINE</span>
-        <span class="account-name">artap5321</span>
+    <p class="price" id="dynamic-price">จ้างงาน 150.-</p>
+    <a href="https://line.me/ti/p/~@artap5321" target="_blank" style="text-decoration:none;">
+        <img src="https://scdn.line-apps.com/n/line_add_friends/btn/th.png" alt="Add LINE" style="width:120px;">
+        <span class="account-name" style="display:block;margin-top:8px;font-size:1.2em;font-weight:700;">artap5321</span>
     </a>
 </div>
 
 <script>
     const lineAdFixed = document.getElementById('line-ad-fixed');
+    const dynamicPriceEl = document.getElementById('dynamic-price');
     let currentSearchQuery = '';
     let currentSearchPage = 1;
     let allwork = [];
@@ -277,142 +279,72 @@
     }
     function escapeRegExp(string) {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
+    };
     function getPlainText(html) {
         if (!html) return '';
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
         return doc.body.textContent || '';
     }
-    function highlight(plainText, term) {
-        if (!term || !term.trim()) return escapeHtml(plainText);
-        const regex = new RegExp(escapeRegExp(term), 'gi');
-        let lastIndex = 0;
-        const parts = [];
-        let match;
-        while ((match = regex.exec(plainText)) !== null) {
-            const before = plainText.slice(lastIndex, match.index);
-            parts.push(escapeHtml(before));
-            parts.push(`<mark style="background-color: #FFD700; color: #000; font-weight: bold;">${escapeHtml(match[0])}</mark>`);
-            lastIndex = match.index + match[0].length;
-        }
-        parts.push(escapeHtml(plainText.slice(lastIndex)));
-        return parts.join('');
+    function highlight(text, term) {
+        if (!term || !term.trim()) return escapeHtml(text);
+        const regex = new RegExp(RegExp.escape(term), 'gi');
+        return escapeHtml(text).replace(regex, match => `<mark style="background:#FFD700;color:#000;font-weight:bold;">${match}</mark>`);
     }
-    function linkifyAndHighlight(plainText, query) {
-        const urlRegex = /(https?:\/\/[^\s<]+[^<.,:;"'\)\]\s])/g;
-        const urls = [];
-        let placeholderText = plainText;
-        let index = 0;
-        let urlMatch;
-        const originalText = plainText;
-        while ((urlMatch = urlRegex.exec(originalText)) !== null) {
-            const placeholder = `__URL_${index}__`;
-            urls[index] = urlMatch[0];
-            placeholderText = placeholderText.slice(0, urlMatch.index) + placeholder + placeholderText.slice(urlMatch.index + urlMatch[0].length);
-            index++;
-        }
-        const highlighted = highlight(placeholderText, query);
-        let finalHtml = highlighted;
-        urls.forEach((url, i) => {
-            const placeholder = `__URL_${i}__`;
-            const linkHtml = `<a href="${escapeHtml(url)}" target="_blank" style="color: #FFD700; text-decoration: none;">${escapeHtml(url)}</a>`;
-            finalHtml = finalHtml.replace(new RegExp(escapeRegExp(placeholder), 'g'), linkHtml);
-        });
-        return finalHtml;
-    }
-    function highlightHtml(html, query) {
-        if (!query || !query.trim()) return html;
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const textNodes = [];
-        const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, null, false);
-        let node;
-        while (node = walker.nextNode()) {
-            textNodes.push(node);
-        }
-        const regex = new RegExp(escapeRegExp(query), 'gi');
-        textNodes.forEach((textNode) => {
-            const text = textNode.textContent;
-            let lastIndex = 0;
-            const parent = textNode.parentNode;
-            let match;
-            while ((match = regex.exec(text)) !== null) {
-                if (match.index > lastIndex) {
-                    const before = doc.createTextNode(text.slice(lastIndex, match.index));
-                    parent.insertBefore(before, textNode);
-                }
-                const mark = doc.createElement('mark');
-                mark.style.backgroundColor = '#FFD700';
-                mark.style.color = '#000';
-                mark.style.fontWeight = 'bold';
-                mark.textContent = match[0];
-                parent.insertBefore(mark, textNode);
-                lastIndex = match.index + match[0].length;
-            }
-            if (lastIndex < text.length) {
-                const after = doc.createTextNode(text.slice(lastIndex));
-                parent.insertBefore(after, textNode);
-            }
-            parent.removeChild(textNode);
-        });
-        return doc.body.innerHTML;
-    }
+
     function extractYouTubeId(url) {
         const pattern = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([a-zA-Z0-9_-]{11})/;
         const match = url.match(pattern);
         return match ? match[1] : null;
     }
 
+    // แสดงรายละเอียดงาน + อัปเดตราคาในปุ่ม LINE
     function showWorkDetail(slug, paraIndex = null) {
         lineAdFixed.classList.add('show-ad');
-        document.title = decodeURIComponent(slug).replace(/_/g, ' ').toLocaleUpperCase('th-TH');
 
         fetch(`${slug}.json`)
             .then(r => r.json())
             .then(data => {
+                // อัปเดตราคาในปุ่ม LINE ด้านข้าง
+                const price = data.price || '150';
+                dynamicPriceEl.innerHTML = `จ้างงาน ${price}.-`;
+
                 document.title = escapeHtml(data.title);
+
                 let html = `<center><p class="back-link"><a href="#">← เมนูงานที่รับจ้าง</a></p></center>
                             <h1>${escapeHtml(data.title)}</h1>`;
 
                 data.paragraphs.forEach((para, index) => {
-                    const processedText = highlightHtml(para.text || '', currentSearchQuery);
+                    const processedText = highlight(para.text || '', currentSearchQuery);
                     let mediaEmbed = '';
                     let shortsClass = '';
 
                     if (para.media_url && para.media_type) {
                         const url = para.media_url.trim();
 
-                        // === YouTube ===
                         if (para.media_type === "youtube") {
                             const videoId = extractYouTubeId(url);
                             if (videoId) {
                                 const isShorts = url.includes('/shorts/');
-                                if (isShorts) {
-                                    shortsClass = Math.random() < 0.5 ? 'shorts' : 'shorts reverse';
-                                }
-                                const embedUrl = `https://www.youtube.com/embed/${videoId}?hl=th&cc_lang_pref=th&rel=0&modestbranding=1&controls=0&showinfo=0`;
+                                if (isShorts) shortsClass = Math.random() < 0.5 ? 'shorts' : 'shorts reverse';
+                                const embedUrl = `https://www.youtube.com/embed/${videoId}?hl=th&cc_lang_pref=th&rel=0&modestbranding=1`;
                                 mediaEmbed = `
-                                    <div class="youtube-embed ${isShorts ? 'shorts-embed' : ''}" data-embed-url="${embedUrl}">
-                                        <iframe loading="lazy" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+                                    <div class="youtube-embed" data-embed-url="${embedUrl}" style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:12px;margin:20px 0;">
+                                        <iframe loading="lazy" allowfullscreen allow="autoplay; picture-in-picture"
+                                            style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;"></iframe>
                                     </div>`;
                             }
                         }
 
-                        // === Vimeo ===
                         if (para.media_type === "vimeo") {
                             const vimeoId = url.match(/vimeo\.com\/(?:.*\/)?(\d+)/)?.[1];
                             if (vimeoId) {
-                                const embedUrl = `https://player.vimeo.com/video/${vimeoId}?title=0&byline=0&portrait=0&badge=0`;
                                 mediaEmbed = `
-                                    <div class="vimeo-embed">
-                                        <iframe src="${embedUrl}" loading="lazy" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"></iframe>
+                                    <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:12px;margin:20px 0;">
+                                        <iframe src="https://player.vimeo.com/video/${vimeoId}?title=0&byline=0&portrait=0" 
+                                            loading="lazy" allowfullscreen allow="autoplay" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;"></iframe>
                                     </div>`;
                             }
-                        }
-
-                        if (!mediaEmbed) {
-                            mediaEmbed = '<p style="color:#FF5555;text-align:center;">⚠️ URL วิดีโอไม่ถูกต้อง</p>';
                         }
                     }
 
@@ -424,236 +356,183 @@
 
                 document.getElementById('main-content').innerHTML = html;
 
-                // Lazy load embed เมื่อเลื่อนมาเห็น
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(e => {
-                        if (e.isIntersecting) {
-                            e.target.classList.add('active');
-                            const embedDiv = e.target.querySelector('.youtube-embed[data-embed-url]');
-                            if (embedDiv) {
-                                const iframe = embedDiv.querySelector('iframe');
-                                if (iframe && !iframe.src) {
-                                    iframe.src = embedDiv.dataset.embedUrl;
-                                    delete embedDiv.dataset.embedUrl;
-                                }
+                // Lazy load iframe
+                const observer = new IntersectionObserver(entries => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('active');
+                            const div = entry.target.querySelector('.youtube-embed[data-embed-url]');
+                            if (div) {
+                                const iframe = div.querySelector('iframe');
+                                if (iframe && !iframe.src) iframe.src = div.dataset.embedUrl;
                             }
-                        } else {
-                            e.target.classList.remove('active');
                         }
                     });
                 }, { threshold: 0.6 });
-
                 document.querySelectorAll('.paragraph').forEach(p => observer.observe(p));
 
-                // Scroll ไปยัง paragraph ที่ระบุ (จากผลค้นหา)
+                // Scroll ไปย่อหน้าที่ค้นหาเจอ
                 if (paraIndex !== null) {
                     setTimeout(() => {
                         const el = document.getElementById(`para-${paraIndex}`);
                         if (el) {
                             el.classList.add('active');
                             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            const embedDiv = el.querySelector('.youtube-embed[data-embed-url]');
-                            if (embedDiv) {
-                                const iframe = embedDiv.querySelector('iframe');
-                                if (iframe) iframe.src = embedDiv.dataset.embedUrl;
-                            }
                         }
-                    }, 200);
+                    }, 300);
                 }
 
                 // ปุ่มย้อนกลับ
-                document.querySelector('.back-link a').addEventListener('click', (e) => {
+                document.querySelector('.back-link a').onclick = e => {
                     e.preventDefault();
                     showWorkList(currentSearchQuery, currentSearchPage);
-                    location.hash = '';
-                });
+                    history.pushState({}, '', location.pathname);
+                };
             })
             .catch(() => {
-                document.getElementById('main-content').innerHTML = '<p style="text-align:center; color:#FF0000;">ไม่พบข้อมูลงานนี้</p>';
+                document.getElementById('main-content').innerHTML = '<p style="text-align:center;color:#FF0000;">ไม่พบข้อมูลงานนี้</p>';
             });
     }
 
-    // ====================== ส่วนแสดงรายการงาน (เหมือนเดิมทุกบรรทัด) ======================
+    // แสดงรายการงานทั้งหมด + ราคาจริงของแต่ละงาน
     function showWorkList(query = '', page = 1) {
         lineAdFixed.classList.remove('show-ad');
+        dynamicPriceEl.innerHTML = 'จ้างงาน 150.-'; // กลับเป็นค่าเริ่มต้นตอนอยู่ในหน้ารายการ
         document.title = 'บริการรับงาน E-Worker';
         currentSearchQuery = query;
         currentSearchPage = page;
+
         const itemsPerPage = 10;
-        const trimmedQuery = query.trim();
-        let html = `<div class="search-container"><input type="text" class="search-input" id="search-input" placeholder="ค้นหางานที่รับ..." value="${escapeHtml(query)}"></div>`;
-        let displayedItems = [];
-        let totalItems = 0;
-        let totalPages = 1;
-        let h2Text = 'งานที่เปิดรับล่าสุด';
-        let filteredItems = allwork;
+        let html = `<div class="search-container">
+                        <input type="text" class="search-input" id="search-input" placeholder="ค้นหางานที่รับ..." value="${escapeHtml(query)}">
+                    </div>`;
 
-        if (trimmedQuery) {
-            const lowerQuery = query.toLowerCase();
-            let results = [];
-            allwork.forEach(work => {
-                let hasParaMatch = false;
-                work.paragraphs.forEach((para, i) => {
-                    const plainPara = getPlainText(para.text);
-                    if (plainPara.toLowerCase().includes(lowerQuery)) {
-                        let snippet = plainPara;
-                        const maxLen = 150;
-                        if (snippet.length > maxLen) {
-                            const escapedQ = escapeRegExp(query);
-                            const regex = new RegExp(escapedQ, 'i');
-                            let match = regex.exec(snippet);
-                            if (match) {
-                                let start = Math.max(0, match.index - 50);
-                                let end = Math.min(snippet.length, match.index + match[0].length + 50);
-                                snippet = snippet.substring(start, end);
-                                if (start > 0) snippet = '...' + snippet;
-                                if (end < plainPara.length) snippet += '...';
-                            } else {
-                                snippet = snippet.substring(0, maxLen) + '...';
-                            }
-                        }
-                        results.push({ work, paraIndex: i, snippet, matchType: 'para' });
-                        hasParaMatch = true;
-                    }
-                });
-                if (!hasParaMatch && work.title.toLowerCase().includes(lowerQuery)) {
-                    results.push({ work, paraIndex: null, snippet: work.title, matchType: 'title' });
-                }
-            });
-            results.sort((a, b) => new Date(b.work.updated) - new Date(a.work.updated));
-            filteredItems = results;
-            h2Text = `ผลการค้นหา "${escapeHtml(query)}" (${filteredItems.length} ผลลัพธ์)`;
-        }
-
-        totalItems = filteredItems.length;
-        totalPages = Math.ceil(totalItems / itemsPerPage);
-        displayedItems = filteredItems.slice((page - 1) * itemsPerPage, page * itemsPerPage);
-
-        html += `<h2>${h2Text}</h2>`;
-
-        if (totalItems === 0) {
-            html += '<p style="text-align: center; color: #FFD700; font-size: 18px;">ไม่พบงานที่ตรงกับการค้นหา</p>';
-        } else {
-            html += '<div class="work-grid">';
-            displayedItems.forEach(item => {
-                let work, snippet, matchType, paraIndex;
-                if (!trimmedQuery) {
-                    work = item;
-                    const firstParaPlain = work.paragraphs.length > 0 ? getPlainText(work.paragraphs[0].text) : '';
-                    snippet = firstParaPlain.slice(0, 100) + (firstParaPlain.length > 100 ? '...' : '');
-                    matchType = null;
-                    paraIndex = null;
-                } else {
-                    work = item.work;
-                    snippet = item.snippet;
-                    matchType = item.matchType;
-                    paraIndex = item.paraIndex;
-                }
-                const hash = paraIndex !== null ? `${work.slug}|para-${paraIndex}` : work.slug;
-                const highlightedSnippet = linkifyAndHighlight(snippet, query);
-
-                let titleText = escapeHtml(work.title);
-                let smallHtml = '';
-
-                if (matchType === 'title') {
-                    titleText = highlight(work.title, query);
-                } else if (matchType === 'para') {
-                    smallHtml = `<small>ตรงกับย่อหน้า ${paraIndex + 1}</small>`;
-                }
-
-                html += `
-                    <a href="#${hash}" style="text-decoration:none; color:inherit;">
-                        <div class="work-card">
-                            <div class="price-tag">150 บาท</div>
-                            <h3><img src="https://cdn-icons-png.flaticon.com/128/3281/3281307.png" style="width:72px; vertical-align:middle; margin-right: 5%">${titleText}</h3>
-                            ${smallHtml}
-                        </div>
-                    </a>`;
-            });
-            html += '</div>';
-        }
-
-        // Pagination
-        if (totalPages > 1) {
-            html += '<div class="pagination" style="text-align:center; margin:30px 0;">';
-            if (page > 1) {
-                html += `<button class="page-btn" onclick="goToPage(${page - 1})" style="background:#FF4500; color:#fff; padding:10px 20px; border:none; border-radius:8px; margin:0 5px; cursor:pointer;">ก่อนหน้า</button>`;
-            }
-            for (let i = 1; i <= totalPages; i++) {
-                if (i === page) {
-                    html += `<span style="background:#FFD700; color:#000; padding:10px 15px; border-radius:8px; margin:0 5px;">${i}</span>`;
-                } else {
-                    html += `<button class="page-btn" onclick="goToPage(${i})" style="background:#333; color:#FFD700; padding:10px 15px; border:none; border-radius:8px; margin:0 5px; cursor:pointer;">${i}</button>`;
-                }
-            }
-            if (page < totalPages) {
-                html += `<button class="page-btn" onclick="goToPage(${page + 1})" style="background:#FF4500; color:#fff; padding:10px 20px; border:none; border-radius:8px; margin:0 5px; cursor:pointer;">ถัดไป</button>`;
-            }
-            html += '</div>';
-        }
-
-        document.getElementById('main-content').innerHTML = html;
-
-        const searchInput = document.getElementById('search-input');
-        if (searchInput) {
-            searchInput.focus();
-            const len = searchInput.value.length;
-            searchInput.setSelectionRange(len, len);
-            searchInput.addEventListener('input', (e) => {
-                showWorkList(e.target.value, 1);
-            });
-        }
-    }
-
-    function goToPage(page) {
-        showWorkList(currentSearchQuery, page);
-    }
-
-    function handleHashChange() {
-        const hash = location.hash.slice(1);
-        if (!hash) {
-            showWorkList(currentSearchQuery, currentSearchPage);
-            return;
-        }
-        const parts = hash.split('|');
-        const slug = parts[0];
-        let paraIndex = null;
-        if (parts[1] && parts[1].startsWith('para-')) {
-            paraIndex = parseInt(parts[1].slice(5));
-        }
-        showWorkDetail(slug, paraIndex);
-    }
-
-    window.addEventListener('load', () => {
-        currentSearchQuery = '';
-        currentSearchPage = 1;
         fetch('work.json')
             .then(r => r.json())
             .then(workList => {
-                const promises = workList.map(work =>
+                const promises = workList.map(work => 
                     fetch(`${work.slug}.json`)
-                        .then(r => { if (!r.ok) throw new Error('Not found'); return r.json(); })
-                        .then(fullData => ({
+                        .then(r => r.json())
+                        .then(detail => ({
                             ...work,
-                            paragraphs: fullData.paragraphs || []
+                            paragraphs: detail.paragraphs || [],
+                            price: detail.price || work.price || '150' // รองรับทุกรูปแบบ
                         }))
-                        .catch(() => work)
+                        .catch(() => ({...work, paragraphs: [], price: work.price || '150'}))
                 );
-                return Promise.all(promises).then(loadedWork => {
-                    allwork = loadedWork.filter(w => w.paragraphs).sort((a, b) => new Date(b.updated) - new Date(a.updated));
-                    if (location.hash) {
-                        handleHashChange();
-                    } else {
-                        showWorkList('', 1);
+
+                Promise.all(promises).then(works => {
+                    allwork = works.sort((a, b) => b.slug - a.slug);
+
+                    let filtered = allwork;
+                    if (query.trim()) {
+                        const q = query.toLowerCase();
+                        filtered = allwork.filter(w => 
+                            w.title.toLowerCase().includes(q) || 
+                            w.paragraphs.some(p => getPlainText(p.text || '').toLowerCase().includes(q))
+                        );
                     }
+
+                    const totalPages = Math.ceil(filtered.length / itemsPerPage);
+                    const start = (page - 1) * itemsPerPage;
+                    const pageItems = filtered.slice(start, start + itemsPerPage);
+
+                    html += `<h2>${query ? `ผลค้นหา "${escapeHtml(query)}" (${filtered.length})` : 'งานที่เปิดรับล่าสุด'}</h2>
+                             <div class="work-grid">`;
+
+                    if (pageItems.length === 0) {
+                        html += '<p style="text-align:center;color:#FFD700;font-size:20px;">ไม่พบงานที่ตรงกับการค้นหา</p>';
+                    } else {
+                        pageItems.forEach(work => {
+                            const price = work.price || '150';
+                            const hash = work.paragraphs.length > 0 ? work.slug : '#';
+                            html += `
+                                <a href="#${hash}" style="text-decoration:none;color:inherit;">
+                                    <div class="work-card">
+                                        <div class="price-tag">${price} บาท</div>
+                                        <h3>
+                                            <img src="https://cdn-icons-png.flaticon.com/128/3281/3281307.png" style="width:36px;vertical-align:middle;margin-right:10px;">
+                                            ${escapeHtml(work.title)}
+                                        </h3>
+                                    </div>
+                                </a>`;
+                        });
+                    }
+
+                    html += `</div>`;
+
+                    // Pagination
+                    if (totalPages > 1) {
+                        html += '<div style="text-align:center;margin:30px 0;">';
+                        if (page > 1) html += `<button onclick="showWorkList('${query}',${page-1})" style="background:#FF4500;color:#fff;padding:10px 20px;border:none;border-radius:8px;margin:0 8px;cursor:pointer;">ก่อนหน้า</button>`;
+                        for (let i = 1; i <= totalPages; i++) {
+                            if (i === page) {
+                                html += `<span style="background:#FFD700;color:#000;padding:10px 18px;border-radius:8px;margin:0 5px;">${i}</span>`;
+                            } else {
+                                html += `<button onclick="showWorkList('${query}',${i})" style="background:#333;color:#FFD700;padding:10px 18px;border:none;border-radius:8px;margin:0 5px;cursor:pointer;">${i}</button>`;
+                            }
+                        }
+                        if (page < totalPages) html += `<button onclick="showWorkList('${query}',${page+1})" style="background:#FF4500;color:#fff;padding:10px 20px;border:none;border-radius:8px;margin:0 8px;cursor:pointer;">ถัดไป</button>`;
+                        html += '</div>';
+                    }
+
+                    document.getElementById('main-content').innerHTML = html;
+
+                    // ช่องค้นหา
+                    const input = document.getElementById('search-input');
+                    if (input) {
+                        input.focus();
+                        input.selectionStart = input.selectionEnd = input.value.length;
+                        input.oninput = e => showWorkList(e.target.value, 1);
+                    }
+
+                    // คลิกการ์ด → เปิดงาน
+                    document.querySelectorAll('.work-card').forEach(card => {
+                        card.parentElement.onclick = e => {
+                            e.preventDefault();
+                            const slug = card.parentElement.getAttribute('href').slice(1);
+                            if (slug && slug !== '#') {
+                                history.pushState({}, '', `#${slug}`);
+                                showWorkDetail(slug);
+                            }
+                        };
+                    });
                 });
             })
             .catch(() => {
-                document.getElementById('main-content').innerHTML = '<p style="text-align:center; color:#FF0000;">ยังไม่มีประกาศรับงาน</p>';
+                document.getElementById('main-content').innerHTML = '<p style="text-align:center;color:#FF0000;">ยังไม่มีประกาศรับงาน</p>';
             });
+    }
+
+    // จัดการ hash
+    window.addEventListener('hashchange', () => {
+        const hash = location.hash.slice(1);
+        if (hash && hash.includes('|')) {
+            const [slug, para] = hash.split('|');
+            const paraIndex = para?.startsWith('para-') ? parseInt(para.slice(5)) : null;
+            showWorkDetail(slug, paraIndex);
+        } else if (hash) {
+            showWorkDetail(hash);
+        } else {
+            showWorkList(currentSearchQuery, currentSearchPage);
+        }
     });
 
-    window.addEventListener('hashchange', handleHashChange);
+    // โหลดครั้งแรก
+    window.addEventListener('load', () => {
+        if (location.hash) {
+            const hash = location.hash.slice(1);
+            if (hash.includes('|')) {
+                const [slug, para] = hash.split('|');
+                const paraIndex = para?.startsWith('para-') ? parseInt(para.slice(5)) : null;
+                showWorkDetail(slug, paraIndex);
+            } else {
+                showWorkDetail(hash);
+            }
+        } else {
+            showWorkList();
+        }
+    });
 </script>
 </body>
 </html>
