@@ -478,7 +478,7 @@
 
         const itemsPerPage = 10;
         let html = `<div class="search-container">
-                        <input type="text" class="search-input" id="search-input" placeholder="ค้นหางานที่รับ..." value="${escapeHtml(query)}">
+                        <input type="text" class="search-input" id="search-input" placeholder="ค้นหางานที่รับ..." value="${escapeHtml(query)}" autocomplete="off">
                     </div>`;
 
         fetch('work.json')
