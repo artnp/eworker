@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เครื่องมือวงกลมเอกสาร PDF - เวอร์ชันสมบูรณ์ (ภาษาไทย 100%)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #f8fafc;
+            font-family: 'Sarabun', sans-serif;
+            color: #c7c7c7;
+        }
+
+        .container {
+            max-width: 1160px;
+            margin: 30px auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            color: white;
+            padding: 32px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 30px;
+            font-weight: 700;
+        }
+
+        .header p {
+            margin: 12px 0 0;
+            font-size: 17px;
+            opacity: 0.95;
+        }
+
+        .content {
+            padding: 32px;
+        }
+
+        .upload-area {
+            border: 3px dashed #94a3b8;
+            border-radius: 16px;
+            padding: 50px;
+            text-align: center;
+            background: #f8fafc;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover,
+        .upload-area.dragover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .upload-area input {
+            display: none;
+        }
+
+        .controls {
+            margin: 25px 0;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .controls label {
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .controls input[type="number"] {
+            width: 110px;
+            padding: 11px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .btn {
+            padding: 12px 26px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .btn-secondary {
+            background: hwb(0 2% 13%);
+            color: #ffe6e6;
+        }
+
+        .btn-secondary:hover {
+            background: hsl(0, 0%, 66%);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        #canvasContainer {
+            position: relative;
+            display: inline-block;
+            margin: 25px auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            overflow: visible;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            background: white;
+        }
+
+        canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .box {
+            position: absolute;
+            border: 5px solid #ef4444;
+            background: rgba(239, 68, 68, 0.08);
+            min-width: 30px;
+            min-height: 30px;
+            cursor: move;
+            user-select: none;
+            z-index: 2;
+        }
+
+        .resizer {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: #ef4444;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+            z-index: 5;
+        }
+
+        .resizer.tl {
+            top: -11px;
+            left: -11px;
+            cursor: nwse-resize;
+        }
+
+        .resizer.tr {
+            top: -11px;
+            right: -11px;
+            cursor: nesw-resize;
+        }
+
+        .resizer.bl {
+            bottom: -11px;
+            left: -11px;
+            cursor: nesw-resize;
+        }
+
+        .resizer.br {
+            bottom: -11px;
+            right: -11px;
+            cursor: nwse-resize;
+        }
+
+        .label {
+            position: absolute;
+            left: -5px;
+            right: -5px;
+            top: 100%;
+            margin-top: 10px;
+            background: #1f2937;
+            color: #ff3333;
+            padding: 12px 16px;
+            font-weight: bold;
+            font-size: 15px;
+            text-align: center;
+            border-radius: 14px;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+            white-space: pre-wrap;
+            line-height: 1.5;
+            outline: none;
+            cursor: text;
+            z-index: 1;
+        }
+
+        .label:empty:before {
+            content: "คลิกเพื่อพิมพ์ข้อความ";
+            color: #94a3b8;
+            font-weight: normal;
+        }
+
+        .close-x {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            background: #ef4444;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            line-height: 34px;
+            font-size: 20px;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .page-info {
+            margin-left: auto;
+            font-weight: 600;
+            color: hsl(0, 0%, 77%);
+            font-size: 16px;
+        }
+
+        /* LINE Ad Fixed */
+        .line-ad-fixed {
+            position: fixed;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #00C300, rgba(0, 195, 0, 0.85));
+            color: #fff;
+            padding: 14px 18px;
+            border-radius: 8px 0 0 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            z-index: 1000;
+            font-weight: 700;
+            transition: right 0.3s ease;
+            display: none;
+        }
+
+        #line-ad-fixed .account-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            background-color: #000;
+            color: #ffffff;
+            display: inline-block;
+            margin-top: 10px;
+            padding: 3px 8px;
+            border-radius: 12px;
+        }
+
+        .line-ad-fixed.show-ad {
+            display: block;
+        }
+
+        .line-ad-fixed:hover {
+            right: -5px;
+        }
+
+        .line-ad-fixed img {
+            width: 120px;
+            margin: 8px auto 4px;
+            display: block;
+        }
+
+        .line-ad-fixed .price {
+            font-size: 1.5em;
+            background: hwb(0 2% 11%);
+            color: hsl(0, 0%, 100%);
+            padding: 8px 16px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+            }
+
+            .header h1 {
+                font-size: 26px;
+            }
+
+            .line-ad-fixed.show-ad {
+                top: auto;
+                bottom: 10px;
+                left: 0;
+                right: 0;
+                width: 100%;
+                border-radius: 0;
+                padding: 14px;
+                transform: none;
+            }
+        }
+    </style>
+
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/build/pdf.mjs"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>เครื่องมือวงกลมเอกสาร PDF</h1>
+            <p>วงจุดจะแก้ไข · พิมพ์คำอธิบาย · บันทึกเป็น PDF</p>
+        </div>
+
+        <div class="content">
+            <div class="upload-area" id="uploadArea">
+                <div
+                    style="width:80px;height:80px;margin:0 auto 20px;background:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath d=%22M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4%22/%3E%3Cpolyline points=%2217 8 12 3 7 8%22/%3E%3Cline x1=%2212%22 y1=%223%22 x2=%2212%22 y2=%2215%22/%3E%3C/svg%3E') center/contain no-repeat">
+                </div>
+                <p style="margin:0;font-size:19px;color:#475569;font-weight:600;">คลิกหรือลากไฟล์ PDF มาที่นี่</p>
+                <input type="file" id="fileInput" accept=".pdf">
+            </div>
+
+            <div id="pageControls" style="display:none;">
+                <div class="controls">
+                    <label>ไปหน้า:</label>
+                    <input type="number" id="pageNum" min="1" value="1">
+                    <button class="btn btn-primary" id="goPage">ไป</button>
+                    <div class="page-info" id="pageInfo"></div>
+                </div>
+                <center>
+                    <button class="btn btn-secondary" id="addBox">+ วงชี้จุดตำแหน่ง</button>
+                    <button class="btn btn-success" id="savePDF">บันทึกเป็น PDF</button>
+                </center>
+            </div>
+
+            <div id="canvasContainer"></div>
+        </div>
+    </div>
+
+    <!-- LINE Ad - ซ่อนไว้ก่อน จะแสดงเมื่ออัปโหลด PDF แล้ว -->
+    <a id="line-ad-url" target="_blank" style="text-decoration:none;">
+        <div class="line-ad-fixed" id="line-ad-fixed">
+            <div class="account-name">จ้างแก้ไขข้อความ</div>
+            <p>
+            <div class="price" id="dynamic-price">กำลังโหลดราคา...</div>
+            <img src="https://scdn.line-apps.com/n/line_add_friends/btn/th.png" alt="Add LINE" style="width:120px;">
+            <span style="display:block;margin-top:8px;font-size:1.3em;font-weight:700;">@artap5321</span>
+        </div>
+    </a>
+
+    <script type="module">
+        import * as pdfjsLib from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/build/pdf.mjs';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/build/pdf.worker.min.mjs';
+        const { jsPDF } = window.jspdf;
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const pageNumInput = document.getElementById('pageNum');
+        const goBtn = document.getElementById('goPage');
+        const addBtn = document.getElementById('addBox');
+        const saveBtn = document.getElementById('savePDF');
+        const pageInfo = document.getElementById('pageInfo');
+        const pageControls = document.getElementById('pageControls');
+        const lineAdFixed = document.getElementById('line-ad-fixed');
+        const dynamicPriceEl = document.getElementById('dynamic-price');
+
+        let pdfDoc = null, totalPages = 0, currentPage = 1, originalFileName = '';
+        const pageAnnotations = new Map();
+
+        // ดึงราคาจาก work.json เฉพาะ slug = "6" เท่านั้น
+        document.getElementById("line-ad-url").href = "../index.html#6"
+        async function loadPriceFromWorkJson() {
+            try {
+                const response = await fetch('../work.json');
+                const workList = await response.json();
+                const workItem = workList.find(item => item.slug === "6");
+                if (workItem && workItem.price !== undefined) {
+                    const price = workItem.price === "0" ? "ฟรี" : `${workItem.price} บาท`;
+                    dynamicPriceEl.textContent = `ใน ${price}`;
+                }
+            } catch (err) {
+            }
+        }
+
+        // เรียกใช้ทันทีที่หน้าโหลด (เพื่อ fallback)
+        loadPriceFromWorkJson();
+
+        // เมื่ออัปโหลด PDF สำเร็จ → แสดงปุ่ม LINE + อัปเดตราคาใหม่
+        fileInput.onchange = async () => {
+            const file = fileInput.files[0];
+            if (!file || !file.name.toLowerCase().endsWith('.pdf')) {
+                return alert('กรุณาเลือกไฟล์ PDF เท่านั้น');
+            }
+
+            // แสดงปุ่ม LINE ทันที + อัปเดตราคาล่าสุดจาก work.json
+            lineAdFixed.classList.add('show-ad');
+            loadPriceFromWorkJson();
+
+            originalFileName = file.name.replace('.pdf', '');
+            const arrayBuffer = await file.arrayBuffer();
+            pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            totalPages = pdfDoc.numPages;
+
+            pageControls.style.display = 'block';
+            uploadArea.style.display = 'none';
+            pageNumInput.max = totalPages;
+            pageInfo.textContent = `ทั้งหมด ${totalPages} หน้า • ${file.name}`;
+
+            renderPage(1);
+        };
+
+        // Drag & Drop
+        uploadArea.addEventListener('click', () => fileInput.click());
+        ['dragover', 'dragenter'].forEach(e => uploadArea.addEventListener(e, ev => {
+            ev.preventDefault();
+            uploadArea.classList.add('dragover');
+        }));
+        ['dragleave', 'drop'].forEach(e => uploadArea.addEventListener(e, () => uploadArea.classList.remove('dragover')));
+        uploadArea.addEventListener('drop', e => {
+            e.preventDefault();
+            if (e.dataTransfer.files[0]) {
+                fileInput.files = e.dataTransfer.files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        });
+
+        async function renderPage(num) {
+            currentPage = num;
+            pageNumInput.value = num;
+            const page = await pdfDoc.getPage(num);
+            const viewport = page.getViewport({ scale: 2.0 });
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            await page.render({ canvasContext: ctx, viewport }).promise;
+            canvasContainer.innerHTML = '';
+            canvasContainer.appendChild(canvas);
+            (pageAnnotations.get(num) || []).forEach(d => createBox(d));
+        }
+
+        function createBox(data) {
+            const box = document.createElement('div');
+            box.className = 'box';
+            box.style.left = data.x + 'px';
+            box.style.top = data.y + 'px';
+            box.style.width = data.w + 'px';
+            box.style.height = data.h + 'px';
+
+            const close = document.createElement('div');
+            close.className = 'close-x';
+            close.textContent = '×';
+            close.onclick = () => { box.remove(); saveAnnotations(); };
+            box.appendChild(close);
+
+            const label = document.createElement('div');
+            label.className = 'label';
+            label.contentEditable = true;
+            label.textContent = data.text || '';
+            label.onblur = saveAnnotations;
+            box.appendChild(label);
+
+            ['tl', 'tr', 'bl', 'br'].forEach(dir => {
+                const r = document.createElement('div');
+                r.className = `resizer ${dir}`;
+                box.appendChild(r);
+            });
+
+            canvasContainer.appendChild(box);
+            makeDraggableResizable(box);
+        }
+
+        function makeDraggableResizable(el) {
+            let isDragging = false, isResizing = false, dir, start = {};
+
+            el.querySelectorAll('.resizer').forEach(r => {
+                r.onmousedown = e => {
+                    e.stopPropagation();
+                    isResizing = true;
+                    dir = r.className.split(' ')[1];
+                    start = { x: e.clientX, y: e.clientY, w: el.offsetWidth, h: el.offsetHeight, l: el.offsetLeft, t: el.offsetTop };
+                };
+            });
+
+            el.onmousedown = e => {
+                if (e.target.closest('.label') || e.target.classList.contains('close-x')) return;
+                isDragging = true;
+                start = { x: e.clientX - el.offsetLeft, y: e.clientY - el.offsetTop };
+                e.preventDefault();
+            };
+
+            document.onmousemove = e => {
+                if (isResizing) {
+                    const dx = e.clientX - start.x;
+                    const dy = e.clientY - start.y;
+                    let w = start.w, h = start.h, l = start.l, t = start.t;
+                    if (dir.includes('r')) w += dx;
+                    if (dir.includes('l')) { w -= dx; l += dx; }
+                    if (dir.includes('b')) h += dy;
+                    if (dir.includes('t')) { h -= dy; t += dy; }
+                    if (w >= 30 && h >= 30) {
+                        el.style.width = w + 'px';
+                        el.style.height = h + 'px';
+                        el.style.left = l + 'px';
+                        el.style.top = t + 'px';
+                    }
+                } else if (isDragging) {
+                    el.style.left = (e.clientX - start.x) + 'px';
+                    el.style.top = (e.clientY - start.y) + 'px';
+                }
+            };
+
+            document.onmouseup = () => {
+                if (isDragging || isResizing) {
+                    isDragging = isResizing = false;
+                    saveAnnotations();
+                }
+            };
+        }
+
+        function saveAnnotations() {
+            const boxes = Array.from(canvasContainer.querySelectorAll('.box')).map(b => ({
+                x: b.offsetLeft,
+                y: b.offsetTop,
+                w: b.offsetWidth,
+                h: b.offsetHeight,
+                text: b.querySelector('.label').textContent.trim()
+            }));
+            if (boxes.length > 0) pageAnnotations.set(currentPage, boxes);
+            else pageAnnotations.delete(currentPage);
+        }
+
+        addBtn.onclick = () => { createBox({ x: 200, y: 150, w: 300, h: 200, text: '' }); saveAnnotations(); };
+        goBtn.onclick = () => { const n = parseInt(pageNumInput.value); if (n >= 1 && n <= totalPages) renderPage(n); };
+        pageNumInput.addEventListener('keyup', e => { if (e.key === 'Enter') goBtn.click(); });
+
+        saveBtn.onclick = async () => {
+            if (!pdfDoc || pageAnnotations.size === 0) return alert('กรุณาเพิ่มกรอบอย่างน้อย 1 อันก่อนบันทึก');
+
+            const pdf = new jsPDF('p', 'pt', 'a4');
+            const pages = Array.from(pageAnnotations.keys()).sort((a, b) => a - b);
+
+            for (let i = 0; i < pages.length; i++) {
+                const pg = pages[i]; await renderPage(pg); const
+                    watermark = document.createElement('div');
+                watermark.style.cssText = 'position:absolute;top:20px;left:20px;color:red;font-size:24px;font-weight:bold;z-index:100;pointer-events:none;font-family:"Sarabun",sans-serif;'
+                    ; watermark.textContent = `ให้แก้ไขหน้าที่ ${pg}`; canvasContainer.appendChild(watermark); const
+                        canvas = await html2canvas(canvasContainer, { scale: 2, backgroundColor: '#ffffff' }); const
+                            imgData = canvas.toDataURL('image/png'); const w = pdf.internal.pageSize.getWidth(); const h = (canvas.height * w)
+                                / canvas.width; if (i > 0) pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, 0, w, h);
+                watermark.remove();
+            }
+
+            pdf.save(`${originalFileName}_วงขุดแก้ไข.pdf`);
+        };
+    </script>
+</body>
+
+</html>
