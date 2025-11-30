@@ -16,7 +16,7 @@
             padding: 0;
             background: #f8fafc;
             font-family: 'Sarabun', sans-serif;
-            color: #c7c7c7;
+            color: #333;
         }
 
         .container {
@@ -117,12 +117,12 @@
         }
 
         .btn-secondary {
-            background: hwb(0 2% 13%);
-            color: #ffe6e6;
+            background: #dc2626;
+            color: white;
         }
 
         .btn-secondary:hover {
-            background: hsl(0, 0%, 66%);
+            background: #b91c1c;
         }
 
         .btn-success {
@@ -245,41 +245,118 @@
         .page-info {
             margin-left: auto;
             font-weight: 600;
-            color: hsl(0, 0%, 77%);
+            color: #94a3b8;
             font-size: 16px;
         }
 
-        /* LINE Ad Fixed */
+        /* ==================== แถบเครื่องมือลอย ด้านซ้าย + ลากได้ ==================== */
+        #floatingToolbar {
+            position: fixed;
+            left: 20px !important;
+            /* เริ่มต้นชิดซ้าย */
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+            z-index: 99999;
+            min-width: 280px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        #floatingToolbar.minimized {
+            min-width: 60px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+        }
+
+        .toolbar-header {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            color: white;
+            padding: 14px 18px;
+            border-radius: 16px 16px 0 0;
+            cursor: move;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .toolbar-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toolbar-buttons {
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .toolbar-buttons .btn {
+            width: 100%;
+            justify-content: center;
+            font-size: 16px;
+            padding: 14px;
+        }
+
+        #pageControls center {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            #floatingToolbar {
+                left: 10px !important;
+                right: 10px !important;
+                top: auto !important;
+                bottom: 20px !important;
+                transform: none !important;
+                width: auto;
+            }
+
+            #floatingToolbar.minimized {
+                left: 50% !important;
+                transform: translateX(-50%) !important;
+            }
+        }
+
+        /* LINE Ad */
+/* LINE Ad */
         .line-ad-fixed {
             position: fixed;
             right: 0;
             top: 50%;
             transform: translateY(-50%);
-            background: linear-gradient(135deg, #00C300, hwb(120 2% 26% / 0.753));
+            max-width: 10vw;     /* ไม่เกิน 20% ของหน้าจอ */
+            background: linear-gradient(135deg,#00C300,rgba(0,200,0,0.75));
             color: #fff;
             padding: 10px 15px;
             border-radius: 8px 0 0 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
             text-align: center;
             z-index: 1000;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 1.1vw;    /* ตัวอักษรปรับตามจอ */
             font-weight: 700;
             line-height: 1.5;
             transition: right 0.3s ease;
             display: none;
         }
 
-        #line-ad-fixed .account-name {
-            font-size: 1.3em;
-            font-weight: bold;
-            background-color: #000;
-            color: #ffffff;
-            display: inline-block;
-            margin-top: 10px;
-            padding: 3px 8px;
-            border-radius: 12px;
-        }
 
         .line-ad-fixed.show-ad {
             display: block;
@@ -296,9 +373,9 @@
         }
 
         .line-ad-fixed .price {
-            font-size: 1.5em;
-            background: hwb(0 2% 11%);
-            color: hsl(0, 0%, 100%);
+            font-size: 0.9em;
+            background: #dc2626;
+            color: white;
             padding: 8px 16px;
             border-radius: 12px;
             display: inline-block;
@@ -306,25 +383,15 @@
             font-weight: bold;
         }
 
-        @media (max-width: 768px) {
-            .container {
-                margin: 10px;
-            }
-
-            .header h1 {
-                font-size: 26px;
-            }
-
-            .line-ad-fixed.show-ad {
-                top: auto;
-                bottom: 10px;
-                left: 0;
-                right: 0;
-                width: 100%;
-                border-radius: 0;
-                padding: 14px;
-                transform: none;
-            }
+        .line-ad-fixed .account-name {
+            font-size: 0.9em;
+            font-weight: bold;
+            background-color: #000;
+            color: #ffffff;
+            display: inline-block;
+            margin-top: 10px;
+            padding: 3px 8px;
+            border-radius: 12px;
         }
     </style>
 
@@ -357,23 +424,31 @@
                     <button class="btn btn-primary" id="goPage">ไป</button>
                     <div class="page-info" id="pageInfo"></div>
                 </div>
-                <center>
-                    <button class="btn btn-secondary" id="addBox">+ วงชี้จุดตำแหน่ง</button>
-                    <button class="btn btn-success" id="savePDF">บันทึกเป็น PDF</button>
-                </center>
             </div>
 
             <div id="canvasContainer"></div>
         </div>
     </div>
 
-    <!-- LINE Ad - ซ่อนไว้ก่อน จะแสดงเมื่ออัปโหลด PDF แล้ว -->
+    <!-- แถบเครื่องมือลอย ด้านซ้าย + ลากได้ -->
+    <div id="floatingToolbar">
+        <div class="toolbar-header">
+            <span>เครื่องมือ</span>
+            <button class="toolbar-close">×</button>
+        </div>
+        <div class="toolbar-buttons">
+            <button class="btn btn-secondary" id="addBox">+ วงชี้จุดตำแหน่ง</button>
+            <button class="btn btn-success" id="savePDF">บันทึกเป็น PDF</button>
+        </div>
+    </div>
+
+    <!-- LINE Ad -->
     <a id="line-ad-url" target="_blank" style="text-decoration:none;">
         <div class="line-ad-fixed" id="line-ad-fixed">
             <div class="account-name">จ้างแก้ไขข้อความ</div>
-            <p>
+            ...<br>
             <div class="price" id="dynamic-price">กำลังโหลดราคา...</div>
-            <img src="https://scdn.line-apps.com/n/line_add_friends/btn/th.png" alt="Add LINE" style="width:120px;">
+            <img src="https://scdn.line-apps.com/n/line_add_friends/btn/th.png" alt="Add LINE">
             <span style="display:block;margin-top:8px;font-size:1.3em;font-weight:700;">@artap5321</span>
         </div>
     </a>
@@ -394,12 +469,15 @@
         const pageControls = document.getElementById('pageControls');
         const lineAdFixed = document.getElementById('line-ad-fixed');
         const dynamicPriceEl = document.getElementById('dynamic-price');
+        const toolbar = document.getElementById('floatingToolbar');
+        const toolbarHeader = toolbar.querySelector('.toolbar-header');
+        const toolbarClose = toolbar.querySelector('.toolbar-close');
 
         let pdfDoc = null, totalPages = 0, currentPage = 1, originalFileName = '';
         const pageAnnotations = new Map();
 
-        // ดึงราคาจาก work.json เฉพาะ slug = "6" เท่านั้น
-        document.getElementById("line-ad-url").href = "../index.html#6"
+        // ดึงราคา
+        document.getElementById("line-ad-url").href = "../index.html#6";
         async function loadPriceFromWorkJson() {
             try {
                 const response = await fetch('../work.json');
@@ -409,21 +487,13 @@
                     const price = workItem.price === "0" ? "ฟรี" : `${workItem.price} บาท`;
                     dynamicPriceEl.textContent = `ใน ${price}`;
                 }
-            } catch (err) {
-            }
+            } catch (err) { }
         }
-
-        // เรียกใช้ทันทีที่หน้าโหลด (เพื่อ fallback)
         loadPriceFromWorkJson();
 
-        // เมื่ออัปโหลด PDF สำเร็จ → แสดงปุ่ม LINE + อัปเดตราคาใหม่
         fileInput.onchange = async () => {
             const file = fileInput.files[0];
-            if (!file || !file.name.toLowerCase().endsWith('.pdf')) {
-                return alert('กรุณาเลือกไฟล์ PDF เท่านั้น');
-            }
-
-            // แสดงปุ่ม LINE ทันที + อัปเดตราคาล่าสุดจาก work.json
+            if (!file || !file.name.toLowerCase().endsWith('.pdf')) return alert('กรุณาเลือกไฟล์ PDF เท่านั้น');
             lineAdFixed.classList.add('show-ad');
             loadPriceFromWorkJson();
 
@@ -436,16 +506,12 @@
             uploadArea.style.display = 'none';
             pageNumInput.max = totalPages;
             pageInfo.textContent = `ทั้งหมด ${totalPages} หน้า • ${file.name}`;
-
             renderPage(1);
         };
 
         // Drag & Drop
         uploadArea.addEventListener('click', () => fileInput.click());
-        ['dragover', 'dragenter'].forEach(e => uploadArea.addEventListener(e, ev => {
-            ev.preventDefault();
-            uploadArea.classList.add('dragover');
-        }));
+        ['dragover', 'dragenter'].forEach(e => uploadArea.addEventListener(e, ev => { ev.preventDefault(); uploadArea.classList.add('dragover'); }));
         ['dragleave', 'drop'].forEach(e => uploadArea.addEventListener(e, () => uploadArea.classList.remove('dragover')));
         uploadArea.addEventListener('drop', e => {
             e.preventDefault();
@@ -572,19 +638,64 @@
             const pages = Array.from(pageAnnotations.keys()).sort((a, b) => a - b);
 
             for (let i = 0; i < pages.length; i++) {
-                const pg = pages[i]; await renderPage(pg); const
-                    watermark = document.createElement('div');
-                watermark.style.cssText = 'position:absolute;top:20px;left:20px;color:red;font-size:24px;font-weight:bold;z-index:100;pointer-events:none;font-family:"Sarabun",sans-serif;'
-                    ; watermark.textContent = `ให้แก้ไขหน้าที่ ${pg}`; canvasContainer.appendChild(watermark); const
-                        canvas = await html2canvas(canvasContainer, { scale: 2, backgroundColor: '#ffffff' }); const
-                            imgData = canvas.toDataURL('image/png'); const w = pdf.internal.pageSize.getWidth(); const h = (canvas.height * w)
-                                / canvas.width; if (i > 0) pdf.addPage();
+                const pg = pages[i];
+                await renderPage(pg);
+                const watermark = document.createElement('div');
+                watermark.style.cssText = 'position:absolute;top:20px;left:20px;color:red;font-size:24px;font-weight:bold;z-index:100;pointer-events:none;font-family:"Sarabun",sans-serif;';
+                watermark.textContent = `ให้แก้ไขหน้าที่ ${pg}`;
+                canvasContainer.appendChild(watermark);
+
+                const canvas = await html2canvas(canvasContainer, { scale: 2, backgroundColor: '#ffffff' });
+                const imgData = canvas.toDataURL('image/png');
+                const w = pdf.internal.pageSize.getWidth();
+                const h = (canvas.height * w) / canvas.width;
+                if (i > 0) pdf.addPage();
                 pdf.addImage(imgData, 'PNG', 0, 0, w, h);
                 watermark.remove();
             }
 
             pdf.save(`${originalFileName}_วงขุดแก้ไข.pdf`);
         };
+
+        // ==================== ลากแถบเครื่องมือได้ทุกที่ ====================
+        let isDragging = false;
+        let offsetX, offsetY;
+
+        toolbarHeader.addEventListener('mousedown', e => {
+            if (e.target === toolbarClose) return;
+            isDragging = true;
+            offsetX = e.clientX - toolbar.getBoundingClientRect().left;
+            offsetY = e.clientY - toolbar.getBoundingClientRect().top;
+            toolbar.style.transition = 'none';
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', e => {
+            if (!isDragging) return;
+            toolbar.style.left = (e.clientX - offsetX) + 'px';
+            toolbar.style.top = (e.clientY - offsetY) + 'px';
+            toolbar.style.right = 'auto';
+            toolbar.style.bottom = 'auto';
+            toolbar.style.transform = 'none';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                toolbar.style.transition = 'all 0.3s ease';
+            }
+        });
+
+        // ปุ่มย่อ/ขยาย
+        toolbarClose.addEventListener('click', () => {
+            toolbar.classList.toggle('minimized');
+            toolbarClose.textContent = toolbar.classList.contains('minimized') ? '+' : '×';
+        });
+
+        // ป้องกันลากตอนกดปุ่ม
+        toolbar.querySelectorAll('.toolbar-buttons button').forEach(btn => {
+            btn.addEventListener('mousedown', e => e.stopPropagation());
+        });
     </script>
 </body>
 
