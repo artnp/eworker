@@ -173,29 +173,10 @@
             z-index: 5;
         }
 
-        .resizer.tl {
-            top: -11px;
-            left: -11px;
-            cursor: nwse-resize;
-        }
-
-        .resizer.tr {
-            top: -11px;
-            right: -11px;
-            cursor: nesw-resize;
-        }
-
-        .resizer.bl {
-            bottom: -11px;
-            left: -11px;
-            cursor: nesw-resize;
-        }
-
-        .resizer.br {
-            bottom: -11px;
-            right: -11px;
-            cursor: nwse-resize;
-        }
+        .resizer.tl { top: -11px; left: -11px; cursor: nwse-resize; }
+        .resizer.tr { top: -11px; right: -11px; cursor: nesw-resize; }
+        .resizer.bl { bottom: -11px; left: -11px; cursor: nesw-resize; }
+        .resizer.br { bottom: -11px; right: -11px; cursor: nwse-resize; }
 
         .label {
             position: absolute;
@@ -249,11 +230,10 @@
             font-size: 16px;
         }
 
-        /* ==================== แถบเครื่องมือลอย ด้านซ้าย + ลากได้ ==================== */
+        /* ==================== แถบเครื่องมือลอย (เริ่มต้นซ่อน) ==================== */
         #floatingToolbar {
             position: fixed;
             left: 20px !important;
-            /* เริ่มต้นชิดซ้าย */
             top: 50% !important;
             transform: translateY(-50%) !important;
             background: white;
@@ -264,6 +244,7 @@
             border: 1px solid #e2e8f0;
             transition: all 0.3s ease;
             user-select: none;
+            display: none; /* ซ่อนตั้งแต่แรก */
         }
 
         #floatingToolbar.minimized {
@@ -335,13 +316,12 @@
         }
 
         /* LINE Ad */
-/* LINE Ad */
         .line-ad-fixed {
             position: fixed;
             right: 0;
             top: 50%;
             transform: translateY(-50%);
-            max-width: 10vw;     /* ไม่เกิน 20% ของหน้าจอ */
+            max-width: 10vw;
             background: linear-gradient(135deg,#00C300,rgba(0,200,0,0.75));
             color: #fff;
             padding: 10px 15px;
@@ -350,13 +330,12 @@
             text-align: center;
             z-index: 1000;
             cursor: pointer;
-            font-size: 1.1vw;    /* ตัวอักษรปรับตามจอ */
+            font-size: 1.1vw;
             font-weight: 700;
             line-height: 1.5;
             transition: right 0.3s ease;
             display: none;
         }
-
 
         .line-ad-fixed.show-ad {
             display: block;
@@ -410,9 +389,7 @@
 
         <div class="content">
             <div class="upload-area" id="uploadArea">
-                <div
-                    style="width:80px;height:80px;margin:0 auto 20px;background:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath d=%22M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4%22/%3E%3Cpolyline points=%2217 8 12 3 7 8%22/%3E%3Cline x1=%2212%22 y1=%223%22 x2=%2212%22 y2=%2215%22/%3E%3C/svg%3E') center/contain no-repeat">
-                </div>
+                <div style="width:80px;height:80px;margin:0 auto 20px;background:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath d=%22M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4%22/%3E%3Cpolyline points=%2217 8 12 3 7 8%22/%3E%3Cline x1=%2212%22 y1=%223%22 x2=%2212%22 y2=%2215%22/%3E%3C/svg%3E') center/contain no-repeat"></div>
                 <p style="margin:0;font-size:19px;color:#475569;font-weight:600;">คลิกหรือลากไฟล์ PDF มาที่นี่</p>
                 <input type="file" id="fileInput" accept=".pdf">
             </div>
@@ -430,7 +407,7 @@
         </div>
     </div>
 
-    <!-- แถบเครื่องมือลอย ด้านซ้าย + ลากได้ -->
+    <!-- แถบเครื่องมือลอย (เริ่มต้นซ่อนด้วย CSS) -->
     <div id="floatingToolbar">
         <div class="toolbar-header">
             <span>เครื่องมือ</span>
@@ -470,7 +447,6 @@
         const lineAdFixed = document.getElementById('line-ad-fixed');
         const dynamicPriceEl = document.getElementById('dynamic-price');
         const toolbar = document.getElementById('floatingToolbar');
-        const toolbarHeader = toolbar.querySelector('.toolbar-header');
         const toolbarClose = toolbar.querySelector('.toolbar-close');
 
         let pdfDoc = null, totalPages = 0, currentPage = 1, originalFileName = '';
@@ -494,6 +470,7 @@
         fileInput.onchange = async () => {
             const file = fileInput.files[0];
             if (!file || !file.name.toLowerCase().endsWith('.pdf')) return alert('กรุณาเลือกไฟล์ PDF เท่านั้น');
+            
             lineAdFixed.classList.add('show-ad');
             loadPriceFromWorkJson();
 
@@ -502,8 +479,15 @@
             pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
             totalPages = pdfDoc.numPages;
 
+            // แสดงส่วนควบคุม + ซ่อนพื้นที่อัพโหลด
             pageControls.style.display = 'block';
             uploadArea.style.display = 'none';
+
+            // แสดงแถบเครื่องมือ (สำคัญ!)
+            toolbar.style.display = 'block';
+            toolbar.classList.remove('minimized');
+            toolbarClose.textContent = '×';
+
             pageNumInput.max = totalPages;
             pageInfo.textContent = `ทั้งหมด ${totalPages} หน้า • ${file.name}`;
             renderPage(1);
@@ -654,14 +638,14 @@
                 watermark.remove();
             }
 
-            pdf.save(`${originalFileName}_วงขุดแก้ไข.pdf`);
+            pdf.save(`${originalFileName}_วงจุดแก้ไข.pdf`);
         };
 
-        // ==================== ลากแถบเครื่องมือได้ทุกที่ ====================
+        // ลากแถบเครื่องมือได้
         let isDragging = false;
         let offsetX, offsetY;
 
-        toolbarHeader.addEventListener('mousedown', e => {
+        toolbar.querySelector('.toolbar-header').addEventListener('mousedown', e => {
             if (e.target === toolbarClose) return;
             isDragging = true;
             offsetX = e.clientX - toolbar.getBoundingClientRect().left;
@@ -686,13 +670,13 @@
             }
         });
 
-        // ปุ่มย่อ/ขยาย
+        // ย่อ/ขยายแถบเครื่องมือ
         toolbarClose.addEventListener('click', () => {
             toolbar.classList.toggle('minimized');
             toolbarClose.textContent = toolbar.classList.contains('minimized') ? '+' : '×';
         });
 
-        // ป้องกันลากตอนกดปุ่ม
+        // ป้องกันการลากตอนกดปุ่ม
         toolbar.querySelectorAll('.toolbar-buttons button').forEach(btn => {
             btn.addEventListener('mousedown', e => e.stopPropagation());
         });
