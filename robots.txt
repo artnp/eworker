@@ -1,4 +1,24 @@
+# robots.txt for E-Worker Digital Services
+# Updated: 2025-12-18
+
 User-agent: *
 Allow: /
+Disallow: /github_api.php
+Disallow: /init_seo.php
+Disallow: /generate.php
 
+# Sitemap location
 Sitemap: https://artnp.github.io/eworker/sitemap.xml
+
+# Crawl delay (optional)
+Crawl-delay: 1
+
+# Popular search engines
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Slurp
+Allow: /
