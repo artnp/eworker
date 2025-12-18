@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting...</title>
+    <script>
+        // GitHub Pages 404 redirect trick for clean URLs
+        (function () {
+            var path = window.location.pathname;
+            var baseUrl = '/eworker/';
+
+            // Extract the slug from path (e.g., /eworker/1 -> 1)
+            if (path.startsWith(baseUrl)) {
+                var slug = path.replace(baseUrl, '').replace(/\/$/, '');
+
+                // Redirect to index.html with the slug as a query parameter
+                // This allows us to use clean URLs without creating folders
+                if (slug && slug !== '') {
+                    window.location.replace(baseUrl + '?work=' + encodeURIComponent(slug));
+                } else {
+                    window.location.replace(baseUrl);
+                }
+            } else {
+                // Fallback to homepage
+                window.location.replace(baseUrl);
+            }
+        })();
+    </script>
+</head>
+
+<body>
+    <p style="text-align:center; margin-top:50px; font-family:sans-serif;">กำลังเปลี่ยนหน้า...</p>
+</body>
+
+</html>

@@ -16,6 +16,23 @@
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://artnp.github.io/eworker/">
 
+    <!-- Favicons & App Icons -->
+    <link rel="icon" type="image/png" sizes="16x16" href="https://cdn-icons-png.flaticon.com/128/13540/13540872.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://cdn-icons-png.flaticon.com/128/13540/13540872.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://cdn-icons-png.flaticon.com/128/13540/13540872.png">
+    <meta name="theme-color" content="#000000">
+    <meta name="msapplication-TileColor" content="#000000">
+
+    <!-- Performance & Resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn-icons-png.flaticon.com">
+    <link rel="dns-prefetch" href="https://www.youtube.com">
+    <link rel="dns-prefetch" href="https://player.vimeo.com">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://artnp.github.io/eworker/">
@@ -26,13 +43,13 @@
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://eworker.dosfixvirus.com/">
+    <meta property="twitter:url" content="https://artnp.github.io/eworker/">
     <meta property="twitter:title" content="บริการรับงานคุณภาพ แก้ไขรูปภาพ เอกสาร และดิจิทัล | LINE @artap5321">
     <meta property="twitter:description"
         content="บริการรับจ้างงานคุณภาพโดยผู้เชี่ยวชาญ แก้ไขรูปภาพพิธีการ หาชื่อฟอนต์ ปรึกษาปัญหาคอมพิวเตอร์ และอื่นๆ">
     <meta property="twitter:image" content="https://cdn-icons-png.flaticon.com/128/13540/13540872.png">
 
-    <!-- Structured Data (JSON-LD) -->
+    <!-- Structured Data (JSON-LD) - Service Schema -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -66,6 +83,73 @@
           }
         ]
       }
+    }
+    </script>
+
+    <!-- Organization Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "E-Worker Digital Services",
+      "url": "https://artnp.github.io/eworker/",
+      "logo": "https://cdn-icons-png.flaticon.com/128/13540/13540872.png",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer service",
+        "availableLanguage": ["Thai", "English"]
+      },
+      "sameAs": [
+        "https://line.me/ti/p/~@artap5321"
+      ]
+    }
+    </script>
+
+    <!-- BreadcrumbList Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [{
+        "@type": "ListItem",
+        "position": 1,
+        "name": "หน้าแรก",
+        "item": "https://artnp.github.io/eworker/"
+      }]
+    }
+    </script>
+
+    <!-- FAQ Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "บริการรับจ้างทำอะไรบ้าง",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "รับจ้างแก้ไขรูปภาพในงานพิธีการ หาชื่อฟอนต์จากภาพเอกสาร สกัด URL Youtube IDs จำนวนมาก ถอดซับไตเติ้ลจากวิดีโอ ทำไฟล์เอกสารส่งมอบงาน และบริการอื่นๆ ราคาเริ่มต้น 50 บาท"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "ติดต่อจ้างงานได้ที่ไหน",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "สามารถติดต่อจ้างงานได้ผ่าน LINE @artap5321"
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "ราคาเริ่มต้นเท่าไหร่",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "ราคาเริ่มต้น 50 บาท ขึ้นอยู่กับประเภทและความซับซ้อนของงาน มีบางงานที่ให้บริการฟรี"
+          }
+        }
+      ]
     }
     </script>
 
@@ -523,7 +607,8 @@
 
 <body>
     <h1>
-        <img src="https://cdn-icons-png.flaticon.com/128/13540/13540872.png" alt="E-Worker Icon"
+        <img src="https://cdn-icons-png.flaticon.com/128/13540/13540872.png"
+            alt="E-Worker ระบบจ้างงานออนไลน์ บริการคุณภาพ" width="72" height="72"
             style="width:72px; vertical-align:middle;">
         <span style="vertical-align:middle; display:inline-block;">
             ระบบจ้างงาน E-Worker<br>
@@ -733,7 +818,7 @@
                     document.querySelector('.back-link a').onclick = e => {
                         e.preventDefault();
                         showWorkList(currentSearchQuery, currentSearchPage);
-                        history.pushState({}, '', location.pathname);
+                        history.pushState({}, '', '/eworker/');
                     };
                 })
                 .catch(() => {
@@ -791,9 +876,9 @@
                         } else {
                             pageItems.forEach(work => {
                                 const price = work.price || '150';
-                                const hash = work.paragraphs.length > 0 ? work.slug : '#';
+                                const workUrl = work.paragraphs.length > 0 ? work.slug : '#';
                                 html += `
-                                <a href="#${hash}" style="text-decoration:none;color:inherit;">
+                                <a href="${workUrl}" style="text-decoration:none;color:inherit;">
                                     <div class="work-card">
                                        
                                             ${formatPriceForCard(price)}
@@ -842,9 +927,9 @@
                         document.querySelectorAll('.work-card').forEach(card => {
                             card.parentElement.onclick = e => {
                                 e.preventDefault();
-                                const slug = card.parentElement.getAttribute('href').slice(1);
+                                const slug = card.parentElement.getAttribute('href');
                                 if (slug && slug !== '#') {
-                                    history.pushState({}, '', `#${slug}`);
+                                    history.pushState({ work: slug }, '', slug);
                                     showWorkDetail(slug);
                                 }
                             };
@@ -856,34 +941,35 @@
                 });
         }
 
-        // จัดการ hash change
-        window.addEventListener('hashchange', () => {
-            const hash = location.hash.slice(1);
-            if (hash && hash.includes('|')) {
-                const [slug, para] = hash.split('|');
-                const paraIndex = para?.startsWith('para-') ? parseInt(para.slice(5)) : null;
-                showWorkDetail(slug, paraIndex);
-            } else if (hash) {
-                showWorkDetail(hash);
-            } else {
-                showWorkList(currentSearchQuery, currentSearchPage);
-            }
+        // จัดการ history state changes (back/forward buttons)
+        window.addEventListener('popstate', (event) => {
+            routePage();
         });
 
-        // โหลดครั้งแรก
-        window.addEventListener('load', () => {
-            if (location.hash) {
-                const hash = location.hash.slice(1);
-                if (hash.includes('|')) {
-                    const [slug, para] = hash.split('|');
-                    const paraIndex = para?.startsWith('para-') ? parseInt(para.slice(5)) : null;
-                    showWorkDetail(slug, paraIndex);
-                } else {
-                    showWorkDetail(hash);
+        // Main routing function
+        function routePage() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const workParam = urlParams.get('work');
+            const path = window.location.pathname;
+
+            // Check for clean URL pattern /eworker/1, /eworker/2, etc.
+            const match = path.match(/\/eworker\/(\d+)/);
+            const slug = workParam || (match ? match[1] : null);
+
+            if (slug) {
+                // Clean up URL if it has query parameter
+                if (workParam) {
+                    history.replaceState({ work: slug }, '', slug);
                 }
+                showWorkDetail(slug);
             } else {
                 showWorkList();
             }
+        }
+
+        // โหลดครั้งแรก
+        window.addEventListener('load', () => {
+            routePage();
         });
     </script>
 </body>
