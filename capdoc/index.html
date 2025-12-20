@@ -173,10 +173,29 @@
             z-index: 5;
         }
 
-        .resizer.tl { top: -11px; left: -11px; cursor: nwse-resize; }
-        .resizer.tr { top: -11px; right: -11px; cursor: nesw-resize; }
-        .resizer.bl { bottom: -11px; left: -11px; cursor: nesw-resize; }
-        .resizer.br { bottom: -11px; right: -11px; cursor: nwse-resize; }
+        .resizer.tl {
+            top: -11px;
+            left: -11px;
+            cursor: nwse-resize;
+        }
+
+        .resizer.tr {
+            top: -11px;
+            right: -11px;
+            cursor: nesw-resize;
+        }
+
+        .resizer.bl {
+            bottom: -11px;
+            left: -11px;
+            cursor: nesw-resize;
+        }
+
+        .resizer.br {
+            bottom: -11px;
+            right: -11px;
+            cursor: nwse-resize;
+        }
 
         .label {
             position: absolute;
@@ -244,7 +263,8 @@
             border: 1px solid #e2e8f0;
             transition: all 0.3s ease;
             user-select: none;
-            display: none; /* ซ่อนตั้งแต่แรก */
+            display: none;
+            /* ซ่อนตั้งแต่แรก */
         }
 
         #floatingToolbar.minimized {
@@ -274,11 +294,22 @@
             gap: 14px;
         }
 
-        .toolbar-buttons .btn {
-            width: 100%;
-            justify-content: center;
+        .toolbar-nav {
+            padding: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #475569;
+            font-weight: 600;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .toolbar-nav input {
+            width: 80px;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
             font-size: 16px;
-            padding: 14px;
         }
 
         #pageControls center {
@@ -301,26 +332,26 @@
             }
         }
 
-        /* LINE Ad */
+        /* LINE Ad Modern & Compact */
         .line-ad-fixed {
             position: fixed;
             right: 0;
             top: 50%;
             transform: translateY(-50%);
-            max-width: 10vw;
-            background: linear-gradient(135deg,#00C300,rgba(0,200,0,0.75));
+            width: 140px;
+            background: linear-gradient(135deg, #06c755, #05a346);
             color: #fff;
-            padding: 10px 15px;
-            border-radius: 8px 0 0 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            padding: 15px 12px;
+            border-radius: 20px 0 0 20px;
+            box-shadow: -4px 4px 20px rgba(0, 0, 0, 0.15);
             text-align: center;
             z-index: 1000;
             cursor: pointer;
-            font-size: 1.1vw;
-            font-weight: 700;
-            line-height: 1.5;
-            transition: right 0.3s ease;
+            font-size: 14px;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             display: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-right: none;
         }
 
         .line-ad-fixed.show-ad {
@@ -328,35 +359,44 @@
         }
 
         .line-ad-fixed:hover {
-            right: -5px;
+            width: 150px;
+            padding-right: 20px;
         }
 
         .line-ad-fixed img {
-            width: 120px;
-            margin: 8px auto 4px;
+            width: 90px;
+            margin: 10px auto;
             display: block;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
         }
 
         .line-ad-fixed .price {
-            font-size: 0.9em;
-            background: #dc2626;
+            font-size: 13px;
+            background: rgba(255, 255, 255, 0.2);
             color: white;
-            padding: 8px 16px;
-            border-radius: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
             display: inline-block;
-            margin-bottom: 8px;
-            font-weight: bold;
+            margin: 5px 0;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
         .line-ad-fixed .account-name {
-            font-size: 0.9em;
-            font-weight: bold;
-            background-color: #000;
+            font-size: 13px;
+            font-weight: 700;
             color: #ffffff;
-            display: inline-block;
-            margin-top: 10px;
-            padding: 3px 8px;
-            border-radius: 12px;
+            display: block;
+            margin-bottom: 2px;
+            letter-spacing: 0.5px;
+        }
+
+        .line-id {
+            display: block;
+            margin-top: 4px;
+            font-size: 14px;
+            font-weight: 800;
+            opacity: 0.9;
         }
     </style>
 
@@ -375,16 +415,15 @@
 
         <div class="content">
             <div class="upload-area" id="uploadArea">
-                <div style="width:80px;height:80px;margin:0 auto 20px;background:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath d=%22M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4%22/%3E%3Cpolyline points=%2217 8 12 3 7 8%22/%3E%3Cline x1=%2212%22 y1=%223%22 x2=%2212%22 y2=%2215%22/%3E%3C/svg%3E') center/contain no-repeat"></div>
+                <div
+                    style="width:80px;height:80px;margin:0 auto 20px;background:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%222%22%3E%3Cpath d=%22M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4%22/%3E%3Cpolyline points=%2217 8 12 3 7 8%22/%3E%3Cline x1=%2212%22 y1=%223%22 x2=%2212%22 y2=%2215%22/%3E%3C/svg%3E') center/contain no-repeat">
+                </div>
                 <p style="margin:0;font-size:19px;color:#475569;font-weight:600;">คลิกหรือลากไฟล์ PDF มาที่นี่</p>
                 <input type="file" id="fileInput" accept=".pdf">
             </div>
 
             <div id="pageControls" style="display:none;">
                 <div class="controls">
-                    <label>ไปหน้า:</label>
-                    <input type="number" id="pageNum" min="1" value="1">
-                    <button class="btn btn-primary" id="goPage">ไป</button>
                     <div class="page-info" id="pageInfo"></div>
                 </div>
             </div>
@@ -398,20 +437,24 @@
         <div class="toolbar-header">
             <span>เครื่องมือ</span>
         </div>
+        <div class="toolbar-nav">
+            <label>ไปหน้า:</label>
+            <input type="number" id="pageNum" min="1" value="1">
+            <button class="btn btn-primary" id="goPage">ไป</button>
+        </div>
         <div class="toolbar-buttons">
             <button class="btn btn-secondary" id="addBox">+ วงชี้จุดตำแหน่ง</button>
             <button class="btn btn-success" id="savePDF">บันทึกเป็น PDF</button>
         </div>
     </div>
 
-    <!-- LINE Ad -->
+    <!-- LINE Ad Modern -->
     <a id="line-ad-url" target="_blank" style="text-decoration:none;">
         <div class="line-ad-fixed" id="line-ad-fixed">
             <div class="account-name">จ้างแก้ไขข้อความ</div>
-            ...<br>
             <div class="price" id="dynamic-price">กำลังโหลดราคา...</div>
             <img src="https://scdn.line-apps.com/n/line_add_friends/btn/th.png" alt="Add LINE">
-            <span style="display:block;margin-top:8px;font-size:1.3em;font-weight:700;">@artap5321</span>
+            <span class="line-id">@artap5321</span>
         </div>
     </a>
 
@@ -434,6 +477,7 @@
         const toolbar = document.getElementById('floatingToolbar');
 
         let pdfDoc = null, totalPages = 0, currentPage = 1, originalFileName = '';
+        const RENDER_SCALE = 2.0; // ใช้ค่าคงที่ 2.0 เพื่อความคมชัดและตำแหน่งแม่นยำ
         const pageAnnotations = new Map();
 
         // ดึงราคา
@@ -454,7 +498,7 @@
         fileInput.onchange = async () => {
             const file = fileInput.files[0];
             if (!file || !file.name.toLowerCase().endsWith('.pdf')) return alert('กรุณาเลือกไฟล์ PDF เท่านั้น');
-            
+
             lineAdFixed.classList.add('show-ad');
             loadPriceFromWorkJson();
 
@@ -492,20 +536,28 @@
             currentPage = num;
             pageNumInput.value = num;
             const page = await pdfDoc.getPage(num);
-            const viewport = page.getViewport({ scale: 2.0 });
+            const viewport = page.getViewport({ scale: RENDER_SCALE });
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             canvas.height = viewport.height;
             canvas.width = viewport.width;
+
+            // ใช้ Promise รอรัน render ให้เสร็จสมบูรณ์
             await page.render({ canvasContext: ctx, viewport }).promise;
+
             canvasContainer.innerHTML = '';
             canvasContainer.appendChild(canvas);
+
+            // วาดกล่องโดยใช้พิกัดที่มองเห็นจริงบนจอ (Scale 2.0)
             (pageAnnotations.get(num) || []).forEach(d => createBox(d));
+
+            return viewport;
         }
 
         function createBox(data) {
             const box = document.createElement('div');
             box.className = 'box';
+
             box.style.left = data.x + 'px';
             box.style.top = data.y + 'px';
             box.style.width = data.w + 'px';
@@ -594,7 +646,30 @@
             else pageAnnotations.delete(currentPage);
         }
 
-        addBtn.onclick = () => { createBox({ x: 200, y: 150, w: 300, h: 200, text: '' }); saveAnnotations(); };
+        addBtn.onclick = () => {
+            const containerWidth = canvasContainer.offsetWidth;
+            const containerHeight = canvasContainer.offsetHeight;
+            const rect = canvasContainer.getBoundingClientRect();
+
+            const boxW = 300;
+            const boxH = 200;
+            const x = (containerWidth - boxW) / 2;
+            let y = (window.innerHeight / 2) - rect.top - (boxH / 2);
+
+            if (y < 20) y = 20;
+            if (y + boxH > containerHeight - 20) y = containerHeight - boxH - 20;
+
+            createBox({ x, y, w: boxW, h: boxH, text: '' });
+
+            // บันทึกค่าทันที โดยหารด้วย currentScale เพื่อเก็บเป็นค่ามาตรฐาน (PDF unit)
+            saveAnnotations();
+
+            // เลื่อนหน้าจอให้เห็นกล่องที่สร้างใหม่ (ถ้าจำเป็น)
+            const box = canvasContainer.lastElementChild;
+            if (box) {
+                // box.scrollIntoView({ behavior: 'smooth', block: 'center' }); // เลือกเปิดใช้ถ้าต้องการ
+            }
+        };
         goBtn.onclick = () => { const n = parseInt(pageNumInput.value); if (n >= 1 && n <= totalPages) renderPage(n); };
         pageNumInput.addEventListener('keyup', e => { if (e.key === 'Enter') goBtn.click(); });
 
@@ -607,8 +682,9 @@
             for (let i = 0; i < pages.length; i++) {
                 const pg = pages[i];
                 await renderPage(pg);
+
                 const watermark = document.createElement('div');
-                watermark.style.cssText = 'position:absolute;top:20px;left:20px;color:red;font-size:24px;font-weight:bold;z-index:100;pointer-events:none;font-family:"Sarabun",sans-serif;';
+                watermark.style.cssText = `position:absolute;top:20px;left:20px;color:red;font-size:24px;font-weight:bold;z-index:100;pointer-events:none;font-family:"Sarabun",sans-serif;`;
                 watermark.textContent = `ให้แก้ไขหน้าที่ ${pg}`;
                 canvasContainer.appendChild(watermark);
 
