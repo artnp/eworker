@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>เครื่องมือตัดไฟล์ PDF - Cut PDF Tool</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+            --secondary-color: #64748b;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            --radius: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--background);
+            font-family: 'Sarabun', sans-serif;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            width: 95%;
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            flex-grow: 1;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            color: white;
+            padding: 40px 32px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            margin: 12px 0 0;
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 32px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .upload-area {
+            border: 3px dashed var(--secondary-color);
+            border-radius: var(--radius);
+            padding: 60px 40px;
+            text-align: center;
+            background: #f8fafc;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 24px;
+        }
+
+        .upload-area:hover,
+        .upload-area.dragover {
+            border-color: var(--primary-color);
+            background: #eff6ff;
+            transform: translateY(-2px);
+        }
+
+        .upload-area input {
+            display: none;
+        }
+
+        .upload-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 20px;
+            background: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%233b82f6%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4%22/%3E%3Cpolyline points=%2217 8 12 3 7 8%22/%3E%3Cline x1=%2212%22 y1=%223%22 x2=%2212%22 y2=%2215%22/%3E%3C/svg%3E') center/contain no-repeat;
+        }
+
+        .upload-area p {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        #canvasContainer {
+            position: relative;
+            display: inline-block;
+            margin: 20px auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            max-width: 100%;
+        }
+
+        canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Toolbar */
+        #toolbar {
+            position: fixed;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: white;
+            padding: 24px;
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+            width: 300px;
+            z-index: 1000;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+
+        .toolbar-title {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--text-main);
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--background);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .toolbar-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .toolbar-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        input[type='number'] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type='number']:focus {
+            border-color: var(--primary-color);
+        }
+
+        .btn {
+            padding: 14px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: var(--text-main);
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Crop Box */
+        .crop-box {
+            position: absolute;
+            border: 2px solid var(--primary-color);
+            background: rgba(59, 130, 246, 0.1);
+            cursor: move;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
+        }
+
+        .resizer {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--primary-color);
+            border: 2px solid white;
+            border-radius: 50%;
+        }
+
+        .resizer.tl {
+            top: -6px;
+            left: -6px;
+            cursor: nwse-resize;
+        }
+
+        .resizer.tr {
+            top: -6px;
+            right: -6px;
+            cursor: nesw-resize;
+        }
+
+        .resizer.bl {
+            bottom: -6px;
+            left: -6px;
+            cursor: nesw-resize;
+        }
+
+        .resizer.br {
+            bottom: -6px;
+            right: -6px;
+            cursor: nwse-resize;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        #pageInfo {
+            margin-top: 10px;
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .copy-group-toolbar {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 12px;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 12px;
+            margin-top: 10px;
+        }
+
+        .copy-group-toolbar input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #86efac;
+            border-radius: 6px;
+            font-size: 11px;
+            background: white;
+            color: #166534;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ตัดเอกสาร PDF </h1>
+            <p>ใช้ตัดส่วนเอกสารที่มีความเสี่ยงออก</p>
+        </div>
+
+        <div class="content">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon"></div>
+                <p>คลิกหรือลากไฟล์ PDF เพื่อเริ่มต้น</p>
+                <input type="file" id="fileInput" accept=".pdf" />
+            </div>
+
+            <div id="pageInfo"></div>
+
+            <div id="canvasContainer">
+                <div id="cropBox" class="crop-box">
+                    <div class="resizer tl"></div>
+                    <div class="resizer tr"></div>
+                    <div class="resizer bl"></div>
+                    <div class="resizer br"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Sidebar Toolbar -->
+    <div id="toolbar">
+        <div class="toolbar-title">
+            <span>เครื่องมือ</span>
+        </div>
+
+        <div class="toolbar-group">
+            <span class="toolbar-label">การนำทาง</span>
+            <div class="input-group">
+                <input type="number" id="pageNum" min="1" value="1" placeholder="หน้า" />
+                <button class="btn btn-secondary" id="btnGo" style="width: 80px;">ไป</button>
+            </div>
+        </div>
+
+        <div class="toolbar-group">
+            <span class="toolbar-label">การตัดส่วน</span>
+            <button class="btn btn-primary" id="btnSelectCrop">
+                ✂️ เลือกตัดส่วน
+            </button>
+        </div>
+
+        <div class="toolbar-group" style="margin-top: auto;">
+            <button class="btn btn-success" id="btnSave">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                บันทึกหน้านี้เป็น PDF
+            </button>
+        </div>
+
+        <div class="toolbar-group" id="toolbarResult"
+            style="display:none; margin-top: 10px; border-top: 1px solid var(--border); padding-top: 15px;">
+            <span class="toolbar-label">ลิงก์ไปหน้า Decut</span>
+            <div class="copy-group-toolbar">
+                <input type="text" id="decutUrlInput" readonly />
+                <button class="btn btn-success" id="btnCopyUrl" style="padding: 10px; font-size: 13px;">
+                    คัดลอกลิงก์
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <p style="margin-top: 15px; font-weight: 600; color: var(--text-main);">กำลังประมวลผล...</p>
+    </div>
+
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+    <script type="module">
+        import * as pdfjsLib from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/build/pdf.mjs';
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+            'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/build/pdf.worker.min.mjs';
+        const { jsPDF } = window.jspdf;
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const cropBox = document.getElementById('cropBox');
+        const toolbar = document.getElementById('toolbar');
+        const pageNumInput = document.getElementById('pageNum');
+        const btnGo = document.getElementById('btnGo');
+        const btnSelectCrop = document.getElementById('btnSelectCrop');
+        const btnSave = document.getElementById('btnSave');
+        const pageInfo = document.getElementById('pageInfo');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const toolbarResult = document.getElementById('toolbarResult');
+        const decutUrlInput = document.getElementById('decutUrlInput');
+        const btnCopyUrl = document.getElementById('btnCopyUrl');
+
+        let pdfDoc = null;
+        let currentPage = 1;
+        let totalPages = 0;
+        let originalFileName = '';
+        let renderScale = 3.0; // render ที่ scale สูงเพื่อความคมชัด [web:20]
+        let cropData = null; // {x, y, w, h} in viewport pixels
+
+        // --- File Upload ---
+        uploadArea.onclick = () => fileInput.click();
+        fileInput.onchange = handleFileUpload;
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files[0]) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileUpload();
+            }
+        });
+
+        async function handleFileUpload() {
+            const file = fileInput.files[0];
+            if (!file || !file.name.toLowerCase().endsWith('.pdf')) {
+                alert('กรุณาเลือกไฟล์ PDF เท่านั้น');
+                return;
+            }
+
+            originalFileName = file.name.replace('.pdf', '');
+            showLoading(true);
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                totalPages = pdfDoc.numPages;
+
+                uploadArea.style.display = 'none';
+                toolbar.style.display = 'flex';
+                pageNumInput.max = totalPages;
+
+                await renderPage(1);
+            } catch (err) {
+                console.error(err);
+                alert('เกิดข้อผิดพลาดในการโหลดไฟล์');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function renderPage(num) {
+            currentPage = num;
+            pageNumInput.value = num;
+            pageInfo.textContent = `หน้า ${num} จากทั้งหมด ${totalPages}`;
+
+            const page = await pdfDoc.getPage(num);
+            const viewport = page.getViewport({ scale: renderScale });
+
+            let canvas = canvasContainer.querySelector('canvas');
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                canvasContainer.appendChild(canvas);
+            }
+
+            const ctx = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            await page.render({ canvasContext: ctx, viewport }).promise;
+
+            // Reset crop on page change
+            cropBox.style.display = 'none';
+            cropData = null;
+            btnSelectCrop.style.opacity = '1';
+            btnSelectCrop.style.pointerEvents = 'auto';
+        }
+
+        // --- Navigation ---
+        btnGo.onclick = () => {
+            const n = parseInt(pageNumInput.value);
+            if (n >= 1 && n <= totalPages) renderPage(n);
+        };
+        pageNumInput.onkeyup = (e) => {
+            if (e.key === 'Enter') btnGo.onclick();
+        };
+
+        // --- Cropping Logic ---
+        function getDisplayScale() {
+            const canvas = canvasContainer.querySelector('canvas');
+            if (!canvas) return 1;
+            return canvas.clientWidth / canvas.width;
+        }
+
+        window.addEventListener('resize', () => {
+            if (cropData) updateCropBoxPosition();
+        });
+
+        btnSelectCrop.onclick = () => {
+            const canvas = canvasContainer.querySelector('canvas');
+            if (!canvas) return;
+
+            const w = canvas.width * 0.3;
+            const h = canvas.height * 0.3;
+            const x = (canvas.width - w) / 2;
+            const y = (canvas.height - h) / 2;
+
+            cropData = {
+                x: Math.round(x),
+                y: Math.round(y),
+                w: Math.round(w),
+                h: Math.round(h),
+            };
+            cropBox.style.display = 'block';
+            updateCropBoxPosition();
+
+            btnSelectCrop.style.opacity = '0.4';
+            btnSelectCrop.style.pointerEvents = 'none';
+        };
+
+        function updateCropBoxPosition() {
+            const s = getDisplayScale();
+            cropBox.style.left = cropData.x * s + 'px';
+            cropBox.style.top = cropData.y * s + 'px';
+            cropBox.style.width = cropData.w * s + 'px';
+            cropBox.style.height = cropData.h * s + 'px';
+        }
+
+        // Draggable & Resizable
+        let isDragging = false;
+        let isResizing = false;
+        let resizeDir = '';
+        let startPos = { x: 0, y: 0, w: 0, h: 0, l: 0, t: 0 };
+
+        cropBox.onmousedown = (e) => {
+            const s = getDisplayScale();
+            if (e.target.classList.contains('resizer')) {
+                isResizing = true;
+                resizeDir = e.target.className.split(' ')[1];
+                startPos = {
+                    x: e.clientX,
+                    y: e.clientY,
+                    w: cropData.w * s,
+                    h: cropData.h * s,
+                    l: cropData.x * s,
+                    t: cropData.y * s,
+                };
+            } else {
+                isDragging = true;
+                startPos = { x: e.clientX - cropData.x * s, y: e.clientY - cropData.y * s };
+            }
+            e.preventDefault();
+        };
+
+        document.onmousemove = (e) => {
+            const s = getDisplayScale();
+            if (isResizing) {
+                const dx = e.clientX - startPos.x;
+                const dy = e.clientY - startPos.y;
+                let w = startPos.w;
+                let h = startPos.h;
+                let l = startPos.l;
+                let t = startPos.t;
+
+                if (resizeDir.includes('r')) w += dx;
+                if (resizeDir.includes('l')) {
+                    w -= dx;
+                    l += dx;
+                }
+                if (resizeDir.includes('b')) h += dy;
+                if (resizeDir.includes('t')) {
+                    h -= dy;
+                    t += dy;
+                }
+
+                if (w > 20 && h > 20) {
+                    cropData = {
+                        x: l / s,
+                        y: t / s,
+                        w: w / s,
+                        h: h / s,
+                    };
+                    updateCropBoxPosition();
+                }
+            } else if (isDragging) {
+                const x = (e.clientX - startPos.x) / s;
+                const y = (e.clientY - startPos.y) / s;
+                cropData.x = x;
+                cropData.y = y;
+                updateCropBoxPosition();
+            }
+        };
+
+        document.onmouseup = () => {
+            isDragging = false;
+            isResizing = false;
+            // ปัดให้ตรงพิกเซล ลดเส้นขอบจากการเรนเดอร์คร่อมพิกเซล [web:11]
+            if (cropData) {
+                cropData.x = Math.round(cropData.x);
+                cropData.y = Math.round(cropData.y);
+                cropData.w = Math.round(cropData.w);
+                cropData.h = Math.round(cropData.h);
+                updateCropBoxPosition();
+            }
+        };
+
+        // --- Save Process ---
+        btnSave.onclick = async () => {
+            if (!pdfDoc || !cropData) {
+                alert('กรุณาเลือกพื้นที่ตัดก่อนบันทึก');
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const page = await pdfDoc.getPage(currentPage);
+                const viewport = page.getViewport({ scale: renderScale });
+
+                const fullWidth = Math.round(viewport.width);
+                const fullHeight = Math.round(viewport.height);
+                const cropX = Math.round(cropData.x);
+                const cropY = Math.round(cropData.y);
+                const cropW = Math.round(cropData.w);
+                const cropH = Math.round(cropData.h);
+
+                // 1. สร้าง full canvas ขนาดทั้งหน้า
+                const fullCanvas = document.createElement('canvas');
+                fullCanvas.width = fullWidth;
+                fullCanvas.height = fullHeight;
+                const fullCtx = fullCanvas.getContext('2d');
+                fullCtx.clearRect(0, 0, fullWidth, fullHeight);
+
+                // ถ้าต้องการพื้นหลังขาว ให้ uncomment 4 บรรทัดนี้
+                // fullCtx.save();
+                // fullCtx.setTransform(1, 0, 0, 1, 0, 0);
+                // fullCtx.fillStyle = '#ffffff';
+                // fullCtx.fillRect(0, 0, fullWidth, fullHeight);
+                // fullCtx.restore();
+
+                // 2. สร้าง canvas เฉพาะส่วนครอป (ไม่มี padding/inset)
+                const cropCanvas = document.createElement('canvas');
+                cropCanvas.width = cropW;
+                cropCanvas.height = cropH;
+                const cropCtx = cropCanvas.getContext('2d');
+                cropCtx.clearRect(0, 0, cropW, cropH);
+                cropCtx.imageSmoothingEnabled = false;
+
+                // เรนเดอร์ทั้งหน้าแต่เลื่อนต้นกำเนิดให้อยู่ตรง cropX, cropY
+                cropCtx.translate(-cropX, -cropY);
+                await page.render({ canvasContext: cropCtx, viewport }).promise;
+
+                // 3. วาดส่วนครอปกลับลง fullCanvas ตำแหน่งเดิม
+                fullCtx.imageSmoothingEnabled = false;
+                fullCtx.drawImage(cropCanvas, cropX, cropY);
+
+                // 4. สร้าง PDF ขนาดเฉพาะส่วนที่ครอป
+                // คำนวณขนาดจริงในหน่วย pt (หารด้วย renderScale)
+                const finalW = cropW / renderScale;
+                const finalH = cropH / renderScale;
+                const doc = new jsPDF({
+                    orientation: finalW > finalH ? 'l' : 'p',
+                    unit: 'pt',
+                    format: [finalW, finalH],
+                });
+
+                // ดึงภาพเฉพาะส่วนที่ครอปมาเซฟ
+                const imgData = cropCanvas.toDataURL('image/png');
+                doc.addImage(imgData, 'PNG', 0, 0, finalW, finalH);
+                doc.save(`crop_${originalFileName}_page${currentPage}.pdf`);
+
+                // อัปเดต URL สำหรับ Decut พร้อมพิกัด (X, Y, W, H)
+                const baseUrl = window.location.href.substring(
+                    0,
+                    window.location.href.lastIndexOf('/') + 1
+                );
+
+                // พิกัดแบบ pt เพื่อให้ตรงกับ PDF-LIB ในหน้าถัดไป
+                const ptX = (cropX / renderScale).toFixed(2);
+                const ptY = (cropY / renderScale).toFixed(2);
+                const ptW = finalW.toFixed(2);
+                const ptH = finalH.toFixed(2);
+
+                decutUrlInput.value = `${baseUrl}decut.html#${currentPage}&x=${ptX}&y=${ptY}&w=${ptW}&h=${ptH}`;
+                toolbarResult.style.display = 'block';
+            } catch (err) {
+                console.error(err);
+                alert('เกิดข้อผิดพลาดในการบันทึกไฟล์');
+            } finally {
+                showLoading(false);
+            }
+        };
+
+        btnCopyUrl.onclick = () => {
+            decutUrlInput.select();
+            document.execCommand('copy');
+            const originalText = btnCopyUrl.innerHTML;
+            btnCopyUrl.textContent = 'คัดลอกแล้ว!';
+            setTimeout(() => {
+                btnCopyUrl.innerHTML = originalText;
+            }, 2000);
+        };
+
+        function showLoading(show) {
+            loadingOverlay.style.display = show ? 'flex' : 'none';
+        }
+    </script>
+</body>
+
+</html>

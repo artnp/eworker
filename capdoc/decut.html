@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบประกอบเอกสารแยกส่วน - PDF Merge Back</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/build/pdf.mjs"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --secondary: #64748b;
+            --success: #10b981;
+            --background: #f1f5f9;
+            --surface: #ffffff;
+            --text-main: #1e293b;
+            --border: #e2e8f0;
+            --radius: 20px;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--background);
+            font-family: 'Sarabun', sans-serif;
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4338ca, #6366f1);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .content {
+            padding: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .upload-box {
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fafafa;
+            position: relative;
+        }
+
+        .upload-box:hover {
+            border-color: var(--primary);
+            background: #f5f3ff;
+        }
+
+        .upload-box.active {
+            border-color: var(--success);
+            background: #ecfdf5;
+        }
+
+        .upload-box h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .upload-box p {
+            font-size: 13px;
+            color: var(--secondary);
+        }
+
+        .upload-box input {
+            display: none;
+        }
+
+        .settings-panel {
+            grid-column: 1 / -1;
+            background: #f8fafc;
+            padding: 5px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        input[type="number"] {
+            width: 100px;
+            padding: 10px 15px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--primary);
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4338ca, #6366f1);
+            color: white;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            border: none;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .btn-primary:not(:disabled):hover {
+            background: linear-gradient(135deg, #4f46e5, #818cf8);
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-merge-ready {
+            animation: pulse-border 2s infinite;
+            background: linear-gradient(135deg, #10b981, #34d399) !important;
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7) !important;
+        }
+
+        @keyframes pulse-border {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            }
+
+            70% {
+                transform: scale(1.02);
+                box-shadow: 0 0 0 15px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        .step-label {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .footer {
+            padding: 30px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .preview-area {
+            grid-column: 1 / -1;
+            display: none;
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .preview-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            min-width: 300px;
+        }
+
+        .controls-sidebar {
+            flex: 0 0 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        @media (max-width: 850px) {
+            .preview-area {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .controls-sidebar {
+                flex: 1;
+                width: 100%;
+            }
+        }
+
+        canvas {
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            border-radius: 8px;
+            /* ลายตารางหมากรุกสีจางเพื่อให้เห็นความโปร่งใส */
+            background-color: #fff;
+            background-image: linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
+                linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+                linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .file-info {
+            font-size: 12px;
+            color: var(--success);
+            margin-top: 10px;
+            font-weight: 600;
+        }
+
+        .nudge-panel {
+            grid-column: 1 / -1;
+            background: #fdf2f2;
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid #fecaca;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .nudge-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .nudge-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            border: 1px solid #ef4444;
+            background: white;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .nudge-btn:hover {
+            background: #ef4444;
+            color: white;
+        }
+
+        .coord-display {
+            font-family: monospace;
+            font-size: 14px;
+            background: #fff;
+            padding: 5px 15px;
+            border-radius: 8px;
+            border: 1px solid #fecaca;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <h1>ระบบประกอบเอกสารแยกส่วน</h1>
+            </div>
+
+            <div class="content">
+                <!-- Section 1: Original PDF -->
+                <div class="upload-section">
+                    <label>1. ไฟล์ PDF ต้นฉบับ</label>
+                    <div class="upload-box" id="dropZoneOriginal">
+                        <h3>คลิกหรือวางไฟล์ต้นฉบับ</h3>
+                        <p>ไฟล์เอกสารต้นฉบับ</p>
+                        <input type="file" id="fileOriginal" accept=".pdf">
+                        <div id="infoOriginal" class="file-info"></div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Cropped PDF -->
+                <div class="upload-section">
+                    <label>2. ไฟล์ที่ถูกตัดแยกส่วน</label>
+                    <div class="upload-box" id="dropZoneCropped">
+                        <h3>คลิกหรือวางไฟล์ที่ Crop</h3>
+                        <p>ไฟล์ที่ถูกตัดแยกส่วน</p>
+                        <input type="file" id="fileCropped" accept=".pdf">
+                        <div id="infoCropped" class="file-info"></div>
+                    </div>
+                </div>
+
+                <!-- Main Tool Area (Preview + Controls Side-by-Side) -->
+                <div class="preview-area" id="previewArea">
+                    <!-- Left: Preview -->
+                    <div class="preview-item">
+                        <canvas id="pdfPreviewMerged"></canvas>
+                    </div>
+
+                    <!-- Right: Controls -->
+                    <div class="controls-sidebar">
+                        <!-- Settings -->
+                        <div class="settings-panel">
+                            <div class="input-group" style="justify-content: space-between;">
+                                <label>บังคับเปิดหน้าที่:</label>
+                                <input type="number" id="targetPageNum" min="1" value="1"
+                                    style="width: 70px; padding: 5px;">
+                            </div>
+                        </div>
+
+                        <!-- Nudge Controls -->
+                        <div class="nudge-panel" id="nudgePanel">
+                            <p style="font-weight:700; color: #b91c1c; font-size: 13px;">ปรับพิกัด (pt):</p>
+                            <div class="nudge-controls">
+                                <div style="display:grid; grid-template-columns: repeat(3, 40px); gap: 5px;">
+                                    <div></div>
+                                    <button class="nudge-btn" onclick="nudge(0, -1)">↑</button>
+                                    <div></div>
+                                    <button class="nudge-btn" onclick="nudge(-1, 0)">←</button>
+                                    <button class="nudge-btn" onclick="nudge(0, 1)">↓</button>
+                                    <button class="nudge-btn" onclick="nudge(1, 0)">→</button>
+                                </div>
+                                <div class="coord-display" id="coordDisplay" style="font-size: 12px;">
+                                    X: 0, Y: 0
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Merge Button -->
+                        <div style="margin-top: 10px;">
+                            <button class="btn btn-primary" id="btnMerge" disabled
+                                style="width: 100%; padding: 18px; font-size: 17px;">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="3" stroke-linecap="round" stroke-linejoin="round"
+                                    style="margin-right: 10px;">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                <b>ประกอบไฟล์และดาวน์โหลด</b>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p style="font-size: 14px; color: var(--secondary);">*ไฟล์จะถูกประมวลผลบนบราวเซอร์ของคุณเท่านั้น
+                ปลอดภัยต่อข้อมูลส่วนตัว</p>
+        </div>
+    </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <p style="margin-top: 20px; font-weight: 700; color: var(--text-main);">กำลังประกบเอกสาร...</p>
+    </div>
+
+    <script type="module">
+        import * as pdfjsLib from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/build/pdf.mjs';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/build/pdf.worker.min.mjs';
+
+        const { PDFDocument } = PDFLib;
+
+        const fileOriginal = document.getElementById('fileOriginal');
+        const fileCropped = document.getElementById('fileCropped');
+        const dropZoneOriginal = document.getElementById('dropZoneOriginal');
+        const dropZoneCropped = document.getElementById('dropZoneCropped');
+        const infoOriginal = document.getElementById('infoOriginal');
+        const infoCropped = document.getElementById('infoCropped');
+        const targetPageNum = document.getElementById('targetPageNum');
+        const btnMerge = document.getElementById('btnMerge');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const previewArea = document.getElementById('previewArea');
+        const pdfPreviewMerged = document.getElementById('pdfPreviewMerged');
+        const nudgePanel = document.getElementById('nudgePanel');
+        const coordDisplay = document.getElementById('coordDisplay');
+
+        let originalBuffer = null;
+        let croppedBuffer = null;
+        let originalPdfDoc = null;
+
+        // State for crop position (in pt)
+        let cropX = 0, cropY = 0, cropW = 0, cropH = 0;
+        let hasCoords = false;
+
+        // --- Event Handlers ---
+
+        dropZoneOriginal.onclick = () => fileOriginal.click();
+        dropZoneCropped.onclick = () => fileCropped.click();
+
+        fileOriginal.onchange = async () => {
+            const file = fileOriginal.files[0];
+            if (!file) return;
+            infoOriginal.textContent = `✓ ${file.name}`;
+            dropZoneOriginal.classList.add('active');
+            originalBuffer = await file.arrayBuffer();
+
+            // Preview using a copy of the buffer to avoid detachment issues
+            originalPdfDoc = await pdfjsLib.getDocument({ data: originalBuffer.slice(0) }).promise;
+            targetPageNum.max = originalPdfDoc.numPages;
+            renderCombinedPreview();
+            checkState();
+        };
+
+        fileCropped.onchange = async () => {
+            const file = fileCropped.files[0];
+            if (!file) return;
+            infoCropped.textContent = `✓ ${file.name}`;
+            dropZoneCropped.classList.add('active');
+            croppedBuffer = await file.arrayBuffer();
+
+            renderCombinedPreview();
+            checkState();
+        };
+
+        targetPageNum.onchange = () => {
+            const val = parseInt(targetPageNum.value);
+            window.location.hash = val;
+            renderCombinedPreview();
+        };
+
+        function handleHashChange() {
+            const hash = window.location.hash.substring(1);
+            if (!hash) return;
+
+            const params = new URLSearchParams(hash.includes('&') ? hash : `page=${hash}`);
+
+            // Page Number
+            const p = params.get('page') || hash.split('&')[0];
+            if (p && !isNaN(p)) {
+                targetPageNum.value = parseInt(p);
+            }
+
+            // Coordinates (Custom)
+            if (params.has('x')) {
+                cropX = parseFloat(params.get('x'));
+                cropY = parseFloat(params.get('y'));
+                cropW = parseFloat(params.get('w'));
+                cropH = parseFloat(params.get('h'));
+                hasCoords = true;
+                nudgePanel.style.display = 'flex';
+                updateCoordDisplay();
+            }
+
+            renderCombinedPreview();
+        }
+
+        function updateCoordDisplay() {
+            coordDisplay.textContent = `X: ${cropX.toFixed(1)}, Y: ${cropY.toFixed(1)}`;
+        }
+
+        window.nudge = (dx, dy) => {
+            cropX += dx;
+            cropY += dy;
+            updateCoordDisplay();
+            renderCombinedPreview();
+        };
+
+        window.addEventListener('hashchange', handleHashChange);
+        handleHashChange(); // Initial check on load
+
+        function checkState() {
+            const isReady = !!(originalBuffer && croppedBuffer);
+            btnMerge.disabled = !isReady;
+            if (isReady) {
+                btnMerge.classList.add('btn-merge-ready');
+            } else {
+                btnMerge.classList.remove('btn-merge-ready');
+            }
+        }
+
+        async function renderCombinedPreview() {
+            const num = parseInt(targetPageNum.value);
+            if (!originalPdfDoc || num < 1 || num > originalPdfDoc.numPages) return;
+
+            previewArea.style.display = 'flex';
+            // 1. Render Original Page
+            const page = await originalPdfDoc.getPage(num);
+            const viewport = page.getViewport({ scale: 0.8 });
+
+            pdfPreviewMerged.height = viewport.height;
+            pdfPreviewMerged.width = viewport.width;
+            const ctx = pdfPreviewMerged.getContext('2d');
+            ctx.clearRect(0, 0, pdfPreviewMerged.width, pdfPreviewMerged.height);
+
+            // ใช้ Multiply เพื่อให้พื้นขาวใน PDF กลายเป็นสีโปร่งใส (เห็นลายตาราง)
+            ctx.globalCompositeOperation = 'multiply';
+            await page.render({ canvasContext: ctx, viewport }).promise;
+
+            // 2. Render Cropped Page on top (if exists)
+            if (croppedBuffer) {
+                try {
+                    const croppedPdfDoc = await pdfjsLib.getDocument({ data: croppedBuffer.slice(0) }).promise;
+                    const cropPage = await croppedPdfDoc.getPage(1);
+                    const cropViewport = cropPage.getViewport({ scale: 0.8 });
+
+                    ctx.save();
+                    // บังคับโหมด multiply สำหรับชั้นบนด้วย เพื่อไม่ให้พื้นขาวของแผ่น Crop ไปบังหน้าหลัก
+                    ctx.globalCompositeOperation = 'multiply';
+
+                    if (hasCoords) {
+                        ctx.translate(cropX * 0.8, cropY * 0.8);
+                    }
+
+                    await cropPage.render({
+                        canvasContext: ctx,
+                        viewport: cropViewport,
+                        intent: 'print'
+                    }).promise;
+
+                    ctx.restore();
+                } catch (err) {
+                    console.error("Combined Preview Error:", err);
+                }
+            }
+        }
+
+        btnMerge.onclick = async () => {
+            loadingOverlay.style.display = 'flex';
+
+            try {
+                // 1. Create a NEW empty document for the single page result
+                const resultPdf = await PDFDocument.create();
+
+                // 2. Load source documents
+                const pdfOrigin = await PDFDocument.load(originalBuffer.slice(0));
+                const pdfCrop = await PDFDocument.load(croppedBuffer.slice(0));
+
+                const targetIdx = parseInt(targetPageNum.value) - 1;
+
+                if (targetIdx < 0 || targetIdx >= pdfOrigin.getPageCount()) {
+                    alert('ไม่พบเลขหน้าที่ระบุในไฟล์ต้นฉบับ');
+                    return;
+                }
+
+                // 3. Copy the target page from original to the new result document
+                const [originalPage] = await resultPdf.copyPages(pdfOrigin, [targetIdx]);
+                resultPdf.addPage(originalPage);
+
+                // 4. Draw the crop layer on top of the original page.
+                const [embeddedCropPage] = await resultPdf.embedPdf(pdfCrop, [0]);
+                const { width, height } = originalPage.getSize();
+
+                // Convert Top-Left Y to Bottom-Left Y for PDF-LIB
+                // pdf-lib y = PageHeight - CropHeight - TopY
+                const pdfY = height - cropH - cropY;
+
+                originalPage.drawPage(embeddedCropPage, {
+                    x: hasCoords ? cropX : 0,
+                    y: hasCoords ? pdfY : 0,
+                    width: hasCoords ? cropW : width,
+                    height: hasCoords ? cropH : height,
+                });
+
+                // 5. Save and download ONLY the single layered page
+                const pdfBytes = await resultPdf.save();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `ประกบทับ_หน้า${targetPageNum.value}_${fileOriginal.files[0].name}`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+            } catch (err) {
+                console.error("Merge error:", err);
+                alert('เกิดข้อผิดพลาดในการประกอบไฟล์: ' + err.message);
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+        };
+
+        // Drag and Drop
+        ['dragover', 'dragenter'].forEach(e => {
+            dropZoneOriginal.addEventListener(e, (ev) => { ev.preventDefault(); dropZoneOriginal.style.borderColor = 'var(--primary)'; });
+            dropZoneCropped.addEventListener(e, (ev) => { ev.preventDefault(); dropZoneCropped.style.borderColor = 'var(--primary)'; });
+        });
+
+        dropZoneOriginal.addEventListener('drop', e => {
+            e.preventDefault();
+            if (e.dataTransfer.files[0]) {
+                fileOriginal.files = e.dataTransfer.files;
+                fileOriginal.dispatchEvent(new Event('change'));
+            }
+        });
+
+        dropZoneCropped.addEventListener('drop', e => {
+            e.preventDefault();
+            if (e.dataTransfer.files[0]) {
+                fileCropped.files = e.dataTransfer.files;
+                fileCropped.dispatchEvent(new Event('change'));
+            }
+        });
+
+    </script>
+</body>
+
+</html>
