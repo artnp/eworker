@@ -385,24 +385,23 @@
             </div>
 
             <div class="content">
-                <!-- Section 1: Original PDF -->
                 <div class="upload-section">
-                    <label>1. ไฟล์ PDF ต้นฉบับ</label>
+                    <label>1. ไฟล์ต้นฉบับ (PDF หรือ รูปภาพ)</label>
                     <div class="upload-box" id="dropZoneOriginal">
                         <h3>คลิกหรือวางไฟล์ต้นฉบับ</h3>
-                        <p>ไฟล์เอกสารต้นฉบับ</p>
-                        <input type="file" id="fileOriginal" accept=".pdf">
+                        <p>ไฟล์ PDF หรือรูปภาพ (.jpg, .png, .tiff)</p>
+                        <input type="file" id="fileOriginal" accept=".pdf,.jpg,.jpeg,.png,.tiff">
                         <div id="infoOriginal" class="file-info"></div>
                     </div>
                 </div>
 
                 <!-- Section 2: Cropped PDF -->
                 <div class="upload-section">
-                    <label>2. ไฟล์ที่ถูกตัดแยกส่วน</label>
+                    <label>2. ไฟล์แยกส่วน (PDF หรือ รูปภาพ)</label>
                     <div class="upload-box" id="dropZoneCropped">
-                        <h3>คลิกหรือวางไฟล์ที่ Crop</h3>
-                        <p>ไฟล์ที่ถูกตัดแยกส่วน</p>
-                        <input type="file" id="fileCropped" accept=".pdf">
+                        <h3>คลิกหรือวางไฟล์ที่ตัดส่วน</h3>
+                        <p>ไฟล์ PDF หรือรูปภาพ (.jpg, .png, .tiff)</p>
+                        <input type="file" id="fileCropped" accept=".pdf,.jpg,.jpeg,.png,.tiff">
                         <div id="infoCropped" class="file-info"></div>
                     </div>
                 </div>
@@ -497,10 +496,28 @@
         let originalBuffer = null;
         let croppedBuffer = null;
         let originalPdfDoc = null;
+        let originalImage = null;
+        let croppedPdfDoc = null;
+        let croppedImage = null;
 
         // State for crop position (in pt)
         let cropX = 0, cropY = 0, cropW = 0, cropH = 0;
         let hasCoords = false;
+
+        // --- Helper ---
+        function loadImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
 
         // --- Event Handlers ---
 
@@ -512,11 +529,22 @@
             if (!file) return;
             infoOriginal.textContent = `✓ ${file.name}`;
             dropZoneOriginal.classList.add('active');
-            originalBuffer = await file.arrayBuffer();
 
-            // Preview using a copy of the buffer to avoid detachment issues
-            originalPdfDoc = await pdfjsLib.getDocument({ data: originalBuffer.slice(0) }).promise;
-            targetPageNum.max = originalPdfDoc.numPages;
+            const isPdf = file.name.toLowerCase().endsWith('.pdf');
+            if (isPdf) {
+                originalBuffer = await file.arrayBuffer();
+                originalPdfDoc = await pdfjsLib.getDocument({ data: originalBuffer.slice(0) }).promise;
+                originalImage = null;
+                targetPageNum.max = originalPdfDoc.numPages;
+                document.getElementById('btnMerge').innerHTML = '<b>ประกอบไฟล์และดาวน์โหลด (PDF)</b>';
+            } else {
+                originalBuffer = null;
+                originalPdfDoc = null;
+                originalImage = await loadImage(file);
+                targetPageNum.max = 1;
+                document.getElementById('btnMerge').innerHTML = '<b>ประกอบรูปภาพและดาวน์โหลด</b>';
+            }
+
             renderCombinedPreview();
             checkState();
         };
@@ -526,7 +554,15 @@
             if (!file) return;
             infoCropped.textContent = `✓ ${file.name}`;
             dropZoneCropped.classList.add('active');
-            croppedBuffer = await file.arrayBuffer();
+
+            const isPdf = file.name.toLowerCase().endsWith('.pdf');
+            if (isPdf) {
+                croppedBuffer = await file.arrayBuffer();
+                croppedImage = null;
+            } else {
+                croppedBuffer = null;
+                croppedImage = await loadImage(file);
+            }
 
             renderCombinedPreview();
             checkState();
@@ -579,7 +615,7 @@
         handleHashChange(); // Initial check on load
 
         function checkState() {
-            const isReady = !!(originalBuffer && croppedBuffer);
+            const isReady = !!((originalBuffer || originalImage) && (croppedBuffer || croppedImage));
             btnMerge.disabled = !isReady;
             if (isReady) {
                 btnMerge.classList.add('btn-merge-ready');
@@ -590,42 +626,61 @@
 
         async function renderCombinedPreview() {
             const num = parseInt(targetPageNum.value);
-            if (!originalPdfDoc || num < 1 || num > originalPdfDoc.numPages) return;
+            if (!originalImage && (!originalPdfDoc || num < 1 || num > originalPdfDoc.numPages)) return;
 
             previewArea.style.display = 'flex';
-            // 1. Render Original Page
-            const page = await originalPdfDoc.getPage(num);
-            const viewport = page.getViewport({ scale: 0.8 });
-
-            pdfPreviewMerged.height = viewport.height;
-            pdfPreviewMerged.width = viewport.width;
             const ctx = pdfPreviewMerged.getContext('2d');
-            ctx.clearRect(0, 0, pdfPreviewMerged.width, pdfPreviewMerged.height);
 
-            // ใช้ Multiply เพื่อให้พื้นขาวใน PDF กลายเป็นสีโปร่งใส (เห็นลายตาราง)
-            ctx.globalCompositeOperation = 'multiply';
-            await page.render({ canvasContext: ctx, viewport }).promise;
+            if (originalImage) {
+                // Render Original Image
+                pdfPreviewMerged.width = originalImage.width;
+                pdfPreviewMerged.height = originalImage.height;
+                ctx.clearRect(0, 0, pdfPreviewMerged.width, pdfPreviewMerged.height);
+                ctx.drawImage(originalImage, 0, 0);
+            } else {
+                // 1. Render Original Page (PDF)
+                const page = await originalPdfDoc.getPage(num);
+                const viewport = page.getViewport({ scale: 0.8 });
 
-            // 2. Render Cropped Page on top (if exists)
-            if (croppedBuffer) {
+                pdfPreviewMerged.height = viewport.height;
+                pdfPreviewMerged.width = viewport.width;
+                ctx.clearRect(0, 0, pdfPreviewMerged.width, pdfPreviewMerged.height);
+
+                // ใช้ Multiply เพื่อให้พื้นขาวใน PDF กลายเป็นสีโปร่งใส (เห็นลายตาราง)
+                ctx.globalCompositeOperation = 'multiply';
+                await page.render({ canvasContext: ctx, viewport }).promise;
+            }
+
+            // 2. Render Cropped Overlay
+            if (croppedBuffer || croppedImage) {
                 try {
-                    const croppedPdfDoc = await pdfjsLib.getDocument({ data: croppedBuffer.slice(0) }).promise;
-                    const cropPage = await croppedPdfDoc.getPage(1);
-                    const cropViewport = cropPage.getViewport({ scale: 0.8 });
-
                     ctx.save();
                     // บังคับโหมด multiply สำหรับชั้นบนด้วย เพื่อไม่ให้พื้นขาวของแผ่น Crop ไปบังหน้าหลัก
                     ctx.globalCompositeOperation = 'multiply';
 
-                    if (hasCoords) {
-                        ctx.translate(cropX * 0.8, cropY * 0.8);
-                    }
+                    let scale = originalImage ? 1 : 0.8;
 
-                    await cropPage.render({
-                        canvasContext: ctx,
-                        viewport: cropViewport,
-                        intent: 'print'
-                    }).promise;
+                    if (croppedImage) {
+                        if (hasCoords) {
+                            ctx.drawImage(croppedImage, cropX * scale, cropY * scale, cropW * scale, cropH * scale);
+                        } else {
+                            ctx.drawImage(croppedImage, 0, 0, pdfPreviewMerged.width, pdfPreviewMerged.height);
+                        }
+                    } else if (croppedBuffer) {
+                        const croppedPdfDoc = await pdfjsLib.getDocument({ data: croppedBuffer.slice(0) }).promise;
+                        const cropPage = await croppedPdfDoc.getPage(1);
+                        const cropViewport = cropPage.getViewport({ scale: scale });
+
+                        if (hasCoords) {
+                            ctx.translate(cropX * scale, cropY * scale);
+                        }
+
+                        await cropPage.render({
+                            canvasContext: ctx,
+                            viewport: cropViewport,
+                            intent: 'print'
+                        }).promise;
+                    }
 
                     ctx.restore();
                 } catch (err) {
@@ -638,51 +693,85 @@
             loadingOverlay.style.display = 'flex';
 
             try {
-                // 1. Create a NEW empty document for the single page result
-                const resultPdf = await PDFDocument.create();
+                if (originalImage) {
+                    // Export as Image
+                    const canvas = document.createElement('canvas');
+                    canvas.width = originalImage.width;
+                    canvas.height = originalImage.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(originalImage, 0, 0);
 
-                // 2. Load source documents
-                const pdfOrigin = await PDFDocument.load(originalBuffer.slice(0));
-                const pdfCrop = await PDFDocument.load(croppedBuffer.slice(0));
+                    if (croppedImage) {
+                        if (hasCoords) ctx.drawImage(croppedImage, cropX, cropY, cropW, cropH);
+                        else ctx.drawImage(croppedImage, 0, 0, canvas.width, canvas.height);
+                    } else if (croppedBuffer) {
+                        // Draw PDF onto Image Canvas
+                        const croppedPdfDoc = await pdfjsLib.getDocument({ data: croppedBuffer.slice(0) }).promise;
+                        const cropPage = await croppedPdfDoc.getPage(1);
+                        const cropViewport = cropPage.getViewport({ scale: 1 });
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = cropViewport.width;
+                        tempCanvas.height = cropViewport.height;
+                        await cropPage.render({ canvasContext: tempCanvas.getContext('2d'), viewport: cropViewport }).promise;
 
-                const targetIdx = parseInt(targetPageNum.value) - 1;
+                        if (hasCoords) ctx.drawImage(tempCanvas, cropX, cropY, cropW, cropH);
+                        else ctx.drawImage(tempCanvas, 0, 0, canvas.width, canvas.height);
+                    }
 
-                if (targetIdx < 0 || targetIdx >= pdfOrigin.getPageCount()) {
-                    alert('ไม่พบเลขหน้าที่ระบุในไฟล์ต้นฉบับ');
-                    return;
+                    const imgData = canvas.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.href = imgData;
+                    link.download = `ประกอบ_${fileOriginal.files[0].name.split('.')[0]}.png`;
+                    link.click();
+
+                } else if (originalBuffer) {
+                    // Export as PDF
+                    const resultPdf = await PDFDocument.create();
+                    const pdfOrigin = await PDFDocument.load(originalBuffer.slice(0));
+                    const targetIdx = parseInt(targetPageNum.value) - 1;
+
+                    if (targetIdx < 0 || targetIdx >= pdfOrigin.getPageCount()) {
+                        alert('ไม่พบเลขหน้าที่ระบุในไฟล์ต้นฉบับ');
+                        return;
+                    }
+
+                    const [originalPage] = await resultPdf.copyPages(pdfOrigin, [targetIdx]);
+                    resultPdf.addPage(originalPage);
+                    const { width, height } = originalPage.getSize();
+
+                    if (croppedImage) {
+                        // Embed Image into PDF
+                        const imgData = croppedImage.src;
+                        const image = await resultPdf.embedPng(imgData.includes('image/png') ? imgData : (await convertToPng(croppedImage)));
+                        const pdfY = height - cropH - cropY;
+                        originalPage.drawImage(image, {
+                            x: hasCoords ? cropX : 0,
+                            y: hasCoords ? pdfY : 0,
+                            width: hasCoords ? cropW : width,
+                            height: hasCoords ? cropH : height,
+                        });
+                    } else if (croppedBuffer) {
+                        // Embed PDF into PDF
+                        const pdfCrop = await PDFDocument.load(croppedBuffer.slice(0));
+                        const [embeddedCropPage] = await resultPdf.embedPdf(pdfCrop, [0]);
+                        const pdfY = height - cropH - cropY;
+                        originalPage.drawPage(embeddedCropPage, {
+                            x: hasCoords ? cropX : 0,
+                            y: hasCoords ? pdfY : 0,
+                            width: hasCoords ? cropW : width,
+                            height: hasCoords ? cropH : height,
+                        });
+                    }
+
+                    const pdfBytes = await resultPdf.save();
+                    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `ประกบทับ_หน้า${targetPageNum.value}_${fileOriginal.files[0].name}`;
+                    link.click();
+                    URL.revokeObjectURL(url);
                 }
-
-                // 3. Copy the target page from original to the new result document
-                const [originalPage] = await resultPdf.copyPages(pdfOrigin, [targetIdx]);
-                resultPdf.addPage(originalPage);
-
-                // 4. Draw the crop layer on top of the original page.
-                const [embeddedCropPage] = await resultPdf.embedPdf(pdfCrop, [0]);
-                const { width, height } = originalPage.getSize();
-
-                // Convert Top-Left Y to Bottom-Left Y for PDF-LIB
-                // pdf-lib y = PageHeight - CropHeight - TopY
-                const pdfY = height - cropH - cropY;
-
-                originalPage.drawPage(embeddedCropPage, {
-                    x: hasCoords ? cropX : 0,
-                    y: hasCoords ? pdfY : 0,
-                    width: hasCoords ? cropW : width,
-                    height: hasCoords ? cropH : height,
-                });
-
-                // 5. Save and download ONLY the single layered page
-                const pdfBytes = await resultPdf.save();
-                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-                const url = URL.createObjectURL(blob);
-
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `ประกบทับ_หน้า${targetPageNum.value}_${fileOriginal.files[0].name}`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
 
             } catch (err) {
                 console.error("Merge error:", err);
@@ -691,6 +780,14 @@
                 loadingOverlay.style.display = 'none';
             }
         };
+
+        async function convertToPng(img) {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            canvas.getContext('2d').drawImage(img, 0, 0);
+            return canvas.toDataURL('image/png');
+        }
 
         // Drag and Drop
         ['dragover', 'dragenter'].forEach(e => {

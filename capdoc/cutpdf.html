@@ -350,15 +350,21 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>ตัดเอกสาร PDF </h1>
-            <p>ใช้ตัดส่วนเอกสารที่มีความเสี่ยงออก</p>
+            <h1>เครื่องมือตัดไฟล์ PDF และรูปภาพ</h1>
+            <p>ใช้ตัดส่วนเอกสารหรือรุปภาพที่มีความเสี่ยงออก</p>
+            <div style="margin-top: 15px;">
+                <a href="decut.html" target="_blank"
+                    style="color: white; text-decoration: none; font-size: 14px; background: rgba(255,255,255,0.2); padding: 5px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.4);">
+                    🔗 ไปหน้าประกอบไฟล์ (Decut)
+                </a>
+            </div>
         </div>
 
         <div class="content">
             <div class="upload-area" id="uploadArea">
                 <div class="upload-icon"></div>
-                <p>คลิกหรือลากไฟล์ PDF เพื่อเริ่มต้น</p>
-                <input type="file" id="fileInput" accept=".pdf" />
+                <p>คลิกหรือลากไฟล์ PDF หรือรูปภาพ (.jpg, .png, .tiff) เพื่อเริ่มต้น</p>
+                <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.tiff" />
             </div>
 
             <div id="pageInfo"></div>
@@ -380,7 +386,7 @@
             <span>เครื่องมือ</span>
         </div>
 
-        <div class="toolbar-group">
+        <div class="toolbar-group" id="navGroup">
             <span class="toolbar-label">การนำทาง</span>
             <div class="input-group">
                 <input type="number" id="pageNum" min="1" value="1" placeholder="หน้า" />
@@ -447,6 +453,8 @@
         const btnCopyUrl = document.getElementById('btnCopyUrl');
 
         let pdfDoc = null;
+        let imageObj = null; // สำหรับเก็บรูปภาพกรณีอัปโหลดเป็นภาพ [web:1]
+        let isImage = false;
         let currentPage = 1;
         let totalPages = 0;
         let originalFileName = '';
@@ -473,29 +481,83 @@
 
         async function handleFileUpload() {
             const file = fileInput.files[0];
-            if (!file || !file.name.toLowerCase().endsWith('.pdf')) {
-                alert('กรุณาเลือกไฟล์ PDF เท่านั้น');
+            if (!file) return;
+
+            const fileName = file.name.toLowerCase();
+            const isPdf = fileName.endsWith('.pdf');
+            const isImg = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png') || fileName.endsWith('.tiff');
+
+            if (!isPdf && !isImg) {
+                alert('กรุณาเลือกไฟล์ PDF หรือรูปภาพ (.jpg, .png, .tiff)');
                 return;
             }
 
-            originalFileName = file.name.replace('.pdf', '');
+            originalFileName = file.name.substring(0, file.name.lastIndexOf('.'));
             showLoading(true);
 
             try {
-                const arrayBuffer = await file.arrayBuffer();
-                pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                totalPages = pdfDoc.numPages;
+                isImage = isImg;
+                if (isPdf) {
+                    const arrayBuffer = await file.arrayBuffer();
+                    pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    imageObj = null;
+                    totalPages = pdfDoc.numPages;
+                    document.getElementById('navGroup').style.display = 'flex';
+                    btnSave.innerHTML = `
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        บันทึกหน้านี้เป็น PDF
+                    `;
+                } else {
+                    pdfDoc = null;
+                    imageObj = await loadImage(file);
+                    totalPages = 1;
+                    document.getElementById('navGroup').style.display = 'none';
+                    btnSave.innerHTML = `
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        บันทึกหน้านี้เป็นรูปภาพ
+                    `;
+                }
 
                 uploadArea.style.display = 'none';
                 toolbar.style.display = 'flex';
                 pageNumInput.max = totalPages;
 
-                await renderPage(1);
+                await renderCurrentFile(1);
             } catch (err) {
                 console.error(err);
                 alert('เกิดข้อผิดพลาดในการโหลดไฟล์');
             } finally {
                 showLoading(false);
+            }
+        }
+
+        function loadImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function renderCurrentFile(num) {
+            if (isImage) {
+                await renderImage();
+            } else {
+                await renderPage(num);
             }
         }
 
@@ -527,10 +589,35 @@
             btnSelectCrop.style.pointerEvents = 'auto';
         }
 
+        async function renderImage() {
+            currentPage = 1;
+            pageNumInput.value = 1;
+            pageInfo.textContent = `รูปภาพ: ${originalFileName}`;
+
+            let canvas = canvasContainer.querySelector('canvas');
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                canvasContainer.appendChild(canvas);
+            }
+
+            const ctx = canvas.getContext('2d');
+            canvas.width = imageObj.width;
+            canvas.height = imageObj.height;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(imageObj, 0, 0);
+
+            // Reset crop
+            cropBox.style.display = 'none';
+            cropData = null;
+            btnSelectCrop.style.opacity = '1';
+            btnSelectCrop.style.pointerEvents = 'auto';
+        }
+
         // --- Navigation ---
         btnGo.onclick = () => {
             const n = parseInt(pageNumInput.value);
-            if (n >= 1 && n <= totalPages) renderPage(n);
+            if (n >= 1 && n <= totalPages) renderCurrentFile(n);
         };
         pageNumInput.onkeyup = (e) => {
             if (e.key === 'Enter') btnGo.onclick();
@@ -657,7 +744,7 @@
 
         // --- Save Process ---
         btnSave.onclick = async () => {
-            if (!pdfDoc || !cropData) {
+            if ((!pdfDoc && !imageObj) || !cropData) {
                 alert('กรุณาเลือกพื้นที่ตัดก่อนบันทึก');
                 return;
             }
@@ -665,75 +752,63 @@
             showLoading(true);
 
             try {
-                const page = await pdfDoc.getPage(currentPage);
-                const viewport = page.getViewport({ scale: renderScale });
-
-                const fullWidth = Math.round(viewport.width);
-                const fullHeight = Math.round(viewport.height);
                 const cropX = Math.round(cropData.x);
                 const cropY = Math.round(cropData.y);
                 const cropW = Math.round(cropData.w);
                 const cropH = Math.round(cropData.h);
 
-                // 1. สร้าง full canvas ขนาดทั้งหน้า
-                const fullCanvas = document.createElement('canvas');
-                fullCanvas.width = fullWidth;
-                fullCanvas.height = fullHeight;
-                const fullCtx = fullCanvas.getContext('2d');
-                fullCtx.clearRect(0, 0, fullWidth, fullHeight);
-
-                // ถ้าต้องการพื้นหลังขาว ให้ uncomment 4 บรรทัดนี้
-                // fullCtx.save();
-                // fullCtx.setTransform(1, 0, 0, 1, 0, 0);
-                // fullCtx.fillStyle = '#ffffff';
-                // fullCtx.fillRect(0, 0, fullWidth, fullHeight);
-                // fullCtx.restore();
-
-                // 2. สร้าง canvas เฉพาะส่วนครอป (ไม่มี padding/inset)
+                // สร้าง canvas สำหรับเก็บส่วนที่ครอป
                 const cropCanvas = document.createElement('canvas');
                 cropCanvas.width = cropW;
                 cropCanvas.height = cropH;
                 const cropCtx = cropCanvas.getContext('2d');
-                cropCtx.clearRect(0, 0, cropW, cropH);
                 cropCtx.imageSmoothingEnabled = false;
 
-                // เรนเดอร์ทั้งหน้าแต่เลื่อนต้นกำเนิดให้อยู่ตรง cropX, cropY
-                cropCtx.translate(-cropX, -cropY);
-                await page.render({ canvasContext: cropCtx, viewport }).promise;
+                if (isImage) {
+                    // กรณีเป็นรูปภาพ
+                    cropCtx.drawImage(imageObj, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
-                // 3. วาดส่วนครอปกลับลง fullCanvas ตำแหน่งเดิม
-                fullCtx.imageSmoothingEnabled = false;
-                fullCtx.drawImage(cropCanvas, cropX, cropY);
+                    const imgData = cropCanvas.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.href = imgData;
+                    link.download = `crop_${originalFileName}.png`;
+                    link.click();
 
-                // 4. สร้าง PDF ขนาดเฉพาะส่วนที่ครอป
-                // คำนวณขนาดจริงในหน่วย pt (หารด้วย renderScale)
-                const finalW = cropW / renderScale;
-                const finalH = cropH / renderScale;
-                const doc = new jsPDF({
-                    orientation: finalW > finalH ? 'l' : 'p',
-                    unit: 'pt',
-                    format: [finalW, finalH],
-                });
+                    // URL สำหรับ Decut (กรณีรูปภาพ อาจจะไปใช้ประกอบกับรูปหรือ PDF อื่น)
+                    const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+                    decutUrlInput.value = `${baseUrl}decut.html#1&x=${cropX}&y=${cropY}&w=${cropW}&h=${cropH}`;
+                    toolbarResult.style.display = 'block';
 
-                // ดึงภาพเฉพาะส่วนที่ครอปมาเซฟ
-                const imgData = cropCanvas.toDataURL('image/png');
-                doc.addImage(imgData, 'PNG', 0, 0, finalW, finalH);
-                doc.save(`crop_${originalFileName}_page${currentPage}.pdf`);
+                } else {
+                    // กรณีเป็น PDF
+                    const page = await pdfDoc.getPage(currentPage);
+                    const viewport = page.getViewport({ scale: renderScale });
 
-                // อัปเดต URL สำหรับ Decut พร้อมพิกัด (X, Y, W, H)
-                const baseUrl = window.location.href.substring(
-                    0,
-                    window.location.href.lastIndexOf('/') + 1
-                );
+                    cropCtx.translate(-cropX, -cropY);
+                    await page.render({ canvasContext: cropCtx, viewport }).promise;
 
-                // พิกัดแบบ pt เพื่อให้ตรงกับ PDF-LIB ในหน้าถัดไป
-                const ptX = (cropX / renderScale).toFixed(2);
-                const ptY = (cropY / renderScale).toFixed(2);
-                const ptW = finalW.toFixed(2);
-                const ptH = finalH.toFixed(2);
+                    // 4. สร้าง PDF ขนาดเฉพาะส่วนที่ครอป
+                    const finalW = cropW / renderScale;
+                    const finalH = cropH / renderScale;
+                    const doc = new jsPDF({
+                        orientation: finalW > finalH ? 'l' : 'p',
+                        unit: 'pt',
+                        format: [finalW, finalH],
+                    });
 
-                decutUrlInput.value = `${baseUrl}decut.html#${currentPage}&x=${ptX}&y=${ptY}&w=${ptW}&h=${ptH}`;
-                toolbarResult.style.display = 'block';
+                    const imgData = cropCanvas.toDataURL('image/png');
+                    doc.addImage(imgData, 'PNG', 0, 0, finalW, finalH);
+                    doc.save(`crop_${originalFileName}_page${currentPage}.pdf`);
+
+                    const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+                    const ptX = (cropX / renderScale).toFixed(2);
+                    const ptY = (cropY / renderScale).toFixed(2);
+                    const ptW = finalW.toFixed(2);
+                    const ptH = finalH.toFixed(2);
+
+                    decutUrlInput.value = `${baseUrl}decut.html#${currentPage}&x=${ptX}&y=${ptY}&w=${ptW}&h=${ptH}`;
+                    toolbarResult.style.display = 'block';
+                }
             } catch (err) {
                 console.error(err);
                 alert('เกิดข้อผิดพลาดในการบันทึกไฟล์');
