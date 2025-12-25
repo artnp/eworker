@@ -171,11 +171,34 @@
             cursor: pointer;
         }
 
-        img {
+        img,
+        iframe {
             max-width: 100%;
             max-height: 70vh;
             border-radius: 8px;
             display: block;
+            border: none;
+        }
+
+        iframe {
+            display: none;
+            /* ปิด iframe เพราะ tempfile.org บล็อกการฝัง */
+        }
+
+        .pdf-placeholder {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            padding: 40px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            width: 100%;
+        }
+
+        .pdf-icon {
+            font-size: 64px;
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.2));
         }
 
         .actions {
@@ -281,8 +304,13 @@
     <div class="main-content" id="viewer-content">
         <div class="image-container" id="img-box">
             <img id="image" alt="กำลังเตรียมภาพของคุณ..." style="display: none;">
+            <iframe id="pdf-frame" title="PDF Preview"></iframe>
+            <div id="pdf-placeholder" class="pdf-placeholder">
+                <span class="pdf-icon">📄</span>
+                <div style="font-weight: 600;">ไฟล์เอกสาร PDF</div>
+            </div>
             <div id="loading-text" style="color: var(--text-muted); text-align: center; padding: 20px;">
-                กำลังดาวน์โหลดภาพ...<br>
+                กำลังดาวน์โหลดไฟล์...<br>
                 <small>(หากรอนานเกินไป กรุณารีเฟรชหน้าจอ)</small>
             </div>
         </div>
@@ -295,7 +323,7 @@
 
         <p class="info-text">
             <strong>วิธีบันทึก:</strong><br>
-            กดปุ่มสีม่วงข้างต้น หรือ <u>กดค้างที่รูปภาพ</u> แล้วเลือก <strong>"บันทึกรูปภาพ"</strong>
+            กดที่ปุ่มสีม่วง หรือ <u>กดค้างที่รูปภาพ</u> แล้วเลือก <strong>"บันทึกรูปภาพ"</strong>
         </p>
     </div>
 
@@ -303,9 +331,11 @@
         const params = new URLSearchParams(window.location.search);
         const fileId = params.get('id');
         const expiryTimestamp = parseInt(params.get('exp'));
+        const fileType = params.get('type') || 'img';
 
         const countdownElement = document.getElementById('countdown');
         const imageElement = document.getElementById('image');
+        const pdfPlaceholder = document.getElementById('pdf-placeholder');
         const loadingText = document.getElementById('loading-text');
         const downloadBtn = document.getElementById('download-btn');
         const viewerContent = document.getElementById('viewer-content');
@@ -315,20 +345,37 @@
             showError('ไม่พบลิงก์หรือลิงก์ไม่ถูกต้อง');
         } else {
             const previewUrl = `https://tempfile.org/${fileId}/preview`;
-            imageElement.src = previewUrl;
+            // ใช้ลิงก์ดาวน์โหลดมาตรฐานของ tempfile.org
+            const downloadUrl = `https://tempfile.org/download/${fileId}`;
 
-            imageElement.onload = () => {
-                imageElement.style.display = 'block';
+            if (fileType === 'pdf') {
+                document.title = "รับเอกสาร PDF - PrivateSend";
+                pdfPlaceholder.style.display = 'flex';
                 loadingText.style.display = 'none';
-            };
+                downloadBtn.querySelector('span').textContent = 'ดาวน์โหลดไฟล์ PDF';
+            } else {
+                imageElement.src = previewUrl;
+                imageElement.onload = () => {
+                    imageElement.style.display = 'block';
+                    loadingText.style.display = 'none';
+                };
+            }
 
             imageElement.onerror = () => {
                 showError('ไม่สามารถโหลดภาพได้ ไฟล์อาจถูกลบไปแล้ว หรืออินเทอร์เน็ตมีปัญหา');
             };
 
-            // Enhanced Download Logic for Mobile and Desktop
+            // Enhanced Download Logic
             downloadBtn.onclick = async () => {
                 const originalContent = downloadBtn.innerHTML;
+
+                if (fileType === 'pdf') {
+                    // สำหรับ PDF ให้เปิดลิงก์ดาวน์โหลดโดยตรงในหน้าต่างใหม่
+                    window.open(downloadUrl, '_blank');
+                    successState();
+                    return;
+                }
+
                 downloadBtn.disabled = true;
                 downloadBtn.innerHTML = '<span>กำลังเตรียมไฟล์...</span>';
 
@@ -345,25 +392,26 @@
                     document.body.appendChild(a);
                     a.click();
 
-                    // Cleanup
                     setTimeout(() => {
                         window.URL.revokeObjectURL(url);
                         document.body.removeChild(a);
                     }, 100);
 
+                    successState();
+
+                } catch (e) {
+                    console.error('Download failed', e);
+                    window.open(downloadUrl, '_blank');
+                }
+
+                function successState() {
                     downloadBtn.classList.add('btn-success');
                     downloadBtn.innerHTML = '<span>เริ่มดาวน์โหลดแล้ว!</span>';
-
                     setTimeout(() => {
                         downloadBtn.classList.remove('btn-success');
                         downloadBtn.innerHTML = originalContent;
                         downloadBtn.disabled = false;
                     }, 3000);
-
-                } catch (e) {
-                    console.error('Download failed', e);
-                    // Fallback: Just open the image URL directly in a new tab
-                    window.location.href = previewUrl;
                 }
             };
 
