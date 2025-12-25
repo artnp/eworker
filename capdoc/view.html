@@ -185,7 +185,7 @@
             /* ปิด iframe เพราะ tempfile.org บล็อกการฝัง */
         }
 
-        .pdf-placeholder {
+        .pdf-preview-box {
             display: none;
             flex-direction: column;
             align-items: center;
@@ -194,11 +194,19 @@
             background: rgba(255, 255, 255, 0.05);
             border-radius: 12px;
             width: 100%;
+            cursor: pointer;
+            transition: background 0.2s;
         }
 
-        .pdf-icon {
-            font-size: 64px;
+        .pdf-preview-box:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .pdf-preview-box img {
+            width: 80px;
+            height: auto;
             filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.2));
+            display: block;
         }
 
         .actions {
@@ -304,10 +312,10 @@
     <div class="main-content" id="viewer-content">
         <div class="image-container" id="img-box">
             <img id="image" alt="กำลังเตรียมภาพของคุณ..." style="display: none;">
-            <iframe id="pdf-frame" title="PDF Preview"></iframe>
-            <div id="pdf-placeholder" class="pdf-placeholder">
-                <span class="pdf-icon">📄</span>
-                <div style="font-weight: 600;">ไฟล์เอกสาร PDF</div>
+            <div id="pdf-preview" class="pdf-preview-box">
+                <img id="pdf-icon" src="" alt="PDF Icon">
+                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted);">ไฟล์เอกสาร PDF
+                    (คลิกเพื่อดาวน์โหลด)</div>
             </div>
             <div id="loading-text" style="color: var(--text-muted); text-align: center; padding: 20px;">
                 กำลังดาวน์โหลดไฟล์...<br>
@@ -335,7 +343,8 @@
 
         const countdownElement = document.getElementById('countdown');
         const imageElement = document.getElementById('image');
-        const pdfPlaceholder = document.getElementById('pdf-placeholder');
+        const pdfPreview = document.getElementById('pdf-preview');
+        const pdfIcon = document.getElementById('pdf-icon');
         const loadingText = document.getElementById('loading-text');
         const downloadBtn = document.getElementById('download-btn');
         const viewerContent = document.getElementById('viewer-content');
@@ -345,14 +354,16 @@
             showError('ไม่พบลิงก์หรือลิงก์ไม่ถูกต้อง');
         } else {
             const previewUrl = `https://tempfile.org/${fileId}/preview`;
-            // ใช้ลิงก์ดาวน์โหลดมาตรฐานของ tempfile.org
-            const downloadUrl = `https://tempfile.org/download/${fileId}`;
+            const downloadUrl = `https://tempfile.org/${fileId}/download`;
 
             if (fileType === 'pdf') {
                 document.title = "รับเอกสาร PDF - PrivateSend";
-                pdfPlaceholder.style.display = 'flex';
+                pdfIcon.src = previewUrl; // PDF preview returns an SVG icon
+                pdfPreview.style.display = 'flex';
                 loadingText.style.display = 'none';
                 downloadBtn.querySelector('span').textContent = 'ดาวน์โหลดไฟล์ PDF';
+
+                pdfPreview.onclick = () => window.location.href = downloadUrl;
             } else {
                 imageElement.src = previewUrl;
                 imageElement.onload = () => {
@@ -370,8 +381,7 @@
                 const originalContent = downloadBtn.innerHTML;
 
                 if (fileType === 'pdf') {
-                    // สำหรับ PDF ให้เปิดลิงก์ดาวน์โหลดโดยตรงในหน้าต่างใหม่
-                    window.open(downloadUrl, '_blank');
+                    window.location.href = downloadUrl;
                     successState();
                     return;
                 }
@@ -401,7 +411,7 @@
 
                 } catch (e) {
                     console.error('Download failed', e);
-                    window.open(downloadUrl, '_blank');
+                    window.location.href = downloadUrl;
                 }
 
                 function successState() {
