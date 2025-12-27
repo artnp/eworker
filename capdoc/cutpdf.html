@@ -233,10 +233,17 @@
             color: white;
         }
 
-        .btn-success:hover {
+        .btn-success:hover:not(:disabled) {
             background: #059669;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+            filter: grayscale(1);
         }
 
         /* Crop Box */
@@ -402,7 +409,7 @@
         </div>
 
         <div class="toolbar-group" style="margin-top: auto;">
-            <button class="btn btn-success" id="btnSave">
+            <button class="btn btn-success" id="btnSave" disabled>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -587,6 +594,7 @@
             cropData = null;
             btnSelectCrop.style.opacity = '1';
             btnSelectCrop.style.pointerEvents = 'auto';
+            btnSave.disabled = true;
         }
 
         async function renderImage() {
@@ -612,6 +620,7 @@
             cropData = null;
             btnSelectCrop.style.opacity = '1';
             btnSelectCrop.style.pointerEvents = 'auto';
+            btnSave.disabled = true;
         }
 
         // --- Navigation ---
@@ -654,6 +663,7 @@
 
             btnSelectCrop.style.opacity = '0.4';
             btnSelectCrop.style.pointerEvents = 'none';
+            btnSave.disabled = false;
         };
 
         function updateCropBoxPosition() {
@@ -809,6 +819,9 @@
                     decutUrlInput.value = `${baseUrl}decut.html#${currentPage}&x=${ptX}&y=${ptY}&w=${ptW}&h=${ptH}`;
                     toolbarResult.style.display = 'block';
                 }
+
+                // Redirect to Decut page after process completion
+                window.location.href = decutUrlInput.value;
             } catch (err) {
                 console.error(err);
                 alert('เกิดข้อผิดพลาดในการบันทึกไฟล์');
