@@ -337,7 +337,7 @@
 
     <script>
         const params = new URLSearchParams(window.location.search);
-        const fileId = params.get('id');
+        const fileUrl = decodeURIComponent(params.get('url'));
         const expiryTimestamp = parseInt(params.get('exp'));
         const fileType = params.get('type') || 'img';
 
@@ -350,20 +350,41 @@
         const viewerContent = document.getElementById('viewer-content');
         const timerBadge = document.getElementById('timer-badge');
 
-        if (!fileId) {
+        if (!fileUrl || fileUrl === 'null') {
             showError('ไม่พบลิงก์หรือลิงก์ไม่ถูกต้อง');
         } else {
-            const previewUrl = `https://tempfile.org/${fileId}/preview`;
-            const downloadUrl = `https://tempfile.org/${fileId}/download`;
+            // Litterbox provides direct links
+            const previewUrl = fileUrl;
+            const downloadUrl = fileUrl;
 
             if (fileType === 'pdf') {
                 document.title = "รับเอกสาร PDF - PrivateSend";
-                pdfIcon.src = previewUrl; // PDF preview returns an SVG icon
+                // For PDF preview, we might just show a generic icon since we don't have a thumbnail generator
+                // Or if we want to be fancy, we could try to use Google Docs viewer, but keeping it simple as per request or previous design which used an icon.
+                // The previous code set pdfIcon.src = previewUrl, implying the previewUrl was an image.
+                // Since Litterbox is just the file, we can't easily get a preview image of a PDF without a service.
+                // We will use a generic PDF icon or just keep the generic file icon if available.
+                // Let's set a static placeholder for the icon if we can't generate one, 
+                // OR just use a generic icon URL if the user doesn't have one local.
+                // However, looking at previous code: pdfIcon.src = previewUrl; (it was an SVG from tempfile).
+                // We'll use a data URI for a simple PDF icon or just a generic image.
+                // Let's use a simple public emoji or icon for now, or just not set src if it's broken. 
+                // Better approach: Use a standard PDF icon from a CDN or similar if we want to be sure.
+                // For now, I'll use a placeholder or the file itself if it happens to be viewable, 
+                // but <img src="file.pdf"> won't work.
+                // Let's use a data URI for a Red PDF icon to ensure it looks good.
+                pdfIcon.src = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZWY0NDQ0IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE0IDJINmEyIDIgMCAwIDAgMiAydjE2YTIgMiAwIDAgMCAyIDJoMTJhMiAyIDAgMCAwIDItMlY4eiIvPjxwb2x5bGluZSBwb2ludHM9IjE0IDIgMTQgOCAyMCA4Ii8+PHBhdGggZD0iTTEwIDEzdjZoMiIvPjxwYXRoIGQ9Ik0xNCAxM3Y2aDIiLz48cGF0aCBkPSJNMTYgMTloMiIvPjwvc3ZnPg==";
+
                 pdfPreview.style.display = 'flex';
                 loadingText.style.display = 'none';
                 downloadBtn.querySelector('span').textContent = 'ดาวน์โหลดไฟล์ PDF';
 
                 pdfPreview.onclick = () => window.location.href = downloadUrl;
+
+                document.querySelector('.info-text').innerHTML = `
+                    <strong>วิธีบันทึก:</strong><br>
+                    กดที่ปุ่มสีม่วง แล้วเลือก "บันทึก ⬇️" ที่มุมบน
+                `;
             } else {
                 imageElement.src = previewUrl;
                 imageElement.onload = () => {
@@ -398,7 +419,12 @@
                     const a = document.createElement('a');
                     a.style.display = 'none';
                     a.href = url;
-                    a.download = `work-${fileId.substring(0, 6)}.png`;
+                    // Try to guess extension from content-type or url
+                    let ext = 'png';
+                    if (blob.type === 'image/jpeg') ext = 'jpg';
+                    else if (blob.type === 'image/gif') ext = 'gif';
+
+                    a.download = `work-${Date.now()}.${ext}`;
                     document.body.appendChild(a);
                     a.click();
 
