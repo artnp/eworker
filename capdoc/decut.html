@@ -316,7 +316,7 @@
         <div class="upload-cropped" id="dropZoneCropped">
             <div
                 style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--success); font-weight: 700; margin-bottom: 8px; opacity: 0.8;">
-                Step 2: ไฟล์สำหรับปะ</div>
+            </div>
             <h4 id="croppedTitle">✂️ เลือกไฟล์แยกส่วน (Cropped)</h4>
             <p id="croppedSub">ระบบจะล็อคไฟล์นี้เมื่ออัพโหลดเสร็จแล้ว</p>
             <input type="file" id="fileCropped" accept=".pdf,.jpg,.jpeg,.png,.tiff" hidden>
@@ -378,18 +378,73 @@
         let expiryInterval = null;
 
         function setupDnD(zone, input) {
-            zone.addEventListener('dragover', e => { e.preventDefault(); if (!zone.classList.contains('locked')) zone.style.borderColor = 'var(--primary)'; });
-            zone.addEventListener('dragleave', e => { e.preventDefault(); if (!zone.classList.contains('locked')) zone.style.borderColor = ''; });
+            zone.addEventListener('dragover', e => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!zone.classList.contains('locked')) zone.style.borderColor = 'var(--primary)';
+            });
+            zone.addEventListener('dragleave', e => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!zone.classList.contains('locked')) zone.style.borderColor = '';
+            });
             zone.addEventListener('drop', e => {
                 e.preventDefault();
+                e.stopPropagation();
                 zone.style.borderColor = '';
                 if (zone.classList.contains('locked')) return;
-                if (e.dataTransfer.files[0]) { input.files = e.dataTransfer.files; input.dispatchEvent(new Event('change')); }
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    input.files = e.dataTransfer.files;
+                    input.dispatchEvent(new Event('change'));
+                }
             });
             zone.addEventListener('click', () => { if (!zone.classList.contains('locked')) input.click(); });
         }
         setupDnD(dropZoneOriginal, fileOriginal);
         setupDnD(dropZoneCropped, fileCropped);
+
+        // Global Drag & Drop logic
+        window.addEventListener('dragover', e => {
+            e.preventDefault();
+            // If cropped zone is visible/not locked, it takes priority
+            if (dropZoneCropped.style.display !== 'none' && !dropZoneCropped.classList.contains('locked')) {
+                dropZoneCropped.style.borderColor = 'var(--primary)';
+                dropZoneCropped.style.background = 'rgba(99, 102, 241, 0.05)';
+            } else {
+                // Otherwise, target the original file zone
+                dropZoneOriginal.style.borderColor = 'var(--primary)';
+                dropZoneOriginal.style.background = 'var(--primary-soft)';
+            }
+        });
+
+        window.addEventListener('dragleave', e => {
+            e.preventDefault();
+            if (!e.relatedTarget || e.relatedTarget.nodeName === "HTML") {
+                dropZoneCropped.style.borderColor = '';
+                dropZoneCropped.style.background = '';
+                dropZoneOriginal.style.borderColor = '';
+                dropZoneOriginal.style.background = '';
+            }
+        });
+
+        window.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZoneCropped.style.borderColor = '';
+            dropZoneCropped.style.background = '';
+            dropZoneOriginal.style.borderColor = '';
+            dropZoneOriginal.style.background = '';
+
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                // Determine target: Cropped if available, else Original
+                if (dropZoneCropped.style.display !== 'none' && !dropZoneCropped.classList.contains('locked')) {
+                    fileCropped.files = e.dataTransfer.files;
+                    fileCropped.dispatchEvent(new Event('change'));
+                } else {
+                    fileOriginal.files = e.dataTransfer.files;
+                    fileOriginal.dispatchEvent(new Event('change'));
+                }
+            }
+        });
 
         function loadImage(file) {
             return new Promise((resolve) => {
@@ -431,27 +486,58 @@
         fileCropped.onchange = async () => {
             const file = fileCropped.files[0];
             if (!file) return;
-            croppedTitle.textContent = "⏳ กำลังส่งขึ้นระบบ...";
-
-            const formData = new FormData();
-            formData.append('reqtype', 'fileupload');
-            formData.append('time', '1h');
-            formData.append('fileToUpload', file);
+            croppedTitle.textContent = "⏳ กำลังประมวลผลและอัพโหลด...";
 
             try {
+                // 1. Get dimensions locally first so the URL is "Complete"
+                let w = 0, h = 0;
+                if (file.name.toLowerCase().endsWith('.pdf')) {
+                    const tempBuf = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({ data: tempBuf }).promise;
+                    const page = await pdf.getPage(1);
+                    const vp = page.getViewport({ scale: 1 });
+                    w = vp.width; h = vp.height;
+                } else {
+                    const img = await loadImage(file);
+                    w = img.width; h = img.height;
+                }
+
+                // 2. Upload to cloud
+                const formData = new FormData();
+                formData.append('reqtype', 'fileupload');
+                formData.append('time', '1h');
+                formData.append('fileToUpload', file);
+
                 const res = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', { method: 'POST', body: formData });
                 if (res.ok) {
                     const text = await res.text();
                     if (text.startsWith('http')) {
                         const fname = text.trim().split('/').pop();
                         const exp = Date.now() + 3600000;
-                        let cur = window.location.hash.substring(1);
-                        let g = cur.split('#')[0] || '1';
-                        window.location.hash = `#${g}#litterbox/${fname}/${exp}`;
+
+                        // 3. Build COMPLETELY full hash: #page&coords#litterbox/file/exp
+                        // We use x=0, y=0 as default for a new upload, but with correct W and H
+                        const pageNum = targetPageNum.value || '1';
+                        const g = `${pageNum}&x=0.00&y=0.00&w=${w.toFixed(2)}&h=${h.toFixed(2)}`;
+                        const newHash = `#${g}#litterbox/${fname}/${exp}`;
+
+                        // 4. Copy COMPLETELY FULL URL to clipboard
+                        const fullUrl = window.location.origin + window.location.pathname + newHash;
+                        try {
+                            await navigator.clipboard.writeText(fullUrl);
+                        } catch (err) {
+                            console.error('Failed to copy: ', err);
+                        }
+
+                        // 5. Update hash and reload
+                        window.location.hash = newHash;
                         window.location.reload();
                     }
                 }
-            } catch (e) { alert("อัพโหลดไม่สำเร็จ"); croppedTitle.textContent = "✂️ เลือกไฟล์แยกส่วน"; }
+            } catch (e) {
+                console.error(e);
+                croppedTitle.textContent = "❌ อัพโหลดไม่สำเร็จ";
+            }
         };
 
         function setLockedState() {
@@ -540,28 +626,58 @@
 
         async function renderPreview() {
             const num = parseInt(targetPageNum.value);
-            if (!originalImage && (!originalPdfDoc || isNaN(num))) {
-                emptyState.style.display = 'block'; previewCanvas.style.display = 'none'; return;
+            const hasOriginal = originalImage || (originalPdfDoc && !isNaN(num));
+            const hasCropped = croppedBuffer || croppedImage;
+
+            if (!hasOriginal && !hasCropped) {
+                emptyState.style.display = 'block';
+                previewCanvas.style.display = 'none';
+                return;
             }
-            emptyState.style.display = 'none'; previewCanvas.style.display = 'block';
+
+            emptyState.style.display = 'none';
+            previewCanvas.style.display = 'block';
             const ctx = previewCanvas.getContext('2d');
-            if (originalImage) {
-                previewCanvas.width = originalImage.width; previewCanvas.height = originalImage.height;
-                ctx.drawImage(originalImage, 0, 0);
+
+            if (hasOriginal) {
+                if (originalImage) {
+                    previewCanvas.width = originalImage.width;
+                    previewCanvas.height = originalImage.height;
+                    ctx.drawImage(originalImage, 0, 0);
+                } else {
+                    const p = await originalPdfDoc.getPage(num);
+                    const v = p.getViewport({ scale: 0.8 });
+                    previewCanvas.width = v.width;
+                    previewCanvas.height = v.height;
+                    await p.render({ canvasContext: ctx, viewport: v }).promise;
+                }
             } else {
-                const p = await originalPdfDoc.getPage(num);
-                const v = p.getViewport({ scale: 0.8 });
-                previewCanvas.width = v.width; previewCanvas.height = v.height;
-                await p.render({ canvasContext: ctx, viewport: v }).promise;
+                // Only Cropped is available - Show it in its own size or a default frame
+                previewCanvas.width = cropW > 0 ? (originalImage ? cropW : cropW * 0.8) : 500;
+                previewCanvas.height = cropH > 0 ? (originalImage ? cropH : cropH * 0.8) : 250;
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+                ctx.strokeStyle = "#e2e8f0";
+                ctx.setLineDash([5, 5]);
+                ctx.strokeRect(0, 0, previewCanvas.width, previewCanvas.height);
+                ctx.setLineDash([]);
             }
-            if (croppedBuffer || croppedImage) {
-                ctx.save(); ctx.globalCompositeOperation = 'multiply';
+
+            if (hasCropped) {
+                ctx.save();
+                if (hasOriginal) ctx.globalCompositeOperation = 'multiply';
+
                 const s = originalImage ? 1 : 0.8;
-                if (croppedImage) ctx.drawImage(croppedImage, cropX * s, cropY * s, cropW * s, cropH * s);
-                else if (croppedBuffer) {
+                const x = hasOriginal ? cropX * s : 0;
+                const y = hasOriginal ? cropY * s : 0;
+
+                if (croppedImage) {
+                    ctx.drawImage(croppedImage, x, y, cropW * s, cropH * s);
+                } else if (croppedBuffer) {
                     const d = await pdfjsLib.getDocument({ data: croppedBuffer.slice(0) }).promise;
-                    const p = await d.getPage(1); const v = p.getViewport({ scale: s });
-                    ctx.translate(cropX * s, cropY * s);
+                    const p = await d.getPage(1);
+                    const v = p.getViewport({ scale: s });
+                    ctx.translate(x, y);
                     await p.render({ canvasContext: ctx, viewport: v }).promise;
                 }
                 ctx.restore();

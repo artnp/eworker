@@ -90,43 +90,110 @@
 
         .upload-area {
             border: 2px dashed var(--border);
-            background: var(--surface);
-            border-radius: var(--radius-md);
-            padding: 60px 40px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.5));
+            border-radius: var(--radius-lg);
+            padding: 80px 40px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
             width: 100%;
-            max-width: 600px;
-            margin-bottom: 24px;
+            max-width: 700px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            backdrop-filter: blur(8px);
         }
 
-        .upload-area:hover,
-        .upload-area.dragover {
+        .upload-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, var(--primary-soft), transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .upload-area:hover {
             border-color: var(--primary);
-            background: var(--primary-soft);
-            transform: translateY(-2px);
+            transform: translateY(-8px) scale(1.01);
+            box-shadow: 0 30px 60px -12px rgba(99, 102, 241, 0.15), 0 18px 36px -18px rgba(0, 0, 0, 0.1);
+        }
+
+        .upload-area:hover::before {
+            opacity: 1;
         }
 
         .upload-icon {
-            width: 64px;
-            height: 64px;
-            margin: 0 auto 20px;
-            background: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236366f1%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4%22/%3E%3Cpolyline points=%2217 8 12 3 7 8%22/%3E%3Cline x1=%2212%22 y1=%223%22 x2=%2212%22 y2=%2215%22/%3E%3C/svg%3E') center/contain no-repeat;
-            opacity: 0.8;
+            width: 100px;
+            height: 100px;
+            margin-bottom: 28px;
+            background: var(--primary-soft);
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: var(--primary);
+            transition: all 0.4s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        .upload-area:hover .upload-icon {
+            transform: scale(1.1) rotate(5deg);
+            background: var(--primary);
+            color: white;
+        }
+
+        .upload-area h3 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
         }
 
         .upload-area p {
-            font-size: 18px;
+            font-size: 16px;
+            color: var(--text-soft);
+            max-width: 400px;
+            line-height: 1.6;
+            position: relative;
+            z-index: 1;
+        }
+
+        .browse-btn {
+            margin-top: 24px;
+            padding: 12px 32px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50px;
             font-weight: 600;
-            color: var(--text);
+            font-size: 15px;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        .upload-area:hover .browse-btn {
+            background: var(--primary-hover);
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
         }
 
         #canvasContainer {
             position: relative;
             display: inline-block;
             margin: 20px auto;
-            padding: 12px;
+            padding: 0;
             background: #f8fafc;
             border-radius: var(--radius-md);
             border: 1px solid var(--border);
@@ -170,6 +237,20 @@
             border-bottom: 1px solid var(--border);
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            cursor: move;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toolbar-title::before {
+            content: "";
+            width: 12px;
+            height: 12px;
+            background-image: radial-gradient(var(--text-soft) 1.5px, transparent 1.5px);
+            background-size: 4px 4px;
+            opacity: 0.5;
         }
 
         .toolbar-group {
@@ -408,33 +489,37 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>เครื่องมือตัดไฟล์ PDF และรูปภาพ</h1>
-            <p>ใช้ตัดส่วนเอกสารหรือรุปภาพที่มีความเสี่ยงออก</p>
-            <div>
-                <a href="decut.html" class="decut-link" target="_blank">
-                    🔗 ไปหน้าประกอบไฟล์ (Decut)
-                </a>
+            <h2>เครื่องมือแยกส่วนเอกสาร/รูปภาพ</h2>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
             </div>
+            <h3>เริ่มต้นใช้งาน</h3>
+            <p>ลากไฟล์ PDF หรือรูปภาพมาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์จากเครื่องคอมพิวเตอร์ของคุณ</p>
+            <div class="browse-btn">เลือกไฟล์</div>
+            <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.tiff" style="display: none;" />
         </div>
 
-        <div class="content">
-            <div class="upload-area" id="uploadArea">
-                <div class="upload-icon"></div>
-                <p>คลิกหรือลากไฟล์ PDF หรือรูปภาพ (.jpg, .png, .tiff) เพื่อเริ่มต้น</p>
-                <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png,.tiff" />
-            </div>
+        <div id="pageInfo"></div>
 
-            <div id="pageInfo"></div>
-
-            <div id="canvasContainer">
-                <div id="cropBox" class="crop-box">
-                    <div class="resizer tl"></div>
-                    <div class="resizer tr"></div>
-                    <div class="resizer bl"></div>
-                    <div class="resizer br"></div>
-                </div>
+        <div id="canvasContainer">
+            <div id="cropBox" class="crop-box">
+                <div class="resizer tl"></div>
+                <div class="resizer tr"></div>
+                <div class="resizer bl"></div>
+                <div class="resizer br"></div>
             </div>
         </div>
+    </div>
     </div>
 
     <!-- Right Sidebar Toolbar -->
@@ -442,7 +527,6 @@
         <div class="toolbar-title">
             <span>เครื่องมือ</span>
         </div>
-
         <div class="toolbar-group" id="navGroup">
             <span class="toolbar-label">การนำทาง</span>
             <div class="input-group">
@@ -487,6 +571,16 @@
         <p style="margin-top: 15px; font-weight: 600; color: var(--text-main);">กำลังประมวลผล...</p>
     </div>
 
+    <div id="globalDropZone"
+        style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(99, 102, 241, 0.15); border: 4px dashed var(--primary); z-index: 10001; display: none; align-items: center; justify-content: center; pointer-events: none; backdrop-filter: blur(4px);">
+        <div
+            style="background: white; padding: 40px; border-radius: var(--radius-lg); box-shadow: var(--shadow); text-align: center;">
+            <div class="upload-icon" style="margin-bottom: 20px;"></div>
+            <p style="font-size: 20px; font-weight: 700; color: var(--primary);">วางไฟล์ตรงไหนก็ได้เพื่ออัปโหลด</p>
+            <p style="color: var(--text-soft); font-size: 14px; margin-top: 8px;">รองรับ PDF และไฟล์รูปภาพทุกชนิด</p>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
     <script type="module">
         import * as pdfjsLib from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/build/pdf.mjs';
@@ -522,17 +616,37 @@
         uploadArea.onclick = () => fileInput.click();
         fileInput.onchange = handleFileUpload;
 
-        uploadArea.addEventListener('dragover', (e) => {
+        const globalDropZone = document.getElementById('globalDropZone');
+        let dragCounter = 0;
+
+        window.addEventListener('dragenter', (e) => {
             e.preventDefault();
-            uploadArea.classList.add('dragover');
+            dragCounter++;
+            globalDropZone.style.display = 'flex';
         });
-        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
-        uploadArea.addEventListener('drop', (e) => {
+
+        window.addEventListener('dragleave', (e) => {
             e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            if (e.dataTransfer.files[0]) {
+            dragCounter--;
+            if (dragCounter <= 0) {
+                dragCounter = 0;
+                globalDropZone.style.display = 'none';
+            }
+        });
+
+        window.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        window.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragCounter = 0;
+            globalDropZone.style.display = 'none';
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                 fileInput.files = e.dataTransfer.files;
                 handleFileUpload();
+                // Reset file input value to allow the same file to be uploaded again if needed
+                fileInput.value = '';
             }
         });
 
@@ -607,6 +721,16 @@
                 };
                 reader.onerror = reject;
                 reader.readAsDataURL(file);
+            });
+        }
+
+        function loadImageFromUrl(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = url;
             });
         }
 
@@ -718,19 +842,19 @@
 
         function updateCropBoxPosition() {
             const s = getDisplayScale();
-            cropBox.style.left = cropData.x * s + 'px';
-            cropBox.style.top = cropData.y * s + 'px';
-            cropBox.style.width = cropData.w * s + 'px';
-            cropBox.style.height = cropData.h * s + 'px';
+            cropBox.style.left = (cropData.x * s) + 'px';
+            cropBox.style.top = (cropData.y * s) + 'px';
+            cropBox.style.width = (cropData.w * s) + 'px';
+            cropBox.style.height = (cropData.h * s) + 'px';
         }
 
-        // Draggable & Resizable
+        // Draggable & Resizable with boundaries
         let isDragging = false;
         let isResizing = false;
         let resizeDir = '';
         let startPos = { x: 0, y: 0, w: 0, h: 0, l: 0, t: 0 };
 
-        cropBox.onmousedown = (e) => {
+        cropBox.addEventListener('mousedown', (e) => {
             const s = getDisplayScale();
             if (e.target.classList.contains('resizer')) {
                 isResizing = true;
@@ -748,10 +872,18 @@
                 startPos = { x: e.clientX - cropData.x * s, y: e.clientY - cropData.y * s };
             }
             e.preventDefault();
-        };
+            e.stopPropagation();
+        });
 
-        document.onmousemove = (e) => {
+        window.addEventListener('mousemove', (e) => {
+            if (!cropData) return;
             const s = getDisplayScale();
+            const canvas = canvasContainer.querySelector('canvas');
+            if (!canvas) return;
+
+            const maxWidth = canvas.width;
+            const maxHeight = canvas.height;
+
             if (isResizing) {
                 const dx = e.clientX - startPos.x;
                 const dy = e.clientY - startPos.y;
@@ -761,38 +893,47 @@
                 let t = startPos.t;
 
                 if (resizeDir.includes('r')) w += dx;
-                if (resizeDir.includes('l')) {
-                    w -= dx;
-                    l += dx;
-                }
+                if (resizeDir.includes('l')) { w -= dx; l += dx; }
                 if (resizeDir.includes('b')) h += dy;
-                if (resizeDir.includes('t')) {
-                    h -= dy;
-                    t += dy;
-                }
+                if (resizeDir.includes('t')) { h -= dy; t += dy; }
 
-                if (w > 20 && h > 20) {
-                    cropData = {
-                        x: l / s,
-                        y: t / s,
-                        w: w / s,
-                        h: h / s,
-                    };
-                    updateCropBoxPosition();
-                }
+                // Convert to internal coordinates and clamp
+                let nw = w / s;
+                let nh = h / s;
+                let nx = l / s;
+                let ny = t / s;
+
+                // Min size check
+                if (nw < 20) nw = 20;
+                if (nh < 20) nh = 20;
+
+                // Clamp boundaries
+                if (nx < 0) { nw += nx; nx = 0; }
+                if (ny < 0) { nh += ny; ny = 0; }
+                if (nx + nw > maxWidth) nw = maxWidth - nx;
+                if (ny + nh > maxHeight) nh = maxHeight - ny;
+
+                cropData = { x: nx, y: ny, w: nw, h: nh };
+                updateCropBoxPosition();
             } else if (isDragging) {
-                const x = (e.clientX - startPos.x) / s;
-                const y = (e.clientY - startPos.y) / s;
-                cropData.x = x;
-                cropData.y = y;
+                let nx = (e.clientX - startPos.x) / s;
+                let ny = (e.clientY - startPos.y) / s;
+
+                // Clamp boundaries
+                if (nx < 0) nx = 0;
+                if (ny < 0) ny = 0;
+                if (nx + cropData.w > maxWidth) nx = maxWidth - cropData.w;
+                if (ny + cropData.h > maxHeight) ny = maxHeight - cropData.h;
+
+                cropData.x = nx;
+                cropData.y = ny;
                 updateCropBoxPosition();
             }
-        };
+        });
 
-        document.onmouseup = () => {
+        window.addEventListener('mouseup', () => {
             isDragging = false;
             isResizing = false;
-            // ปัดให้ตรงพิกเซล ลดเส้นขอบจากการเรนเดอร์คร่อมพิกเซล [web:11]
             if (cropData) {
                 cropData.x = Math.round(cropData.x);
                 cropData.y = Math.round(cropData.y);
@@ -800,7 +941,7 @@
                 cropData.h = Math.round(cropData.h);
                 updateCropBoxPosition();
             }
-        };
+        });
 
         // --- Save Process ---
         btnSave.onclick = async () => {
@@ -888,6 +1029,107 @@
         function showLoading(show) {
             loadingOverlay.style.display = show ? 'flex' : 'none';
         }
+
+        // --- Draggable Toolbar ---
+        let isToolbarDragging = false;
+        let toolbarOffset = { x: 0, y: 0 };
+        const toolbarTitle = toolbar.querySelector('.toolbar-title');
+
+        toolbarTitle.addEventListener('mousedown', (e) => {
+            isToolbarDragging = true;
+            const rect = toolbar.getBoundingClientRect();
+            toolbarOffset.x = e.clientX - rect.left;
+            toolbarOffset.y = e.clientY - rect.top;
+
+            // Remove centering transform once dragged
+            toolbar.style.transform = 'none';
+            toolbar.style.top = rect.top + 'px';
+            toolbar.style.left = rect.left + 'px';
+            toolbar.style.transition = 'none'; // Disable transition while dragging
+
+            e.preventDefault();
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isToolbarDragging) {
+                let x = e.clientX - toolbarOffset.x;
+                let y = e.clientY - toolbarOffset.y;
+
+                // Keep within viewport
+                const rect = toolbar.getBoundingClientRect();
+                const pad = 10;
+                if (x < pad) x = pad;
+                if (y < pad) y = pad;
+                if (x + rect.width > window.innerWidth - pad) x = window.innerWidth - rect.width - pad;
+                if (y + rect.height > window.innerHeight - pad) y = window.innerHeight - rect.height - pad;
+
+                toolbar.style.left = x + 'px';
+                toolbar.style.top = y + 'px';
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isToolbarDragging) {
+                isToolbarDragging = false;
+                toolbar.style.transition = ''; // Restore transitions
+            }
+        });
+
+        // --- Auto-load from URL parameter ---
+        window.addEventListener('load', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            let imgUrl = urlParams.get('imgUrl');
+            const source = urlParams.get('source');
+
+            if (source === 'session') {
+                imgUrl = sessionStorage.getItem('cropImageData');
+            }
+
+            if (imgUrl) {
+                showLoading(true);
+                try {
+                    // Check if it's likely a PDF (though app.js only sends images)
+                    const lowUrl = imgUrl.toLowerCase();
+                    const isPdf = lowUrl.includes('.pdf') || imgUrl.startsWith('data:application/pdf');
+
+                    if (isPdf) {
+                        originalFileName = 'document';
+                        const response = await fetch(imgUrl);
+                        const arrayBuffer = await response.arrayBuffer();
+                        pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                        imageObj = null;
+                        totalPages = pdfDoc.numPages;
+                        document.getElementById('navGroup').style.display = 'flex';
+                        isImage = false;
+                    } else {
+                        originalFileName = 'image';
+                        imageObj = await loadImageFromUrl(imgUrl);
+                        pdfDoc = null;
+                        totalPages = 1;
+                        document.getElementById('navGroup').style.display = 'none';
+                        isImage = true;
+
+                        btnSave.innerHTML = `
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            บันทึกหน้านี้เป็นรูปภาพ
+                        `;
+                    }
+
+                    uploadArea.style.display = 'none';
+                    toolbar.style.display = 'flex';
+                    pageNumInput.max = totalPages;
+                    await renderCurrentFile(1);
+                } catch (err) {
+                    console.error('Failed to auto-load image:', err);
+                } finally {
+                    showLoading(false);
+                }
+            }
+        });
     </script>
 </body>
 
