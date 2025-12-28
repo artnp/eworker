@@ -8,82 +8,94 @@
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <style>
         :root {
-            --primary-color: #3b82f6;
-            --primary-hover: #2563eb;
-            --secondary-color: #64748b;
-            --success-color: #10b981;
-            --danger-color: #ef4444;
-            --background: #f8fafc;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --primary-soft: rgba(99, 102, 241, 0.1);
+            --success: #10b981;
+            --success-soft: rgba(16, 185, 129, 0.1);
+            --bg: #fdfdfd;
             --surface: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
+            --text: #1e293b;
+            --text-soft: #64748b;
             --border: #e2e8f0;
-            --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            --radius: 16px;
+            --radius-lg: 24px;
+            --radius-md: 16px;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            -webkit-font-smoothing: antialiased;
         }
 
         body {
-            background: var(--background);
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.05) 0px, transparent 50%);
             font-family: 'Sarabun', sans-serif;
-            color: var(--text-main);
+            color: var(--text);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 40px auto;
-            width: 95%;
-            background: var(--surface);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            overflow: hidden;
-            flex-grow: 1;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #1e40af, #3b82f6);
-            color: white;
-            padding: 40px 32px;
-            text-align: center;
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 32px;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
-        .header p {
-            margin: 12px 0 0;
-            font-size: 18px;
-            opacity: 0.9;
-        }
-
-        .content {
-            padding: 32px;
-            position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
+        .container {
+            width: 95%;
+            max-width: 1200px;
+            margin: 40px auto;
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            padding: 48px 32px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to bottom, rgba(99, 102, 241, 0.02), transparent);
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            color: var(--text-soft);
+            font-size: 16px;
+        }
+
+        .content {
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 400px;
+        }
+
         .upload-area {
-            border: 3px dashed var(--secondary-color);
-            border-radius: var(--radius);
+            border: 2px dashed var(--border);
+            background: var(--surface);
+            border-radius: var(--radius-md);
             padding: 60px 40px;
             text-align: center;
-            background: #f8fafc;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             width: 100%;
             max-width: 600px;
             margin-bottom: 24px;
@@ -91,43 +103,44 @@
 
         .upload-area:hover,
         .upload-area.dragover {
-            border-color: var(--primary-color);
-            background: #eff6ff;
+            border-color: var(--primary);
+            background: var(--primary-soft);
             transform: translateY(-2px);
-        }
-
-        .upload-area input {
-            display: none;
         }
 
         .upload-icon {
             width: 64px;
             height: 64px;
             margin: 0 auto 20px;
-            background: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%233b82f6%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4%22/%3E%3Cpolyline points=%2217 8 12 3 7 8%22/%3E%3Cline x1=%2212%22 y1=%223%22 x2=%2212%22 y2=%2215%22/%3E%3C/svg%3E') center/contain no-repeat;
+            background: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236366f1%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4%22/%3E%3Cpolyline points=%2217 8 12 3 7 8%22/%3E%3Cline x1=%2212%22 y1=%223%22 x2=%2212%22 y2=%2215%22/%3E%3C/svg%3E') center/contain no-repeat;
+            opacity: 0.8;
         }
 
         .upload-area p {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 600;
-            color: var(--text-main);
+            color: var(--text);
         }
 
         #canvasContainer {
             position: relative;
             display: inline-block;
             margin: 20px auto;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: var(--radius-md);
             border: 1px solid var(--border);
-            border-radius: 8px;
-            background: white;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
             max-width: 100%;
         }
 
         canvas {
             display: block;
             max-width: 100%;
-            height: auto;
+            height: auto !important;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            background: white;
         }
 
         /* Toolbar */
@@ -136,40 +149,39 @@
             left: 30px;
             top: 50%;
             transform: translateY(-50%);
-            background: white;
+            background: rgba(255, 255, 255, 0.9);
             padding: 24px;
-            border-radius: 20px;
-            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
             display: none;
             flex-direction: column;
             gap: 20px;
-            width: 300px;
+            width: 280px;
             z-index: 1000;
-            border: 1px solid var(--border);
-            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
         }
 
         .toolbar-title {
             font-weight: 700;
-            font-size: 18px;
-            color: var(--text-main);
+            font-size: 16px;
+            color: var(--text);
             padding-bottom: 12px;
-            border-bottom: 2px solid var(--background);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .toolbar-group {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
         }
 
         .toolbar-label {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-soft);
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
@@ -181,89 +193,98 @@
 
         input[type='number'] {
             width: 100%;
-            padding: 12px;
+            padding: 10px 14px;
             border: 1px solid var(--border);
-            border-radius: 10px;
-            font-size: 16px;
+            border-radius: 12px;
+            font-size: 14px;
             outline: none;
-            transition: border-color 0.2s;
+            transition: all 0.2s;
+            font-family: inherit;
         }
 
         input[type='number']:focus {
-            border-color: var(--primary-color);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-soft);
         }
 
         .btn {
-            padding: 14px 20px;
+            padding: 12px 20px;
             border: none;
             border-radius: 12px;
-            font-size: 16px;
-            font-weight: 700;
+            font-size: 14px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
             width: 100%;
+            font-family: inherit;
         }
 
         .btn-primary {
-            background: var(--primary-color);
+            background: var(--primary);
             color: white;
+            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
         }
 
         .btn-primary:hover {
             background: var(--primary-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
         }
 
         .btn-secondary {
-            background: #f1f5f9;
-            color: var(--text-main);
+            background: var(--primary-soft);
+            color: var(--primary);
         }
 
         .btn-secondary:hover {
-            background: #e2e8f0;
+            background: rgba(99, 102, 241, 0.15);
         }
 
         .btn-success {
-            background: var(--success-color);
+            background: var(--success);
             color: white;
+            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
         }
 
         .btn-success:hover:not(:disabled) {
             background: #059669;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3);
         }
 
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-            pointer-events: none;
-            filter: grayscale(1);
+            filter: grayscale(0.5);
+            background: #e2e8f0;
+            color: #94a3b8;
+            box-shadow: none;
         }
 
         /* Crop Box */
         .crop-box {
             position: absolute;
-            border: 2px solid var(--primary-color);
-            background: rgba(59, 130, 246, 0.1);
+            border: 2px solid var(--primary);
+            background: rgba(99, 102, 241, 0.08);
             cursor: move;
             z-index: 100;
             display: none;
-            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.3);
+            border-radius: 2px;
         }
 
         .resizer {
             position: absolute;
-            width: 12px;
-            height: 12px;
-            background: var(--primary-color);
+            width: 10px;
+            height: 10px;
+            background: var(--primary);
             border: 2px solid white;
             border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .resizer.tl {
@@ -296,60 +317,90 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
             display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 10000;
-            backdrop-filter: blur(5px);
         }
 
         .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary-color);
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--primary-soft);
+            border-top: 4px solid var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
 
         @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
+            to {
                 transform: rotate(360deg);
             }
         }
 
         #pageInfo {
             margin-top: 10px;
-            font-size: 14px;
-            color: var(--text-muted);
-            font-weight: 500;
+            font-size: 13px;
+            color: var(--text-soft);
+            font-weight: 600;
         }
 
         .copy-group-toolbar {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            padding: 12px;
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
+            gap: 10px;
+            padding: 16px;
+            background: var(--success-soft);
             border-radius: 12px;
             margin-top: 10px;
         }
 
         .copy-group-toolbar input {
             width: 100%;
-            padding: 8px;
-            border: 1px solid #86efac;
-            border-radius: 6px;
+            padding: 10px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 8px;
             font-size: 11px;
             background: white;
-            color: #166534;
+            color: #065f46;
+            font-family: monospace;
+        }
+
+        @media (max-width: 768px) {
+            #toolbar {
+                position: static;
+                transform: none;
+                width: 100%;
+                margin: 20px 0;
+            }
+        }
+
+        .decut-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            background: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            margin-top: 16px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
+        .decut-link:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
         }
     </style>
 </head>
@@ -359,9 +410,8 @@
         <div class="header">
             <h1>เครื่องมือตัดไฟล์ PDF และรูปภาพ</h1>
             <p>ใช้ตัดส่วนเอกสารหรือรุปภาพที่มีความเสี่ยงออก</p>
-            <div style="margin-top: 15px;">
-                <a href="decut.html" target="_blank"
-                    style="color: white; text-decoration: none; font-size: 14px; background: rgba(255,255,255,0.2); padding: 5px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.4);">
+            <div>
+                <a href="decut.html" class="decut-link" target="_blank">
                     🔗 ไปหน้าประกอบไฟล์ (Decut)
                 </a>
             </div>
@@ -784,7 +834,6 @@
                     link.download = `crop_${originalFileName}.png`;
                     link.click();
 
-                    // URL สำหรับ Decut (กรณีรูปภาพ อาจจะไปใช้ประกอบกับรูปหรือ PDF อื่น)
                     const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
                     decutUrlInput.value = `${baseUrl}decut.html#1&x=${cropX}&y=${cropY}&w=${cropW}&h=${cropH}`;
                     toolbarResult.style.display = 'block';
@@ -797,19 +846,15 @@
                     cropCtx.translate(-cropX, -cropY);
                     await page.render({ canvasContext: cropCtx, viewport }).promise;
 
-                    // 4. สร้าง PDF ขนาดเฉพาะส่วนที่ครอป
+                    // บันทึกเป็นไฟล์ PNG เสมอตามคำขอ (สัดส่วนเป๊ะ)
+                    const imgData = cropCanvas.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.href = imgData;
+                    link.download = `crop_${originalFileName}_page${currentPage}.png`;
+                    link.click();
+
                     const finalW = cropW / renderScale;
                     const finalH = cropH / renderScale;
-                    const doc = new jsPDF({
-                        orientation: finalW > finalH ? 'l' : 'p',
-                        unit: 'pt',
-                        format: [finalW, finalH],
-                    });
-
-                    const imgData = cropCanvas.toDataURL('image/png');
-                    doc.addImage(imgData, 'PNG', 0, 0, finalW, finalH);
-                    doc.save(`crop_${originalFileName}_page${currentPage}.pdf`);
-
                     const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
                     const ptX = (cropX / renderScale).toFixed(2);
                     const ptY = (cropY / renderScale).toFixed(2);
