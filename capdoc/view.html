@@ -97,7 +97,6 @@
             position: absolute;
             z-index: 100;
             top: 130%;
-            /* ปรับให้แสดงด้านล่างแทนเพื่อไม่ให้หลุดขอบบน */
             right: 0;
             opacity: 0;
             transition: all 0.3s ease;
@@ -110,7 +109,6 @@
         }
 
         .tooltip.show {
-            /* เพิ่ม class สำหรับกดเปิดในมือถือ */
             visibility: visible;
             opacity: 1;
             transform: translateY(5px);
@@ -171,18 +169,12 @@
             cursor: pointer;
         }
 
-        img,
-        iframe {
+        img {
             max-width: 100%;
             max-height: 70vh;
             border-radius: 8px;
             display: block;
             border: none;
-        }
-
-        iframe {
-            display: none;
-            /* ปิด iframe เพราะ tempfile.org บล็อกการฝัง */
         }
 
         .pdf-preview-box {
@@ -262,6 +254,14 @@
             color: var(--danger);
         }
 
+        .expired {
+            animation: pulse 1s infinite;
+        }
+
+        .btn-success {
+            background: var(--success) !important;
+        }
+
         @keyframes pulse {
             0% {
                 opacity: 1;
@@ -275,22 +275,13 @@
                 opacity: 1;
             }
         }
-
-        .expired {
-            animation: pulse 1s infinite;
-        }
-
-        /* Success state for button */
-        .btn-success {
-            background: var(--success) !important;
-        }
     </style>
 </head>
 
 <body>
 
     <div class="header">
-        <div class="logo">PrivateSend <span style="font-weight: 300; opacity: 0.5; display: none;">Viewer</span></div>
+        <div class="logo">PrivateSend</div>
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
             <div class="safety-badge" onclick="toggleTooltip(event)">
                 🛡️ ปลอดภัย
@@ -313,9 +304,8 @@
         <div class="image-container" id="img-box">
             <img id="image" alt="กำลังเตรียมภาพของคุณ..." style="display: none;">
             <div id="pdf-preview" class="pdf-preview-box">
-                <img id="pdf-icon" src="" alt="PDF Icon">
-                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted);">ไฟล์เอกสาร PDF
-                    (คลิกเพื่อดาวน์โหลด)</div>
+                <img id="pdf-icon" src="" alt="Icon">
+                <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted);">ไฟล์เอกสาร (คลิก)</div>
             </div>
             <div id="loading-text" style="color: var(--text-muted); text-align: center; padding: 20px;">
                 กำลังดาวน์โหลดไฟล์...<br>
@@ -338,7 +328,7 @@
     <script>
         const params = new URLSearchParams(window.location.search);
         const fileUrl = decodeURIComponent(params.get('url'));
-        const expiryTimestamp = parseInt(params.get('exp'));
+        const expiryTimestamp = parseInt(params.get('exp')) || 0;
         const fileType = params.get('type') || 'img';
 
         const countdownElement = document.getElementById('countdown');
@@ -350,167 +340,103 @@
         const viewerContent = document.getElementById('viewer-content');
         const timerBadge = document.getElementById('timer-badge');
 
-        if (!fileUrl || fileUrl === 'null') {
-            showError('ไม่พบลิงก์หรือลิงก์ไม่ถูกต้อง');
+        function showError(title, msg, showRawLink = false) {
+            viewerContent.innerHTML = `
+                <div class="error-state">
+                    <h2 style="font-size: 3rem; margin-bottom: 20px;">${title === 'ลิงก์หมดอายุ' ? '⌛' : '⚠️'}</h2>
+                    <h2>${title}</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 25px;">${msg}</p>
+                    <div style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
+                        ${showRawLink ? `<a href="${fileUrl}" target="_blank" class="btn btn-primary" style="display: inline-flex; width: auto; padding: 12px 30px;">เปิดดูไฟล์โดยตรง</a>` : ''}
+                        <a href="index.html" class="btn" style="color: var(--text-muted);">กลับหน้าหลัก</a>
+                    </div>
+                </div>
+            `;
+            countdownElement.textContent = title;
+            countdownElement.style.color = 'var(--danger)';
+        }
+
+        if (!fileUrl || fileUrl === 'null' || fileUrl === 'undefined') {
+            showError('ไม่พบลิงก์', 'พารามิเตอร์ URL ไม่ถูกต้องหรือสูญหาย');
         } else {
-            // Litterbox provides direct links
-            const previewUrl = fileUrl;
-            const downloadUrl = fileUrl;
+            const isTempFile = fileUrl.includes('tempfile.org');
+            let previewUrl = fileUrl;
+            let downloadUrl = fileUrl;
 
-            if (fileType === 'pdf') {
-                document.title = "รับเอกสาร PDF - PrivateSend";
-                // For PDF preview, we might just show a generic icon since we don't have a thumbnail generator
-                // Or if we want to be fancy, we could try to use Google Docs viewer, but keeping it simple as per request or previous design which used an icon.
-                // The previous code set pdfIcon.src = previewUrl, implying the previewUrl was an image.
-                // Since Litterbox is just the file, we can't easily get a preview image of a PDF without a service.
-                // We will use a generic PDF icon or just keep the generic file icon if available.
-                // Let's set a static placeholder for the icon if we can't generate one, 
-                // OR just use a generic icon URL if the user doesn't have one local.
-                // However, looking at previous code: pdfIcon.src = previewUrl; (it was an SVG from tempfile).
-                // We'll use a data URI for a simple PDF icon or just a generic image.
-                // Let's use a simple public emoji or icon for now, or just not set src if it's broken. 
-                // Better approach: Use a standard PDF icon from a CDN or similar if we want to be sure.
-                // For now, I'll use a placeholder or the file itself if it happens to be viewable, 
-                // but <img src="file.pdf"> won't work.
-                // Let's use a data URI for a Red PDF icon to ensure it looks good.
-                pdfIcon.src = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZWY0NDQ0IiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE0IDJINmEyIDIgMCAwIDAgMiAydjE2YTIgMiAwIDAgMCAyIDJoMTJhMiAyIDAgMCAwIDItMlY4eiIvPjxwb2x5bGluZSBwb2ludHM9IjE0IDIgMTQgOCAyMCA4Ii8+PHBhdGggZD0iTTEwIDEzdjZoMiIvPjxwYXRoIGQ9Ik0xNCAxM3Y2aDIiLz48cGF0aCBkPSJNMTYgMTloMiIvPjwvc3ZnPg==";
+            // จัดการลิงก์สำหรับ TempFile
+            if (isTempFile) {
+                const parts = fileUrl.split('/').filter(Boolean);
+                const fileId = parts[parts.length - 1];
+                previewUrl = `https://tempfile.org/${fileId}/preview`;
+                downloadUrl = `https://tempfile.org/${fileId}/download`;
+            }
 
+            if (fileType === 'pdf' || fileType === 'file') {
+                document.title = "รับไฟล์ - PrivateSend";
+                pdfIcon.src = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5NGEzYjgiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xNCAyaC00YTIgMiAwIDAgMC0yIDJ2MTZhMiAyIDAgMCAwIDIgMmg4YTIgMiAwIDAgMCAyLTJWOGwtNi02eiIvPjxwYXRoIGQ9Ik0xNCAydjZoNnptLTYgNmg4bS04IDRoOG0tOCA0aDQiLz48L3N2Zz4=";
                 pdfPreview.style.display = 'flex';
                 loadingText.style.display = 'none';
-                downloadBtn.querySelector('span').textContent = 'ดาวน์โหลดไฟล์ PDF';
-
-                pdfPreview.onclick = () => window.location.href = downloadUrl;
-
-                document.querySelector('.info-text').innerHTML = `
-                    <strong>วิธีบันทึก:</strong><br>
-                    กดที่ปุ่มสีม่วง แล้วเลือก "บันทึก ⬇️" ที่มุมบน
-                `;
+                pdfPreview.querySelector('div').textContent = fileType === 'pdf' ? "ไฟล์เอกสาร PDF (คลิก)" : "ไฟล์ทั่วไป (คลิก)";
+                downloadBtn.querySelector('span').textContent = 'ดาวน์โหลดไฟล์';
+                pdfPreview.onclick = () => window.open(downloadUrl, '_blank');
             } else {
-                imageElement.src = previewUrl;
+                // สำหรับรูปภาพ
+                const cacheBuster = previewUrl.includes('?') ? '&' : '?';
+                imageElement.src = previewUrl + cacheBuster + 'v=' + Date.now();
+
                 imageElement.onload = () => {
                     imageElement.style.display = 'block';
                     loadingText.style.display = 'none';
+                    pdfPreview.style.display = 'none';
+                };
+
+                imageElement.onerror = () => {
+                    // Fallback ถ้าโหลดพรีวิวไม่ขึ้น
+                    imageElement.style.display = 'none';
+                    pdfIcon.src = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2MzY2ZjEiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxyZWN0IHg9IjMiIHk9IjMiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgcng9IjIiIHJ5PSIyIi8+PGNpcmNsZSBjeD0iOC41IiBjeT0iOC41IiByPSIxLjUiLz48cGF0aCBkPSJNMjEgMTVMMTYgMTBMNSAyMSIvPjwvc3ZnPg==";
+                    pdfPreview.style.display = 'flex';
+                    loadingText.style.display = 'none';
+                    pdfPreview.querySelector('div').textContent = "โหลดภาพพรีวิวไม่สำเร็จ (คลิกเพื่อเปิดดู)";
+                    pdfPreview.onclick = () => window.open(downloadUrl, '_blank');
                 };
             }
 
-            imageElement.onerror = () => {
-                showError('ไม่สามารถโหลดภาพได้ ไฟล์อาจถูกลบไปแล้ว หรืออินเทอร์เน็ตมีปัญหา');
+            downloadBtn.onclick = () => {
+                window.location.href = downloadUrl;
+                downloadBtn.innerHTML = '<span>กำลังโหลดไฟล์...</span>';
+                downloadBtn.classList.add('btn-success');
+                setTimeout(() => {
+                    downloadBtn.classList.remove('btn-success');
+                    downloadBtn.innerHTML = `<span>${fileType === 'img' ? 'ดาวน์โหลดรูปภาพ' : 'ดาวน์โหลดไฟล์'}</span>`;
+                }, 3000);
             };
 
-            // Enhanced Download Logic
-            downloadBtn.onclick = async () => {
-                const originalContent = downloadBtn.innerHTML;
-
-                if (fileType === 'pdf') {
-                    window.location.href = downloadUrl;
-                    successState();
-                    return;
-                }
-
-                downloadBtn.disabled = true;
-                downloadBtn.innerHTML = '<span>กำลังเตรียมไฟล์...</span>';
-
-                try {
-                    const response = await fetch(previewUrl);
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = url;
-                    // Try to guess extension from content-type or url
-                    let ext = 'png';
-                    if (blob.type === 'image/jpeg') ext = 'jpg';
-                    else if (blob.type === 'image/gif') ext = 'gif';
-
-                    a.download = `work-${Date.now()}.${ext}`;
-                    document.body.appendChild(a);
-                    a.click();
-
-                    setTimeout(() => {
-                        window.URL.revokeObjectURL(url);
-                        document.body.removeChild(a);
-                    }, 100);
-
-                    successState();
-
-                } catch (e) {
-                    console.error('Download failed', e);
-                    window.location.href = downloadUrl;
-                }
-
-                function successState() {
-                    downloadBtn.classList.add('btn-success');
-                    downloadBtn.innerHTML = '<span>เริ่มดาวน์โหลดแล้ว!</span>';
-                    setTimeout(() => {
-                        downloadBtn.classList.remove('btn-success');
-                        downloadBtn.innerHTML = originalContent;
-                        downloadBtn.disabled = false;
-                    }, 3000);
-                }
-            };
-
-            // Start Countdown logic
             if (expiryTimestamp) {
                 function updateCountdown() {
                     const now = Date.now();
                     const timeLeft = expiryTimestamp - now;
-
                     if (timeLeft <= 0) {
-                        countdownElement.textContent = '00:00:00';
-                        countdownElement.classList.add('expired');
-                        showError('ลิงก์นี้หมดอายุและถูกลบแล้ว');
+                        showError('ลิงก์หมดอายุ', 'ไฟล์ของคุณถูกลบออกจากระบบเซิร์ฟเวอร์เรียบร้อยแล้ว');
                         return;
                     }
-
-                    const hours = Math.floor(timeLeft / (1000 * 60 * 60));
-                    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-
-                    const displayHours = String(hours).padStart(2, '0');
-                    const displayMinutes = String(minutes).padStart(2, '0');
-                    const displaySeconds = String(seconds).padStart(2, '0');
-
-                    countdownElement.textContent = `ไฟล์จะถูกลบใน: ${displayHours}:${displayMinutes}:${displaySeconds}`;
-
-                    if (timeLeft < 1000 * 60 * 5) { // Less than 5 mins
-                        timerBadge.style.background = 'rgba(239, 68, 68, 0.2)';
-                        timerBadge.style.borderColor = 'rgba(239, 68, 68, 0.5)';
-                    }
+                    const h = String(Math.floor(timeLeft / 36e5)).padStart(2, '0');
+                    const m = String(Math.floor((timeLeft % 36e5) / 6e4)).padStart(2, '0');
+                    const s = String(Math.floor((timeLeft % 6e4) / 1e3)).padStart(2, '0');
+                    countdownElement.textContent = `ไฟล์จะลบใน: ${h}:${m}:${s}`;
                 }
-
                 updateCountdown();
                 setInterval(updateCountdown, 1000);
-            } else {
-                countdownElement.textContent = 'ไฟล์จะถูกลบใน 1 ชม.';
             }
-        }
-
-        function showError(msg) {
-            viewerContent.innerHTML = `
-                <div class="error-state">
-                    <h2 style="font-size: 3rem; margin-bottom: 20px;">⌛</h2>
-                    <h2>ลิงก์หมดอายุ</h2>
-                    <p style="color: var(--text-muted)">${msg}</p>
-                    <br><br>
-                    <a href="index.html" class="btn btn-primary" style="display: inline-flex; width: auto; padding: 12px 30px;">กลับหน้าหลัก</a>
-                </div>
-            `;
-            countdownElement.textContent = 'หมดอายุแล้ว';
-            countdownElement.style.color = 'var(--danger)';
         }
 
         function toggleTooltip(e) {
             e.stopPropagation();
-            const tooltip = document.getElementById('safety-tooltip');
-            tooltip.classList.toggle('show');
+            document.getElementById('safety-tooltip').classList.toggle('show');
         }
 
-        // ปิด tooltip เมื่อคลิกที่อื่น
         document.addEventListener('click', () => {
-            const tooltip = document.getElementById('safety-tooltip');
-            if (tooltip) tooltip.classList.remove('show');
+            const t = document.getElementById('safety-tooltip');
+            if (t) t.classList.remove('show');
         });
     </script>
 </body>
