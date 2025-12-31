@@ -526,7 +526,7 @@
                         // 4. Copy COMPLETELY FULL URL to clipboard
                         const fullUrl = window.location.origin + window.location.pathname + newHash;
                         try {
-                            await navigator.clipboard.writeText(fullUrl);
+                            await navigator.clipboard.writeText('✅เรียบร้อย! ต้องเข้าประกอบไฟล์เองที่:\n' + fullUrl);
                         } catch (err) {
                             console.error('Failed to copy: ', err);
                         }
