@@ -516,9 +516,11 @@
                         const exp = Date.now() + 3600000;
 
                         // 3. Build COMPLETELY full hash: #page&coords#litterbox/file/exp
-                        // We use x=0, y=0 as default for a new upload, but with correct W and H
+                        // Use existing coordinates if available, otherwise use defaults
                         const pageNum = targetPageNum.value || '1';
-                        const g = `${pageNum}&x=0.00&y=0.00&w=${w.toFixed(2)}&h=${h.toFixed(2)}`;
+                        const x = hasCoords ? cropX.toFixed(2) : '0.00';
+                        const y = hasCoords ? cropY.toFixed(2) : '0.00';
+                        const g = `${pageNum}&x=${x}&y=${y}&w=${w.toFixed(2)}&h=${h.toFixed(2)}`;
                         const newHash = `#${g}#litterbox/${fname}/${exp}`;
 
                         // 4. Copy COMPLETELY FULL URL to clipboard
