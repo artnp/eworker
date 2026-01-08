@@ -483,13 +483,107 @@
             }, 300);
         };
 
+        // Configuration for Upload Providers
+        const PROVIDERS = {
+            litterbox: {
+                name: 'litterbox',
+                upload: async (file, signal) => {
+                    const fd = new FormData();
+                    fd.append('reqtype', 'fileupload');
+                    fd.append('time', '1h'); // 1 Hour
+                    fd.append('fileToUpload', file);
+                    const res = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', { method: 'POST', body: fd, signal });
+                    if (!res.ok) throw new Error('Status ' + res.status);
+                    const text = await res.text();
+                    if (!text.startsWith('http')) throw new Error('Invalid response');
+                    return text.trim().split('/').pop();
+                },
+                getUrl: (id) => `https://litter.catbox.moe/${id}`,
+                expiry: 3600000 // 1h
+            },
+            fileio: {
+                name: 'fileio',
+                upload: async (file, signal) => {
+                    const fd = new FormData();
+                    fd.append('file', file);
+                    fd.append('expires', '1d');
+                    fd.append('max_downloads', '100');
+                    fd.append('autoDelete', 'true');
+                    const res = await fetch('https://file.io/', { method: 'POST', body: fd, signal });
+                    if (!res.ok) throw new Error('Status ' + res.status);
+                    const json = await res.json();
+                    if (!json.success) throw new Error('API Error');
+                    const u = new URL(json.link);
+                    return u.pathname.substring(1);
+                },
+                getUrl: (id) => `https://file.io/${id}`,
+                expiry: 24 * 3600000
+            },
+            pixeldrain: {
+                name: 'pixeldrain',
+                upload: async (file, signal) => {
+                    const res = await fetch(`https://pixeldrain.com/api/file/${file.name}`, {
+                        method: 'PUT',
+                        body: file,
+                        signal,
+                        headers: { 'Content-Type': file.type || 'application/octet-stream' }
+                    });
+                    if (!res.ok) throw new Error('Status ' + res.status);
+                    const json = await res.json();
+                    if (!json.success) throw new Error('API Error');
+                    return json.id;
+                },
+                getUrl: (id) => `https://pixeldrain.com/api/file/${id}`,
+                expiry: 30 * 24 * 3600000
+            },
+            uguu: {
+                name: 'uguu',
+                upload: async (file, signal) => {
+                    const fd = new FormData();
+                    fd.append('files[]', file);
+                    const res = await fetch('https://uguu.se/upload.php?output=text', { method: 'POST', body: fd, signal });
+                    if (!res.ok) throw new Error('Status ' + res.status);
+                    const text = await res.text();
+                    if (!text.startsWith('http')) throw new Error('Invalid response');
+                    // Returns https://a.uguu.se/xyz.ext -> Store domain+path
+                    const u = new URL(text.trim());
+                    return u.hostname + u.pathname;
+                },
+                getUrl: (id) => `https://${id}`,
+                expiry: 48 * 3600000 // 48h (Backup)
+            }
+        };
+
+        const PROVIDER_ORDER = ['litterbox', 'fileio', 'pixeldrain', 'uguu'];
+
+        async function uploadWithFallback(file) {
+            for (const key of PROVIDER_ORDER) {
+                const p = PROVIDERS[key];
+                croppedTitle.textContent = `⏳ กำลังอัพโหลดไปที่ ${key}...`;
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s Limit
+
+                    console.log(`Attempting upload to ${key}...`);
+                    const id = await p.upload(file, controller.signal);
+                    clearTimeout(timeoutId);
+
+                    return { prov: key, id: id, exp: Date.now() + p.expiry };
+                } catch (e) {
+                    console.warn(`${key} failed:`, e);
+                }
+            }
+            throw new Error('All upload services failed');
+        }
+
         fileCropped.onchange = async () => {
             const file = fileCropped.files[0];
             if (!file) return;
-            croppedTitle.textContent = "⏳ กำลังประมวลผลและอัพโหลด...";
+
+            dropZoneCropped.classList.add('locked');
 
             try {
-                // 1. Get dimensions locally first so the URL is "Complete"
+                // 1. Get dimensions
                 let w = 0, h = 0;
                 if (file.name.toLowerCase().endsWith('.pdf')) {
                     const tempBuf = await file.arrayBuffer();
@@ -502,43 +596,32 @@
                     w = img.width; h = img.height;
                 }
 
-                // 2. Upload to cloud
-                const formData = new FormData();
-                formData.append('reqtype', 'fileupload');
-                formData.append('time', '1h');
-                formData.append('fileToUpload', file);
+                // 2. Upload with fallback chain
+                const result = await uploadWithFallback(file);
 
-                const res = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', { method: 'POST', body: formData });
-                if (res.ok) {
-                    const text = await res.text();
-                    if (text.startsWith('http')) {
-                        const fname = text.trim().split('/').pop();
-                        const exp = Date.now() + 3600000;
+                // 3. Build Hash
+                const pageNum = targetPageNum.value || '1';
+                const x = hasCoords ? cropX.toFixed(2) : '0.00';
+                const y = hasCoords ? cropY.toFixed(2) : '0.00';
+                const g = `${pageNum}&x=${x}&y=${y}&w=${w.toFixed(2)}&h=${h.toFixed(2)}`;
 
-                        // 3. Build COMPLETELY full hash: #page&coords#litterbox/file/exp
-                        // Use existing coordinates if available, otherwise use defaults
-                        const pageNum = targetPageNum.value || '1';
-                        const x = hasCoords ? cropX.toFixed(2) : '0.00';
-                        const y = hasCoords ? cropY.toFixed(2) : '0.00';
-                        const g = `${pageNum}&x=${x}&y=${y}&w=${w.toFixed(2)}&h=${h.toFixed(2)}`;
-                        const newHash = `#${g}#litterbox/${fname}/${exp}`;
+                // Format: provider/id/exp
+                const cloudHash = `${result.prov}/${result.id}/${result.exp}`;
+                const newHash = `#${g}#${cloudHash}`;
 
-                        // 4. Copy COMPLETELY FULL URL to clipboard
-                        const fullUrl = window.location.origin + window.location.pathname + newHash;
-                        try {
-                            await navigator.clipboard.writeText('✅เรียบร้อย! ต้องเข้าประกอบไฟล์เองที่:\n' + fullUrl);
-                        } catch (err) {
-                            console.error('Failed to copy: ', err);
-                        }
+                // 4. Copy & Reload
+                const fullUrl = window.location.origin + window.location.pathname + newHash;
+                try {
+                    await navigator.clipboard.writeText('✅เรียบร้อย! ต้องเข้าประกอบไฟล์เองที่:\n' + fullUrl);
+                } catch (err) { console.error(err); }
 
-                        // 5. Update hash and reload
-                        window.location.hash = newHash;
-                        window.location.reload();
-                    }
-                }
+                window.location.hash = newHash;
+                window.location.reload();
+
             } catch (e) {
                 console.error(e);
-                croppedTitle.textContent = "❌ อัพโหลดไม่สำเร็จ";
+                croppedTitle.textContent = "❌ อัพโหลดไม่สำเร็จ (ทุก Server)";
+                dropZoneCropped.classList.remove('locked');
             }
         };
 
@@ -555,7 +638,7 @@
                 else {
                     const m = Math.floor(diff / 60000);
                     const s = Math.floor((diff % 60000) / 1000);
-                    timerText.innerHTML = `⚠️ถูกลบใน ${m}:${s.toString().padStart(2, '0')}`;
+                    timerText.innerHTML = `⚠️ลบใน ${m}:${s.toString().padStart(2, '0')}`;
                 }
             };
             tick();
@@ -566,7 +649,10 @@
             const h = window.location.hash.substring(1);
             if (!h) return;
             const parts = h.split('#');
-            const cloud = parts.find(p => p.startsWith('litterbox/') || p.startsWith('tmpfiles.org/') || p.startsWith('tempfile.org/'));
+
+            // Find cloud part: provider/...
+            // Supported: litterbox, uguu, fileio, pixeldrain
+            const cloudPart = parts.find(p => ['litterbox/', 'uguu/', 'fileio/', 'pixeldrain/'].some(prefix => p.startsWith(prefix)));
 
             if (parts[0]) {
                 const p = new URLSearchParams(parts[0].includes('&') ? parts[0] : `page=${parts[0]}`);
@@ -577,24 +663,42 @@
                 if (p.get('page')) targetPageNum.value = parseInt(p.get('page'));
             }
 
-            if (cloud) {
-                let id, exp, prov;
-                if (cloud.startsWith('litterbox/')) { const x = cloud.replace('litterbox/', '').split('/'); id = x[0]; exp = parseInt(x[1]); prov = 'litterbox'; }
-                if (id && (!croppedBuffer && !croppedImage)) await fetchCloud(id, prov);
+            if (cloudPart) {
+                // Parse: provider/id/exp (Note: id might contain slashes for uguu/tmpfiles)
+                // We know 'exp' is the LAST segment (numeric).
+                // So we split by slash, take first as prov, last as exp, join middle as id.
+
+                const segments = cloudPart.split('/');
+                const provName = segments[0]; // litterbox, uguu, tmpfiles
+                const exp = parseInt(segments[segments.length - 1]);
+
+                // ID is everything between first and last
+                const id = segments.slice(1, segments.length - 1).join('/');
+
+                if (provName && id && (!croppedBuffer && !croppedImage)) {
+                    await fetchCloud(id, provName);
+                }
+
                 if (exp) startTimer(exp);
                 setLockedState();
             }
             renderPreview();
         }
 
-        async function fetchCloud(id, prov) {
+        async function fetchCloud(id, provName) {
+            const provider = PROVIDERS[provName];
+            if (!provider) return;
+
             try {
-                let url = prov === 'litterbox' ? `https://litter.catbox.moe/${id}` : '';
+                const url = provider.getUrl(id);
+                // Use CorsProxy for all ext resources to be safe
                 const res = await fetch(`https://corsproxy.io/?` + encodeURIComponent(url));
                 const blob = await res.blob();
+
                 if (blob.type.includes('pdf')) {
                     croppedBuffer = await blob.arrayBuffer(); croppedImage = null;
                     if (!hasCoords) {
+                        // Fallback coords if needed
                         const d = await pdfjsLib.getDocument({ data: croppedBuffer.slice(0) }).promise;
                         const p = await d.getPage(1); const v = p.getViewport({ scale: 1 });
                         cropW = v.width; cropH = v.height; hasCoords = true; updateHash();
@@ -607,14 +711,15 @@
                     if (!hasCoords) { cropW = i.width; cropH = i.height; hasCoords = true; updateHash(); }
                 }
                 checkState();
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error('Fetch cloud failed:', e); }
         }
 
         function updateHash() {
             const v = parseInt(targetPageNum.value);
             let cur = window.location.hash.substring(1);
             let parts = cur.split('#');
-            let c = parts.find(p => p.startsWith('litterbox/') || p.startsWith('tmpfiles.org/') || p.startsWith('tempfile.org/'));
+            // Keep existing cloud part
+            let c = parts.find(p => ['litterbox/', 'uguu/', 'fileio/', 'pixeldrain/'].some(prefix => p.startsWith(prefix)));
             let g = hasCoords ? `${v}&x=${cropX.toFixed(2)}&y=${cropY.toFixed(2)}&w=${cropW.toFixed(2)}&h=${cropH.toFixed(2)}` : v.toString();
             history.replaceState(null, null, `#${g}${c ? '#' + c : ''}`);
         }
