@@ -518,6 +518,16 @@
                 <div class="resizer tr"></div>
                 <div class="resizer bl"></div>
                 <div class="resizer br"></div>
+                <button class="btn btn-success" id="btnSave" disabled
+                    style="position: absolute; bottom: -65px; left: 50%; transform: translateX(-50%); width: max-content; white-space: nowrap; z-index: 1001; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    <span>บันทึกหน้านี้เป็น PDF</span>
+                </button>
             </div>
         </div>
     </div>
@@ -544,15 +554,7 @@
         </div>
 
         <div class="toolbar-group" style="margin-top: auto;">
-            <button class="btn btn-success" id="btnSave" disabled>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                บันทึกหน้านี้เป็น PDF
-            </button>
+            <!-- ย้ายปุ่มบันทึกไปที่ cropBox แล้ว -->
         </div>
 
         <div class="toolbar-group" id="toolbarResult"
@@ -703,6 +705,9 @@
                 pageNumInput.max = totalPages;
 
                 await renderCurrentFile(1);
+                if (isImage) {
+                    btnSelectCrop.click();
+                }
             } catch (err) {
                 console.error(err);
                 alert('เกิดข้อผิดพลาดในการโหลดไฟล์');
@@ -856,6 +861,8 @@
         let startPos = { x: 0, y: 0, w: 0, h: 0, l: 0, t: 0 };
 
         cropBox.addEventListener('mousedown', (e) => {
+            if (e.target.closest('#btnSave')) return;
+
             const s = getDisplayScale();
             if (e.target.classList.contains('resizer')) {
                 isResizing = true;
