@@ -275,58 +275,164 @@
                 opacity: 1;
             }
         }
+
+        /* Payment Lock Styles */
+        #payment-lock-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .lock-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .lock-card h2 {
+            margin-bottom: 0px;
+        }
+
+        .payment-status-check {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            user-select: none;
+            color: var(--text-muted);
+        }
+
+        .payment-status-check input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .payment-status-check.checked {
+            color: var(--success);
+        }
+
+        .btn-lock {
+            background: var(--primary);
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .btn-lock.ready {
+            opacity: 1;
+            pointer-events: auto;
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+        }
+
+        .copy-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            margin-top: 10px;
+            cursor: pointer;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            transition: all 0.2s;
+        }
+
+        .copy-pill:active {
+            transform: scale(0.95);
+            background: var(--primary);
+            color: white;
+        }
     </style>
 </head>
 
 <body>
+    <div id="payment-lock-overlay" style="display: none;">
+        <div class="lock-card">
+            <div style="font-size: 3rem;">🔒</div>
+
+            <h2 style="color: var(--text);">กรุณาชำระเงินก่อน</h2>
+
+            <div
+                style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; width: 100%; border: 1px dashed var(--primary);">
+                <div style="font-size: 1.1rem; margin-bottom: 5px; color: var(--text);">ยอดที่ต้องชำระ: <span
+                        id="lock-bill-amount" style="font-weight: 700; color: lime; background-color: #000;">0</span>
+                    บาท</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">พร้อมเพย์
+                </div>
+
+
+                <img id="lock-qrcode"
+                    style="background: white; padding: 12px; border-radius: 12px; display: inline-block; width: 220px; height: 220px; cursor: pointer;"
+                    alt="PromptPay QR Code">
+
+                <div class="copy-pill" id="copy-pp-btn">
+                    <span>0988573074</span>
+                </div>
+            </div>
+
+            <label class="payment-status-check" id="pay-check-label">
+                <input type="checkbox" id="pay-confirm-check">
+                <span>ฉันโอนเงินเรียบร้อยแล้ว</span>
+            </label>
+            <div id="lock-timer-badge"
+                style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: var(--danger); padding: 4px 12px; border-radius: 99px; font-size: 0.8rem; font-weight: 600; margin-bottom: 5px;">
+                หมดอายุใน: <span id="lock-countdown">--:--:--</span></div>
+        </div>
+    </div>
 
     <div class="header">
         <div class="logo">PrivateSend</div>
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
-            <div class="safety-badge" onclick="toggleTooltip(event)">
-                🛡️ ปลอดภัย
-                <div class="tooltip" id="safety-tooltip">
-                    <b>Clean Privacy:</b>
-                    <hr> ลบข้อมูล GPS และข้อมูลที่ถูกฝังมาในไฟล์ให้แล้ว<br><br>
-                    <b>Clean Metadata:</b>
-                    <hr> ตรวจไม่พบว่าทำมาจากโปรแกรมตัดต่อรูป<br><br>
-                    <b>No Footprint:</b>
-                    <hr> ไฟล์สลายตัวอัตโนมัติ ไม่ทิ้งประวัติไว้บนอินเทอร์เน็ต
+            <div class="safety-badge" onclick="toggleTooltip(event)">🛡️ ปลอดภัย <div class="tooltip"
+                    id="safety-tooltip"><b>Clean Privacy:</b>
+                    <hr>ลบข้อมูล GPS และข้อมูลที่ถูกฝังมาในไฟล์ให้แล้ว<br><br><b>Clean Metadata:</b>
+                    <hr>ตรวจไม่พบว่าทำมาจากโปรแกรมตัดต่อรูป<br><br><b>No Footprint:</b>
+                    <hr>ไฟล์สลายตัวอัตโนมัติ ไม่ทิ้งประวัติไว้บนอินเทอร์เน็ต
                 </div>
             </div>
-            <div class="timer-badge" id="timer-badge">
-                <span id="countdown">--:--:--</span>
-            </div>
+            <div class="timer-badge" id="timer-badge"><span id="countdown">--:--:--</span></div>
         </div>
     </div>
-
     <div class="main-content" id="viewer-content">
-        <div class="image-container" id="img-box">
-            <img id="image" alt="กำลังเตรียมภาพของคุณ..." style="display: none;">
-            <div id="pdf-preview" class="pdf-preview-box">
-                <img id="pdf-icon" src="" alt="Icon">
+        <div class="image-container" id="img-box"><img id="image" alt="กำลังเตรียมภาพของคุณ..." style="display: none;">
+            <div id="pdf-preview" class="pdf-preview-box"><img id="pdf-icon" src="" alt="Icon">
                 <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted);">ไฟล์เอกสาร (คลิก)</div>
             </div>
             <div id="loading-text" style="color: var(--text-muted); text-align: center; padding: 20px;">
-                กำลังดาวน์โหลดไฟล์...<br>
-                <small>(หากรอนานเกินไป กรุณารีเฟรชหน้าจอ)</small>
-            </div>
+                กำลังดาวน์โหลดไฟล์...<br><small>(หากรอนานเกินไป กรุณารีเฟรชหน้าจอ)</small></div>
         </div>
-
         <div class="actions">
             <button id="download-btn" class="btn btn-primary">
                 <span>ดาวน์โหลดรูปภาพ</span>
             </button>
         </div>
-
         <p class="info-text">
             <strong>วิธีบันทึก:</strong><br>
             กดที่ปุ่มสีม่วง หรือ <u>กดค้างที่รูปภาพ</u> แล้วเลือก <strong>"บันทึกรูปภาพ"</strong>
         </p>
     </div>
-
-    <script>
-        const params = new URLSearchParams(window.location.search);
+    <script>const params = new URLSearchParams(window.location.search);
         const fileUrl = decodeURIComponent(params.get('url'));
         const expiryTimestamp = parseInt(params.get('exp')) || 0;
         const fileType = params.get('type') || 'img';
@@ -348,7 +454,6 @@
                     <p style="color: var(--text-muted); margin-bottom: 25px;">${msg}</p>
                     <div style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
                         ${showRawLink ? `<a href="${fileUrl}" target="_blank" class="btn btn-primary" style="display: inline-flex; width: auto; padding: 12px 30px;">เปิดดูไฟล์โดยตรง</a>` : ''}
-                        <a href="index.html" class="btn" style="color: var(--text-muted);">กลับหน้าหลัก</a>
                     </div>
                 </div>
             `;
@@ -379,7 +484,9 @@
                 pdfPreview.querySelector('div').textContent = fileType === 'pdf' ? "ไฟล์เอกสาร PDF (คลิก)" : "ไฟล์ทั่วไป (คลิก)";
                 downloadBtn.querySelector('span').textContent = 'ดาวน์โหลดไฟล์';
                 pdfPreview.onclick = () => window.open(downloadUrl, '_blank');
-            } else {
+            }
+
+            else {
                 // สำหรับรูปภาพ
                 const cacheBuster = previewUrl.includes('?') ? '&' : '?';
                 imageElement.src = previewUrl + cacheBuster + 'v=' + Date.now();
@@ -388,7 +495,9 @@
                     imageElement.style.display = 'block';
                     loadingText.style.display = 'none';
                     pdfPreview.style.display = 'none';
-                };
+                }
+
+                    ;
 
                 imageElement.onerror = () => {
                     // Fallback ถ้าโหลดพรีวิวไม่ขึ้น
@@ -398,18 +507,91 @@
                     loadingText.style.display = 'none';
                     pdfPreview.querySelector('div').textContent = "โหลดภาพพรีวิวไม่สำเร็จ (คลิกเพื่อเปิดดู)";
                     pdfPreview.onclick = () => window.open(downloadUrl, '_blank');
-                };
+                }
+
+                    ;
             }
 
             downloadBtn.onclick = () => {
                 window.location.href = downloadUrl;
                 downloadBtn.innerHTML = '<span>กำลังโหลดไฟล์...</span>';
                 downloadBtn.classList.add('btn-success');
+
                 setTimeout(() => {
                     downloadBtn.classList.remove('btn-success');
                     downloadBtn.innerHTML = `<span>${fileType === 'img' ? 'ดาวน์โหลดรูปภาพ' : 'ดาวน์โหลดไฟล์'}</span>`;
                 }, 3000);
             };
+
+            // Payment Lock Initialization
+            const priceParam = params.get('price');
+            const price = parseFloat(priceParam);
+
+            // Create a unique key for this file
+            const paymentKey = `ps_paid_${encodeURIComponent(fileUrl)}`;
+
+            // Check if paid and not expired
+            const storedExpiry = localStorage.getItem(paymentKey);
+            const isPaid = storedExpiry && parseInt(storedExpiry) > Date.now();
+
+            // Auto-Cleanup: Remove expired payment records from localStorage to save space
+            try {
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('ps_paid_')) {
+                        const expDate = parseInt(localStorage.getItem(key));
+                        if (!isNaN(expDate) && Date.now() > expDate) {
+                            localStorage.removeItem(key);
+                        }
+                    }
+                });
+            } catch (e) {
+                // Ignore errors if localStorage is restricted
+            }
+
+            if (priceParam && !isNaN(price) && price > 0 && !isPaid) {
+                const overlay = document.getElementById('payment-lock-overlay');
+                const lockBillAmt = document.getElementById('lock-bill-amount');
+                const lockQrBox = document.getElementById('lock-qrcode');
+                const check = document.getElementById('pay-confirm-check');
+                const unlockBtn = document.getElementById('unlock-btn');
+                const checkLabel = document.getElementById('pay-check-label');
+
+                if (overlay && lockQrBox) {
+                    overlay.style.display = 'flex';
+                    const amount = parseFloat(price).toFixed(2);
+                    lockBillAmt.textContent = parseFloat(price).toLocaleString();
+
+                    // Use promptpay.io for the QR Code image
+                    lockQrBox.src = `https://promptpay.io/0988573074/${amount}`;
+
+
+                    const copyBtn = document.getElementById('copy-pp-btn');
+                    if (copyBtn) {
+                        copyBtn.onclick = () => {
+                            navigator.clipboard.writeText("0988573074");
+                            const span = copyBtn.querySelector('span');
+                            const original = span.textContent;
+                            span.textContent = "✅ คัดลอกสำเร็จ!";
+                            setTimeout(() => span.textContent = original, 2000);
+                        };
+                    }
+
+                    check.onchange = () => {
+                        if (check.checked) {
+                            // Save with expiry time (use file expiry, or default to 24h if permanent)
+                            const expireTime = expiryTimestamp > 0 ? expiryTimestamp : (Date.now() + 86400000);
+                            localStorage.setItem(paymentKey, expireTime.toString());
+
+                            checkLabel.classList.add('checked');
+                            overlay.style.opacity = '0';
+                            overlay.style.transition = 'opacity 0.4s ease';
+                            setTimeout(() => {
+                                overlay.style.display = 'none';
+                            }, 400);
+                        }
+                    };
+                }
+            }
 
             if (expiryTimestamp) {
                 function updateCountdown() {
@@ -422,7 +604,11 @@
                     const h = String(Math.floor(timeLeft / 36e5)).padStart(2, '0');
                     const m = String(Math.floor((timeLeft % 36e5) / 6e4)).padStart(2, '0');
                     const s = String(Math.floor((timeLeft % 6e4) / 1e3)).padStart(2, '0');
-                    countdownElement.textContent = `ไฟล์จะลบใน: ${h}:${m}:${s}`;
+                    const timeStr = `${h}:${m}:${s}`;
+
+                    countdownElement.textContent = `ไฟล์จะลบใน: ${timeStr}`;
+                    const lockCountdown = document.getElementById('lock-countdown');
+                    if (lockCountdown) lockCountdown.textContent = timeStr;
                 }
                 updateCountdown();
                 setInterval(updateCountdown, 1000);
