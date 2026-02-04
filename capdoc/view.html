@@ -1235,12 +1235,37 @@
                 const params = new URLSearchParams(window.location.search);
                 const fileUrl = decodeURIComponent(params.get('url'));
                 // Use PHP download wrapper logic
-                const finalDownloadUrl = window.location.href.split('view.html')[0] + 'download.php?url=' + encodeURIComponent(fileUrl);
+                const finalDownloadUrl = fileUrl;
 
                 downloadBtn.onclick = () => {
-                    window.location.href = finalDownloadUrl;
-                    downloadBtn.innerHTML = '<span>กำลังโหลดไฟล์...</span>';
-                    setTimeout(() => { downloadBtn.innerHTML = '<span>🎉 ดาวน์โหลดรูปภาพ</span>'; }, 3000);
+                    const originalText = downloadBtn.innerHTML;
+                    downloadBtn.innerHTML = '<span>⏳ กำลังดาวน์โหลด...</span>';
+
+                    fetch(finalDownloadUrl)
+                        .then(response => response.blob())
+                        .then(blob => {
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.style.display = 'none';
+                            a.href = url;
+                            // Extract filename or use default
+                            const fileName = finalDownloadUrl.split('/').pop().split('?')[0] || 'image_download.jpg';
+                            a.download = fileName;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+
+                            downloadBtn.innerHTML = '<span>✅ ดาวน์โหลดสำเร็จ!</span>';
+                            setTimeout(() => { downloadBtn.innerHTML = originalText; }, 3000);
+                        })
+                        .catch(err => {
+                            console.error('Auto-download failed:', err);
+                            // Fallback: Open in new tab
+                            window.open(finalDownloadUrl, '_blank');
+                            downloadBtn.innerHTML = '<span>⚠️ เปิดไฟล์ในแท็บใหม่</span>';
+                            setTimeout(() => { downloadBtn.innerHTML = originalText; }, 3000);
+                        });
                 };
 
                 // Remove Lock Icon Style
