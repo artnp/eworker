@@ -950,9 +950,7 @@
                     imageElement.style.display = 'block';
                     loadingText.style.display = 'none';
                     pdfPreview.style.display = 'none';
-                }
-
-                    ;
+                };
 
                 imageElement.onerror = () => {
                     // Fallback ถ้าโหลดพรีวิวไม่ขึ้น
@@ -962,9 +960,7 @@
                     loadingText.style.display = 'none';
                     pdfPreview.querySelector('div').textContent = "โหลดภาพพรีวิวไม่สำเร็จ (คลิกเพื่อเปิดดู)";
                     pdfPreview.onclick = () => window.open(downloadUrl, '_blank');
-                }
-
-                    ;
+                };
             }
 
 
@@ -1127,7 +1123,70 @@
                 return payload + crc16(payload);
             }
 
-            if (priceParam && !isNaN(price) && price > 0) {
+            // === FREE DOWNLOAD MODE (price=0) ===
+            const isFreeMode = priceParam !== null && !isNaN(price) && price === 0;
+
+            if (isFreeMode) {
+                // Hide payment bar completely
+                const paymentBar = document.getElementById('payment-bar');
+                if (paymentBar) paymentBar.style.display = 'none';
+
+                // Remove all protection layers immediately
+                const guard = document.getElementById('guard-layer');
+                const watermark = document.getElementById('watermark');
+                const imgBox = document.getElementById('img-box');
+                const img = document.getElementById('image');
+                const badge = document.querySelector('.status-badge');
+
+                if (guard) guard.style.display = 'none';
+                if (watermark) watermark.style.display = 'none';
+                if (imgBox) {
+                    imgBox.oncontextmenu = null;
+                    imgBox.classList.remove('pay-lock');
+                }
+                if (img) img.style.pointerEvents = 'auto';
+                if (badge) badge.style.display = 'none';
+
+                // Remove lock icon from download button
+                const unlockStyle = document.createElement('style');
+                unlockStyle.innerHTML = '#download-btn::before { content: "" !important; display: none; }';
+                document.head.appendChild(unlockStyle);
+
+                // Set download button to direct download
+                downloadBtn.innerHTML = '<span>🎉 ดาวน์โหลดรูปภาพ</span>';
+                downloadBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                downloadBtn.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.4)';
+
+                downloadBtn.onclick = () => {
+                    const originalText = downloadBtn.innerHTML;
+                    downloadBtn.innerHTML = '<span>⏳ กำลังดาวน์โหลด...</span>';
+
+                    fetch(downloadUrl)
+                        .then(response => response.blob())
+                        .then(blob => {
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.style.display = 'none';
+                            a.href = url;
+                            const fileName = downloadUrl.split('/').pop().split('?')[0] || 'image_download.jpg';
+                            a.download = fileName;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+
+                            downloadBtn.innerHTML = '<span>✅ ดาวน์โหลดสำเร็จ!</span>';
+                            setTimeout(() => { downloadBtn.innerHTML = originalText; }, 3000);
+                        })
+                        .catch(err => {
+                            console.error('Auto-download failed:', err);
+                            window.open(downloadUrl, '_blank');
+                            downloadBtn.innerHTML = '<span>⚠️ เปิดไฟล์ในแท็บใหม่</span>';
+                            setTimeout(() => { downloadBtn.innerHTML = originalText; }, 3000);
+                        });
+                };
+
+            } else if (priceParam && !isNaN(price) && price > 0) {
                 const paymentBar = document.getElementById('payment-bar');
                 const paymentAmount = document.getElementById('payment-amount');
                 const qrDisplay = document.getElementById('qrcode-display');
@@ -1297,8 +1356,15 @@
             }
         };
 
-        // Auto-Fade Timer (5 Seconds)
+        // Auto-Fade Timer (10 Seconds) — SKIP if Free Mode
         setTimeout(() => {
+            const params2 = new URLSearchParams(window.location.search);
+            const priceVal = parseFloat(params2.get('price'));
+            const isFree = params2.get('price') !== null && !isNaN(priceVal) && priceVal === 0;
+
+            // Skip fade for free content
+            if (isFree) return;
+
             const checkbox = document.getElementById('payment-checkbox');
             const imgBox = document.getElementById('img-box');
 
