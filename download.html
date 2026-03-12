@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บันทึกงาน - PrivateSend</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Prompt:wght@300;400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --danger: #ef4444;
+            --success: #10b981;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.8);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', 'Prompt', sans-serif;
+            background: var(--bg);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(239, 68, 68, 0.1) 0px, transparent 50%);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        .header {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding: 0 8px;
+        }
+
+        .logo {
+            font-weight: 700;
+            font-size: 1.1rem;
+            letter-spacing: -0.025em;
+        }
+
+        .timer-badge {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+            padding: 6px 14px;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .safety-badge {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            padding: 6px 14px;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: help;
+            position: relative;
+        }
+
+        .tooltip {
+            visibility: hidden;
+            width: 260px;
+            background-color: #1e293b;
+            color: #fff;
+            text-align: left;
+            border-radius: 12px;
+            padding: 15px;
+            position: absolute;
+            z-index: 100;
+            top: 130%;
+            right: 0;
+            opacity: 0;
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+            font-weight: 400;
+            line-height: 1.5;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+        }
+
+        .tooltip.show {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(5px);
+        }
+
+        .tooltip::after {
+            content: "";
+            position: absolute;
+            bottom: 100%;
+            right: 20px;
+            margin-left: -5px;
+            border-width: 8px;
+            border-style: solid;
+            border-color: transparent transparent #1e293b transparent;
+        }
+
+        .safety-badge:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(5px);
+        }
+
+        .tooltip b {
+            color: var(--success);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .timer-badge span {
+            font-family: monospace;
+            font-size: 0.95rem;
+        }
+
+        .main-content {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            width: 100%;
+            max-width: 1200px;
+            /* Reduced max-width for better compactness */
+            padding: 20px 16px;
+            align-items: start;
+            margin: 0 auto;
+        }
+
+        /* 2-Column Layout for Desktop */
+        @media (min-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr 380px;
+                /* Fixed width for card, rest for content */
+                gap: 48px;
+                padding: 40px 24px;
+            }
+
+            .content-wrapper {
+                order: 1;
+                /* Move Content to Left */
+            }
+
+            .payment-bar {
+                order: 2;
+                /* Move Payment to Right */
+                position: sticky;
+                top: 24px;
+                margin: 0;
+                width: 100%;
+                max-width: 100%;
+            }
+        }
+
+        /* Mobile Layout */
+        @media (max-width: 1023px) {
+            .main-content {
+                gap: 20px;
+                padding: 16px;
+                grid-template-columns: 1fr;
+            }
+
+            .payment-bar {
+                order: 1;
+                /* Payment first */
+                width: 100%;
+                max-width: 100%;
+                /* Full Width on Mobile */
+                margin-bottom: 0;
+            }
+
+            .content-wrapper {
+                order: 2;
+                /* Content below */
+                gap: 20px;
+            }
+
+            /* Responsive Watermark */
+            .watermark-overlay {
+                font-size: 1.8rem;
+                letter-spacing: 4px;
+            }
+        }
+
+        .content-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            width: 100%;
+            min-width: 0;
+            /* Prevent flex overflow */
+        }
+
+        .image-container {
+            background: var(--card-bg);
+            padding: 8px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 150px;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        img {
+            max-width: 100%;
+            max-height: 70vh;
+            border-radius: 8px;
+            display: block;
+            border: none;
+        }
+
+        .pdf-preview-box {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            padding: 40px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            width: 100%;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .pdf-preview-box:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .pdf-preview-box img {
+            width: 80px;
+            height: auto;
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.2));
+            display: block;
+        }
+
+
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .info-text {
+            margin-top: 20px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-align: center;
+            line-height: 1.5;
+            padding: 0 20px;
+        }
+
+        .error-state {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .error-state h2 {
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+            color: var(--danger);
+        }
+
+        .expired {
+            animation: pulse 1s infinite;
+        }
+
+        .btn-success {
+            background: var(--success) !important;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+
+        .copy-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            padding: 8px 16px;
+            border-radius: 99px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .copy-pill:hover {
+            background: rgba(16, 185, 129, 0.2);
+        }
+
+        .copy-pill:active {
+            transform: scale(0.95);
+            background: #10b981;
+            color: white;
+        }
+
+        /* Payment Bar Styles (Modern & Premium) */
+        .payment-bar {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            background: linear-gradient(145deg, #1a1f35 0%, #0f1419 100%);
+            border-radius: 24px;
+            overflow: visible;
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            box-shadow:
+                0 20px 60px -10px rgba(0, 0, 0, 0.6),
+                0 0 0 1px rgba(99, 102, 241, 0.1) inset;
+        }
+
+        @media (min-width: 1024px) {
+            .payment-bar {
+                margin: 0;
+            }
+        }
+
+        .payment-header {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.15));
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+        }
+
+        .payment-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #6366f1 50%, transparent);
+        }
+
+        .payment-alert-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            animation: pulse-alert 2.5s ease-in-out infinite;
+            filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.5));
+        }
+
+        @keyframes pulse-alert {
+
+            0%,
+            100% {
+                transform: scale(1);
+                filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.4));
+            }
+
+            50% {
+                transform: scale(1.15);
+                filter: drop-shadow(0 0 20px rgba(251, 191, 36, 0.7));
+            }
+        }
+
+        .payment-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #f1f5f9;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            letter-spacing: 0.3px;
+        }
+
+        .payment-body {
+            padding: 32px 24px 28px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .qr-wrapper {
+            position: relative;
+            background: white;
+            padding: 16px;
+            border-radius: 20px;
+            box-shadow:
+                0 10px 40px rgba(99, 102, 241, 0.25),
+                0 0 0 4px rgba(99, 102, 241, 0.08);
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-block;
+        }
+
+        .qr-wrapper:hover {
+            transform: translateY(-6px);
+            box-shadow:
+                0 16px 56px rgba(99, 102, 241, 0.35),
+                0 0 0 4px rgba(99, 102, 241, 0.15);
+        }
+
+        .qr-wrapper:active {
+            transform: translateY(-2px);
+        }
+
+        .qr-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: 14px;
+        }
+
+        .qr-container img {
+            width: 200px;
+            height: 200px;
+            display: block;
+        }
+
+        .save-qr-hint {
+            position: absolute;
+            bottom: -32px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .qr-wrapper:hover .save-qr-hint {
+            opacity: 1;
+        }
+
+        .payment-amount {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin: 8px 0 6px;
+            letter-spacing: -0.5px;
+        }
+
+        .payment-amount span {
+            color: #34d399;
+            text-shadow: 0 0 20px rgba(52, 211, 153, 0.3);
+        }
+
+        .payment-note {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            font-weight: 300;
+        }
+
+        /* QR & Download Styles */
+        .qr-wrapper {
+            position: relative;
+            background: white;
+            padding: 12px;
+            border-radius: 16px;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
+            /* Soft glow */
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+
+        .qr-wrapper:hover {
+            transform: scale(1.02);
+        }
+
+        .save-qr-hint {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .qr-wrapper:hover .save-qr-hint {
+            opacity: 1;
+        }
+
+        .download-qr-btn {
+            margin-top: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin-top: 24px;
+        }
+
+        #download-btn {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none;
+            padding: 14px 32px;
+            border-radius: 99px;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #download-btn::before {
+            content: '🔒';
+            font-size: 1.1rem;
+        }
+
+        #download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
+        }
+
+        /* Security & Protection Styles */
+        .image-container {
+            user-select: none;
+            /* ห้ามลากคลุมดำ */
+            -webkit-user-select: none;
+            position: relative;
+            /* สำคัญสำหรับ overlay */
+        }
+
+        /* รูปภาพปกติห้ามแตะต้อง (จนกว่าจะจ่าย) */
+        .image-container img {
+            pointer-events: none;
+            /* ห้ามคลิก/ลากรูปโดยตรง */
+            -webkit-user-drag: none;
+        }
+
+        /* เกราะป้องกันคลิกขวา (Protective Overlay) */
+        .click-guard {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            /* อยู่เหนือรูป */
+            background: rgba(0, 0, 0, 0);
+            /* ใส */
+        }
+
+        /* ลายน้ำ (Watermark) */
+        .watermark-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 3rem;
+            font-weight: 800;
+            color: rgba(255, 255, 255, 0.15);
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 4;
+            text-transform: uppercase;
+            letter-spacing: 10px;
+        }
+
+        /* Status Badge Animation */
+        .status-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(8px);
+            padding: 8px 16px;
+            border-radius: 12px;
+            color: #fbbf24;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 10;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .download-qr-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-confirm-payment {
+            margin-top: 24px;
+            width: 100%;
+            background: rgba(16, 185, 129, 0.1);
+            color: #34d399;
+            border: 2px solid #34d399;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-confirm-payment:hover {
+            background: rgba(16, 185, 129, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-confirm-payment small {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 400;
+        }
+
+        /* Time-out Fade Effect */
+        #image,
+        #pdf-preview,
+        .watermark-overlay {
+            transition: all 1s ease;
+            /* Smooth transition back */
+        }
+
+        #img-box.pay-lock #image,
+        #img-box.pay-lock #pdf-preview {
+            opacity: 0.5 !important;
+            filter: blur(5px) grayscale(100%);
+        }
+
+        #img-box.pay-lock .watermark-overlay {
+            opacity: 0;
+            /* ซ่อนลายน้ำด้วย จะได้ไม่รก */
+        }
+    </style>
+
+
+<body>
+
+
+    <div class="header">
+        <div class="logo">PrivateSend</div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+            <div class="safety-badge" onclick="toggleTooltip(event)">🛡️ ปลอดภัย <div class="tooltip"
+                    id="safety-tooltip"><b>Clean Privacy:</b>
+                    <hr>ลบข้อมูล GPS และข้อมูลที่ถูกฝังมาในไฟล์ให้แล้ว<br><br><b>Clean Metadata:</b>
+                    <hr>ตรวจไม่พบว่าทำมาจากโปรแกรมตัดต่อรูป<br><br><b>No Footprint:</b>
+                    <hr>ไฟล์สลายตัวอัตโนมัติ ไม่ทิ้งประวัติไว้บนอินเทอร์เน็ต
+                </div>
+            </div>
+            <div class="timer-badge" id="timer-badge"><span id="countdown">--:--:--</span></div>
+        </div>
+    </div>
+
+    <div class="main-content" id="viewer-content">
+        <!-- Payment Bar -->
+        <div id="payment-bar" class="payment-bar" style="display: none;">
+            <div class="payment-header">
+                <div class="payment-alert-icon">🔔</div>
+                <div class="payment-title">กรุณาชำระค่าบริการ</div>
+            </div>
+            <div class="payment-body">
+                <div class="qr-wrapper" id="qr-wrapper" title="คลิกเพื่อบันทึก QR Code">
+                    <div class="qr-container"
+                        style="background: white; padding: 10px; display: flex; justify-content: center; align-items: center; min-height: 180px;">
+                        <div id="qrcode-display"></div>
+                    </div>
+                    <div class="save-qr-hint">บันทึก QR Code</div>
+                </div>
+
+                <div class="payment-amount">
+                    <font color="red">～</font> <span id="payment-amount">0</span> บาท
+                </div>
+                <div class="payment-note">สแกนจ่ายผ่านแอปธนาคารได้ทันที</div>
+
+                <!-- Confirmation Checkbox -->
+                <label class="confirm-checkbox-wrapper">
+                    <input type="checkbox" id="payment-checkbox" onchange="toggleDownload(this)">
+                    <div class="checkbox-box">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                    <div class="checkbox-text">
+                        <div class="main-text">ฉันโอนเงินเรียบร้อยแล้ว</div>
+                        <div class="sub-text">คลิกเพื่อยืนยันและปลดล็อค</div>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <style>
+            .confirm-checkbox-wrapper {
+                margin-top: 24px;
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                background: rgba(16, 185, 129, 0.05);
+                /* Very subtle green bg */
+                padding: 16px;
+                border-radius: 16px;
+                border: 1px solid rgba(16, 185, 129, 0.6);
+                cursor: pointer;
+                transition: all 0.2s ease;
+                user-select: none;
+            }
+
+            .confirm-checkbox-wrapper:hover {
+                background: rgba(16, 185, 129, 0.1);
+                border-color: rgba(16, 185, 129, 0.4);
+            }
+
+            .confirm-checkbox-wrapper input {
+                display: none;
+                /* Hide default checkbox */
+            }
+
+            /* Custom Checkbox Box */
+            .checkbox-box {
+                width: 24px;
+                height: 24px;
+                border-radius: 3px;
+                border: 1px solid #94a3b8;
+                /* Green border */
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: white;
+                transition: all 0.2s;
+            }
+
+            .checkbox-box svg {
+                width: 16px;
+                height: 16px;
+                color: white;
+                opacity: 0;
+                transform: scale(0.5);
+                transition: all 0.2s cubic-bezier(0.8, 0, 0.8, 1);
+            }
+
+            /* Checked State */
+            .confirm-checkbox-wrapper input:checked+.checkbox-box {
+                background: #10b981;
+                /* Green fill */
+                border-color: #10b981;
+            }
+
+            .confirm-checkbox-wrapper input:checked+.checkbox-box svg {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            .checkbox-text {
+                flex: 1;
+            }
+
+            .main-text {
+                font-weight: 600;
+                color: #e2e8f0;
+                font-size: 1rem;
+            }
+
+            .sub-text {
+                font-size: 0.75rem;
+                color: #94a3b8;
+                margin-top: 2px;
+            }
+        </style>
+
+        <!-- Content Wrapper -->
+        <div class="content-wrapper">
+            <!-- Added contextmenu prevention -->
+            <div class="image-container" id="img-box" oncontextmenu="return false;">
+                <!-- Security Layers -->
+                <div class="click-guard" id="guard-layer"></div>
+                <div class="watermark-overlay" id="watermark">PREVIEW ONLY</div>
+
+                <div class="status-badge">
+                    <span>⚠️ รอการชำระเงิน</span>
+                </div>
+                <img id="image" alt="กำลังเตรียมภาพของคุณ..." style="display: none;">
+                <div id="pdf-preview" class="pdf-preview-box"><img id="pdf-icon" src="" alt="Icon">
+                    <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted);">ไฟล์เอกสาร (คลิก)</div>
+                </div>
+                <div id="loading-text" style="color: var(--text-muted); text-align: center; padding: 20px;">
+                    กำลังดาวน์โหลดไฟล์...<br><small>(หากรอนานเกินไป กรุณารีเฟรชหน้าจอ)</small></div>
+            </div>
+            <div class="actions">
+                <button id="download-btn" class="btn btn-primary"
+                    onclick="window.scrollTo({top: 0, behavior: 'smooth'}); document.getElementById('payment-bar').style.animation='pulse-alert 0.5s';">
+                    <span>ชำระเงินเพื่อดาวน์โหลดรูปภาพ</span>
+                </button>
+            </div>
+            <p class="info-text">
+                <strong>วิธีบันทึก:</strong><br>
+                เมื่อชำระเงินแล้ว กดที่ปุ่ม "บันทึกรูปภาพ" ได้เลย
+            </p>
+        </div>
+    </div>
+    <script>const params = new URLSearchParams(window.location.search);
+        const fileUrl = params.get('d') ? atob(params.get('d')) : decodeURIComponent(params.get('url'));
+        const expiryTimestamp = parseInt(params.get('exp')) || 0;
+        const fileType = params.get('type') || 'img';
+
+        const countdownElement = document.getElementById('countdown');
+        const imageElement = document.getElementById('image');
+        const pdfPreview = document.getElementById('pdf-preview');
+        const pdfIcon = document.getElementById('pdf-icon');
+        const loadingText = document.getElementById('loading-text');
+        const downloadBtn = document.getElementById('download-btn');
+        const viewerContent = document.getElementById('viewer-content');
+        const timerBadge = document.getElementById('timer-badge');
+
+        function showError(title, msg, showRawLink = false) {
+            viewerContent.innerHTML = `
+                <div class="error-state">
+                    <h2 style="font-size: 3rem; margin-bottom: 20px;">${title === 'ลิงก์หมดอายุ' ? '⌛' : '⚠️'}</h2>
+                    <h2>${title}</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 25px;">${msg}</p>
+                    <div style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
+                        ${showRawLink ? `<a href="${fileUrl}" target="_blank" class="btn btn-primary" style="display: inline-flex; width: auto; padding: 12px 30px;">เปิดดูไฟล์โดยตรง</a>` : ''}
+                    </div>
+                </div>
+            `;
+            countdownElement.textContent = title;
+            countdownElement.style.color = 'var(--danger)';
+        }
+
+        if (!fileUrl || fileUrl === 'null' || fileUrl === 'undefined') {
+            showError('ไม่พบลิงก์', 'พารามิเตอร์ URL ไม่ถูกต้องหรือสูญหาย');
+        } else {
+            const isTempFile = fileUrl.includes('tempfile.org');
+            let previewUrl = fileUrl;
+            let downloadUrl = fileUrl;
+
+            // จัดการลิงก์สำหรับ TempFile
+            if (isTempFile) {
+                const parts = fileUrl.split('/').filter(Boolean);
+                const fileId = parts[parts.length - 1];
+                previewUrl = `https://tempfile.org/${fileId}/preview`;
+                downloadUrl = `https://tempfile.org/${fileId}/download`;
+            }
+
+            if (fileType === 'pdf' || fileType === 'file') {
+                document.title = "รับไฟล์ - PrivateSend";
+                pdfIcon.src = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5NGEzYjgiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xNCAyaC00YTIgMiAwIDAgMC0yIDJ2MTZhMiAyIDAgMCAwIDIgMmg4YTIgMiAwIDAgMCAyLTJWOGwtNi02eiIvPjxwYXRoIGQ9Ik0xNCAydjZoNnptLTYgNmg4bS04IDRoOG0tOCA0aDQiLz48L3N2Zz4=";
+                pdfPreview.style.display = 'flex';
+                loadingText.style.display = 'none';
+                pdfPreview.querySelector('div').textContent = fileType === 'pdf' ? "ไฟล์เอกสาร PDF (คลิก)" : "ไฟล์ทั่วไป (คลิก)";
+                downloadBtn.querySelector('span').textContent = 'ดาวน์โหลดไฟล์';
+                pdfPreview.onclick = () => window.open(downloadUrl, '_blank');
+            }
+
+            else {
+                // สำหรับรูปภาพ
+                const cacheBuster = previewUrl.includes('?') ? '&' : '?';
+                imageElement.src = previewUrl + cacheBuster + 'v=' + Date.now();
+
+                imageElement.onload = () => {
+                    imageElement.style.display = 'block';
+                    loadingText.style.display = 'none';
+                    pdfPreview.style.display = 'none';
+                    // เริ่มนับเวลาเบลอหลังภาพโหลดเสร็จ
+                    startFadeTimer();
+                };
+
+                imageElement.onerror = () => {
+                    // Fallback ถ้าโหลดพรีวิวไม่ขึ้น
+                    imageElement.style.display = 'none';
+                    pdfIcon.src = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2MzY2ZjEiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxyZWN0IHg9IjMiIHk9IjMiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgcng9IjIiIHJ5PSIyIi8+PGNpcmNsZSBjeD0iOC41IiBjeT0iOC41IiByPSIxLjUiLz48cGF0aCBkPSJNMjEgMTVMMTYgMTBMNSAyMSIvPjwvc3ZnPg==";
+                    pdfPreview.style.display = 'flex';
+                    loadingText.style.display = 'none';
+                    pdfPreview.querySelector('div').textContent = "โหลดภาพพรีวิวไม่สำเร็จ (คลิกเพื่อเปิดดู)";
+                    pdfPreview.onclick = () => window.open(downloadUrl, '_blank');
+                };
+            }
+
+
+
+
+            // Payment Bar Initialization
+            const priceParam = params.get('price');
+            const price = parseFloat(priceParam);
+
+            // Function to download QR Code (with CORS workaround)
+            window.downloadQR = async function () {
+                const qrImg = document.getElementById('payment-qrcode');
+                if (qrImg && qrImg.src) {
+                    try {
+                        // Fetch image as blob to bypass CORS restrictions
+                        const response = await fetch(qrImg.src);
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `QR_Code_${price}THB.png`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+
+                        // Clean up blob URL
+                        window.URL.revokeObjectURL(url);
+                    } catch (error) {
+                        console.error('Failed to download QR code:', error);
+                        // Fallback: open in new tab
+                        window.open(qrImg.src, '_blank');
+                    }
+                }
+            };
+
+            // Toggle Download Function (Called by Checkbox)
+            window.toggleDownload = function (checkbox) {
+                const isChecked = checkbox.checked;
+
+                // UI Elements
+                const guard = document.getElementById('guard-layer');
+                const watermark = document.getElementById('watermark');
+                const imgBox = document.getElementById('img-box');
+                const img = document.getElementById('image');
+                const badge = document.querySelector('.status-badge');
+
+                if (isChecked) {
+                    // === UNLOCK STATE ===
+
+                    // 1. Lock Checkbox (One-way)
+                    checkbox.disabled = true;
+                    checkbox.parentElement.style.opacity = '0.7';
+                    checkbox.parentElement.style.cursor = 'default';
+                    checkbox.parentElement.querySelector('.main-text').textContent = 'โอนเงินเรียบร้อยแล้ว';
+                    checkbox.parentElement.querySelector('.sub-text').textContent = 'ขอบคุณที่ใช้บริการ';
+
+                    // 2. Change Button to Download
+                    downloadBtn.innerHTML = '<span>🎉 ดาวน์โหลดรูปภาพ</span>';
+                    downloadBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                    downloadBtn.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.4)';
+
+                    // Set real download action
+                    downloadBtn.onclick = () => {
+                        window.location.href = downloadUrl;
+                        downloadBtn.innerHTML = '<span>กำลังโหลดไฟล์...</span>';
+                        setTimeout(() => {
+                            downloadBtn.innerHTML = '<span>🎉 ดาวน์โหลดรูปภาพ</span>';
+                        }, 3000);
+                    };
+
+                    // Remove Lock Icon
+                    const style = document.createElement('style');
+                    style.id = 'unlock-style';
+                    style.innerHTML = '#download-btn::before { content: "" !important; display: none; }';
+                    document.head.appendChild(style);
+
+                    // 3. Update Badge
+                    if (badge) {
+                        badge.innerHTML = '<span>✅ ชำระเงินแล้ว</span>';
+                        badge.style.color = '#34d399';
+                        badge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                        badge.style.animation = 'none';
+                    }
+
+                    // 4. Remove Protection
+                    if (guard) guard.style.display = 'none';
+                    if (watermark) watermark.style.display = 'none';
+                    if (imgBox) imgBox.oncontextmenu = null;
+                    if (img) img.style.pointerEvents = 'auto';
+
+                    // Scroll to button to show it's ready
+                    downloadBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                } else {
+                    // === LOCK STATE (Revert) ===
+
+                    // 1. Revert Button
+                    downloadBtn.innerHTML = '<span>ชำระเงินเพื่อดาวน์โหลดรูปภาพ</span>';
+                    downloadBtn.style.background = ''; // Revert to CSS default (purple)
+                    downloadBtn.style.boxShadow = '';
+
+                    // Revert action
+                    downloadBtn.onclick = () => {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        document.getElementById('payment-bar').style.animation = 'none';
+                        setTimeout(() => document.getElementById('payment-bar').style.animation = 'pulse-alert 0.5s', 10);
+                    };
+
+                    // Restore Lock Icon
+                    const style = document.getElementById('unlock-style');
+                    if (style) style.remove();
+
+                    // 2. Revert Badge
+                    if (badge) {
+                        badge.innerHTML = '<span>⚠️ รอการชำระเงิน</span>';
+                        badge.style.color = '#fbbf24';
+                        badge.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                        badge.style.animation = 'float 3s ease-in-out infinite';
+                    }
+
+                    // 3. Restore Protection
+                    if (guard) guard.style.display = 'block';
+                    if (watermark) watermark.style.display = 'block';
+                    if (imgBox) imgBox.oncontextmenu = () => false;
+                    if (img) img.style.pointerEvents = 'none';
+                }
+            };
+
+            // --- PromptPay Generator Logic ---
+            function crc16(data) {
+                let crc = 0xFFFF;
+                for (let i = 0; i < data.length; i++) {
+                    crc ^= data.charCodeAt(i) << 8;
+                    for (let j = 0; j < 8; j++) {
+                        if ((crc & 0x8000) > 0) crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
+                        else crc = (crc << 1) & 0xFFFF;
+                    }
+                }
+                return crc.toString(16).toUpperCase().padStart(4, '0');
+            }
+
+            function generatePayload(id, amount) {
+                let target = id.replace(/[^0-9]/g, '');
+                if (target.length === 10 && target.startsWith('0')) {
+                    target = '0066' + target.substring(1);
+                }
+
+                let merchantInfo = '0016A000000677010111' + '01' + ('00' + target.length).slice(-2) + target;
+                let merchantInfoLen = ('00' + merchantInfo.length).slice(-2);
+                let payload = '000201' + '010211' + '29' + merchantInfoLen + merchantInfo + '5802TH' + '5303764'; // 010211 = Reusable, 010212 = One-time
+
+                let amtVal = parseFloat(amount);
+                if (!isNaN(amtVal) && amtVal > 0) {
+                    let amtStr = amtVal.toFixed(2);
+                    payload += '54' + ('00' + amtStr.length).slice(-2) + amtStr;
+                }
+
+                payload += '6304';
+                return payload + crc16(payload);
+            }
+
+            // === FREE DOWNLOAD MODE (price=0) ===
+            const isFreeMode = priceParam !== null && !isNaN(price) && price === 0;
+
+            if (isFreeMode) {
+                // Hide payment bar completely
+                const paymentBar = document.getElementById('payment-bar');
+                if (paymentBar) paymentBar.style.display = 'none';
+
+                // Remove all protection layers immediately
+                const guard = document.getElementById('guard-layer');
+                const watermark = document.getElementById('watermark');
+                const imgBox = document.getElementById('img-box');
+                const img = document.getElementById('image');
+                const badge = document.querySelector('.status-badge');
+
+                if (guard) guard.style.display = 'none';
+                if (watermark) watermark.style.display = 'none';
+                if (imgBox) {
+                    imgBox.oncontextmenu = null;
+                    imgBox.classList.remove('pay-lock');
+                }
+                if (img) img.style.pointerEvents = 'auto';
+                if (badge) badge.style.display = 'none';
+
+                // Remove lock icon from download button
+                const unlockStyle = document.createElement('style');
+                unlockStyle.innerHTML = '#download-btn::before { content: "" !important; display: none; }';
+                document.head.appendChild(unlockStyle);
+
+                // Set download button to direct download
+                downloadBtn.innerHTML = '<span>🎉 ดาวน์โหลดรูปภาพ</span>';
+                downloadBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                downloadBtn.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.4)';
+
+                downloadBtn.onclick = () => {
+                    const originalText = downloadBtn.innerHTML;
+                    downloadBtn.innerHTML = '<span>⏳ กำลังดาวน์โหลด...</span>';
+
+                    fetch(downloadUrl)
+                        .then(response => response.blob())
+                        .then(blob => {
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.style.display = 'none';
+                            a.href = url;
+                            const fileName = downloadUrl.split('/').pop().split('?')[0] || 'image_download.jpg';
+                            a.download = fileName;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+
+                            downloadBtn.innerHTML = '<span>✅ ดาวน์โหลดสำเร็จ!</span>';
+                            setTimeout(() => { downloadBtn.innerHTML = originalText; }, 3000);
+                        })
+                        .catch(err => {
+                            console.error('Auto-download failed:', err);
+                            window.open(downloadUrl, '_blank');
+                            downloadBtn.innerHTML = '<span>⚠️ เปิดไฟล์ในแท็บใหม่</span>';
+                            setTimeout(() => { downloadBtn.innerHTML = originalText; }, 3000);
+                        });
+                };
+
+            } else if (priceParam && !isNaN(price) && price > 0) {
+                const paymentBar = document.getElementById('payment-bar');
+                const paymentAmount = document.getElementById('payment-amount');
+                const qrDisplay = document.getElementById('qrcode-display');
+
+                // Hardcoded PromptPay ID
+                const promptPayId = "0988573074";
+
+                if (paymentBar && qrDisplay) {
+                    paymentBar.style.display = 'block';
+                    paymentAmount.textContent = parseFloat(price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                    // Generate Payload
+                    const ppPayload = generatePayload(promptPayId, price);
+
+                    // Render QR
+                    qrDisplay.innerHTML = ""; // Clear old
+                    new QRCode(qrDisplay, {
+                        text: ppPayload,
+                        width: 160,
+                        height: 160,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.L
+                    });
+
+                    // Setup Download Click on Wrapper
+                    const qrWrapper = document.getElementById('qr-wrapper');
+                    if (qrWrapper) {
+                        qrWrapper.onclick = () => {
+                            const img = qrDisplay.querySelector('img');
+                            if (img && img.src) {
+                                const link = document.createElement('a');
+                                link.href = img.src;
+                                link.download = `QR_${price}THB.png`;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                            }
+                        };
+                    }
+                }
+            }
+
+            if (expiryTimestamp) {
+                function updateCountdown() {
+                    const now = Date.now();
+                    const timeLeft = expiryTimestamp - now;
+                    if (timeLeft <= 0) {
+                        showError('ลิงก์หมดอายุ', 'ไฟล์ของคุณถูกลบออกจากระบบเซิร์ฟเวอร์เรียบร้อยแล้ว');
+                        return;
+                    }
+                    const h = String(Math.floor(timeLeft / 36e5)).padStart(2, '0');
+                    const m = String(Math.floor((timeLeft % 36e5) / 6e4)).padStart(2, '0');
+                    const s = String(Math.floor((timeLeft % 6e4) / 1e3)).padStart(2, '0');
+                    const timeStr = `${h}:${m}:${s}`;
+
+                    countdownElement.textContent = `ไฟล์จะลบใน: ${timeStr}`;
+                }
+                updateCountdown();
+                setInterval(updateCountdown, 1000);
+            }
+        }
+
+        function toggleTooltip(e) {
+            e.stopPropagation();
+            document.getElementById('safety-tooltip').classList.toggle('show');
+        }
+
+        document.addEventListener('click', () => {
+            const t = document.getElementById('safety-tooltip');
+            if (t) t.classList.remove('show');
+        });
+
+
+        // --- FINAL LOGIC OVERRIDES ---
+
+        // Redefine toggleDownload to verify it handles the Fade Effect
+        window.toggleDownload = function (checkbox) {
+            const isChecked = checkbox.checked;
+
+            // UI Elements
+            const guard = document.getElementById('guard-layer');
+            const watermark = document.getElementById('watermark');
+            const imgBox = document.getElementById('img-box');
+            const img = document.getElementById('image');
+            const badge = document.querySelector('.status-badge');
+
+            if (isChecked) {
+                // === UNLOCK STATE ===
+
+                // 1. Lock Checkbox (One-way)
+                checkbox.disabled = true;
+                checkbox.parentElement.style.opacity = '0.7';
+                checkbox.parentElement.style.cursor = 'default';
+                checkbox.parentElement.querySelector('.main-text').textContent = 'โอนเงินเรียบร้อยแล้ว';
+                checkbox.parentElement.querySelector('.sub-text').textContent = 'ขอบคุณที่ใช้บริการ';
+
+                // 2. Change Button
+                const downloadBtn = document.getElementById('download-btn');
+                downloadBtn.innerHTML = '<span>🎉 ดาวน์โหลดรูปภาพ</span>';
+                downloadBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                downloadBtn.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.4)';
+
+                // Set download link
+                const params = new URLSearchParams(window.location.search);
+                const fileUrl = params.get('d') ? atob(params.get('d')) : decodeURIComponent(params.get('url'));
+                // Use PHP download wrapper logic
+                const finalDownloadUrl = fileUrl;
+
+                downloadBtn.onclick = () => {
+                    const originalText = downloadBtn.innerHTML;
+                    downloadBtn.innerHTML = '<span>⏳ กำลังดาวน์โหลด...</span>';
+
+                    fetch(finalDownloadUrl)
+                        .then(response => response.blob())
+                        .then(blob => {
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.style.display = 'none';
+                            a.href = url;
+                            // Extract filename or use default
+                            const fileName = finalDownloadUrl.split('/').pop().split('?')[0] || 'image_download.jpg';
+                            a.download = fileName;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+
+                            downloadBtn.innerHTML = '<span>✅ ดาวน์โหลดสำเร็จ!</span>';
+                            setTimeout(() => { downloadBtn.innerHTML = originalText; }, 3000);
+                        })
+                        .catch(err => {
+                            console.error('Auto-download failed:', err);
+                            // Fallback: Open in new tab
+                            window.open(finalDownloadUrl, '_blank');
+                            downloadBtn.innerHTML = '<span>⚠️ เปิดไฟล์ในแท็บใหม่</span>';
+                            setTimeout(() => { downloadBtn.innerHTML = originalText; }, 3000);
+                        });
+                };
+
+                // Remove Lock Icon Style
+                const style = document.createElement('style');
+                style.id = 'unlock-style-final';
+                style.innerHTML = '#download-btn::before { content: "" !important; display: none; }';
+                document.head.appendChild(style);
+
+                // 3. Update Badge
+                if (badge) {
+                    badge.innerHTML = '<span>✅ ชำระเงินแล้ว</span>';
+                    badge.style.color = '#34d399';
+                    badge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                    badge.style.animation = 'none';
+                }
+
+                // 4. Remove ALL Protections (Including Fade)
+                if (guard) guard.style.display = 'none';
+                if (watermark) watermark.style.display = 'none';
+                if (imgBox) imgBox.oncontextmenu = null;
+                if (img) img.style.pointerEvents = 'auto';
+
+                // *** REMOVE FADE CLASS ***
+                if (imgBox) imgBox.classList.remove('pay-lock');
+
+                // Scroll to button
+                downloadBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            }
+        };
+
+        // Auto-Fade Timer — รอภาพโหลดเสร็จก่อน แล้วค่อยนับ 10 วิ
+        function startFadeTimer() {
+            setTimeout(() => {
+                const params2 = new URLSearchParams(window.location.search);
+                const priceVal = parseFloat(params2.get('price'));
+                const isFree = params2.get('price') !== null && !isNaN(priceVal) && priceVal === 0;
+
+                // Skip fade for free content
+                if (isFree) return;
+
+                const checkbox = document.getElementById('payment-checkbox');
+                const imgBox = document.getElementById('img-box');
+
+                // Only fade if NOT already checked
+                if (checkbox && !checkbox.checked && imgBox) {
+                    imgBox.classList.add('pay-lock');
+                    // Scroll help for mobile user to see payment
+                    if (window.innerWidth < 1024) {
+                        document.getElementById('payment-bar').scrollIntoView({ behavior: 'smooth' });
+                    }
+                }
+            }, 10000);
+        }
+
+    </script>
+</body>
+
+</html>
