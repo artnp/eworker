@@ -159,20 +159,18 @@
         /* 2-Column Layout for Desktop */
         @media (min-width: 1024px) {
             .main-content {
-                grid-template-columns: 1fr 380px;
-                /* Fixed width for card, rest for content */
-                gap: 48px;
+                grid-template-columns: 1fr 420px;
+                gap: 40px;
                 padding: 40px 24px;
+                max-width: 1100px;
             }
 
             .content-wrapper {
                 order: 1;
-                /* Move Content to Left */
             }
 
             .payment-bar {
                 order: 2;
-                /* Move Payment to Right */
                 position: sticky;
                 top: 24px;
                 margin: 0;
@@ -239,7 +237,9 @@
 
         img {
             max-width: 100%;
-            max-height: 70vh;
+            max-height: 45vh;
+            /* Reduced to ensure it fits on one screen without scrolling */
+            object-fit: contain;
             border-radius: 8px;
             display: block;
             border: none;
@@ -349,7 +349,7 @@
         }
 
         /* Payment Bar Styles (Modern & Premium) */
-        .payment-bar {
+        .image-container {
             width: 100%;
             max-width: 500px;
             margin: 0 auto;
@@ -360,6 +360,25 @@
             box-shadow:
                 0 20px 60px -10px rgba(0, 0, 0, 0.6),
                 0 0 0 1px rgba(99, 102, 241, 0.1) inset;
+            position: relative;
+            z-index: 10;
+        }
+
+        .payment-bar {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow:
+                0 25px 50px -12px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
+            width: 92%;
+            max-width: 440px;
+            overflow: visible;
+            position: relative;
+            z-index: 30;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         @media (min-width: 1024px) {
@@ -400,6 +419,19 @@
             font-size: 1.4rem;
             animation: pulse-alert 2.5s ease-in-out infinite;
             filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.5));
+        }
+
+        .step-circle {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 800;
+            position: relative;
+            z-index: 50;
         }
 
         @keyframes pulse-alert {
@@ -444,6 +476,7 @@
             cursor: pointer;
             transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
             display: inline-block;
+            z-index: 12;
         }
 
         .qr-wrapper:hover {
@@ -562,169 +595,472 @@
         }
 
         #download-btn {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            background: linear-gradient(135deg, #10b981, #059669);
             border: none;
-            padding: 14px 32px;
+            padding: 16px 36px;
             border-radius: 99px;
             color: white;
-            font-weight: 600;
-            font-size: 1rem;
+            font-weight: 700;
+            font-size: 1.1rem;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
-            gap: 10px;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+            gap: 12px;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.2);
             position: relative;
-            overflow: hidden;
+            overflow: visible;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        #download-btn::before {
-            content: '🔒';
-            font-size: 1.1rem;
+        /* Zoom / Lightbox */
+        .lightbox-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 99999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            cursor: zoom-out;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .lightbox-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .lightbox-img {
+            max-width: 95%;
+            max-height: 95%;
+            border-radius: 12px;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+
+        .zoom-hint {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.75);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 24px;
+            font-size: 0.85rem;
+            display: none;
+            /* Hidden by default, shown after image load */
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            pointer-events: none;
+            z-index: 20;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            white-space: nowrap;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         }
 
         #download-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.7), inset 0 0 15px rgba(255, 255, 255, 0.3);
         }
 
-        /* Security & Protection Styles */
-        .image-container {
-            user-select: none;
-            /* ห้ามลากคลุมดำ */
-            -webkit-user-select: none;
-            position: relative;
-            /* สำคัญสำหรับ overlay */
+        #download-btn::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(135deg, #10b981, #34d399, #059669);
+            z-index: -1;
+            filter: blur(10px);
+            opacity: 0;
+            transition: opacity 0.3s;
+            border-radius: 99px;
         }
 
-        /* รูปภาพปกติห้ามแตะต้อง (จนกว่าจะจ่าย) */
-        .image-container img {
-            pointer-events: none;
-            /* ห้ามคลิก/ลากรูปโดยตรง */
-            -webkit-user-drag: none;
+        #download-btn:hover::before {
+            opacity: 1;
         }
 
-        /* เกราะป้องกันคลิกขวา (Protective Overlay) */
-        .click-guard {
+        .final-download-container {
+            margin-top: 25px;
+            padding: 20px;
+            background: rgba(16, 185, 129, 0.05);
+            border: 1.5px dashed rgba(16, 185, 129, 0.3);
+            border-radius: 24px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        .step-circle-standalone {
+            position: absolute;
+            bottom: 35px;
+            right: 5px;
+            width: 32px;
+            height: 32px;
+            background: white;
+            color: #ef4444;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            z-index: 20;
+            border: 2px solid #ef4444;
+            animation: bounce-right 1.5s infinite alternate;
+        }
+
+        .guard-layer {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 5;
-            /* อยู่เหนือรูป */
             background: rgba(0, 0, 0, 0);
-            /* ใส */
+            z-index: 15;
+            cursor: not-allowed;
         }
 
-        /* ลายน้ำ (Watermark) */
-        .watermark-overlay {
+        .watermark {
             position: absolute;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%) rotate(-45deg);
-            font-size: 3rem;
-            font-weight: 800;
-            color: rgba(255, 255, 255, 0.15);
+            transform: translate(-50%, -50%) rotate(-30deg);
+            color: rgba(255, 255, 255, 0.25);
+            font-size: 3.2rem;
+            font-weight: 900;
             white-space: nowrap;
             pointer-events: none;
-            z-index: 4;
+            z-index: 10;
             text-transform: uppercase;
-            letter-spacing: 10px;
+            letter-spacing: 5px;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.4);
         }
 
-        /* Status Badge Animation */
-        .status-badge {
+        .pay-lock #image {
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        .image-wrapper {
+            position: relative;
+            display: inline-block;
+            margin: 0 auto;
+        }
+
+        .step-circle-standalone {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(15, 23, 42, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(8px);
-            padding: 8px 16px;
-            border-radius: 12px;
-            color: #fbbf24;
-            font-weight: 600;
-            font-size: 0.85rem;
+            bottom: 10px;
+            right: 10px;
+            width: 32px;
+            height: 32px;
+            background: white;
+            color: #ef4444;
+            border-radius: 50%;
             display: flex;
             align-items: center;
-            gap: 8px;
-            z-index: 10;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            animation: float 3s ease-in-out infinite;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            z-index: 50;
+            border: 2px solid #ef4444;
+            animation: bounce-right 1.5s infinite alternate;
         }
 
-        @keyframes float {
+        /* Animated Arrows */
+        @keyframes bounce-right {
 
             0%,
             100% {
-                transform: translateY(0);
+                transform: translateX(0);
             }
 
             50% {
-                transform: translateY(-5px);
+                transform: translateX(5px);
             }
         }
 
-        .download-qr-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border-color: rgba(255, 255, 255, 0.2);
+        @keyframes bounce-left {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            50% {
+                transform: translateX(-5px);
+            }
         }
 
-        .btn-confirm-payment {
-            margin-top: 24px;
-            width: 100%;
-            background: rgba(16, 185, 129, 0.1);
-            color: #34d399;
-            border: 2px solid #34d399;
-            padding: 12px;
-            border-radius: 12px;
-            font-weight: 700;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            flex-direction: column;
+        .arrow-bounce-right {
+            display: inline-block;
+            animation: bounce-right 1s infinite alternate;
+        }
+
+        .arrow-bounce-left {
+            display: inline-block;
+            animation: bounce-left 1s infinite alternate;
+        }
+
+        /* Step Circles */
+        .step-circle {
+            display: inline-flex;
             align-items: center;
-            gap: 4px;
-            position: relative;
-            overflow: hidden;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            background-color: #ef4444;
+            color: white;
+            border-radius: 50%;
+            font-size: 1rem;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+            margin: 0 6px;
+            z-index: 10000 !important;
         }
 
-        .btn-confirm-payment:hover {
-            background: rgba(16, 185, 129, 0.2);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+        /* Tornado Animation */
+        @keyframes tornado-spin {
+            0% {
+                transform: scale(1) rotateY(0deg);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(0.5) rotateY(720deg);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(0) rotateY(1440deg);
+                opacity: 0;
+            }
         }
 
-        .btn-confirm-payment small {
-            font-size: 0.75rem;
-            color: rgba(255, 255, 255, 0.7);
-            font-weight: 400;
+        .tornado-active {
+            animation: tornado-spin 1.5s ease-in forwards !important;
         }
 
-        /* Time-out Fade Effect */
-        #image,
-        #pdf-preview,
-        .watermark-overlay {
-            transition: all 1s ease;
-            /* Smooth transition back */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        #img-box.pay-lock #image,
-        #img-box.pay-lock #pdf-preview {
-            opacity: 0.5 !important;
-            filter: blur(5px) grayscale(100%);
+        .fade-out {
+            animation: fadeOut 0.5s ease-out forwards;
         }
 
-        #img-box.pay-lock .watermark-overlay {
-            opacity: 0;
-            /* ซ่อนลายน้ำด้วย จะได้ไม่รก */
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
+
+        .fade-in-msg {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        /* Visual Connect Line */
+        .visual-connector {
+            display: none;
+        }
+
+        @media (min-width: 1024px) {
+            .main-content {
+                position: relative;
+            }
+
+            .visual-connector {
+                display: flex;
+                position: absolute;
+                top: 40%;
+                left: calc(100% - 380px - 24px);
+                width: 100px;
+                transform: translateX(-50%);
+                align-items: center;
+                justify-content: center;
+                z-index: 10;
+            }
+
+            .visual-connector::before {
+                content: '';
+                position: absolute;
+                width: 100%;
+                height: 2px;
+                background: linear-gradient(to right, #ef4444 50%, transparent 50%);
+                background-size: 15px 2px;
+                z-index: -1;
+                animation: dash-flow 0.5s linear infinite;
+            }
+
+            @keyframes dash-flow {
+                0% {
+                    background-position: 0 0;
+                }
+
+                100% {
+                    background-position: 15px 0;
+                }
+            }
+
+            .connector-text {
+                background: var(--bg);
+                color: #ef4444;
+                font-size: 0.75rem;
+                padding: 4px;
+                border-radius: 4px;
+                font-weight: 600;
+                text-align: center;
+                line-height: 1.2;
+            }
+        }
+
+        @keyframes scan-line {
+            0% {
+                top: 0%;
+                opacity: 0;
+            }
+
+            15% {
+                opacity: 1;
+                box-shadow: 0 0 10px 2px rgba(239, 68, 68, 0.8);
+            }
+
+            85% {
+                opacity: 1;
+                box-shadow: 0 0 10px 2px rgba(239, 68, 68, 0.8);
+            }
+
+            100% {
+                top: 100%;
+                opacity: 0;
+            }
+        }
+
+        @keyframes bounce-updown {
+            0% {
+                transform: translateY(0);
+            }
+
+            100% {
+                transform: translateY(6px);
+            }
+        }
+
+        /* Bank Icon Styles from thai-banks-logo */
+        .bank-logo {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            display: inline-block;
+            flex: 0 0 auto;
+            transition: transform 0.2s;
+        }
+
+        .bank-logo:hover {
+            transform: scale(1.1);
+        }
+
+        .bank-kbank {
+            background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/KBANK.png');
+        }
+
+        .bank-scb {
+            background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/SCB.png');
+        }
+
+        .bank-bay {
+            background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/BAY.png');
+        }
+
+        .bank-bbl {
+            background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/BBL.png');
+        }
+
+        .bank-ktb {
+            background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/KTB.png');
+        }
+
+        .bank-gsb {
+            background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/GSB.png');
+        }
+
+        .bank-ttb {
+            background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/TTB.png');
+        }
+
+        .bank-uob {
+            background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/UOB.png');
+        }
+
+        @keyframes pulse-heart {
+            0% {
+                transform: scale(1);
+                filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.5));
+            }
+
+            100% {
+                transform: scale(1.2);
+                filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.8));
+            }
+        }
+
+        .pulse-red-heart {
+            display: inline-block;
+            color: #ef4444;
+            font-size: 3rem;
+            animation: pulse-heart 0.8s infinite alternate;
+            margin-top: 5px;
         }
     </style>
-
 
 <body>
 
@@ -744,151 +1080,171 @@
     </div>
 
     <div class="main-content" id="viewer-content">
+
         <!-- Payment Bar -->
         <div id="payment-bar" class="payment-bar" style="display: none;">
             <div class="payment-header">
                 <div class="payment-alert-icon">🔔</div>
                 <div class="payment-title">กรุณาชำระค่าบริการ</div>
             </div>
-            <div class="payment-body">
+            <div class="payment-body" style="position: relative;">
+                <canvas id="payment-confetti-canvas"
+                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;"></canvas>
+                <div id="payment-amount-box" class="payment-amount"
+                    style="position: relative; margin-bottom: 15px; display: inline-block; padding: 0 10px;">
+                    <span class="step-circle"
+                        style="position: absolute; top: 0px; left: -30px; background: #3b82f6; color: white; border: 2px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); animation: bounce-left 1.5s infinite alternate;">2</span>
+                    <div
+                        style="position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: #ef4444; animation: scan-line 1.5s infinite ease-in-out; z-index: 5; border-radius: 50%;">
+                    </div>
+                    <span id="payment-amount" style="position: relative; z-index: 1;">0.00</span> <span
+                        style="position: relative; z-index: 1;">THB</span>
+                </div>
                 <div class="qr-wrapper" id="qr-wrapper" title="คลิกเพื่อบันทึก QR Code">
                     <div class="qr-container"
                         style="background: white; padding: 10px; display: flex; justify-content: center; align-items: center; min-height: 180px;">
                         <div id="qrcode-display"></div>
                     </div>
+                    <div class="payment-note" id="payment-note-txt"
+                        style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; background: rgba(255,255,255,0.08); padding: 8px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); width: max-content; margin-left: auto; margin-right: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+                        <div style="display: flex; gap: 9px; align-items: center; padding: 2px 0;">
+                            <div class="bank-logo bank-kbank" title="Kasikorn Bank"></div>
+                            <div class="bank-logo bank-scb" title="Siam Commercial Bank"></div>
+                            <div class="bank-logo bank-bay" title="Krungsri Bank"></div>
+                            <div class="bank-logo bank-bbl" title="Bangkok Bank"></div>
+                            <div class="bank-logo bank-ktb" title="Krungthai Bank"></div>
+                            <div class="bank-logo bank-ttb" title="TTB Bank"></div>
+                            <div class="bank-logo bank-gsb" title="GSB Bank"></div>
+                            <span
+                                style="font-weight: 800; color: rgba(226,232,240,0.9); font-size: 1.05rem; margin-left: 2px;">+</span>
+                        </div>
+                    </div>
                     <div class="save-qr-hint">บันทึก QR Code</div>
                 </div>
 
-                <div class="payment-amount">
-                    <font color="red">～</font> <span id="payment-amount">0</span> บาท
-                </div>
-                <div class="payment-note">สแกนจ่ายผ่านแอปธนาคารได้ทันที</div>
+                <div id="checkbox-hint-wrapper"
+                    style="position: relative; width: 100%; margin-top: 20px; overflow: visible; z-index: 1000;">
+                    <button id="paid-btn"
+                        style="position: relative; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #f8fafc; padding: 12px 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; overflow: visible;"
+                        onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'"
+                        onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'"
+                        onclick="document.getElementById('paid-checkbox').checked = true; setTimeout(animateTornado, 300)">
+                        <span class="step-circle"
+                            style="position: absolute; top: -12px; left: -12px; background: #64748b; color: white; border: 2px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); animation: bounce-right 1.5s infinite alternate; z-index: 60;">3</span>
 
-                <!-- Confirmation Checkbox -->
-                <label class="confirm-checkbox-wrapper">
-                    <input type="checkbox" id="payment-checkbox" onchange="toggleDownload(this)">
-                    <div class="checkbox-box">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
+                        <div
+                            style="position: relative; display: flex; align-items: center; justify-content: center; z-index: 2;">
+                            <div id="checkbox-hint"
+                                style="position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; z-index: 100000; width: max-content; pointer-events: none;">
+                                <span
+                                    style="font-size: 0.75rem; color: white; background: #ef4444; padding: 3px 10px; border-radius: 12px; margin-bottom: 0px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">กดตรงนี้</span>
+                                <span
+                                    style="font-size: 1.5rem; line-height: 1; animation: bounce-updown 0.8s infinite alternate;">👇</span>
+                            </div>
+                            <input type="checkbox" id="paid-checkbox"
+                                style="width: 28px; height: 28px; accent-color: #34d399; pointer-events: none; margin-top: 2px; cursor: pointer;">
+                        </div>
+
+                        <span style="font-size: 0.9rem; white-space: nowrap;">ฉันโอนแล้วนะ (*ไม่ต้องส่งสลิป)</span>
+                    </button>
+                </div>
+
+                <!-- Free Mode Container -->
+                <div id="free-mode-container"
+                    style="display: none; flex-direction: column; align-items: center; justify-content: center; width: 100%; min-height: 250px; position: relative;">
+                    <div
+                        style="z-index: 1; text-align: center; color: #10b981; padding: 20px; background: rgba(16,185,129,0.1); border-radius: 20px; border: 1px solid rgba(16,185,129,0.2); animation: fadeIn 0.8s ease-out forwards; width: 90%;">
+                        <div
+                            style="font-size: 1.4rem; font-weight: bold; margin-bottom: 0px; background: linear-gradient(to right, #10b981, #34d399); -webkit-background-clip: text; background-clip: text; color: transparent;">
+                            ขอบคุณที่ใช้บริการ</div>
+                        <div style="font-size: 2.5rem; animation: pulse 5s infinite;">💖</div>
                     </div>
-                    <div class="checkbox-text">
-                        <div class="main-text">ฉันโอนเงินเรียบร้อยแล้ว</div>
-                        <div class="sub-text">คลิกเพื่อยืนยันและปลดล็อค</div>
+                </div>
+
+                <!-- Final Action Container (Shared) -->
+                <div id="final-action-wrapper" style="display: none; width: 100%;">
+                    <div class="final-download-container">
+                        <div style="color: #34d399; font-size: 0.85rem; font-weight: 600; margin-bottom: -5px;">
+                            ไฟล์ของคุณพร้อมแล้ว! ✨</div>
+                        <button id="download-btn" class="btn btn-primary"
+                            style="position: relative; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); width: 85%; padding: 16px 20px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                            <span class="arrow-bounce-right" style="font-size: 1.2rem; line-height: 1;">👉</span>💾
+                            <span style="font-size: 1.15rem; font-weight: 800;">บันทึกรูปภาพ</span>
+                        </button>
+                        <div
+                            style="margin-top: 15px; text-align: left; background: rgba(0,0,0,0.15); border: 1px dashed rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 18px; color: #94a3b8; font-size: 0.85rem; width: 95%; max-width: 400px; line-height: 1.5; margin-left: auto; margin-right: auto;">
+                            <p
+                                style="margin: 0; color: #10b981; font-weight: 700; margin-bottom: 8px; font-size: 0.9rem;">
+                                * หากดาวน์โหลดไม่ได้</p>
+                            <div
+                                style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px; white-space: nowrap;">
+                                <span>-</span>
+                                <div><b>มือถือ:</b> ให้กดนิ้วจิ้มค้างที่ภาพ</div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px; white-space: nowrap;">
+                                <span>-</span>
+                                <div><b>คอมพิวเตอร์:</b> กดคลิกขวาที่ภาพ</div>
+                            </div>
+                        </div>
                     </div>
-                </label>
+                </div>
+
+                <div id="thank-you-msg" class="thank-you-text"
+                    style="display:none; text-align: center; color: #10b981; padding: 30px 10px; position: relative; min-height: 200px; flex-direction: column; align-items: center; justify-content: center;">
+                    <div style="z-index: 1; position: relative; width: 100%;">
+                        <div id="thx-content-wrapper">
+                            <div
+                                style="font-size: 1.2rem; margin-bottom: 5px; font-weight: bold; background: linear-gradient(to right, #10b981, #34d399); -webkit-background-clip: text; background-clip: text; color: transparent;">
+                                ขอบคุณที่ใช้บริการ</div>
+                            <div style="font-size: 2.5rem; animation: pulse 5s infinite;">💖</div>
+                        </div>
+                        <div id="final-action-placeholder"></div>
+                        <button id="show-slip-again-btn" onclick="showSlipAgain()"
+                            style="margin-top: 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 8px 16px; border-radius: 99px; cursor: pointer; font-size: 0.85rem; transition: 0.3s; display: inline-block;">
+                            🔄 โชว์สลิปโอนเงินอีกครั้ง
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <style>
-            .confirm-checkbox-wrapper {
-                margin-top: 24px;
-                display: flex;
-                align-items: center;
-                gap: 16px;
-                background: rgba(16, 185, 129, 0.05);
-                /* Very subtle green bg */
-                padding: 16px;
-                border-radius: 16px;
-                border: 1px solid rgba(16, 185, 129, 0.6);
-                cursor: pointer;
-                transition: all 0.2s ease;
-                user-select: none;
-            }
-
-            .confirm-checkbox-wrapper:hover {
-                background: rgba(16, 185, 129, 0.1);
-                border-color: rgba(16, 185, 129, 0.4);
-            }
-
-            .confirm-checkbox-wrapper input {
-                display: none;
-                /* Hide default checkbox */
-            }
-
-            /* Custom Checkbox Box */
-            .checkbox-box {
-                width: 24px;
-                height: 24px;
-                border-radius: 3px;
-                border: 1px solid #94a3b8;
-                /* Green border */
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: white;
-                transition: all 0.2s;
-            }
-
-            .checkbox-box svg {
-                width: 16px;
-                height: 16px;
-                color: white;
-                opacity: 0;
-                transform: scale(0.5);
-                transition: all 0.2s cubic-bezier(0.8, 0, 0.8, 1);
-            }
-
-            /* Checked State */
-            .confirm-checkbox-wrapper input:checked+.checkbox-box {
-                background: #10b981;
-                /* Green fill */
-                border-color: #10b981;
-            }
-
-            .confirm-checkbox-wrapper input:checked+.checkbox-box svg {
-                opacity: 1;
-                transform: scale(1);
-            }
-
-            .checkbox-text {
-                flex: 1;
-            }
-
-            .main-text {
-                font-weight: 600;
-                color: #e2e8f0;
-                font-size: 1rem;
-            }
-
-            .sub-text {
-                font-size: 0.75rem;
-                color: #94a3b8;
-                margin-top: 2px;
-            }
-        </style>
+        <!-- checkbox styles removed, scan-detect styles are in main <style> -->
 
         <!-- Content Wrapper -->
         <div class="content-wrapper">
-            <!-- Added contextmenu prevention -->
-            <div class="image-container" id="img-box" oncontextmenu="return false;">
-                <!-- Security Layers -->
-                <div class="click-guard" id="guard-layer"></div>
-                <div class="watermark-overlay" id="watermark">PREVIEW ONLY</div>
+            <!-- Contextmenu enabled to allow long pressing -->
+            <div class="image-container" id="img-box" oncontextmenu="return false;"
+                style="padding: 0; flex-direction: column; position: relative; z-index: 10;">
+                <div
+                    style="padding: 20px; display: flex; justify-content: center; align-items: center; width: 100%; min-height: 150px; position: relative;">
+                    <div id="image-zoom-container" class="image-wrapper" onclick="openLightbox()"
+                        style="cursor: default; pointer-events: none;">
+                        <img id="image" alt="กำลังเตรียมภาพของคุณ..."
+                            style="display: none; pointer-events: none; max-width: 100%; border-radius: 8px;">
+                        <div id="guard-layer" class="guard-layer" style="display: none;"></div>
+                        <div id="watermark" class="watermark" style="display: none;">ภาพตัวอย่าง</div>
+                        <span id="step-1-circle" class="step-circle-standalone">1</span>
+                        <div id="zoom-hint" class="zoom-hint" style="display: none;">🔍 ขยายภาพ</div>
+                    </div>
 
-                <div class="status-badge">
-                    <span>⚠️ รอการชำระเงิน</span>
+                    <div id="pdf-preview" class="pdf-preview-box"><img id="pdf-icon" src="" alt="Icon">
+                        <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted);">ไฟล์เอกสาร (คลิก)
+                        </div>
+                    </div>
+
+                    <div id="loading-text" style="color: var(--text-muted); text-align: center; padding: 20px;">
+                        กำลังดาวน์โหลดไฟล์...<br><small>(หากรอนานเกินไป กรุณารีเฟรชหน้าจอ)</small></div>
                 </div>
-                <img id="image" alt="กำลังเตรียมภาพของคุณ..." style="display: none;">
-                <div id="pdf-preview" class="pdf-preview-box"><img id="pdf-icon" src="" alt="Icon">
-                    <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted);">ไฟล์เอกสาร (คลิก)</div>
-                </div>
-                <div id="loading-text" style="color: var(--text-muted); text-align: center; padding: 20px;">
-                    กำลังดาวน์โหลดไฟล์...<br><small>(หากรอนานเกินไป กรุณารีเฟรชหน้าจอ)</small></div>
+
+                <div id="hold-instruction" style="display: none;"></div>
             </div>
-            <div class="actions">
-                <button id="download-btn" class="btn btn-primary"
-                    onclick="window.scrollTo({top: 0, behavior: 'smooth'}); document.getElementById('payment-bar').style.animation='pulse-alert 0.5s';">
-                    <span>ชำระเงินเพื่อดาวน์โหลดรูปภาพ</span>
-                </button>
+
+            <div class="actions" style="display: none;">
+                <!-- Original download btn removed from bottom -->
             </div>
-            <p class="info-text">
-                <strong>วิธีบันทึก:</strong><br>
-                เมื่อชำระเงินแล้ว กดที่ปุ่ม "บันทึกรูปภาพ" ได้เลย
-            </p>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script>const params = new URLSearchParams(window.location.search);
         const fileUrl = params.get('d') ? atob(params.get('d')) : decodeURIComponent(params.get('url'));
         const expiryTimestamp = parseInt(params.get('exp')) || 0;
@@ -935,7 +1291,7 @@
 
             if (fileType === 'pdf' || fileType === 'file') {
                 document.title = "รับไฟล์ - PrivateSend";
-                pdfIcon.src = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5NGEzYjgiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xNCAyaC00YTIgMiAwIDAgMC0yIDJ2MTZhMiAyIDAgMCAwIDIgMmg4YTIgMiAwIDAgMCAyLTJWOGwtNi02eiIvPjxwYXRoIGQ9Ik0xNCAydjZoNnptLTYgNmg4bS04IDRoOG0tOCA0aDQiLz48L3N2Zz4=";
+                pdfIcon.src = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5NGEzYjgiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxyZWN0IHg9IjMiIHk9IjMiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgcng9IjIiIHJ5PSIyIi8+PGNpcmNsZSBjeD0iOC41IiBjeT0iOC41IiByPSIxLjUiLz48cGF0aCBkPSJNMjEgMTVMMTYgMTBMNSAyMSIvPjwvc3ZnPg==";
                 pdfPreview.style.display = 'flex';
                 loadingText.style.display = 'none';
                 pdfPreview.querySelector('div').textContent = fileType === 'pdf' ? "ไฟล์เอกสาร PDF (คลิก)" : "ไฟล์ทั่วไป (คลิก)";
@@ -948,12 +1304,46 @@
                 const cacheBuster = previewUrl.includes('?') ? '&' : '?';
                 imageElement.src = previewUrl + cacheBuster + 'v=' + Date.now();
 
-                imageElement.onload = () => {
-                    imageElement.style.display = 'block';
+                window.startFadeTimer = function () {
+                    console.log("Fade timer started"); // To prevent reference error
+                };
+
+                imageElement.onload = function () {
                     loadingText.style.display = 'none';
+                    imageElement.style.display = 'block';
                     pdfPreview.style.display = 'none';
-                    // เริ่มนับเวลาเบลอหลังภาพโหลดเสร็จ
-                    startFadeTimer();
+
+                    // Update connections
+                    setTimeout(updateConnections, 50);
+                    setTimeout(updateConnections, 500);
+                    setTimeout(updateConnections, 1500);
+
+                    // Check Price and Status for initial Zoom & Protection
+                    const priceParam = params.get('price');
+                    const isPaid = localStorage.getItem('paid_' + fileUrl) === '1';
+
+                    if (priceParam === '0' || isPaid) {
+                        // Already clear or free - enable zoom immediately
+                        const zoomCont = document.getElementById('image-zoom-container');
+                        const zHint = document.getElementById('zoom-hint');
+                        if (zoomCont) {
+                            zoomCont.style.pointerEvents = 'auto';
+                            zoomCont.style.cursor = 'zoom-in';
+                        }
+                        if (zHint) {
+                            zHint.style.display = 'flex';
+                            zHint.innerHTML = '🔍 ขยายภาพ';
+                        }
+                        return; // No watermark needed
+                    }
+
+                    // For paid mode not yet paid:
+                    const imgBox = document.getElementById('img-box');
+                    const watermark = document.getElementById('watermark');
+                    const guard = document.getElementById('guard-layer');
+                    if (imgBox) imgBox.classList.add('pay-lock');
+                    if (watermark) watermark.style.display = 'block';
+                    if (guard) guard.style.display = 'block';
                 };
 
                 imageElement.onerror = () => {
@@ -1001,98 +1391,7 @@
                 }
             };
 
-            // Toggle Download Function (Called by Checkbox)
-            window.toggleDownload = function (checkbox) {
-                const isChecked = checkbox.checked;
 
-                // UI Elements
-                const guard = document.getElementById('guard-layer');
-                const watermark = document.getElementById('watermark');
-                const imgBox = document.getElementById('img-box');
-                const img = document.getElementById('image');
-                const badge = document.querySelector('.status-badge');
-
-                if (isChecked) {
-                    // === UNLOCK STATE ===
-
-                    // 1. Lock Checkbox (One-way)
-                    checkbox.disabled = true;
-                    checkbox.parentElement.style.opacity = '0.7';
-                    checkbox.parentElement.style.cursor = 'default';
-                    checkbox.parentElement.querySelector('.main-text').textContent = 'โอนเงินเรียบร้อยแล้ว';
-                    checkbox.parentElement.querySelector('.sub-text').textContent = 'ขอบคุณที่ใช้บริการ';
-
-                    // 2. Change Button to Download
-                    downloadBtn.innerHTML = '<span>🎉 ดาวน์โหลดรูปภาพ</span>';
-                    downloadBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-                    downloadBtn.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.4)';
-
-                    // Set real download action
-                    downloadBtn.onclick = () => {
-                        window.location.href = downloadUrl;
-                        downloadBtn.innerHTML = '<span>กำลังโหลดไฟล์...</span>';
-                        setTimeout(() => {
-                            downloadBtn.innerHTML = '<span>🎉 ดาวน์โหลดรูปภาพ</span>';
-                        }, 3000);
-                    };
-
-                    // Remove Lock Icon
-                    const style = document.createElement('style');
-                    style.id = 'unlock-style';
-                    style.innerHTML = '#download-btn::before { content: "" !important; display: none; }';
-                    document.head.appendChild(style);
-
-                    // 3. Update Badge
-                    if (badge) {
-                        badge.innerHTML = '<span>✅ ชำระเงินแล้ว</span>';
-                        badge.style.color = '#34d399';
-                        badge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
-                        badge.style.animation = 'none';
-                    }
-
-                    // 4. Remove Protection
-                    if (guard) guard.style.display = 'none';
-                    if (watermark) watermark.style.display = 'none';
-                    if (imgBox) imgBox.oncontextmenu = null;
-                    if (img) img.style.pointerEvents = 'auto';
-
-                    // Scroll to button to show it's ready
-                    downloadBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                } else {
-                    // === LOCK STATE (Revert) ===
-
-                    // 1. Revert Button
-                    downloadBtn.innerHTML = '<span>ชำระเงินเพื่อดาวน์โหลดรูปภาพ</span>';
-                    downloadBtn.style.background = ''; // Revert to CSS default (purple)
-                    downloadBtn.style.boxShadow = '';
-
-                    // Revert action
-                    downloadBtn.onclick = () => {
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                        document.getElementById('payment-bar').style.animation = 'none';
-                        setTimeout(() => document.getElementById('payment-bar').style.animation = 'pulse-alert 0.5s', 10);
-                    };
-
-                    // Restore Lock Icon
-                    const style = document.getElementById('unlock-style');
-                    if (style) style.remove();
-
-                    // 2. Revert Badge
-                    if (badge) {
-                        badge.innerHTML = '<span>⚠️ รอการชำระเงิน</span>';
-                        badge.style.color = '#fbbf24';
-                        badge.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                        badge.style.animation = 'float 3s ease-in-out infinite';
-                    }
-
-                    // 3. Restore Protection
-                    if (guard) guard.style.display = 'block';
-                    if (watermark) watermark.style.display = 'block';
-                    if (imgBox) imgBox.oncontextmenu = () => false;
-                    if (img) img.style.pointerEvents = 'none';
-                }
-            };
 
             // --- PromptPay Generator Logic ---
             function crc16(data) {
@@ -1131,9 +1430,66 @@
             const isFreeMode = priceParam !== null && !isNaN(price) && price === 0;
 
             if (isFreeMode) {
-                // Hide payment bar completely
+                // Free mode logic for connection and confetti
+                setTimeout(() => {
+                    const dlBtnStep = document.querySelector('#download-btn .step-circle');
+                    if (dlBtnStep) dlBtnStep.style.display = 'none';
+
+                    const sharedCanvas = document.getElementById('payment-confetti-canvas');
+                    if (typeof confetti === 'function' && sharedCanvas) {
+                        const myConfetti = confetti.create(sharedCanvas, {
+                            resize: true,
+                            useWorker: true
+                        });
+                        myConfetti({
+                            particleCount: 80,
+                            spread: 60,
+                            origin: { y: 0.5 },
+                            colors: ['#10b981', '#34d399', '#ffffff']
+                        });
+                    }
+                }, 500);
+
+                // Show payment bar but update it for free mode
                 const paymentBar = document.getElementById('payment-bar');
-                if (paymentBar) paymentBar.style.display = 'none';
+                if (paymentBar) {
+                    paymentBar.style.display = 'block';
+                    // Hide payment elements
+                    const header = paymentBar.querySelector('.payment-header');
+                    const amtBox = document.getElementById('payment-amount-box');
+                    const qrWrapper = document.getElementById('qr-wrapper');
+                    const cbHint = document.getElementById('checkbox-hint-wrapper');
+                    const freeContainer = document.getElementById('free-mode-container');
+                    const finalAction = document.getElementById('final-action-wrapper');
+
+                    if (header) header.style.display = 'none';
+                    if (amtBox) amtBox.style.display = 'none';
+                    if (qrWrapper) qrWrapper.style.display = 'none';
+                    if (cbHint) cbHint.style.display = 'none';
+
+                    // Step 1: Show Thank you first
+                    if (freeContainer) {
+                        freeContainer.style.display = 'flex';
+                        freeContainer.style.opacity = '1';
+                    }
+                    if (finalAction) finalAction.style.display = 'none';
+
+                    // Step 2: After 2 seconds, fade out thank you and show record button
+                    setTimeout(() => {
+                        if (freeContainer) {
+                            freeContainer.classList.add('fade-out');
+                            setTimeout(() => {
+                                freeContainer.style.display = 'none';
+                                if (finalAction) {
+                                    finalAction.style.display = 'block';
+                                    finalAction.classList.add('fade-in-msg'); // reuse existing fade
+                                }
+                            }, 500);
+                        } else {
+                            if (finalAction) finalAction.style.display = 'block';
+                        }
+                    }, 2000);
+                }
 
                 // Remove all protection layers immediately
                 const guard = document.getElementById('guard-layer');
@@ -1141,6 +1497,7 @@
                 const imgBox = document.getElementById('img-box');
                 const img = document.getElementById('image');
                 const badge = document.querySelector('.status-badge');
+                const step1 = document.getElementById('step-1-circle');
 
                 if (guard) guard.style.display = 'none';
                 if (watermark) watermark.style.display = 'none';
@@ -1150,47 +1507,44 @@
                 }
                 if (img) img.style.pointerEvents = 'auto';
                 if (badge) badge.style.display = 'none';
-
-                // Remove lock icon from download button
-                const unlockStyle = document.createElement('style');
-                unlockStyle.innerHTML = '#download-btn::before { content: "" !important; display: none; }';
-                document.head.appendChild(unlockStyle);
+                if (step1) step1.style.display = 'none';
 
                 // Set download button to direct download
-                downloadBtn.innerHTML = '<span>🎉 ดาวน์โหลดรูปภาพ</span>';
-                downloadBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-                downloadBtn.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.4)';
+                const dBtn = document.getElementById('download-btn');
+                if (dBtn) {
+                    dBtn.onclick = () => {
+                        const originalText = dBtn.innerHTML;
+                        dBtn.innerHTML = '<span>⏳ กำลังดาวน์โหลด...</span>';
 
-                downloadBtn.onclick = () => {
-                    const originalText = downloadBtn.innerHTML;
-                    downloadBtn.innerHTML = '<span>⏳ กำลังดาวน์โหลด...</span>';
+                        fetch(downloadUrl)
+                            .then(response => response.blob())
+                            .then(blob => {
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.style.display = 'none';
+                                a.href = url;
+                                const fileName = downloadUrl.split('/').pop().split('?')[0] || 'image_download.jpg';
+                                a.download = fileName;
+                                document.body.appendChild(a);
+                                a.click();
+                                window.URL.revokeObjectURL(url);
+                                document.body.removeChild(a);
 
-                    fetch(downloadUrl)
-                        .then(response => response.blob())
-                        .then(blob => {
-                            const url = window.URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.style.display = 'none';
-                            a.href = url;
-                            const fileName = downloadUrl.split('/').pop().split('?')[0] || 'image_download.jpg';
-                            a.download = fileName;
-                            document.body.appendChild(a);
-                            a.click();
-                            window.URL.revokeObjectURL(url);
-                            document.body.removeChild(a);
-
-                            downloadBtn.innerHTML = '<span>✅ ดาวน์โหลดสำเร็จ!</span>';
-                            setTimeout(() => { downloadBtn.innerHTML = originalText; }, 3000);
-                        })
-                        .catch(err => {
-                            console.error('Auto-download failed:', err);
-                            window.open(downloadUrl, '_blank');
-                            downloadBtn.innerHTML = '<span>⚠️ เปิดไฟล์ในแท็บใหม่</span>';
-                            setTimeout(() => { downloadBtn.innerHTML = originalText; }, 3000);
-                        });
-                };
-
+                                dBtn.innerHTML = '<span>✅ ดาวน์โหลดสำเร็จ!</span>';
+                                setTimeout(() => { dBtn.innerHTML = originalText; }, 3000);
+                            })
+                            .catch(err => {
+                                console.error('Auto-download failed:', err);
+                                window.open(downloadUrl, '_blank');
+                                dBtn.innerHTML = '<span>⚠️ เปิดไฟล์ในแท็บใหม่</span>';
+                                setTimeout(() => { dBtn.innerHTML = originalText; }, 3000);
+                            });
+                    };
+                }
             } else if (priceParam && !isNaN(price) && price > 0) {
+                // Initial hide for instruction on price > 0 mode
+                const holdInstr = document.getElementById('hold-instruction');
+                if (holdInstr) holdInstr.style.display = 'none';
                 const paymentBar = document.getElementById('payment-bar');
                 const paymentAmount = document.getElementById('payment-amount');
                 const qrDisplay = document.getElementById('qrcode-display');
@@ -1200,6 +1554,7 @@
 
                 if (paymentBar && qrDisplay) {
                     paymentBar.style.display = 'block';
+                    console.log("Showing payment bar for price:", price);
                     paymentAmount.textContent = parseFloat(price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
                     // Generate Payload
@@ -1239,6 +1594,7 @@
                     const now = Date.now();
                     const timeLeft = expiryTimestamp - now;
                     if (timeLeft <= 0) {
+                        localStorage.removeItem('paid_' + fileUrl);
                         showError('ลิงก์หมดอายุ', 'ไฟล์ของคุณถูกลบออกจากระบบเซิร์ฟเวอร์เรียบร้อยแล้ว');
                         return;
                     }
@@ -1265,126 +1621,386 @@
         });
 
 
-        // --- FINAL LOGIC OVERRIDES ---
+        // Set direct download link logic for the button
+        const dUrlParam = new URLSearchParams(window.location.search);
+        const fUrlDirect = dUrlParam.get('d') ? atob(dUrlParam.get('d')) : decodeURIComponent(dUrlParam.get('url'));
+        const isTfDirect = fUrlDirect.includes('tempfile.org');
+        let dlUrlDirect = fUrlDirect;
+        if (isTfDirect) {
+            const parts = fUrlDirect.split('/').filter(Boolean);
+            dlUrlDirect = `https://tempfile.org/${parts[parts.length - 1]}/download`;
+        }
 
-        // Redefine toggleDownload to verify it handles the Fade Effect
-        window.toggleDownload = function (checkbox) {
-            const isChecked = checkbox.checked;
+        downloadBtn.onclick = () => {
+            const originalText = downloadBtn.innerHTML;
+            downloadBtn.innerHTML = '<span>⏳ กำลังดาวน์โหลด...</span>';
 
-            // UI Elements
+            fetch(dlUrlDirect)
+                .then(response => response.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    const fileName = dlUrlDirect.split('/').pop().split('?')[0] || 'image_download.jpg';
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    downloadBtn.innerHTML = '<span>✅ ดาวน์โหลดสำเร็จ!</span>';
+                    setTimeout(() => { downloadBtn.innerHTML = originalText; }, 3000);
+                })
+                .catch(err => {
+                    console.error('Auto-download failed:', err);
+                    window.open(dlUrlDirect, '_blank');
+                    downloadBtn.innerHTML = '<span>⚠️ เปิดไฟล์ในแท็บใหม่</span>';
+                    setTimeout(() => { downloadBtn.innerHTML = originalText; }, 3000);
+                });
+        };
+
+        function showSlipAgain() {
+            const qrWrapper = document.getElementById('qr-wrapper');
+            const amtBox = document.getElementById('payment-amount-box');
+            const noteTxt = document.getElementById('payment-note-txt');
+            const paidBtn = document.getElementById('paid-btn');
+            const thxMsg = document.getElementById('thank-you-msg');
+            const header = document.querySelector('.payment-header');
+
+            if (header) header.style.display = 'flex';
+            if (amtBox) amtBox.style.display = 'inline-block';
+            if (noteTxt) noteTxt.style.display = 'flex';
+            if (paidBtn) paidBtn.style.display = 'flex';
+            if (qrWrapper) {
+                qrWrapper.style.display = 'inline-block';
+                qrWrapper.classList.remove('tornado-active');
+            }
+            if (thxMsg) thxMsg.style.display = 'none';
+            const finalAction = document.getElementById('final-action-wrapper');
+            if (finalAction) finalAction.style.display = 'none';
+
+            const holdInstr = document.getElementById('hold-instruction');
+            if (holdInstr) holdInstr.style.display = 'none';
+
+            const step1 = document.getElementById('step-1-circle');
+            if (step1) step1.style.display = 'flex';
+
+            // Enable zoom feature after payment confirmed
+            const zoomCont = document.getElementById('image-zoom-container');
+            const zHint = document.getElementById('zoom-hint');
+            if (zoomCont) {
+                zoomCont.style.pointerEvents = 'auto';
+                zoomCont.style.cursor = 'zoom-in';
+            }
+            if (zHint) {
+                zHint.style.display = 'flex';
+                zHint.innerHTML = '🔍 ขยายภาพ';
+                zHint.style.background = 'rgba(16, 185, 129, 0.8)'; // Green success
+            }
+            if (svg) {
+                svg.style.display = 'block';
+                setTimeout(() => svg.style.opacity = '1', 50);
+            }
+            updateConnections();
+        }
+
+        function hideElementsForTornado() {
+            const qrWrapper = document.getElementById('qr-wrapper');
+            const amtBox = document.getElementById('payment-amount-box');
+            const noteTxt = document.getElementById('payment-note-txt');
+            const paidBtn = document.getElementById('paid-btn');
+            const thxMsg = document.getElementById('thank-you-msg');
+            const header = document.querySelector('.payment-header');
+
+            if (header) header.style.display = 'none';
+            if (amtBox) amtBox.style.display = 'none';
+            if (noteTxt) noteTxt.style.display = 'none';
+            if (paidBtn) paidBtn.style.display = 'none';
+            if (qrWrapper) qrWrapper.style.display = 'none';
+
+            const thxContent = document.getElementById('thx-content-wrapper');
+            const finalAction = document.getElementById('final-action-wrapper');
+            const placeholder = document.getElementById('final-action-placeholder');
+
+            if (thxMsg) {
+                thxMsg.style.display = 'flex';
+                thxMsg.style.position = 'relative';
+                thxMsg.classList.add('fade-in-msg');
+            }
+            if (thxContent) thxContent.style.display = 'block';
+            if (finalAction) finalAction.style.display = 'none';
+
+            // 2s Transition
+            setTimeout(() => {
+                if (thxContent) {
+                    thxContent.classList.add('fade-out');
+                    setTimeout(() => {
+                        thxContent.style.display = 'none';
+                        if (finalAction && placeholder) {
+                            placeholder.appendChild(finalAction);
+                            finalAction.style.display = 'block';
+                            finalAction.classList.add('fade-in-msg');
+                        }
+                    }, 500);
+                }
+            }, 2000);
+
+            const step1 = document.getElementById('step-1-circle');
+            if (step1) step1.style.display = 'none';
+
+            const svg = document.getElementById('connection-svg');
+            if (svg) {
+                svg.style.transition = 'opacity 0.3s ease';
+                svg.style.opacity = '0';
+                setTimeout(() => svg.style.display = 'none', 300);
+            }
+
+            const checkboxHint = document.getElementById('checkbox-hint');
+            if (checkboxHint) {
+                checkboxHint.style.display = 'none';
+            }
+
+            // Enable zoom feature if already paid
+            const zoomCont = document.getElementById('image-zoom-container');
+            const zHint = document.getElementById('zoom-hint');
+            if (zoomCont) {
+                zoomCont.style.pointerEvents = 'auto';
+                zoomCont.style.cursor = 'zoom-in';
+            }
+            if (zHint) {
+                zHint.style.display = 'flex';
+            }
+        }
+
+        function animateTornado() {
+            localStorage.setItem('paid_' + fileUrl, '1');
+            const qrWrapper = document.getElementById('qr-wrapper');
+            const amtBox = document.getElementById('payment-amount-box');
+            const noteTxt = document.getElementById('payment-note-txt');
+            const paidBtn = document.getElementById('paid-btn');
+            const header = document.querySelector('.payment-header');
+
+            if (header) header.style.display = 'none';
+            if (amtBox) amtBox.style.display = 'none';
+            if (noteTxt) noteTxt.style.display = 'none';
+            if (paidBtn) paidBtn.style.display = 'none';
+
+            const svg = document.getElementById('connection-svg');
+            if (svg) {
+                svg.style.transition = 'opacity 0.3s ease';
+                svg.style.opacity = '0';
+                setTimeout(() => svg.style.display = 'none', 300);
+            }
+
+            const dlBtnStep = document.querySelector('#download-btn .step-circle');
+            if (dlBtnStep) dlBtnStep.style.display = 'none';
+
+            const sharedCanvas = document.getElementById('payment-confetti-canvas');
+            if (typeof confetti === 'function' && sharedCanvas) {
+                const myConfetti = confetti.create(sharedCanvas, {
+                    resize: true,
+                    useWorker: true
+                });
+                myConfetti({
+                    particleCount: 140,
+                    spread: 70,
+                    origin: { y: 0.5 },
+                    colors: ['#10b981', '#ef4444', '#3b82f6', '#f59e0b']
+                });
+            }
+
+            // NO INSTRUCTIONS AFTER PAYMENT AS REQUESTED
+            const holdInstr = document.getElementById('hold-instruction');
+            if (holdInstr) holdInstr.style.display = 'none';
+
+            // REMOVE PROTECTION
             const guard = document.getElementById('guard-layer');
             const watermark = document.getElementById('watermark');
             const imgBox = document.getElementById('img-box');
-            const img = document.getElementById('image');
-            const badge = document.querySelector('.status-badge');
-
-            if (isChecked) {
-                // === UNLOCK STATE ===
-
-                // 1. Lock Checkbox (One-way)
-                checkbox.disabled = true;
-                checkbox.parentElement.style.opacity = '0.7';
-                checkbox.parentElement.style.cursor = 'default';
-                checkbox.parentElement.querySelector('.main-text').textContent = 'โอนเงินเรียบร้อยแล้ว';
-                checkbox.parentElement.querySelector('.sub-text').textContent = 'ขอบคุณที่ใช้บริการ';
-
-                // 2. Change Button
-                const downloadBtn = document.getElementById('download-btn');
-                downloadBtn.innerHTML = '<span>🎉 ดาวน์โหลดรูปภาพ</span>';
-                downloadBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-                downloadBtn.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.4)';
-
-                // Set download link
-                const params = new URLSearchParams(window.location.search);
-                const fileUrl = params.get('d') ? atob(params.get('d')) : decodeURIComponent(params.get('url'));
-                // Use PHP download wrapper logic
-                const finalDownloadUrl = fileUrl;
-
-                downloadBtn.onclick = () => {
-                    const originalText = downloadBtn.innerHTML;
-                    downloadBtn.innerHTML = '<span>⏳ กำลังดาวน์โหลด...</span>';
-
-                    fetch(finalDownloadUrl)
-                        .then(response => response.blob())
-                        .then(blob => {
-                            const url = window.URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.style.display = 'none';
-                            a.href = url;
-                            // Extract filename or use default
-                            const fileName = finalDownloadUrl.split('/').pop().split('?')[0] || 'image_download.jpg';
-                            a.download = fileName;
-                            document.body.appendChild(a);
-                            a.click();
-                            window.URL.revokeObjectURL(url);
-                            document.body.removeChild(a);
-
-                            downloadBtn.innerHTML = '<span>✅ ดาวน์โหลดสำเร็จ!</span>';
-                            setTimeout(() => { downloadBtn.innerHTML = originalText; }, 3000);
-                        })
-                        .catch(err => {
-                            console.error('Auto-download failed:', err);
-                            // Fallback: Open in new tab
-                            window.open(finalDownloadUrl, '_blank');
-                            downloadBtn.innerHTML = '<span>⚠️ เปิดไฟล์ในแท็บใหม่</span>';
-                            setTimeout(() => { downloadBtn.innerHTML = originalText; }, 3000);
-                        });
-                };
-
-                // Remove Lock Icon Style
-                const style = document.createElement('style');
-                style.id = 'unlock-style-final';
-                style.innerHTML = '#download-btn::before { content: "" !important; display: none; }';
-                document.head.appendChild(style);
-
-                // 3. Update Badge
-                if (badge) {
-                    badge.innerHTML = '<span>✅ ชำระเงินแล้ว</span>';
-                    badge.style.color = '#34d399';
-                    badge.style.borderColor = 'rgba(16, 185, 129, 0.3)';
-                    badge.style.animation = 'none';
-                }
-
-                // 4. Remove ALL Protections (Including Fade)
-                if (guard) guard.style.display = 'none';
-                if (watermark) watermark.style.display = 'none';
-                if (imgBox) imgBox.oncontextmenu = null;
-                if (img) img.style.pointerEvents = 'auto';
-
-                // *** REMOVE FADE CLASS ***
-                if (imgBox) imgBox.classList.remove('pay-lock');
-
-                // Scroll to button
-                downloadBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
+            if (guard) guard.style.display = 'none';
+            if (watermark) watermark.style.display = 'none';
+            if (imgBox) {
+                imgBox.classList.remove('pay-lock');
+                imgBox.oncontextmenu = null;
             }
-        };
+            if (imageElement) imageElement.style.pointerEvents = 'auto';
 
-        // Auto-Fade Timer — รอภาพโหลดเสร็จก่อน แล้วค่อยนับ 10 วิ
-        function startFadeTimer() {
-            setTimeout(() => {
-                const params2 = new URLSearchParams(window.location.search);
-                const priceVal = parseFloat(params2.get('price'));
-                const isFree = params2.get('price') !== null && !isNaN(priceVal) && priceVal === 0;
+            if (qrWrapper) {
+                qrWrapper.classList.add('tornado-active');
+                setTimeout(() => {
+                    hideElementsForTornado();
+                    const paymentBar = document.getElementById('payment-bar');
+                    if (paymentBar) paymentBar.style.width = '100%';
+                }, 1500);
+            }
+        }
 
-                // Skip fade for free content
-                if (isFree) return;
+        if (params.get('price') !== '0' && localStorage.getItem('paid_' + fileUrl) === '1') {
+            hideElementsForTornado();
+        }
 
-                const checkbox = document.getElementById('payment-checkbox');
-                const imgBox = document.getElementById('img-box');
+        if (params.get('price') === '0') {
+            localStorage.removeItem('paid_' + fileUrl);
+            const svg = document.getElementById('connection-svg');
+            if (svg) {
+                svg.style.display = 'block';
+                svg.style.opacity = '1';
+            }
+            updateConnections();
+        }
 
-                // Only fade if NOT already checked
-                if (checkbox && !checkbox.checked && imgBox) {
-                    imgBox.classList.add('pay-lock');
-                    // Scroll help for mobile user to see payment
-                    if (window.innerWidth < 1024) {
-                        document.getElementById('payment-bar').scrollIntoView({ behavior: 'smooth' });
+        function updateConnections() {
+            const svg = document.getElementById('connection-svg');
+            if (!svg || svg.style.display === 'none') return;
+
+            const getCenter = (el) => {
+                if (!el) return null;
+                const r = el.getBoundingClientRect();
+                return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+            };
+
+            const c1 = document.getElementById('step-1-circle');
+            const c2 = document.querySelector('#payment-amount-box .step-circle');
+            const c3 = document.querySelector('#paid-btn .step-circle');
+            const imgBox = document.getElementById('img-box');
+            const imgEl = document.getElementById('image');
+            const pdfPreview = document.getElementById('pdf-preview');
+
+            const imgRect = imgBox ? imgBox.getBoundingClientRect() : null;
+
+            const p1 = getCenter(c1);
+            const p2 = getCenter(c2);
+            const p3 = getCenter(c3);
+            const pImg = getCenter((imgEl && imgEl.style.display !== 'none') ? imgEl : ((pdfPreview && pdfPreview.style.display !== 'none') ? pdfPreview : imgBox));
+
+            const path1 = document.getElementById('line-1-2');
+            const path2 = document.getElementById('line-2-3');
+
+            const base1 = document.getElementById('pipe-base-1-2');
+            const base2 = document.getElementById('pipe-base-2-3');
+
+            // Free mode connection (Price 0)
+            if (params.get('price') === '0') {
+                // If the free mode thank you element is lower, we hide the line, or we can just point to the download button from nothing.
+                if (pImg && p1 && path1) {
+                    const dlBtnStep = document.querySelector('#download-btn .step-circle');
+                    // Ensure line only points to the download button if it's there
+                    if (!dlBtnStep || dlBtnStep.style.display === 'none') {
+                        path1.setAttribute('d', '');
+                        if (base1) base1.setAttribute('d', '');
+                    } else {
+                        const startX = imgRect ? (imgRect.left + Math.max(28, imgRect.width * 0.22)) : pImg.x;
+                        const startY = imgRect ? (imgRect.bottom + 16) : (pImg.y + 16);
+                        const endX = p1.x;
+                        const endY = p1.y;
+                        const d = `M${startX},${startY} C${startX},${startY + 70} ${endX - 90},${endY - 25} ${endX},${endY}`;
+                        path1.setAttribute('d', d);
+                        if (base1) base1.setAttribute('d', d);
                     }
+                    path2.setAttribute('d', ''); // Clear other line
+                    if (base2) base2.setAttribute('d', '');
                 }
-            }, 10000);
+                return;
+            }
+
+            if (p1 && p2 && path1) {
+                // Sweeping curve from Step 1 to Step 2 as per drawing
+                const startX = p1.x;
+                const startY = p1.y;
+                const endX = p2.x;
+                const endY = p2.y;
+
+                // Move control points to the right to create the outward sweep
+                const d = `M${startX},${startY} C${startX + 220},${startY - 20} ${endX + 180},${endY - 140} ${endX},${endY}`;
+                path1.setAttribute('d', d);
+                if (base1) base1.setAttribute('d', d);
+            }
+            if (p2 && p3 && path2) {
+                // Sweeping curve from Step 2 to Step 3 - curving out to the left
+                const startX = p2.x;
+                const startY = p2.y;
+                const endX = p3.x;
+                const endY = p3.y;
+
+                // Broad sweep to the left (into the gap) then back to the button
+                const d = `M${startX},${startY} C${startX - 260},${startY + 80} ${endX - 260},${endY - 80} ${endX},${endY}`;
+                path2.setAttribute('d', d);
+                if (base2) base2.setAttribute('d', d);
+            }
+        }
+
+        window.addEventListener('resize', updateConnections);
+        window.addEventListener('scroll', updateConnections);
+        setInterval(updateConnections, 500);
+        setTimeout(updateConnections, 500);
+        setTimeout(updateConnections, 1500); // Wait for images
+
+        // Hand icon positioning is now handled by absolute CSS within the button container.
+        // Lightbox Functions
+        function openLightbox() {
+            const src = document.getElementById('image').src;
+            if (!src) return;
+            const overlay = document.getElementById('lightbox-overlay');
+            const lImg = document.getElementById('lightbox-img');
+            lImg.src = src;
+            overlay.classList.add('active');
+
+            // Apply watermark to zoom if still locked
+            const isLocked = document.getElementById('img-box').classList.contains('pay-lock');
+            const lWatermark = document.getElementById('lightbox-watermark');
+            if (isLocked) {
+                lWatermark.style.display = 'block';
+            } else {
+                lWatermark.style.display = 'none';
+            }
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox-overlay').classList.remove('active');
         }
 
     </script>
+
+    <!-- Lightbox Modal -->
+    <div id="lightbox-overlay" class="lightbox-overlay" onclick="closeLightbox()">
+        <div class="lightbox-close">×</div>
+        <div style="position: relative; display: flex; justify-content: center; align-items: center;">
+            <img id="lightbox-img" class="lightbox-img" alt="Zoomed View">
+            <div id="lightbox-watermark" class="watermark" style="display: none; font-size: 5rem; opacity: 0.3;">
+                ภาพตัวอย่าง</div>
+        </div>
+    </div>
+    <svg id="connection-svg"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.4)); opacity: 0.8;">
+        <defs>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"
+                markerUnits="strokeWidth">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444"></polygon>
+            </marker>
+        </defs>
+        <path id="pipe-base-1-2" d="" fill="none" stroke="rgba(239, 68, 68, 0.16)" stroke-width="14"
+            stroke-linecap="round" />
+        <path id="pipe-base-2-3" d="" fill="none" stroke="rgba(239, 68, 68, 0.16)" stroke-width="14"
+            stroke-linecap="round" />
+        <path id="line-1-2" d="" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round"
+            stroke-dasharray="6, 20" />
+        <path id="line-2-3" d="" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round"
+            stroke-dasharray="6, 20" />
+        <style>
+            #connection-svg #line-1-2,
+            #connection-svg #line-2-3 {
+                animation: flow-modern 0.6s linear infinite;
+            }
+
+            @keyframes flow-modern {
+                to {
+                    stroke-dashoffset: -26;
+                }
+            }
+        </style>
+    </svg>
+
 </body>
 
 </html>
