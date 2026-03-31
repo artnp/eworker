@@ -32,15 +32,88 @@
         body {
             font-family: 'Inter', 'Prompt', sans-serif;
             background: var(--bg);
+            background-size: 400% 400%;
+            animation: gradient-bg 15s ease infinite;
             background-image:
-                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(239, 68, 68, 0.1) 0px, transparent 50%);
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(239, 68, 68, 0.15) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(30, 41, 59, 0.1) 0px, transparent 100%);
             color: var(--text);
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
             padding: 16px;
+        }
+
+        @keyframes gradient-bg {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .pulse-premium {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+            animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        /* Verifying Overlay */
+        .verifying-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            border-radius: 32px;
+            backdrop-filter: blur(8px);
+        }
+
+        .spinner-premium {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(16, 185, 129, 0.2);
+            border-top: 3px solid #10b981;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .header {
@@ -115,6 +188,122 @@
             transform: translateY(5px);
         }
 
+        /* Moving Security Grid for Locked Image */
+        .security-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(hwb(51 13% 11% / 0.719) 1px, transparent 1px),
+                linear-gradient(90deg, lab(96.84% -23.12 93.44 / 0.747) 1px, transparent 1px);
+            background-size: 30px 30px;
+            z-index: 17;
+            display: none;
+            pointer-events: none;
+            animation: grid-flow 20s linear infinite;
+        }
+
+        @keyframes grid-flow {
+            from {
+                background-position: 0 0;
+            }
+
+            to {
+                background-position: 300px 300px;
+            }
+        }
+
+        .pay-lock .security-grid {
+            display: block;
+        }
+
+        .pay-lock #image-zoom-container {
+            cursor: not-allowed !important;
+        }
+
+        /* Chains and Lock Decor */
+        .lock-decor {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 19;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .pay-lock .lock-decor {
+            display: flex;
+        }
+
+        .chain-svg {
+            position: absolute;
+            width: 130%;
+            height: 130%;
+            top: -15%;
+            left: -15%;
+            opacity: 0.15;
+            filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.8));
+            pointer-events: none;
+        }
+
+        /* Modern Snake Border Animation for Button */
+        .btn-loading-active {
+            position: relative;
+            pointer-events: none;
+            overflow: visible !important;
+        }
+
+        .btn-loading-active .btn-border-container {
+            display: block !important;
+        }
+
+        .btn-border-container {
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            pointer-events: none;
+            display: none;
+            z-index: 5;
+        }
+
+        .btn-border-svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        .btn-border-path {
+            fill: none;
+            stroke: #34d399;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            vector-effect: non-scaling-stroke;
+            stroke-dasharray: 120 600;
+            /* Line length 120, Gap 600 ensures only one line visible */
+            animation: snake-run 0.7s linear infinite;
+            /* Ultra high speed */
+            filter: drop-shadow(0 0 5px #10b981);
+            /* Glowing effect */
+        }
+
+        @keyframes snake-run {
+            0% {
+                stroke-dashoffset: 720;
+                /* Full loop offset */
+            }
+
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+
         .tooltip::after {
             content: "";
             position: absolute;
@@ -176,6 +365,65 @@
                 margin: 0;
                 width: 100%;
                 max-width: 100%;
+                transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            }
+
+            .main-content.connected-state {
+                display: flex;
+                flex-direction: row;
+                justify-content: center;
+                align-items: stretch;
+                gap: 0px;
+                max-width: 1100px;
+            }
+
+            .connected-state .content-wrapper {
+                flex: 1;
+                max-width: 500px;
+                animation: slide-right-connect 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            }
+
+            .connected-state .image-container {
+                height: 100%;
+                margin-bottom: 0;
+                border-top-right-radius: 0;
+                border-bottom-right-radius: 0;
+                border-right: none;
+            }
+
+            .connected-state .payment-bar {
+                flex: 0 0 420px;
+                animation: slide-left-connect 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+                border-top-left-radius: 0;
+                border-bottom-left-radius: 0;
+                border-left: 1px solid rgba(255, 255, 255, 0.08);
+                box-shadow:
+                    25px 25px 50px -12px rgba(0, 0, 0, 0.5);
+                margin: 0;
+            }
+
+            @keyframes slide-right-connect {
+                from {
+                    transform: translateX(-50px);
+                    opacity: 0.8;
+                }
+
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+
+            @keyframes slide-left-connect {
+                from {
+                    transform: translateX(50px);
+                    opacity: 0.8;
+                }
+
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
             }
         }
 
@@ -704,11 +952,14 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(10px);
-            z-index: 99999;
             display: none;
+            align-items: flex-start;
             justify-content: center;
-            align-items: center;
+            z-index: 3000;
+            overflow: auto;
+            /* Enable scrolling */
+            -webkit-overflow-scrolling: touch;
+            padding: 40px 10px;
             cursor: zoom-out;
             opacity: 0;
             transition: opacity 0.3s ease;
@@ -745,25 +996,42 @@
 
         .zoom-hint {
             position: absolute;
-            bottom: 12px;
+            bottom: 15px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(0, 0, 0, 0.7);
             color: white;
-            padding: 8px 16px;
-            border-radius: 24px;
+            padding: 9px 20px;
+            border-radius: 99px;
             font-size: 0.85rem;
             display: none;
-            /* Hidden by default, shown after image load */
             align-items: center;
             justify-content: center;
             gap: 8px;
             pointer-events: none;
-            z-index: 20;
+            /* Let clicks pass through to parent */
+            z-index: 25;
             backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-weight: 500;
             white-space: nowrap;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: opacity 0.3s ease;
+        }
+
+        #image-zoom-container:hover .zoom-hint {
+            opacity: 0;
+        }
+
+        #image-zoom-container {
+            pointer-events: auto !important;
+            /* Ensure it can be clicked */
+            cursor: zoom-in;
+        }
+
+        .pay-lock #image-zoom-container {
+            cursor: not-allowed !important;
         }
 
         #download-btn:hover {
@@ -1206,13 +1474,13 @@
 
                 <div id="checkbox-hint-wrapper"
                     style="position: relative; width: 100%; margin-top: 20px; overflow: visible; z-index: 1000;">
-                    <button id="paid-btn"
-                        style="position: relative; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #f8fafc; padding: 12px 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; overflow: visible;"
-                        onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'"
-                        onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'"
-                        onclick="document.getElementById('paid-checkbox').checked = true; setTimeout(animateTornado, 300)">
+                    <button id="paid-btn" class="pulse-premium"
+                        style="position: relative; background: rgba(16, 185, 129, 0.1); border: 1.5px solid rgba(16, 185, 129, 0.3); color: #f8fafc; padding: 12px 10px; border-radius: 12px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 8px; overflow: visible;"
+                        onmouseover="this.style.background='rgba(16, 185, 129, 0.2)'"
+                        onmouseout="this.style.background='rgba(16, 185, 129, 0.1)'"
+                        onclick="document.getElementById('paid-checkbox').checked = true; startVerification()">
                         <span class="step-circle"
-                            style="position: absolute; top: -12px; left: -12px; background: #64748b; color: white; border: 2px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); animation: bounce-right 1.5s infinite alternate; z-index: 60;">3</span>
+                            style="position: absolute; top: -12px; left: -12px; background: #10b981; color: white; border: 2px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); animation: bounce-right 1.5s infinite alternate; z-index: 60;">3</span>
 
                         <div
                             style="position: relative; display: flex; align-items: center; justify-content: center; z-index: 2;">
@@ -1227,7 +1495,15 @@
                                 style="width: 28px; height: 28px; accent-color: #34d399; pointer-events: none; margin-top: 2px; cursor: pointer;">
                         </div>
 
-                        <span style="font-size: 0.9rem; white-space: nowrap;">ฉันโอนแล้วนะ (*ไม่ต้องส่งสลิป)</span>
+                        <span style="font-size: 0.95rem; white-space: nowrap;">ฉันโอนแล้วนะ <span
+                                style="font-size: 0.75rem; color: #94a3b8; font-weight: normal; margin-left: 2px;">(*ไม่ต้องส่งสลิป)</span></span>
+
+                        <!-- SVG Snake Border -->
+                        <div class="btn-border-container">
+                            <svg class="btn-border-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                                <rect x="0" y="0" width="100" height="100" rx="4" class="btn-border-path" />
+                            </svg>
+                        </div>
                     </button>
                 </div>
 
@@ -1239,7 +1515,7 @@
                         <div
                             style="font-size: 1.4rem; font-weight: bold; margin-bottom: 0px; background: linear-gradient(to right, #10b981, #34d399); -webkit-background-clip: text; background-clip: text; color: transparent;">
                             ขอบคุณที่ใช้บริการ</div>
-                        <div style="font-size: 2.5rem; animation: pulse 5s infinite;">💖</div>
+                        <div style="font-size: 2.5rem; animation: pulse 1s infinite;">💖</div>
                     </div>
                 </div>
 
@@ -1278,7 +1554,7 @@
                             <div
                                 style="font-size: 1.2rem; margin-bottom: 5px; font-weight: bold; background: linear-gradient(to right, #10b981, #34d399); -webkit-background-clip: text; background-clip: text; color: transparent;">
                                 ขอบคุณที่ใช้บริการ</div>
-                            <div style="font-size: 2.5rem; animation: pulse 5s infinite;">💖</div>
+                            <div style="font-size: 2.5rem; animation: pulse 1s infinite;">💖</div>
                         </div>
                         <div id="final-action-placeholder"></div>
                         <button id="show-slip-again-btn" onclick="showSlipAgain()"
@@ -1299,11 +1575,20 @@
                 style="padding: 0; flex-direction: column; position: relative; z-index: 10;">
                 <div
                     style="padding: 20px; display: flex; justify-content: center; align-items: center; width: 100%; min-height: 150px; position: relative;">
-                    <div id="image-zoom-container" class="image-wrapper" onclick="openLightbox()"
-                        style="cursor: default; pointer-events: none;">
+                    <div id="image-zoom-container" class="image-wrapper" onclick="openLightbox()">
                         <img id="image" alt="กำลังเตรียมภาพของคุณ..."
                             style="display: none; pointer-events: none; max-width: 100%; border-radius: 8px;">
                         <div id="guard-layer" class="guard-layer" style="display: none;"></div>
+                        <div id="security-grid" class="security-grid"></div>
+                        <div id="scan-line" class="scan-line-security"></div>
+
+                        <div class="lock-decor" id="lock-decor">
+                            <svg class="chain-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M0,50 L200,150 M0,150 L200,50 M50,0 L150,200 M150,0 L50,200"
+                                    stroke="rgba(255,255,255,0.4)" stroke-width="6" stroke-dasharray="10,8" />
+                            </svg>
+                        </div>
+
                         <div id="watermark" class="watermark" style="display: none;">ภาพตัวอย่าง</div>
                         <span id="step-1-circle" class="step-circle-standalone">1</span>
                         <div id="zoom-hint" class="zoom-hint" style="display: none;">🔍 ขยายภาพ</div>
@@ -1423,9 +1708,16 @@
                     const imgBox = document.getElementById('img-box');
                     const watermark = document.getElementById('watermark');
                     const guard = document.getElementById('guard-layer');
+                    const secGrid = document.getElementById('security-grid');
+                    const scanLine = document.getElementById('scan-line');
+                    const lDecor = document.getElementById('lock-decor');
+
                     if (imgBox) imgBox.classList.add('pay-lock');
                     if (watermark) watermark.style.display = 'block';
                     if (guard) guard.style.display = 'block';
+                    if (secGrid) secGrid.style.display = 'block';
+                    if (scanLine) scanLine.style.display = 'block';
+                    if (lDecor) lDecor.style.display = 'flex';
                 };
 
                 imageElement.onerror = () => {
@@ -1571,6 +1863,10 @@
                             if (finalAction) finalAction.style.display = 'block';
                         }
                     }, 2000);
+
+                    // Add connection state for free mode too
+                    const mainContent = document.querySelector('.main-content');
+                    if (mainContent) mainContent.classList.add('connected-state');
                 }
 
                 // Remove all protection layers immediately
@@ -1583,6 +1879,11 @@
 
                 if (guard) guard.style.display = 'none';
                 if (watermark) watermark.style.display = 'none';
+                if (document.getElementById('security-grid')) document.getElementById('security-grid').style.display = 'none';
+                if (document.getElementById('scan-line')) document.getElementById('scan-line').style.display = 'none';
+                const lDecor = document.getElementById('lock-decor');
+                if (lDecor) lDecor.style.display = 'none';
+
                 if (imgBox) {
                     imgBox.oncontextmenu = null;
                     imgBox.classList.remove('pay-lock');
@@ -1778,7 +2079,7 @@
             if (zHint) {
                 zHint.style.display = 'flex';
                 zHint.innerHTML = '🔍 ขยายภาพ';
-                zHint.style.background = 'rgba(16, 185, 129, 0.8)'; // Green success
+                zHint.style.background = 'rgba(0, 0, 0, 0.7)';
             }
             if (svg) {
                 svg.style.display = 'block';
@@ -1855,6 +2156,19 @@
             }
         }
 
+        function startVerification() {
+            const paidBtn = document.getElementById('paid-btn');
+
+            // Add Modern Border Spin class to button ONLY
+            if (paidBtn) paidBtn.classList.add('btn-loading-active');
+
+            // Just a short wait with only border animation (No deceptive text)
+            setTimeout(() => {
+                if (paidBtn) paidBtn.classList.remove('btn-loading-active');
+                animateTornado();
+            }, 1800);
+        }
+
         function animateTornado() {
             localStorage.setItem('paid_' + fileUrl, '1');
             const qrWrapper = document.getElementById('qr-wrapper');
@@ -1902,6 +2216,9 @@
             const imgBox = document.getElementById('img-box');
             if (guard) guard.style.display = 'none';
             if (watermark) watermark.style.display = 'none';
+            if (document.getElementById('security-grid')) document.getElementById('security-grid').style.display = 'none';
+            if (document.getElementById('scan-line')) document.getElementById('scan-line').style.display = 'none';
+            if (document.getElementById('lock-decor')) document.getElementById('lock-decor').style.display = 'none';
             if (imgBox) {
                 imgBox.classList.remove('pay-lock');
                 imgBox.oncontextmenu = null;
@@ -1913,7 +2230,9 @@
                 setTimeout(() => {
                     hideElementsForTornado();
                     const paymentBar = document.getElementById('payment-bar');
+                    const mainContent = document.querySelector('.main-content');
                     if (paymentBar) paymentBar.style.width = '100%';
+                    if (mainContent) mainContent.classList.add('connected-state');
                 }, 1500);
             }
         }
@@ -2021,6 +2340,10 @@
         // Hand icon positioning is now handled by absolute CSS within the button container.
         // Lightbox Functions
         function openLightbox() {
+            // Disable zoom if image is still locked
+            const isLocked = document.getElementById('img-box').classList.contains('pay-lock');
+            if (isLocked) return;
+
             const src = document.getElementById('image').src;
             if (!src) return;
             const overlay = document.getElementById('lightbox-overlay');
@@ -2028,8 +2351,7 @@
             lImg.src = src;
             overlay.classList.add('active');
 
-            // Apply watermark to zoom if still locked
-            const isLocked = document.getElementById('img-box').classList.contains('pay-lock');
+            // Apply watermark to zoom if still locked (redundant now but kept for safety)
             const lWatermark = document.getElementById('lightbox-watermark');
             if (isLocked) {
                 lWatermark.style.display = 'block';
