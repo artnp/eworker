@@ -1577,7 +1577,7 @@
                 <span id="step-2-circle-no-price" class="step-circle"
                     style="position: absolute; top: -12px; left: -12px; background: #3b82f6; color: white; border: 2px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); animation: bounce-left 1.5s infinite alternate; z-index: 60; width: 34px; height: 34px; border-radius: 50%; font-weight: 800; display: flex; align-items: center; justify-content: center;">2</span>
 
-                <button onclick="window.close()" class="pulse-premium"
+                <button onclick="smartClose()" class="pulse-premium"
                     style="position: relative; background: linear-gradient(135deg, #10b981, #059669); border: none; color: #f8fafc; padding: 18px 20px; border-radius: 18px; cursor: pointer; width: 100%; font-weight: 800; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 10px; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4); font-size: 1.1rem; overflow: visible;">
                     <span style="white-space: nowrap;">👌ถูกใจมั้ย! กลับไปโอนเงินกัน</span>
                 </button>
@@ -1587,8 +1587,7 @@
                 style="margin-top: 25px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.08); border-radius: 12px; padding: 15px; color: #94a3b8; font-size: 0.8rem; line-height: 1.6; text-align: left; width: 100%;">
                 <p style="margin: 0; color: hwb(29 3% 3%); font-weight: 700; margin-bottom: 5px;">* คำชี้แจง</p>
                 - ภาพขนาดเต็มจะได้เมื่อชำระเงินแล้ว<br>
-                - ปิดหน้านี้ได้เลย! <u style="cursor: pointer; color: hwb(29 3% 3%);"
-                    onclick="window.close()">กลับไปต่อกันที่หน้าแชท</u>
+                - ปิดหน้านี้ได้เลย! <b><u>กลับไปต่อกันที่หน้าแชท</u></b>
             </div>
         </div>
 
@@ -1712,11 +1711,10 @@
                     setTimeout(updateConnections, 500);
                     setTimeout(updateConnections, 1500);
 
-                    // Check Price and Status for initial Zoom & Protection
                     const priceParam = params.get('price');
                     const isPaid = localStorage.getItem('paid_' + fileUrl) === '1';
 
-                    if (priceParam === '0' || isPaid) {
+                    if (priceParam === '0' || (priceParam !== null && isPaid)) {
                         // Already clear or free - enable zoom immediately
                         const zoomCont = document.getElementById('image-zoom-container');
                         const zHint = document.getElementById('zoom-hint');
@@ -2277,7 +2275,8 @@
             }
         }
 
-        if (params.get('price') !== '0' && localStorage.getItem('paid_' + fileUrl) === '1') {
+        const autoPriceCheck = params.get('price');
+        if (autoPriceCheck !== null && autoPriceCheck !== '0' && localStorage.getItem('paid_' + fileUrl) === '1') {
             hideElementsForTornado();
         }
 
@@ -2376,6 +2375,15 @@
                 path2.setAttribute('d', d);
                 if (base2) base2.setAttribute('d', d);
             }
+        }
+
+        function smartClose() {
+            window.close();
+            setTimeout(function () {
+                if (!window.closed) {
+                    window.location.href = 'https://chat.fastwork.co/message';
+                }
+            }, 300);
         }
 
         window.addEventListener('resize', updateConnections);
