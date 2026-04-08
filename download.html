@@ -1411,6 +1411,137 @@
             animation: pulse-heart 0.8s infinite alternate;
             margin-top: 5px;
         }
+
+        /* === DONATE MODE STYLES === */
+        .donate-bar {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow:
+                0 25px 50px -12px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
+            width: 92%;
+            max-width: 440px;
+            overflow: visible;
+            position: relative;
+            z-index: 30;
+        }
+
+        .donate-header {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(251, 146, 60, 0.12));
+            padding: 18px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 1px solid rgba(239, 68, 68, 0.1);
+        }
+
+        .donate-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #ef4444, #f59e0b, transparent);
+        }
+
+        .donate-body {
+            padding: 28px 24px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .donate-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #f1f5f9;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            letter-spacing: 0.3px;
+        }
+
+        .donate-heart {
+            font-size: 2rem;
+            animation: pulse-heart 1s infinite alternate;
+            filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.5));
+        }
+
+        .donate-msg {
+            color: #94a3b8;
+            font-size: 0.88rem;
+            line-height: 1.6;
+            margin-bottom: 18px;
+        }
+
+        .donate-msg b {
+            color: #f8fafc;
+        }
+
+        .donate-qr-wrapper {
+            background: white;
+            padding: 14px;
+            border-radius: 18px;
+            box-shadow: 0 8px 30px rgba(239, 68, 68, 0.15);
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+
+        .donate-qr-wrapper:hover {
+            transform: scale(1.03);
+        }
+
+        .donate-amount {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #34d399;
+            margin-bottom: 5px;
+        }
+
+        .donate-note {
+            font-size: 0.78rem;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        .donate-thanks {
+            margin-top: 15px;
+            padding: 12px 18px;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.15);
+            border-radius: 14px;
+            color: #10b981;
+            font-size: 0.82rem;
+            font-weight: 600;
+            width: 100%;
+        }
+
+        @media (min-width: 1024px) {
+            .donate-bar {
+                position: sticky;
+                top: 24px;
+                margin: 0;
+                width: 100%;
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 1023px) {
+            .donate-bar {
+                width: 100% !important;
+                max-width: 100%;
+                margin: 0;
+                border-radius: 24px;
+            }
+        }
     </style>
 
 <body>
@@ -1638,10 +1769,13 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <script>const params = new URLSearchParams(window.location.search);
+    <script>// Fix: clean &amp; → & in URL before parsing
+        const cleanSearch = window.location.search.replace(/&amp;/gi, '&');
+        const params = new URLSearchParams(cleanSearch);
         const fileUrl = params.get('d') ? atob(params.get('d')) : decodeURIComponent(params.get('url'));
         const expiryTimestamp = parseInt(params.get('exp')) || 0;
         const fileType = params.get('type') || 'img';
+        const isDonateMode = params.get('donate') === '1';
 
         const countdownElement = document.getElementById('countdown');
         const imageElement = document.getElementById('image');
@@ -1714,8 +1848,8 @@
                     const priceParam = params.get('price');
                     const isPaid = localStorage.getItem('paid_' + fileUrl) === '1';
 
-                    if (priceParam === '0' || (priceParam !== null && isPaid)) {
-                        // Already clear or free - enable zoom immediately
+                    if (priceParam === '0' || (priceParam !== null && isPaid) || isDonateMode) {
+                        // Already clear or free or donate - enable zoom immediately
                         const zoomCont = document.getElementById('image-zoom-container');
                         const zHint = document.getElementById('zoom-hint');
                         if (zoomCont) {
@@ -1829,7 +1963,189 @@
             const isFreeMode = priceParam !== null && !isNaN(price) && price === 0;
             const isNoPriceMode = priceParam === null;
 
-            if (isNoPriceMode) {
+            // === DONATE MODE ===
+            if (isDonateMode) {
+                document.title = 'ดาวน์โหลดไฟล์ - DonateShare';
+                document.querySelector('.logo').textContent = '💝 DonateShare';
+
+                // Remove ALL protection layers (no watermark)
+                const guard = document.getElementById('guard-layer');
+                const watermark = document.getElementById('watermark');
+                const imgBox = document.getElementById('img-box');
+                const img = document.getElementById('image');
+                const step1 = document.getElementById('step-1-circle');
+                if (guard) guard.style.display = 'none';
+                if (watermark) watermark.style.display = 'none';
+                if (document.getElementById('security-grid')) document.getElementById('security-grid').style.display = 'none';
+                if (document.getElementById('scan-line')) document.getElementById('scan-line').style.display = 'none';
+                if (document.getElementById('lock-decor')) document.getElementById('lock-decor').style.display = 'none';
+                if (imgBox) { imgBox.oncontextmenu = null; imgBox.classList.remove('pay-lock'); }
+                if (img) img.style.pointerEvents = 'auto';
+                if (step1) step1.style.display = 'none';
+
+                // Enable zoom
+                const zoomCont = document.getElementById('image-zoom-container');
+                const zHint = document.getElementById('zoom-hint');
+                if (zoomCont) { zoomCont.style.pointerEvents = 'auto'; zoomCont.style.cursor = 'zoom-in'; }
+                if (zHint) { zHint.style.display = 'flex'; zHint.innerHTML = '🔍 ขยายภาพ'; }
+
+                // Hide existing bars
+                const paymentBar = document.getElementById('payment-bar');
+                const noPriceBar = document.getElementById('no-price-bar');
+                if (paymentBar) paymentBar.style.display = 'none';
+                if (noPriceBar) noPriceBar.style.display = 'none';
+
+                // Build donate bar (right panel)
+                const donateBar = document.createElement('div');
+                donateBar.className = 'payment-bar';
+                donateBar.id = 'donate-bar';
+                donateBar.style.display = 'block';
+                donateBar.innerHTML = `
+                    <div class="payment-body" style="position: relative; padding: 28px 24px;">
+                        <canvas id="donate-confetti-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;"></canvas>
+
+                        <!-- Download Section -->
+                        <div style="margin-bottom: 24px; width: 100%;">
+                            <div style="color: #34d399; font-size: 0.9rem; font-weight: 600; margin-bottom: 10px;">ไฟล์ของคุณพร้อมแล้ว! ✨</div>
+                            <button id="donate-download-btn" style="position: relative; background: linear-gradient(135deg, #10b981, #059669); border: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); width: 85%; padding: 16px 20px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 99px; color: white; font-weight: 700; font-size: 1.1rem; cursor: pointer; transition: all 0.3s;">
+                                <span class="arrow-bounce-right" style="font-size: 1.2rem; line-height: 1;">👉</span>💾
+                                <span style="font-size: 1.15rem; font-weight: 800;">บันทึกรูปภาพ</span>
+                            </button>
+                            <div style="margin-top: 12px; text-align: left; background: rgba(0,0,0,0.15); border: 1px dashed rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 18px; color: #94a3b8; font-size: 0.85rem; width: 95%; max-width: 400px; line-height: 1.5; margin-left: auto; margin-right: auto;">
+                                <p style="margin: 0; color: #10b981; font-weight: 700; margin-bottom: 8px; font-size: 0.9rem;">* หากดาวน์โหลดไม่ได้</p>
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px; white-space: nowrap;"><span>-</span><div><b>มือถือ:</b> ให้กดนิ้วจิ้มค้างที่ภาพ</div></div>
+                                <div style="display: flex; align-items: center; gap: 10px; white-space: nowrap;"><span>-</span><div><b>คอมพิวเตอร์:</b> กดคลิกขวาที่ภาพ</div></div>
+                            </div>
+                        </div>
+
+                        <!-- Divider -->
+                        <div style="width: 80%; height: 1px; background: rgba(255,255,255,0.08); margin: 8px 0 20px;"></div>
+
+                        <!-- Donation QR Section -->
+                        <div id="donate-qr-section" style="width: 100%;">
+                            <div style="color: #f59e0b; font-size: 0.85rem; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <span style="font-size: 1.1rem; animation: pulse-heart 1s infinite alternate;">❤️</span>
+                                ส่งต่อความช่วยเหลือ
+                            </div>
+                            <div style="color: #94a3b8; font-size: 0.8rem; line-height: 1.5; margin-bottom: 14px;">
+                                ไฟล์นี้แจกให้<b style="color:#f8fafc;">ฟรี</b> ไม่มีค่าใช้จ่าย 🎁<br>
+                                หากอยากช่วยเหลือผู้อื่นต่อ สแกนบริจาคได้เลย
+                            </div>
+                            <div class="donate-qr-wrapper" id="donate-qr-wrapper" title="คลิกเพื่อบันทึก QR" style="background:white; padding: 10px; border-radius: 14px; box-shadow: 0 6px 20px rgba(239,68,68,0.12); margin-bottom: 12px; cursor: pointer; transition: transform 0.2s; display: inline-block;">
+                                <div id="donate-qrcode" style="display: flex; justify-content: center; align-items: center; min-height: 140px;"></div>
+                            </div>
+                            <div style="display: flex; gap: 7px; align-items: center; justify-content: center; padding: 4px 0; margin-bottom: 8px;">
+                                <div class="bank-logo bank-kbank" title="Kasikorn Bank"></div>
+                                <div class="bank-logo bank-scb" title="Siam Commercial Bank"></div>
+                                <div class="bank-logo bank-bay" title="Krungsri Bank"></div>
+                                <div class="bank-logo bank-ktb" title="Krungthai Bank"></div>
+                                <div class="bank-logo bank-ttb" title="TTB Bank"></div>
+                                <span style="font-weight: 800; color: rgba(226,232,240,0.7); font-size: 0.95rem; margin-left: 2px;">+</span>
+                            </div>
+                            <div style="font-size: 0.72rem; color: #64748b; line-height: 1.4;">สแกนจ่ายผ่านแอปธนาคารทุกแห่ง</div>
+                            <div style="margin-top: 10px; padding: 8px 14px; background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.12); border-radius: 10px; color: #10b981; font-size: 0.78rem; font-weight: 600;">✨ บริจาคให้โปรเจคนี้ ได้ไปช่วยเหลือผู้อื่นต่อ ✨</div>
+                        </div>
+                    </div>
+                `;
+
+                // Insert donate bar into main content
+                const mainContent = document.querySelector('.main-content');
+                mainContent.appendChild(donateBar);
+                mainContent.classList.add('connected-state');
+
+                // Generate PromptPay QR for donation (no fixed amount)
+                const donatePromptPayId = '0988573074';
+                const donatePPPayload = generatePayload(donatePromptPayId, '0');
+                const donateQrContainer = document.getElementById('donate-qrcode');
+                if (donateQrContainer) {
+                    new QRCode(donateQrContainer, {
+                        text: donatePPPayload,
+                        width: 140,
+                        height: 140,
+                        colorDark: '#000000',
+                        colorLight: '#ffffff',
+                        correctLevel: QRCode.CorrectLevel.L
+                    });
+                }
+
+                // QR download click
+                const donateQrWrapper = document.getElementById('donate-qr-wrapper');
+                if (donateQrWrapper) {
+                    donateQrWrapper.onclick = () => {
+                        const qrImg = donateQrContainer.querySelector('img');
+                        if (qrImg && qrImg.src) {
+                            const link = document.createElement('a');
+                            link.href = qrImg.src;
+                            link.download = 'Donate_QR.png';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        }
+                    };
+                }
+
+                // Download button
+                const donateDlBtn = document.getElementById('donate-download-btn');
+                if (donateDlBtn) {
+                    donateDlBtn.onclick = () => {
+                        const originalText = donateDlBtn.innerHTML;
+                        donateDlBtn.innerHTML = '<span>⏳ กำลังดาวน์โหลด...</span>';
+                        fetch(downloadUrl)
+                            .then(response => response.blob())
+                            .then(blob => {
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.style.display = 'none';
+                                a.href = url;
+                                const fileName = downloadUrl.split('/').pop().split('?')[0] || 'image_download.jpg';
+                                a.download = fileName;
+                                document.body.appendChild(a);
+                                a.click();
+                                window.URL.revokeObjectURL(url);
+                                document.body.removeChild(a);
+                                donateDlBtn.innerHTML = '<span>✅ ดาวน์โหลดสำเร็จ!</span>';
+                                setTimeout(() => { donateDlBtn.innerHTML = originalText; }, 3000);
+                            })
+                            .catch(err => {
+                                console.error('Download failed:', err);
+                                window.open(downloadUrl, '_blank');
+                                donateDlBtn.innerHTML = '<span>⚠️ เปิดไฟล์ในแท็บใหม่</span>';
+                                setTimeout(() => { donateDlBtn.innerHTML = originalText; }, 3000);
+                            });
+                    };
+                }
+
+                // Confetti
+                setTimeout(() => {
+                    const donateCanvas = document.getElementById('donate-confetti-canvas');
+                    if (typeof confetti === 'function' && donateCanvas) {
+                        const myConfetti = confetti.create(donateCanvas, { resize: true, useWorker: true });
+                        myConfetti({ particleCount: 80, spread: 60, origin: { y: 0.5 }, colors: ['#ef4444', '#f59e0b', '#10b981', '#ffffff'] });
+                    }
+                }, 600);
+
+                // --- Donate Countdown: เมื่อหมดอายุ ซ่อน donate bar ทั้งหมด ---
+                if (expiryTimestamp) {
+                    function updateDonateCountdown() {
+                        const now = Date.now();
+                        const timeLeft = expiryTimestamp - now;
+                        if (timeLeft <= 0) {
+                            // ไฟล์หมดอายุ - ซ่อนแถบดาวน์โหลดและ QR ทั้งหมด
+                            const db = document.getElementById('donate-bar');
+                            if (db) db.style.display = 'none';
+                            showError('ลิงก์หมดอายุ', 'ไฟล์ของคุณถูกลบออกจากระบบเรียบร้อยแล้ว');
+                            return;
+                        }
+                        const h = String(Math.floor(timeLeft / 36e5)).padStart(2, '0');
+                        const m = String(Math.floor((timeLeft % 36e5) / 6e4)).padStart(2, '0');
+                        const s = String(Math.floor((timeLeft % 6e4) / 1e3)).padStart(2, '0');
+                        countdownElement.textContent = `ไฟล์จะลบใน: ${h}:${m}:${s}`;
+                    }
+                    updateDonateCountdown();
+                    setInterval(updateDonateCountdown, 1000);
+                }
+
+            } else if (isNoPriceMode) {
                 const noPriceBar = document.getElementById('no-price-bar');
                 const mainContent = document.querySelector('.main-content');
                 const svg = document.getElementById('connection-svg');
@@ -2010,7 +2326,7 @@
                 }
             }
 
-            if (expiryTimestamp) {
+            if (expiryTimestamp && !isDonateMode) {
                 function updateCountdown() {
                     const now = Date.now();
                     const timeLeft = expiryTimestamp - now;
