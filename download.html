@@ -2747,19 +2747,5 @@
         </style>
     </svg>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            if (/Line|FBAV|FBAN|Instagram/i.test(userAgent)) {
-                // Update instructions to encourage clicking the download button rather than long pressing
-                const divs = document.querySelectorAll('div');
-                divs.forEach(div => {
-                    if (div.innerHTML.includes('<b>มือถือ:</b> ให้กดนิ้วจิ้มค้างที่ภาพ')) {
-                        div.innerHTML = "<b>แอปโซเชียล:</b> ให้กดปุ่มดาวน์โหลดรัวๆ เพื่อใช้เบราว์เซอร์หลักเครื่อง";
-                    }
-                });
-            }
-        });
-    </script>
 </body>
 </html>
