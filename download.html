@@ -1786,6 +1786,44 @@
         const viewerContent = document.getElementById('viewer-content');
         const timerBadge = document.getElementById('timer-badge');
 
+        // Helper for downloading files safely (especially on LINE App)
+        window.performDownload = function(btnElement, urlToDownload) {
+            const originalText = btnElement.innerHTML;
+            btnElement.innerHTML = '<span>⏳ กำลังดาวน์โหลด...</span>';
+
+            const isLineApp = /Line/i.test(navigator.userAgent);
+            if (isLineApp) {
+                // Bypass blob fetch on LINE app to avoid restrictive sandbox
+                window.location.href = urlToDownload + (urlToDownload.includes('?') ? '&' : '?') + 'dl=1';
+                btnElement.innerHTML = '<span>✅ เปิดไฟล์แล้ว! (คลิกค้างเพื่อบันทึก)</span>';
+                setTimeout(() => { btnElement.innerHTML = originalText; }, 3000);
+                return;
+            }
+
+            fetch(urlToDownload)
+                .then(response => response.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    const fileName = urlToDownload.split('/').pop().split('?')[0] || 'image_download.jpg';
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    btnElement.innerHTML = '<span>✅ ดาวน์โหลดสำเร็จ!</span>';
+                    setTimeout(() => { btnElement.innerHTML = originalText; }, 3000);
+                })
+                .catch(err => {
+                    console.error('Download failed:', err);
+                    window.open(urlToDownload, '_blank');
+                    btnElement.innerHTML = '<span>⚠️ เปิดไฟล์ในแท็บใหม่</span>';
+                    setTimeout(() => { btnElement.innerHTML = originalText; }, 3000);
+                });
+        };
+
         function showError(title, msg, showRawLink = false) {
             viewerContent.innerHTML = `
                 <div class="error-state">
@@ -1979,8 +2017,11 @@
                 if (document.getElementById('security-grid')) document.getElementById('security-grid').style.display = 'none';
                 if (document.getElementById('scan-line')) document.getElementById('scan-line').style.display = 'none';
                 if (document.getElementById('lock-decor')) document.getElementById('lock-decor').style.display = 'none';
-                if (imgBox) { imgBox.oncontextmenu = null; imgBox.classList.remove('pay-lock'); }
-                if (img) img.style.pointerEvents = 'auto';
+                if (imgBox) { imgBox.removeAttribute('oncontextmenu'); imgBox.classList.remove('pay-lock'); }
+                if (img) {
+                    img.style.pointerEvents = 'auto';
+                    img.style.webkitTouchCallout = 'default';
+                }
                 if (step1) step1.style.display = 'none';
 
                 // Enable zoom
@@ -2087,32 +2128,7 @@
                 // Download button
                 const donateDlBtn = document.getElementById('donate-download-btn');
                 if (donateDlBtn) {
-                    donateDlBtn.onclick = () => {
-                        const originalText = donateDlBtn.innerHTML;
-                        donateDlBtn.innerHTML = '<span>⏳ กำลังดาวน์โหลด...</span>';
-                        fetch(downloadUrl)
-                            .then(response => response.blob())
-                            .then(blob => {
-                                const url = window.URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.style.display = 'none';
-                                a.href = url;
-                                const fileName = downloadUrl.split('/').pop().split('?')[0] || 'image_download.jpg';
-                                a.download = fileName;
-                                document.body.appendChild(a);
-                                a.click();
-                                window.URL.revokeObjectURL(url);
-                                document.body.removeChild(a);
-                                donateDlBtn.innerHTML = '<span>✅ ดาวน์โหลดสำเร็จ!</span>';
-                                setTimeout(() => { donateDlBtn.innerHTML = originalText; }, 3000);
-                            })
-                            .catch(err => {
-                                console.error('Download failed:', err);
-                                window.open(downloadUrl, '_blank');
-                                donateDlBtn.innerHTML = '<span>⚠️ เปิดไฟล์ในแท็บใหม่</span>';
-                                setTimeout(() => { donateDlBtn.innerHTML = originalText; }, 3000);
-                            });
-                    };
+                    donateDlBtn.onclick = () => window.performDownload(donateDlBtn, downloadUrl);
                 }
 
                 // Confetti
@@ -2239,44 +2255,20 @@
                 if (lDecor) lDecor.style.display = 'none';
 
                 if (imgBox) {
-                    imgBox.oncontextmenu = null;
+                    imgBox.removeAttribute('oncontextmenu');
                     imgBox.classList.remove('pay-lock');
                 }
-                if (img) img.style.pointerEvents = 'auto';
+                if (img) {
+                    img.style.pointerEvents = 'auto';
+                    img.style.webkitTouchCallout = 'default';
+                }
                 if (badge) badge.style.display = 'none';
                 if (step1) step1.style.display = 'none';
 
                 // Set download button to direct download
                 const dBtn = document.getElementById('download-btn');
                 if (dBtn) {
-                    dBtn.onclick = () => {
-                        const originalText = dBtn.innerHTML;
-                        dBtn.innerHTML = '<span>⏳ กำลังดาวน์โหลด...</span>';
-
-                        fetch(downloadUrl)
-                            .then(response => response.blob())
-                            .then(blob => {
-                                const url = window.URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.style.display = 'none';
-                                a.href = url;
-                                const fileName = downloadUrl.split('/').pop().split('?')[0] || 'image_download.jpg';
-                                a.download = fileName;
-                                document.body.appendChild(a);
-                                a.click();
-                                window.URL.revokeObjectURL(url);
-                                document.body.removeChild(a);
-
-                                dBtn.innerHTML = '<span>✅ ดาวน์โหลดสำเร็จ!</span>';
-                                setTimeout(() => { dBtn.innerHTML = originalText; }, 3000);
-                            })
-                            .catch(err => {
-                                console.error('Auto-download failed:', err);
-                                window.open(downloadUrl, '_blank');
-                                dBtn.innerHTML = '<span>⚠️ เปิดไฟล์ในแท็บใหม่</span>';
-                                setTimeout(() => { dBtn.innerHTML = originalText; }, 3000);
-                            });
-                    };
+                    dBtn.onclick = () => window.performDownload(dBtn, downloadUrl);
                 }
             } else if (priceParam && !isNaN(price) && price > 0) {
                 // Initial hide for instruction on price > 0 mode
@@ -2368,34 +2360,7 @@
             dlUrlDirect = `https://tempfile.org/${parts[parts.length - 1]}/download`;
         }
 
-        downloadBtn.onclick = () => {
-            const originalText = downloadBtn.innerHTML;
-            downloadBtn.innerHTML = '<span>⏳ กำลังดาวน์โหลด...</span>';
-
-            fetch(dlUrlDirect)
-                .then(response => response.blob())
-                .then(blob => {
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = url;
-                    const fileName = dlUrlDirect.split('/').pop().split('?')[0] || 'image_download.jpg';
-                    a.download = fileName;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-
-                    downloadBtn.innerHTML = '<span>✅ ดาวน์โหลดสำเร็จ!</span>';
-                    setTimeout(() => { downloadBtn.innerHTML = originalText; }, 3000);
-                })
-                .catch(err => {
-                    console.error('Auto-download failed:', err);
-                    window.open(dlUrlDirect, '_blank');
-                    downloadBtn.innerHTML = '<span>⚠️ เปิดไฟล์ในแท็บใหม่</span>';
-                    setTimeout(() => { downloadBtn.innerHTML = originalText; }, 3000);
-                });
-        };
+        downloadBtn.onclick = () => window.performDownload(downloadBtn, dlUrlDirect);
 
         function showSlipAgain() {
             const qrWrapper = document.getElementById('qr-wrapper');
@@ -2575,9 +2540,12 @@
             if (document.getElementById('lock-decor')) document.getElementById('lock-decor').style.display = 'none';
             if (imgBox) {
                 imgBox.classList.remove('pay-lock');
-                imgBox.oncontextmenu = null;
+                imgBox.removeAttribute('oncontextmenu');
             }
-            if (imageElement) imageElement.style.pointerEvents = 'auto';
+            if (imageElement) {
+                imageElement.style.pointerEvents = 'auto';
+                imageElement.style.webkitTouchCallout = 'default';
+            }
 
             if (qrWrapper) {
                 qrWrapper.classList.add('tornado-active');
