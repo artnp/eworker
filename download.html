@@ -1789,14 +1789,17 @@
         // Helper for downloading files safely (especially on LINE App)
         window.performDownload = function(btnElement, urlToDownload) {
             const originalText = btnElement.innerHTML;
-            btnElement.innerHTML = '<span>⏳ กำลังดาวน์โหลด...</span>';
+            btnElement.innerHTML = '<span>⏳ กำลังเปิดไฟล์...</span>';
 
-            const isLineApp = /Line/i.test(navigator.userAgent);
-            if (isLineApp) {
-                // Bypass blob fetch on LINE app to avoid restrictive sandbox
-                window.location.href = urlToDownload + (urlToDownload.includes('?') ? '&' : '?') + 'dl=1';
-                btnElement.innerHTML = '<span>✅ เปิดไฟล์แล้ว! (คลิกค้างเพื่อบันทึก)</span>';
-                setTimeout(() => { btnElement.innerHTML = originalText; }, 3000);
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            const isInAppBrowser = /Line|FBAV|FBAN|Instagram/i.test(userAgent);
+
+            if (isInAppBrowser) {
+                // Force LINE/FB to bounce out to Safari/Chrome to allow saving natively.
+                const sep = urlToDownload.includes('?') ? '&' : '?';
+                window.location.href = urlToDownload + sep + 'openExternalBrowser=1';
+                btnElement.innerHTML = '<span>🚀 เปิดรูปในเบราว์เซอร์หลัก...</span>';
+                setTimeout(() => { btnElement.innerHTML = originalText; }, 4000);
                 return;
             }
 
@@ -2744,6 +2747,19 @@
         </style>
     </svg>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            if (/Line|FBAV|FBAN|Instagram/i.test(userAgent)) {
+                // Update instructions to encourage clicking the download button rather than long pressing
+                const divs = document.querySelectorAll('div');
+                divs.forEach(div => {
+                    if (div.innerHTML.includes('<b>มือถือ:</b> ให้กดนิ้วจิ้มค้างที่ภาพ')) {
+                        div.innerHTML = "<b>แอปโซเชียล:</b> ให้กดปุ่มดาวน์โหลดรัวๆ เพื่อใช้เบราว์เซอร์หลักเครื่อง";
+                    }
+                });
+            }
+        });
+    </script>
 </body>
-
 </html>
