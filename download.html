@@ -1666,7 +1666,7 @@
                             <span class="arrow-bounce-right" style="font-size: 1.1rem; line-height: 1;">👉</span>💾
                             <span style="font-size: 1.1rem; font-weight: 800;">บันทึกรูปภาพ</span>
                         </button>
-                        <div
+                        <div id="help-instruction-box"
                             style="margin-top: 15px; text-align: left; background: rgba(0,0,0,0.15); border: 1px dashed rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 18px; color: #94a3b8; font-size: 0.85rem; width: 95%; max-width: 400px; line-height: 1.5; margin-left: auto; margin-right: auto;">
                             <p
                                 style="margin: 0; color: #10b981; font-weight: 700; margin-bottom: 8px; font-size: 0.9rem;">
@@ -1847,17 +1847,21 @@
 
         // Hide zoom hint for PDF immediately
         if (fileType === 'pdf' || fileType === 'file') {
+            document.title = "รับไฟล์เอกสาร - PrivateSend";
             document.getElementById('zoom-hint').style.display = 'none';
             document.getElementById('pdf-action-menu').style.display = 'flex';
             
             // Update help instructions for PDF
-            const helpInstructions = document.querySelectorAll('#img-box + .final-download-container div, #hold-instruction + div');
-            helpInstructions.forEach(box => {
-                if (box.innerHTML.includes('หากดาวน์โหลดไม่ได้')) {
-                    box.innerHTML = box.innerHTML.replace('- หากรูปภาพไม่แสดง ให้ลองรีเฟรชหน้าจอ', '- กดที่เอกสาร > บันทึก(มุมขวาบน)');
-                    box.innerHTML = box.innerHTML.replace('กดค้างที่รูปภาพ > บันทึกรูปภาพ', '- กดที่เอกสาร > บันทึก(มุมขวาบน)');
-                }
-            });
+            const helpBox = document.getElementById('help-instruction-box');
+            if (helpBox) {
+                helpBox.innerHTML = `
+                    <p style="margin: 0; color: #10b981; font-weight: 700; margin-bottom: 8px; font-size: 0.9rem;">* หากดาวน์โหลดไม่ได้</p>
+                    <div style="display: flex; align-items: center; gap: 10px; white-space: nowrap;">
+                        <span>-</span>
+                        <div>กดที่เอกสาร > บันทึก(มุมขวาบน)</div>
+                    </div>
+                `;
+            }
         }
 
         // Helper for downloading files safely (especially on LINE App)
@@ -2186,10 +2190,13 @@
                                 <span class="arrow-bounce-right" style="font-size: 1.1rem; line-height: 1;">👉</span>💾
                                 <span style="font-size: 1.1rem; font-weight: 800;">${(fileType === 'pdf' || fileType === 'file') ? 'ดาวน์โหลดไฟล์' : 'บันทึกรูปภาพ'}</span>
                             </button>
-                            <div style="margin-top: 12px; text-align: left; background: rgba(0,0,0,0.15); border: 1px dashed rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 18px; color: #94a3b8; font-size: 0.85rem; width: 95%; max-width: 400px; line-height: 1.5; margin-left: auto; margin-right: auto;">
+                            <div id="donate-help-box" style="margin-top: 12px; text-align: left; background: rgba(0,0,0,0.15); border: 1px dashed rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 18px; color: #94a3b8; font-size: 0.85rem; width: 95%; max-width: 400px; line-height: 1.5; margin-left: auto; margin-right: auto;">
                                 <p style="margin: 0; color: #10b981; font-weight: 700; margin-bottom: 8px; font-size: 0.9rem;">* หากดาวน์โหลดไม่ได้</p>
-                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px; white-space: nowrap;"><span>-</span><div><b>มือถือ:</b> ให้กดนิ้วจิ้มค้างที่ภาพ</div></div>
-                                <div style="display: flex; align-items: center; gap: 10px; white-space: nowrap;"><span>-</span><div><b>คอมพิวเตอร์:</b> กดคลิกขวาที่ภาพ</div></div>
+                                ${(fileType === 'pdf' || fileType === 'file') ? 
+                                    `<div style="display: flex; align-items: center; gap: 10px; white-space: nowrap;"><span>-</span><div>กดที่เอกสาร > บันทึก(มุมขวาบน)</div></div>` :
+                                    `<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px; white-space: nowrap;"><span>-</span><div><b>มือถือ:</b> ให้กดนิ้วจิ้มค้างที่ภาพ</div></div>
+                                     <div style="display: flex; align-items: center; gap: 10px; white-space: nowrap;"><span>-</span><div><b>คอมพิวเตอร์:</b> กดคลิกขวาที่ภาพ</div></div>`
+                                }
                             </div>
                         </div>
 
