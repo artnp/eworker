@@ -223,6 +223,12 @@
             cursor: not-allowed !important;
         }
 
+        .pay-lock #image-zoom-container,
+        .pay-lock .pdf-preview-box {
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+        }
+
         /* Chains and Lock Decor */
         .lock-decor {
             position: absolute;
@@ -1730,34 +1736,49 @@
             <!-- Contextmenu enabled to allow long pressing -->
             <div class="image-container" id="img-box" oncontextmenu="return false;"
                 style="padding: 0; flex-direction: column; position: relative; z-index: 10;">
-                <div
+                <div id="preview-wrapper"
                     style="padding: 20px; display: flex; justify-content: center; align-items: center; width: 100%; min-height: 150px; position: relative;">
-                    <div id="image-zoom-container" class="image-wrapper" onclick="openLightbox()">
+                    <div id="image-zoom-container" class="image-wrapper" onclick="openLightbox()" style="position: relative;">
                         <img id="image" alt="กำลังเตรียมภาพของคุณ..."
                             style="display: none; pointer-events: none; max-width: 100%; border-radius: 8px;">
-                        <div id="guard-layer" class="guard-layer" style="display: none;"></div>
-                        <div id="security-grid" class="security-grid"></div>
-                        <div id="scan-line" class="scan-line-security"></div>
-
-                        <div class="lock-decor" id="lock-decor">
-                            <svg class="chain-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M0,50 L200,150 M0,150 L200,50 M50,0 L150,200 M150,0 L50,200"
-                                    stroke="rgba(255,255,255,0.4)" stroke-width="6" stroke-dasharray="10,8" />
-                            </svg>
-                        </div>
-
-                        <div id="watermark" class="watermark" style="display: none;">ภาพตัวอย่าง</div>
-                        <span id="step-1-circle" class="step-circle-standalone">1</span>
-                        <div id="zoom-hint" class="zoom-hint" style="display: none;">🔍 ขยายภาพ</div>
                     </div>
 
-                    <div id="pdf-preview" class="pdf-preview-box"><img id="pdf-icon" src="" alt="Icon">
-                        <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted);">ไฟล์เอกสาร (คลิก)
+                    <div id="pdf-preview" class="pdf-preview-box" style="position: relative; overflow: hidden; padding: 0; background: #1a1f35; width: 100%; display: none; justify-content: center; z-index: 1;">
+                        <canvas id="pdf-canvas" style="max-width: 100%; max-height: 45vh; height: auto; display: block; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);"></canvas>
+                        <div id="pdf-icon-fallback" style="display: none; flex-direction: column; align-items: center; gap: 15px; padding: 40px 20px;">
+                            <img id="pdf-icon" src="" alt="Icon" style="width: 80px;">
+                            <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted);">ไฟล์เอกสาร (คลิก)</div>
                         </div>
                     </div>
+
+                    <!-- Layout Shared Protection Layers (Overlay both img and pdf) -->
+                    <div id="guard-layer" class="guard-layer" style="display: none; z-index: 100;"></div>
+                    <div id="security-grid" class="security-grid" style="z-index: 90;"></div>
+                    <div id="scan-line" class="scan-line-security" style="z-index: 95;"></div>
+
+                    <div class="lock-decor" id="lock-decor" style="z-index: 110;">
+                        <svg class="chain-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M0,50 L200,150 M0,150 L200,50 M50,0 L150,200 M150,0 L50,200"
+                                stroke="rgba(255,255,255,0.4)" stroke-width="6" stroke-dasharray="10,8" />
+                        </svg>
+                    </div>
+
+                    <div id="watermark" class="watermark" style="display: none; z-index: 85;">ภาพตัวอย่าง</div>
+                    <span id="step-1-circle" class="step-circle-standalone" style="z-index: 120;">1</span>
+                    <div id="zoom-hint" class="zoom-hint" style="display: none; z-index: 120;">🔍 ขยายภาพ</div>
 
                     <div id="loading-text" style="color: var(--text-muted); text-align: center; padding: 20px;">
                         กำลังดาวน์โหลดไฟล์...<br><small>(หากรอนานเกินไป กรุณารีเฟรชหน้าจอ)</small></div>
+                </div>
+
+                <!-- PDF specific menu below thumbnail -->
+                <div id="pdf-action-menu" style="display: none; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 25px; animation: fadeIn 0.8s ease-out;">
+                    <!-- Pagination Controls -->
+                    <div id="pdf-pagination" style="display: flex; align-items: center; gap: 20px; background: rgba(15, 23, 42, 0.6); padding: 8px 16px; border-radius: 99px; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(10px);">
+                        <button id="pdf-prev-btn" class="nav-btn" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1.2rem; transition: color 0.3s; display: flex; align-items: center;">◀</button>
+                        <span id="pdf-page-num" style="color: #f8fafc; font-weight: 600; font-size: 0.9rem; min-width: 80px; text-align: center; letter-spacing: 1px;">หน้า 1 / 1</span>
+                        <button id="pdf-next-btn" class="nav-btn" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1.2rem; transition: color 0.3s; display: flex; align-items: center;">▶</button>
+                    </div>
                 </div>
 
                 <div id="hold-instruction" style="display: none;"></div>
@@ -1769,6 +1790,11 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // PDF.js worker configuration
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
     <script>// Fix: clean &amp; → & in URL before parsing
         const cleanSearch = window.location.search.replace(/&amp;/gi, '&');
         const params = new URLSearchParams(cleanSearch);
@@ -1785,6 +1811,54 @@
         const downloadBtn = document.getElementById('download-btn');
         const viewerContent = document.getElementById('viewer-content');
         const timerBadge = document.getElementById('timer-badge');
+
+        let pdfDoc = null;
+        let pdfCurrentPage = 1;
+        let pdfTotalPages = 1;
+
+        function applyProtection(isPdf = false) {
+            const imgBox = document.getElementById('img-box');
+            const watermark = document.getElementById('watermark');
+            const guard = document.getElementById('guard-layer');
+            const secGrid = document.getElementById('security-grid');
+            const scanLine = document.getElementById('scan-line');
+            const lDecor = document.getElementById('lock-decor');
+
+            if (imgBox) imgBox.classList.add('pay-lock');
+            if (watermark) {
+                watermark.style.display = 'block';
+                if (isPdf) watermark.style.fontSize = '2.5rem';
+            }
+            if (guard) guard.style.display = 'block';
+            if (secGrid) secGrid.style.display = 'block';
+            if (scanLine) scanLine.style.display = 'block';
+            if (lDecor) lDecor.style.display = 'flex';
+        }
+
+        // Initial Protection Check (PROACTIVE) - Run as soon as we have params
+        const priceForGuard = parseFloat(params.get('price'));
+        const isPaidForGuard = localStorage.getItem('paid_' + fileUrl) === '1';
+        if (!isNaN(priceForGuard) && priceForGuard > 0 && !isPaidForGuard && !isDonateMode) {
+            // Apply protection IMMEDIATELY before loading starts
+            setTimeout(() => {
+                applyProtection(fileType === 'pdf');
+            }, 0);
+        }
+
+        // Hide zoom hint for PDF immediately
+        if (fileType === 'pdf' || fileType === 'file') {
+            document.getElementById('zoom-hint').style.display = 'none';
+            document.getElementById('pdf-action-menu').style.display = 'flex';
+            
+            // Update help instructions for PDF
+            const helpInstructions = document.querySelectorAll('#img-box + .final-download-container div, #hold-instruction + div');
+            helpInstructions.forEach(box => {
+                if (box.innerHTML.includes('หากดาวน์โหลดไม่ได้')) {
+                    box.innerHTML = box.innerHTML.replace('- หากรูปภาพไม่แสดง ให้ลองรีเฟรชหน้าจอ', '- กดที่เอกสาร > บันทึก(มุมขวาบน)');
+                    box.innerHTML = box.innerHTML.replace('กดค้างที่รูปภาพ > บันทึกรูปภาพ', '- กดที่เอกสาร > บันทึก(มุมขวาบน)');
+                }
+            });
+        }
 
         // Helper for downloading files safely (especially on LINE App)
         window.performDownload = function(btnElement, urlToDownload) {
@@ -1862,7 +1936,6 @@
                 pdfIcon.src = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5NGEzYjgiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxyZWN0IHg9IjMiIHk9IjMiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgcng9IjIiIHJ5PSIyIi8+PGNpcmNsZSBjeD0iOC41IiBjeT0iOC41IiByPSIxLjUiLz48cGF0aCBkPSJNMjEgMTVMMTYgMTBMNSAyMSIvPjwvc3ZnPg==";
                 pdfPreview.style.display = 'flex';
                 loadingText.style.display = 'none';
-                pdfPreview.querySelector('div').textContent = fileType === 'pdf' ? "ไฟล์เอกสาร PDF (คลิก)" : "ไฟล์ทั่วไป (คลิก)";
                 
                 // Fix: Target the second span to avoid overwriting the arrow icon and creating double text
                 const btnSpans = downloadBtn.querySelectorAll('span');
@@ -1871,8 +1944,80 @@
                 } else {
                     downloadBtn.textContent = 'ดาวน์โหลดไฟล์';
                 }
+
+                // --- PDF Rendering Logic ---
+                if (fileType === 'pdf') {
+                    const canvas = document.getElementById('pdf-canvas');
+                    const fallback = document.getElementById('pdf-icon-fallback');
+                    const pageDisplay = document.getElementById('pdf-page-num');
+                    const prevBtn = document.getElementById('pdf-prev-btn');
+                    const nextBtn = document.getElementById('pdf-next-btn');
+
+                    function renderPdfPage(num) {
+                        pdfDoc.getPage(num).then(page => {
+                            const viewport = page.getViewport({ scale: 1.5 });
+                            const context = canvas.getContext('2d');
+                            const containerWidth = pdfPreview.clientWidth || 400;
+                            const scale = containerWidth / viewport.width;
+                            const scaledViewport = page.getViewport({ scale: scale * 1.5 });
+
+                            canvas.height = scaledViewport.height;
+                            canvas.width = scaledViewport.width;
+
+                            page.render({
+                                canvasContext: context,
+                                viewport: scaledViewport
+                            }).promise.then(() => {
+                                console.log('PDF Page ' + num + ' rendered');
+                                canvas.style.display = 'block';
+                                fallback.style.display = 'none';
+                                pageDisplay.textContent = `หน้า ${num} / ${pdfTotalPages}`;
+                                
+                                // Maintain protection layers
+                                if (document.getElementById('img-box').classList.contains('pay-lock')) {
+                                    applyProtection(true);
+                                }
+                                setTimeout(updateConnections, 100);
+                            });
+                        });
+                    }
+                    
+                    pdfjsLib.getDocument(downloadUrl).promise.then(pdf => {
+                        pdfDoc = pdf;
+                        pdfTotalPages = pdf.numPages;
+                        pdfCurrentPage = 1;
+                        renderPdfPage(pdfCurrentPage);
+                    }).catch(err => {
+                        console.warn('PDF.js failed to render:', err);
+                        canvas.style.display = 'none';
+                        fallback.style.display = 'flex';
+                        fallback.querySelector('div').textContent = "ไฟล์เอกสาร PDF (คลิก)";
+                        document.getElementById('pdf-pagination').style.display = 'none';
+                    });
+
+                    prevBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (pdfCurrentPage <= 1) return;
+                        pdfCurrentPage--;
+                        renderPdfPage(pdfCurrentPage);
+                    };
+
+                    nextBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (pdfCurrentPage >= pdfTotalPages) return;
+                        pdfCurrentPage++;
+                        renderPdfPage(pdfCurrentPage);
+                    };
+                } else {
+                    document.getElementById('pdf-canvas').style.display = 'none';
+                    document.getElementById('pdf-icon-fallback').style.display = 'flex';
+                    document.getElementById('pdf-icon-fallback').querySelector('div').textContent = "ไฟล์ทั่วไป (คลิก)";
+                }
                 
-                pdfPreview.onclick = () => window.open(downloadUrl, '_blank');
+                pdfPreview.onclick = () => {
+                   if (document.getElementById('img-box').classList.contains('pay-lock')) return;
+                   window.open(downloadUrl, '_blank');
+                };
             }
 
             else {
@@ -1894,38 +2039,16 @@
                     setTimeout(updateConnections, 500);
                     setTimeout(updateConnections, 1500);
 
+                    // Re-check zoom if already paid
                     const priceParam = params.get('price');
                     const isPaid = localStorage.getItem('paid_' + fileUrl) === '1';
-
                     if (priceParam === '0' || (priceParam !== null && isPaid) || isDonateMode) {
-                        // Already clear or free or donate - enable zoom immediately
                         const zoomCont = document.getElementById('image-zoom-container');
-                        const zHint = document.getElementById('zoom-hint');
                         if (zoomCont) {
                             zoomCont.style.pointerEvents = 'auto';
                             zoomCont.style.cursor = 'zoom-in';
                         }
-                        if (zHint) {
-                            zHint.style.display = 'flex';
-                            zHint.innerHTML = '🔍 ขยายภาพ';
-                        }
-                        return; // No watermark needed
                     }
-
-                    // For paid mode not yet paid:
-                    const imgBox = document.getElementById('img-box');
-                    const watermark = document.getElementById('watermark');
-                    const guard = document.getElementById('guard-layer');
-                    const secGrid = document.getElementById('security-grid');
-                    const scanLine = document.getElementById('scan-line');
-                    const lDecor = document.getElementById('lock-decor');
-
-                    if (imgBox) imgBox.classList.add('pay-lock');
-                    if (watermark) watermark.style.display = 'block';
-                    if (guard) guard.style.display = 'block';
-                    if (secGrid) secGrid.style.display = 'block';
-                    if (scanLine) scanLine.style.display = 'block';
-                    if (lDecor) lDecor.style.display = 'flex';
                 };
 
                 imageElement.onerror = () => {
