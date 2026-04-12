@@ -1060,7 +1060,7 @@
 
         .final-download-container {
             margin-top: 25px;
-            padding: 20px;
+            padding: 18px 10px;
             background: rgba(16, 185, 129, 0.05);
             border: 1.5px dashed rgba(16, 185, 129, 0.3);
             border-radius: 24px;
@@ -1656,9 +1656,9 @@
                         <div style="color: #34d399; font-size: 0.85rem; font-weight: 600; margin-bottom: -5px;">
                             ไฟล์ของคุณพร้อมแล้ว! ✨</div>
                         <button id="download-btn" class="btn btn-primary"
-                            style="position: relative; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); width: 85%; padding: 16px 20px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
-                            <span class="arrow-bounce-right" style="font-size: 1.2rem; line-height: 1;">👉</span>💾
-                            <span style="font-size: 1.15rem; font-weight: 800;">บันทึกรูปภาพ</span>
+                            style="position: relative; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); width: 95%; padding: 16px 10px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                            <span class="arrow-bounce-right" style="font-size: 1.1rem; line-height: 1;">👉</span>💾
+                            <span style="font-size: 1.1rem; font-weight: 800;">บันทึกรูปภาพ</span>
                         </button>
                         <div
                             style="margin-top: 15px; text-align: left; background: rgba(0,0,0,0.15); border: 1px dashed rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 18px; color: #94a3b8; font-size: 0.85rem; width: 95%; max-width: 400px; line-height: 1.5; margin-left: auto; margin-right: auto;">
@@ -1863,7 +1863,15 @@
                 pdfPreview.style.display = 'flex';
                 loadingText.style.display = 'none';
                 pdfPreview.querySelector('div').textContent = fileType === 'pdf' ? "ไฟล์เอกสาร PDF (คลิก)" : "ไฟล์ทั่วไป (คลิก)";
-                downloadBtn.querySelector('span').textContent = 'ดาวน์โหลดไฟล์';
+                
+                // Fix: Target the second span to avoid overwriting the arrow icon and creating double text
+                const btnSpans = downloadBtn.querySelectorAll('span');
+                if (btnSpans.length > 1) {
+                    btnSpans[1].textContent = 'ดาวน์โหลดไฟล์';
+                } else {
+                    downloadBtn.textContent = 'ดาวน์โหลดไฟล์';
+                }
+                
                 pdfPreview.onclick = () => window.open(downloadUrl, '_blank');
             }
 
@@ -2051,9 +2059,9 @@
                         <!-- Download Section -->
                         <div style="margin-bottom: 24px; width: 100%;">
                             <div style="color: #34d399; font-size: 0.9rem; font-weight: 600; margin-bottom: 10px;">ไฟล์ของคุณพร้อมแล้ว! ✨</div>
-                            <button id="donate-download-btn" style="position: relative; background: linear-gradient(135deg, #10b981, #059669); border: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); width: 85%; padding: 16px 20px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 99px; color: white; font-weight: 700; font-size: 1.1rem; cursor: pointer; transition: all 0.3s;">
-                                <span class="arrow-bounce-right" style="font-size: 1.2rem; line-height: 1;">👉</span>💾
-                                <span style="font-size: 1.15rem; font-weight: 800;">บันทึกรูปภาพ</span>
+                            <button id="donate-download-btn" style="position: relative; background: linear-gradient(135deg, #10b981, #059669); border: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); width: 95%; padding: 16px 10px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 99px; color: white; font-weight: 700; font-size: 1.1rem; cursor: pointer; transition: all 0.3s;">
+                                <span class="arrow-bounce-right" style="font-size: 1.1rem; line-height: 1;">👉</span>💾
+                                <span style="font-size: 1.1rem; font-weight: 800;">${(fileType === 'pdf' || fileType === 'file') ? 'ดาวน์โหลดไฟล์' : 'บันทึกรูปภาพ'}</span>
                             </button>
                             <div style="margin-top: 12px; text-align: left; background: rgba(0,0,0,0.15); border: 1px dashed rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 18px; color: #94a3b8; font-size: 0.85rem; width: 95%; max-width: 400px; line-height: 1.5; margin-left: auto; margin-right: auto;">
                                 <p style="margin: 0; color: #10b981; font-weight: 700; margin-bottom: 8px; font-size: 0.9rem;">* หากดาวน์โหลดไม่ได้</p>
