@@ -66,6 +66,23 @@ class DownloadHandler(FileSystemEventHandler):
     def on_modified(self, event):
         self._handle(event)
 
+class DesktopHandler(FileSystemEventHandler):
+    def _handle(self, event):
+        if event.is_directory: return
+        filename = os.path.basename(event.src_path)
+        if filename.lower() == "complete.png":
+            time.sleep(1) # wait for file write
+            global last_exported_path
+            last_exported_path = event.src_path
+            export_event.set()
+            export_event.clear()
+
+    def on_created(self, event):
+        self._handle(event)
+
+    def on_modified(self, event):
+        self._handle(event)
+
 # --- SERVER LOGIC ---
 class HubHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
@@ -82,8 +99,11 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             # จอดรอตรงนี้จนกว่าจะมีสัญญาณ (Timeout 60s เพื่อความปลอดภัย)
-            export_event.wait(timeout=60)
-            self.wfile.write(json.dumps({"status": "updated", "path": last_exported_path}).encode())
+            was_set = export_event.wait(timeout=60)
+            if was_set:
+                self.wfile.write(json.dumps({"status": "updated", "path": last_exported_path}).encode())
+            else:
+                self.wfile.write(json.dumps({"status": "timeout", "path": last_exported_path}).encode())
             return
 
         if parsed_url.path == '/list-downloads':
@@ -211,6 +231,11 @@ if __name__ == "__main__":
     observer.schedule(event_handler, DOWNLOADS_PATH, recursive=False)
     observer.start()
 
+    desktop_handler = DesktopHandler()
+    desktop_observer = Observer()
+    desktop_observer.schedule(desktop_handler, DESKTOP_PATH, recursive=False)
+    desktop_observer.start()
+
     from PIL import Image, ImageDraw
     import pystray
 
@@ -227,6 +252,7 @@ if __name__ == "__main__":
 
     def on_quit(icon, item):
         observer.stop()
+        desktop_observer.stop()
         httpd.shutdown()
         httpd.server_close()
         icon.stop()
@@ -242,5 +268,7 @@ if __name__ == "__main__":
     finally:
         observer.stop()
         observer.join()
+        desktop_observer.stop()
+        desktop_observer.join()
         httpd.shutdown()
         httpd.server_close()

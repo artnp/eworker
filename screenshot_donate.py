@@ -260,14 +260,76 @@ def process_donate(full_path=None):
     aa_scale = 3
     aa_img = Image.new('RGBA', (overlay_w * aa_scale, overlay_h * aa_scale), (0,0,0,0))
     aa_draw = ImageDraw.Draw(aa_img)
-    outline_w = max(1, int(1.5 * scale))
+    import math
+
+    aw = (overlay_w * aa_scale) - 1
+    ah = (overlay_h * aa_scale) - 1
+    ar = radius * aa_scale
+
+    # วาดพื้นสีขาวของกรอบ (ไม่มีเส้นขอบทึบ)
     aa_draw.rounded_rectangle(
-        (0, 0, (overlay_w * aa_scale) - 1, (overlay_h * aa_scale) - 1), 
-        radius=radius * aa_scale, 
-        fill=(255, 255, 255, 248), 
-        outline=(226, 232, 240, 255), 
-        width=outline_w * aa_scale
+        (0, 0, aw, ah), 
+        radius=ar, 
+        fill=(255, 255, 255, 248)
     )
+
+    # ฟังก์ชันคำนวณตำแหน่งจุดบนขอบของ Rounded Rectangle
+    def get_rrect_point(p, w, h, r):
+        seg_horiz = w - 2*r
+        seg_vert = h - 2*r
+        arc_len = math.pi * r / 2
+        
+        if p <= seg_horiz: return (r + p, 0)
+        p -= seg_horiz
+        if p <= arc_len:
+            angle = -math.pi/2 + (p / arc_len) * (math.pi/2)
+            return (w - r + r * math.cos(angle), r + r * math.sin(angle))
+        p -= arc_len
+        if p <= seg_vert: return (w, r + p)
+        p -= seg_vert
+        if p <= arc_len:
+            angle = (p / arc_len) * (math.pi/2)
+            return (w - r + r * math.cos(angle), h - r + r * math.sin(angle))
+        p -= arc_len
+        if p <= seg_horiz: return (w - r - p, h)
+        p -= seg_horiz
+        if p <= arc_len:
+            angle = math.pi/2 + (p / arc_len) * (math.pi/2)
+            return (r + r * math.cos(angle), h - r + r * math.sin(angle))
+        p -= arc_len
+        if p <= seg_vert: return (0, h - r - p)
+        p -= seg_vert
+        if p <= arc_len:
+            angle = math.pi + (p / arc_len) * (math.pi/2)
+            return (r + r * math.cos(angle), r + r * math.sin(angle))
+        return (r, 0)
+
+    perimeter = 2 * (aw - 2 * ar) + 2 * (ah - 2 * ar) + 2 * math.pi * ar
+    dash_len = 20 * aa_scale * scale  # ความยาวเส้นปะ (ขยายให้ยาวขึ้น)
+    gap_len = 14 * aa_scale * scale   # ความยาวช่องว่าง (ขยายช่องว่างให้สมดุล)
+    
+    dash_total = dash_len + gap_len
+    num_dashes = max(1, int(perimeter / dash_total))
+    
+    actual_dash_total = perimeter / num_dashes
+    ratio = actual_dash_total / dash_total
+    actual_dash = dash_len * ratio
+    
+    samples = int(perimeter)
+    border_color = '#f97316'
+    outline_w = max(2, int(3.0 * scale)) # เพิ่มความหนาของเส้นปะ
+    draw_width = outline_w * aa_scale
+    
+    last_pt = None
+    for i in range(samples + 1):
+        dist = (i / samples) * perimeter
+        pt = get_rrect_point(dist, aw, ah, ar)
+        if (dist % actual_dash_total) <= actual_dash:
+            if last_pt:
+                aa_draw.line([last_pt, pt], fill=border_color, width=draw_width)
+            last_pt = pt
+        else:
+            last_pt = None
     
     # ย่อสเกลกลับด้วย LANCZOS เพื่อความเนียนสมบูรณ์แบบ
     overlay_img = aa_img.resize((overlay_w, overlay_h), Image.Resampling.LANCZOS)
@@ -284,7 +346,18 @@ def process_donate(full_path=None):
     overlay_draw.text((text_x, text_y), ":) โปรเจคการกุศลช่วยเหลือฟรี", fill='#059669', font=font)
     overlay_draw.text((text_x, text_y + int(36 * scale)), "สแกน QR code !!", fill='#0f172a', font=font)
     overlay_draw.text((text_x, text_y + int(64 * scale)), "ดาวน์โหลดภาพเต็มชัดแจ๋ว-ไฟล์ไม่แตก!", fill='#0f172a', font=font)
-    overlay_draw.text((text_x, text_y + int(100 * scale)), "> อยากจ้างตัดต่อส่วนตัว 60฿ | ทักแชทมาได้เลย", fill='#64748b', font=small_font)
+
+    # วาดเส้นปะสีส้มคั่น
+    dash_length = max(1, int(6 * scale))
+    dash_gap = max(1, int(4 * scale))
+    line_y = text_y + int(92 * scale)
+    line_start_x = text_x
+    line_end_x = overlay_w - int(20 * scale)
+    for cx in range(line_start_x, line_end_x, dash_length + dash_gap):
+        end_x = min(cx + dash_length, line_end_x)
+        overlay_draw.line([(cx, line_y), (end_x, line_y)], fill='#f97316', width=max(1, int(1.5 * scale)))
+
+    overlay_draw.text((text_x, text_y + int(106 * scale)), "> อยากจ้างตัดต่อส่วนตัว 60฿ | ทักแชทมาได้เลย", fill='#64748b', font=small_font)
 
     # วาง overlay มุมซ้ายล่าง ห่างขอบ   
     pos_x = margin

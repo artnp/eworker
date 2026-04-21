@@ -17,12 +17,12 @@ function runDonateAction() {
         doc.saveAs(saveFile, pngSaveOptions, true, Extension.LOWERCASE);
         
         // พาธของไฟล์ VBScript ที่ต้องการรัน
-        var vbsFile = new File("D:/model/secretSend/บริจาค.vbs");
+        var vbsFile = new File("D:/Github/eworker/บริจาค.vbs");
         
         if (vbsFile.exists) {
             vbsFile.execute();
         } else {
-            alert("ข้อผิดพลาด: ไม่พบไฟล์ VBScript ที่ D:/model/secretSend/บริจาค.vbs");
+            alert("ข้อผิดพลาด: ไม่พบไฟล์ VBScript ที่ D:/Github/eworker/บริจาค.vbs");
         }
     } catch (e) {
         alert("เกิดข้อผิดพลาด: โปรดเปิดรูปภาพใน Photoshop ก่อนรัน Action นี้\n" + e);

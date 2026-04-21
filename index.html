@@ -706,7 +706,7 @@
                             updateSelectionIndicators();
                             // ถ้าเป็น complete.png กดแล้วให้โหลดตัวอย่างด้วย
                             if (item.shortname.toLowerCase() === "complete.png") {
-                                showWatermarkCheck(`/get-img?path=${encodeURIComponent(item.filename)}`);
+                                showWatermarkCheck(`/get-img?path=${encodeURIComponent(item.filename)}&v=${Date.now()}`);
                             }
                         };
 
@@ -742,15 +742,17 @@
                 const res = await fetch('/wait-for-export');
                 const data = await res.json();
                 
-                // เมื่อได้รับสัญญาณว่า Export เสร็จแล้ว ให้ Refresh รายการ
-                loadDownloads();
-                
-                // และโหลดตัวอย่างจากไฟล์ที่ Desktop มาโชว์ก้นภาพ
-                if (data.path) {
-                    showWatermarkCheck(`/get-img?path=${encodeURIComponent(data.path)}`);
+                // เฉพาะเมื่อได้รับสัญญาณว่า Export เสร็จจริงๆ (ไม่ใช่แค่ Timeout)
+                if (data.status === "updated" && data.path) {
+                    // Refresh รายการ
+                    loadDownloads();
+                    
+                    // โหลดตัวอย่างจากไฟล์ที่ Desktop มาโชว์ก้นภาพ (เพิ่ม v=Date.now เพื่อกัน Cache)
+                    showWatermarkCheck(`/get-img?path=${encodeURIComponent(data.path)}&v=${Date.now()}`);
+                    showToast('🔔 ตรวจพบไฟล์ใหม่จาก Desktop');
                 }
                 
-                // เสร็จแล้วกลับไปรอยาวๆ ใหม่
+                // กลับไปรอยาวๆ ใหม่
                 listenForExport();
             } catch (e) {
                 // ถ้าเกิด Error ให้รอ 5 วิแล้วค่อยลองต่อใหม่
@@ -937,8 +939,7 @@
                 }
             }
             if (imageFound) {
-                // Auto submit on paste as requested
-                setTimeout(() => submitHubData(), 100);
+                // Image added to previews, waiting for user to press Enter
             }
         });
 
