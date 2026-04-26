@@ -1049,7 +1049,7 @@
                 <!-- LEFT: Upload -->
                 <div class="form-col">
                     <div class="f-card step-active" id="step1" style="flex:1; overflow:hidden; transition: all 0.3s;">
-                        <label id="lbStep1">➔1️⃣ อัปโหลดภาพที่จะแก้</label>
+                        <label id="lbStep1">1️⃣ อัปโหลดภาพที่จะแก้ไข</label>
                         <div class="drop-zone" id="dz">
                             <input type="file" id="fi" accept="image/*" multiple hidden>
                             <svg class="drop-icon" width="52" height="52" viewBox="0 0 24 24" fill="none"
@@ -1076,7 +1076,7 @@
                 <!-- RIGHT: Details + Budget -->
                 <div class="form-col">
                     <div class="f-card step-future" id="step2" style="flex:1; transition: all 0.3s;">
-                        <label id="lbStep2">➔2️⃣รายละเอียดงาน</label>
+                        <label id="lbStep2">2️⃣รายละเอียดงาน</label>
                         <textarea id="desc"
                             placeholder="อธิบายสิ่งที่ต้องการแก้ไข เช่น ลบสิว ปรับสีผิว ลบวัตถุในพื้นหลัง..."></textarea>
                     </div>
@@ -1091,7 +1091,7 @@
                         <div class="budget-sub">ตั้งงบประมาณ 60 – 500 บาท</div>
                     </div>
                     <button id="subBtn" class="btn-go step-future" onclick="submitJob()"
-                        style="transition: all 0.3s;">➔3️⃣ โพสต์งานทันที⚡</button>
+                        style="transition: all 0.3s;">3️⃣ โพสต์งานทันที⚡</button>
                     <div id="errMsg"
                         style="color:var(--err); background:#fee2e2; padding:11px 14px; border-radius:10px; margin-top:12px; text-align:center; font-weight:600; display:none; font-size:.9rem;">
                     </div>
@@ -1498,7 +1498,7 @@
             document.getElementById('qrAmt').textContent = parseFloat(budget).toFixed(2) + ' THB';
             const qd = document.getElementById('qrD');
             const pid = "0988573074";
-            
+
             const qrUrl = `https://promptpay.io/${pid}/${budget}.png`;
             qd.innerHTML = `<img src="${qrUrl}" style="width: 140px; height: 140px; border-radius: 8px;" alt="PromptPay QR Code">`;
 
@@ -1676,9 +1676,9 @@
             s1.className = 'f-card';
             s2.className = 'f-card';
             s3.className = 'btn-go';
-            l1.innerHTML = '➔1️⃣ อัปโหลดภาพที่จะแก้';
-            l2.innerHTML = '➔2️⃣รายละเอียดงาน';
-            s3.innerHTML = '➔3️⃣ โพสต์งานทันที⚡';
+            l1.innerHTML = '1️⃣ อัปโหลดภาพที่จะแก้ไข';
+            l2.innerHTML = '2️⃣รายละเอียดงาน';
+            s3.innerHTML = '3️⃣ โพสต์งานทันที⚡';
 
             l1.classList.remove('anim-pulse');
             l2.classList.remove('anim-pulse');
@@ -1690,12 +1690,12 @@
                 s3.classList.add('step-future');
                 l1.classList.add('anim-pulse');
             } else if (!hasDesc) {
-                l1.innerHTML = '➔1️⃣ อัปโหลดภาพที่จะแก้ <span style="color:#10b981;">✅</span>';
+                l1.innerHTML = '➔1️⃣ อัปโหลดภาพที่จะแก้ไข <span style="color:#10b981;">✅</span>';
                 s2.classList.add('step-active');
                 s3.classList.add('step-future');
                 l2.classList.add('anim-pulse');
             } else {
-                l1.innerHTML = '➔1️⃣ อัปโหลดภาพที่จะแก้ <span style="color:#10b981;">✅</span>';
+                l1.innerHTML = '➔1️⃣ อัปโหลดภาพที่จะแก้ไข <span style="color:#10b981;">✅</span>';
                 l2.innerHTML = '➔2️⃣รายละเอียดงาน <span style="color:#10b981;">✅</span>';
                 s3.classList.add('step-active');
                 s3.innerHTML = '➔3️⃣ โพสต์งานทันที⚡ <span style="color:#10b981;">✅</span>';
