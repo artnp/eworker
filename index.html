@@ -3,1304 +3,1763 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI ศูนย์ทำงาน</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>🖼️ระบบจ้างงานแก้ไขภาพ</title>
     <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Prompt:wght@300;400;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Sarabun:wght@300;400;500;600&display=swap"
         rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
-            --bg: #f8f9fa;
-            --surface: #ffffff;
-            --input-bg: #ffffff;
-            --primary: #4285f4;
-            --text: #202124;
-            --text-sub: #5f6368;
-            --border: #dadce0;
-            --green: #06C755;
-            --shadow: 0 1px 3px rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
+            --p: #1d6aff;
+            --ph: #0052d9;
+            --p2: #38bdf8;
+            --s: #0ea5e9;
+            --bg: #f0f5fb;
+            --card: #ffffff;
+            --tx: #0f172a;
+            --dim: #64748b;
+            --ok: #10b981;
+            --err: #ef4444;
+            --bdr: #dde4f0;
+            --glow: 0 8px 24px rgba(29, 106, 255, 0.10);
         }
 
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Outfit', 'Prompt', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+            background-color: #f4f7fb;
+            background-image:
+                radial-gradient(at 0% 0%, rgba(29, 106, 255, 0.12) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(56, 189, 248, 0.12) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(255, 255, 255, 0.8) 0px, transparent 100%);
+            color: var(--tx);
             height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .top-bar {
+            padding: 16px 32px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+            z-index: 10;
+        }
+
+        .top-bar h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--p);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: -.3px;
+        }
+
+        .top-bar h1 span {
+            color: var(--tx);
+        }
+
+        .btn-back-home {
+            background: var(--bg);
+            border: 1px solid var(--bdr);
+            padding: 8px 18px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            color: var(--tx);
+            font-family: inherit;
+        }
+
+        .btn-back-home:hover {
+            background: #dde9ff;
+            border-color: var(--p);
+            color: var(--p);
+        }
+
+        .app-container {
+            flex: 1;
+            display: flex;
+            gap: 0;
+            padding: 16px;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            overflow: hidden;
+        }
+
+        /* ─── FORM LAYOUT ─── */
+        .form-outer {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-radius: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 0 12px 40px rgba(29, 106, 255, 0.08);
+        }
+
+        .form-header {
+            padding: 24px 36px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .form-header h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--tx);
+        }
+
+        .form-header .badge {
+            background: linear-gradient(135deg, #e8f0fe, #dbeafe);
+            color: var(--p);
+            font-size: .75rem;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            box-shadow: inset 0 0 0 1px rgba(29, 106, 255, 0.1);
+        }
+
+        .form-body {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            padding: 20px 36px 24px;
+            overflow: hidden;
+        }
+
+        .form-col {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Panel cards */
+        .f-card {
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 20px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.03);
+            overflow: hidden;
+        }
+
+        .f-card+.f-card {
+            margin-top: 16px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            font-size: .85rem;
+            margin-bottom: 8px;
+            color: #334155;
+            letter-spacing: .2px;
+            text-transform: uppercase;
+        }
+
+        textarea {
+            width: 100%;
+            border: 2px solid #e2e8f0;
+            /* Soft Gray */
+            border-radius: 16px;
+            padding: 18px;
+            font-family: inherit;
+            font-size: .97rem;
+            resize: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #fcfdfe;
+            /* Clean White-Gray */
+            color: var(--tx);
+            flex: 1;
+            min-height: 120px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #94a3b8;
+            /* Professional Slate Gray */
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(148, 163, 184, 0.1), 0 4px 20px rgba(0, 0, 0, 0.05);
+            transform: translateY(-1px);
+        }
+
+        /* Drop Zone */
+        .drop-zone {
+            border: 2.5px dashed #ffadd2;
+            /* Pastel Pink */
+            border-radius: 20px;
+            padding: 40px 20px;
+            text-align: center;
+            background: rgba(255, 240, 246, 0.7);
+            /* Soft Pink Tint */
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
-            padding: 20px;
-            transition: background-color 0.3s;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--text);
-            margin-bottom: 5px;
-        }
-
-        h1 span {
-            color: var(--primary);
-        }
-
-        .downloads-container {
-            width: 100%;
-            max-width: 1000px;
-            margin-bottom: 20px;
-        }
-
-        .section-label {
-            font-size: 0.85rem;
-            color: var(--text-sub);
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-        }
-
-        .downloads-grid {
-            display: flex;
-            gap: 12px;
-            overflow-x: auto;
-            padding: 5px;
-            scrollbar-width: none;
-        }
-
-        .downloads-grid::-webkit-scrollbar {
-            display: none;
-        }
-
-        .dl-item {
-            flex: 0 0 120px;
-            aspect-ratio: 1;
-            border-radius: 12px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            overflow: hidden;
-            cursor: pointer;
-            transition: all 0.3s;
+            min-height: 160px;
             position: relative;
-            opacity: 0.9;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            overflow: hidden;
         }
 
-        .dl-item:hover,
-        .dl-item.selected {
-            opacity: 1;
-            transform: scale(1.05);
-            border-color: var(--primary);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        .drop-zone:hover,
+        .drop-zone.over {
+            background: #fff0f6;
+            border-color: #ff85c0;
+            /* Stronger Pink */
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 0 12px 24px rgba(255, 133, 192, 0.15);
         }
 
-        .dl-item.selected::after {
-            content: attr(data-order);
+        /* Step Highlight System */
+        .step-future {
+            opacity: 0.4;
+            pointer-events: none;
+            filter: grayscale(1);
+        }
+
+        .step-active {
+            box-shadow: 0 0 0 3px rgba(29, 106, 255, 0.4), 0 8px 32px rgba(29, 106, 255, 0.15) !important;
+            transform: scale(1.02);
+            border-color: var(--p) !important;
+            z-index: 10;
+        }
+
+        button.step-active {
+            box-shadow: 0 0 0 4px rgba(29, 106, 255, 0.3), 0 8px 22px rgba(29, 106, 255, 0.35) !important;
+            animation: pulse-btn 1.5s infinite ease-in-out;
+        }
+
+        @keyframes pulse-btn {
+            0% {
+                box-shadow: 0 0 0 0 rgba(29, 106, 255, 0.5);
+                transform: translateY(-2px) scale(1);
+            }
+
+            50% {
+                transform: translateY(-2px) scale(1.05);
+            }
+
+            70% {
+                box-shadow: 0 0 0 12px rgba(29, 106, 255, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(29, 106, 255, 0);
+                transform: translateY(-2px) scale(1);
+            }
+        }
+
+        /* Text Pulse Animation */
+        @keyframes pulse-text {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.06);
+                color: var(--p);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .anim-pulse {
+            display: inline-block;
+            transform-origin: left center;
+            animation: pulse-text 1.5s infinite ease-in-out;
+            transition: all 0.3s;
+        }
+
+        .budget-amount.anim-pulse {
+            transform-origin: center center;
+            color: #fff !important;
+            animation: pulse-budget 1.5s infinite ease-in-out;
+        }
+
+        @keyframes pulse-budget {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.15);
+                text-shadow: 0 0 15px rgba(255, 255, 255, 0.9);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .drop-icon {
+            color: #ff85c0;
+            margin-bottom: 16px;
+            transition: transform 0.3s ease;
+        }
+
+        .drop-zone:hover .drop-icon {
+            transform: translateY(-5px);
+        }
+
+        .drop-text {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--p);
+            margin-bottom: 4px;
+        }
+
+        .drop-subtext {
+            font-size: .82rem;
+            color: var(--dim);
+        }
+
+        /* Thumb strip */
+        .thumb-list {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 10px 0 4px;
+            margin-top: 10px;
+        }
+
+        .thumb-list::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .thumb-list::-webkit-scrollbar-thumb {
+            background: #b8cff7;
+            border-radius: 8px;
+        }
+
+        .thumb-item {
+            width: 68px;
+            height: 68px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2.5px solid transparent;
+            cursor: pointer;
+            transition: all .2s;
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.10);
+        }
+
+        .thumb-item.active {
+            border-color: var(--p);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 14px rgba(29, 106, 255, .25);
+        }
+
+        .thumb-item:hover {
+            border-color: var(--s);
+        }
+
+        .thumb-wrap {
+            position: relative;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .btn-remove-thumb {
             position: absolute;
-            top: 5px;
-            left: 5px;
-            background: var(--primary);
-            color: white;
+            top: -6px;
+            right: -6px;
+            background: #ef4444;
+            color: #fff;
+            border: 2px solid #fff;
+            width: 22px;
+            height: 22px;
             border-radius: 50%;
-            width: 20px;
-            height: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 12px;
             font-weight: bold;
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: 0.2s;
         }
 
-        .dl-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .btn-remove-thumb:hover {
+            transform: scale(1.15);
+            background: #dc2626;
         }
 
-        .dl-item .time {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            font-size: 8px;
-            padding: 2px;
-            background: rgba(255, 255, 255, 0.85);
-            color: #000;
+        .hint-bar {
+            font-size: .8rem;
+            color: var(--s);
+            font-weight: 600;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            margin: 8px 0 6px;
+            background: #e0f2fe;
+            padding: 6px 12px;
+            border-radius: 8px;
+        }
+
+        /* Ann canvas */
+        .ann-wrap {
+            display: none;
+            background: #0f172a;
+            border-radius: 14px;
+            padding: 10px;
             text-align: center;
-            white-space: nowrap;
             overflow: hidden;
-            text-overflow: ellipsis;
+            position: relative;
+            margin-top: 8px;
         }
 
-        .dl-item .delete-btn {
+        #cv {
+            max-width: 100%;
+            max-height: 28vh;
+            cursor: crosshair;
+            background: #000;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            touch-action: none;
+            transition: transform 0.1s;
+        }
+
+        .tools-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            padding: 0 8px;
+        }
+
+        .btn-clear {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 5px 12px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: .78rem;
+            font-family: inherit;
+        }
+
+        .btn-clear:hover {
+            background: rgba(255, 255, 255, 0.22);
+        }
+
+        /* Budget */
+        .budget-card {
+            background: linear-gradient(135deg, #1d6aff 0%, #0ea5e9 100%);
+            border-radius: 20px;
+            padding: 24px;
+            color: #fff;
+            margin-bottom: 16px;
+            box-shadow: 0 12px 32px rgba(29, 106, 255, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .budget-card::before {
+            content: '';
             position: absolute;
-            top: 4px;
-            right: 4px;
-            background: rgba(255, 77, 77, 0.9);
+            top: -50%;
+            right: -20%;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 60%);
+        }
+
+        .budget-card label {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 10px;
+        }
+
+        .budget-amount {
+            font-size: 2.6rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 12px;
+            letter-spacing: -1px;
+        }
+
+        .budget-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .budget-row input[type=range] {
+            flex: 1;
+            accent-color: #fff;
+            height: 4px;
+        }
+
+        .budget-row input[type=number] {
+            width: 80px;
+            padding: 7px 10px;
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.15);
+            font-family: inherit;
+        }
+
+        .budget-row input[type=number]:focus {
+            outline: none;
+            border-color: #fff;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .budget-row input[type=number]::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .budget-sub {
+            font-size: .78rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 8px;
+        }
+
+        /* Remove number input spinners */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+        }
+
+        /* Submit */
+        .btn-go {
+            width: 100%;
+            padding: 15px;
+            background: var(--p);
             color: #fff;
             border: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            font-size: 9px;
+            border-radius: 12px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .2s;
+            box-shadow: 0 4px 14px rgba(29, 106, 255, .3);
+            font-family: inherit;
+            letter-spacing: .2px;
+        }
+
+        .btn-go:hover {
+            background: var(--ph);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 22px rgba(29, 106, 255, .35);
+        }
+
+        .btn-go:disabled {
+            background: #b0bfd8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ─── CHAT UI ─── */
+        .panel-main {
+            flex: 2;
+            background: rgba(255, 255, 255, 0.85);
+            border-right: 1px solid rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(24px);
+            border-radius: 28px 0 0 28px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 12px 40px rgba(29, 106, 255, 0.05);
+        }
+
+        .panel-side {
+            width: 340px;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(24px);
+            border-radius: 0 28px 28px 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 12px 40px rgba(29, 106, 255, 0.05);
+        }
+
+        .scroll-area {
+            overflow-y: auto;
+            padding: 20px;
+            flex: 1;
+        }
+
+        .scroll-area::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .scroll-area::-webkit-scrollbar-thumb {
+            background: #dde4f0;
+            border-radius: 10px;
+        }
+
+        .chat-head {
+            padding: 16px 28px;
+            background: rgba(255, 255, 255, 0.6);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-head h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--tx);
+        }
+
+        .chat-head .cd {
+            background: #fee2e2;
+            color: #ef4444;
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: .82rem;
+            border: 1px solid #fca5a5;
+        }
+
+        .msgs {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: transparent;
+            position: relative;
+        }
+
+        .m {
+            max-width: 75%;
+            padding: 11px 15px;
+            border-radius: 16px;
+            font-size: .93rem;
+            line-height: 1.5;
+            word-break: break-word;
+            animation: mi .25s ease;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        @keyframes mi {
+            from {
+                opacity: 0;
+                transform: translateY(6px)
+            }
+
+            to {
+                opacity: 1;
+                transform: none
+            }
+        }
+
+        .m.user {
+            align-self: flex-end;
+            background: var(--p);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+
+        .m.admin {
+            align-self: flex-start;
+            background: #fff;
+            border: 1px solid var(--bdr);
+            color: var(--tx);
+            border-bottom-left-radius: 4px;
+        }
+
+        .m.sys {
+            align-self: center;
+            background: #e0f2fe;
+            border: 1px solid #bae6fd;
+            color: #0369a1;
+            font-size: .82rem;
+            border-radius: 20px;
+            padding: 5px 14px;
+            font-weight: 600;
+            box-shadow: none;
+        }
+
+        .m .t {
+            font-size: .68rem;
+            opacity: .65;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .m.fm img {
+            max-width: 220px;
+            border-radius: 10px;
+            margin-top: 6px;
+            cursor: pointer;
+        }
+
+        .m.fm a {
+            color: inherit;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.08);
+            padding: 7px 11px;
+            border-radius: 7px;
+            margin-top: 5px;
+        }
+
+        .drag-overlay {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(4px);
+            z-index: 50;
+            align-items: center;
+            justify-content: center;
+            border: 3px dashed var(--p);
+            border-radius: 16px;
+            margin: 10px;
+        }
+
+        .drag-overlay.on {
+            display: flex;
+        }
+
+        .drag-box {
+            text-align: center;
+            color: var(--p);
+        }
+
+        .chat-input {
+            padding: 14px 20px;
+            background: #fff;
+            border-top: 1px solid var(--bdr);
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .chat-input textarea {
+            flex: 1;
+            border: 1.5px solid var(--bdr);
+            border-radius: 12px;
+            padding: 11px 14px;
+            font-family: inherit;
+            font-size: .93rem;
+            resize: none;
+            max-height: 110px;
+            background: #f5f8ff;
+            min-height: 0;
+        }
+
+        .chat-input textarea:disabled {
+            background: #e8edf5;
+            cursor: not-allowed;
+        }
+
+        .btn-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            border: 1.5px solid var(--bdr);
+            background: #f5f8ff;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            opacity: 0;
-            transition: opacity 0.2s;
-            z-index: 10;
+            font-size: 1.1rem;
+            transition: 0.2s;
+            color: var(--dim);
+            flex-shrink: 0;
         }
 
-        .dl-item:hover .delete-btn {
-            opacity: 1;
+        .btn-icon:hover {
+            background: #ddeeff;
+            color: var(--p);
+            border-color: var(--p);
         }
 
-        .ai-hub-main {
-            width: 100%;
-            max-width: 1000px;
+        .btn-icon:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-send {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            border: none;
+            background: var(--p);
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: 0.2s;
+            flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(29, 106, 255, 0.28);
+        }
+
+        .btn-send:hover {
+            background: var(--ph);
+            transform: translateY(-2px);
+        }
+
+        .btn-send:disabled {
+            background: #b0bfd8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* QR */
+        .qr-box {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            border-radius: 20px;
+            padding: 24px;
+            text-align: center;
+            color: #fff;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+            display: none;
+            margin: 10px 20px 20px;
+        }
+
+        .qr-box h3 {
+            font-size: .95rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .qr-container {
+            background: #fff;
+            padding: 10px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .qr-container:hover {
+            transform: scale(1.05);
+        }
+
+        @keyframes jiggleUp {
+            0% {
+                transform: translateY(0)rotate(0)
+            }
+
+            25% {
+                transform: translateY(-10px)rotate(-3deg)
+            }
+
+            50% {
+                transform: translateY(0)rotate(3deg)
+            }
+
+            75% {
+                transform: translateY(-5px)rotate(-2deg)
+            }
+
+            100% {
+                transform: translateY(0)rotate(0)
+            }
+        }
+
+        .qr-box.jiggle {
+            animation: jiggleUp 0.8s ease 3;
+            border: 3px solid #10b981;
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.5);
+        }
+
+        /* Info sidebar */
+        .info-block {
+            margin-bottom: 20px;
+        }
+
+        .info-block h4 {
+            font-size: .78rem;
+            color: var(--dim);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .img-grid {
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
 
-        .pasted-previews {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 5px;
-        }
-
-        .preview-thumb {
-            width: 80px;
-            height: 80px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            position: relative;
-        }
-
-        .preview-thumb img {
+        .img-grid img {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 7px;
-        }
-
-        .preview-thumb .remove {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #ff4d4d;
-            color: #fff;
-            border: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            font-size: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .input-bar {
-            background: var(--input-bg);
-            border-radius: 30px;
-            display: flex;
-            align-items: flex-end;
-            padding: 10px 15px;
-            border: 1px solid var(--border);
-            transition: border-color 0.3s, box-shadow 0.3s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-
-        .input-bar:focus-within {
-            border-color: var(--primary);
-            box-shadow: 0 1px 6px rgba(32,33,36,0.28);
-        }
-
-        .action-btn {
-            background: none;
-            border: none;
-            color: var(--text-sub);
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s, color 0.2s;
-            flex-shrink: 0;
-            margin-bottom: 2px;
-        }
-
-        .action-btn:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: #fff;
-        }
-
-        #prompt-input {
-            flex-grow: 1;
-            background: none;
-            border: none;
-            color: var(--text);
-            font-family: inherit;
-            font-size: 1.1rem;
-            padding: 8px 10px;
-            max-height: 200px;
-            min-height: 24px;
-            outline: none;
-            resize: none;
-            overflow-y: hidden;
-            scrollbar-width: none;
-        }
-
-        .quick-tags {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-            flex-wrap: wrap;
-            justify-content: center;
-            max-width: 100%;
-        }
-
-        .tag-item {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            color: var(--text-sub);
-            padding: 8px 18px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            white-space: nowrap;
-            display: flex;
-            align-items: center;
-            font-weight: 600;
-        }
-
-        .tag-item:nth-child(1) { border-color: #f4b400; color: #b48400; background: rgba(244, 180, 0, 0.1); }
-        .tag-item:nth-child(2) { border-color: #0f9d58; color: #0f9d58; background: rgba(15, 157, 88, 0.1); }
-        .tag-item:nth-child(3) { border-color: #db4437; color: #db4437; background: rgba(219, 68, 55, 0.1); }
-        .tag-item:nth-child(4) { border-color: #4285f4; color: #4285f4; background: rgba(66, 133, 244, 0.1); }
-        .tag-item:nth-child(5) { border-color: #ab47bc; color: #ab47bc; background: rgba(171, 71, 188, 0.1); }
-        .tag-item:nth-child(6) { border-color: #00acc1; color: #00acc1; background: rgba(0, 172, 193, 0.1); }
-        .tag-item:nth-child(7) { border-color: #ff7043; color: #e64a19; background: rgba(255, 112, 67, 0.1); }
-
-        /* Gemini Account Selector */
-        .account-selector {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.5);
-            border-radius: 15px;
-            border: 1px solid var(--border);
-            justify-content: center;
-            align-items: center;
-        }
-
-        .account-selector label {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 0.9rem;
-            color: var(--text-sub);
-            cursor: pointer;
-            padding: 5px 10px;
             border-radius: 10px;
-            transition: all 0.2s;
-        }
-
-        .account-selector label:hover {
-            background: rgba(66, 133, 244, 0.1);
-        }
-
-        .account-selector input[type="radio"] {
-            accent-color: var(--primary);
-            width: 18px;
-            height: 18px;
+            border: 1px solid var(--bdr);
+            object-fit: cover;
             cursor: pointer;
+            transition: 0.2s;
         }
 
-        .account-selector span {
-            font-weight: 600;
+        .img-grid img:hover {
+            transform: scale(1.02);
+            border-color: var(--p);
         }
 
-        .account-selector input[type="radio"]:checked + span {
-            color: var(--primary);
+        .info-desc {
+            font-size: .9rem;
+            line-height: 1.5;
+            background: #f5f8ff;
+            padding: 13px;
+            border-radius: 10px;
+            border: 1px solid var(--bdr);
+            margin-bottom: 10px;
         }
 
-        .tag-item:hover {
-            filter: brightness(1.2);
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            background: var(--tag-bg-hover, rgba(255, 255, 255, 0.1));
-        }
-        
-        .tag-item:nth-child(1):hover { background: #f4b400; color: #000; }
-        .tag-item:nth-child(2):hover { background: #0f9d58; color: #fff; }
-        .tag-item:nth-child(3):hover { background: #db4437; color: #fff; }
-        .tag-item:nth-child(4):hover { background: #4285f4; color: #fff; }
-        .tag-item:nth-child(5):hover { background: #ab47bc; color: #fff; }
-        .tag-item:nth-child(6):hover { background: #00acc1; color: #fff; }
-        .tag-item:nth-child(7):hover { background: #ff7043; color: #fff; }
-
-        footer {
-            margin-top: 25px;
-            font-size: 0.75rem;
-            color: var(--text-sub);
-            opacity: 0.5;
+        .info-bud {
+            font-size: 1.7rem;
+            font-weight: 800;
+            color: #10b981;
+            text-align: center;
         }
 
-        /* ===== ประจาน Button ===== */
-        .expose-btn {
-            position: relative;
-            padding: 12px 28px;
-            background: linear-gradient(135deg, #c0392b, #8e1010);
-            color: #fff;
-            border: none;
-            border-radius: 30px;
-            font-family: 'Outfit', 'Prompt', sans-serif;
-            font-size: 0.95rem;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(192, 57, 43, 0.35);
-            transition: all 0.25s;
-            letter-spacing: 0.5px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .expose-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 22px rgba(192, 57, 43, 0.5);
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
-        }
-        .expose-btn:active {
-            transform: translateY(0);
-        }
-        .expose-mode-hint {
-            margin-top: 8px;
-            font-size: 0.8rem;
-            color: #c0392b;
-            font-weight: 600;
-            min-height: 1.2em;
-            text-align: left;
-        }
-        .dl-item.before-selected {
-            border: 3px solid #27ae60 !important;
-            box-shadow: 0 0 12px rgba(39, 174, 96, 0.6) !important;
-        }
-        .dl-item.before-selected::after {
-            content: 'BEFORE';
-            position: absolute;
-            top: 5px;
-            left: 5px;
-            background: #27ae60;
-            color: white;
-            border-radius: 6px;
-            width: auto;
-            height: 20px;
-            padding: 0 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            font-weight: bold;
-            border-radius: 8px;
-        }
-        .dl-item.after-selected {
-            border: 3px solid #e67e22 !important;
-            box-shadow: 0 0 12px rgba(230, 126, 34, 0.6) !important;
-        }
-        .dl-item.after-selected::after {
-            content: 'AFTER';
-            position: absolute;
-            top: 5px;
-            left: 5px;
-            background: #e67e22;
-            color: white;
-            border-radius: 8px;
-            width: auto;
-            height: 20px;
-            padding: 0 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-            font-weight: bold;
-        }
-
-        /* Expose modal overlay */
-        .expose-overlay {
+        /* Secret */
+        #secFrame {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.75);
-            z-index: 10000;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            gap: 20px;
-        }
-        .expose-overlay.active {
-            display: flex;
-        }
-        .expose-modal {
+            z-index: 500;
             background: #fff;
-            border-radius: 16px;
-            padding: 20px;
-            max-width: 90vw;
-            max-height: 90vh;
+        }
+
+        #secFrame.on {
+            display: block;
+        }
+
+        .sec-bar {
+            height: 48px;
+            background: #0f172a;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            justify-content: space-between;
+            padding: 0 20px;
+            border-bottom: 1px solid #1e293b;
         }
-        .expose-modal img {
-            max-width: 80vw;
-            max-height: 60vh;
-            border-radius: 10px;
-        }
-        .expose-modal-btns {
-            display: flex;
-            gap: 12px;
-        }
-        .expose-modal-btns button {
-            padding: 10px 24px;
-            border-radius: 20px;
-            border: none;
-            font-family: inherit;
+
+        .sec-bar span {
+            color: var(--s);
             font-weight: 700;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-download-expose {
-            background: linear-gradient(135deg, #c0392b, #8e1010);
-            color: #fff;
-        }
-        .btn-download-expose:hover { filter: brightness(1.15); }
-        .btn-close-expose {
-            background: #eee;
-            color: #333;
-        }
-        .btn-close-expose:hover { background: #ddd; }
-
-        #toast-container {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9999;
+            font-size: .9rem;
         }
 
-        .toast {
-            background: #323336;
-            color: #fff;
-            padding: 12px 24px;
-            border-radius: 24px;
-            margin-top: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            font-weight: 500;
+        #secIf {
+            width: 100%;
+            height: calc(100% - 48px);
+            border: none;
         }
 
-        /* Drag and Drop Styles */
-        body.drag-over {
-            background-color: #e8f0fe;
-        }
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app-container {
+                padding: 10px;
+            }
 
-        .preview-thumb {
-            cursor: grab;
-            transition: transform 0.2s, opacity 0.2s;
-        }
+            .form-outer {
+                border-radius: 20px;
+            }
 
-        .preview-thumb.dragging,
-        .dl-item.dragging {
-            opacity: 0.4;
-            cursor: grabbing;
-        }
+            .form-body {
+                grid-template-columns: 1fr;
+                padding: 16px 20px;
+                overflow-y: auto;
+            }
 
-        .preview-thumb.drag-over-item,
-        .dl-item.drag-over-item {
-            border: 2px dashed var(--primary);
+            .form-header {
+                padding: 20px 20px 0;
+            }
+
+            .panel-main {
+                border-radius: 20px 20px 0 0;
+                border-right: none;
+            }
+
+            .panel-side {
+                width: 100%;
+                border-radius: 0 0 20px 20px;
+                border-top: 1px solid var(--bdr);
+            }
         }
     </style>
-</head>
+
+
 
 <body>
-    <header>
-        <h1>AI <span>HUB</span> CENTRAL</h1>
-    </header>
 
-    <div class="downloads-container">
-        <div class="section-label"><span id="conn-status" style="font-size: 10px; color: var(--green);">●
-                เชื่อมต่อแล้ว</span></div>
-        <div id="dl-grid" class="downloads-grid"></div>
+    <div class="top-bar">
+        <h1>🖼️ <span>ระบบจ้างงานแก้ไขภาพ【 ✅ดีที่สุด 】</span></h1>
+        <button class="btn-back-home" id="btnBackHome" onclick="goHome()" style="display:none;">← กลับหน้าหลัก</button>
     </div>
 
-    <div class="ai-hub-main">
-        <div id="previews" class="pasted-previews"></div>
-        <div class="input-bar">
-            <button id="btn-paste" class="action-btn" title="วางภาพ (Ctrl+V)"><svg viewBox="0 0 24 24" width="24"
-                    height="24" fill="currentColor">
-                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-                </svg></button>
-            <input type="file" id="file-input" multiple accept="image/*" style="display: none;">
-            <textarea id="prompt-input" rows="1" placeholder="รายละเอียดงาน..." autofocus></textarea>
-        </div>
-        <div class="quick-tags">
-            <div class="tag-item" onclick="addTag('จงปรับภาพให้ชัด')">ปรับให้ชัด</div>
-            <div class="tag-item" onclick="addTag('จงเปลี่ยนเป็นภาพสี')">เป็นภาพสี</div>
-            <div class="tag-item" onclick="addTag('จงทำให้ภาพเนียนกว่านี้')">ให้ภาพเนียน</div>
-            <div class="tag-item" onclick="addTag('จงปรับแสงให้เหมือนจริงทั้งภาพ')">ปรับแสง</div>
-            <div class="tag-item" onclick="addTag('เปลี่ยนเป็นพื้นหลังสีฟ้าหน้าตรงครึ่งตัว')">
-                พื้นหลังสีฟ้า</div>
-            <div class="tag-item" onclick="addTag('ตัดต่อภาพที่ 2 ไปใส่ ภาพที่ 1')">รูป 2 ใส่ 1</div>
-            <div class="tag-item" onclick="addTag('จงเปลี่ยนเป็นชุด')">เปลี่ยนชุด..</div>
-        </div>
-
-        <!-- Gemini Account Selector -->
-        <div class="account-selector">
-            <span style="font-size: 0.8rem; color: var(--text-sub); margin-right: 10px;">Gemini Account:</span>
-            <label>
-                <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/0/app">
-                <span>u/0</span>
-            </label>
-            <label>
-                <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/1/app" checked>
-                <span>u/1</span>
-            </label>
-            <label>
-                <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/2/app">
-                <span>u/2</span>
-            </label>
-            <label>
-                <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/3/app">
-                <span>u/3</span>
-            </label>
-            <label>
-                <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/4/app">
-                <span>u/4</span>
-            </label>
-        </div>
-        
-        <!-- Watermark Check Section (ส่วนตรวจสอบลายน้ำ - Clean & Compact) -->
-        <div id="watermark-check-container" style="width: 100%; max-width: 900px; margin: 10px auto; padding: 15px; background: #fff; border: 2px dashed #dadce0; border-radius: 16px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); min-height: 50px; display: flex; flex-direction: column; justify-content: center;">
-            <div id="watermark-check-content" style="display: none;">
-                <div id="watermark-check-preview-container" style="width: 100%; max-height: 280px; overflow-y: auto; overflow-x: hidden; border: 1px solid #eee; border-radius: 8px; background: #fff; display: flex; justify-content: center;">
-                    <canvas id="watermark-check-canvas" style="width: 100%; height: auto; display: block;"></canvas>
+    <!-- FORM VIEW -->
+    <div id="formView" class="app-container">
+        <div class="form-outer">
+            <div class="form-header">
+                <span class="badge">มืออาชีพ · รวดเร็ว · ปลอดภัย</span>
+            </div>
+            <div class="form-body">
+                <!-- LEFT: Upload -->
+                <div class="form-col">
+                    <div class="f-card step-active" id="step1" style="flex:1; overflow:hidden; transition: all 0.3s;">
+                        <label id="lbStep1">➔1️⃣ อัปโหลดภาพที่จะแก้</label>
+                        <div class="drop-zone" id="dz">
+                            <input type="file" id="fi" accept="image/*" multiple hidden>
+                            <svg class="drop-icon" width="52" height="52" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
+                                <path d="M12 15V9" />
+                                <path d="M9 12l3-3 3 3" />
+                            </svg>
+                            <div class="drop-text">คลิกหรือลากไฟล์มาวางที่นี่</div>
+                            <div class="drop-subtext">รองรับหลายไฟล์ · PNG, JPG, WEBP · สูงสุด 100MB</div>
+                        </div>
+                        <div class="thumb-list" id="thumbList" style="display:none;"></div>
+                        <div class="hint-bar" id="annHint">💡 คลิก thumbnail เพื่อเลือกภาพที่ต้องการวาดวงระบุจุดแก้ไข
+                        </div>
+                        <div id="ann" class="ann-wrap">
+                            <canvas id="cv"></canvas>
+                            <div class="tools-bar">
+                                <span style="color:#94a3b8; font-size:.78rem;">ลากเพื่อวาดจุดที่ต้องการแก้</span>
+                                <button class="btn-clear" onclick="clearCanvas()">🗑 ล้าง</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- RIGHT: Details + Budget -->
+                <div class="form-col">
+                    <div class="f-card step-future" id="step2" style="flex:1; transition: all 0.3s;">
+                        <label id="lbStep2">➔2️⃣รายละเอียดงาน</label>
+                        <textarea id="desc"
+                            placeholder="อธิบายสิ่งที่ต้องการแก้ไข เช่น ลบสิว ปรับสีผิว ลบวัตถุในพื้นหลัง..."></textarea>
+                    </div>
+                    <div class="budget-card">
+                        <label>งบประมาณที่เสนอ</label>
+                        <div class="budget-amount" id="budgetDisplay">฿60</div>
+                        <div class="budget-row">
+                            <input type="range" id="bSlider" min="60" max="500" step="10" value="60">
+                            <input type="number" id="bInput" min="60" max="500" value="60">
+                            <span style="font-size:.9rem; opacity:.8;">บาท</span>
+                        </div>
+                        <div class="budget-sub">ตั้งงบประมาณ 60 – 500 บาท</div>
+                    </div>
+                    <button id="subBtn" class="btn-go step-future" onclick="submitJob()"
+                        style="transition: all 0.3s;">➔3️⃣ โพสต์งานทันที⚡</button>
+                    <div id="errMsg"
+                        style="color:var(--err); background:#fee2e2; padding:11px 14px; border-radius:10px; margin-top:12px; text-align:center; font-weight:600; display:none; font-size:.9rem;">
+                    </div>
                 </div>
             </div>
-            <div id="watermark-check-placeholder">
-                <p style="color: var(--text-sub); font-size: 0.85rem; margin: 0;">📸 ส่วนตรวจสอบก้นภาพ (Desktop) จะปรากฏที่นี่อัตโนมัติ</p>
+        </div>
+    </div>
+
+    <!-- CHAT VIEW -->
+    <div id="chatView" class="app-container" style="display:none;">
+        <div class="panel-main">
+            <div class="chat-head">
+                <h3 style="font-size:1.2rem;">ห้องสนทนา</h3>
+                <div class="cd" id="cCd">⏱ --:--:--</div>
+            </div>
+
+            <div class="msgs" id="cMsgs">
+                <div class="drag-overlay" id="dragOverlay">
+                    <div class="drag-box">
+                        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" style="margin-bottom:12px;">
+                            <path
+                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                            </path>
+                        </svg>
+                        <h2 style="font-size:1.4rem; font-weight:700;">ปล่อยเพื่อส่งไฟล์</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input">
+                <button class="btn-icon" id="btnAttach" onclick="document.getElementById('cfi').click()"
+                    title="แนบไฟล์">📎</button>
+                <input type="file" id="cfi" hidden>
+                <textarea id="cIn" rows="1" placeholder="พิมพ์ข้อความที่นี่..."></textarea>
+                <button class="btn-send" id="btnSend" onclick="sendMsg()">➤</button>
+            </div>
+        </div>
+
+        <div class="panel-side">
+            <div class="scroll-area" style="padding-top: 10px;">
+                <div class="qr-box" id="qrBox" style="display:none;">
+                    <h3>🔔 ชำระค่าบริการ</h3>
+                    <div class="qr-container" id="qrW">
+                        <div id="qrD"></div>
+                    </div>
+                    <div style="font-size:1.4rem; font-weight:700; color:#10b981; margin-bottom:4px;" id="qrAmt"></div>
+                    <div style="font-size:.8rem; color:rgba(255,255,255,0.7);">สแกน PromptPay เพื่อชำระเงิน<br>คลิกที่
+                        QR เพื่อบันทึกภาพ</div>
+                </div>
             </div>
         </div>
     </div>
 
-    <footer>v1.9 Core Edition • Pro Multi-Select Mode ACTIVE</footer>
-
-    <!-- ปุ่มประจาน (Bottom Left) -->
-    <div style="position: fixed; left: 24px; bottom: 24px; display: flex; flex-direction: column; align-items: flex-start; z-index: 1000;">
-        <button class="expose-btn" id="btn-expose" onclick="startExposeMode()">
-            <span>⚠️</span> ประจานไม่จ่ายเงิน
-        </button>
-        <div class="expose-mode-hint" id="expose-hint"></div>
-    </div>
-
-    <!-- Modal preview -->
-    <div class="expose-overlay" id="expose-overlay">
-        <div class="expose-modal" id="expose-modal">
-            <h3 style="font-family:inherit;font-size:1rem;color:#c0392b;">⚠️ ภาพสำหรับประจาน (AI-Generated)</h3>
-            <img id="expose-result-img" src="" alt="ผลลัพธ์">
-            <div class="expose-modal-btns">
-                <button class="btn-download-expose" onclick="downloadExposeImage()">⬇ ดาวน์โหลด</button>
-                <button class="btn-close-expose" onclick="closeExposeModal()">✕ ปิด</button>
-            </div>
+    <!-- Secret Chat Frame -->
+    <div id="secFrame">
+        <div class="sec-bar">
+            <span>🔒 แชทลับโหมดส่วนตัว — ข้อความหายใน 10 นาที</span>
         </div>
+        <iframe id="secIf" src=""></iframe>
     </div>
 
-    <div id="toast-container"></div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+        import { getDatabase, ref, push, get, onValue, off } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
 
-    <script>
-        const pendingRequests = new Map();
-        function callExtension(action, payload = {}) {
-            return new Promise((resolve) => {
-                const requestId = Math.random().toString(36).substr(2, 9);
-                pendingRequests.set(requestId, resolve);
-                document.dispatchEvent(new CustomEvent('HUB_TO_EXTENSION', { detail: { action, requestId, ...payload } }));
-            });
-        }
-        document.addEventListener('EXTENSION_TO_HUB', (event) => {
-            const { requestId, payload } = event.detail;
-            const resolve = pendingRequests.get(requestId);
-            if (resolve) { resolve(payload); pendingRequests.delete(requestId); }
+        const app = initializeApp({
+            apiKey: "AIzaSyDWzE4nEYt6fWPS2q6KscvoBbYxL_tdRzk",
+            authDomain: "retouch-ebid.firebaseapp.com",
+            databaseURL: "https://retouch-ebid-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "retouch-ebid",
+            storageBucket: "retouch-ebid.firebasestorage.app",
+            messagingSenderId: "1016195918066",
+            appId: "1:1016195918066:web:b623d84af8aa4920ba886b"
         });
+        const db = getDatabase(app);
+        const jobsRef = ref(db, 'jobs');
 
-        const dlGrid = document.getElementById('dl-grid');
-        const promptInput = document.getElementById('prompt-input');
-        const previews = document.getElementById('previews');
-        const btnPaste = document.getElementById('btn-paste');
-        const fileInput = document.getElementById('file-input');
-        let pastedFiles = [];
-        let selectedFilesList = [];
+        // State
+        let selFile = null;
+        let origImg = null;
+        let paths = [];
+        let currentPath = [];
+        let isDrawing = false;
+        let curJobId = null;
+        let curJob = null;
+        let curJobFirebaseKey = null;
+        let cdTimer = null;
+        let secretJobListener = null;
+        let canvasZoom = 1;
 
-        let lastDownloadFilenames = "";
-        let lastCheckedCompletePath = "";
+        let uploadedFiles = [];
+        let activeFileIndex = -1;
 
-        function updateSelectionIndicators() {
-            document.querySelectorAll('.dl-item').forEach(el => {
-                const filename = el.dataset.filename;
-                const idx = selectedFilesList.indexOf(filename);
-                if (idx !== -1) {
-                    el.classList.add('selected');
-                    el.setAttribute('data-order', idx + 1);
-                } else {
-                    el.classList.remove('selected');
-                    el.removeAttribute('data-order');
+        // UI Elements
+        const cv = document.getElementById('cv');
+        const cx = cv.getContext('2d');
+        const bSlider = document.getElementById('bSlider');
+        const bInput = document.getElementById('bInput');
+        const dz = document.getElementById('dz');
+        const fi = document.getElementById('fi');
+
+        // Budget Sync
+        bSlider.oninput = () => { bInput.value = bSlider.value; document.getElementById('budgetDisplay').textContent = '฿' + bSlider.value; };
+        bInput.oninput = () => {
+            let v = Math.min(500, Math.max(60, parseInt(bInput.value) || 60));
+            bSlider.value = v;
+            document.getElementById('budgetDisplay').textContent = '฿' + v;
+        };
+
+        // Drag & Drop for Image Upload
+        dz.onclick = () => fi.click();
+        dz.ondragover = e => { e.preventDefault(); dz.classList.add('over'); };
+        dz.ondragleave = () => dz.classList.remove('over');
+        dz.ondrop = e => {
+            e.preventDefault(); dz.classList.remove('over');
+            if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
+        };
+        fi.onchange = e => { if (e.target.files.length > 0) handleFiles(e.target.files); };
+
+        function handleFiles(files) {
+            const newFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+            if (newFiles.length === 0) return;
+
+            uploadedFiles = uploadedFiles.concat(newFiles);
+            renderThumbs();
+            if (activeFileIndex === -1) {
+                selectThumb(0);
+            }
+            updateSteps();
+        }
+
+        window.removeThumb = (e, index) => {
+            e.stopPropagation();
+            uploadedFiles.splice(index, 1);
+            if (uploadedFiles.length === 0) {
+                activeFileIndex = -1;
+                document.getElementById('ann').style.display = 'none';
+                document.getElementById('annHint').style.display = 'none';
+                selFile = null;
+                origImg = null;
+            } else {
+                if (index === activeFileIndex) {
+                    selectThumb(0);
+                } else if (index < activeFileIndex) {
+                    activeFileIndex--;
                 }
+            }
+            renderThumbs();
+            updateSteps();
+        };
+
+        function renderThumbs() {
+            const tl = document.getElementById('thumbList');
+            tl.style.display = uploadedFiles.length > 0 ? 'flex' : 'none';
+            tl.innerHTML = '';
+
+            uploadedFiles.forEach((f, i) => {
+                const reader = new FileReader();
+
+                const wrap = document.createElement('div');
+                wrap.className = 'thumb-wrap';
+
+                const img = document.createElement('img');
+                img.className = `thumb-item ${i === activeFileIndex ? 'active' : ''}`;
+                img.onclick = () => selectThumb(i);
+
+                const btn = document.createElement('div');
+                btn.className = 'btn-remove-thumb';
+                btn.innerHTML = '✕';
+                btn.onclick = (e) => removeThumb(e, i);
+
+                wrap.appendChild(img);
+                wrap.appendChild(btn);
+
+                reader.onload = e => {
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(f);
+                tl.appendChild(wrap);
             });
         }
 
-        async function loadDownloads() {
-            try {
-                const res = await fetch('/list-downloads');
-                const downloads = await res.json();
-                if (downloads) {
-                    // ตรวจสอบทั้งชื่อไฟล์และเวลาแก้ไข (mtime) เพื่อให้รู้ว่ามีไฟล์ใหม่มาทับ
-                    const currentStatus = downloads.map(d => `${d.filename}_${d.mtime}`).join(',');
-                    if (currentStatus === lastDownloadFilenames) return; 
-                    lastDownloadFilenames = currentStatus;
+        function selectThumb(index) {
+            if (index < 0 || index >= uploadedFiles.length) return;
+            activeFileIndex = index;
+            renderThumbs();
 
-                    dlGrid.innerHTML = '';
-                    downloads.slice(0, 20).forEach(item => {
-                        const div = document.createElement('div');
-                        div.className = 'dl-item';
-                        div.draggable = true;
-                        div.dataset.filename = item.filename;
-                        div.innerHTML = `<button class="delete-btn">✕</button><img src="/get-img?path=${encodeURIComponent(item.filename)}"><div class="time">${item.shortname}</div>`;
-
-                        div.onclick = (e) => {
-                            if (e.target.classList.contains('delete-btn')) return;
-                            const idx = selectedFilesList.indexOf(item.filename);
-                            if (idx !== -1) {
-                                selectedFilesList.splice(idx, 1);
-                            } else {
-                                selectedFilesList.push(item.filename);
-                            }
-                            updateSelectionIndicators();
-                            // ถ้าเป็น complete.png กดแล้วให้โหลดตัวอย่างด้วย
-                            if (item.shortname.toLowerCase() === "complete.png") {
-                                showWatermarkCheck(`/get-img?path=${encodeURIComponent(item.filename)}&v=${Date.now()}`);
-                            }
-                        };
-
-                        div.querySelector('.delete-btn').onclick = async (e) => {
-                            e.stopPropagation();
-                            if (confirm('ลบไฟล์นี้?')) {
-                                const delRes = await fetch(`/delete-file?path=${encodeURIComponent(item.filename)}`);
-                                if (delRes.ok) {
-                                    const idx = selectedFilesList.indexOf(item.filename);
-                                    if (idx !== -1) selectedFilesList.splice(idx, 1);
-                                    loadDownloads();
-                                }
-                            }
-                        };
-
-                        div.addEventListener('dragstart', handleDragStart);
-                        div.addEventListener('dragover', handleDragOverItem);
-                        div.addEventListener('dragleave', handleDragLeaveItem);
-                        div.addEventListener('drop', (e) => handleDropItem(e, dlGrid));
-                        div.addEventListener('dragend', handleDragEnd);
-
-                        dlGrid.appendChild(div);
-                    });
-                    updateSelectionIndicators();
-                }
-            } catch (e) { }
-        }
-
-        // ระบบจอดรอสัญญาณ (Long Polling): เบาเครื่องที่สุด ทำงานเฉพาะเมื่อมี Export จริง
-        async function listenForExport() {
-            try {
-                // ส่งคำขอไปจอดรอที่ Server (จะค้างไว้จนกว่าจะมีไฟล์ใหม่)
-                const res = await fetch('/wait-for-export');
-                const data = await res.json();
-                
-                // เฉพาะเมื่อได้รับสัญญาณว่า Export เสร็จจริงๆ (ไม่ใช่แค่ Timeout)
-                if (data.status === "updated" && data.path) {
-                    // Refresh รายการ
-                    loadDownloads();
-                    
-                    // โหลดตัวอย่างจากไฟล์ที่ Desktop มาโชว์ก้นภาพ (เพิ่ม v=Date.now เพื่อกัน Cache)
-                    showWatermarkCheck(`/get-img?path=${encodeURIComponent(data.path)}&v=${Date.now()}`);
-                    showToast('🔔 ตรวจพบไฟล์ใหม่จาก Desktop');
-                }
-                
-                // กลับไปรอยาวๆ ใหม่
-                listenForExport();
-            } catch (e) {
-                // ถ้าเกิด Error ให้รอ 5 วิแล้วค่อยลองต่อใหม่
-                setTimeout(listenForExport, 5000);
-            }
-        }
-
-        // เริ่มต้นการจอดรอ
-        listenForExport();
-        setInterval(() => fetch('/heartbeat').catch(() => { }), 5000);
-
-        function addTag(text) {
-            const current = promptInput.value.trim();
-            promptInput.value = current ? `${current} ${text}` : text;
-            promptInput.focus();
-            promptInput.style.height = 'auto';
-            promptInput.style.height = promptInput.scrollHeight + 'px';
-        }
-
-        function addPaddingToDataUrl(dataUrl) {
-            return new Promise((resolve) => {
+            const f = uploadedFiles[index];
+            selFile = f;
+            const reader = new FileReader();
+            reader.onload = e => {
                 const img = new Image();
                 img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    const padding = Math.max(180, Math.floor(img.height * 0.12));
-                    canvas.width = img.width;
-                    canvas.height = img.height + padding;
-                    ctx.fillStyle = 'white';
-                    ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    ctx.drawImage(img, 0, 0);
-                    resolve(canvas.toDataURL('image/png'));
+                    origImg = img;
+                    setupCanvas(img);
+                    document.getElementById('ann').style.display = 'block';
+                    document.getElementById('annHint').style.display = 'flex';
                 };
-                img.src = dataUrl;
-            });
-        }
-
-        function addPreview(blob) {
-            const url = URL.createObjectURL(blob);
-            const id = Math.random().toString(36).substr(2, 9);
-            const thumb = document.createElement('div');
-            thumb.className = 'preview-thumb';
-            thumb.draggable = true;
-            thumb.dataset.id = id;
-            thumb.innerHTML = `<img src="${url}"><button class="remove">×</button>`;
-
-            thumb.querySelector('.remove').onclick = (e) => {
-                e.stopPropagation();
-                thumb.remove();
-                pastedFiles = pastedFiles.filter(f => f.id !== id);
+                img.src = e.target.result;
             };
-
-            // Drag and drop reordering
-            thumb.addEventListener('dragstart', handleDragStart);
-            thumb.addEventListener('dragover', handleDragOverItem);
-            thumb.addEventListener('dragleave', handleDragLeaveItem);
-            thumb.addEventListener('drop', (e) => handleDropItem(e, previews, true));
-            thumb.addEventListener('dragend', handleDragEnd);
-
-            previews.appendChild(thumb);
-            pastedFiles.push({ id, blob });
+            reader.readAsDataURL(f);
         }
 
-        // --- Drag & Drop Reordering Logic ---
-        let dragSource = null;
-
-        function handleDragStart(e) {
-            const target = e.currentTarget;
-            dragSource = target;
-            target.classList.add('dragging');
-            e.dataTransfer.effectAllowed = 'move';
+        function setupCanvas(img) {
+            let w = img.width, h = img.height;
+            if (w > 800) { h = (800 / w) * h; w = 800; }
+            cv.width = w; cv.height = h;
+            paths = [];
+            canvasZoom = 1;
+            cv.style.transform = `scale(1)`;
+            redrawCanvas();
         }
 
-        function handleDragOverItem(e) {
-            if (e.preventDefault) e.preventDefault();
-            const target = e.currentTarget;
-            target.classList.add('drag-over-item');
-            return false;
-        }
+        function redrawCanvas() {
+            if (!origImg) return;
+            cx.clearRect(0, 0, cv.width, cv.height);
+            cx.drawImage(origImg, 0, 0, cv.width, cv.height);
 
-        function handleDragLeaveItem(e) {
-            const target = e.currentTarget;
-            target.classList.remove('drag-over-item');
-        }
+            cx.strokeStyle = 'rgba(239, 68, 68, 0.9)';
+            cx.lineWidth = 4;
+            cx.lineCap = 'round';
+            cx.lineJoin = 'round';
 
-        function handleDropItem(e, container, isPreview = false) {
-            if (e.stopPropagation) e.stopPropagation();
-            const target = e.currentTarget;
-            target.classList.remove('drag-over-item');
-
-            if (dragSource !== target && dragSource.parentNode === container) {
-                const children = Array.from(container.children);
-                const sourceIndex = children.indexOf(dragSource);
-                const targetIndex = children.indexOf(target);
-
-                if (sourceIndex < targetIndex) {
-                    container.insertBefore(dragSource, target.nextSibling);
-                } else {
-                    container.insertBefore(dragSource, target);
-                }
-                if (isPreview) syncPastedFilesOrder();
-            }
-            return false;
-        }
-
-        function handleDragEnd(e) {
-            this.classList.remove('dragging');
-            document.querySelectorAll('.preview-thumb, .dl-item').forEach(el => el.classList.remove('drag-over-item'));
-        }
-
-        function syncPastedFilesOrder() {
-            const children = Array.from(previews.children);
-            const newOrder = [];
-            children.forEach(child => {
-                const id = child.dataset.id;
-                const file = pastedFiles.find(f => f.id === id);
-                if (file) newOrder.push(file);
+            paths.forEach(p => {
+                if (p.length < 2) return;
+                cx.beginPath();
+                cx.moveTo(p[0].x, p[0].y);
+                for (let i = 1; i < p.length; i++) cx.lineTo(p[i].x, p[i].y);
+                cx.stroke();
             });
-            pastedFiles = newOrder;
         }
 
-        // --- Global Drag & Drop for Files ---
-        window.addEventListener('dragover', (e) => {
+        function getPos(e) {
+            const r = cv.getBoundingClientRect();
+            let clientX = e.clientX;
+            let clientY = e.clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            }
+            return {
+                x: (clientX - r.left) * (cv.width / r.width),
+                y: (clientY - r.top) * (cv.height / r.height)
+            };
+        }
+
+        // Mouse Events
+        cv.onmousedown = (e) => { isDrawing = true; const p = getPos(e); currentPath = [p]; cx.beginPath(); cx.moveTo(p.x, p.y); cx.strokeStyle = 'rgba(239, 68, 68, 0.9)'; cx.lineWidth = 4; cx.lineCap = 'round'; cx.lineJoin = 'round'; };
+        cv.onmousemove = (e) => { if (!isDrawing) return; const p = getPos(e); currentPath.push(p); cx.lineTo(p.x, p.y); cx.stroke(); };
+        cv.onmouseup = () => { if (isDrawing) { isDrawing = false; if (currentPath.length > 1) paths.push(currentPath); } };
+        cv.onmouseleave = () => { if (isDrawing) { isDrawing = false; if (currentPath.length > 1) paths.push(currentPath); } };
+
+        // Touch Events
+        cv.ontouchstart = (e) => { e.preventDefault(); isDrawing = true; const p = getPos(e); currentPath = [p]; cx.beginPath(); cx.moveTo(p.x, p.y); cx.strokeStyle = 'rgba(239, 68, 68, 0.9)'; cx.lineWidth = 4; cx.lineCap = 'round'; cx.lineJoin = 'round'; };
+        cv.ontouchmove = (e) => { e.preventDefault(); if (!isDrawing) return; const p = getPos(e); currentPath.push(p); cx.lineTo(p.x, p.y); cx.stroke(); };
+        cv.ontouchend = () => { if (isDrawing) { isDrawing = false; if (currentPath.length > 1) paths.push(currentPath); } };
+
+        // Zoom on Wheel
+        cv.onwheel = (e) => {
             e.preventDefault();
-            document.body.classList.add('drag-over');
-        });
+            const r = cv.getBoundingClientRect();
+            const x = ((e.clientX - r.left) / r.width) * 100;
+            const y = ((e.clientY - r.top) / r.height) * 100;
 
-        window.addEventListener('dragleave', (e) => {
-            if (e.relatedTarget === null) {
-                document.body.classList.remove('drag-over');
-            }
-        });
+            cv.style.transformOrigin = `${x}% ${y}%`;
 
-        window.addEventListener('drop', (e) => {
-            e.preventDefault();
-            document.body.classList.remove('drag-over');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                for (let i = 0; i < files.length; i++) {
-                    if (files[i].type.startsWith('image/')) {
-                        addPreview(files[i]);
-                    }
-                }
+            const zoomStep = 0.2;
+            if (e.deltaY < 0) {
+                canvasZoom = Math.min(5, canvasZoom + zoomStep);
+            } else {
+                canvasZoom = Math.max(1, canvasZoom - zoomStep);
             }
-        });
-
-        // --- Button click handling ---
-        btnPaste.onclick = async () => {
-            try {
-                // Try reading from clipboard first (User gesture allows this)
-                const clipboardItems = await navigator.clipboard.read();
-                let found = false;
-                for (const item of clipboardItems) {
-                    for (const type of item.types) {
-                        if (type.startsWith('image/')) {
-                            const blob = await item.getType(type);
-                            addPreview(blob);
-                            found = true;
-                        }
-                    }
-                }
-                if (!found) fileInput.click();
-            } catch (err) {
-                // Fallback to file input
-                fileInput.click();
-            }
+            cv.style.transform = `scale(${canvasZoom})`;
         };
 
-        fileInput.onchange = (e) => {
-            const files = e.target.files;
-            for (let i = 0; i < files.length; i++) {
-                addPreview(files[i]);
-            }
-            fileInput.value = ''; // Reset for next use
-        };
+        window.clearCanvas = () => { paths = []; redrawCanvas(); };
 
-        document.addEventListener('paste', (e) => {
-            const items = e.clipboardData.items;
-            let imageFound = false;
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf('image') !== -1) {
-                    addPreview(items[i].getAsFile());
-                    imageFound = true;
-                }
-            }
-            if (imageFound) {
-                // Image added to previews, waiting for user to press Enter
-            }
-        });
-
-        promptInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitHubData(); }
-        });
-
-        async function submitHubData() {
-            const prompt = promptInput.value.trim();
-            if (pastedFiles.length === 0 && !prompt && selectedFilesList.length === 0) return;
-            showToast('🚀 ส่งไปยัง Gemini...');
-
-            // We only send imagePaths for history items and base64 for NEW pasted items
-            // This significantly reduces massage size for history items
-            const imagePaths = [...selectedFilesList];
-            
-            // For pasted images, we still need to send them as base64, but we can resize them
-            const pastedImageDataUrls = await Promise.all(pastedFiles.map(async (item) => {
-                let dataUrl = await new Promise(r => { const rd = new FileReader(); rd.onloadend = () => r(rd.result); rd.readAsDataURL(item.blob); });
-                
-                // Helper to resize large images to avoid 64MB extension limit
-                const resizeImage = (dUrl, maxSide = 1800) => {
-                    return new Promise((resolve) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            if (img.width <= maxSide && img.height <= maxSide) {
-                                resolve(dUrl); // No resize needed
-                                return;
-                            }
-                            const canvas = document.createElement('canvas');
-                            let w = img.width, h = img.height;
-                            if (w > h) { if (w > maxSide) { h *= maxSide / w; w = maxSide; } }
-                            else { if (h > maxSide) { w *= maxSide / h; h = maxSide; } }
-                            canvas.width = w; canvas.height = h;
-                            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                            resolve(canvas.toDataURL('image/jpeg', 0.85)); // Use JPEG for better compression
-                        };
-                        img.src = dUrl;
-                    });
-                };
-
-                const resized = await resizeImage(dataUrl);
-                return await addPaddingToDataUrl(resized);
-            }));
-
-            const res = await callExtension('SUBMIT_HUB_DATA', { 
-                prompt, 
-                images: pastedImageDataUrls, 
-                imagePaths: imagePaths,
-                origin: window.location.origin 
-            });
-
-            if (res && res.success) {
-                showToast('✅ ส่งแล้ว!');
-                promptInput.value = '';
-                promptInput.style.height = 'auto';
-                previews.innerHTML = '';
-                pastedFiles = [];
-                selectedFilesList = [];
-                updateSelectionIndicators();
-
-                // Auto-rotate to the next Gemini Account
-                const currentIdx = Array.from(accountRadios).findIndex(r => r.checked);
-                const nextIdx = (currentIdx + 1) % accountRadios.length;
-                const nextRadio = accountRadios[nextIdx];
-                nextRadio.checked = true;
-                updateGeminiUrl(nextRadio.value);
-                setTimeout(() => showToast(`🔄 เตรียมพร้อมใช้งาน ${nextRadio.nextElementSibling.textContent}`), 1500);
-            }
+        // Upload Helper
+        async function uploadCatbox(fileOrBlob, filename) {
+            const fd = new FormData();
+            fd.append('reqtype', 'fileupload');
+            fd.append('time', '72h');
+            fd.append('fileToUpload', fileOrBlob, filename);
+            const res = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', { method: 'POST', body: fd });
+            const url = await res.text();
+            if (!url.startsWith('http')) throw new Error('Upload failed');
+            return url;
         }
 
-        function showToast(msg) {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.textContent = msg;
-            container.appendChild(toast);
-            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 3000);
-        }
+        // Submit Job
+        window.submitJob = async () => {
+            const desc = document.getElementById('desc').value.trim();
+            const budget = parseInt(bInput.value) || parseInt(bSlider.value);
 
-        setInterval(() => fetch('/heartbeat').catch(() => { }), 5000);
+            if (!desc || uploadedFiles.length === 0) { showError('กรุณากรอกรายละเอียดงานและอัปโหลดภาพ'); return; }
+            if (budget < 60 || budget > 500) { showError('งบประมาณต้องอยู่ระหว่าง 60-500 บาท'); return; }
 
-        // --- Gemini Account Selection Logic ---
-        const accountRadios = document.querySelectorAll('input[name="geminiAccount"]');
-        
-        function updateGeminiUrl(url) {
-            callExtension('SET_GEMINI_URL', { url }).catch(err => console.log("Extension not ready or origin blocked:", err));
-        }
+            const btn = document.getElementById('subBtn');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ กำลังอัปโหลดไฟล์...';
 
-        accountRadios.forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                if (e.target.checked) {
-                    updateGeminiUrl(e.target.value);
-                    showToast(`🔄 Switch to Gemini ${e.target.nextElementSibling.textContent}`);
-                }
-            });
-        });
-
-        // Initialize default (using the one currently checked in HTML)
-        setTimeout(() => {
-            const checkedRadio = document.querySelector('input[name="geminiAccount"]:checked');
-            if (checkedRadio) {
-                updateGeminiUrl(checkedRadio.value);
-            }
-        }, 1000);
-
-        loadDownloads();
-        window.onfocus = loadDownloads;
-
-        // ========== EXPOSE FEATURE (ประจานไม่จ่ายเงิน) ==========
-        let exposeMode = false;
-        let exposeBefore = null;  // { el, filename }
-        let exposeAfter  = null;
-        let exposeResultDataUrl = null;
-
-        const WATERMARK_LINE1 = '⚠ FAKE & AI-MANIPULATED — This person\'s appearance has been digitally falsified. DO NOT trust or share as real.';
-        const WATERMARK_LINE2 = '🔍 Google-indexed: AI-generated fraud image. The original photo (left) was manipulated using generative AI. Verify before believing.';
-
-        function startExposeMode() {
-            exposeMode = true;
-            exposeBefore = null;
-            exposeAfter  = null;
-            // Clear old selections
-            document.querySelectorAll('.dl-item').forEach(el => {
-                el.classList.remove('before-selected', 'after-selected', 'selected');
-            });
-            document.getElementById('expose-hint').textContent = '📷 คลิกภาพแรก → BEFORE';
-            showToast('โหมดประจาน: เลือกภาพ BEFORE ก่อน');
-        }
-
-        // Override dl-item click to support expose mode
-        // We patch the loadDownloads click handler instead by intercepting at the grid level
-        dlGrid.addEventListener('click', async (e) => {
-            if (!exposeMode) return;
-            const item = e.target.closest('.dl-item');
-            if (!item) return;
-            if (e.target.classList.contains('delete-btn')) return;
-
-            const filename = item.dataset.filename;
-
-            if (!exposeBefore) {
-                // First click = BEFORE
-                item.classList.add('before-selected');
-                exposeBefore = { el: item, filename };
-                document.getElementById('expose-hint').textContent = '📷 คลิกภาพที่สอง → AFTER';
-                showToast('เลือก BEFORE แล้ว! ตอนนี้เลือก AFTER');
-            } else if (!exposeAfter && filename !== exposeBefore.filename) {
-                // Second click = AFTER
-                item.classList.add('after-selected');
-                exposeAfter = { el: item, filename };
-                document.getElementById('expose-hint').textContent = '⚙️ กำลังสร้างภาพ...';
-                showToast('⚙️ กำลังรวมภาพ...');
-                await buildExposeImage();
-            }
-        }, true);
-
-        async function fetchImageBlob(filename) {
-            const resp = await fetch(`/get-img?path=${encodeURIComponent(filename)}`);
-            const blob = await resp.blob();
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
-                reader.readAsDataURL(blob);
-            });
-        }
-
-        async function loadImageFromDataUrl(dataUrl) {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.onload = () => resolve(img);
-                img.src = dataUrl;
-            });
-        }
-
-        async function buildExposeImage() {
             try {
-                const [beforeDataUrl, afterDataUrl] = await Promise.all([
-                    fetchImageBlob(exposeBefore.filename),
-                    fetchImageBlob(exposeAfter.filename)
-                ]);
+                // Upload Original (Active File)
+                const origUrl = await uploadCatbox(uploadedFiles[activeFileIndex], 'original.jpg');
 
-                const imgB = await loadImageFromDataUrl(beforeDataUrl);
-                const imgA = await loadImageFromDataUrl(afterDataUrl);
-
-                const GAP = 8;
-                const WATERMARK_H = 60;
-                const LABEL_H = 28;
-
-                // Normalise both images to the same height
-                const targetH = Math.max(imgB.height, imgA.height);
-                const scaleB = targetH / imgB.height;
-                const scaleA = targetH / imgA.height;
-                const wB = Math.round(imgB.width * scaleB);
-                const wA = Math.round(imgA.width * scaleA);
-
-                const totalW = wB + GAP + wA;
-                const totalH = LABEL_H + targetH + WATERMARK_H;
-
-                const canvas = document.createElement('canvas');
-                canvas.width = totalW;
-                canvas.height = totalH;
-                const ctx = canvas.getContext('2d');
-
-                // Background
-                ctx.fillStyle = '#111';
-                ctx.fillRect(0, 0, totalW, totalH);
-
-                // Labels BEFORE / AFTER
-                ctx.fillStyle = '#27ae60';
-                ctx.fillRect(0, 0, wB, LABEL_H);
-                ctx.fillStyle = '#e67e22';
-                ctx.fillRect(wB + GAP, 0, wA, LABEL_H);
-
-                ctx.font = `bold ${LABEL_H * 0.6}px 'Outfit', sans-serif`;
-                ctx.fillStyle = '#fff';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('BEFORE', wB / 2, LABEL_H / 2);
-                ctx.fillText('AFTER', wB + GAP + wA / 2, LABEL_H / 2);
-
-                // Images
-                ctx.drawImage(imgB, 0, LABEL_H, wB, targetH);
-                ctx.drawImage(imgA, wB + GAP, LABEL_H, wA, targetH);
-
-                // ===== STAMP "AI MANIPULATED" diagonally on BEFORE image =====
-                ctx.save();
-                // Red semi-transparent overlay strip
-                ctx.globalAlpha = 0.18;
-                ctx.fillStyle = '#ff0000';
-                ctx.fillRect(0, LABEL_H, wB, targetH);
-                ctx.globalAlpha = 1;
-
-                // Diagonal stamp text
-                const stampFontSize = Math.max(18, Math.min(40, wB / 7));
-                ctx.save();
-                ctx.translate(wB / 2, LABEL_H + targetH / 2);
-                ctx.rotate(-Math.PI / 5);
-                ctx.font = `bold ${stampFontSize}px 'Outfit', Arial, sans-serif`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                // Shadow for readability
-                ctx.shadowColor = 'rgba(0,0,0,0.8)';
-                ctx.shadowBlur = 8;
-                // Stroke outline
-                ctx.strokeStyle = 'rgba(180,0,0,0.85)';
-                ctx.lineWidth = stampFontSize * 0.18;
-                ctx.strokeText('⚠ AI MANIPULATED', 0, 0);
-                // Fill
-                ctx.fillStyle = 'rgba(255, 50, 50, 0.92)';
-                ctx.fillText('⚠ AI MANIPULATED', 0, 0);
-                ctx.restore();
-
-                // Small label bottom-left of BEFORE
-                const smallFont = Math.max(9, Math.min(13, wB / 18));
-                ctx.font = `bold ${smallFont}px 'Outfit', sans-serif`;
-                ctx.fillStyle = 'rgba(255,60,60,0.95)';
-                ctx.textAlign = 'left';
-                ctx.textBaseline = 'bottom';
-                ctx.shadowColor = 'rgba(0,0,0,0.9)';
-                ctx.shadowBlur = 6;
-                ctx.fillText('SOURCE: ORIGINAL PHOTO (BEFORE AI EDIT)', 6, LABEL_H + targetH - 6);
-                ctx.restore();
-
-                // Watermark bar
-                ctx.fillStyle = '#000';
-                ctx.fillRect(0, LABEL_H + targetH, totalW, WATERMARK_H);
-
-                // Watermark text
-                const fontSize1 = Math.max(11, Math.min(16, totalW / 52));
-                const fontSize2 = Math.max(10, Math.min(14, totalW / 60));
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-
-                ctx.font = `bold ${fontSize1}px 'Outfit', sans-serif`;
-                ctx.fillStyle = '#FFE000';
-                ctx.fillText(WATERMARK_LINE1, totalW / 2, LABEL_H + targetH + WATERMARK_H * 0.35);
-
-                ctx.font = `${fontSize2}px 'Prompt', sans-serif`;
-                ctx.fillStyle = '#FFD600';
-                ctx.fillText(WATERMARK_LINE2, totalW / 2, LABEL_H + targetH + WATERMARK_H * 0.72);
-
-                exposeResultDataUrl = canvas.toDataURL('image/png');
-                await downloadExposeImage(); // บันทึกทันทีไม่ต้องรอ
-            } catch (err) {
-                console.error(err);
-                showToast('❌ เกิดข้อผิดพลาดในการสร้างภาพ');
-            } finally {
-                exposeMode = false;
-                document.getElementById('expose-hint').textContent = '';
-                document.querySelectorAll('.dl-item').forEach(el => {
-                    el.classList.remove('before-selected', 'after-selected');
-                });
-                exposeBefore = null;
-                exposeAfter = null;
-            }
-        }
-
-        function showExposeModal(dataUrl) {
-            document.getElementById('expose-result-img').src = dataUrl;
-            document.getElementById('expose-overlay').classList.add('active');
-        }
-
-        function closeExposeModal() {
-            document.getElementById('expose-overlay').classList.remove('active');
-            exposeResultDataUrl = null;
-        }
-
-        async function downloadExposeImage() {
-            if (!exposeResultDataUrl) return;
-            try {
-                const res = await fetch('/save-expose', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ image: exposeResultDataUrl })
-                });
-                if (res.ok) {
-                    showToast('✅ บันทึกที่ Desktop (complete.png) แล้ว!');
-                    showWatermarkCheck(exposeResultDataUrl);
-                } else {
-                    throw new Error('Server error');
+                // Upload Annotated if paths exist
+                let annUrl = origUrl;
+                if (paths.length > 0) {
+                    const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.85));
+                    annUrl = await uploadCatbox(blob, 'annotated.jpg');
                 }
+
+                const uid = Math.random().toString(36).substr(2, 12);
+                const now = new Date();
+                const exp = new Date(now.getTime() + 12 * 3600000); // 12 hours
+
+                // Prepare extra image files
+                const extraFiles = uploadedFiles.filter((_, i) => i !== activeFileIndex);
+
+                await push(jobsRef, {
+                    description: desc,
+                    budget,
+                    imageUrl: origUrl,
+                    annotatedUrl: annUrl,
+                    createdAt: now.toISOString(),
+                    expiresAt: exp.toISOString(),
+                    status: 'active',
+                    uniqueId: uid,
+                    secretChat: false
+                });
+
+                // Upload other files to chat immediately
+                if (extraFiles.length > 0) {
+                    for (let f of extraFiles) {
+                        try {
+                            const u = await uploadCatbox(f, f.name);
+                            await push(ref(db, `chats/${uid}`), {
+                                sender: 'user',
+                                text: '🖼 ภาพเพิ่มเติม: ' + f.name,
+                                fileUrl: u,
+                                fileName: f.name,
+                                timestamp: new Date().toISOString(),
+                                type: 'file'
+                            });
+                        } catch (err) { console.error('Failed to upload extra file', err); }
+                    }
+                }
+
+                localStorage.setItem('recentJobId', uid);
+                window.location.href = `index.html?job=${uid}`;
             } catch (e) {
-                // Fallback
-                const a = document.createElement('a');
-                a.href = exposeResultDataUrl;
-                a.download = `complete.png`;
-                a.click();
-                showToast('✅ บันทึกผ่าน Browser แล้ว');
-                showWatermarkCheck(exposeResultDataUrl);
+                console.error(e);
+                showError('อัปโหลดล้มเหลว กรุณาลองใหม่อีกครั้ง');
+                btn.disabled = false;
+                btn.innerHTML = '⚡ โพสต์งานทันที';
+            }
+        };
+
+        function showError(msg) {
+            const el = document.getElementById('errMsg');
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 4000);
+        }
+
+        // Global Jobs Listener (for Task List and Job Status)
+        onValue(jobsRef, snap => {
+            if (!snap.exists()) return;
+            const jobs = snap.val();
+            const now = new Date();
+
+            // Update Task List (Form View)
+            const taskList = document.getElementById('taskListContent');
+            if (!curJobId && taskList) {
+                const activeJobs = Object.values(jobs)
+                    .filter(j => j.status === 'active' && new Date(j.expiresAt) > now)
+                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                if (activeJobs.length === 0) {
+                    taskList.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--dim); padding:40px 0;">ไม่มีงานที่ค้างอยู่</td></tr>';
+                } else {
+                    taskList.innerHTML = activeJobs.map(j => {
+                        const hLeft = Math.ceil((new Date(j.expiresAt) - now) / 3600000);
+                        return `
+                    <tr>
+                        <td class="desc-col" title="${j.description}">${j.description}</td>
+                        <td class="bud-col">${j.budget}</td>
+                        <td>⏱ เหลือ ${hLeft} ชม.</td>
+                        <td><span style="background:#fef3c7; color:#d97706; padding:4px 8px; border-radius:6px; font-size:.8rem; font-weight:600;">รอรับงาน</span></td>
+                    </tr>`;
+                    }).join('');
+                }
+            }
+
+
+        });
+
+        function showQR(budget) {
+            const qrBox = document.getElementById('qrBox');
+            if (qrBox.style.display === 'block') return;
+
+            qrBox.style.display = 'block';
+            document.getElementById('qrAmt').textContent = parseFloat(budget).toFixed(2) + ' THB';
+            const qd = document.getElementById('qrD');
+            const pid = "0988573074";
+            
+            const qrUrl = `https://promptpay.io/${pid}/${budget}.png`;
+            qd.innerHTML = `<img src="${qrUrl}" style="width: 140px; height: 140px; border-radius: 8px;" alt="PromptPay QR Code">`;
+
+            document.getElementById('qrW').onclick = () => {
+                fetch(qrUrl)
+                    .then(response => response.blob())
+                    .then(blob => {
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.download = `PromptPay_${budget}_THB.png`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    })
+                    .catch(e => console.error('QR Download failed', e));
+            };
+        }
+
+        // Chat Page Initialization
+        async function loadChatPage(uid) {
+            curJobId = uid;
+            document.getElementById('formView').style.display = 'none';
+            document.getElementById('chatView').style.display = 'flex';
+            document.getElementById('btnBackHome').style.display = 'block';
+
+            const snap = await get(jobsRef);
+            if (!snap.exists()) return;
+            const allJobs = snap.val();
+            const jobEntry = Object.entries(allJobs).find(([, j]) => j.uniqueId === uid);
+            if (!jobEntry) {
+                document.getElementById('chatView').innerHTML = '<div style="text-align:center; padding:50px; font-size:1.2rem; flex:1;">ไม่พบงานนี้ ❌</div>';
+                return;
+            }
+            const [firebaseKey, job] = jobEntry;
+            curJob = job;
+            curJobFirebaseKey = firebaseKey;
+
+            // Dedicated listener on this specific job for secretChat & status changes
+            if (secretJobListener) off(secretJobListener);
+            const specificJobRef = ref(db, `jobs/${firebaseKey}`);
+            onValue(specificJobRef, jobSnap => {
+                if (!jobSnap.exists()) return;
+                const j = jobSnap.val();
+                curJob = j;
+
+                // Secret Chat Frame syncing
+                const sf = document.getElementById('secFrame');
+                const iframe = document.getElementById('secIf');
+                if (j.secretChat) {
+                    if (!sf.classList.contains('on')) {
+                        sf.classList.add('on');
+                    }
+                    const secretUrl = `https://artnp.github.io/chat/?room=${curJob.uniqueId}`;
+                    if (!iframe.src || iframe.src === '' || iframe.src === location.href || !iframe.src.includes(curJob.uniqueId)) {
+                        iframe.src = secretUrl;
+                    }
+                } else {
+                    sf.classList.remove('on');
+                }
+
+                // Lock Chat if Cancelled / Completed
+                const cIn = document.getElementById('cIn');
+                const btnSend = document.getElementById('btnSend');
+                const btnAttach = document.getElementById('btnAttach');
+                if (j.status === 'cancelled') {
+                    cIn.disabled = true;
+                    cIn.placeholder = '🔒 งานถูกยกเลิก ไม่สามารถส่งข้อความได้';
+                    btnSend.disabled = true;
+                    btnAttach.disabled = true;
+                } else if (j.status === 'completed') {
+                    cIn.disabled = false;
+                    cIn.placeholder = 'พิมพ์ข้อความที่นี่...';
+                    btnSend.disabled = false;
+                    btnAttach.disabled = false;
+
+                    const qrBox = document.getElementById('qrBox');
+                    if (qrBox && !qrBox.classList.contains('jiggle')) {
+                        qrBox.classList.add('jiggle');
+                    }
+                }
+            });
+
+
+
+            // Countdown
+            const exp = new Date(job.expiresAt);
+            if (cdTimer) clearInterval(cdTimer);
+            const cdEl = document.getElementById('cCd');
+            cdTimer = setInterval(() => {
+                const d = exp - new Date();
+                if (d <= 0) { cdEl.textContent = '⏱ หมดเวลา!'; clearInterval(cdTimer); return; }
+                const h = Math.floor(d / 3600000), m = Math.floor((d % 3600000) / 60000), s = Math.floor((d % 60000) / 1000);
+                cdEl.textContent = `⏱ ปิดใน ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            }, 1000);
+
+            // Always show QR code in the info panel
+            showQR(job.budget);
+
+            // Listen Messages
+            onValue(ref(db, `chats/${uid}`), snap => {
+                const el = document.getElementById('cMsgs');
+                const overlay = document.getElementById('dragOverlay');
+
+                if (!snap.exists()) {
+                    // Keep overlay if it's there
+                    const sys = document.createElement('div');
+                    sys.className = 'm sys';
+                    sys.textContent = 'ยังไม่มีข้อความ รอนักรีทัชรับงาน...';
+                    el.innerHTML = '';
+                    el.appendChild(sys);
+                    el.appendChild(overlay);
+                    return;
+                }
+
+                const msgs = Object.values(snap.val()).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                const frag = document.createDocumentFragment();
+
+                msgs.forEach(m => {
+                    const t = new Date(m.timestamp).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                    const div = document.createElement('div');
+
+                    if (m.type === 'system') {
+                        div.className = 'm sys';
+                        div.textContent = m.text;
+                    } else if (m.type === 'file') {
+                        div.className = `m ${m.sender} fm`;
+                        const isImg = /\.(jpg|jpeg|png|gif|webp)$/i.test(m.fileUrl || '');
+                        div.innerHTML = `${m.text || ''} ${isImg ? `<img src="${m.fileUrl}" onclick="window.open(this.src)">` : `<a href="${m.fileUrl}" target="_blank">📁 ${m.fileName || 'ไฟล์'}</a>`} <div class="t">${t}</div>`;
+                    } else {
+                        div.className = `m ${m.sender}`;
+                        div.innerHTML = `${m.text} <div class="t">${t}</div>`;
+                    }
+                    frag.appendChild(div);
+                });
+
+                el.innerHTML = '';
+                el.appendChild(frag);
+                el.appendChild(overlay); // keep overlay at bottom
+                el.scrollTop = el.scrollHeight;
+            });
+        }
+
+        // Chat Sending
+        window.sendMsg = async () => {
+            const inp = document.getElementById('cIn');
+            const txt = inp.value.trim();
+            if (!txt || !curJob || document.getElementById('btnSend').disabled) return;
+
+            await push(ref(db, `chats/${curJob.uniqueId}`), { sender: 'user', text: txt, timestamp: new Date().toISOString() });
+            inp.value = '';
+        };
+
+        document.getElementById('cIn').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMsg();
+            }
+        });
+
+        // Step UI Logic
+        document.getElementById('desc').addEventListener('input', updateSteps);
+
+        function updateSteps() {
+            const s1 = document.getElementById('step1');
+            const s2 = document.getElementById('step2');
+            const s3 = document.getElementById('subBtn');
+            const l1 = document.getElementById('lbStep1');
+            const l2 = document.getElementById('lbStep2');
+            const bDisp = document.getElementById('budgetDisplay');
+            const descVal = document.getElementById('desc').value.trim();
+            const hasFiles = uploadedFiles.length > 0;
+            const hasDesc = descVal.length > 0;
+
+            // Reset
+            s1.className = 'f-card';
+            s2.className = 'f-card';
+            s3.className = 'btn-go';
+            l1.innerHTML = '➔1️⃣ อัปโหลดภาพที่จะแก้';
+            l2.innerHTML = '➔2️⃣รายละเอียดงาน';
+            s3.innerHTML = '➔3️⃣ โพสต์งานทันที⚡';
+
+            l1.classList.remove('anim-pulse');
+            l2.classList.remove('anim-pulse');
+            bDisp.classList.remove('anim-pulse');
+
+            if (!hasFiles) {
+                s1.classList.add('step-active');
+                s2.classList.add('step-future');
+                s3.classList.add('step-future');
+                l1.classList.add('anim-pulse');
+            } else if (!hasDesc) {
+                l1.innerHTML = '➔1️⃣ อัปโหลดภาพที่จะแก้ <span style="color:#10b981;">✅</span>';
+                s2.classList.add('step-active');
+                s3.classList.add('step-future');
+                l2.classList.add('anim-pulse');
+            } else {
+                l1.innerHTML = '➔1️⃣ อัปโหลดภาพที่จะแก้ <span style="color:#10b981;">✅</span>';
+                l2.innerHTML = '➔2️⃣รายละเอียดงาน <span style="color:#10b981;">✅</span>';
+                s3.classList.add('step-active');
+                s3.innerHTML = '➔3️⃣ โพสต์งานทันที⚡ <span style="color:#10b981;">✅</span>';
+                bDisp.classList.add('anim-pulse');
             }
         }
 
-        // Close overlay on backdrop click
-        document.getElementById('expose-overlay').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('expose-overlay')) closeExposeModal();
-        });
+        // Initial call
+        updateSteps();
 
-        async function showWatermarkCheck(source) {
-            const canvas = document.getElementById('watermark-check-canvas');
-            const ctx = canvas.getContext('2d');
-            
-            const img = new Image();
-            img.crossOrigin = "Anonymous";
-            img.onload = () => {
-                // คำนวณแสดงเฉพาะ 20% ส่วนล่างของภาพ
-                const cropHeight = img.height * 0.20;
-                const startY = img.height - cropHeight;
-                
-                canvas.width = img.width;
-                canvas.height = cropHeight;
-                
-                // วาดภาพส่วนท้ายสุด (Bottom 20%)
-                ctx.drawImage(img, 
-                    0, startY, img.width, cropHeight, 
-                    0, 0, img.width, cropHeight
-                );
-                
-                document.getElementById('watermark-check-content').style.display = 'block';
-                document.getElementById('watermark-check-placeholder').style.display = 'none';
-            };
-            img.src = source;
+        // Chat Upload logic
+        async function uploadToChat(file) {
+            if (!file || !curJob) return;
+            const fd = new FormData();
+            fd.append('reqtype', 'fileupload');
+            fd.append('time', '72h');
+            fd.append('fileToUpload', file, file.name);
+            try {
+                const r = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', { method: 'POST', body: fd });
+                const u = await r.text();
+                if (!u.startsWith('http')) throw new Error();
+                await push(ref(db, `chats/${curJob.uniqueId}`), { sender: 'user', text: '📤 ' + file.name, fileUrl: u, fileName: file.name, timestamp: new Date().toISOString(), type: 'file' });
+            } catch {
+                alert('อัปโหลดล้มเหลว');
+            }
+        }
+
+        document.getElementById('cfi').onchange = e => {
+            if (e.target.files.length > 0) uploadToChat(e.target.files[0]);
+            e.target.value = '';
+        };
+
+        // Drag and drop for Chat
+        const cMsgs = document.getElementById('cMsgs');
+        const dragOverlay = document.getElementById('dragOverlay');
+
+        cMsgs.ondragover = e => { e.preventDefault(); dragOverlay.classList.add('on'); };
+        cMsgs.ondragleave = e => { if (e.target === dragOverlay) dragOverlay.classList.remove('on'); };
+        cMsgs.ondrop = e => {
+            e.preventDefault();
+            dragOverlay.classList.remove('on');
+            if (curJob && curJob.status !== 'cancelled' && e.dataTransfer.files.length > 0) {
+                uploadToChat(e.dataTransfer.files[0]);
+            }
+        };
+
+        window.goHome = () => {
+            localStorage.removeItem('recentJobId');
+            window.location.href = 'index.html';
+        };
+
+        // Route
+        const urlParams = new URLSearchParams(window.location.search);
+        const jid = urlParams.get('job');
+        if (jid) {
+            loadChatPage(jid);
+        } else {
+            const recentJob = localStorage.getItem('recentJobId');
+            if (recentJob) {
+                window.location.href = `index.html?job=${recentJob}`;
+            } else {
+                document.getElementById('formView').style.display = 'flex';
+                document.getElementById('chatView').style.display = 'none';
+            }
         }
 
     </script>

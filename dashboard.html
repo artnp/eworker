@@ -1,0 +1,1794 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI ศูนย์ทำงาน</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Prompt:wght@300;400;600&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
+    <style>
+        :root {
+            --bg: #f8f9fa;
+            --surface: #ffffff;
+            --input-bg: #ffffff;
+            --primary: #4285f4;
+            --text: #202124;
+            --text-sub: #5f6368;
+            --border: #dadce0;
+            --green: #06C755;
+            --shadow: 0 1px 3px rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', 'Prompt', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 20px;
+            transition: background-color 0.3s;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 5px;
+        }
+
+        h1 span {
+            color: var(--primary);
+        }
+
+        .downloads-container {
+            width: 100%;
+            max-width: 1000px;
+            margin-bottom: 20px;
+        }
+
+        .section-label {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .downloads-grid {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 5px;
+            scrollbar-width: none;
+        }
+
+        .downloads-grid::-webkit-scrollbar {
+            display: none;
+        }
+
+        .dl-item {
+            flex: 0 0 120px;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            opacity: 0.9;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .dl-item:hover,
+        .dl-item.selected {
+            opacity: 1;
+            transform: scale(1.05);
+            border-color: var(--primary);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .dl-item.selected::after {
+            content: attr(data-order);
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .dl-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .dl-item .time {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            font-size: 8px;
+            padding: 2px;
+            background: rgba(255, 255, 255, 0.85);
+            color: #000;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dl-item .delete-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(255, 77, 77, 0.9);
+            color: #fff;
+            border: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            font-size: 9px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 10;
+        }
+
+        .dl-item:hover .delete-btn {
+            opacity: 1;
+        }
+
+        .ai-hub-main {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .pasted-previews {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
+        .preview-thumb {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        .preview-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 7px;
+        }
+
+        .preview-thumb .remove {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ff4d4d;
+            color: #fff;
+            border: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            font-size: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-bar {
+            background: var(--input-bg);
+            border-radius: 30px;
+            display: flex;
+            align-items: flex-end;
+            padding: 10px 15px;
+            border: 1px solid var(--border);
+            transition: border-color 0.3s, box-shadow 0.3s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .input-bar:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 1px 6px rgba(32, 33, 36, 0.28);
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            color: var(--text-sub);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, color 0.2s;
+            flex-shrink: 0;
+            margin-bottom: 2px;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+        }
+
+        #prompt-input {
+            flex-grow: 1;
+            background: none;
+            border: none;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 1.1rem;
+            padding: 8px 10px;
+            max-height: 200px;
+            min-height: 24px;
+            outline: none;
+            resize: none;
+            overflow-y: hidden;
+            scrollbar-width: none;
+        }
+
+        .quick-tags {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 100%;
+        }
+
+        .tag-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-sub);
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+        }
+
+        .tag-item:nth-child(1) {
+            border-color: #f4b400;
+            color: #b48400;
+            background: rgba(244, 180, 0, 0.1);
+        }
+
+        .tag-item:nth-child(2) {
+            border-color: #0f9d58;
+            color: #0f9d58;
+            background: rgba(15, 157, 88, 0.1);
+        }
+
+        .tag-item:nth-child(3) {
+            border-color: #db4437;
+            color: #db4437;
+            background: rgba(219, 68, 55, 0.1);
+        }
+
+        .tag-item:nth-child(4) {
+            border-color: #4285f4;
+            color: #4285f4;
+            background: rgba(66, 133, 244, 0.1);
+        }
+
+        .tag-item:nth-child(5) {
+            border-color: #ab47bc;
+            color: #ab47bc;
+            background: rgba(171, 71, 188, 0.1);
+        }
+
+        .tag-item:nth-child(6) {
+            border-color: #00acc1;
+            color: #00acc1;
+            background: rgba(0, 172, 193, 0.1);
+        }
+
+        .tag-item:nth-child(7) {
+            border-color: #ff7043;
+            color: #e64a19;
+            background: rgba(255, 112, 67, 0.1);
+        }
+
+        /* Gemini Account Selector */
+        .account-selector {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            border: 1px solid var(--border);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .account-selector label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+            color: var(--text-sub);
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 10px;
+            transition: all 0.2s;
+        }
+
+        .account-selector label:hover {
+            background: rgba(66, 133, 244, 0.1);
+        }
+
+        .account-selector input[type="radio"] {
+            accent-color: var(--primary);
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .account-selector span {
+            font-weight: 600;
+        }
+
+        .account-selector input[type="radio"]:checked+span {
+            color: var(--primary);
+        }
+
+        .tag-item:hover {
+            filter: brightness(1.2);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            background: var(--tag-bg-hover, rgba(255, 255, 255, 0.1));
+        }
+
+        .tag-item:nth-child(1):hover {
+            background: #f4b400;
+            color: #000;
+        }
+
+        .tag-item:nth-child(2):hover {
+            background: #0f9d58;
+            color: #fff;
+        }
+
+        .tag-item:nth-child(3):hover {
+            background: #db4437;
+            color: #fff;
+        }
+
+        .tag-item:nth-child(4):hover {
+            background: #4285f4;
+            color: #fff;
+        }
+
+        .tag-item:nth-child(5):hover {
+            background: #ab47bc;
+            color: #fff;
+        }
+
+        .tag-item:nth-child(6):hover {
+            background: #00acc1;
+            color: #fff;
+        }
+
+        .tag-item:nth-child(7):hover {
+            background: #ff7043;
+            color: #fff;
+        }
+
+        footer {
+            margin-top: 25px;
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            opacity: 0.5;
+        }
+
+        /* ===== ประจาน Button ===== */
+        .expose-btn {
+            position: relative;
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #c0392b, #8e1010);
+            color: #fff;
+            border: none;
+            border-radius: 30px;
+            font-family: 'Outfit', 'Prompt', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(192, 57, 43, 0.35);
+            transition: all 0.25s;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .expose-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 22px rgba(192, 57, 43, 0.5);
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .expose-btn:active {
+            transform: translateY(0);
+        }
+
+        .expose-mode-hint {
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: #c0392b;
+            font-weight: 600;
+            min-height: 1.2em;
+            text-align: left;
+        }
+
+        .dl-item.before-selected {
+            border: 3px solid #27ae60 !important;
+            box-shadow: 0 0 12px rgba(39, 174, 96, 0.6) !important;
+        }
+
+        .dl-item.before-selected::after {
+            content: 'ก่อนทำ';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: #27ae60;
+            color: white;
+            border-radius: 6px;
+            width: auto;
+            height: 20px;
+            padding: 0 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            border-radius: 8px;
+        }
+
+        .dl-item.after-selected {
+            border: 3px solid #e67e22 !important;
+            box-shadow: 0 0 12px rgba(230, 126, 34, 0.6) !important;
+        }
+
+        .dl-item.after-selected::after {
+            content: 'หลังทำ';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: #e67e22;
+            color: white;
+            border-radius: 8px;
+            width: auto;
+            height: 20px;
+            padding: 0 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        /* Expose modal overlay */
+        .expose-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .expose-overlay.active {
+            display: flex;
+        }
+
+        .expose-modal {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px;
+            max-width: 90vw;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .expose-modal img {
+            max-width: 80vw;
+            max-height: 60vh;
+            border-radius: 10px;
+        }
+
+        .expose-modal-btns {
+            display: flex;
+            gap: 12px;
+        }
+
+        .expose-modal-btns button {
+            padding: 10px 24px;
+            border-radius: 20px;
+            border: none;
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-download-expose {
+            background: linear-gradient(135deg, #c0392b, #8e1010);
+            color: #fff;
+        }
+
+        .btn-download-expose:hover {
+            filter: brightness(1.15);
+        }
+
+        .btn-close-expose {
+            background: #eee;
+            color: #333;
+        }
+
+        .btn-close-expose:hover {
+            background: #ddd;
+        }
+
+        #toast-container {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+        }
+
+        .toast {
+            background: #323336;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 24px;
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            font-weight: 500;
+        }
+
+        /* Drag and Drop Styles */
+        body.drag-over {
+            background-color: #e8f0fe;
+        }
+
+        .preview-thumb {
+            cursor: grab;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .preview-thumb.dragging,
+        .dl-item.dragging {
+            opacity: 0.4;
+            cursor: grabbing;
+        }
+
+        .preview-thumb.drag-over-item,
+        .dl-item.drag-over-item {
+            border: 2px dashed var(--primary);
+        }
+
+        /* Quota Status Panel */
+        .quota-panel {
+            margin-top: 12px;
+            padding: 12px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .quota-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .quota-panel-header h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .quota-panel-header .refresh-btn {
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            color: var(--text-sub);
+            transition: all 0.2s;
+        }
+
+        .quota-panel-header .refresh-btn:hover {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        .quota-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 8px;
+        }
+
+        .quota-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .quota-item.available {
+            background: rgba(15, 157, 88, 0.08);
+            border-color: rgba(15, 157, 88, 0.2);
+        }
+
+        .quota-item.exhausted {
+            background: rgba(219, 68, 55, 0.08);
+            border-color: rgba(219, 68, 55, 0.2);
+        }
+
+        .quota-item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .quota-item-name {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .quota-item.available .quota-item-name {
+            color: #0f9d58;
+        }
+
+        .quota-item.exhausted .quota-item-name {
+            color: #db4437;
+        }
+
+        .quota-item-time {
+            font-size: 0.7rem;
+            color: var(--text-sub);
+        }
+
+        .quota-action-btn {
+            padding: 4px 10px;
+            border-radius: 8px;
+            border: none;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .quota-action-btn.unlock {
+            background: #0f9d58;
+            color: #fff;
+        }
+
+        .quota-action-btn.unlock:hover {
+            background: #0b8043;
+            transform: scale(1.05);
+        }
+
+        .quota-action-btn.block {
+            background: #db4437;
+            color: #fff;
+        }
+
+        .quota-action-btn.block:hover {
+            background: #c62828;
+            transform: scale(1.05);
+        }
+
+        .quota-summary {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>AI <span>HUB</span> CENTRAL</h1>
+    </header>
+
+    <div class="downloads-container">
+        <div class="section-label"><span id="conn-status" style="font-size: 10px; color: var(--green);">●
+                เชื่อมต่อแล้ว</span></div>
+        <div id="dl-grid" class="downloads-grid"></div>
+    </div>
+
+    <div class="ai-hub-main">
+        <div id="previews" class="pasted-previews"></div>
+        <div class="input-bar">
+            <button id="btn-paste" class="action-btn" title="วางภาพ (Ctrl+V)"><svg viewBox="0 0 24 24" width="24"
+                    height="24" fill="currentColor">
+                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+                </svg></button>
+            <input type="file" id="file-input" multiple accept="image/*" style="display: none;">
+            <textarea id="prompt-input" rows="1" placeholder="รายละเอียดงาน..." autofocus></textarea>
+        </div>
+        <div class="quick-tags">
+            <div class="tag-item" onclick="addTag('จงปรับภาพให้ชัด')">ปรับให้ชัด</div>
+            <div class="tag-item" onclick="addTag('จงเปลี่ยนเป็นภาพสี')">เป็นภาพสี</div>
+            <div class="tag-item" onclick="addTag('จงทำให้ภาพเนียนกว่านี้')">ให้ภาพเนียน</div>
+            <div class="tag-item" onclick="addTag('จงปรับแสงให้เหมือนจริงทั้งภาพ')">ปรับแสง</div>
+            <div class="tag-item" onclick="addTag('เปลี่ยนเป็นพื้นหลังสีฟ้าหน้าตรงครึ่งตัว')">
+                พื้นหลังสีฟ้า</div>
+            <div class="tag-item" onclick="addTag('ตัดต่อภาพที่ 2 ไปใส่ ภาพที่ 1')">รูป 2 ใส่ 1</div>
+            <div class="tag-item" onclick="addTag('จงเปลี่ยนเป็นชุด')">เปลี่ยนชุด..</div>
+        </div>
+
+        <!-- Ultra-Compact Gemini Bar -->
+        <div class="quota-panel" id="quota-panel" style="margin-top: 8px; padding: 6px 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 12px; flex-grow: 1; flex-wrap: wrap;">
+                <h3 style="margin: 0; font-size: 0.85rem; color: var(--text-sub); white-space: nowrap; cursor: pointer; display: flex; align-items: center; gap: 4px;" onclick="const g = document.getElementById('quota-grid'); g.style.display = g.style.display === 'none' ? 'grid' : 'none';">
+                    <span>🔑 Gemini:</span>
+                    <small style="font-weight: normal; font-size: 0.65rem; color: #999; border: 1px solid #ddd; padding: 1px 4px; border-radius: 4px; margin-left: 2px;">ตั้งค่า</small>
+                </h3>
+                
+                <!-- Gemini Account Selector with Status Dots -->
+                <div class="account-selector" style="margin: 0; padding: 0; background: transparent; border: none; gap: 8px;">
+                    <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
+                        <label style="padding: 2px 4px;">
+                            <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/0/app" checked>
+                            <span>u/0</span>
+                        </label>
+                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/0/app" style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
+                    </div>
+                    <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
+                        <label style="padding: 2px 4px;">
+                            <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/1/app">
+                            <span>u/1</span>
+                        </label>
+                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/1/app" style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
+                    </div>
+                    <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
+                        <label style="padding: 2px 4px;">
+                            <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/2/app">
+                            <span>u/2</span>
+                        </label>
+                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/2/app" style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
+                    </div>
+                    <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
+                        <label style="padding: 2px 4px;">
+                            <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/3/app">
+                            <span>u/3</span>
+                        </label>
+                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/3/app" style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
+                    </div>
+                    <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
+                        <label style="padding: 2px 4px;">
+                            <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/4/app">
+                            <span>u/4</span>
+                        </label>
+                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/4/app" style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
+                    </div>
+                    <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
+                        <label style="padding: 2px 4px;">
+                            <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/5/app">
+                            <span>u/5</span>
+                        </label>
+                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/5/app" style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
+                    </div>
+                    <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
+                        <label style="padding: 2px 4px;">
+                            <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/6/app">
+                            <span>u/6</span>
+                        </label>
+                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/6/app" style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
+                    </div>
+                </div>
+                
+                <!-- Compact Status Summary -->
+                <span id="quota-summary" style="font-size: 0.75rem; color: var(--text-sub); border-left: 1px solid var(--border); padding-left: 10px; margin-left: 5px; white-space: nowrap;"></span>
+            </div>
+            
+            <button class="refresh-btn" onclick="loadQuotaStatus()" style="padding: 2px 6px; font-size: 0.75rem; background: none; border: none; cursor: pointer;">🔄</button>
+            
+            <!-- Grid (Hidden by default, click Gemini icon to show) -->
+            <div class="quota-grid" id="quota-grid" style="display: none; width: 100%; margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px;">
+                <div style="color: var(--text-sub); font-size: 0.8rem; grid-column: 1 / -1; text-align: center; padding: 5px;">กำลังโหลด...</div>
+            </div>
+        </div>
+
+        <!-- Watermark Check Section (ส่วนตรวจสอบลายน้ำ - Clean & Compact) -->
+        <div id="watermark-check-container"
+            style="width: 100%; max-width: 900px; margin: 10px auto; padding: 15px; background: #fff; border: 2px dashed #dadce0; border-radius: 16px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); min-height: 50px; display: flex; flex-direction: column; justify-content: center;">
+            <div id="watermark-check-content" style="display: none;">
+                <div id="watermark-check-preview-container"
+                    style="width: 100%; max-height: 280px; overflow-y: auto; overflow-x: hidden; border: 1px solid #eee; border-radius: 8px; background: #fff; display: flex; justify-content: center;">
+                    <canvas id="watermark-check-canvas" style="width: 100%; height: auto; display: block;"></canvas>
+                </div>
+            </div>
+            <div id="watermark-check-placeholder">
+                <p style="color: var(--text-sub); font-size: 0.85rem; margin: 0;">📸 ส่วนตรวจสอบก้นภาพ (Desktop)
+                    จะปรากฏที่นี่อัตโนมัติ</p>
+            </div>
+        </div>
+    </div>
+
+    <footer>v1.9 Core Edition • โหมดเลือกหลายไฟล์ ทำงาน</footer>
+
+    <!-- ปุ่มประจาน (Bottom Left) -->
+    <div
+        style="position: fixed; left: 24px; bottom: 24px; display: flex; flex-direction: column; align-items: flex-start; z-index: 1000;">
+        <button class="expose-btn" id="btn-expose" onclick="startExposeMode()">
+            <span>⚠️</span> ประจานไม่จ่ายเงิน
+        </button>
+        <div class="expose-mode-hint" id="expose-hint"></div>
+    </div>
+
+    <!-- Modal preview -->
+    <div class="expose-overlay" id="expose-overlay">
+        <div class="expose-modal" id="expose-modal">
+            <h3 style="font-family:inherit;font-size:1rem;color:#c0392b;">⚠️ ภาพสำหรับประจาน (AI-Generated)</h3>
+            <img id="expose-result-img" src="" alt="ผลลัพธ์">
+            <div class="expose-modal-btns">
+                <button class="btn-download-expose" onclick="downloadExposeImage()">⬇ ดาวน์โหลด</button>
+                <button class="btn-close-expose" onclick="closeExposeModal()">✕ ปิด</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+        const pendingRequests = new Map();
+        function callExtension(action, payload = {}) {
+            return new Promise((resolve) => {
+                const requestId = Math.random().toString(36).substr(2, 9);
+                pendingRequests.set(requestId, resolve);
+                document.dispatchEvent(new CustomEvent('HUB_TO_EXTENSION', { detail: { action, requestId, ...payload } }));
+            });
+        }
+        document.addEventListener('EXTENSION_TO_HUB', (event) => {
+            const { requestId, payload } = event.detail;
+            const resolve = pendingRequests.get(requestId);
+            if (resolve) { resolve(payload); pendingRequests.delete(requestId); }
+        });
+
+        const dlGrid = document.getElementById('dl-grid');
+        const promptInput = document.getElementById('prompt-input');
+        const previews = document.getElementById('previews');
+        const btnPaste = document.getElementById('btn-paste');
+        const fileInput = document.getElementById('file-input');
+        let pastedFiles = [];
+        let selectedFilesList = [];
+
+        let lastDownloadFilenames = "";
+        let lastCheckedCompletePath = "";
+
+        function updateSelectionIndicators() {
+            document.querySelectorAll('.dl-item').forEach(el => {
+                const filename = el.dataset.filename;
+                const idx = selectedFilesList.indexOf(filename);
+                if (idx !== -1) {
+                    el.classList.add('selected');
+                    el.setAttribute('data-order', idx + 1);
+                } else {
+                    el.classList.remove('selected');
+                    el.removeAttribute('data-order');
+                }
+            });
+        }
+
+        async function loadDownloads() {
+            try {
+                const res = await fetch('/list-downloads');
+                const downloads = await res.json();
+                if (downloads) {
+                    // ตรวจสอบทั้งชื่อไฟล์และเวลาแก้ไข (mtime) เพื่อให้รู้ว่ามีไฟล์ใหม่มาทับ
+                    const currentStatus = downloads.map(d => `${d.filename}_${d.mtime}`).join(',');
+                    if (currentStatus === lastDownloadFilenames) return;
+                    lastDownloadFilenames = currentStatus;
+
+                    dlGrid.innerHTML = '';
+                    downloads.slice(0, 20).forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'dl-item';
+                        div.draggable = true;
+                        div.dataset.filename = item.filename;
+                        div.innerHTML = `<button class="delete-btn">✕</button><img src="/get-img?path=${encodeURIComponent(item.filename)}"><div class="time">${item.shortname}</div>`;
+
+                        div.onclick = (e) => {
+                            if (e.target.classList.contains('delete-btn')) return;
+                            const idx = selectedFilesList.indexOf(item.filename);
+                            if (idx !== -1) {
+                                selectedFilesList.splice(idx, 1);
+                            } else {
+                                selectedFilesList.push(item.filename);
+                            }
+                            updateSelectionIndicators();
+                            // ถ้าเป็น complete.png กดแล้วให้โหลดตัวอย่างด้วย
+                            if (item.shortname.toLowerCase() === "complete.png") {
+                                showWatermarkCheck(`/get-img?path=${encodeURIComponent(item.filename)}&v=${Date.now()}`);
+                            }
+                        };
+
+                        div.querySelector('.delete-btn').onclick = async (e) => {
+                            e.stopPropagation();
+                            if (confirm('ลบไฟล์นี้?')) {
+                                const delRes = await fetch(`/delete-file?path=${encodeURIComponent(item.filename)}`);
+                                if (delRes.ok) {
+                                    const idx = selectedFilesList.indexOf(item.filename);
+                                    if (idx !== -1) selectedFilesList.splice(idx, 1);
+                                    loadDownloads();
+                                }
+                            }
+                        };
+
+                        div.addEventListener('dragstart', handleDragStart);
+                        div.addEventListener('dragover', handleDragOverItem);
+                        div.addEventListener('dragleave', handleDragLeaveItem);
+                        div.addEventListener('drop', (e) => handleDropItem(e, dlGrid));
+                        div.addEventListener('dragend', handleDragEnd);
+
+                        dlGrid.appendChild(div);
+                    });
+                    updateSelectionIndicators();
+                }
+            } catch (e) { }
+        }
+
+        // ระบบจอดรอสัญญาณ (Long Polling): เบาเครื่องที่สุด ทำงานเฉพาะเมื่อมี Export จริง
+        async function listenForExport() {
+            try {
+                // ส่งคำขอไปจอดรอที่ Server (จะค้างไว้จนกว่าจะมีไฟล์ใหม่)
+                const res = await fetch('/wait-for-export');
+                const data = await res.json();
+
+                // เฉพาะเมื่อได้รับสัญญาณว่า Export เสร็จจริงๆ (ไม่ใช่แค่ Timeout)
+                if (data.status === "updated" && data.path) {
+                    // Refresh รายการ
+                    loadDownloads();
+
+                    // โหลดตัวอย่างจากไฟล์ที่ Desktop มาโชว์ก้นภาพ (เพิ่ม v=Date.now เพื่อกัน Cache)
+                    showWatermarkCheck(`/get-img?path=${encodeURIComponent(data.path)}&v=${Date.now()}`);
+                    showToast('🔔 ตรวจพบไฟล์ใหม่จาก Desktop');
+                }
+
+                // กลับไปรอยาวๆ ใหม่
+                listenForExport();
+            } catch (e) {
+                // ถ้าเกิด Error ให้รอ 5 วิแล้วค่อยลองต่อใหม่
+                setTimeout(listenForExport, 5000);
+            }
+        }
+
+        // เริ่มต้นการจอดรอ
+        listenForExport();
+        setInterval(() => fetch('/heartbeat').catch(() => { }), 5000);
+
+        function addTag(text) {
+            const current = promptInput.value.trim();
+            promptInput.value = current ? `${current} ${text}` : text;
+            promptInput.focus();
+            promptInput.style.height = 'auto';
+            promptInput.style.height = promptInput.scrollHeight + 'px';
+        }
+
+        function addPaddingToDataUrl(dataUrl) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const padding = Math.max(180, Math.floor(img.height * 0.12));
+                    canvas.width = img.width;
+                    canvas.height = img.height + padding;
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.src = dataUrl;
+            });
+        }
+
+        function addPreview(blob) {
+            const url = URL.createObjectURL(blob);
+            const id = Math.random().toString(36).substr(2, 9);
+            const thumb = document.createElement('div');
+            thumb.className = 'preview-thumb';
+            thumb.draggable = true;
+            thumb.dataset.id = id;
+            thumb.innerHTML = `<img src="${url}"><button class="remove">×</button>`;
+
+            thumb.querySelector('.remove').onclick = (e) => {
+                e.stopPropagation();
+                thumb.remove();
+                pastedFiles = pastedFiles.filter(f => f.id !== id);
+            };
+
+            // Drag and drop reordering
+            thumb.addEventListener('dragstart', handleDragStart);
+            thumb.addEventListener('dragover', handleDragOverItem);
+            thumb.addEventListener('dragleave', handleDragLeaveItem);
+            thumb.addEventListener('drop', (e) => handleDropItem(e, previews, true));
+            thumb.addEventListener('dragend', handleDragEnd);
+
+            previews.appendChild(thumb);
+            pastedFiles.push({ id, blob });
+        }
+
+        // --- Drag & Drop Reordering Logic ---
+        let dragSource = null;
+
+        function handleDragStart(e) {
+            const target = e.currentTarget;
+            dragSource = target;
+            target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragOverItem(e) {
+            if (e.preventDefault) e.preventDefault();
+            const target = e.currentTarget;
+            target.classList.add('drag-over-item');
+            return false;
+        }
+
+        function handleDragLeaveItem(e) {
+            const target = e.currentTarget;
+            target.classList.remove('drag-over-item');
+        }
+
+        function handleDropItem(e, container, isPreview = false) {
+            if (e.stopPropagation) e.stopPropagation();
+            const target = e.currentTarget;
+            target.classList.remove('drag-over-item');
+
+            if (dragSource !== target && dragSource.parentNode === container) {
+                const children = Array.from(container.children);
+                const sourceIndex = children.indexOf(dragSource);
+                const targetIndex = children.indexOf(target);
+
+                if (sourceIndex < targetIndex) {
+                    container.insertBefore(dragSource, target.nextSibling);
+                } else {
+                    container.insertBefore(dragSource, target);
+                }
+                if (isPreview) syncPastedFilesOrder();
+            }
+            return false;
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            document.querySelectorAll('.preview-thumb, .dl-item').forEach(el => el.classList.remove('drag-over-item'));
+        }
+
+        function syncPastedFilesOrder() {
+            const children = Array.from(previews.children);
+            const newOrder = [];
+            children.forEach(child => {
+                const id = child.dataset.id;
+                const file = pastedFiles.find(f => f.id === id);
+                if (file) newOrder.push(file);
+            });
+            pastedFiles = newOrder;
+        }
+
+        // --- Global Drag & Drop for Files ---
+        window.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            document.body.classList.add('drag-over');
+        });
+
+        window.addEventListener('dragleave', (e) => {
+            if (e.relatedTarget === null) {
+                document.body.classList.remove('drag-over');
+            }
+        });
+
+        window.addEventListener('drop', (e) => {
+            e.preventDefault();
+            document.body.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                for (let i = 0; i < files.length; i++) {
+                    if (files[i].type.startsWith('image/')) {
+                        addPreview(files[i]);
+                    }
+                }
+            }
+        });
+
+        // --- Button click handling ---
+        btnPaste.onclick = async () => {
+            try {
+                // Try reading from clipboard first (User gesture allows this)
+                const clipboardItems = await navigator.clipboard.read();
+                let found = false;
+                for (const item of clipboardItems) {
+                    for (const type of item.types) {
+                        if (type.startsWith('image/')) {
+                            const blob = await item.getType(type);
+                            addPreview(blob);
+                            found = true;
+                        }
+                    }
+                }
+                if (!found) fileInput.click();
+            } catch (err) {
+                // Fallback to file input
+                fileInput.click();
+            }
+        };
+
+        fileInput.onchange = (e) => {
+            const files = e.target.files;
+            for (let i = 0; i < files.length; i++) {
+                addPreview(files[i]);
+            }
+            fileInput.value = ''; // Reset for next use
+        };
+
+        document.addEventListener('paste', (e) => {
+            const items = e.clipboardData.items;
+            let imageFound = false;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    addPreview(items[i].getAsFile());
+                    imageFound = true;
+                }
+            }
+            if (imageFound) {
+                // Image added to previews, waiting for user to press Enter
+            }
+        });
+
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitHubData(); }
+        });
+
+        async function submitHubData() {
+            const prompt = promptInput.value.trim();
+            if (pastedFiles.length === 0 && !prompt && selectedFilesList.length === 0) return;
+            showToast('🚀 ส่งไปยัง Gemini...');
+
+            // We only send imagePaths for history items and base64 for NEW pasted items
+            // This significantly reduces massage size for history items
+            const imagePaths = [...selectedFilesList];
+
+            // For pasted images, we still need to send them as base64, but we can resize them
+            const pastedImageDataUrls = await Promise.all(pastedFiles.map(async (item) => {
+                let dataUrl = await new Promise(r => { const rd = new FileReader(); rd.onloadend = () => r(rd.result); rd.readAsDataURL(item.blob); });
+
+                // Helper to resize large images to avoid 64MB extension limit
+                const resizeImage = (dUrl, maxSide = 1800) => {
+                    return new Promise((resolve) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            if (img.width <= maxSide && img.height <= maxSide) {
+                                resolve(dUrl); // No resize needed
+                                return;
+                            }
+                            const canvas = document.createElement('canvas');
+                            let w = img.width, h = img.height;
+                            if (w > h) { if (w > maxSide) { h *= maxSide / w; w = maxSide; } }
+                            else { if (h > maxSide) { w *= maxSide / h; h = maxSide; } }
+                            canvas.width = w; canvas.height = h;
+                            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                            resolve(canvas.toDataURL('image/jpeg', 0.85)); // Use JPEG for better compression
+                        };
+                        img.src = dUrl;
+                    });
+                };
+
+                const resized = await resizeImage(dataUrl);
+                return await addPaddingToDataUrl(resized);
+            }));
+
+            const res = await callExtension('SUBMIT_HUB_DATA', {
+                prompt,
+                images: pastedImageDataUrls,
+                imagePaths: imagePaths,
+                origin: window.location.origin
+            });
+
+            if (res && res.success) {
+                showToast('✅ ส่งแล้ว!');
+                promptInput.value = '';
+                promptInput.style.height = 'auto';
+                previews.innerHTML = '';
+                pastedFiles = [];
+                selectedFilesList = [];
+                updateSelectionIndicators();
+
+                // Auto-rotate to the next Gemini Account
+                const currentIdx = Array.from(accountRadios).findIndex(r => r.checked);
+                let nextIdx = (currentIdx + 1) % accountRadios.length;
+                
+                // Skip blocked/exhausted accounts
+                let attempts = 0;
+                while (accountRadios[nextIdx].parentElement.style.opacity === '0.5' && attempts < accountRadios.length) {
+                    nextIdx = (nextIdx + 1) % accountRadios.length;
+                    attempts++;
+                }
+
+                const nextRadio = accountRadios[nextIdx];
+                nextRadio.checked = true;
+                updateGeminiUrl(nextRadio.value);
+                setTimeout(() => showToast(`🔄 เตรียมพร้อมใช้งาน ${nextRadio.nextElementSibling.textContent}`), 1500);
+            }
+        }
+
+        function showToast(msg) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = msg;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 3000);
+        }
+
+        setInterval(() => fetch('/heartbeat').catch(() => { }), 5000);
+
+        // --- Gemini Account Selection Logic ---
+        const accountRadios = document.querySelectorAll('input[name="geminiAccount"]');
+
+        function updateGeminiUrl(url) {
+            callExtension('SET_GEMINI_URL', { url }).catch(err => console.log("Extension not ready or origin blocked:", err));
+        }
+
+        accountRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    const url = e.target.value;
+                    localStorage.setItem('lastGeminiUrl', url);
+                    updateGeminiUrl(url);
+                    showToast(`🔄 เปลี่ยนเป็น Gemini ${e.target.nextElementSibling.textContent}`);
+                }
+            });
+        });
+
+        // Initialize: Sync current account status from Extension memory or localStorage
+        async function syncAccountSelection() {
+            // Priority 1: Check localStorage for immediate response
+            const localUrl = localStorage.getItem('lastGeminiUrl');
+            if (localUrl) {
+                const targetRadio = document.querySelector(`input[name="geminiAccount"][value="${localUrl}"]`);
+                if (targetRadio) {
+                    targetRadio.checked = true;
+                    // Don't call updateGeminiUrl yet, wait for extension sync to be sure
+                }
+            }
+
+            try {
+                const res = await callExtension('GET_GEMINI_CONFIG');
+                if (res && res.url) {
+                    const targetRadio = document.querySelector(`input[name="geminiAccount"][value="${res.url}"]`);
+                    if (targetRadio) {
+                        targetRadio.checked = true;
+                        localStorage.setItem('lastGeminiUrl', res.url);
+                        // Also make sure extension knows we are in hub mode
+                        updateGeminiUrl(res.url);
+                    }
+                }
+            } catch (e) {
+                console.log("Initial account sync failed:", e);
+            }
+        }
+        setTimeout(syncAccountSelection, 600);
+
+        // --- Quota Status Panel Logic ---
+        async function loadQuotaStatus() {
+            const grid = document.getElementById('quota-grid');
+            const summary = document.getElementById('quota-summary');
+            try {
+                const res = await callExtension('GET_QUOTA_STATUS');
+                if (!res || !res.status) {
+                    grid.innerHTML = '<div style="color: var(--text-sub); font-size: 0.8rem; grid-column: 1 / -1; text-align: center; padding: 10px;">⚠️ ไม่สามารถเชื่อมต่อ Extension ได้</div>';
+                    summary.textContent = '';
+                    return;
+                }
+
+                const accounts = res.status;
+                const availableCount = accounts.filter(a => a.isAvailable).length;
+                const totalCount = accounts.length;
+
+                grid.innerHTML = '';
+                accounts.forEach(acc => {
+                    const urlMatch = acc.url.match(/\/u\/(\d+)\//);
+                    const label = urlMatch ? `u/${urlMatch[1]}` : acc.url;
+                    const isExhausted = !acc.isAvailable;
+
+                    const item = document.createElement('div');
+                    item.className = `quota-item ${isExhausted ? 'exhausted' : 'available'}`;
+
+                    let timeInfo = '';
+                    if (isExhausted && acc.resetTime) {
+                        const resetDate = new Date(acc.resetTime);
+                        const now = new Date();
+                        const diffMs = acc.resetTime - now.getTime();
+                        
+                        if (diffMs > 0) {
+                            const hours = Math.floor(diffMs / 3600000);
+                            const mins = Math.floor((diffMs % 3600000) / 60000);
+                            timeInfo = `กลับมาใช้ได้: ${resetDate.toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} (อีก ${hours}ชม. ${mins}น.)`;
+                        } else {
+                            timeInfo = 'น่าจะกลับมาใช้ได้แล้ว';
+                        }
+                    } else if (isExhausted) {
+                        timeInfo = 'ไม่ทราบเวลารีเซ็ต';
+                    }
+
+                    const statusIcon = isExhausted ? '🔴' : '🟢';
+                    const statusText = isExhausted ? 'โควต้าหมด' : 'พร้อมใช้';
+
+                    item.innerHTML = `
+                        <div class="quota-item-info">
+                            <div class="quota-item-name">${statusIcon} ${label} — ${statusText}</div>
+                            ${timeInfo ? `<div class="quota-item-time">${timeInfo}</div>` : ''}
+                        </div>
+                        <button class="quota-action-btn ${isExhausted ? 'unlock' : 'block'}" 
+                                onclick="${isExhausted ? `unlockAccount('${acc.url}')` : `blockAccount('${acc.url}')`}">
+                            ${isExhausted ? '🔓 Unlock' : '🔒 Block'}
+                        </button>
+                    `;
+                    grid.appendChild(item);
+                });
+
+                summary.textContent = `✅ ใช้ได้ ${availableCount}/${totalCount} บัญชี`;
+                if (availableCount === 0) {
+                    const soonest = accounts.reduce((a, b) => {
+                        if (!a.resetTime) return b;
+                        if (!b.resetTime) return a;
+                        return a.resetTime < b.resetTime ? a : b;
+                    });
+                    if (soonest && soonest.resetTime) {
+                        const soonestDate = new Date(soonest.resetTime);
+                        summary.textContent += ` | บัญชีแรกจะกลับมา: ${soonestDate.toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`;
+                    }
+                    summary.style.color = '#db4437';
+                } else {
+                    summary.style.color = 'var(--text-sub)';
+                }
+
+                // Also update account selector radio visual with status dots
+                accountRadios.forEach(radio => {
+                    const acc = accounts.find(a => a.url === radio.value);
+                    const label = radio.parentElement;
+                    const span = label.querySelector('span');
+                    const isExhausted = (acc && !acc.isAvailable);
+                    const dot = isExhausted ? '🔴' : '🟢';
+                    
+                    // Clear and rebuild to avoid encoding issues or strange characters
+                    const urlMatch = radio.value.match(/\/u\/(\d+)\//);
+                    const baseName = urlMatch ? `u/${urlMatch[1]}` : 'u/?';
+                    
+                    span.innerHTML = `<span style="font-size: 0.7rem; margin-right: 2px;">${dot}</span>${baseName}`;
+                    
+                    if (isExhausted) {
+                        label.style.opacity = '0.5';
+                        label.title = 'โควต้าหมด/ถูกบล็อก (คลิกขวาเพื่อปลดล็อค)';
+                    } else {
+                        label.style.opacity = '1';
+                        label.title = 'พร้อมใช้ (คลิกขวาเพื่อบล็อก)';
+                    }
+
+                    // Quick Toggle: Right click to Block/Unlock
+                    label.oncontextmenu = (e) => {
+                        e.preventDefault();
+                        if (isExhausted) unlockAccount(radio.value);
+                        else blockAccount(radio.value);
+                    };
+
+                    // Update inline buttons
+                    const inlineBtn = label.parentElement.querySelector('.inline-quota-btn');
+                    if (inlineBtn) {
+                        if (isExhausted) {
+                            inlineBtn.style.display = 'none';
+                        } else {
+                            inlineBtn.style.display = 'block';
+                            inlineBtn.textContent = 'บล็อก';
+                            inlineBtn.style.background = '#db4437';
+                            inlineBtn.style.color = 'white';
+                            inlineBtn.onclick = (e) => { e.preventDefault(); blockAccount(radio.value); };
+                        }
+                    }
+                });
+            } catch (e) {
+                console.log('Quota status load failed:', e);
+            }
+        }
+
+        async function unlockAccount(url) {
+            await callExtension('MARK_QUOTA_EXHAUSTED', { accountUrl: url, resetTimestamp: 0 });
+            showToast(`🔓 ปลดล็อคบัญชี ${url.match(/\/u\/(\d+)\//)?.[0] || url} แล้ว`);
+            loadQuotaStatus();
+        }
+
+        async function blockAccount(url) {
+            // Block for 24 hours by default
+            const resetTime = Date.now() + (24 * 60 * 60 * 1000);
+            await callExtension('MARK_QUOTA_EXHAUSTED', { accountUrl: url, resetTimestamp: resetTime });
+            showToast(`🔒 บล็อคบัญชี ${url.match(/\/u\/(\d+)\//)?.[0] || url} แล้ว (24 ชม.)`);
+            loadQuotaStatus();
+        }
+
+        // Load quota status on startup and refresh periodically
+        setTimeout(loadQuotaStatus, 800);
+        setInterval(loadQuotaStatus, 15000);
+
+        loadDownloads();
+        window.onfocus = loadDownloads;
+
+        // ========== EXPOSE FEATURE (ประจานไม่จ่ายเงิน) ==========
+        let exposeMode = false;
+        let exposeBefore = null;  // { el, filename }
+        let exposeAfter = null;
+        let exposeResultDataUrl = null;
+
+        const WATERMARK_LINE1 = '🚧 เจ้าของภาพนี้เพิกเฉยต่อความรับผิดชอบค่าบริการ — จึงขอนำผลงานชิ้นนี้เผยแพร่สู่สาธารณะเพื่อใช้โปรโมทเป็นผลงานของทางเพจ';
+        const WATERMARK_LINE2 = 'หากต้องการยืนยันความรับผิดชอบหรือลบภาพนี้ออกจากระบบสาธารณะ กรุณาติดต่อในแชทเพื่อดำเนินการให้ถูกต้อง';
+
+        // Load face-api models
+        let faceModelsLoaded = false;
+        async function loadFaceModels() {
+            if (faceModelsLoaded) return;
+            try {
+                const modelUrl = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+                await faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl);
+                faceModelsLoaded = true;
+                console.log("Face models loaded");
+            } catch(e) {
+                console.error("Face model load error:", e);
+            }
+        }
+
+        function startExposeMode() {
+            exposeMode = true;
+            exposeBefore = null;
+            exposeAfter = null;
+            // Clear old selections
+            document.querySelectorAll('.dl-item').forEach(el => {
+                el.classList.remove('before-selected', 'after-selected', 'selected');
+            });
+            document.getElementById('expose-hint').textContent = '📷 คลิกภาพแรก → ก่อนทำ';
+            showToast('โหมดประจาน: เลือกภาพก่อนทำก่อน');
+            loadFaceModels(); // Pre-load face models
+        }
+
+        // Override dl-item click to support expose mode
+        // We patch the loadDownloads click handler instead by intercepting at the grid level
+        dlGrid.addEventListener('click', async (e) => {
+            if (!exposeMode) return;
+            const item = e.target.closest('.dl-item');
+            if (!item) return;
+            if (e.target.classList.contains('delete-btn')) return;
+
+            const filename = item.dataset.filename;
+
+            if (!exposeBefore) {
+                // First click = BEFORE
+                item.classList.add('before-selected');
+                exposeBefore = { el: item, filename };
+                document.getElementById('expose-hint').textContent = '📷 คลิกภาพที่สอง → หลังทำ';
+                showToast('เลือก "ก่อนทำ" แล้ว! ตอนนี้เลือก "หลังทำ"');
+            } else if (!exposeAfter && filename !== exposeBefore.filename) {
+                // Second click = AFTER
+                item.classList.add('after-selected');
+                exposeAfter = { el: item, filename };
+                document.getElementById('expose-hint').textContent = '⚙️ กำลังสร้างภาพ...';
+                showToast('⚙️ กำลังรวมภาพ...');
+                await buildExposeImage();
+            }
+        }, true);
+
+        async function fetchImageBlob(filename) {
+            const resp = await fetch(`/get-img?path=${encodeURIComponent(filename)}`);
+            const blob = await resp.blob();
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        async function loadImageFromDataUrl(dataUrl) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.src = dataUrl;
+            });
+        }
+
+        async function buildExposeImage() {
+            try {
+                const [beforeDataUrl, afterDataUrl] = await Promise.all([
+                    fetchImageBlob(exposeBefore.filename),
+                    fetchImageBlob(exposeAfter.filename)
+                ]);
+
+                const imgB = await loadImageFromDataUrl(beforeDataUrl);
+                const imgA = await loadImageFromDataUrl(afterDataUrl);
+
+                showToast('⚙️ กำลังประมวลผลภาพและเซ็นเซอร์...');
+                let detectionsB = [];
+                let detectionsA = [];
+                if (faceModelsLoaded) {
+                    // Increase inputSize and lower scoreThreshold to catch more faces
+                    const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 608, scoreThreshold: 0.1 });
+                    try {
+                        [detectionsB, detectionsA] = await Promise.all([
+                            faceapi.detectAllFaces(imgB, options),
+                            faceapi.detectAllFaces(imgA, options)
+                        ]);
+                    } catch(e) {
+                        console.error('Face detection error:', e);
+                    }
+                }
+
+                const GAP = 8;
+                const WATERMARK_H = 60;
+                const LABEL_H = 28;
+
+                // Normalise both images to the same height
+                const targetH = Math.max(imgB.height, imgA.height);
+                const scaleB = targetH / imgB.height;
+                const scaleA = targetH / imgA.height;
+                const wB = Math.round(imgB.width * scaleB);
+                const wA = Math.round(imgA.width * scaleA);
+
+                const totalW = wB + GAP + wA;
+                const totalH = LABEL_H + targetH + WATERMARK_H;
+
+                const canvas = document.createElement('canvas');
+                canvas.width = totalW;
+                canvas.height = totalH;
+                const ctx = canvas.getContext('2d');
+
+                // Background
+                ctx.fillStyle = '#111';
+                ctx.fillRect(0, 0, totalW, totalH);
+
+                // Labels BEFORE / AFTER
+                ctx.fillStyle = '#27ae60';
+                ctx.fillRect(0, 0, wB, LABEL_H);
+                ctx.fillStyle = '#e67e22';
+                ctx.fillRect(wB + GAP, 0, wA, LABEL_H);
+
+                ctx.font = `bold ${LABEL_H * 0.6}px 'Outfit', sans-serif`;
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('ก่อนทำ', wB / 2, LABEL_H / 2);
+                ctx.fillText('หลังทำ', wB + GAP + wA / 2, LABEL_H / 2);
+
+                // Images
+                ctx.drawImage(imgB, 0, LABEL_H, wB, targetH);
+                ctx.drawImage(imgA, wB + GAP, LABEL_H, wA, targetH);
+
+                // Censor Faces (Blur)
+                const applyBlur = (x, y, w, h) => {
+                    if (w <= 0 || h <= 0) return;
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = w;
+                    tempCanvas.height = h;
+                    const tCtx = tempCanvas.getContext('2d');
+                    tCtx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
+
+                    ctx.save();
+                    ctx.filter = `blur(${Math.max(12, Math.floor(w/8))}px)`;
+                    ctx.drawImage(tempCanvas, 0, 0, w, h, x, y, w, h);
+                    // Add light semi-transparent overlay to make censor more noticeable but still 'บางๆ'
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+                    ctx.fillRect(x, y, w, h);
+                    ctx.restore();
+                };
+
+                // Blur eyes area (บางๆ)
+                detectionsB.forEach(det => {
+                    const box = det.box;
+                    const x = box.x * scaleB;
+                    const y = LABEL_H + box.y * scaleB;
+                    const w = box.width * scaleB;
+                    const h = box.height * scaleB;
+                    // Blur specifically around the eyes, widened slightly
+                    applyBlur(x - w * 0.05, y + h * 0.15, w * 1.1, h * 0.35);
+                });
+                detectionsA.forEach(det => {
+                    const box = det.box;
+                    const x = wB + GAP + box.x * scaleA;
+                    const y = LABEL_H + box.y * scaleA;
+                    const w = box.width * scaleA;
+                    const h = box.height * scaleA;
+                    applyBlur(x - w * 0.05, y + h * 0.15, w * 1.1, h * 0.35);
+                });
+
+                // ===== STAMP "AI MANIPULATED" diagonally on BEFORE image =====
+                ctx.save();
+                
+
+                // Small label bottom-left of BEFORE
+                const smallFont = Math.max(9, Math.min(13, wB / 18));
+                ctx.font = `bold ${smallFont}px 'Outfit', sans-serif`;
+                ctx.fillStyle = 'rgba(255,60,60,0.95)';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'bottom';
+                ctx.shadowColor = 'rgba(0,0,0,0.9)';
+                ctx.shadowBlur = 6;
+                ctx.fillText('สถานะ: ยังไม่ได้รับการชำระเงินค่าจ้าง', 6, LABEL_H + targetH - 6);
+                ctx.restore();
+
+                // Watermark bar
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, LABEL_H + targetH, totalW, WATERMARK_H);
+
+                // Watermark text
+                const fontSize1 = Math.max(11, Math.min(16, totalW / 52));
+                const fontSize2 = Math.max(10, Math.min(14, totalW / 60));
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                ctx.font = `bold ${fontSize1}px 'Outfit', sans-serif`;
+                ctx.fillStyle = '#FFE000';
+                ctx.fillText(WATERMARK_LINE1, totalW / 2, LABEL_H + targetH + WATERMARK_H * 0.35);
+
+                ctx.font = `${fontSize2}px 'Prompt', sans-serif`;
+                ctx.fillStyle = '#FFD600';
+                ctx.fillText(WATERMARK_LINE2, totalW / 2, LABEL_H + targetH + WATERMARK_H * 0.72);
+
+                exposeResultDataUrl = canvas.toDataURL('image/png');
+                await downloadExposeImage(); // บันทึกทันทีไม่ต้องรอ
+            } catch (err) {
+                console.error(err);
+                showToast('❌ เกิดข้อผิดพลาดในการสร้างภาพ');
+            } finally {
+                exposeMode = false;
+                document.getElementById('expose-hint').textContent = '';
+                document.querySelectorAll('.dl-item').forEach(el => {
+                    el.classList.remove('before-selected', 'after-selected');
+                });
+                exposeBefore = null;
+                exposeAfter = null;
+            }
+        }
+
+        function showExposeModal(dataUrl) {
+            document.getElementById('expose-result-img').src = dataUrl;
+            document.getElementById('expose-overlay').classList.add('active');
+        }
+
+        function closeExposeModal() {
+            document.getElementById('expose-overlay').classList.remove('active');
+            exposeResultDataUrl = null;
+        }
+
+        async function downloadExposeImage() {
+            if (!exposeResultDataUrl) return;
+            try {
+                const res = await fetch('/save-expose', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: exposeResultDataUrl })
+                });
+                if (res.ok) {
+                    showToast('✅ บันทึกที่ Desktop (complete.png) แล้ว!');
+                    showWatermarkCheck(exposeResultDataUrl);
+                } else {
+                    throw new Error('Server error');
+                }
+            } catch (e) {
+                // Fallback
+                const a = document.createElement('a');
+                a.href = exposeResultDataUrl;
+                a.download = `complete.png`;
+                a.click();
+                showToast('✅ บันทึกผ่าน Browser แล้ว');
+                showWatermarkCheck(exposeResultDataUrl);
+            }
+        }
+
+        // Close overlay on backdrop click
+        document.getElementById('expose-overlay').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('expose-overlay')) closeExposeModal();
+        });
+
+        async function showWatermarkCheck(source) {
+            const canvas = document.getElementById('watermark-check-canvas');
+            const ctx = canvas.getContext('2d');
+
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.onload = () => {
+                // คำนวณแสดงเฉพาะ 20% ส่วนล่างของภาพ
+                const cropHeight = img.height * 0.20;
+                const startY = img.height - cropHeight;
+
+                canvas.width = img.width;
+                canvas.height = cropHeight;
+
+                // วาดภาพส่วนท้ายสุด (Bottom 20%)
+                ctx.drawImage(img,
+                    0, startY, img.width, cropHeight,
+                    0, 0, img.width, cropHeight
+                );
+
+                document.getElementById('watermark-check-content').style.display = 'block';
+                document.getElementById('watermark-check-placeholder').style.display = 'none';
+            };
+            img.src = source;
+        }
+
+    </script>
+</body>
+
+</html>
