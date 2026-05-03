@@ -5,6 +5,9 @@ import os
 import shutil
 import time
 import threading
+import urllib.request
+import urllib.error
+import webbrowser
 from urllib.parse import urlparse, parse_qs
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -116,7 +119,7 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                 all_files = os.listdir(DOWNLOADS_PATH)
                 all_files.sort(key=lambda x: os.path.getmtime(os.path.join(DOWNLOADS_PATH, x)), reverse=True)
                 for f in all_files:
-                    if f.lower().endswith(('.png', '.jpg', '.jpeg')):
+                    if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
                         full_path = os.path.join(DOWNLOADS_PATH, f)
                         files.append({
                             "filename": full_path,
@@ -133,7 +136,9 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
             file_path = query.get('path', [None])[0]
             if file_path and os.path.exists(file_path):
                 self.send_response(200)
-                self.send_header('Content-type', 'image/png' if file_path.lower().endswith('.png') else 'image/jpeg')
+                ext = file_path.lower().split('.')[-1]
+                content_type = 'image/webp' if ext == 'webp' else ('image/png' if ext == 'png' else 'image/jpeg')
+                self.send_header('Content-type', content_type)
                 self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
                 with open(file_path, 'rb') as f:
@@ -225,6 +230,59 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
 class ThreadingHTTPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True
 
+# --- FIREBASE POLLER ---
+seen_job_ids = set()
+def firebase_poll_worker():
+    global seen_job_ids
+    url = 'https://retouch-ebid-default-rtdb.asia-southeast1.firebasedatabase.app/jobs.json?orderBy="status"&equalTo="active"'
+    print("[Watcher] Started Firebase Poller. Monitoring active jobs...")
+    first_run = True
+    while True:
+        try:
+            req = urllib.request.Request(url)
+            with urllib.request.urlopen(req, timeout=10) as response:
+                data = json.loads(response.read().decode())
+                if data:
+                    for key, job in data.items():
+                        job_id = job.get('uniqueId')
+                        if not job_id:
+                            continue
+                        if job_id not in seen_job_ids:
+                            seen_job_ids.add(job_id)
+                            if first_run:
+                                # Just remember existing jobs, don't open
+                                print(f"[Watcher] 📝 Existing job noted: {job_id}")
+                            else:
+                                # NEW job! Open Edge browser
+                                print(f"[Watcher] 🔔 NEW Job! Opening chat: {job_id}")
+                                admin_url = f"http://127.0.0.1:{PORT}/admin-local.html?job={key}&uid={job_id}"
+                                import subprocess
+                                try:
+                                    # Escape '&' for cmd.exe using '^&' to prevent it from truncating the URL
+                                    cmd_url = admin_url.replace('&', '^&')
+                                    subprocess.Popen(['cmd', '/c', 'start', 'msedge', cmd_url], shell=False)
+                                except:
+                                    webbrowser.open(admin_url)
+                first_run = False
+        except Exception as e:
+            print(f"[Watcher] Error: {e}")
+        
+        time.sleep(20)
+
+def firebase_heartbeat_worker():
+    url = 'https://retouch-ebid-default-rtdb.asia-southeast1.firebasedatabase.app/settings.json'
+    while True:
+        try:
+            timestamp = int(time.time() * 1000)
+            data = json.dumps({"lastActive": timestamp}).encode('utf-8')
+            req = urllib.request.Request(url, data=data, method='PATCH')
+            req.add_header('Content-Type', 'application/json')
+            with urllib.request.urlopen(req, timeout=5) as response:
+                pass
+        except Exception as e:
+            pass # Silent fail for heartbeat
+        time.sleep(60)
+
 if __name__ == "__main__":
     event_handler = DownloadHandler()
     observer = Observer()
@@ -243,6 +301,16 @@ if __name__ == "__main__":
     server_thread = threading.Thread(target=httpd.serve_forever, daemon=True)
     server_thread.start()
     print(f"[Server] Serving in Threaded mode at port {PORT}")
+
+    # Start Firebase Poller Thread
+    poller_thread = threading.Thread(target=firebase_poll_worker, daemon=True)
+    poller_thread.start()
+    print("[Server] Firebase Poller started (30s interval)")
+
+    # Start Firebase Heartbeat Thread
+    heartbeat_thread = threading.Thread(target=firebase_heartbeat_worker, daemon=True)
+    heartbeat_thread.start()
+    print("[Server] Heartbeat started (60s interval)")
 
     def create_image():
         image = Image.new('RGB', (64, 64), color=(66, 133, 244))

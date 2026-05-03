@@ -56,7 +56,7 @@ def upload_litterbox_24h(file_path):
         with open(file_path, 'rb') as f:
             files = {'fileToUpload': f}
             data = {'reqtype': 'fileupload', 'time': '24h'}
-            response = requests.post(url, data=data, files=files, timeout=60)
+            response = requests.post(url, data=data, files=files, timeout=30)
             if response.status_code == 200 and response.text.startswith('http'):
                 return response.text.strip()
     except Exception as e:
@@ -207,6 +207,30 @@ def process_clean_only(full_path=None):
     else:
         print("[Error] Failed")
 
+def _upload_with_timeout(file_path, timeout_sec=30):
+    """Upload ไปที่ Litterbox โดยมี timeout ที่แน่นอน ผ่าน threading"""
+    import threading
+    result = [None]
+    
+    def _do_upload():
+        result[0] = upload_litterbox_24h(file_path)
+    
+    t = threading.Thread(target=_do_upload, daemon=True)
+    start = time.time()
+    t.start()
+    t.join(timeout=timeout_sec)
+    elapsed = time.time() - start
+    
+    if t.is_alive():
+        print(f"[Donate] Upload timeout! ({elapsed:.1f}s > {timeout_sec}s) → fallback to no-upload mode")
+        return None
+    
+    if result[0]:
+        print(f"[Donate] Upload สำเร็จใน {elapsed:.1f}s")
+    else:
+        print(f"[Donate] Upload ล้มเหลวใน {elapsed:.1f}s → fallback to no-upload mode")
+    return result[0]
+
 def process_donate(full_path=None):
     print("[Donate] เริ่มต้น...")
     source = full_path if full_path else os.path.join(os.environ['USERPROFILE'], 'Downloads', 'complete.png')
@@ -215,162 +239,138 @@ def process_donate(full_path=None):
     original_img = crop_watermark(source)
     if not original_img: return
 
-    temp_path = os.path.join(tempfile.gettempdir(), 'ps_cropped_temp.png')
-    original_img.save(temp_path, format='PNG')
+    # // ส่วนนี้ถูก bypass ทั้งหมด — upload littlebox + สร้าง QR + แถบ QR
+    # // คอมเมนต์ไว้เพื่อกู้คืนได้ในอนาคต ไม่ได้ลบทิ้ง
+
+    # temp_path = os.path.join(tempfile.gettempdir(), 'ps_cropped_temp.png')
+    # original_img.save(temp_path, format='PNG')
+    # poisoned = scrub_and_poison(temp_path)
+    # upload_url = _upload_with_timeout(poisoned, timeout_sec=30)
+    upload_url = None  # bypass: ข้ามการ upload ทั้งหมด
+
+    # if upload_url:
+    #     b64_url = base64.b64encode(upload_url.encode()).decode()
+    #     expiry = int((time.time() + 86400) * 1000)
+    #     donate_link = f"https://artnp.github.io/eworker/download.html?d={b64_url}&exp={expiry}&type=img&donate=1"
+    #     preview_img = original_img.copy()
+    #     w, h = preview_img.size
+    #     final_img = preview_img
+    #     final_h = h
+    #     scale = max(0.65, min(w / 850.0, 3.0))
+    #     qr_size = int(145 * scale)
+    #     qr_img = generate_qr_image(donate_link, size=qr_size).convert("RGBA")
+    #     overlay_w, overlay_h = int(540 * scale), int(175 * scale)
+    #     margin, radius = int(22 * scale), int(24 * scale)
+    #     shadow_pad = int(12 * scale)
+    #     # Fonts
+    #     font = None
+    #     small_font = None
+    #     for fp in ["C:/Windows/Fonts/tahoma.ttf", "C:/Windows/Fonts/arial.ttf"]:
+    #         if os.path.exists(fp):
+    #             font = ImageFont.truetype(fp, int(22 * scale))
+    #             small_font = ImageFont.truetype(fp, int(16 * scale))
+    #             break
+    #     if not font:
+    #         font = ImageFont.load_default()
+    #         small_font = ImageFont.load_default()
+    #     # สร้าง Overlay และ Shadow
+    #     shadow_img = Image.new('RGBA', (overlay_w + shadow_pad*2, overlay_h + shadow_pad*2), (0,0,0,0))
+    #     shadow_draw = ImageDraw.Draw(shadow_img)
+    #     shadow_draw.rounded_rectangle((shadow_pad, shadow_pad, overlay_w + shadow_pad, overlay_h + shadow_pad), radius=radius, fill=(0, 0, 0, 60))
+    #     shadow_img = shadow_img.filter(ImageFilter.GaussianBlur(int(10 * scale)))
+    #     # Supersampling
+    #     aa_scale = 3
+    #     aa_img = Image.new('RGBA', (overlay_w * aa_scale, overlay_h * aa_scale), (0,0,0,0))
+    #     aa_draw = ImageDraw.Draw(aa_img)
+    #     import math
+    #     aw = (overlay_w * aa_scale) - 1
+    #     ah = (overlay_h * aa_scale) - 1
+    #     ar = radius * aa_scale
+    #     aa_draw.rounded_rectangle((0, 0, aw, ah), radius=ar, fill=(255, 255, 255, 248))
+    #     def get_rrect_point(p, w, h, r):
+    #         seg_horiz = w - 2*r
+    #         seg_vert = h - 2*r
+    #         arc_len = math.pi * r / 2
+    #         if p <= seg_horiz: return (r + p, 0)
+    #         p -= seg_horiz
+    #         if p <= arc_len:
+    #             angle = -math.pi/2 + (p / arc_len) * (math.pi/2)
+    #             return (w - r + r * math.cos(angle), r + r * math.sin(angle))
+    #         p -= arc_len
+    #         if p <= seg_vert: return (w, r + p)
+    #         p -= seg_vert
+    #         if p <= arc_len:
+    #             angle = (p / arc_len) * (math.pi/2)
+    #             return (w - r + r * math.cos(angle), h - r + r * math.sin(angle))
+    #         p -= arc_len
+    #         if p <= seg_horiz: return (w - r - p, h)
+    #         p -= seg_horiz
+    #         if p <= arc_len:
+    #             angle = math.pi/2 + (p / arc_len) * (math.pi/2)
+    #             return (r + r * math.cos(angle), h - r + r * math.sin(angle))
+    #         p -= arc_len
+    #         if p <= seg_vert: return (0, h - r - p)
+    #         p -= seg_vert
+    #         if p <= arc_len:
+    #             angle = math.pi + (p / arc_len) * (math.pi/2)
+    #             return (r + r * math.cos(angle), r + r * math.sin(angle))
+    #         return (r, 0)
+    #     perimeter = 2 * (aw - 2 * ar) + 2 * (ah - 2 * ar) + 2 * math.pi * ar
+    #     dash_len = 20 * aa_scale * scale
+    #     gap_len = 14 * aa_scale * scale
+    #     dash_total = dash_len + gap_len
+    #     num_dashes = max(1, int(perimeter / dash_total))
+    #     actual_dash_total = perimeter / num_dashes
+    #     ratio = actual_dash_total / dash_total
+    #     actual_dash = dash_len * ratio
+    #     samples = int(perimeter)
+    #     border_color = '#f97316'
+    #     outline_w = max(2, int(3.0 * scale))
+    #     draw_width = outline_w * aa_scale
+    #     last_pt = None
+    #     for i in range(samples + 1):
+    #         dist = (i / samples) * perimeter
+    #         pt = get_rrect_point(dist, aw, ah, ar)
+    #         if (dist % actual_dash_total) <= actual_dash:
+    #             if last_pt:
+    #                 aa_draw.line([last_pt, pt], fill=border_color, width=draw_width)
+    #             last_pt = pt
+    #         else:
+    #             last_pt = None
+    #     overlay_img = aa_img.resize((overlay_w, overlay_h), Image.Resampling.LANCZOS)
+    #     overlay_draw = ImageDraw.Draw(overlay_img)
+    #     qr_x, qr_y = int(15 * scale), int(15 * scale)
+    #     overlay_img.paste(qr_img, (qr_x, qr_y))
+    #     text_x = qr_x + qr_size + int(22 * scale)
+    #     text_y = qr_y + int(4 * scale)
+    #     overlay_draw.text((text_x, text_y), ":) โปรเจคการกุศลช่วยเหลือฟรี", fill='#059669', font=font)
+    #     overlay_draw.text((text_x, text_y + int(36 * scale)), "สแกน QR code !!", fill='#0f172a', font=font)
+    #     overlay_draw.text((text_x, text_y + int(64 * scale)), "ดาวน์โหลดภาพเต็มชัดแจ๋ว-ไฟล์ไม่แตก!", fill='#0f172a', font=font)
+    #     dash_length = max(1, int(6 * scale))
+    #     dash_gap = max(1, int(4 * scale))
+    #     line_y = text_y + int(92 * scale)
+    #     line_start_x = text_x
+    #     line_end_x = overlay_w - int(20 * scale)
+    #     for cx in range(line_start_x, line_end_x, dash_length + dash_gap):
+    #         end_x = min(cx + dash_length, line_end_x)
+    #         overlay_draw.line([(cx, line_y), (end_x, line_y)], fill='#f97316', width=max(1, int(1.5 * scale)))
+    #     overlay_draw.text((text_x, text_y + int(106 * scale)), "> อยากจ้างตัดต่อส่วนตัว 60฿ | ทักแชทมาได้เลย", fill='#64748b', font=small_font)
+    #     pos_x = margin
+    #     pos_y = final_h - overlay_h - margin
+    #     rgba_final = final_img.convert('RGBA')
+    #     rgba_final.paste(shadow_img, (pos_x - shadow_pad, pos_y - shadow_pad + int(4 * scale)), shadow_img)
+    #     rgba_final.paste(overlay_img, (pos_x, pos_y), overlay_img)
+    #     final_export = rgba_final.convert('RGB')
+    # else:
+    # === โหมดไม่อัพโหลด: ลบลายน้ำ + กรอบเขียว + ไม่มี QR ===
+    print("[Donate] → bypass mode: ลบลายน้ำ + กรอบเขียว (ไม่ upload / ไม่ QR)")
+    final_export = original_img.copy().convert('RGB')
     
-    poisoned = scrub_and_poison(temp_path)
-    upload_url = upload_litterbox_24h(poisoned)
-    if not upload_url: return
-
-    b64_url = base64.b64encode(upload_url.encode()).decode()
-    expiry = int((time.time() + 86400) * 1000)
-    donate_link = f"https://artnp.github.io/eworker/download.html?d={b64_url}&exp={expiry}&type=img&donate=1"
-
-    preview_img = original_img.copy()
-    w, h = preview_img.size
-    final_img = preview_img
-    final_h = h
-    scale = max(0.65, min(w / 850.0, 3.0))
-    qr_size = int(145 * scale)
-    qr_img = generate_qr_image(donate_link, size=qr_size).convert("RGBA")
-
-    overlay_w, overlay_h = int(540 * scale), int(175 * scale)
-    margin, radius = int(22 * scale), int(24 * scale)
-    shadow_pad = int(12 * scale)
-
-    # Fonts
-    font = None
-    small_font = None
-    for fp in ["C:/Windows/Fonts/tahoma.ttf", "C:/Windows/Fonts/arial.ttf"]:
-        if os.path.exists(fp): 
-            font = ImageFont.truetype(fp, int(22 * scale))
-            small_font = ImageFont.truetype(fp, int(16 * scale))
-            break
-    if not font: 
-        font = ImageFont.load_default()
-        small_font = ImageFont.load_default()
-
-    # สร้าง Overlay และ Shadow
-    shadow_img = Image.new('RGBA', (overlay_w + shadow_pad*2, overlay_h + shadow_pad*2), (0,0,0,0))
-    shadow_draw = ImageDraw.Draw(shadow_img)
-    shadow_draw.rounded_rectangle((shadow_pad, shadow_pad, overlay_w + shadow_pad, overlay_h + shadow_pad), radius=radius, fill=(0, 0, 0, 60))
-    shadow_img = shadow_img.filter(ImageFilter.GaussianBlur(int(10 * scale)))
-
-    # Supersampling เฉพาะรูปทรงกรอบ เพื่อให้ขอบและเส้นขอบเนียน (Anti-aliasing)
-    aa_scale = 3
-    aa_img = Image.new('RGBA', (overlay_w * aa_scale, overlay_h * aa_scale), (0,0,0,0))
-    aa_draw = ImageDraw.Draw(aa_img)
-    import math
-
-    aw = (overlay_w * aa_scale) - 1
-    ah = (overlay_h * aa_scale) - 1
-    ar = radius * aa_scale
-
-    # วาดพื้นสีขาวของกรอบ (ไม่มีเส้นขอบทึบ)
-    aa_draw.rounded_rectangle(
-        (0, 0, aw, ah), 
-        radius=ar, 
-        fill=(255, 255, 255, 248)
-    )
-
-    # ฟังก์ชันคำนวณตำแหน่งจุดบนขอบของ Rounded Rectangle
-    def get_rrect_point(p, w, h, r):
-        seg_horiz = w - 2*r
-        seg_vert = h - 2*r
-        arc_len = math.pi * r / 2
-        
-        if p <= seg_horiz: return (r + p, 0)
-        p -= seg_horiz
-        if p <= arc_len:
-            angle = -math.pi/2 + (p / arc_len) * (math.pi/2)
-            return (w - r + r * math.cos(angle), r + r * math.sin(angle))
-        p -= arc_len
-        if p <= seg_vert: return (w, r + p)
-        p -= seg_vert
-        if p <= arc_len:
-            angle = (p / arc_len) * (math.pi/2)
-            return (w - r + r * math.cos(angle), h - r + r * math.sin(angle))
-        p -= arc_len
-        if p <= seg_horiz: return (w - r - p, h)
-        p -= seg_horiz
-        if p <= arc_len:
-            angle = math.pi/2 + (p / arc_len) * (math.pi/2)
-            return (r + r * math.cos(angle), h - r + r * math.sin(angle))
-        p -= arc_len
-        if p <= seg_vert: return (0, h - r - p)
-        p -= seg_vert
-        if p <= arc_len:
-            angle = math.pi + (p / arc_len) * (math.pi/2)
-            return (r + r * math.cos(angle), r + r * math.sin(angle))
-        return (r, 0)
-
-    perimeter = 2 * (aw - 2 * ar) + 2 * (ah - 2 * ar) + 2 * math.pi * ar
-    dash_len = 20 * aa_scale * scale  # ความยาวเส้นปะ (ขยายให้ยาวขึ้น)
-    gap_len = 14 * aa_scale * scale   # ความยาวช่องว่าง (ขยายช่องว่างให้สมดุล)
-    
-    dash_total = dash_len + gap_len
-    num_dashes = max(1, int(perimeter / dash_total))
-    
-    actual_dash_total = perimeter / num_dashes
-    ratio = actual_dash_total / dash_total
-    actual_dash = dash_len * ratio
-    
-    samples = int(perimeter)
-    border_color = '#f97316'
-    outline_w = max(2, int(3.0 * scale)) # เพิ่มความหนาของเส้นปะ
-    draw_width = outline_w * aa_scale
-    
-    last_pt = None
-    for i in range(samples + 1):
-        dist = (i / samples) * perimeter
-        pt = get_rrect_point(dist, aw, ah, ar)
-        if (dist % actual_dash_total) <= actual_dash:
-            if last_pt:
-                aa_draw.line([last_pt, pt], fill=border_color, width=draw_width)
-            last_pt = pt
-        else:
-            last_pt = None
-    
-    # ย่อสเกลกลับด้วย LANCZOS เพื่อความเนียนสมบูรณ์แบบ
-    overlay_img = aa_img.resize((overlay_w, overlay_h), Image.Resampling.LANCZOS)
-    overlay_draw = ImageDraw.Draw(overlay_img)
-
-    # วาง QR บน overlay
-    qr_x, qr_y = int(15 * scale), int(15 * scale)
-    overlay_img.paste(qr_img, (qr_x, qr_y))
-
-    # ข้อความบน overlay
-    text_x = qr_x + qr_size + int(22 * scale)
-    text_y = qr_y + int(4 * scale)
-    
-    overlay_draw.text((text_x, text_y), ":) โปรเจคการกุศลช่วยเหลือฟรี", fill='#059669', font=font)
-    overlay_draw.text((text_x, text_y + int(36 * scale)), "สแกน QR code !!", fill='#0f172a', font=font)
-    overlay_draw.text((text_x, text_y + int(64 * scale)), "ดาวน์โหลดภาพเต็มชัดแจ๋ว-ไฟล์ไม่แตก!", fill='#0f172a', font=font)
-
-    # วาดเส้นปะสีส้มคั่น
-    dash_length = max(1, int(6 * scale))
-    dash_gap = max(1, int(4 * scale))
-    line_y = text_y + int(92 * scale)
-    line_start_x = text_x
-    line_end_x = overlay_w - int(20 * scale)
-    for cx in range(line_start_x, line_end_x, dash_length + dash_gap):
-        end_x = min(cx + dash_length, line_end_x)
-        overlay_draw.line([(cx, line_y), (end_x, line_y)], fill='#f97316', width=max(1, int(1.5 * scale)))
-
-    overlay_draw.text((text_x, text_y + int(106 * scale)), "> อยากจ้างตัดต่อส่วนตัว 60฿ | ทักแชทมาได้เลย", fill='#64748b', font=small_font)
-
-    # วาง overlay มุมซ้ายล่าง ห่างขอบ   
-    pos_x = margin
-    pos_y = final_h - overlay_h - margin
-
-    # นำมาแปะรวมเข้ากับภาพหลัก
-    rgba_final = final_img.convert('RGBA')
-    # แปะเงาก่อน (ออฟเซตลงมาเล็กน้อย)
-    rgba_final.paste(shadow_img, (pos_x - shadow_pad, pos_y - shadow_pad + int(4 * scale)), shadow_img)
-    # แปะกรอบ overlay (QR + text)
-    rgba_final.paste(overlay_img, (pos_x, pos_y), overlay_img)
-
-    final_export = rgba_final.convert('RGB')
+    # วาดกรอบสี LIME หนา 6px ล้อมรอบภาพทั้งหมด
+    border_draw = ImageDraw.Draw(final_export)
+    fw, fh = final_export.size
+    for i in range(6):
+        border_draw.rectangle([i, i, fw - 1 - i, fh - 1 - i], outline="lime")
     
     # --- Export เซฟลงเป้าหมายโดยตรง (รักษาตำแหน่งไอคอน Desktop) ---
     import io

@@ -630,7 +630,7 @@
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 14px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
 
         .quota-panel-header {
@@ -758,6 +758,105 @@
             color: var(--text-sub);
             text-align: center;
         }
+
+        /* Undo Button */
+        .undo-btn {
+            background: none;
+            border: none;
+            color: var(--text-sub);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s;
+            flex-shrink: 0;
+            margin-bottom: 2px;
+            opacity: 0;
+            pointer-events: none;
+            transform: rotate(-90deg);
+        }
+
+        .undo-btn.visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: rotate(0deg);
+        }
+
+        .undo-btn:hover {
+            background: rgba(66, 133, 244, 0.12);
+            color: var(--primary);
+            transform: scale(1.15);
+        }
+
+        .undo-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Model Selector Checkboxes */
+        .model-selector-bar {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 10px;
+            margin-bottom: 2px;
+            flex-wrap: wrap;
+        }
+
+        .model-checkbox {
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .model-checkbox input {
+            display: none;
+        }
+
+        .model-checkbox span {
+            padding: 4px 10px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-sub);
+            transition: all 0.2s;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .model-checkbox span::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #ccc;
+            transition: all 0.2s;
+        }
+
+        .model-checkbox input:checked+span {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(66, 133, 244, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .model-checkbox input:checked+span::before {
+            background: #fff;
+            box-shadow: 0 0 5px #fff;
+        }
+
+        .model-checkbox:hover span {
+            border-color: var(--primary);
+            background: rgba(66, 133, 244, 0.05);
+        }
     </style>
 </head>
 
@@ -779,9 +878,45 @@
                     height="24" fill="currentColor">
                     <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
                 </svg></button>
-            <input type="file" id="file-input" multiple accept="image/*" style="display: none;">
+            <input type="file" id="file-input" multiple accept="image/*, .webp" style="display: none;">
             <textarea id="prompt-input" rows="1" placeholder="รายละเอียดงาน..." autofocus></textarea>
+            <button id="btn-undo" class="undo-btn" title="ย้อนกลับข้อมูลก่อน Submit"><svg viewBox="0 0 24 24" width="22"
+                    height="22" fill="currentColor">
+                    <path
+                        d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z" />
+                </svg></button>
         </div>
+
+        <!-- AI Model Multi-Selector -->
+        <div class="model-selector-bar">
+            <label class="model-checkbox">
+                <input type="checkbox" name="model" value="GPT">
+                <span>GPT</span>
+            </label>
+            <label class="model-checkbox">
+                <input type="checkbox" name="model" value="QWEN">
+                <span>QWEN</span>
+            </label>
+            |
+            <label class="model-checkbox">
+                <input type="checkbox" name="model" value="GROK">
+                <span>GROK</span>
+            </label>
+            <label class="model-checkbox">
+                <input type="checkbox" name="model" value="COPILOT">
+                <span>COPILOT</span>
+            </label>
+            <label class="model-checkbox">
+                <input type="checkbox" name="model" value="META">
+                <span>META</span>
+            </label>
+
+            <label class="model-checkbox">
+                <input type="checkbox" name="model" value="GLM">
+                <span>GLM</span>
+            </label>
+        </div>
+
         <div class="quick-tags">
             <div class="tag-item" onclick="addTag('จงปรับภาพให้ชัด')">ปรับให้ชัด</div>
             <div class="tag-item" onclick="addTag('จงเปลี่ยนเป็นภาพสี')">เป็นภาพสี</div>
@@ -794,75 +929,91 @@
         </div>
 
         <!-- Ultra-Compact Gemini Bar -->
-        <div class="quota-panel" id="quota-panel" style="margin-top: 8px; padding: 6px 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+        <div class="quota-panel" id="quota-panel"
+            style="margin-top: 8px; padding: 6px 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
             <div style="display: flex; align-items: center; gap: 12px; flex-grow: 1; flex-wrap: wrap;">
-                <h3 style="margin: 0; font-size: 0.85rem; color: var(--text-sub); white-space: nowrap; cursor: pointer; display: flex; align-items: center; gap: 4px;" onclick="const g = document.getElementById('quota-grid'); g.style.display = g.style.display === 'none' ? 'grid' : 'none';">
+                <h3 style="margin: 0; font-size: 0.85rem; color: var(--text-sub); white-space: nowrap; cursor: pointer; display: flex; align-items: center; gap: 4px;"
+                    onclick="const g = document.getElementById('quota-grid'); g.style.display = g.style.display === 'none' ? 'grid' : 'none';">
                     <span>🔑 Gemini:</span>
-                    <small style="font-weight: normal; font-size: 0.65rem; color: #999; border: 1px solid #ddd; padding: 1px 4px; border-radius: 4px; margin-left: 2px;">ตั้งค่า</small>
+                    <small
+                        style="font-weight: normal; font-size: 0.65rem; color: #999; border: 1px solid #ddd; padding: 1px 4px; border-radius: 4px; margin-left: 2px;">ตั้งค่า</small>
                 </h3>
-                
+
                 <!-- Gemini Account Selector with Status Dots -->
-                <div class="account-selector" style="margin: 0; padding: 0; background: transparent; border: none; gap: 8px;">
+                <div class="account-selector"
+                    style="margin: 0; padding: 0; background: transparent; border: none; gap: 8px;">
                     <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
                         <label style="padding: 2px 4px;">
                             <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/0/app" checked>
                             <span>u/0</span>
                         </label>
-                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/0/app" style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
+                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/0/app"
+                            style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
                     </div>
                     <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
                         <label style="padding: 2px 4px;">
                             <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/1/app">
                             <span>u/1</span>
                         </label>
-                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/1/app" style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
+                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/1/app"
+                            style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
                     </div>
                     <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
                         <label style="padding: 2px 4px;">
                             <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/2/app">
                             <span>u/2</span>
                         </label>
-                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/2/app" style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
+                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/2/app"
+                            style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
                     </div>
                     <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
                         <label style="padding: 2px 4px;">
                             <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/3/app">
                             <span>u/3</span>
                         </label>
-                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/3/app" style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
+                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/3/app"
+                            style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
                     </div>
                     <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
                         <label style="padding: 2px 4px;">
                             <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/4/app">
                             <span>u/4</span>
                         </label>
-                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/4/app" style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
+                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/4/app"
+                            style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
                     </div>
                     <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
                         <label style="padding: 2px 4px;">
                             <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/5/app">
                             <span>u/5</span>
                         </label>
-                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/5/app" style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
+                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/5/app"
+                            style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
                     </div>
                     <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
                         <label style="padding: 2px 4px;">
                             <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/6/app">
                             <span>u/6</span>
                         </label>
-                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/6/app" style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
+                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/6/app"
+                            style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
                     </div>
                 </div>
-                
+
                 <!-- Compact Status Summary -->
-                <span id="quota-summary" style="font-size: 0.75rem; color: var(--text-sub); border-left: 1px solid var(--border); padding-left: 10px; margin-left: 5px; white-space: nowrap;"></span>
+                <span id="quota-summary"
+                    style="font-size: 0.75rem; color: var(--text-sub); border-left: 1px solid var(--border); padding-left: 10px; margin-left: 5px; white-space: nowrap;"></span>
             </div>
-            
-            <button class="refresh-btn" onclick="loadQuotaStatus()" style="padding: 2px 6px; font-size: 0.75rem; background: none; border: none; cursor: pointer;">🔄</button>
-            
+
+            <button class="refresh-btn" onclick="loadQuotaStatus()"
+                style="padding: 2px 6px; font-size: 0.75rem; background: none; border: none; cursor: pointer;">🔄</button>
+
             <!-- Grid (Hidden by default, click Gemini icon to show) -->
-            <div class="quota-grid" id="quota-grid" style="display: none; width: 100%; margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px;">
-                <div style="color: var(--text-sub); font-size: 0.8rem; grid-column: 1 / -1; text-align: center; padding: 5px;">กำลังโหลด...</div>
+            <div class="quota-grid" id="quota-grid"
+                style="display: none; width: 100%; margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px;">
+                <div
+                    style="color: var(--text-sub); font-size: 0.8rem; grid-column: 1 / -1; text-align: center; padding: 5px;">
+                    กำลังโหลด...</div>
             </div>
         </div>
 
@@ -929,6 +1080,9 @@
         const fileInput = document.getElementById('file-input');
         let pastedFiles = [];
         let selectedFilesList = [];
+
+        // Undo state: stores the last submitted data
+        let lastSubmitState = null;
 
         let lastDownloadFilenames = "";
         let lastCheckedCompletePath = "";
@@ -1162,7 +1316,7 @@
             const files = e.dataTransfer.files;
             if (files.length > 0) {
                 for (let i = 0; i < files.length; i++) {
-                    if (files[i].type.startsWith('image/')) {
+                    if (files[i].type.startsWith('image/') || files[i].name.toLowerCase().endsWith('.webp')) {
                         addPreview(files[i]);
                     }
                 }
@@ -1177,7 +1331,7 @@
                 let found = false;
                 for (const item of clipboardItems) {
                     for (const type of item.types) {
-                        if (type.startsWith('image/')) {
+                        if (type.startsWith('image/') || type.includes('webp')) {
                             const blob = await item.getType(type);
                             addPreview(blob);
                             found = true;
@@ -1203,8 +1357,9 @@
             const items = e.clipboardData.items;
             let imageFound = false;
             for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf('image') !== -1) {
-                    addPreview(items[i].getAsFile());
+                const file = items[i].getAsFile();
+                if (items[i].type.indexOf('image') !== -1 || (file && file.name && file.name.toLowerCase().endsWith('.webp'))) {
+                    addPreview(file);
                     imageFound = true;
                 }
             }
@@ -1220,13 +1375,22 @@
         async function submitHubData() {
             const prompt = promptInput.value.trim();
             if (pastedFiles.length === 0 && !prompt && selectedFilesList.length === 0) return;
-            showToast('🚀 ส่งไปยัง Gemini...');
 
-            // We only send imagePaths for history items and base64 for NEW pasted items
-            // This significantly reduces massage size for history items
+            // URL mapping for external AI models
+            const MODEL_URLS = {
+                'GPT': 'https://chatgpt.com',
+                'GROK': 'https://grok.com',
+                'META': 'https://www.meta.ai',
+                'QWEN': 'https://chat.qwen.ai/?inputFeature=image_edit',
+                'GLM': 'https://chat.z.ai',
+                'COPILOT': 'https://copilot.microsoft.com'
+            };
+
+            const selectedModels = Array.from(document.querySelectorAll('input[name="model"]:checked')).map(el => el.value);
+            const hasExternalModels = selectedModels.some(m => MODEL_URLS[m]);
+
+            // Prepare images (shared for both Gemini and External AI paths)
             const imagePaths = [...selectedFilesList];
-
-            // For pasted images, we still need to send them as base64, but we can resize them
             const pastedImageDataUrls = await Promise.all(pastedFiles.map(async (item) => {
                 let dataUrl = await new Promise(r => { const rd = new FileReader(); rd.onloadend = () => r(rd.result); rd.readAsDataURL(item.blob); });
 
@@ -1255,14 +1419,91 @@
                 return await addPaddingToDataUrl(resized);
             }));
 
+            // === External AI Path ===
+            if (hasExternalModels) {
+                const externalModels = selectedModels.filter(m => MODEL_URLS[m]);
+                showToast(`🚀 กำลังส่งไปยัง ${externalModels.join(', ')}...`);
+
+                // Resolve imagePaths to dataUrls for external AI (they don't use the extension's server)
+                const allImageDataUrls = [];
+                for (const path of imagePaths) {
+                    try {
+                        const fetchUrl = `/get-img?path=${encodeURIComponent(path)}`;
+                        const resp = await fetch(fetchUrl);
+                        if (resp.ok) {
+                            const blob = await resp.blob();
+                            const dataUrl = await new Promise(r => {
+                                const reader = new FileReader();
+                                reader.onloadend = () => r(reader.result);
+                                reader.readAsDataURL(blob);
+                            });
+                            allImageDataUrls.push(dataUrl);
+                        }
+                    } catch (e) {
+                        console.error('Failed to fetch image path:', path, e);
+                    }
+                }
+                allImageDataUrls.push(...pastedImageDataUrls);
+
+                // Send to each selected external AI sequentially (with delay between each)
+                for (let i = 0; i < externalModels.length; i++) {
+                    const model = externalModels[i];
+                    const targetUrl = MODEL_URLS[model];
+                    if (i > 0) await new Promise(r => setTimeout(r, 2000)); // delay between opens
+                    const res = await callExtension('SUBMIT_TO_EXTERNAL_AI', {
+                        prompt,
+                        images: allImageDataUrls,
+                        targetUrl,
+                        modelName: model
+                    });
+                    if (res && res.success) {
+                        showToast(`✅ เปิด ${model} แล้ว!`);
+                    }
+                }
+
+                // Save state before clearing for undo
+                lastSubmitState = {
+                    prompt: prompt,
+                    pastedFiles: [...pastedFiles],
+                    pastedPreviews: previews.innerHTML,
+                    selectedFilesList: [...selectedFilesList]
+                };
+                document.getElementById('btn-undo').classList.add('visible');
+
+                // Clear form
+                promptInput.value = '';
+                promptInput.style.height = 'auto';
+                previews.innerHTML = '';
+                pastedFiles = [];
+                selectedFilesList = [];
+                updateSelectionIndicators();
+
+                // Reset all model checkboxes
+                document.querySelectorAll('input[name="model"]').forEach(cb => cb.checked = false);
+                return;
+            }
+
+            // === Gemini Path (default when no external model is selected) ===
+            showToast('🚀 ส่งไปยัง Gemini...');
+
             const res = await callExtension('SUBMIT_HUB_DATA', {
                 prompt,
                 images: pastedImageDataUrls,
                 imagePaths: imagePaths,
+                models: selectedModels,
                 origin: window.location.origin
             });
 
             if (res && res.success) {
+                // Save state before clearing for undo
+                lastSubmitState = {
+                    prompt: prompt,
+                    pastedFiles: [...pastedFiles],
+                    pastedPreviews: previews.innerHTML,
+                    selectedFilesList: [...selectedFilesList]
+                };
+                document.getElementById('btn-undo').classList.add('visible');
+
                 showToast('✅ ส่งแล้ว!');
                 promptInput.value = '';
                 promptInput.style.height = 'auto';
@@ -1271,10 +1512,13 @@
                 selectedFilesList = [];
                 updateSelectionIndicators();
 
+                // Reset all model checkboxes
+                document.querySelectorAll('input[name="model"]').forEach(cb => cb.checked = false);
+
                 // Auto-rotate to the next Gemini Account
                 const currentIdx = Array.from(accountRadios).findIndex(r => r.checked);
                 let nextIdx = (currentIdx + 1) % accountRadios.length;
-                
+
                 // Skip blocked/exhausted accounts
                 let attempts = 0;
                 while (accountRadios[nextIdx].parentElement.style.opacity === '0.5' && attempts < accountRadios.length) {
@@ -1299,6 +1543,55 @@
         }
 
         setInterval(() => fetch('/heartbeat').catch(() => { }), 5000);
+
+        // --- Undo (ย้อนกลับ) Logic ---
+        document.getElementById('btn-undo').addEventListener('click', () => {
+            if (!lastSubmitState) return;
+
+            // Restore prompt text
+            promptInput.value = lastSubmitState.prompt;
+            promptInput.style.height = 'auto';
+            promptInput.style.height = promptInput.scrollHeight + 'px';
+
+            // Restore pasted images (re-create preview DOM with event listeners)
+            pastedFiles = [];
+            previews.innerHTML = '';
+            lastSubmitState.pastedFiles.forEach(item => {
+                const url = URL.createObjectURL(item.blob);
+                const id = item.id;
+                const thumb = document.createElement('div');
+                thumb.className = 'preview-thumb';
+                thumb.draggable = true;
+                thumb.dataset.id = id;
+                thumb.innerHTML = `<img src="${url}"><button class="remove">×</button>`;
+
+                thumb.querySelector('.remove').onclick = (e) => {
+                    e.stopPropagation();
+                    thumb.remove();
+                    pastedFiles = pastedFiles.filter(f => f.id !== id);
+                };
+
+                thumb.addEventListener('dragstart', handleDragStart);
+                thumb.addEventListener('dragover', handleDragOverItem);
+                thumb.addEventListener('dragleave', handleDragLeaveItem);
+                thumb.addEventListener('drop', (e) => handleDropItem(e, previews, true));
+                thumb.addEventListener('dragend', handleDragEnd);
+
+                previews.appendChild(thumb);
+                pastedFiles.push({ id, blob: item.blob });
+            });
+
+            // Restore selected files from dl-grid
+            selectedFilesList = [...lastSubmitState.selectedFilesList];
+            updateSelectionIndicators();
+
+            // Hide undo button & clear state
+            document.getElementById('btn-undo').classList.remove('visible');
+            lastSubmitState = null;
+
+            showToast('↩️ ย้อนกลับเรียบร้อย');
+            promptInput.focus();
+        });
 
         // --- Gemini Account Selection Logic ---
         const accountRadios = document.querySelectorAll('input[name="geminiAccount"]');
@@ -1377,7 +1670,7 @@
                         const resetDate = new Date(acc.resetTime);
                         const now = new Date();
                         const diffMs = acc.resetTime - now.getTime();
-                        
+
                         if (diffMs > 0) {
                             const hours = Math.floor(diffMs / 3600000);
                             const mins = Math.floor((diffMs % 3600000) / 60000);
@@ -1428,13 +1721,13 @@
                     const span = label.querySelector('span');
                     const isExhausted = (acc && !acc.isAvailable);
                     const dot = isExhausted ? '🔴' : '🟢';
-                    
+
                     // Clear and rebuild to avoid encoding issues or strange characters
                     const urlMatch = radio.value.match(/\/u\/(\d+)\//);
                     const baseName = urlMatch ? `u/${urlMatch[1]}` : 'u/?';
-                    
+
                     span.innerHTML = `<span style="font-size: 0.7rem; margin-right: 2px;">${dot}</span>${baseName}`;
-                    
+
                     if (isExhausted) {
                         label.style.opacity = '0.5';
                         label.title = 'โควต้าหมด/ถูกบล็อก (คลิกขวาเพื่อปลดล็อค)';
@@ -1508,7 +1801,7 @@
                 await faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl);
                 faceModelsLoaded = true;
                 console.log("Face models loaded");
-            } catch(e) {
+            } catch (e) {
                 console.error("Face model load error:", e);
             }
         }
@@ -1591,7 +1884,7 @@
                             faceapi.detectAllFaces(imgB, options),
                             faceapi.detectAllFaces(imgA, options)
                         ]);
-                    } catch(e) {
+                    } catch (e) {
                         console.error('Face detection error:', e);
                     }
                 }
@@ -1646,7 +1939,7 @@
                     tCtx.drawImage(canvas, x, y, w, h, 0, 0, w, h);
 
                     ctx.save();
-                    ctx.filter = `blur(${Math.max(12, Math.floor(w/8))}px)`;
+                    ctx.filter = `blur(${Math.max(12, Math.floor(w / 8))}px)`;
                     ctx.drawImage(tempCanvas, 0, 0, w, h, x, y, w, h);
                     // Add light semi-transparent overlay to make censor more noticeable but still 'บางๆ'
                     ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
@@ -1675,7 +1968,7 @@
 
                 // ===== STAMP "AI MANIPULATED" diagonally on BEFORE image =====
                 ctx.save();
-                
+
 
                 // Small label bottom-left of BEFORE
                 const smallFont = Math.max(9, Math.min(13, wB / 18));
