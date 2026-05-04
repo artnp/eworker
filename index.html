@@ -1134,9 +1134,13 @@
             if (!isShopOpen) {
                 document.getElementById('subBtnText').innerText = '🚫 วันนี้ร้านปิดนะที่รัก';
                 formInputs.forEach(el => { if (el) { el.style.opacity = '0.5'; el.style.pointerEvents = 'none'; } });
+                const shopIcon = document.getElementById('shopStatusIcon');
+                if (shopIcon) shopIcon.src = 'https://cdn-icons-png.flaticon.com/128/282/282252.png';
             } else {
                 document.getElementById('subBtnText').innerText = '🚀 กดเพื่อจ้างงาน!';
                 formInputs.forEach(el => { if (el) { el.style.opacity = '1'; el.style.pointerEvents = 'auto'; } });
+                const shopIcon = document.getElementById('shopStatusIcon');
+                if (shopIcon) shopIcon.src = 'https://cdn-icons-png.flaticon.com/128/6301/6301324.png';
             }
         });
 
@@ -1836,7 +1840,7 @@
             });
         };
     </script>
-    <img src="https://cdn-icons-png.flaticon.com/128/6301/6301324.png" class="floating-eye" alt="AI Eye">
+    <img id="shopStatusIcon" src="https://cdn-icons-png.flaticon.com/128/6301/6301324.png" class="floating-eye" alt="shop">
 </body>
 
 </html>
