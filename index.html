@@ -959,7 +959,7 @@
 <body>
 
     <div class="top-bar">
-        <h1>✨ ระบบแก้ไขภาพด่วน — {⚡️ดูแลโดยมืออาชีพ 🏦 }</h1>
+        <h1>{🖼️ ระบบแก้ไขภาพด่วน — ⚡️ดูแลโดยมืออาชีพ 🥴 }</h1>
         <div id="shopClosedMsg" class="shop-status closed">⚠️โปรดทราบ❗ วันร้านปิดนะท่าน..</div>
         <div id="returnToChat" style="display:none; margin-left: 16px;">
             <button onclick="goToRecentChat()" class="btn-outline"
@@ -1049,8 +1049,10 @@
         <div class="chat-messages" id="cMsgs"></div>
 
         <!-- Secret Chat Inline Frame (hidden by default) -->
-        <div id="secretChatInline" style="display:none; flex-direction:column; width:100%; height:calc(100vh - 70px); overflow:hidden;">
-            <div style="background:#fef3c7;color:#92400e;text-align:center;padding:10px;font-weight:600;font-size:0.85rem;border-bottom:2px solid #f59e0b;">
+        <div id="secretChatInline"
+            style="display:none; flex-direction:column; width:100%; height:calc(100vh - 70px); overflow:hidden;">
+            <div
+                style="background:#fef3c7;color:#92400e;text-align:center;padding:10px;font-weight:600;font-size:0.85rem;border-bottom:2px solid #f59e0b;">
                 🔒 โหมดแชทลับ - ข้อความจะหายไปใน 10 นาที
             </div>
             <iframe id="secretChatIframe" src="" style="width:100%; height:100%; border:none; flex:1;"></iframe>
@@ -1660,7 +1662,7 @@
                     currentJob = jobEntry[1];
                     document.getElementById('qrAmt').textContent = currentJob.budget + ' THB';
                     document.getElementById('qrD').innerHTML = '';
-                    try { new QRCode(document.getElementById('qrD'), { text: `https://promptpay.io/0988573074/${currentJob.budget}`, width: 45, height: 45 }); } catch(e) {}
+                    try { new QRCode(document.getElementById('qrD'), { text: `https://promptpay.io/0988573074/${currentJob.budget}`, width: 45, height: 45 }); } catch (e) { }
 
                     if (cdTimer) clearInterval(cdTimer);
                     const cdEl = document.getElementById('cCd');
@@ -1834,7 +1836,7 @@
             });
         };
     </script>
-    <img src="https://cdn-icons-png.flaticon.com/128/2276/2276800.png" class="floating-eye" alt="AI Eye">
+    <img src="https://cdn-icons-png.flaticon.com/128/6301/6301324.png" class="floating-eye" alt="AI Eye">
 </body>
 
 </html>
