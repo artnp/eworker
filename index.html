@@ -952,6 +952,49 @@
             .qr-top-right span {
                 display: none;
             }
+
+            .footer-bar {
+                display: flex;
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .footer-right {
+                align-self: center !important;
+            }
+        }
+
+        .footer-bar {
+            padding: 16px 24px;
+            background: white;
+            border-top: 1px solid var(--bdr);
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 16px;
+            z-index: 10;
+        }
+
+        .footer-center {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .footer-right {
+            justify-self: end;
+            font-weight: 600;
+            color: var(--tx);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            background: #eff6ff;
+            padding: 8px 16px;
+            border-radius: 12px;
+            border: 1px solid #bfdbfe;
         }
     </style>
 </head>
@@ -1010,21 +1053,31 @@
     </div>
 
     <!-- Footer Links -->
-    <div id="footerLinks"
-        style="text-align:center; padding: 16px; background: white; border-top: 1px solid var(--bdr); display:flex; justify-content:center; gap: 24px; z-index:10;">
-        ติดต่อเพิ่มเติม | <a href="https://fastwork.co/user/ready321" target="_blank"
-            style="display:flex; align-items:center; gap:8px; text-decoration:none; color:var(--tx); font-weight:600; font-size:0.9rem;">
-            <img src="https://cdn-1.webcatalog.io/catalog/fastwork/fastwork-icon-filled-256.webp?v=1777249924465"
-                style="height:20px;"> Fastwork
-        </a>
-        <a href="https://www.facebook.com/ImageTextEditor/" target="_blank"
-            style="display:flex; align-items:center; gap:8px; text-decoration:none; color:var(--tx); font-weight:600; font-size:0.9rem;">
-            <img src="https://cdn-icons-png.flaticon.com/128/5968/5968764.png" style="height:24px;"> Facebook
-        </a>
-        <a href="https://line.me/ti/p/gqIluRmdJ_" target="_blank"
-            style="display:flex; align-items:center; gap:8px; text-decoration:none; color:var(--tx); font-weight:600; font-size:0.9rem;">
-            <img src="https://cdn-icons-png.flaticon.com/128/3670/3670089.png" style="height:24px;"> Line
-        </a>
+    <div id="footerLinks" class="footer-bar">
+        <!-- Left empty space for grid balancing -->
+        <div></div>
+        <!-- Center links -->
+        <div class="footer-center">
+            ติดต่อเพิ่มเติม | <a href="https://fastwork.co/user/ready321" target="_blank"
+                style="display:flex; align-items:center; gap:8px; text-decoration:none; color:var(--tx); font-weight:600; font-size:0.9rem;">
+                <img src="https://cdn-1.webcatalog.io/catalog/fastwork/fastwork-icon-filled-256.webp?v=1777249924465"
+                    style="height:20px;"> Fastwork
+            </a>
+            <a href="https://www.facebook.com/ImageTextEditor/" target="_blank"
+                style="display:flex; align-items:center; gap:8px; text-decoration:none; color:var(--tx); font-weight:600; font-size:0.9rem;">
+                <img src="https://cdn-icons-png.flaticon.com/128/5968/5968764.png" style="height:24px;"> Facebook
+            </a>
+            <a href="https://line.me/ti/p/gqIluRmdJ_" target="_blank"
+                style="display:flex; align-items:center; gap:8px; text-decoration:none; color:var(--tx); font-weight:600; font-size:0.9rem;">
+                <img src="https://cdn-icons-png.flaticon.com/128/3670/3670089.png" style="height:24px;"> Line
+            </a>
+        </div>
+
+        <!-- Right queue display -->
+        <div class="footer-right">
+            <span style="font-size: 1.2rem;">⌛</span>งานในเข้าระบบ <span id="qCount"
+                style="color: #2563eb; font-size: 1.2rem; font-weight: 800; margin: 0 4px;">0</span> คิว
+        </div>
     </div>
 
     <!-- CHAT VIEW -->
@@ -1157,6 +1210,23 @@
                 }
             }
         }, 3000);
+
+        // Job Queue Counter
+        onValue(jobsRef, snap => {
+            const jobs = snap.val() || {};
+            let activeCount = 0;
+            const now = new Date();
+            Object.values(jobs).forEach(j => {
+                if (j.status === 'active') {
+                    const exp = new Date(j.expiresAt);
+                    if (exp > now) {
+                        activeCount++;
+                    }
+                }
+            });
+            const qCountEl = document.getElementById('qCount');
+            if (qCountEl) qCountEl.textContent = activeCount;
+        });
 
         // Form State
         let uploadedFiles = [];
@@ -1840,7 +1910,8 @@
             });
         };
     </script>
-    <img id="shopStatusIcon" src="https://cdn-icons-png.flaticon.com/128/6301/6301324.png" class="floating-eye" alt="shop">
+    <img id="shopStatusIcon" src="https://cdn-icons-png.flaticon.com/128/6301/6301324.png" class="floating-eye"
+        alt="shop">
 </body>
 
 </html>
