@@ -437,6 +437,40 @@
             opacity: 0.7;
             margin-top: 6px;
             text-align: right;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 6px;
+        }
+
+        .read-receipt {
+            font-size: 0.65rem;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        /* Warning tag for customer */
+        .chat-warning-tag {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border: 2px solid #f59e0b;
+            color: #92400e;
+            padding: 12px 20px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin: 0 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            animation: warningPulse 2.5s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes warningPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
         }
 
         .m.fm {
@@ -1099,6 +1133,10 @@
             </div>
         </div>
 
+        <div class="chat-warning-tag" id="chatWarningTag" style="display:none;">
+            ⚠️ โปรดเปิดแชทนี้ไว้ก่อน อย่าเพิ่งปิดนะครับ — รอนักรีทัชรับงาน
+        </div>
+
         <div class="chat-messages" id="cMsgs"></div>
 
         <!-- Secret Chat Inline Frame (hidden by default) -->
@@ -1155,7 +1193,13 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-        import { getDatabase, ref, push, get, onValue, update } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
+        import { getDatabase, ref, push, get, onValue, update, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
+
+        // === Notification Sound ===
+        const notifSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgipGQfWBUV3+RnZB6XVlmeYqHdGZhaXiDgnh0cnB1fIF/eXd2dXl+gYB8eXh4e36Af3x5eXl7fYB/fHp5enx9f358e3p7fH1+fXx7e3x8fX19fHt7fHx9fX18e3t8fH19fXx8fHx8fH19fHx8fHx8fX18fHx8fHx8fX18fHx8fHx9fXx8fHx8fH19fHx8fHx8fH18fHx8fHx8fXx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8');
+        notifSound.volume = 0.5;
+        let lastMsgCount = 0;
+        let chatInitialized = false;
 
         const app = initializeApp({
             apiKey: "AIzaSyDWzE4nEYt6fWPS2q6KscvoBbYxL_tdRzk",
@@ -1786,11 +1830,53 @@
                 }
             });
 
+            // Mark as read when user views chat (user side)
+            let userReadInterval = setInterval(() => {
+                update(ref(db, `readReceipts/${jid}`), { userLastRead: new Date().toISOString() });
+            }, 3000);
+
+            // Listen for read receipts
+            let adminLastRead = null;
+            onValue(ref(db, `readReceipts/${jid}`), snap => {
+                const data = snap.val() || {};
+                adminLastRead = data.adminLastRead ? new Date(data.adminLastRead) : null;
+                // Re-render to update read status
+                if (document.getElementById('cMsgs').children.length > 0) {
+                    document.querySelectorAll('.read-receipt').forEach(el => {
+                        const msgTime = new Date(el.dataset.time);
+                        if (adminLastRead && msgTime <= adminLastRead) {
+                            el.textContent = 'อ่านแล้ว';
+                        }
+                    });
+                }
+            });
+
             onValue(ref(db, `chats/${jid}`), snap => {
                 const el = document.getElementById('cMsgs');
-                if (!snap.exists()) { el.innerHTML = '<div class="m sys">ยังไม่มีข้อความ รอนักรีทัชรับงาน...</div>'; return; }
+                const warningTag = document.getElementById('chatWarningTag');
+                if (!snap.exists()) {
+                    el.innerHTML = '<div class="m sys">ยังไม่มีข้อความ รอนักรีทัชรับงาน...</div>';
+                    warningTag.style.display = 'flex';
+                    return;
+                }
 
                 const msgs = Object.values(snap.val()).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+                // Play sound on new incoming message (from admin)
+                const newCount = msgs.length;
+                if (chatInitialized && newCount > lastMsgCount) {
+                    const lastMsg = msgs[msgs.length - 1];
+                    if (lastMsg.sender === 'admin') {
+                        try { notifSound.currentTime = 0; notifSound.play().catch(() => {}); } catch(e) {}
+                    }
+                }
+                lastMsgCount = newCount;
+                chatInitialized = true;
+
+                // Show/hide warning based on whether admin has joined
+                const hasAdminMsg = msgs.some(m => m.sender === 'admin');
+                warningTag.style.display = hasAdminMsg ? 'none' : 'flex';
+
                 let html = '';
 
                 // Group pairs
@@ -1808,6 +1894,7 @@
                         const { orig: m, marked: mk } = item;
                         const t = new Date(m.timestamp).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
                         const safeUrl = (mk.fileUrl || '').replace(/'/g, "\\'");
+                        const isRead = m.sender === 'user' && adminLastRead && new Date(m.timestamp) <= adminLastRead;
                         html += `
                         <div class="m ${m.sender} fm">
                             <div class="image-pair-row">
@@ -1824,13 +1911,14 @@
                                 </div>
                             </div>
                             ${m.text ? `<div style="margin-top: 12px; font-size: 0.9rem; padding: 8px; background: rgba(255,255,255,0.2); border-radius: 8px; white-space: pre-wrap;">${m.text}</div>` : ''}
-                            <div class="t">${t}</div>
+                            <div class="t">${t}${m.sender === 'user' ? `<span class="read-receipt" data-time="${m.timestamp}">${isRead ? 'อ่านแล้ว' : ''}</span>` : ''}</div>
                         </div>`;
                     } else {
                         const m = item.msg;
                         const t = new Date(m.timestamp).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
                         if (m.type === 'system') { html += `<div class="m sys">${m.text}</div>`; return; }
 
+                        const isRead = m.sender === 'user' && adminLastRead && new Date(m.timestamp) <= adminLastRead;
                         let cHTML = '';
                         if (m.type === 'file') {
                             const isMarked = m.fileName?.startsWith('marked_');
@@ -1842,7 +1930,7 @@
                             }
                         } else { cHTML = m.text; }
 
-                        html += `<div class="m ${m.sender} ${m.type === 'file' ? 'fm' : ''}">${cHTML}<div class="t">${t}</div></div>`;
+                        html += `<div class="m ${m.sender} ${m.type === 'file' ? 'fm' : ''}">${cHTML}<div class="t">${t}${m.sender === 'user' ? `<span class="read-receipt" data-time="${m.timestamp}">${isRead ? 'อ่านแล้ว' : ''}</span>` : ''}</div></div>`;
                     }
                 });
                 el.innerHTML = html;
