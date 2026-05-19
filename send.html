@@ -88,6 +88,29 @@
             box-shadow: var(--shadow-sm);
         }
 
+        @keyframes pulse-border {
+            0% {
+                border-color: #cbd5e1;
+                transform: scale(1);
+            }
+
+            50% {
+                border-color: var(--primary);
+                transform: scale(1.02);
+            }
+
+            100% {
+                border-color: #cbd5e1;
+                transform: scale(1);
+            }
+        }
+
+        .upload-area.pulse {
+            animation: pulse-border 2s infinite ease-in-out;
+            border-color: var(--primary);
+            background: #f5f3ff;
+        }
+
         .upload-area:hover,
         .upload-area.dragover {
             border-color: var(--primary);
@@ -116,6 +139,123 @@
 
         .upload-area input {
             display: none;
+        }
+
+        /* Instructions Section */
+        .instructions-section {
+            margin-top: 30px;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: 20px 24px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            text-align: center;
+            max-width: 420px;
+            margin-left: auto;
+            margin-right: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .instructions-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .instructions-steps {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .instruction-tag {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            color: #64748b;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0.4;
+            border: 2px solid transparent;
+        }
+
+        .instruction-tag.active {
+            opacity: 1;
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.35);
+            transform: scale(1.15);
+            border-color: #ffffff;
+        }
+
+        .instructions-line {
+            height: 2px;
+            background: #e2e8f0;
+            flex: 1;
+            max-width: 30px;
+            transition: background 0.3s ease;
+        }
+
+        .instructions-line.active {
+            background: var(--primary);
+        }
+
+        .instructions-content {
+            position: relative;
+            width: 100%;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .instruction-slide {
+            position: absolute;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .instruction-slide.active {
+            position: relative;
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+        .instruction-icon {
+            width: 56px;
+            height: 56px;
+            object-fit: contain;
+            margin-bottom: 8px;
+        }
+
+        .instruction-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin: 0;
         }
 
         /* Document Viewer */
@@ -151,7 +291,7 @@
             position: relative;
             display: inline-block;
             background: white;
-            border-radius: var(--radius-md);
+            border-radius: 0;
             box-shadow: var(--shadow-lg);
             max-width: 100%;
             overflow: visible;
@@ -162,7 +302,7 @@
             display: block;
             max-width: 100%;
             height: auto;
-            border-radius: var(--radius-md);
+            border-radius: 0;
         }
 
         /* Annotation Box (Pointer Tool) */
@@ -812,12 +952,47 @@
     </header>
 
     <div class="container">
-        <!-- Upload Area -->
-        <div class="upload-area" id="uploadArea">
-            <div class="upload-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
-            <p id="ui-upload-title">คลิกหรือลากไฟล์มาวางที่นี่</p>
-            <span id="ui-upload-subtitle">รองรับไฟล์ .PDF และรูปภาพ (.JPG, .PNG)</span>
-            <input type="file" id="fileInput" accept=".pdf, image/*">
+        <div class="upload-area pulse" id="uploadArea">
+            <div id="uploadVisuals">
+                <div style="font-size: 2.5rem; margin-bottom: 12px;">📁</div>
+                <p><strong id="ui-upload-title">คลิกเพื่อเลือกไฟล์</strong></p>
+                <p id="ui-upload-subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">
+                    หรือลากไฟล์ภาพ/PDF มาวางที่นี่</p>
+            </div>
+            <input type="file" id="fileInput" accept=".pdf, image/*" hidden>
+        </div>
+
+        <!-- Instructions Section -->
+        <div class="instructions-section" id="instructions">
+            <h2 class="instructions-title">
+                <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i> วิธีการใช้งานง่ายๆ
+            </h2>
+
+            <div class="instructions-steps">
+                <div class="instruction-tag active" data-step="0">1</div>
+                <div class="instructions-line" id="line-0"></div>
+                <div class="instruction-tag" data-step="1">2</div>
+                <div class="instructions-line" id="line-1"></div>
+                <div class="instruction-tag" data-step="2">3</div>
+            </div>
+
+            <div class="instructions-content">
+                <div class="instruction-slide active" id="slide-0">
+                    <img class="instruction-icon" src="https://cdn-icons-png.flaticon.com/128/3121/3121601.png"
+                        alt="อัพโหลดไฟล์">
+                    <p class="instruction-text">อัพโหลดไฟล์ภาพ หรือ PDF</p>
+                </div>
+                <div class="instruction-slide" id="slide-1">
+                    <img class="instruction-icon" src="https://cdn-icons-png.flaticon.com/128/401/401067.png"
+                        alt="วงจุดที่จะแก้">
+                    <p class="instruction-text">วงจุดที่ต้องการแก้ไข พร้อมพิมพ์รายละเอียด</p>
+                </div>
+                <div class="instruction-slide" id="slide-2">
+                    <img class="instruction-icon" src="https://cdn-icons-png.flaticon.com/128/8999/8999441.png"
+                        alt="ส่งงานให้นักรีทัช">
+                    <p class="instruction-text">ส่งงานให้นักรีทัชดำเนินการ</p>
+                </div>
+            </div>
         </div>
 
         <!-- Main Workspace -->
@@ -937,8 +1112,8 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/build/pdf.worker.min.mjs';
         const { jsPDF } = window.jspdf;
 
-        // Catbox API (Direct - No backend needed, CORS-friendly)
-        const CATBOX_API = 'https://catbox.moe/user/api.php';
+        // Litterbox API (Primary - Auto deletes in 12h)
+        const LITTERBOX_API = 'https://litterbox.catbox.moe/resources/internals/api.php';
         const FIREBASE_STORE = 'https://retouch-ebid-default-rtdb.asia-southeast1.firebasedatabase.app/file_store';
 
         // Elements
@@ -967,13 +1142,13 @@
 
         const RENDER_SCALE = 2.0;
 
-        // Language Support
+        // Language Support (Thai only)
         const i18n = {
             th: {
                 title: "เครื่องมือมาร์คจุดแก้ไขจุด",
                 subtitle: "อัพโหลด PDF หรือ รูปภาพ • วงจุดที่ต้องการ • พิมพ์คำอธิบายได้",
-                upload_title: "คลิกหรือลากไฟล์มาวางที่นี่",
-                upload_subtitle: "รองรับไฟล์ .PDF และรูปภาพ (.JPG, .PNG)",
+                upload_title: "คลิกเพื่อเลือกไฟล์",
+                upload_subtitle: "หรือลากไฟล์ภาพ/PDF มาวางที่นี่",
                 loading_pdf: "กำลังโหลด PDF...",
                 loading_img: "กำลังโหลดรูปภาพ...",
                 page_of: "หน้า {current} / {total}",
@@ -1005,54 +1180,17 @@
                 destroyed: "ลบสำเร็จแล้ว",
                 dl_orig: "ไฟล์ต้นฉบับลูกค้า",
                 destroy_btn: "ทำลายไฟล์"
-            },
-            en: {
-                title: "Marking Tool",
-                subtitle: "Upload PDF or Image • Mark positions • Add descriptions",
-                upload_title: "Click or drag file here",
-                upload_subtitle: "Supports .PDF and Images (.JPG, .PNG)",
-                loading_pdf: "Loading PDF...",
-                loading_img: "Loading Image...",
-                page_of: "Page {current} / {total}",
-                img_title: "Image: {name}",
-                add_btn: "Add Mark",
-                save_pdf: "Upload PDF",
-                save_img: "Upload Image",
-                error_file: "Please upload PDF or image only",
-                error_no_marks: "Please add at least 1 mark before uploading",
-                error_save: "An error occurred while uploading",
-                placeholder: "Fix what?",
-                saving: "Uploading...",
-                pdf_mark: "Edit page {page}",
-                success_upload: "Upload Success!",
-                success_subtitle: "File sent to retoucher successfully. You can close this page.",
-                points_to_fix: "Total {points} points to fix",
-                copied_info: "Auto-copied to clipboard",
-                close_btn: "Close Window",
-                uploading: "Uploading...",
-                please_wait: "Please wait a moment",
-                file_orig: "Original file",
-                file_marked: "Marked file",
-                expired_title: "File Expired",
-                expired_msg: "This file has been auto-deleted. Please request a new link from the sender.",
-                new_btn: "Start Over",
-                copied: "Copied!",
-                destroy_confirm: "Permanently destroy this file? (Cannot undo)",
-                destroying: "Destroying...",
-                destroyed: "Deleted Successfully",
-                dl_orig: "Original File",
-                destroy_btn: "Destroy File"
             }
         };
 
-        let currentLang = 'th';
+        const currentLang = 'th';
 
-        // Expiration: display only (catbox files are permanent, countdown is cosmetic)
+        // Expiration: 12 hours (Litterbox auto-delete)
         const EXPIRE_MS = 12 * 60 * 60 * 1000;
+        const EXPIRE_TIME = '12h';
 
         window.setLanguage = (lang) => {
-            currentLang = lang;
-            document.documentElement.lang = lang;
+            document.documentElement.lang = 'th';
 
             const updateText = (id, text) => {
                 const el = document.getElementById(id);
@@ -1060,29 +1198,29 @@
             };
 
             const titleEl = document.getElementById('ui-title');
-            if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> ${i18n[lang].title}`;
+            if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> ${i18n.th.title}`;
 
-            updateText('ui-subtitle', i18n[lang].subtitle);
-            updateText('ui-upload-title', i18n[lang].upload_title);
-            updateText('ui-upload-subtitle', i18n[lang].upload_subtitle);
-            updateText('ui-success-title', i18n[lang].success_upload);
-            updateText('ui-success-subtitle', i18n[lang].success_subtitle);
-            updateText('ui-tag-text', i18n[lang].copied);
-            updateText('ui-dl-orig', i18n[lang].dl_orig);
-            updateText('ui-destroy', i18n[lang].destroy_btn);
-            updateText('ui-expired-title', i18n[lang].expired_title);
-            updateText('ui-expired-msg', i18n[lang].expired_msg);
-            updateText('progress-title', i18n[lang].uploading);
-            updateText('progress-subtitle', i18n[lang].please_wait);
-            updateText('step-orig-text', i18n[lang].file_orig);
-            updateText('step-marked-text', i18n[lang].file_marked);
+            updateText('ui-subtitle', i18n.th.subtitle);
+            updateText('ui-upload-title', i18n.th.upload_title);
+            updateText('ui-upload-subtitle', i18n.th.upload_subtitle);
+            updateText('ui-success-title', i18n.th.success_upload);
+            updateText('ui-success-subtitle', i18n.th.success_subtitle);
+            updateText('ui-tag-text', i18n.th.copied);
+            updateText('ui-dl-orig', i18n.th.dl_orig);
+            updateText('ui-destroy', i18n.th.destroy_btn);
+            updateText('ui-expired-title', i18n.th.expired_title);
+            updateText('ui-expired-msg', i18n.th.expired_msg);
+            updateText('progress-title', i18n.th.uploading);
+            updateText('progress-subtitle', i18n.th.please_wait);
+            updateText('step-orig-text', i18n.th.file_orig);
+            updateText('step-marked-text', i18n.th.file_marked);
 
             const addBtnSpan = document.getElementById('ui-add-btn');
-            if (addBtnSpan) addBtnSpan.textContent = i18n[lang].add_btn;
+            if (addBtnSpan) addBtnSpan.textContent = i18n.th.add_btn;
 
             if (savePdfBtn) {
                 const icon = currentFileType === 'image' ? 'fa-image' : 'fa-file-pdf';
-                const text = currentFileType === 'image' ? i18n[lang].save_img : i18n[lang].save_pdf;
+                const text = currentFileType === 'image' ? i18n.th.save_img : i18n.th.save_pdf;
                 savePdfBtn.innerHTML = `<i class="fa-solid ${icon}"></i> <span class="btn-text">${text}</span>`;
             }
 
@@ -1090,15 +1228,15 @@
                 updatePageInfo();
             }
 
-            document.title = i18n[lang].title;
-            document.documentElement.style.setProperty('--placeholder-text', `"${i18n[lang].placeholder}"`);
+            document.title = i18n.th.title;
+            document.documentElement.style.setProperty('--placeholder-text', `"${i18n.th.placeholder}"`);
         };
 
         // Custom Toast Notification Function
         window.showToast = (msg) => {
             const toast = document.getElementById('toast');
             const toastMsg = document.getElementById('toast-msg');
-            toastMsg.textContent = msg || i18n[currentLang].copied;
+            toastMsg.textContent = msg || i18n.th.copied;
             toast.classList.add('show');
             setTimeout(() => {
                 toast.classList.remove('show');
@@ -1124,7 +1262,7 @@
             });
         }
 
-        // Upload via Catbox.moe (primary) with Firebase RTDB fallback
+        // Upload via Litterbox (primary) with Firebase RTDB fallback
         function uploadFile(blob, name, onProgress) {
             return new Promise(async (resolve, reject) => {
                 let simPct = 0;
@@ -1136,26 +1274,27 @@
                 }, 300);
 
                 try {
-                    // Primary: Catbox.moe
+                    // Primary: Litterbox
                     const formData = new FormData();
                     formData.append('reqtype', 'fileupload');
+                    formData.append('time', EXPIRE_TIME);
                     formData.append('fileToUpload', blob, name);
 
-                    const uploadRes = await fetch(CATBOX_API, {
+                    const uploadRes = await fetch(LITTERBOX_API, {
                         method: 'POST',
                         body: formData
                     });
 
                     const resultText = (await uploadRes.text()).trim();
-                    if (!resultText.startsWith('https://files.catbox.moe/')) {
-                        throw new Error('Catbox Upload failed: ' + resultText);
+                    if (!resultText.startsWith('https://litter.catbox.moe/')) {
+                        throw new Error('Litterbox Upload failed: ' + resultText);
                     }
                     clearInterval(simInterval);
                     if (onProgress) onProgress(100);
                     const fileId = resultText.split('/').pop();
                     resolve({ id: fileId });
                 } catch (primaryErr) {
-                    console.warn('Primary upload (Catbox) failed, attempting Firebase fallback...', primaryErr);
+                    console.warn('Primary upload (Litterbox) failed, attempting Firebase fallback...', primaryErr);
 
                     try {
                         // Fallback: Store as base64 in Firebase RTDB
@@ -1187,22 +1326,15 @@
         }
 
         const urlParams = new URLSearchParams(window.location.search);
-        const langParam = urlParams.get('lang');
         const viewId = urlParams.get('id');
         const viewTs = urlParams.get('ts');
-
-        if (langParam === 'en' || window.location.search.includes('?en') || window.location.search.includes('&en')) {
-            window.setLanguage('en');
-        } else {
-            window.setLanguage('th');
-        }
 
         if (viewId) {
             initViewer(viewId, viewTs);
         }
 
         // Initial state for upload button
-        savePdfBtn.title = currentLang === 'th' ? "กรุณาเพิ่มคำอธิบายก่อนอัพโหลด" : "Please add description first";
+        savePdfBtn.title = "กรุณาเพิ่มคำอธิบายก่อนอัพโหลด";
 
         async function initViewer(dataString, ts) {
             const parts = dataString.split('-');
@@ -1221,7 +1353,7 @@
                     const diff = expiryTime - now;
 
                     if (diff <= 0) {
-                        countdownEl.innerHTML = `<span style="color: #ef4444; font-weight: bold;">ไฟล์หมดอายุแล้ว / File Expired</span>`;
+                        countdownEl.innerHTML = `<span style="color: #ef4444; font-weight: bold;">ไฟล์หมดอายุแล้ว</span>`;
                         return;
                     }
 
@@ -1229,9 +1361,7 @@
                     const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                     const s = Math.floor((diff % (1000 * 60)) / 1000);
 
-                    const timeStr = currentLang === 'th' ?
-                        `ไฟล์จะถูกลบอัตโนมัติในอีก: <b>${h} ชม. ${m} นาที ${s} วินาที</b>` :
-                        `Auto-delete in: <b>${h}h ${m}m ${s}s</b>`;
+                    const timeStr = `ไฟล์จะถูกลบอัตโนมัติในอีก: <b>${h} ชม. ${m} นาที ${s} วินาที</b>`;
                     countdownEl.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> ${timeStr}`;
                 };
 
@@ -1254,10 +1384,10 @@
                 btnDel.style.display = 'flex';
                 btnDel.onclick = async (e) => {
                     e.preventDefault();
-                    if (confirm(i18n[currentLang].destroy_confirm)) {
+                    if (confirm(i18n.th.destroy_confirm)) {
                         const originalText = btnDel.innerHTML;
                         btnDel.disabled = true;
-                        btnDel.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${i18n[currentLang].destroying}`;
+                        btnDel.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${i18n.th.destroying}`;
                         try {
                             if (origId.startsWith('fb_')) {
                                 await fetch(`${FIREBASE_STORE}/${origId.substring(3)}.json`, { method: 'DELETE' });
@@ -1265,7 +1395,7 @@
                             if (markedId.startsWith('fb_')) {
                                 await fetch(`${FIREBASE_STORE}/${markedId.substring(3)}.json`, { method: 'DELETE' });
                             }
-                            showToast(i18n[currentLang].destroyed);
+                            showToast(i18n.th.destroyed);
                             setTimeout(() => {
                                 showExpiredState();
                             }, 1000);
@@ -1301,8 +1431,8 @@
                         mimetype: url.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/png'
                     };
                 }
-                // Catbox direct links: https://files.catbox.moe/ID
-                const directUrl = `https://files.catbox.moe/${id}`;
+                // Litterbox direct links: https://litter.catbox.moe/ID
+                const directUrl = `https://litter.catbox.moe/${id}`;
                 return {
                     link: directUrl,
                     mimetype: id.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/png'
@@ -1375,7 +1505,7 @@
             btnDl.onclick = async (e) => {
                 e.preventDefault();
                 const originalText = btnDl.innerHTML;
-                btnDl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Downloading...`;
+                btnDl.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> กำลังดาวน์โหลด...`;
 
                 try {
                     const blob = await getTypedBlob(origId);
@@ -1435,7 +1565,7 @@
                 originalFileName = file.name; // Keep full name with extension
 
                 // Show Load State
-                uploadArea.innerHTML = `<p><i class="fa-solid fa-spinner fa-spin"></i> ${i18n[currentLang].loading_pdf}</p>`;
+                document.getElementById('uploadVisuals').innerHTML = `<p><i class="fa-solid fa-spinner fa-spin"></i> ${i18n.th.loading_pdf}</p>`;
 
                 const arrayBuffer = await file.arrayBuffer();
                 pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -1444,7 +1574,7 @@
                 prepareWorkspace(true);
                 if (totalPages > 1) paginationInput.style.display = 'inline-block';
                 renderPDFPage(1);
-                window.setLanguage(currentLang); // Refresh button text with proper icon
+                window.setLanguage('th'); // Refresh button text with proper icon
 
             } else if (file.type.startsWith('image/')) {
                 currentFileType = 'image';
@@ -1452,24 +1582,30 @@
                 totalPages = 1;
                 currentPage = 1;
 
-                uploadArea.innerHTML = `<p><i class="fa-solid fa-spinner fa-spin"></i> ${i18n[currentLang].loading_img}</p>`;
+                document.getElementById('uploadVisuals').innerHTML = `<p><i class="fa-solid fa-spinner fa-spin"></i> ${i18n.th.loading_img}</p>`;
 
                 imageElement = new Image();
                 imageElement.crossOrigin = "anonymous"; // To help with CORS issues
                 imageElement.onload = () => {
                     prepareWorkspace(false);
                     renderImage();
-                    window.setLanguage(currentLang); // Refresh button text with proper icon
+                    window.setLanguage('th'); // Refresh button text with proper icon
                 };
                 imageElement.src = URL.createObjectURL(file);
             } else {
-                alert(i18n[currentLang].error_file);
-                uploadArea.innerHTML = '<div class="upload-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div><p id="ui-upload-title">' + i18n[currentLang].upload_title + '</p>';
+                alert(i18n.th.error_file);
+                document.getElementById('uploadVisuals').innerHTML = `
+                    <div style="font-size: 2.5rem; margin-bottom: 12px;">📁</div>
+                    <p><strong id="ui-upload-title">${i18n.th.upload_title}</strong></p>
+                    <p id="ui-upload-subtitle" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">${i18n.th.upload_subtitle}</p>
+                `;
             }
         }
 
         function prepareWorkspace(isPdf) {
             uploadArea.style.display = 'none';
+            const inst = document.getElementById('instructions');
+            if (inst) inst.style.display = 'none';
             workspaceWrapper.style.display = 'flex';
             mainToolbar.classList.add('d-flex');
 
@@ -1533,9 +1669,9 @@
 
         function updatePageInfo() {
             if (currentFileType === 'pdf') {
-                pageInfo.textContent = i18n[currentLang].page_of.replace('{current}', currentPage).replace('{total}', totalPages);
+                pageInfo.textContent = i18n.th.page_of.replace('{current}', currentPage).replace('{total}', totalPages);
             } else {
-                pageInfo.textContent = i18n[currentLang].img_title.replace('{name}', originalFileName);
+                pageInfo.textContent = i18n.th.img_title.replace('{name}', originalFileName);
             }
         }
 
@@ -1764,11 +1900,11 @@
             }
             saveAnnotations();
             if (pageAnnotations.size === 0) {
-                return alert(i18n[currentLang].error_no_marks);
+                return alert(i18n.th.error_no_marks);
             }
 
             const btnOriginalHTML = savePdfBtn.innerHTML;
-            savePdfBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${i18n[currentLang].saving}`;
+            savePdfBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${i18n.th.saving}`;
             savePdfBtn.style.pointerEvents = 'none';
 
             canvasContainer.classList.add('exporting');
@@ -1871,11 +2007,11 @@
                 for (const boxes of pageAnnotations.values()) {
                     totalPoints += boxes.length;
                 }
-                const pointsText = i18n[currentLang].points_to_fix.replace('{points}', totalPoints);
+                const pointsText = i18n.th.points_to_fix.replace('{points}', totalPoints);
                 document.getElementById('ui-success-points').textContent = pointsText;
 
                 // Show Success
-                document.getElementById('ui-success-subtitle').textContent = i18n[currentLang].success_subtitle;
+                document.getElementById('ui-success-subtitle').textContent = i18n.th.success_subtitle;
                 document.getElementById('copyBox').style.display = 'none';
                 document.getElementById('copyTag').style.display = 'none';
                 document.getElementById('successModal').classList.add('show');
@@ -1883,12 +2019,66 @@
             } catch (err) {
                 console.error(err);
                 document.getElementById('progressOverlay').classList.remove('show');
-                showToast(i18n[currentLang].error_save);
+                showToast(i18n.th.error_save);
             } finally {
                 savePdfBtn.innerHTML = btnOriginalHTML;
                 savePdfBtn.style.pointerEvents = 'auto';
             }
         };
+
+        // Stepper / Cycler for Instructions Section
+        (function () {
+            const tags = document.querySelectorAll('.instruction-tag');
+            const slides = document.querySelectorAll('.instruction-slide');
+            const lines = document.querySelectorAll('.instructions-line');
+            let currentStep = 0;
+            let cycleInterval;
+
+            function showStep(index) {
+                currentStep = index;
+                tags.forEach((tag, idx) => {
+                    if (idx === index) {
+                        tag.classList.add('active');
+                    } else {
+                        tag.classList.remove('active');
+                    }
+                });
+
+                slides.forEach((slide, idx) => {
+                    if (idx === index) {
+                        slide.classList.add('active');
+                    } else {
+                        slide.classList.remove('active');
+                    }
+                });
+
+                lines.forEach((line, idx) => {
+                    if (idx < index) {
+                        line.classList.add('active');
+                    } else {
+                        line.classList.remove('active');
+                    }
+                });
+            }
+
+            function startCycle() {
+                clearInterval(cycleInterval);
+                cycleInterval = setInterval(() => {
+                    const nextStep = (currentStep + 1) % tags.length;
+                    showStep(nextStep);
+                }, 3000);
+            }
+
+            tags.forEach((tag, index) => {
+                tag.addEventListener('click', () => {
+                    showStep(index);
+                    startCycle(); // Reset timer on click
+                });
+            });
+
+            // Start cycling initially
+            startCycle();
+        })();
 
     </script>
 </body>
