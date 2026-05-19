@@ -539,6 +539,26 @@
             margin-bottom: 20px;
         }
 
+        #ui-success-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 10px;
+            line-height: 1.6;
+        }
+
+        #ui-success-points {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-top: 16px;
+            margin-bottom: 8px;
+            background: #eef2ff;
+            border: 1px solid #e0e7ff;
+            padding: 10px 20px;
+            border-radius: 50px;
+            display: inline-block;
+        }
+
         .copy-box {
             background: #f8fafc;
             border: 2px solid #e2e8f0;
@@ -873,6 +893,7 @@
             <div class="success-icon"><i class="fa-solid fa-circle-check"></i></div>
             <h2 id="ui-success-title">อัพโหลดสำเร็จ!</h2>
             <p id="ui-success-subtitle">คัดลอกลิ้งค์นี้ไปส่งให้ผู้บริการหน้าแชท</p>
+            <p id="ui-success-points"></p>
             <div class="copy-box" id="copyBox">
                 <i class="fa-solid fa-link"></i>
                 <span id="shortLinkDisplay">Generating...</span>
@@ -958,7 +979,8 @@
                 saving: "กำลังอัพโหลด...",
                 pdf_mark: "แก้ไขหน้าที่ {page}",
                 success_upload: "อัพโหลดสำเร็จ!",
-                success_subtitle: "ให้ส่งลิ้งค์นี้ไปให้ผู้บริการหน้าแชทนะ",
+                success_subtitle: "ส่งไฟล์ให้นักรีทัชเรียบร้อย ปิดหน้านี้ได้เลยท่าน",
+                points_to_fix: "งานให้แก้ทั้งหมด {points} จุด ดูจากตำแหน่งที่วง",
                 copied_info: "คัดลอกลงคลิปบอร์ดให้อัตโนมัติแล้ว",
                 close_btn: "ปิดหน้าต่างนี้",
                 uploading: "กำลังอัพโหลด...",
@@ -994,7 +1016,8 @@
                 saving: "Uploading...",
                 pdf_mark: "Edit page {page}",
                 success_upload: "Upload Success!",
-                success_subtitle: "Send this link to support chat",
+                success_subtitle: "File sent to retoucher successfully. You can close this page.",
+                points_to_fix: "Total {points} points to fix, check the circled positions",
                 copied_info: "Auto-copied to clipboard",
                 close_btn: "Close Window",
                 uploading: "Uploading...",
@@ -1083,15 +1106,9 @@
             }, 2500);
         };
 
-        // Upload via fetch (no preflight CORS issue) with simulated progress
+        // Upload via fetch (no preflight CORS issue) with simulated progress and Fallback
         function uploadFile(blob, name, onProgress) {
             return new Promise(async (resolve, reject) => {
-                const formData = new FormData();
-                formData.append('reqtype', 'fileupload');
-                formData.append('time', EXPIRE_TIME);
-                formData.append('fileToUpload', blob, name);
-
-                // Simulated progress (fetch doesn't support upload progress)
                 let simPct = 0;
                 const simInterval = setInterval(() => {
                     // Fast to 70%, then slow crawl to 90%
@@ -1102,24 +1119,51 @@
                 }, 300);
 
                 try {
+                    const formData = new FormData();
+                    formData.append('reqtype', 'fileupload');
+                    formData.append('time', EXPIRE_TIME);
+                    formData.append('fileToUpload', blob, name);
+
                     const uploadRes = await fetch(LITTERBOX_API, {
                         method: 'POST',
                         body: formData
                     });
 
-                    clearInterval(simInterval);
-
                     const resultText = (await uploadRes.text()).trim();
                     if (!resultText.startsWith('https://litter.catbox.moe/')) {
-                        reject(new Error('Upload failed: ' + resultText));
-                        return;
+                        throw new Error('Litterbox Upload failed: ' + resultText);
                     }
+                    clearInterval(simInterval);
                     if (onProgress) onProgress(100);
                     const fileId = resultText.split('/').pop();
                     resolve({ id: fileId });
-                } catch (err) {
-                    clearInterval(simInterval);
-                    reject(err);
+                } catch (primaryErr) {
+                    console.warn("Primary upload (Litterbox) failed, attempting fallback to Uguu...", primaryErr);
+                    
+                    try {
+                        const fallbackData = new FormData();
+                        fallbackData.append('files[]', blob, name);
+                        
+                        const fallbackRes = await fetch('https://uguu.se/upload.php', {
+                            method: 'POST',
+                            body: fallbackData
+                        });
+                        
+                        const fallbackJson = await fallbackRes.json();
+                        clearInterval(simInterval);
+                        
+                        if (fallbackJson.success && fallbackJson.files && fallbackJson.files.length > 0) {
+                            if (onProgress) onProgress(100);
+                            const fileUrl = fallbackJson.files[0].url;
+                            resolve({ id: 'uguu_' + btoa(fileUrl) });
+                        } else {
+                            throw new Error('Fallback upload failed');
+                        }
+                    } catch (fallbackErr) {
+                        clearInterval(simInterval);
+                        console.error("Fallback upload failed as well", fallbackErr);
+                        reject(new Error('All upload services failed'));
+                    }
                 }
             });
         }
@@ -1191,6 +1235,13 @@
             btnDel.style.display = 'none';
 
             async function getFileInfo(id) {
+                if (id.startsWith('uguu_')) {
+                    const url = atob(id.substring(5));
+                    return {
+                        link: url,
+                        mimetype: url.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/png'
+                    };
+                }
                 // Litterbox direct links: https://litter.catbox.moe/ID
                 const directUrl = `https://litter.catbox.moe/${id}`;
                 return {
@@ -1201,9 +1252,11 @@
 
             // Detect mimetype more robustly
             async function getTypedBlob(id) {
-                // If local proxy supports GET, we could use it, but images.weserv is better for images.
-                // For PDFs, we'll try direct but it might fail CORS if viewed outside.
-                // Best for now: Use specialized image proxy for images, and direct if PDF (or we can add GET to PHP proxy)
+                if (id.startsWith('uguu_')) {
+                    const fileInfo = await getFileInfo(id);
+                    const response = await fetch(fileInfo.link);
+                    return await response.blob();
+                }
                 const response = await fetch(`https://litter.catbox.moe/${id}`);
                 const blob = await response.blob();
                 return blob;
@@ -1743,20 +1796,29 @@
                 const ts = Date.now();
                 const finalUrl = `${window.location.origin}${window.location.pathname}?id=${combinedId}&ts=${ts}`;
 
+                // Send the link to Firebase for auto_donate_watcher.py to pick up
+                try {
+                    await fetch('https://retouch-ebid-default-rtdb.asia-southeast1.firebasedatabase.app/send_queue.json', {
+                        method: 'POST',
+                        body: JSON.stringify({ url: finalUrl, timestamp: ts })
+                    });
+                } catch (fbErr) {
+                    console.error("Firebase push failed", fbErr);
+                }
+
+                // Calculate total points
+                let totalPoints = 0;
+                for (const boxes of pageAnnotations.values()) {
+                    totalPoints += boxes.length;
+                }
+                const pointsText = i18n[currentLang].points_to_fix.replace('{points}', totalPoints);
+                document.getElementById('ui-success-points').textContent = pointsText;
+
                 // Show Success
-                document.getElementById('shortLinkDisplay').textContent = finalUrl;
+                document.getElementById('ui-success-subtitle').textContent = i18n[currentLang].success_subtitle;
+                document.getElementById('copyBox').style.display = 'none';
+                document.getElementById('copyTag').style.display = 'none';
                 document.getElementById('successModal').classList.add('show');
-                showCopyTag(); // Show tag immediately as we auto-copy
-
-                // Auto copy
-                navigator.clipboard.writeText(finalUrl).then(() => {
-                    // Success silently as tag is already pulsing
-                });
-
-                document.getElementById('copyBox').onclick = () => {
-                    navigator.clipboard.writeText(finalUrl);
-                    showCopyTag();
-                };
 
             } catch (err) {
                 console.error(err);
