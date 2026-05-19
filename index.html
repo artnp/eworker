@@ -1236,6 +1236,26 @@
         <img id="lightboxImg" src="" onclick="event.stopPropagation()">
     </div>
 
+    <!-- Unified Loading Overlay -->
+    <div id="unifiedLoadOverlay" style="display:none; position:fixed; inset:0; background:rgba(255,255,255,0.95); z-index:99999; flex-direction:column; align-items:center; justify-content:center; backdrop-filter:blur(5px);">
+        <div id="ulIcon" style="font-size:3.5rem; margin-bottom:20px; animation: bounce 1.5s infinite;">⏳</div>
+        <h2 id="ulTitle" style="color:var(--p); margin-bottom:12px; font-weight:700;">กำลังดำเนินการ...</h2>
+        <div style="width:280px; height:12px; background:#e2e8f0; border-radius:6px; overflow:hidden; margin-bottom:12px; box-shadow:inset 0 1px 3px rgba(0,0,0,0.1);">
+            <div id="ulBar" style="width:0%; height:100%; background:linear-gradient(90deg, var(--p), #60a5fa); transition:width 0.4s ease;"></div>
+        </div>
+        <div id="ulText" style="font-size:0.95rem; color:var(--dim); font-weight:600;">โปรดรอสักครู่ (0%)</div>
+    </div>
+    <style>
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        @keyframes inlineBarPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+    </style>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
         import { getDatabase, ref, push, get, onValue, update, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
@@ -1245,6 +1265,23 @@
         notifSound.volume = 0.5;
         let lastMsgCount = 0;
         let chatInitialized = false;
+
+        // Loader Helpers
+        window.showLoader = (title, icon = '⏳') => {
+            document.getElementById('unifiedLoadOverlay').style.display = 'flex';
+            document.getElementById('ulTitle').textContent = title;
+            document.getElementById('ulIcon').textContent = icon;
+            window.updateLoader(0, 'เริ่มต้น...');
+        };
+        window.updateLoader = (pct, text) => {
+            document.getElementById('ulBar').style.width = pct + '%';
+            document.getElementById('ulText').textContent = `${text} (${pct}%)`;
+        };
+        window.hideLoader = () => {
+            setTimeout(() => {
+                document.getElementById('unifiedLoadOverlay').style.display = 'none';
+            }, 300);
+        };
 
         const app = initializeApp({
             apiKey: "AIzaSyDWzE4nEYt6fWPS2q6KscvoBbYxL_tdRzk",
@@ -1762,6 +1799,9 @@
             const btnText = document.getElementById('subBtnText');
             btn.disabled = true; btnText.innerHTML = '⏳ กำลังอัปโหลด...';
 
+            window.showLoader('กำลังส่งงานของคุณ', '🚀');
+            window.updateLoader(10, 'ตรวจสอบข้อมูล...');
+
             try {
                 // For direct Base64 storage in Firebase for instant loading
                 const uid = Math.random().toString(36).substr(2, 12);
@@ -1770,6 +1810,7 @@
 
                 const reader = new FileReader();
                 reader.onload = async (e) => {
+                    window.updateLoader(30, 'กำลังบันทึกข้อมูลงาน...');
                     const origUrl = e.target.result;
                     const annUrl = pendingAnnotations[activeFileIndex] || origUrl;
 
@@ -1778,6 +1819,7 @@
                         createdAt: now.toISOString(), expiresAt: exp.toISOString(), status: 'active', uniqueId: uid
                     });
 
+                    window.updateLoader(50, 'กำลังอัปโหลดรูปภาพหลัก...');
                     const chatRef = ref(db, `chats/${uid}`);
                     let origText = desc ? `📝 ${desc}` : '';
                     await push(chatRef, { sender: 'user', text: origText, fileUrl: origUrl, fileName: 'original.jpg', timestamp: new Date().toISOString(), type: 'file' });
@@ -1787,6 +1829,7 @@
                     }
 
                     // Extra files
+                    if (uploadedFiles.length > 1) window.updateLoader(70, 'กำลังอัปโหลดรูปภาพเพิ่มเติม...');
                     for (let i = 0; i < uploadedFiles.length; i++) {
                         if (i === activeFileIndex) continue;
                         const fr = new FileReader();
@@ -1799,10 +1842,14 @@
                         fr.readAsDataURL(uploadedFiles[i]);
                     }
 
-                    window.location.href = `index.html?job=${uid}`;
+                    window.updateLoader(100, 'เสร็จสิ้นขั้นตอน!');
+                    setTimeout(() => {
+                        window.location.href = `index.html?job=${uid}`;
+                    }, 500);
                 };
                 reader.readAsDataURL(uploadedFiles[activeFileIndex]);
             } catch (err) {
+                window.hideLoader();
                 alert('เกิดข้อผิดพลาด กรุณาลองใหม่');
                 btn.disabled = false; btn.innerHTML = '🚀 โพสต์งานทันที';
             }
@@ -1820,11 +1867,42 @@
         const urlParams = new URLSearchParams(window.location.search);
         const jid = urlParams.get('job');
         if (jid) {
+            window.showLoader('กำลังเข้าสู่ห้องสนทนา', '💬');
+            window.updateLoader(10, 'เชื่อมต่อเซิร์ฟเวอร์...');
+            let chatDataLoaded = false;
+
             localStorage.setItem('recentJobId', jid);
             document.getElementById('formView').style.display = 'none';
             document.getElementById('footerLinks').style.display = 'none';
             document.getElementById('chatView').style.display = 'flex';
             document.querySelector('.top-bar').style.display = 'none'; // hide main top bar in chat
+
+            // Show inline loading in chat area
+            document.getElementById('cMsgs').innerHTML = `
+                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;padding:40px 20px;">
+                    <div style="font-size:2.5rem;animation:bounce 1.5s infinite;">💬</div>
+                    <div style="font-weight:700;color:var(--p);font-size:1.05rem;">กำลังโหลดข้อความ...</div>
+                    <div style="width:200px;height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden;">
+                        <div id="chatInlineBar" style="width:20%;height:100%;background:linear-gradient(90deg,var(--p),#60a5fa);transition:width 0.5s ease;animation:inlineBarPulse 2s ease-in-out infinite;"></div>
+                    </div>
+                    <div id="chatInlineText" style="font-size:0.85rem;color:var(--dim);">กำลังเชื่อมต่อ Firebase...</div>
+                </div>
+            `;
+            // Animate inline bar
+            const inlineSteps = [
+                { delay: 300, pct: '35%', text: 'ค้นหาข้อมูลงาน...' },
+                { delay: 800, pct: '55%', text: 'ดึงข้อมูลห้องสนทนา...' },
+                { delay: 1500, pct: '70%', text: 'โหลดรูปภาพ...' },
+            ];
+            inlineSteps.forEach(s => {
+                setTimeout(() => {
+                    if (chatDataLoaded) return;
+                    const bar = document.getElementById('chatInlineBar');
+                    const txt = document.getElementById('chatInlineText');
+                    if (bar) bar.style.width = s.pct;
+                    if (txt) txt.textContent = s.text;
+                }, s.delay);
+            });
 
             onValue(jobsRef, snap => {
                 const jobs = snap.val();
@@ -1832,6 +1910,7 @@
                 const jobEntry = Object.entries(jobs).find(([, j]) => j.uniqueId === jid);
                 if (jobEntry) {
                     currentJob = jobEntry[1];
+                    window.updateLoader(40, 'พบข้อมูลงาน...');
                     document.getElementById('qrAmt').textContent = currentJob.budget + ' THB';
                     document.getElementById('qrD').innerHTML = '';
                     try { new QRCode(document.getElementById('qrD'), { text: `https://promptpay.io/0988573074/${currentJob.budget}`, width: 45, height: 45 }); } catch (e) { }
@@ -1844,6 +1923,8 @@
                         const h = Math.floor(d / 3600000), m = Math.floor((d % 3600000) / 60000), s = Math.floor((d % 60000) / 1000);
                         cdEl.textContent = `⏱ ปิดใน ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
                     }, 1000);
+
+                    window.updateLoader(60, 'กำลังโหลดห้องสนทนา...');
 
                     // Disable chat input if cancelled or completed
                     const chatInputArea = document.querySelector('.chat-input-area');
@@ -1915,6 +1996,14 @@
             onValue(ref(db, `chats/${jid}`), snap => {
                 const el = document.getElementById('cMsgs');
                 const warningTag = document.getElementById('chatWarningTag');
+
+                // Dismiss loaders on first real data
+                if (!chatDataLoaded) {
+                    chatDataLoaded = true;
+                    window.updateLoader(100, 'เสร็จสิ้น!');
+                    window.hideLoader();
+                }
+
                 if (!snap.exists()) {
                     el.innerHTML = '<div class="m sys">ยังไม่มีข้อความ รอนักรีทัชรับงาน...</div>';
                     warningTag.style.display = 'flex';
