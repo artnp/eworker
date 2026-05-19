@@ -2155,14 +2155,51 @@
 
             async function handleChatFile(file) {
                 if (!file.type.startsWith('image/')) return;
-                const reader = new FileReader();
-                reader.onload = async (ev) => {
-                    if (currentJob && currentJob.status === 'completed') {
-                        await update(ref(db, `jobs/${currentJob.uniqueId}`), { status: 'active' });
-                    }
-                    await push(ref(db, `chats/${jid}`), { sender: 'user', text: '', fileUrl: ev.target.result, timestamp: new Date().toISOString(), type: 'file' });
-                };
-                reader.readAsDataURL(file);
+                const overlay = document.getElementById('chatProgressOverlay');
+                const stepText = document.getElementById('chat-step-text');
+                const barFill = document.getElementById('chat-bar-fill');
+                const pct = document.getElementById('chat-percent');
+                const stepLabel = document.getElementById('chat-step-label');
+
+                // Show overlay
+                if (stepText) stepText.textContent = file.name;
+                if (barFill) { barFill.style.width = '0%'; barFill.classList.remove('done'); }
+                if (pct) pct.textContent = '0%';
+                if (stepLabel) { stepLabel.className = 'progress-step-label active'; stepLabel.querySelector('i').className = 'fa-solid fa-image'; }
+                if (overlay) overlay.classList.add('show');
+
+                try {
+                    const reader = new FileReader();
+                    reader.onprogress = (e) => {
+                        if (e.lengthComputable && barFill && pct) {
+                            const percent = Math.round((e.loaded / e.total) * 100);
+                            barFill.style.width = percent + '%';
+                            pct.textContent = percent + '%';
+                        }
+                    };
+                    reader.onload = async (ev) => {
+                        if (barFill) { barFill.style.width = '100%'; }
+                        if (pct) pct.textContent = '100%';
+                        if (currentJob && currentJob.status === 'completed') {
+                            await update(ref(db, `jobs/${currentJob.uniqueId}`), { status: 'active' });
+                        }
+                        await push(ref(db, `chats/${jid}`), { sender: 'user', text: '', fileUrl: ev.target.result, timestamp: new Date().toISOString(), type: 'file' });
+                        
+                        // Mark done
+                        if (barFill) barFill.classList.add('done');
+                        if (stepLabel) { stepLabel.className = 'progress-step-label done'; stepLabel.querySelector('i').className = 'fa-solid fa-circle-check'; }
+                        setTimeout(() => { if (overlay) overlay.classList.remove('show'); }, 600);
+                    };
+                    reader.onerror = () => {
+                        if (overlay) overlay.classList.remove('show');
+                        alert('อ่านไฟล์ไม่สำเร็จ');
+                    };
+                    reader.readAsDataURL(file);
+                } catch (err) {
+                    if (overlay) overlay.classList.remove('show');
+                    console.error(err);
+                    alert('อัปโหลดล้มเหลว ลองใหม่อีกครั้ง');
+                }
             }
         } else {
             const recent = localStorage.getItem('recentJobId');
@@ -2204,6 +2241,29 @@
     </script>
     <img id="shopStatusIcon" src="https://cdn-icons-png.flaticon.com/128/6301/6301324.png" class="floating-eye"
         alt="shop">
+    <!-- Chat Upload Progress Overlay -->
+    <div id="chatProgressOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.85); backdrop-filter:blur(8px); z-index:10001; align-items:center; justify-content:center;">
+        <div style="background:white; padding:40px; border-radius:30px; width:90%; max-width:420px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.4); animation:cardSlideUp 0.3s ease;">
+            <h2 style="margin:0 0 5px; font-size:22px; color:#1e293b;"><i class="fa-solid fa-cloud-arrow-up" style="color:#4f46e5;"></i></h2>
+            <h3 style="margin:0 0 5px; font-size:18px; color:#1e293b;">กำลังส่งภาพ...</h3>
+            <p style="margin:0; font-size:13px; color:#94a3b8;">กรุณารอสักครู่</p>
+            <div style="margin-top:25px; text-align:left;">
+                <div id="chat-step-label" class="progress-step-label active" style="font-size:13px; font-weight:600; color:#4f46e5; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-image" style="width:16px; text-align:center;"></i>
+                    <span id="chat-step-text">กำลังโหลดไฟล์...</span>
+                </div>
+                <div style="width:100%; height:8px; background:#e2e8f0; border-radius:100px; overflow:hidden;">
+                    <div id="chat-bar-fill" style="height:100%; width:0%; background:linear-gradient(90deg,#4f46e5,#6366f1); border-radius:100px; transition:width 0.3s ease;"></div>
+                </div>
+                <div id="chat-percent" style="font-size:12px; color:#94a3b8; margin-top:4px; text-align:right;">0%</div>
+            </div>
+        </div>
+    </div>
+    <style>
+        #chatProgressOverlay.show { display: flex !important; }
+        #chat-bar-fill.done { background: linear-gradient(90deg, #16a34a, #22c55e) !important; width: 100% !important; }
+        @keyframes cardSlideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    </style>
 </body>
 
 </html>
