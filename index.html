@@ -1258,7 +1258,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-        import { getDatabase, ref, push, get, onValue, update, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
+        import { getDatabase, ref, push, get, onValue, update, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
 
         // === Notification Sound ===
         const notifSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgipGQfWBUV3+RnZB6XVlmeYqHdGZhaXiDgnh0cnB1fIF/eXd2dXl+gYB8eXh4e36Af3x5eXl7fYB/fHp5enx9f358e3p7fH1+fXx7e3x8fX19fHt7fHx9fX18e3t8fH19fXx8fHx8fH19fHx8fHx8fX18fHx8fHx8fX18fHx8fHx9fXx8fHx8fH19fHx8fHx8fH18fHx8fHx8fXx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8');
@@ -1295,6 +1295,20 @@
         const db = getDatabase(app);
         const settingsRef = ref(db, 'settings');
         const jobsRef = ref(db, 'jobs');
+
+        async function deleteJobAndChat(jobKey, jobUniqueId) {
+            if (!jobKey || !jobUniqueId) return;
+            try {
+                await Promise.all([
+                    remove(ref(db, `jobs/${jobKey}`)),
+                    remove(ref(db, `chats/${jobUniqueId}`)),
+                    remove(ref(db, `readReceipts/${jobUniqueId}`))
+                ]);
+                console.log(`Deleted job ${jobKey} and chat ${jobUniqueId} successfully.`);
+            } catch (e) {
+                console.error("Error deleting job and chat: ", e);
+            }
+        }
 
         // Shop state
         let isShopOpen = true;
@@ -1337,17 +1351,16 @@
             }
         }, 3000);
 
-        // Job Queue Counter
+        // Job Queue Counter & Expired Cleanup
         onValue(jobsRef, snap => {
             const jobs = snap.val() || {};
             let activeCount = 0;
             const now = new Date();
-            Object.values(jobs).forEach(j => {
-                if (j.status === 'active') {
-                    const exp = new Date(j.expiresAt);
-                    if (exp > now) {
-                        activeCount++;
-                    }
+            Object.entries(jobs).forEach(([key, j]) => {
+                if (new Date(j.expiresAt) <= now) {
+                    deleteJobAndChat(key, j.uniqueId);
+                } else if (j.status === 'active') {
+                    activeCount++;
                 }
             });
             const qCountEl = document.getElementById('qCount');
@@ -1359,6 +1372,7 @@
         let activeFileIndex = -1;
         let pendingAnnotations = {};
         let currentJob = null;
+        let currentJobKey = null;
         let cdTimer = null;
 
         // UI Listeners
@@ -1906,10 +1920,10 @@
 
             onValue(jobsRef, snap => {
                 const jobs = snap.val();
-                if (!jobs) return;
-                const jobEntry = Object.entries(jobs).find(([, j]) => j.uniqueId === jid);
+                const jobEntry = jobs ? Object.entries(jobs).find(([, j]) => j.uniqueId === jid) : null;
                 if (jobEntry) {
                     currentJob = jobEntry[1];
+                    currentJobKey = jobEntry[0];
                     window.updateLoader(40, 'พบข้อมูลงาน...');
                     document.getElementById('qrAmt').textContent = currentJob.budget + ' THB';
                     document.getElementById('qrD').innerHTML = '';
@@ -1919,7 +1933,12 @@
                     const cdEl = document.getElementById('cCd');
                     cdTimer = setInterval(() => {
                         const d = new Date(currentJob.expiresAt) - new Date();
-                        if (d <= 0) { cdEl.textContent = '⏱ หมดเวลา'; clearInterval(cdTimer); return; }
+                        if (d <= 0) {
+                            cdEl.textContent = '⏱ หมดเวลา';
+                            clearInterval(cdTimer);
+                            deleteJobAndChat(currentJobKey, currentJob.uniqueId);
+                            return;
+                        }
                         const h = Math.floor(d / 3600000), m = Math.floor((d % 3600000) / 60000), s = Math.floor((d % 60000) / 1000);
                         cdEl.textContent = `⏱ ปิดใน ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
                     }, 1000);
@@ -1961,6 +1980,13 @@
                         chatInput.style.display = '';
                         secretInline.style.display = 'none';
                         secretIframe.src = '';
+                    }
+                } else {
+                    if (chatDataLoaded) {
+                        alert('ห้องสนทนานี้หมดเวลาหรือถูกลบแล้ว');
+                        window.location.href = 'index.html';
+                    } else {
+                        window.location.href = 'index.html';
                     }
                 }
             });
