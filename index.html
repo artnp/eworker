@@ -1261,8 +1261,54 @@
         import { getDatabase, ref, push, get, onValue, update, remove, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
 
         // === Notification Sound ===
-        const notifSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgipGQfWBUV3+RnZB6XVlmeYqHdGZhaXiDgnh0cnB1fIF/eXd2dXl+gYB8eXh4e36Af3x5eXl7fYB/fHp5enx9f358e3p7fH1+fXx7e3x8fX19fHt7fHx9fX18e3t8fH19fXx8fHx8fH19fHx8fHx8fX18fHx8fHx8fX18fHx8fHx9fXx8fHx8fH19fHx8fHx8fH18fHx8fHx8fXx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8');
-        notifSound.volume = 0.5;
+        let _notifCtx = null;
+        function playSoftNotification() {
+            try {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    if (!_notifCtx || _notifCtx.state === 'closed') {
+                        _notifCtx = new AudioContextClass();
+                    }
+                    const ctx = _notifCtx;
+                    if (ctx.state === 'suspended') {
+                        ctx.resume();
+                    }
+                    const now = ctx.currentTime;
+
+                    const osc1 = ctx.createOscillator();
+                    const gain1 = ctx.createGain();
+                    osc1.type = 'sine';
+                    osc1.frequency.setValueAtTime(950, now);
+                    gain1.gain.setValueAtTime(0.12, now);
+                    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                    osc1.connect(gain1);
+                    gain1.connect(ctx.destination);
+                    osc1.start(now);
+                    osc1.stop(now + 0.15);
+
+                    const osc2 = ctx.createOscillator();
+                    const gain2 = ctx.createGain();
+                    osc2.type = 'sine';
+                    osc2.frequency.setValueAtTime(1250, now + 0.08);
+                    gain2.gain.setValueAtTime(0.12, now + 0.08);
+                    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                    osc2.connect(gain2);
+                    gain2.connect(ctx.destination);
+                    osc2.start(now + 0.08);
+                    osc2.stop(now + 0.25);
+                    return;
+                }
+            } catch (e) {
+                console.warn("Web Audio API failed or blocked, falling back to Audio object", e);
+            }
+            try {
+                const fallbackAudio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgipGQfWBUV3+RnZB6XVlmeYqHdGZhaXiDgnh0cnB1fIF/eXd2dXl+gYB8eXh4e36Af3x5eXl7fYB/fHp5enx9f358e3p7fH1+fXx7e3x8fX19fHt7fHx9fX18e3t8fH19fXx8fHx8fH19fHx8fHx8fX18fHx8fHx8fX18fHx8fHx9fXx8fHx8fH19fHx8fHx8fH18fHx8fHx8fXx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8');
+                fallbackAudio.volume = 0.3;
+                fallbackAudio.play().catch(() => {});
+            } catch (e) {
+                console.error("Audio fallback failed", e);
+            }
+        }
         let lastMsgCount = 0;
         let chatInitialized = false;
 
@@ -1835,48 +1881,70 @@
 
                 const reader = new FileReader();
                 reader.onload = async (e) => {
-                    window.updateLoader(30, 'กำลังบันทึกข้อมูลงาน...');
-                    const origUrl = e.target.result;
-                    const annUrl = pendingAnnotations[activeFileIndex] || origUrl;
+                    try {
+                        window.updateLoader(30, 'กำลังบันทึกข้อมูลงาน...');
+                        const origUrl = e.target.result;
+                        const annUrl = pendingAnnotations[activeFileIndex] || origUrl;
 
-                    const newJobRef = push(jobsRef);
-                    const jobKey = newJobRef.key;
-                    await set(newJobRef, {
-                        description: desc, budget,
-                        createdAt: now.toISOString(), expiresAt: exp.toISOString(), status: 'active', uniqueId: uid
-                    });
-                    // Store images separately to avoid bandwidth explosion on onValue(jobs)
-                    await set(ref(db, `jobImages/${jobKey}`), { imageUrl: origUrl, annotatedUrl: annUrl });
-                    // Store index for quick uniqueId → jobKey lookup
-                    await set(ref(db, `jobIndex/${uid}`), jobKey);
+                        const newJobRef = push(jobsRef);
+                        const jobKey = newJobRef.key;
 
-                    window.updateLoader(50, 'กำลังอัปโหลดรูปภาพหลัก...');
-                    const chatRef = ref(db, `chats/${uid}`);
-                    let origText = desc ? `📝 ${desc}` : '';
-                    await push(chatRef, { sender: 'user', text: origText, fileUrl: origUrl, fileName: 'original.jpg', timestamp: new Date().toISOString(), type: 'file' });
-
-                    if (pendingAnnotations[activeFileIndex]) {
-                        await push(chatRef, { sender: 'user', text: '', fileUrl: annUrl, fileName: 'marked_annotated.png', timestamp: new Date().toISOString(), type: 'file' });
-                    }
-
-                    // Extra files
-                    if (uploadedFiles.length > 1) window.updateLoader(70, 'กำลังอัปโหลดรูปภาพเพิ่มเติม...');
-                    for (let i = 0; i < uploadedFiles.length; i++) {
-                        if (i === activeFileIndex) continue;
-                        const fr = new FileReader();
-                        fr.onload = async (ev) => {
-                            await push(chatRef, { sender: 'user', text: '🖼 ภาพเพิ่มเติม', fileUrl: ev.target.result, fileName: uploadedFiles[i].name, timestamp: new Date().toISOString(), type: 'file' });
-                            if (pendingAnnotations[i]) {
-                                await push(chatRef, { sender: 'user', text: '', fileUrl: pendingAnnotations[i], fileName: `marked_${i}.png`, timestamp: new Date().toISOString(), type: 'file' });
-                            }
+                        // Save job data (core - must succeed)
+                        const jobData = {
+                            description: desc, budget,
+                            createdAt: now.toISOString(), expiresAt: exp.toISOString(), status: 'active', uniqueId: uid
                         };
-                        fr.readAsDataURL(uploadedFiles[i]);
-                    }
+                        await set(newJobRef, jobData);
 
-                    window.updateLoader(100, 'เสร็จสิ้นขั้นตอน!');
-                    setTimeout(() => {
-                        window.location.href = `index.html?job=${uid}`;
-                    }, 500);
+                        // Store images separately to avoid bandwidth explosion on onValue(jobs)
+                        // If permission denied, fallback to storing images inline in job
+                        try {
+                            await set(ref(db, `jobImages/${jobKey}`), { imageUrl: origUrl, annotatedUrl: annUrl });
+                        } catch (imgErr) {
+                            console.warn('jobImages write failed, storing images inline in job:', imgErr.message);
+                            await update(newJobRef, { imageUrl: origUrl, annotatedUrl: annUrl });
+                        }
+
+                        // Store index for quick uniqueId → jobKey lookup
+                        try {
+                            await set(ref(db, `jobIndex/${uid}`), jobKey);
+                        } catch (idxErr) {
+                            console.warn('jobIndex write failed (will use fallback search):', idxErr.message);
+                        }
+
+                        window.updateLoader(50, 'กำลังอัปโหลดรูปภาพหลัก...');
+                        const chatRef = ref(db, `chats/${uid}`);
+                        let origText = desc ? `📝 ${desc}` : '';
+                        await push(chatRef, { sender: 'user', text: origText, fileUrl: origUrl, fileName: 'original.jpg', timestamp: new Date().toISOString(), type: 'file' });
+
+                        if (pendingAnnotations[activeFileIndex]) {
+                            await push(chatRef, { sender: 'user', text: '', fileUrl: annUrl, fileName: 'marked_annotated.png', timestamp: new Date().toISOString(), type: 'file' });
+                        }
+
+                        // Extra files
+                        if (uploadedFiles.length > 1) window.updateLoader(70, 'กำลังอัปโหลดรูปภาพเพิ่มเติม...');
+                        for (let i = 0; i < uploadedFiles.length; i++) {
+                            if (i === activeFileIndex) continue;
+                            const fr = new FileReader();
+                            fr.onload = async (ev) => {
+                                await push(chatRef, { sender: 'user', text: '🖼 ภาพเพิ่มเติม', fileUrl: ev.target.result, fileName: uploadedFiles[i].name, timestamp: new Date().toISOString(), type: 'file' });
+                                if (pendingAnnotations[i]) {
+                                    await push(chatRef, { sender: 'user', text: '', fileUrl: pendingAnnotations[i], fileName: `marked_${i}.png`, timestamp: new Date().toISOString(), type: 'file' });
+                                }
+                            };
+                            fr.readAsDataURL(uploadedFiles[i]);
+                        }
+
+                        window.updateLoader(100, 'เสร็จสิ้นขั้นตอน!');
+                        setTimeout(() => {
+                            window.location.href = `index.html?job=${uid}`;
+                        }, 500);
+                    } catch (innerErr) {
+                        console.error('submitJob inner error:', innerErr);
+                        window.hideLoader();
+                        alert('เกิดข้อผิดพลาด กรุณาลองใหม่: ' + innerErr.message);
+                        btn.disabled = false; btnText.innerHTML = '🚀 โพสต์งานทันที';
+                    }
                 };
                 reader.readAsDataURL(uploadedFiles[activeFileIndex]);
             } catch (err) {
@@ -1950,7 +2018,7 @@
                     const entry = Object.entries(jobs).find(([, j]) => j.uniqueId === jid);
                     if (entry) {
                         targetJobKey = entry[0];
-                        await set(ref(db, `jobIndex/${jid}`), targetJobKey);
+                        try { await set(ref(db, `jobIndex/${jid}`), targetJobKey); } catch(e) { console.warn('jobIndex write skipped:', e.message); }
                     }
                 }
 
@@ -2089,7 +2157,7 @@
                 if (chatInitialized && newCount > lastMsgCount) {
                     const lastMsg = msgs[msgs.length - 1];
                     if (lastMsg.sender === 'admin') {
-                        try { notifSound.currentTime = 0; notifSound.play().catch(() => { }); } catch (e) { }
+                        playSoftNotification();
                     }
                 }
                 lastMsgCount = newCount;
@@ -2182,7 +2250,7 @@
                 const txt = document.getElementById('cIn').value.trim();
                 if (!txt || !currentJob) return;
                 if (currentJob.status === 'completed') {
-                    await update(ref(db, `jobs/${currentJob.uniqueId}`), { status: 'active' });
+                    try { await update(ref(db, `jobs/${currentJobKey}`), { status: 'active' }); } catch(e) { console.warn('status update failed:', e.message); }
                 }
                 await push(ref(db, `chats/${jid}`), { sender: 'user', text: txt, timestamp: new Date().toISOString() });
                 document.getElementById('cIn').value = '';
