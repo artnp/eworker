@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดหน้าภาพถ่ายขนาดนิ้วและพิมพ์ PDF - eWorker</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- jsPDF CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-light: #eff6ff;
+            --accent: #f59e0b;
+            --bg-main: #f8fafc;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.02);
+            --radius-md: 12px;
+            --radius-lg: 18px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Header Style */
+        header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            color: white;
+            padding: 40px 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 80%);
+            pointer-events: none;
+        }
+
+        .header-content {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+            z-index: 2;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 8px;
+            background: linear-gradient(to right, #ffffff, #93c5fd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            font-size: 1rem;
+            color: #93c5fd;
+            font-weight: 400;
+            opacity: 0.9;
+        }
+
+        /* Container & Grid Layout */
+        .container {
+            max-width: 1280px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 32px 24px;
+            flex-grow: 1;
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 32px;
+        }
+
+        /* Left Sidebar: Controls */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            border-color: #cbd5e1;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 18px;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 2px solid var(--primary-light);
+            padding-bottom: 10px;
+        }
+
+        .card-title svg {
+            width: 20px;
+            height: 20px;
+            color: var(--primary);
+        }
+
+        /* Selection Options (Checkbox Grid) */
+        .selection-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .custom-checkbox {
+            position: relative;
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            background: #fafafb;
+        }
+
+        .custom-checkbox:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .custom-checkbox input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+        .checkmark {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--text-muted);
+            border-radius: 6px;
+            margin-right: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            background: white;
+            flex-shrink: 0;
+        }
+
+        .checkmark svg {
+            width: 12px;
+            height: 12px;
+            fill: none;
+            stroke: white;
+            stroke-width: 3.5px;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        .custom-checkbox input:checked ~ .checkmark {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .custom-checkbox input:checked ~ .checkmark svg {
+            opacity: 1;
+        }
+
+        .custom-checkbox input:checked ~ .label-text {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .custom-checkbox.checked-card {
+            border-color: var(--primary);
+            background-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .label-text {
+            font-size: 0.95rem;
+            color: #334155;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .label-subtext {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 400;
+        }
+
+        /* Adjustment sliders */
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .slider-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .slider-value {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: #cbd5e1;
+            border-radius: 3px;
+            outline: none;
+            accent-color: var(--primary);
+        }
+
+        /* Toggle Options */
+        .toggle-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .toggle-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        /* Switch UI */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 46px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider-round {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1;
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .slider-round:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider-round {
+            background-color: var(--primary);
+        }
+
+        input:checked + .slider-round:before {
+            transform: translateX(22px);
+        }
+
+        /* Selector Button Group */
+        .btn-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 8px;
+            margin-top: 4px;
+        }
+
+        .btn-group-btn {
+            border: none;
+            background: transparent;
+            padding: 8px 4px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-group-btn.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Main Workspace */
+        .workspace {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Drop Zone */
+        .dropzone {
+            border: 2px dashed #94a3b8;
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 48px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 240px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .dropzone:hover, .dropzone.dragover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            box-shadow: 0 8px 30px rgba(37, 99, 235, 0.08);
+        }
+
+        .dropzone-icon {
+            width: 64px;
+            height: 64px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            transition: transform 0.3s ease;
+        }
+
+        .dropzone:hover .dropzone-icon {
+            transform: translateY(-5px) scale(1.05);
+        }
+
+        .dropzone h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #1e293b;
+        }
+
+        .dropzone p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .dropzone input {
+            display: none;
+        }
+
+        /* Fullscreen Drag Overlay */
+        .drag-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            border: 4px dashed var(--primary);
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        .drag-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .drag-overlay-icon {
+            width: 96px;
+            height: 96px;
+            background: rgba(37, 99, 235, 0.2);
+            color: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            border: 2px solid var(--primary);
+            animation: pulse-border 2s infinite;
+        }
+
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(37, 99, 235, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+        }
+
+        .drag-overlay h2 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+        }
+
+        .drag-overlay p {
+            font-size: 1rem;
+            opacity: 0.8;
+        }
+
+        /* Layout Preview Area */
+        .preview-area {
+            background: #e2e8f0;
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 450px;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.06);
+            overflow: auto;
+            position: relative;
+        }
+
+        /* Paper sheet mockup styling */
+        .paper-mockup {
+            background: white;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.05);
+            position: relative;
+            transform-origin: center center;
+            transition: all 0.3s ease;
+            max-width: 100%;
+        }
+
+        /* Canvas inside paper mockup */
+        .paper-canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        /* Floating Info and Control bar above/below sheet */
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .info-pill {
+            background: #e2e8f0;
+            color: #334155;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Actions Section */
+        .action-bar {
+            display: flex;
+            gap: 16px;
+            justify-content: flex-end;
+            margin-top: 16px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #334155;
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Footer Ad CSS */
+        footer {
+            background: #0f172a;
+            color: white;
+            padding: 24px;
+            text-align: center;
+            margin-top: auto;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .footer-ad-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .footer-ad-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, #06c755, #05a346);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.95rem;
+            box-shadow: 0 4px 15px rgba(6, 199, 85, 0.3);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .footer-ad-link:hover {
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 0 6px 20px rgba(6, 199, 85, 0.4);
+        }
+
+        .footer-ad-link img {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+        }
+
+        .footer-ad-text {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        .ad-price-badge {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-left: 4px;
+        }
+
+        /* Responsive styling */
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                grid-template-columns: 1fr;
+            }
+            header {
+                padding: 30px 16px;
+            }
+            header h1 {
+                font-size: 1.6rem;
+            }
+            .container {
+                padding: 16px;
+            }
+            .preview-area {
+                padding: 16px;
+                min-height: 350px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Fullpage Drag Overlay -->
+    <div class="drag-overlay" id="dragOverlay">
+        <div class="drag-overlay-icon">
+            <svg style="width: 48px; height: 48px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+            </svg>
+        </div>
+        <h2>วางรูปภาพตรงไหนก็ได้ในหน้านี้</h2>
+        <p>เพื่อเริ่มทำรูปภาพและส่งออก PDF ทันที</p>
+    </div>
+
+    <header>
+        <div class="header-content">
+            <h1>จัดหน้าภาพถ่ายด่วนตามขนาดนิ้ว</h1>
+            <p>ลากรูปภาพมาวางที่ใดก็ได้บนหน้าจอ ➔ ระบบตั้งค่าจำให้ในตัว ➔ ดาวน์โหลด PDF อัตโนมัติทันที</p>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        <!-- Left Section: Controls -->
+        <div class="sidebar">
+            
+            <!-- Photo Size Card -->
+            <div class="card" id="photoSizeCard">
+                <div class="card-title">
+                    <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 00-1.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"></path>
+                    </svg>
+                    <span>1. เลือกขนาดรูปถ่าย</span>
+                </div>
+                <div class="selection-group" id="photoSizeGroup">
+                    <label class="custom-checkbox" data-value="1inch">
+                        <input type="checkbox" name="photoSize" value="1inch">
+                        <span class="checkmark">
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </span>
+                        <span class="label-text">
+                            <span>รูปขนาด 1"</span>
+                            <span class="label-subtext">2.8 × 3.5 ซม.</span>
+                        </span>
+                    </label>
+
+                    <label class="custom-checkbox" data-value="1.5inch">
+                        <input type="checkbox" name="photoSize" value="1.5inch">
+                        <span class="checkmark">
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </span>
+                        <span class="label-text">
+                            <span>รูปขนาด 1.5"</span>
+                            <span class="label-subtext">3.5 × 4.2 ซม.</span>
+                        </span>
+                    </label>
+
+                    <label class="custom-checkbox" data-value="2inch">
+                        <input type="checkbox" name="photoSize" value="2inch">
+                        <span class="checkmark">
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </span>
+                        <span class="label-text">
+                            <span>รูปขนาด 2"</span>
+                            <span class="label-subtext">4.2 × 5.5 ซม.</span>
+                        </span>
+                    </label>
+
+                    <label class="custom-checkbox" data-value="2.5inch">
+                        <input type="checkbox" name="photoSize" value="2.5inch">
+                        <span class="checkmark">
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </span>
+                        <span class="label-text">
+                            <span>รูปขนาด 2.5"</span>
+                            <span class="label-subtext">2 × 2.5 นิ้ว (5.1 × 6.4 ซม.)</span>
+                        </span>
+                    </label>
+
+                    <label class="custom-checkbox" data-value="3inch">
+                        <input type="checkbox" name="photoSize" value="3inch">
+                        <span class="checkmark">
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </span>
+                        <span class="label-text">
+                            <span>รูปขนาด 3"</span>
+                            <span class="label-subtext">6.1 × 7.8 นิ้ว (6.1 × 7.8 ซม.)</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Paper Size Card -->
+            <div class="card" id="paperSizeCard">
+                <div class="card-title">
+                    <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path>
+                    </svg>
+                    <span>2. เลือกขนาดกระดาษ</span>
+                </div>
+                <div class="selection-group" id="paperSizeGroup">
+                    <label class="custom-checkbox" data-value="A4">
+                        <input type="checkbox" name="paperSize" value="A4">
+                        <span class="checkmark">
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </span>
+                        <span class="label-text">
+                            <span>A4 (ยอดนิยม)</span>
+                            <span class="label-subtext">210 × 297 มม.</span>
+                        </span>
+                    </label>
+                    
+                    <label class="custom-checkbox" data-value="A3">
+                        <input type="checkbox" name="paperSize" value="A3">
+                        <span class="checkmark">
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </span>
+                        <span class="label-text">
+                            <span>A3</span>
+                            <span class="label-subtext">297 × 420 มม.</span>
+                        </span>
+                    </label>
+
+                    <label class="custom-checkbox" data-value="A5">
+                        <input type="checkbox" name="paperSize" value="A5">
+                        <span class="checkmark">
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </span>
+                        <span class="label-text">
+                            <span>A5</span>
+                            <span class="label-subtext">148 × 210 มม.</span>
+                        </span>
+                    </label>
+
+                    <label class="custom-checkbox" data-value="A6">
+                        <input type="checkbox" name="paperSize" value="A6">
+                        <span class="checkmark">
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </span>
+                        <span class="label-text">
+                            <span>A6</span>
+                            <span class="label-subtext">105 × 148 มม.</span>
+                        </span>
+                    </label>
+
+                    <label class="custom-checkbox" data-value="A2">
+                        <input type="checkbox" name="paperSize" value="A2">
+                        <span class="checkmark">
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </span>
+                        <span class="label-text">
+                            <span>A2</span>
+                            <span class="label-subtext">420 × 594 มม.</span>
+                        </span>
+                    </label>
+
+                    <label class="custom-checkbox" data-value="A1">
+                        <input type="checkbox" name="paperSize" value="A1">
+                        <span class="checkmark">
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </span>
+                        <span class="label-text">
+                            <span>A1</span>
+                            <span class="label-subtext">594 × 841 มม.</span>
+                        </span>
+                    </label>
+
+                    <label class="custom-checkbox" data-value="A0">
+                        <input type="checkbox" name="paperSize" value="A0">
+                        <span class="checkmark">
+                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </span>
+                        <span class="label-text">
+                            <span>A0</span>
+                            <span class="label-subtext">841 × 1189 มม.</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Page Layout Settings Card -->
+            <div class="card">
+                <div class="card-title">
+                    <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.43l-1.003.828c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.43l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.991l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.28z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <span>3. ตั้งค่าการจัดวาง</span>
+                </div>
+                <div class="slider-group">
+                    <div class="slider-item">
+                        <div class="slider-header">
+                            <span>ขอบกระดาษ (Margin)</span>
+                            <span class="slider-value" id="marginVal">10 mm</span>
+                        </div>
+                        <input type="range" id="marginInput" min="0" max="30" value="10">
+                    </div>
+                    
+                    <div class="slider-item">
+                        <div class="slider-header">
+                            <span>ระยะห่างรูป (Gap)</span>
+                            <span class="slider-value" id="gapVal">2 mm</span>
+                        </div>
+                        <input type="range" id="gapInput" min="0" max="15" value="2">
+                    </div>
+
+                    <div class="toggle-options" style="margin-top: 8px;">
+                        <div class="toggle-item">
+                            <span>เส้นช่วยตัด (Crop Marks)</span>
+                            <label class="switch">
+                                <input type="checkbox" id="cropMarksToggle" checked>
+                                <span class="slider-round"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="slider-item">
+                        <span class="slider-header">การหมุนแนวหน้ากระดาษ</span>
+                        <div class="btn-group" id="paperOrientGroup">
+                            <button class="btn-group-btn" data-orient="auto">แนวตั้ง (P)</button>
+                            <button class="btn-group-btn" data-orient="landscape">แนวนอน (L)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Right Section: Workspace & Preview -->
+        <div class="workspace">
+            
+            <!-- Drag & Drop Upload Zone -->
+            <div class="dropzone" id="dropzone">
+                <div class="dropzone-icon">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+                    </svg>
+                </div>
+                <h3>ลากรูปภาพมาวางตรงไหนก็ได้ในหน้าเว็บ หรือคลิกเพื่อเลือกไฟล์</h3>
+                <p>รองรับไฟล์รูปภาพ PNG, JPG, JPEG, WEBP</p>
+                <input type="file" id="fileInput" accept="image/*">
+            </div>
+
+            <!-- Preview Card -->
+            <div class="card" style="display: none;" id="previewCard">
+                <div class="preview-header">
+                    <h3 style="font-size: 1.1rem; font-weight: 700; color: #1e293b;">ตัวอย่างหน้ากระดาษก่อนพิมพ์</h3>
+                    <div>
+                        <span class="info-pill" id="gridInfoPill">
+                            <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"></path>
+                            </svg>
+                            <span id="fitCountText">จำนวนรูปภาพที่วางได้: 0 รูป</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Preview Board -->
+                <div class="preview-area">
+                    <div class="paper-mockup" id="paperMockup">
+                        <canvas class="paper-canvas" id="previewCanvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="action-bar">
+                    <button class="btn btn-primary" id="downloadPdfBtn" style="width: 100%;">
+                        <svg style="width:18px;height:18px;" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"></path>
+                        </svg>
+                        <span>ดาวน์โหลด PDF (จะดาวน์โหลดให้อัตโนมัติเมื่อค่าเปลี่ยน)</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Footer Dynamic Ad Banner -->
+    <footer>
+        <div class="footer-ad-container">
+            <span class="footer-ad-text">งานด่วน? สั่งแก้ไขเอกสาร/ข้อความ ดัดแปลงรูปภาพด่วนกับเรา</span>
+            <a href="https://artnp.github.io/eworker" target="_blank" class="footer-ad-link" id="adLink">
+                <img src="https://cdn-icons-png.flaticon.com/128/8061/8061995.png" alt="Edit Service">
+                <span>รับแก้ไขภาพ/เอกสารด่วน <span class="ad-price-badge" id="adPrice">...</span></span>
+            </a>
+        </div>
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+        const { jsPDF } = window.jspdf;
+
+        // Constants & Registries
+        const PHOTO_SIZES = {
+            "1inch": { w: 28, h: 35, label: "1 นิ้ว" },
+            "1.5inch": { w: 35, h: 42, label: "1.5 นิ้ว" },
+            "2inch": { w: 42, h: 55, label: "2 นิ้ว" },
+            "2.5inch": { w: 50.8, h: 63.5, label: "2.5 นิ้ว" }, // 2x2.5 inches in mm
+            "3inch": { w: 61, h: 78, label: "3 นิ้ว" } // 6.1x7.8 cm in mm (Thailand standard 3 นิ้ว)
+        };
+
+        const PAPER_SIZES = {
+            "A0": { w: 841, h: 1189 },
+            "A1": { w: 594, h: 841 },
+            "A2": { w: 420, h: 594 },
+            "A3": { w: 297, h: 420 },
+            "A4": { w: 210, h: 297 },
+            "A5": { w: 148, h: 210 },
+            "A6": { w: 105, h: 148 }
+        };
+
+        // DOM elements
+        const dragOverlay = document.getElementById('dragOverlay');
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const previewCard = document.getElementById('previewCard');
+        const paperMockup = document.getElementById('paperMockup');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const fitCountText = document.getElementById('fitCountText');
+        const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+        
+        // Input Control DOMs
+        const marginInput = document.getElementById('marginInput');
+        const marginVal = document.getElementById('marginVal');
+        const gapInput = document.getElementById('gapInput');
+        const gapVal = document.getElementById('gapVal');
+        const cropMarksToggle = document.getElementById('cropMarksToggle');
+
+        // State variables (Restore from localStorage with default fallbacks)
+        let uploadedImage = null;
+        let selectedPhotoSize = localStorage.getItem('eworker_photo_size') || '1.5inch';
+        let selectedPaperSize = localStorage.getItem('eworker_paper_size') || 'A4';
+        
+        // Layout Config States (Restore from localStorage)
+        let margin = parseInt(localStorage.getItem('eworker_margin') || '10');
+        let gap = parseInt(localStorage.getItem('eworker_gap') || '2');
+        let showCropMarks = localStorage.getItem('eworker_crop_marks') !== 'false'; // default true
+        let paperOrientation = localStorage.getItem('eworker_paper_orient') || 'auto'; // auto, landscape
+
+        // Update UI inputs from loaded states
+        marginInput.value = margin;
+        marginVal.textContent = `${margin} mm`;
+        gapInput.value = gap;
+        gapVal.textContent = `${gap} mm`;
+        cropMarksToggle.checked = showCropMarks;
+
+        // Load dynamic price from work.json
+        async function fetchAdPrice() {
+            if (window.location.protocol === 'file:') {
+                document.getElementById('adPrice').textContent = `ด่วน 24 ชม.`;
+                return;
+            }
+            try {
+                const response = await fetch('../work.json');
+                const workList = await response.json();
+                const item = workList.find(w => w.slug === "6");
+                if (item && item.price !== undefined) {
+                    const priceText = item.price === "0" ? "ฟรี" : `${item.price} บาท`;
+                    document.getElementById('adPrice').textContent = `เริ่มต้น ${priceText}`;
+                } else {
+                    document.getElementById('adPrice').textContent = `ราคาเบาๆ`;
+                }
+            } catch (e) {
+                document.getElementById('adPrice').textContent = `ด่วน 24 ชม.`;
+            }
+        }
+        fetchAdPrice();
+
+        // Checkbox Enforcers (Act like Radio but keep premium checkbox design)
+        function initCheckboxes(groupName, storageKey, currentVal, callback) {
+            const container = document.getElementById(`${groupName}Group`);
+            const items = container.querySelectorAll('.custom-checkbox');
+            
+            // Set state function
+            const setChecked = (val) => {
+                items.forEach(item => {
+                    const input = item.querySelector('input');
+                    if (input.value === val) {
+                        input.checked = true;
+                        item.classList.add('checked-card');
+                    } else {
+                        input.checked = false;
+                        item.classList.remove('checked-card');
+                    }
+                });
+                localStorage.setItem(storageKey, val);
+                callback(val);
+            };
+
+            // Bind click events
+            items.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const val = item.getAttribute('data-value');
+                    setChecked(val);
+                });
+            });
+
+            // Initial setup
+            setChecked(currentVal);
+        }
+
+        // Initialize Checkbox groups
+        initCheckboxes('photoSize', 'eworker_photo_size', selectedPhotoSize, (val) => {
+            selectedPhotoSize = val;
+            updateLayout(true);
+        });
+
+        initCheckboxes('paperSize', 'eworker_paper_size', selectedPaperSize, (val) => {
+            selectedPaperSize = val;
+            updateLayout(true);
+        });
+
+        // Initialize button groups (Paper orientation only)
+        function initButtonGroup(groupId, storageKey, currentVal, callback) {
+            const group = document.getElementById(groupId);
+            const btns = group.querySelectorAll('button');
+            
+            const setActive = (val) => {
+                btns.forEach(btn => {
+                    if (btn.dataset.orient === val) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+                localStorage.setItem(storageKey, val);
+                callback(val);
+            };
+
+            btns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    setActive(btn.dataset.orient);
+                });
+            });
+
+            // Initial state set
+            setActive(currentVal);
+        }
+
+        initButtonGroup('paperOrientGroup', 'eworker_paper_orient', paperOrientation, (orient) => {
+            paperOrientation = orient;
+            updateLayout(true);
+        });
+
+        // Sliders & Toggles events
+        marginInput.addEventListener('input', (e) => {
+            margin = parseInt(e.target.value);
+            marginVal.textContent = `${margin} mm`;
+            updateLayout(false); // Live preview update only
+        });
+
+        marginInput.addEventListener('change', (e) => {
+            margin = parseInt(e.target.value);
+            localStorage.setItem('eworker_margin', margin.toString());
+            updateLayout(true); // Save & Auto-download on release
+        });
+
+        gapInput.addEventListener('input', (e) => {
+            gap = parseInt(e.target.value);
+            gapVal.textContent = `${gap} mm`;
+            updateLayout(false); // Live preview update only
+        });
+
+        gapInput.addEventListener('change', (e) => {
+            gap = parseInt(e.target.value);
+            localStorage.setItem('eworker_gap', gap.toString());
+            updateLayout(true); // Save & Auto-download on release
+        });
+
+        cropMarksToggle.addEventListener('change', (e) => {
+            showCropMarks = e.target.checked;
+            localStorage.setItem('eworker_crop_marks', showCropMarks.toString());
+            updateLayout(true); // Save & Auto-download
+        });
+
+        // File upload / Click zone trigger
+        dropzone.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            handleFile(file);
+        });
+
+        // Page-wide Drag & Drop events
+        let dragCounter = 0;
+
+        window.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            dragCounter++;
+            dragOverlay.classList.add('active');
+        });
+
+        window.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        window.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dragCounter--;
+            if (dragCounter === 0) {
+                dragOverlay.classList.remove('active');
+            }
+        });
+
+        window.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragCounter = 0;
+            dragOverlay.classList.remove('active');
+            
+            const file = e.dataTransfer.files[0];
+            handleFile(file);
+        });
+
+        function handleFile(file) {
+            if (!file || !file.type.startsWith('image/')) {
+                alert('กรุณาเลือกหรือวางไฟล์รูปภาพที่ถูกต้อง');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    uploadedImage = img;
+                    dropzone.style.display = 'none';
+                    previewCard.style.display = 'block';
+                    
+                    // Trigger process completed & Auto-download
+                    updateLayout(true);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Layout Calculation & Render Engine
+        function updateLayout(triggerAutoDownload = false) {
+            if (!uploadedImage) return;
+
+            // 1. Get raw paper size (mm)
+            const rawPaper = PAPER_SIZES[selectedPaperSize];
+            let paperW = rawPaper.w;
+            let paperH = rawPaper.h;
+
+            // Adjust paper orientation
+            if (paperOrientation === 'landscape') {
+                paperW = Math.max(rawPaper.w, rawPaper.h);
+                paperH = Math.min(rawPaper.w, rawPaper.h);
+            } else {
+                // Portrait (default)
+                paperW = Math.min(rawPaper.w, rawPaper.h);
+                paperH = Math.max(rawPaper.w, rawPaper.h);
+            }
+
+            // 2. Get photo dimensions (mm)
+            const photoSpec = PHOTO_SIZES[selectedPhotoSize];
+            let photoW = photoSpec.w;
+            let photoH = photoSpec.h;
+
+            // Auto-Orientation Calculation (always optimize layout alignment)
+            const fitNormal = calculateGridFit(paperW, paperH, photoW, photoH, margin, gap);
+            const fitRotated = calculateGridFit(paperW, paperH, photoH, photoW, margin, gap);
+            let optimalOrient = fitRotated.count > fitNormal.count ? 'landscape' : 'portrait';
+
+            if (optimalOrient === 'landscape') {
+                photoW = Math.max(photoSpec.w, photoSpec.h);
+                photoH = Math.min(photoSpec.w, photoSpec.h);
+            } else {
+                photoW = Math.min(photoSpec.w, photoSpec.h);
+                photoH = Math.max(photoSpec.w, photoSpec.h);
+            }
+
+            // 3. Perform grid fitting calculations
+            const grid = calculateGridFit(paperW, paperH, photoW, photoH, margin, gap);
+
+            // 4. Render layout to screen preview canvas
+            renderPreview(paperW, paperH, photoW, photoH, grid);
+
+            // 5. Update fit count text
+            fitCountText.textContent = `จำนวนรูปภาพที่วางได้: ${grid.count} รูป (${grid.cols} แถวแนวตั้ง × ${grid.rows} แถวแนวนอน)`;
+
+            // 6. Trigger auto-download if requested (Process Completed)
+            if (triggerAutoDownload) {
+                generatePDF(paperW, paperH, photoW, photoH, grid, true);
+            }
+        }
+
+        // Fit calculation helper
+        function calculateGridFit(paperW, paperH, photoW, photoH, margin, gap) {
+            const availableW = paperW - (2 * margin);
+            const availableH = paperH - (2 * margin);
+
+            const cols = Math.max(0, Math.floor((availableW + gap) / (photoW + gap)));
+            const rows = Math.max(0, Math.floor((availableH + gap) / (photoH + gap)));
+            const count = cols * rows;
+
+            // Calculate starting offsets to center-align the grid inside paper
+            const gridW = (cols * photoW) + ((cols - 1) * gap);
+            const gridH = (rows * photoH) + ((rows - 1) * gap);
+            const startX = margin + (availableW - gridW) / 2;
+            const startY = margin + (availableH - gridH) / 2;
+
+            return { cols, rows, count, startX, startY, gridW, gridH };
+        }
+
+        // Render Canvas Preview
+        function renderPreview(paperW, paperH, photoW, photoH, grid) {
+            const scale = 2; 
+            const displayWidth = Math.min(window.innerWidth - 64, 550);
+            const displayHeight = (paperH / paperW) * displayWidth;
+
+            paperMockup.style.width = `${displayWidth}px`;
+            paperMockup.style.height = `${displayHeight}px`;
+
+            previewCanvas.width = displayWidth * scale;
+            previewCanvas.height = displayHeight * scale;
+            
+            const ctx = previewCanvas.getContext('2d');
+            ctx.scale(scale, scale);
+
+            // Clear & draw background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, displayWidth, displayHeight);
+
+            // Convert MM coordinate values to display pixels
+            const mmToPx = displayWidth / paperW;
+            const pW_px = photoW * mmToPx;
+            const pH_px = photoH * mmToPx;
+            const gap_px = gap * mmToPx;
+            const margin_px = margin * mmToPx;
+
+            // Draw printable area boundary (subtle dotted outline)
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+            ctx.strokeRect(margin_px, margin_px, (paperW - 2 * margin) * mmToPx, (paperH - 2 * margin) * mmToPx);
+            ctx.setLineDash([]); // Reset line dash
+
+            // Setup image center cropping parameters to fit selected size aspect ratio
+            const targetRatio = photoW / photoH;
+            const sourceRatio = uploadedImage.width / uploadedImage.height;
+            let sx, sy, sw, sh;
+
+            if (sourceRatio > targetRatio) {
+                // Crop sides (landscape photo for portrait target)
+                sh = uploadedImage.height;
+                sw = sh * targetRatio;
+                sx = (uploadedImage.width - sw) / 2;
+                sy = 0;
+            } else {
+                // Crop top & bottom (portrait photo for taller target)
+                sw = uploadedImage.width;
+                sh = sw / targetRatio;
+                sx = 0;
+                sy = (uploadedImage.height - sh) / 2;
+            }
+
+            // Draw photo grids
+            if (grid.count > 0) {
+                for (let r = 0; r < grid.rows; r++) {
+                    for (let c = 0; c < grid.cols; c++) {
+                        const x = (grid.startX + c * (photoW + gap)) * mmToPx;
+                        const y = (grid.startY + r * (photoH + gap)) * mmToPx;
+
+                        // Draw cropped photo
+                        ctx.drawImage(uploadedImage, sx, sy, sw, sh, x, y, pW_px, pH_px);
+
+                        // Draw thin border around photo
+                        ctx.strokeStyle = '#e2e8f0';
+                        ctx.lineWidth = 0.5;
+                        ctx.strokeRect(x, y, pW_px, pH_px);
+
+                        // Draw crop marks (cut lines)
+                        if (showCropMarks) {
+                            ctx.strokeStyle = '#ef4444'; // Red crop marks
+                            ctx.lineWidth = 0.75;
+                            const markLength = 4 * mmToPx;
+
+                            // Top-Left crop marks
+                            if (c === 0) {
+                                ctx.beginPath(); ctx.moveTo(x - markLength, y); ctx.lineTo(x, y); ctx.stroke();
+                            }
+                            if (r === 0) {
+                                ctx.beginPath(); ctx.moveTo(x, y - markLength); ctx.lineTo(x, y); ctx.stroke();
+                            }
+
+                            // Top-Right crop marks
+                            if (c === grid.cols - 1) {
+                                ctx.beginPath(); ctx.moveTo(x + pW_px, y); ctx.lineTo(x + pW_px + markLength, y); ctx.stroke();
+                            }
+                            if (r === 0) {
+                                ctx.beginPath(); ctx.moveTo(x + pW_px, y - markLength); ctx.lineTo(x + pW_px, y); ctx.stroke();
+                            }
+
+                            // Bottom-Left crop marks
+                            if (c === 0) {
+                                ctx.beginPath(); ctx.moveTo(x - markLength, y + pH_px); ctx.lineTo(x, y + pH_px); ctx.stroke();
+                            }
+                            if (r === grid.rows - 1) {
+                                ctx.beginPath(); ctx.moveTo(x, y + pH_px); ctx.lineTo(x, y + pH_px + markLength); ctx.stroke();
+                            }
+
+                            // Bottom-Right crop marks
+                            if (c === grid.cols - 1) {
+                                ctx.beginPath(); ctx.moveTo(x + pW_px, y + pH_px); ctx.lineTo(x + pW_px + markLength, y + pH_px); ctx.stroke();
+                            }
+                            if (r === grid.rows - 1) {
+                                ctx.beginPath(); ctx.moveTo(x + pW_px, y + pH_px); ctx.lineTo(x + pW_px, y + pH_px + markLength); ctx.stroke();
+                            }
+
+                            // Inner crosshairs/marks for cutting lines
+                            if (c < grid.cols - 1) {
+                                ctx.beginPath();
+                                ctx.moveTo(x + pW_px, y - markLength/2);
+                                ctx.lineTo(x + pW_px, y + markLength/2);
+                                ctx.stroke();
+
+                                ctx.beginPath();
+                                ctx.moveTo(x + pW_px, y + pH_px - markLength/2);
+                                ctx.lineTo(x + pW_px, y + pH_px + markLength/2);
+                                ctx.stroke();
+                            }
+
+                            if (r < grid.rows - 1) {
+                                ctx.beginPath();
+                                ctx.moveTo(x - markLength/2, y + pH_px);
+                                ctx.lineTo(x + markLength/2, y + pH_px);
+                                ctx.stroke();
+
+                                ctx.beginPath();
+                                ctx.moveTo(x + pW_px - markLength/2, y + pH_px);
+                                ctx.lineTo(x + pW_px + markLength/2, y + pH_px);
+                                ctx.stroke();
+                            }
+                        }
+                    }
+                }
+            } else {
+                ctx.fillStyle = '#ef4444';
+                ctx.font = '14px Sarabun';
+                ctx.textAlign = 'center';
+                ctx.fillText('ภาพใหญ่เกินกว่าที่จะวางบนกระดาษไซส์นี้ได้', displayWidth / 2, displayHeight / 2);
+            }
+        }
+
+        // Generate High-DPI PDF & Trigger Download
+        function generatePDF(paperW, paperH, photoW, photoH, grid, isAuto = false) {
+            if (!uploadedImage || grid.count === 0) return;
+
+            const mmToPt = 72 / 25.4;
+            const pW_pt = photoW * mmToPt;
+            const pH_pt = photoH * mmToPt;
+            const gap_pt = gap * mmToPt;
+            
+            const orientation = paperW > paperH ? 'l' : 'p';
+            const pdf = new jsPDF({
+                orientation: orientation,
+                unit: 'pt',
+                format: [paperW * mmToPt, paperH * mmToPt]
+            });
+
+            // Crop settings
+            const targetRatio = photoW / photoH;
+            const sourceRatio = uploadedImage.width / uploadedImage.height;
+            let sx, sy, sw, sh;
+
+            if (sourceRatio > targetRatio) {
+                sh = uploadedImage.height;
+                sw = sh * targetRatio;
+                sx = (uploadedImage.width - sw) / 2;
+                sy = 0;
+            } else {
+                sw = uploadedImage.width;
+                sh = sw / targetRatio;
+                sx = 0;
+                sy = (uploadedImage.height - sh) / 2;
+            }
+
+            // Create temporary canvas to hold cropped photo at high quality
+            const cropCanvas = document.createElement('canvas');
+            cropCanvas.width = sw;
+            cropCanvas.height = sh;
+            const cropCtx = cropCanvas.getContext('2d');
+            cropCtx.drawImage(uploadedImage, sx, sy, sw, sh, 0, 0, sw, sh);
+            const highResImgData = cropCanvas.toDataURL('image/jpeg', 0.95);
+
+            // Draw grid on PDF
+            for (let r = 0; r < grid.rows; r++) {
+                for (let c = 0; c < grid.cols; c++) {
+                    const x_pt = (grid.startX + c * (photoW + gap)) * mmToPt;
+                    const y_pt = (grid.startY + r * (photoH + gap)) * mmToPt;
+
+                    // Place image
+                    pdf.addImage(highResImgData, 'JPEG', x_pt, y_pt, pW_pt, pH_pt);
+
+                    // Draw crop marks in PDF
+                    if (showCropMarks) {
+                        pdf.setDrawColor(239, 68, 68); // Red color
+                        pdf.setLineWidth(0.5);
+                        const markLen_pt = 4 * mmToPt;
+
+                        // Top-Left corner
+                        if (c === 0) pdf.line(x_pt - markLen_pt, y_pt, x_pt, y_pt);
+                        if (r === 0) pdf.line(x_pt, y_pt - markLen_pt, x_pt, y_pt);
+
+                        // Top-Right corner
+                        if (c === grid.cols - 1) pdf.line(x_pt + pW_pt, y_pt, x_pt + pW_pt + markLen_pt, y_pt);
+                        if (r === 0) pdf.line(x_pt + pW_pt, y_pt - markLen_pt, x_pt + pW_pt, y_pt);
+
+                        // Bottom-Left corner
+                        if (c === 0) pdf.line(x_pt - markLen_pt, y_pt + pH_pt, x_pt, y_pt + pH_pt);
+                        if (r === grid.rows - 1) pdf.line(x_pt, y_pt + pH_pt, x_pt, y_pt + pH_pt + markLen_pt);
+
+                        // Bottom-Right corner
+                        if (c === grid.cols - 1) pdf.line(x_pt + pW_pt, y_pt + pH_pt, x_pt + pW_pt + markLen_pt, y_pt + pH_pt);
+                        if (r === grid.rows - 1) pdf.line(x_pt + pW_pt, y_pt + pH_pt, x_pt + pW_pt, y_pt + pH_pt + markLen_pt);
+
+                        // Inner ticks
+                        if (c < grid.cols - 1) {
+                            pdf.line(x_pt + pW_pt, y_pt - markLen_pt/2, x_pt + pW_pt, y_pt + markLen_pt/2);
+                            pdf.line(x_pt + pW_pt, y_pt + pH_pt - markLen_pt/2, x_pt + pW_pt, y_pt + pH_pt + markLen_pt/2);
+                        }
+                        if (r < grid.rows - 1) {
+                            pdf.line(x_pt - markLen_pt/2, y_pt + pH_pt, x_pt + markLen_pt/2, y_pt + pH_pt);
+                            pdf.line(x_pt + pW_pt - markLen_pt/2, y_pt + pH_pt, x_pt + pW_pt + markLen_pt/2, y_pt + pH_pt);
+                        }
+                    }
+                }
+            }
+
+            // Save / download the file
+            const sizeLabel = PHOTO_SIZES[selectedPhotoSize].label;
+            const paperLabel = selectedPaperSize;
+            const suffix = isAuto ? '_AutoExport' : '';
+            pdf.save(`eWorker_${sizeLabel}_on_${paperLabel}${suffix}.pdf`);
+        }
+
+        // Trigger PDF generation manual / programmatic wrapper
+        function triggerDownload() {
+            const rawPaper = PAPER_SIZES[selectedPaperSize];
+            let paperW = paperOrientation === 'landscape' ? Math.max(rawPaper.w, rawPaper.h) : Math.min(rawPaper.w, rawPaper.h);
+            let paperH = paperOrientation === 'landscape' ? Math.min(rawPaper.w, rawPaper.h) : Math.max(rawPaper.w, rawPaper.h);
+
+            const photoSpec = PHOTO_SIZES[selectedPhotoSize];
+            let photoW = photoSpec.w;
+            let photoH = photoSpec.h;
+
+            const fitNormal = calculateGridFit(paperW, paperH, photoW, photoH, margin, gap);
+            const fitRotated = calculateGridFit(paperW, paperH, photoH, photoW, margin, gap);
+            let optimalOrient = fitRotated.count > fitNormal.count ? 'landscape' : 'portrait';
+
+            if (optimalOrient === 'landscape') {
+                photoW = Math.max(photoSpec.w, photoSpec.h);
+                photoH = Math.min(photoSpec.w, photoSpec.h);
+            } else {
+                photoW = Math.min(photoSpec.w, photoSpec.h);
+                photoH = Math.max(photoSpec.w, photoSpec.h);
+            }
+
+            const grid = calculateGridFit(paperW, paperH, photoW, photoH, margin, gap);
+            generatePDF(paperW, paperH, photoW, photoH, grid, false);
+        }
+
+        // Bind download button trigger
+        downloadPdfBtn.addEventListener('click', triggerDownload);
+
+    </script>
+</body>
+
+</html>
