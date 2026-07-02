@@ -197,9 +197,11 @@ def crop_watermark(source_path):
         return img_rgb.crop((0, 0, orig_w, orig_h - crop_bottom))
 
 def process_clean_only(full_path=None):
-    print("[CleanOnly] เริ่มต้น...")
+    is_bot = '--bot' in sys.argv
+    target_name = 'complete_bot.png' if is_bot else 'complete.png'
+    print(f"[CleanOnly] เริ่มต้น... (target: {target_name})")
     source = full_path if full_path else os.path.join(os.environ['USERPROFILE'], 'Downloads', 'complete.png')
-    target = os.path.join(os.environ['USERPROFILE'], 'Desktop', 'complete.png')
+    target = os.path.join(os.environ['USERPROFILE'], 'Desktop', target_name)
     img = crop_watermark(source)
     if img:
         img.save(target, format='PNG')
@@ -232,9 +234,11 @@ def _upload_with_timeout(file_path, timeout_sec=30):
     return result[0]
 
 def process_donate(full_path=None):
-    print("[Donate] เริ่มต้น...")
+    is_bot = '--bot' in sys.argv
+    target_name = 'complete_bot.png' if is_bot else 'complete.png'
+    print(f"[Donate] เริ่มต้น... (target: {target_name})")
     source = full_path if full_path else os.path.join(os.environ['USERPROFILE'], 'Downloads', 'complete.png')
-    target = os.path.join(os.environ['USERPROFILE'], 'Desktop', 'complete.png')
+    target = os.path.join(os.environ['USERPROFILE'], 'Desktop', target_name)
     
     original_img = crop_watermark(source)
     if not original_img: return
@@ -402,7 +406,7 @@ if __name__ == "__main__":
     
     if mode_flag == "--clean":
         process_clean_only(target_path)
-    elif mode_flag == "--donate":
+    elif mode_flag in ["--donate", "--donate-no-paste"]:
         process_donate(target_path)
     else:
         process_donate()
