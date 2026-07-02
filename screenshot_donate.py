@@ -169,18 +169,29 @@ def auto_paste():
 def get_white_band_height(img):
     w, h = img.size
     img_rgb = img.convert('RGB')
-    for y in range(h - 1, h - int(h * 0.4), -1):
+    
+    # เริ่มสแกนจากด้านล่างขึ้นไป หาจุดที่ไม่ใช่สีขาว
+    for y in range(h - 1, max(0, h - int(h * 0.5)), -1):  # สแกนมากขึ้น (50% แทน 40%)
         white_count = 0
-        samples = 20
+        samples = 30  # เพิ่มจำนวน sample points
         for i in range(samples):
-            x = int((i / samples) * (w * 0.75))
+            x = int((i / samples) * (w * 0.9))  # ครอบคลุมพื้นที่มากขึ้น (90% แทน 75%)
             r, g, b = img_rgb.getpixel((x, y))
-            if r > 190 and g > 190 and b > 190: white_count += 1
-        if white_count < samples * 0.8:
+            # ใช้เกณฑ์เข้มงวดขึ้นสำหรับสีขาว (220 แทน 190)
+            if r > 220 and g > 220 and b > 220: 
+                white_count += 1
+        
+        # ถ้าไม่ใช่พื้นที่สีขาวส่วนใหญ่ (70% แทน 80%)
+        if white_count < samples * 0.7:
             detected = h - y
-            if detected >= 20: return detected
-            else: return 0
-    return int(h * 0.065)
+            # เพิ่มการตัดขั้นต่ำ (40px แทน 20px)
+            if detected >= 40: 
+                return detected + 20  # เพิ่ม buffer 20px
+            else: 
+                return 60  # minimum cut 60px
+    
+    # กรณี fallback ตัดมากขึ้น (10% แทน 6.5%)
+    return int(h * 0.1)
 
 def crop_watermark(source_path):
     if not os.path.exists(source_path):
@@ -190,10 +201,16 @@ def crop_watermark(source_path):
         img_rgb = img.convert('RGB')
         orig_w, orig_h = img_rgb.size
         white_band_h = get_white_band_height(img_rgb)
+        
+        # *** แก้: ลบพื้นที่ขาวจริงๆ ไม่เพิ่ม ***
         if white_band_h > 0:
-            crop_bottom = max(160, white_band_h) + 2
+            # ตัดตามที่ detect ได้จริงๆ + เล็กน้อย buffer
+            crop_bottom = white_band_h + 10
         else:
-            crop_bottom = max(60, int(orig_h * 0.065))
+            # ถ้า detect ไม่เจอ ก็ตัดน้อยลง (ไม่ใช่มากกว่า)
+            crop_bottom = int(orig_h * 0.08)  # ประมาณ 8% เท่านั้น
+        
+        print(f"[Crop] white_band_h={white_band_h}px, crop_bottom={crop_bottom}px, original_h={orig_h}px")
         return img_rgb.crop((0, 0, orig_w, orig_h - crop_bottom))
 
 def process_clean_only(full_path=None):
@@ -366,39 +383,191 @@ def process_donate(full_path=None):
     #     rgba_final.paste(overlay_img, (pos_x, pos_y), overlay_img)
     #     final_export = rgba_final.convert('RGB')
     # else:
-    # === โหมดไม่อัพโหลด: ลบลายน้ำ + กรอบเขียว + ไม่มี QR ===
-    print("[Donate] → bypass mode: ลบลายน้ำ + กรอบเขียว (ไม่ upload / ไม่ QR)")
-    final_export = original_img.copy().convert('RGB')
-    
-    # วาดกรอบสี LIME หนา 6px ล้อมรอบภาพทั้งหมด
+    # === โหมดไม่อัพโหลด: ลบลายน้ำ + กรอบเขียว + แบนเนอร์หัวภาพ ===
+    print("[Donate] → bypass mode: ลบลายน้ำ + กรอบเขียว + แบนเนอร์หัว (ไม่ upload / ไม่ QR)")
+    base_img = original_img.copy().convert('RGB')
+    fw, fh = base_img.size
+
+    # --- Scale factor ตามความกว้างภาพ ---
+    scale = max(0.8, min(fw / 400.0, 3.0))
+
+    # --- โหลด Font ---
+    font_large = None
+    font_small = None
+    font_bold = None
+    font_paths = [
+        "C:/Windows/Fonts/tahoma.ttf",
+        "C:/Windows/Fonts/Tahoma.ttf",
+        "C:/Windows/Fonts/arial.ttf",
+        "C:/Windows/Fonts/Arial.ttf",
+        "C:/Windows/Fonts/segoeui.ttf",
+        "C:/Windows/Fonts/Segoeui.ttf",
+    ]
+    font_bold_paths = [
+        "C:/Windows/Fonts/tahomabd.ttf",
+        "C:/Windows/Fonts/arialbd.ttf",
+        "C:/Windows/Fonts/Arialbd.ttf",
+        "C:/Windows/Fonts/segoeuib.ttf",
+    ]
+    sz_large = int(20 * scale)
+    sz_small = int(13 * scale)
+    sz_bold = int(22 * scale)
+
+    for fp in font_bold_paths:
+        if os.path.exists(fp):
+            try:
+                font_bold = ImageFont.truetype(fp, sz_bold)
+                break
+            except Exception:
+                pass
+    for fp in font_paths:
+        if os.path.exists(fp):
+            try:
+                font_large = ImageFont.truetype(fp, sz_large)
+                font_small = ImageFont.truetype(fp, sz_small)
+                break
+            except Exception:
+                pass
+    if not font_bold:
+        font_bold = font_large or ImageFont.load_default()
+    if not font_large:
+        font_large = ImageFont.load_default()
+    if not font_small:
+        font_small = ImageFont.load_default()
+
+    # --- คำนวณความสูงแบนเนอร์ ---
+    pad_v = int(10 * scale)
+    pad_h = int(14 * scale)
+    line_gap = int(5 * scale)
+
+    dummy = ImageDraw.Draw(Image.new('RGB', (1, 1)))
+    txt1 = 'อยากจะแก้ไขบ้าง'
+    txt2 = 'เพียง 60 ฿'
+    txt3 = '/ ทำแกมให้หมด ช่วย ๆ กัน / inbox มาแน่ท่าน. /'
+    h1 = dummy.textbbox((0, 0), txt1, font=font_bold)[3]
+    h3 = dummy.textbbox((0, 0), txt3, font=font_small)[3]
+    banner_h = pad_v + h1 + line_gap + h3 + pad_v + int(4 * scale)  # +4 เผื่อเส้นประ
+
+    # --- สร้าง banner RGBA (รองรับ alpha สำหรับ gradient) ---
+    banner = Image.new('RGBA', (fw, banner_h), (0, 0, 0, 0))
+
+    # Gradient ฟ้าสด → น้ำเงินเข้ม (ซ้าย→ขวา) แบบของเดิม
+    bd = ImageDraw.Draw(banner)
+    for x in range(fw):
+        t = x / max(fw - 1, 1)
+        r = int(0 * (1 - t) + 0 * t)
+        g = int(162 * (1 - t) + 98 * t)
+        b = int(255 * (1 - t) + 230 * t)
+        bd.line([(x, 0), (x, banner_h - 1)], fill=(r, g, b, 255))
+
+    # --- วาดข้อความ row 1: 💞 อยากจะแก้ไขบ้าง  เพียง 60 ฿ ---
+    y1 = pad_v
+    x_text = pad_h
+
+    # วาดหัวใจ (วงกลมสีชมพู-แดง แทน emoji ที่ font ไม่รองรับ)
+    heart_r = int(10 * scale)
+    heart_cx = x_text + heart_r
+    heart_cy = y1 + h1 // 2
+    bd.ellipse([heart_cx - heart_r, heart_cy - heart_r,
+                heart_cx + heart_r, heart_cy + heart_r], fill=(255, 80, 120, 255))
+    bd.ellipse([heart_cx - heart_r + int(2*scale), heart_cy - heart_r + int(2*scale),
+                heart_cx + heart_r - int(2*scale), heart_cy + heart_r - int(2*scale)],
+               fill=(255, 130, 160, 255))
+    x_text = heart_cx + heart_r + int(6 * scale)
+
+    # เงาข้อความ row 1 (ออฟเซ็ต 1px)
+    bd.text((x_text + 1, y1 + 1), txt1, fill=(0, 0, 80, 180), font=font_bold)
+    bd.text((x_text, y1), txt1, fill=(255, 255, 255, 255), font=font_bold)
+
+    # "เพียง 60 ฿" สีเหลืองสด ต่อท้าย
+    w1 = dummy.textbbox((0, 0), txt1, font=font_bold)[2]
+    x_price = x_text + w1 + int(8 * scale)
+
+    # กล่องพื้นหลังสีเหลืองใส
+    price_bbox = dummy.textbbox((0, 0), txt2, font=font_large)
+    pw, ph = price_bbox[2], price_bbox[3]
+    px1 = x_price - int(4 * scale)
+    py1 = y1 + (h1 - ph) // 2 - int(1 * scale)
+    px2 = x_price + pw + int(4 * scale)
+    py2 = y1 + (h1 + ph) // 2 + int(2 * scale)
+    bd.rounded_rectangle([px1, py1, px2, py2], radius=int(4 * scale), fill=(255, 220, 0, 220))
+    bd.text((x_price + 1, py1 + 1), txt2, fill=(0, 0, 0, 120), font=font_large)
+    bd.text((x_price, py1), txt2, fill=(20, 20, 20, 255), font=font_large)
+
+    # --- วาดข้อความ row 2 ---
+    y2 = y1 + h1 + line_gap
+    bd.text((pad_h + 1, y2 + 1), txt3, fill=(0, 0, 80, 150), font=font_small)
+    bd.text((pad_h, y2), txt3, fill=(220, 240, 255, 255), font=font_small)
+
+    # --- ไอคอนกรรไกร ✂ มุมขวาล่างของ banner ---
+    scissor_r = int(9 * scale)
+    sx = fw - scissor_r - int(8 * scale)
+    sy = banner_h - scissor_r - int(6 * scale)
+    # วงกลมสีแดงเป็น background
+    bd.ellipse([sx - scissor_r, sy - scissor_r, sx + scissor_r, sy + scissor_r],
+               fill=(220, 30, 30, 230))
+    # วาด X ขาว (แทน ✂)
+    cr = int(5 * scale)
+    bd.line([sx - cr, sy - cr, sx + cr, sy + cr], fill=(255, 255, 255, 255), width=max(2, int(2 * scale)))
+    bd.line([sx + cr, sy - cr, sx - cr, sy + cr], fill=(255, 255, 255, 255), width=max(2, int(2 * scale)))
+
+    # --- เส้นประสีเหลืองด้านล่าง banner ---
+    dash_y = banner_h - int(3 * scale)
+    dash_len = int(14 * scale)
+    gap_len = int(7 * scale)
+    x_pos = 0
+    while x_pos < fw:
+        end_x = min(x_pos + dash_len, fw)
+        bd.line([(x_pos, dash_y), (end_x, dash_y)],
+                fill=(255, 220, 0, 255), width=max(2, int(2 * scale)))
+        x_pos += dash_len + gap_len
+
+    # --- รวม banner (RGBA) + ภาพหลัก ---
+    banner_rgb = banner.convert('RGB')
+    combined = Image.new('RGB', (fw, banner_h + fh), (0, 0, 0))
+    combined.paste(banner_rgb, (0, 0))
+    combined.paste(base_img, (0, banner_h))
+    final_export = combined
+
+    # วาดกรอบสี Lime เขียวสด หนา 4px ล้อมรอบทั้งหมด (สวยกว่า)
     border_draw = ImageDraw.Draw(final_export)
     fw, fh = final_export.size
-    for i in range(6):
-        border_draw.rectangle([i, i, fw - 1 - i, fh - 1 - i], outline="lime")
+    border_color = "#00FF00"  # Lime สดใส
+    for i in range(4):
+        border_draw.rectangle([i, i, fw - 1 - i, fh - 1 - i], outline=border_color, width=1)
     
-    # --- Export เซฟลงเป้าหมายโดยตรง (รักษาตำแหน่งไอคอน Desktop) ---
-    import io
-    img_byte_arr = io.BytesIO()
-    final_export.save(img_byte_arr, format='PNG')
-    data = img_byte_arr.getvalue()
-    
+    # --- Export เซฟลงเป้าหมายโดยตรง (เขียนทับไฟล์เดิม ห้ามลบ) ---
     try:
-        if os.path.exists(target):
-            with open(target, 'r+b') as f:
-                f.seek(0)
-                f.write(data)
-                f.truncate()
-        else:
-            with open(target, 'wb') as f:
-                f.write(data)
+        # ใช้วิธีเขียนทับโดยไม่ลบไฟล์เดิม (เพื่อไม่ให้ไอคอนหาย)
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
+            final_export.save(temp_file.name, format='PNG')
+            temp_path = temp_file.name
+        
+        # อ่านข้อมูลจากไฟล์ชั่วคราว
+        with open(temp_path, 'rb') as temp_f:
+            data = temp_f.read()
+        
+        # เขียนทับไฟล์เป้าหมาย (ไม่ลบก่อน)
+        with open(target, 'wb') as target_f:
+            target_f.write(data)
+        
+        # ลบไฟล์ชั่วคราว
+        os.unlink(temp_path)
+        
+        print(f"[Done] Overwritten: {target}")
+        
     except Exception as e:
-        print(f"Error saving file: {e}")
+        print(f"Error overwriting file: {e}")
+        # fallback ไปวิธีเดิม
+        final_export.save(target, format='PNG')
     
     copy_image_to_clipboard(target)
     
-    # --- หน่วงเวลาให้ Addon เตรียมโฟกัสกล่องคอมเมนต์ให้เสร็จก่อน แล้วทำการ Paste (Ctrl+V) ---
-    time.sleep(2.0)
-    auto_paste()
+    # --- ถ้าเป็น --donate-no-paste → bot.js จะจัดการ upload เองผ่าน setInputFiles, ไม่ต้อง auto_paste ---
+    if '--donate-no-paste' not in sys.argv:
+        time.sleep(2.0)
+        auto_paste()
 
 if __name__ == "__main__":
     mode_flag = sys.argv[1] if len(sys.argv) > 1 else ""
