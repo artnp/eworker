@@ -532,8 +532,30 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
             try {
               const resp = await fetch(`data:${mimeType};base64,${base64}`);
               const blob = await resp.blob();
+              // Add white padding below image to push watermark out of visible area
+              const paddedBlob = await new Promise((resolve) => {
+                const img = new Image();
+                const url = URL.createObjectURL(blob);
+                const fallback = () => { URL.revokeObjectURL(url); resolve(blob); };
+                const timer = setTimeout(fallback, 5000);
+                img.onload = () => {
+                  clearTimeout(timer);
+                  const pad = Math.max(300, Math.floor(img.height * 0.15));
+                  const c = document.createElement('canvas');
+                  c.width = img.width;
+                  c.height = img.height + pad;
+                  const ctx = c.getContext('2d');
+                  ctx.fillStyle = 'white';
+                  ctx.fillRect(0, 0, c.width, c.height);
+                  ctx.drawImage(img, 0, 0);
+                  URL.revokeObjectURL(url);
+                  c.toBlob((p) => { resolve(p || blob); }, 'image/png');
+                };
+                img.onerror = () => { clearTimeout(timer); fallback(); };
+                img.src = url;
+              });
               const ext = mimeType === 'image/png' ? 'png' : 'jpg';
-              const file = new File([blob], `image_${Date.now()}.${ext}`, { type: mimeType });
+              const file = new File([paddedBlob], `image_${Date.now()}.${ext}`, { type: 'image/png' });
               dt.items.add(file);
             } catch (e) { return false; }
             try {
