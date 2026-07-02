@@ -20,3 +20,4 @@ echo NOTE: If the tray icons are still visible,
 echo simply hover your mouse over them and they will disappear.
 echo.
 timeout /t 5 >nul
+
