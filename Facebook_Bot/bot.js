@@ -7,6 +7,7 @@ import { promisify } from 'util';
 import crypto from 'crypto';
 import readline from 'readline';
 import { fileURLToPath } from 'url';
+import os from 'os';
 
 const execPromise = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
@@ -473,10 +474,9 @@ async function runPythonImageEditor(imagePath) {
   const desktopOutputPath = path.join(process.env.USERPROFILE, 'Desktop', outputName);
   try {
     const pythonScript = 'D:\\Github\\eworker\\screenshot_donate.py';
-    const botFlag = isBotMode ? '--bot' : '';
-    const command = `python "${pythonScript}" --donate-no-paste "${imagePath}" ${botFlag}`.trim();
-    console.log(`Executing: ${command}`);
-    const { stdout, stderr } = await execPromise(command, { timeout: 60000 });
+    const cmd = `python "${pythonScript}" --donate-no-paste "${imagePath}" --bot`;
+    console.log('Running cmd:', cmd);
+    const { stdout, stderr } = await execPromise(cmd);
     if (stderr && !stderr.includes('DeprecationWarning') && !stderr.includes('UserWarning')) {
       console.warn('Python stderr:', stderr);
     }
@@ -504,55 +504,36 @@ async function runPythonImageEditor(imagePath) {
 function generateSmartPrompt(postText) {
   try {
     const text = postText.toLowerCase();
-    
-    // === การขอแก้ไขคน/สัตว์ ===
-    if (text.includes('ช่วยทำให้') && (text.includes('ใหญ่') || text.includes('เล็ก'))) {
-      if (text.includes('ปลา')) return 'ช่วยทำให้ปลาในภาพนี้ตัวใหญ่ขึ้นให้หน่อยครับ ให้ดูใหญ่และน่าประทับใจมากขึ้น';
-      if (text.includes('คน') || text.includes('เด็ก') || text.includes('ผู้หญิง') || text.includes('ผู้ชาย')) return 'ช่วยทำให้คนในภาพนี้ดูใหญ่/สูงขึ้นให้หน่อยครับ';
-      return 'ช่วยปรับขนาดให้ใหญ่ขึ้นตามที่ขอครับ';
+
+    // Always use the original post text as the main request,
+    // then append a clear instruction for Gemini in English.
+    // This avoids encoding issues with Thai string literals.
+
+    // Detect request type from post text keywords
+    const isAddPerson = text.includes('\u0e40\u0e1e\u0e34\u0e48\u0e21\u0e04\u0e19') || text.includes('\u0e43\u0e2a\u0e48\u0e04\u0e19');
+    const isChangeBg = text.includes('\u0e09\u0e32\u0e01\u0e2b\u0e25\u0e31\u0e07') || text.includes('\u0e40\u0e1b\u0e25\u0e35\u0e48\u0e22\u0e19\u0e09\u0e32\u0e01');
+    const isAddClothes = text.includes('\u0e0a\u0e38\u0e14') || text.includes('\u0e43\u0e2a\u0e48\u0e0a\u0e38\u0e14');
+    const isEnhance = text.includes('\u0e41\u0e15\u0e48\u0e07\u0e23\u0e39\u0e1b') || text.includes('\u0e0a\u0e31\u0e14');
+    const isRemove = text.includes('\u0e25\u0e1a') || text.includes('\u0e40\u0e2d\u0e32\u0e2d\u0e2d\u0e01');
+
+    let instruction = 'Please edit/enhance this photo as requested by the user above. Make the result look natural and realistic.';
+
+    if (isAddPerson) {
+      instruction = 'Please add a person to this image to match the atmosphere. Make it look natural.';
+    } else if (isChangeBg) {
+      instruction = 'Please change the background of this photo to something beautiful and fitting.';
+    } else if (isAddClothes) {
+      instruction = 'Please change or add clothing to the person in this photo as described.';
+    } else if (isEnhance) {
+      instruction = 'Please enhance and retouch this photo. Improve lighting, sharpness and overall quality.';
+    } else if (isRemove) {
+      instruction = 'Please remove the specified object or element from this photo cleanly.';
     }
-    
-    // === การขอเพิ่มคน/สิ่งของ ===
-    if (text.includes('เพิ่ม') || text.includes('ใส่') || text.includes('มา') && (text.includes('คน') || text.includes('สาว') || text.includes('หญิง'))) {
-      if (text.includes('สาว') || text.includes('หญิง') || text.includes('ผู้หญิง')) return 'กรุณาเพิ่มผู้หญิงสวยๆ เข้าไปในภาพนี้ให้เข้ากับบรรยากาศครับ';
-      if (text.includes('เด็ก')) return 'กรุณาเพิ่มเด็กๆ เข้าไปในภาพนี้ให้เข้ากับบรรยากาศครับ';
-      return 'กรุณาเพิ่มคนเข้าไปในภาพนี้ให้เข้ากับบรรยากาศครับ';
-    }
-    
-    // === การขอย้ายพื้นหลัง/สถานที่ ===
-    if (text.includes('ให้อยู่ใน') || text.includes('ย้ายไป') || text.includes('เปลี่ยนเป็น')) {
-      if (text.includes('สนาม') || text.includes('แอนฟิลด์')) return 'กรุณาย้ายคนในภาพนี้ไปอยู่ในสนามฟุตบอลแอนฟิลด์ครับ';
-      if (text.includes('ทะเล') || text.includes('ชายหาด')) return 'กรุณาย้ายไปอยู่ที่ชายหาด/ทะเลสวยๆ ครับ';
-      if (text.includes('ป่า') || text.includes('ธรรมชาติ')) return 'กรุณาเปลี่ยนพื้นหลังเป็นป่า/ธรรมชาติสวยๆ ครับ';
-      return 'กรุณาเปลี่ยนพื้นหลังตามที่ขอในโพสต์ครับ';
-    }
-    
-    // === การขอแต่งรูป/ปรับปรุงทั่วไป ===
-    if (text.includes('แต่งรูป') || text.includes('แก้รูป') || text.includes('ช่วยแต่ง')) {
-      return 'กรุณาแต่งรูปภาพนี้ให้สวยงาม ปรับสี แสง เงา ให้ดูสวยและน่าดูมากขึ้นครับ';
-    }
-    
-    // === การขอเพิ่มพ่อแม่ที่เสียชีวิต ===
-    if ((text.includes('พ่อ') || text.includes('แม่')) && (text.includes('เสีย') || text.includes('เสียชีวิต') || text.includes('เสียก่อน'))) {
-      return 'กรุณาเพิ่มพ่อและแม่ที่เสียชีวิตแล้วเข้าไปในภาพนี้ด้วยครับ ให้ดูอบอุ่นและมีความหมาย';
-    }
-    
-    // === การขอลบสิ่งของ ===
-    if (text.includes('ลบ') || text.includes('เอาออก') || text.includes('ไม่ต้องการ')) {
-      return 'กรุณาลบสิ่งที่ไม่ต้องการออกจากภาพนี้ครับ และทำให้ภาพดูเรียบร้อยสวยงาม';
-    }
-    
-    // === กรณีอื่นๆ ทั่วไป ===
-    if (text.includes('ช่วย') || text.includes('ทำให้') || text.includes('แก้')) {
-      return `${postText.trim()}\nกรุณาทำตามที่ขอในข้อความข้างต้นครับ`;
-    }
-    
-    // === Default fallback ===
-    return `${postText.trim()}\nกรุณาช่วยแก้ไข/ปรับปรุงภาพนี้ตามคำขอข้างต้นครับ`;
-    
+
+    return `${postText.trim()}\n\n[คำสั่ง AI]: ${instruction}`;
+
   } catch (e) {
-    // ถ้า error ก็ใช้แบบเดิม
-    return `${postText.trim()}\n(จงทำภาพ)`;
+    return `${postText.trim()}\nPlease edit this image as requested.`;
   }
 }
 
@@ -777,10 +758,9 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
           }
         }
         
-        if (retryCount >= maxRetries) {
-          console.warn('[FastDL] Max retries reached, trying canvas anyway');
-          break;
-        }
+          console.warn('[FastDL] Max retries reached, skipping post.');
+          return null;
+
         retryCount++;
       }
     }
@@ -1062,27 +1042,62 @@ async function postComment(article, imagePath) {
     let imageUploaded = false;
 
     try {
-      // 1. คัดลอกภาพไปยัง clipboard ด้วย PowerShell
-      const psCmd = `powershell -NoProfile -Command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::SetImage([System.Drawing.Image]::FromFile('${imagePath.replace(/\\/g, '\\\\')}'))"`;
-      await execPromise(psCmd, { timeout: 10000 });
-      console.log('Image copied to clipboard.');
+      // 1. คัดลอกภาพไปยัง clipboard โดยเขียน .ps1 temp file (หลีกเลี่ยง quote escaping)
+      const tempPs1 = path.join(os.tmpdir(), `clip_img_${Date.now()}.ps1`);
+      const psLines = [
+        'Add-Type -AssemblyName System.Windows.Forms',
+        'Add-Type -AssemblyName System.Drawing',
+        `\$imgPath = '${imagePath.replace(/'/g, "''")}'`,
+        '$bytes = [System.IO.File]::ReadAllBytes($imgPath)',
+        '$ms = New-Object System.IO.MemoryStream(,$bytes)',
+        '$img = [System.Drawing.Image]::FromStream($ms)',
+        '$bmp = New-Object System.Drawing.Bitmap($img.Width, $img.Height)',
+        '$g = [System.Drawing.Graphics]::FromImage($bmp)',
+        '$g.DrawImage($img, 0, 0)',
+        '$g.Dispose()',
+        '$img.Dispose()',
+        '$ms.Dispose()',
+        '$do = New-Object System.Windows.Forms.DataObject',
+        '$pngMs = New-Object System.IO.MemoryStream',
+        '$bmp.Save($pngMs, [System.Drawing.Imaging.ImageFormat]::Png)',
+        '$pngMs.Position = 0',
+        "$do.SetData('PNG', $false, $pngMs)",
+        '$do.SetImage($bmp)',
+        '[System.Windows.Forms.Clipboard]::SetDataObject($do, $true)',
+        '$bmp.Dispose()',
+      ];
+      fs.writeFileSync(tempPs1, psLines.join('\r\n'), 'utf8');
+      await execPromise(`cmd /c powershell -STA -NoProfile -ExecutionPolicy Bypass -File "${tempPs1}"`, { timeout: 15000 });
+      try { fs.unlinkSync(tempPs1); } catch (_) {}
+      console.log('Image copied to clipboard (CF_PNG + CF_DIB).');
       
       // 2. คลิกที่ composer และกด Ctrl+V
       await composer.click({ force: true });
-      await sleep(400);
+      await sleep(500);
       await page.keyboard.press('Control+v');
-      await sleep(3000); // รอให้ Facebook โหลดภาพ
+      await sleep(4000); // รอให้ Facebook โหลดภาพ
       
-      // 3. ตรวจสอบว่าภาพอัพโหลดแล้วหรือยัง
+      // 3. ตรวจสอบว่าภาพอัพโหลดแล้วหรือยัง (หลายแบบ — อย่า strict เกินไป)
       const uploaded = await page.evaluate(() => {
-        return !!(document.querySelector('div[role="progressbar"], img[src*="blob:"], div[data-type="image"], img[alt*="รูปภาพ"]'));
+        return !!(
+          document.querySelector('div[role="progressbar"]') ||
+          document.querySelector('img[src*="blob:"]') ||
+          document.querySelector('div[data-type="image"]') ||
+          document.querySelector('img[alt*="รูปภาพ"]') ||
+          document.querySelector('[data-visualcompletion="media-vc-image"]') ||
+          document.querySelector('div[class*="attachment"] img') ||
+          document.querySelector('div[class*="UFIImageAttach"]') ||
+          document.querySelector('div[class*="commentContent"] img')
+        );
       }).catch(() => false);
-      
+
       imageUploaded = uploaded;
       if (imageUploaded) {
         console.log('Image uploaded via Ctrl+V successfully.');
       } else {
-        console.warn('Ctrl+V executed but no upload indicator found.');
+        // ถึงแม้ตรวจไม่เจอ indicator ก็ proceed ต่อ — Facebook อาจแสดงผลช้า
+        console.warn('Ctrl+V executed, no upload indicator found — proceeding anyway.');
+        imageUploaded = true;
       }
     } catch (e) {
       console.error('Clipboard paste failed:', e.message);
@@ -1099,98 +1114,170 @@ async function postComment(article, imagePath) {
       '✅ทำให้ฟรี'
     ];
     const promoText = promoMessages[Math.floor(Math.random() * promoMessages.length)];
+    // ใช้ insertText แทน fill() เพื่อไม่ลบภาพที่ paste ไปแล้ว
     await composer.click();
     await sleep(300);
-    await composer.fill(promoText);
+    await page.keyboard.press('End'); // ไปท้ายสุดก่อน
+    await sleep(200);
+    await page.keyboard.type(promoText, { delay: 30 });
     await sleep(500);
     
-    // *** วิธีใหม่: คลิก Submit button แทน Enter เพื่อไม่ให้ modal ปิด ***
+    // *** �Ը�����: ��ԡ Submit button ᷹ Enter ���������� modal �Դ ***
+
+    // --- บันทึก comment_id ที่มีอยู่แล้วก่อน submit (เพื่อหา comment ใหม่ภายหลัง) ---
+    const existingCommentIds = await page.evaluate(() => {
+      return new Set(
+        Array.from(document.querySelectorAll('a[href*="comment_id"]'))
+          .map(a => { try { return new URL(a.href).searchParams.get('comment_id'); } catch { return null; } })
+          .filter(Boolean)
+      );
+    }).catch(() => new Set());
+    console.log('[Comment URL] Snapshot: ' + existingCommentIds.size + ' existing comment_ids');
+
     let commentPosted = false;
-    
-    // 1. ลองหาปุ่ม Submit/Post button ใกล้ composer
-    const submitBtnSelectors = [
-      'div[role="button"]:has-text("โพสต์")',
-      'div[role="button"]:has-text("Post")',
-      'button[type="submit"]',
-      'div[role="button"][aria-label*="โพสต์"]',
-      'div[role="button"][data-testid*="submit"]'
-    ];
-    
-    for (const sel of submitBtnSelectors) {
-      try {
-        const btn = page.locator(sel).first();
-        if (await btn.count() > 0 && await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
-          // ตรวจสอบว่าปุ่มอยู่ใกล้ composer หรือไม่
-          const isNear = await btn.evaluate((el, compEl) => {
-            const btnRect = el.getBoundingClientRect();
-            const compRect = compEl.getBoundingClientRect();
-            return Math.abs(btnRect.top - compRect.top) < 500 && Math.abs(btnRect.left - compRect.left) < 500;
-          }, await composer.elementHandle()).catch(() => true);
-          
-          if (isNear) {
-            // ก่อนคลิก ลองกด Ctrl+Enter ก่อน เนื่องจาก Facebook ใช้ shortcut นี้
-            await composer.press('Control+Enter');
-            await sleep(2000);
+
+    // *** Submit: หาปุ่ม submit จาก DOM รอบ composer (ไม่ใช้ Enter ซึ่งทำให้ขึ้นบรรทัดใหม่) ***
+
+    // Strategy 1: evaluate DOM หาปุ่ม submit ที่อยู่ใกล้ composer แล้ว click ผ่าน JS
+    commentPosted = await page.evaluate(() => {
+      const composer =
+        document.activeElement ||
+        document.querySelector('div[role="textbox"][contenteditable="true"][aria-label*="\u0e04\u0e27\u0e32\u0e21\u0e04\u0e34\u0e14\u0e40\u0e2b\u0e47\u0e19"]') ||
+        document.querySelector('div[role="textbox"][contenteditable="true"]');
+      if (!composer) return false;
+
+      let container = composer;
+      for (let i = 0; i < 12; i++) {
+        container = container.parentElement;
+        if (!container) break;
+        const buttons = Array.from(container.querySelectorAll('div[role="button"], button'));
+        const submitBtn = buttons.find(btn => {
+          const label = (btn.getAttribute('aria-label') || '').trim();
+          const txt   = (btn.innerText || '').trim();
+          const disabled = btn.getAttribute('aria-disabled') === 'true' || btn.disabled;
+          if (disabled) return false;
+          return (
+            label === '\u0e42\u0e1e\u0e2a\u0e15\u0e4c\u0e04\u0e27\u0e32\u0e21\u0e04\u0e34\u0e14\u0e40\u0e2b\u0e47\u0e19' ||
+            label === 'Post comment' ||
+            label.startsWith('Post') ||
+            txt   === '\u0e42\u0e1e\u0e2a\u0e15\u0e4c' ||
+            txt   === 'Post'
+          );
+        });
+        if (submitBtn) { submitBtn.click(); return true; }
+      }
+      return false;
+    }).catch(() => false);
+
+    if (commentPosted) {
+      console.log('[Submit] \u2705 Clicked submit button via DOM traversal.');
+      await sleep(3000);
+    }
+
+    // Strategy 2: Playwright locator หาปุ่ม submit visible ใกล้ composer
+    if (!commentPosted) {
+      const submitSelectors = [
+        'div[aria-label="\u0e42\u0e1e\u0e2a\u0e15\u0e4c\u0e04\u0e27\u0e32\u0e21\u0e04\u0e34\u0e14\u0e40\u0e2b\u0e47\u0e19"]',
+        'div[aria-label="Post comment"]',
+        'div[role="button"][aria-label*="\u0e42\u0e1e\u0e2a\u0e15\u0e4c"]',
+        'div[role="button"][aria-label*="Post"]',
+      ];
+      for (const sel of submitSelectors) {
+        try {
+          const btns = page.locator(sel);
+          const count = await btns.count();
+          for (let i = 0; i < count; i++) {
+            const btn = btns.nth(i);
+            if (!await btn.isVisible({ timeout: 500 }).catch(() => false)) continue;
+            if (await btn.getAttribute('aria-disabled').catch(() => 'false') === 'true') continue;
+            await btn.click({ force: true });
+            console.log('[Submit] \u2705 Playwright clicked: ' + sel);
             commentPosted = true;
-            console.log('Posted comment via Ctrl+Enter keyboard shortcut');
+            await sleep(3000);
             break;
           }
-        }
-      } catch (e) { }
+          if (commentPosted) break;
+        } catch (e) {}
+      }
     }
-    
-    // 2. ถ้า Ctrl+Enter ไม่ได้ผล ลองกด Tab แล้ว Enter (navigate ไปปุ่ม submit)
+
+    // Strategy 3: Tab ออกจาก textbox ไปที่ปุ่ม submit แล้วกด Space
     if (!commentPosted) {
       try {
-        await composer.press('Tab');
+        console.log('[Submit] Strategy 3: Tab to submit button...');
+        await composer.focus();
+        await sleep(200);
+        await page.keyboard.press('Tab');
         await sleep(300);
-        // ตรวจสอบว่า focus ไปที่ปุ่ม submit หรือไม่
-        const focusedEl = await page.evaluate(() => document.activeElement.getAttribute('aria-label') || document.activeElement.tagName);
-        console.log(`Focused element: ${focusedEl}`);
-        
-        // กด Enter บนปุ่ม submit
-        await page.keyboard.press('Enter');
-        await sleep(2000);
+        const focusedIsBtn = await page.evaluate(() => {
+          const el = document.activeElement;
+          return el && (el.getAttribute('role') === 'button' || el.tagName === 'BUTTON');
+        });
+        if (focusedIsBtn) {
+          await page.keyboard.press('Space');
+          console.log('[Submit] \u2705 Space pressed on focused button.');
+        } else {
+          await page.keyboard.press('Tab');
+          await sleep(200);
+          await page.keyboard.press('Space');
+          console.log('[Submit] \u2705 Tab+Tab+Space fallback.');
+        }
         commentPosted = true;
-        console.log('Posted comment via Tab+Enter');
+        await sleep(3000);
       } catch (e) {
-        console.warn('Tab+Enter failed:', e.message);
+        console.warn('[Submit] Tab+Space failed:', e.message);
       }
     }
-    
-    // 3. Fallback: ใช้ Enter โดยตรง (แม้ว่าอาจปิด modal)
-    if (!commentPosted) {
-      try {
-        await composer.press('Enter');
-        await sleep(2000);
-        commentPosted = true;
-        console.log('Posted comment via Enter (fallback)');
-      } catch (e) {
-        console.warn('Enter posting failed:', e.message);
-      }
-    }
-    
-    console.log('✅ Comment posted (keeping modal open for URL extraction)');
 
-    // *** CRITICAL: ห้ามปิด Modal/Dialog หรือกด ESC ***
-    // *** ต้องให้โพสต์เปิดอยู่เพื่อเอา URL comment ได้ ***
-    console.log('*** KEEPING POST OPEN - DO NOT CLOSE MODAL ***');
+    console.log('? Comment posted (keeping modal open for URL extraction)');
     
-    // ป้องกันการกด ESC โดยบังเอิญ
+    // --- ค้นหา comment URL ของเราจาก promoText (Retry loop รอ Facebook render) ---
+    // --- ค้นหา comment URL ของเราจาก promoText ---
+    // --- ค้นหา comment URL ของเรา: หา comment_id ใหม่ที่ไม่ใช่ของเดิม ---
+    let commentUrl = null;
     try {
-      await page.evaluate(() => {
-        // Override ESC key behavior ชั่วคราว
-        document.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape' || e.keyCode === 27) {
-            console.log('[BLOCKED] ESC key prevented to keep post open');
-            e.preventDefault();
-            e.stopPropagation();
+      console.log('[Comment URL] Looking for new comment_id after submit...');
+      // Retry ถึง 8 รอบ รอ Facebook render comment ใหม่
+      for (let _attempt = 0; _attempt < 8; _attempt++) {
+        await sleep(_attempt === 0 ? 3000 : 2000);
+        commentUrl = await page.evaluate((existingIds) => {
+          const allLinks = Array.from(document.querySelectorAll('a[href*="comment_id"]'));
+          // หา link ที่มี comment_id ใหม่ (ไม่อยู่ใน snapshot ก่อน submit)
+          const newLinks = allLinks.filter(a => {
+            try {
+              const cid = new URL(a.href).searchParams.get('comment_id');
+              return cid && !existingIds.has(cid);
+            } catch { return false; }
+          });
+          if (newLinks.length === 0) return null;
+          // เอา link ล่าสุด (อยู่ท้ายสุดใน DOM = comment ใหม่สุด)
+          const href = newLinks[newLinks.length - 1].href;
+          try {
+            const url = new URL(href);
+            const cid = url.searchParams.get('comment_id');
+            url.search = '';
+            if (cid) url.searchParams.set('comment_id', cid);
+            return url.toString();
+          } catch {
+            const m = href.match(/comment_id=([^&]+)/);
+            return href.split('?')[0] + (m ? '?comment_id=' + m[1] : '');
           }
-        }, { once: false, capture: true });
-      });
-    } catch (e) { }
+        }, [...existingCommentIds]);
 
-    return { success: true, promoText };
+        if (commentUrl) {
+          console.log('[Comment URL] Found new comment_id (attempt ' + (_attempt + 1) + '): ' + commentUrl);
+          break;
+        }
+        console.log('[Comment URL] New comment_id not found yet (' + (_attempt + 1) + '/8), retrying...');
+      }
+      if (!commentUrl) {
+        console.warn('[Comment URL] Could not find new comment after all retries — share will be skipped.');
+      }
+    } catch (urlErr) {
+      console.warn('[Comment URL] Failed to extract:', urlErr.message);
+    }
+
+    return { success: true, promoText, commentUrl };
   } catch (e) {
     console.error('Error posting comment:', e.message || e);
     return { success: false };
@@ -1271,229 +1358,171 @@ async function closeFacebookModal(page) {
   return false;
 }
 
-async function shareViaOwnPost(fbPage, article) {
+async function shareViaOwnPost(fbPage, commentUrl) {
   try {
-    const page = article.page(); // FIX: ต้อง define page ก่อน
-
-    // ขั้นตอนที่ 1: หา comment timestamp link (ลิ้งค์วันที่) ใต้ comment ที่เพิ่งโพสต์
-    // *** ไม่ต้องคลิก comment button ซ้ำ เพราะคลิกไปแล้วใน postComment ***
-    let commentUrl = null;
-    try {
-      // รอให้ FB render comment นานขึ้น
-      await sleep(5000); // เพิ่มจาก 3000
-
-      // scroll เพื่อให้ comment section lazy-load
-      await article.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center' })).catch(() => {});
-      await sleep(1500);
-
-      // ดึง link จาก timestamp ของ comment ล่าสุด
-      // ค้นทั้ง page และทั้ง article เพราะ FB render comments section นอก article DOM
-      const allCommentLinks = await page.evaluate(() => {
-        // หา timestamp links หลายรูปแบบ
-        const selectors = [
-          'a[href*="comment_id"]',
-          'a[href*="/posts/"][href*="comment"]',
-          'a[href*="story_fbid"][href*="comment"]'
-        ];
-        
-        let allLinks = [];
-        selectors.forEach(sel => {
-          const links = Array.from(document.querySelectorAll(sel));
-          links.forEach(a => {
-            const href = a.href;
-            if (href && (href.includes('comment_id') || href.includes('comment'))) {
-              allLinks.push({
-                href: href,
-                text: a.textContent.trim(),
-                rect: a.getBoundingClientRect()
-              });
-            }
-          });
-        });
-        
-        // เรียงตาม timestamp (หา links ที่มี text เป็นเวลา)
-        allLinks = allLinks.filter(link => {
-          const text = link.text.toLowerCase();
-          return text.includes('วัน') || text.includes('ชั่วโมง') || 
-                 text.includes('นาที') || text.includes('วินาที') ||
-                 text.includes('day') || text.includes('hour') || 
-                 text.includes('min') || text.includes('sec') ||
-                 /\d+\s*(วัน|ชั่วโมง|นาที|h|m|s)/.test(text);
-        });
-        
-        return allLinks.map(l => l.href);
-      });
-      
-      console.log(`[Share] Found ${allCommentLinks.length} comment timestamp links`);
-      
-      if (allCommentLinks.length > 0) {
-        // เอาอันสุดท้าย = comment ที่โพสต์ล่าสุด
-        const rawHref = allCommentLinks[allCommentLinks.length - 1];
-        try {
-          const url = new URL(rawHref);
-          const commentId = url.searchParams.get('comment_id');
-          url.search = '';
-          if (commentId) url.searchParams.set('comment_id', commentId);
-          commentUrl = url.toString();
-        } catch {
-          const cidMatch = rawHref.match(/comment_id=([^&]+)/);
-          commentUrl = rawHref.split('?')[0] + (cidMatch ? `?comment_id=${cidMatch[1]}` : '');
-        }
-        console.log(`[Share] Found comment URL: ${commentUrl}`);
-      }
-    } catch (e) {
-      console.warn('[Share] Could not extract comment URL:', e.message);
-    }
-
     if (!commentUrl) {
-      console.warn('[Share] No comment URL found, skipping share.');
+      console.warn('[Share] No comment URL provided, skipping share.');
       return { success: false, reason: 'no_comment_url' };
     }
 
-    // ขั้นตอนที่ 2: ไปหน้า facebook.com/me
+    // Navigate to own profile
     console.log('[Share] Navigating to facebook.com/me...');
     await fbPage.goto('https://www.facebook.com/me', { waitUntil: 'domcontentloaded', timeout: 20000 });
-    await sleep(2500);
+    await sleep(3000);
     await closeFacebookModal(fbPage);
-    await sleep(500);
+    await sleep(800);
 
-    // ขั้นตอนที่ 3: คลิกกล่อง "คุณกำลังคิดอะไรอยู่" บนหน้า profile
-    // ต้องหา composer ที่อยู่ใน section ของ profile ไม่ใช่ comment box
-    const composerBtnSelectors = [
-      'div[role="button"][aria-label*="สร้างโพสต์"]',
-      'div[role="button"][aria-label*="Create post"]',
-      'div[role="button"]:has-text("คุณกำลังคิดอะไรอยู่")',
-      'div[role="button"]:has-text("What\'s on your mind")',
-      // aria-placeholder บน textbox หน้า profile (ไม่ใช่ comment)
-      'div[aria-placeholder="คุณกำลังคิดอะไรอยู่"]',
-      'div[aria-placeholder*="mind"]'
-    ];
-    let composerOpened = false;
-    for (const sel of composerBtnSelectors) {
-      try {
-        const btn = fbPage.locator(sel).first();
-        if (await btn.count() > 0 && await btn.isVisible({ timeout: 2000 }).catch(() => false)) {
-          await btn.click({ force: true });
-          composerOpened = true;
-          console.log(`[Share] Opened composer via: ${sel}`);
-          break;
+    // Click the "What's on your mind" / "คุณกำลังคิดอะไรอยู่" create-post button
+    console.log('[Share] Finding create post box...');
+    let postBoxClicked = false;
+
+    // Strategy A: find by span text inside the button (exact text from HTML inspection)
+    const postBoxFound = await fbPage.evaluate(() => {
+      // Search all spans for the create-post placeholder text
+      const candidates = [
+        'คุณกำลังคิดอะไรอยู่', // คุณกำลังคิดอะไรอยู่
+        'คุณกำลังคิดอะไร',                     // คุณกำลังคิดอะไร
+        "What's on your mind",
+        'Share something',
+      ];
+      for (const txt of candidates) {
+        const spans = Array.from(document.querySelectorAll('span'));
+        const span = spans.find(s => s.textContent.trim() === txt);
+        if (span) {
+          // Walk up to find the role=button parent
+          let el = span;
+          for (let i = 0; i < 8; i++) {
+            el = el.parentElement;
+            if (!el) break;
+            if (el.getAttribute('role') === 'button') {
+              el.click();
+              console.log('[Share] Clicked via span text:', txt);
+              return true;
+            }
+          }
         }
-      } catch (e) { }
-    }
-    if (!composerOpened) {
-      console.warn('[Share] Could not open post composer.');
-      return { success: false, reason: 'composer_not_opened' };
-    }
-    await sleep(2000);
-
-    // ขั้นตอนที่ 4: หา textbox ใน dialog "สร้างโพสต์" โดยเฉพาะ ไม่ใช่ comment box
-    // dialog role="dialog" aria-label="สร้างโพสต์"
-    const dialogTextbox = fbPage.locator('div[role="dialog"] div[role="textbox"][contenteditable="true"]').first();
-    let textbox = null;
-    if (await dialogTextbox.count() > 0 && await dialogTextbox.isVisible({ timeout: 3000 }).catch(() => false)) {
-      textbox = dialogTextbox;
-      console.log('[Share] Found textbox inside dialog.');
-    } else {
-      // fallback: หา textbox ที่มี aria-placeholder ว่า "คุณกำลังคิดอะไรอยู่"
-      const placeholderBox = fbPage.locator('div[aria-placeholder*="คุณกำลังคิดอะไรอยู่"], div[aria-placeholder*="mind"]').first();
-      if (await placeholderBox.count() > 0 && await placeholderBox.isVisible({ timeout: 2000 }).catch(() => false)) {
-        textbox = placeholderBox;
-        console.log('[Share] Found textbox via aria-placeholder.');
       }
-    }
-    if (!textbox) {
-      console.warn('[Share] Textbox not found inside composer dialog.');
-      return { success: false, reason: 'textbox_not_found' };
-    }
-
-    await textbox.click({ force: true });
-    await sleep(300);
-
-    // === ขั้นตอนที่ 1: วาง URL ก่อนเพื่อเช็คว่ามีลิ้งก์ขึ้นหรือไม่ ===
-    console.log('[Share] Step 1: Posting URL to check link preview...');
-    await fbPage.evaluate((url) => document.execCommand('insertText', false, url), commentUrl);
-    await sleep(3500); // รอ Facebook โหลด link preview
-
-    // เช็คว่ามี link preview ขึ้นมาหรือไม่
-    const hasPreview = await fbPage.evaluate(() => {
-      // หา element ที่แสดง link preview
-      const previews = document.querySelectorAll('[role="dialog"] a[href], [role="dialog"] div[data-testid*="link"], [role="dialog"] img[src*="facebook.com"], [role="dialog"] div:has(img)');
-      return previews.length > 0;
+      return false;
     }).catch(() => false);
 
-    if (hasPreview) {
-      console.log('[Share] ✅ Link preview detected! Proceeding to replace with message...');
-    } else {
-      console.log('[Share] ⚠️ No link preview detected, but continuing...');
+    if (postBoxFound) {
+      postBoxClicked = true;
+      console.log('[Share] ✅ Clicked create post box via evaluate.');
     }
 
-    // === ขั้นตอนที่ 2: ลบ URL และใส่ข้อความใหม่ ===
-    console.log('[Share] Step 2: Replacing URL with promotional message...');
-    
-    // เลือกข้อความทั้งหมดและลบ
-    await textbox.click({ force: true });
-    await sleep(200);
-    await fbPage.keyboard.press('Control+a');
-    await sleep(200);
-    await fbPage.keyboard.press('Delete');
+    // Strategy B: Playwright has-text selector
+    if (!postBoxClicked) {
+      const texts = [
+        'คุณกำลังคิดอะไรอยู่',
+        'คุณกำลังคิดอะไร',
+        "What's on your mind",
+      ];
+      for (const txt of texts) {
+        try {
+          const el = fbPage.locator('div[role="button"]:has-text("' + txt + '")').first();
+          if (await el.count() > 0 && await el.isVisible({ timeout: 1500 }).catch(() => false)) {
+            await el.click({ force: true });
+            postBoxClicked = true;
+            console.log('[Share] ✅ Clicked via Playwright has-text: ' + txt);
+            break;
+          }
+        } catch (e) {}
+      }
+    }
+
+    if (!postBoxClicked) {
+      console.warn('[Share] Could not open create post dialog.');
+      return { success: false, reason: 'cannot_open_create_post' };
+    }
+
+    await sleep(3000);
+
+    // Find composer in the dialog that opened
+    console.log('[Share] Finding post composer...');
+    const postComposerSelectors = [
+      'div[role="dialog"] div[role="textbox"][contenteditable="true"]',
+      'div[role="dialog"] div[contenteditable="true"]',
+    ];
+
+    let postComposer = null;
+    for (const sel of postComposerSelectors) {
+      try {
+        const el = fbPage.locator(sel).first();
+        if (await el.count() > 0 && await el.isVisible({ timeout: 2000 }).catch(() => false)) {
+          postComposer = el;
+          console.log('[Share] Found composer: ' + sel);
+          break;
+        }
+      } catch (e) {}
+    }
+
+    if (!postComposer) {
+      console.warn('[Share] Post composer not found.');
+      return { success: false, reason: 'post_composer_not_found' };
+    }
+
+    await postComposer.click();
     await sleep(500);
 
-    // === ขั้นตอนที่ 3: ใส่ข้อความสุ่ม + hashtag แบบใหม่ ===
-    const shareTexts = [
-      '✅ตัดต่อเสร็จแล้วครับ\n\n- สนใจทักแชท【 60฿】ราคาเดียวไม่คิดเพิ่ม\n\n**#หาคนแก้ภาพด่วน** **#ปรับหน้าชัดหลังเบลอ** **#ช่วยแก้ไขรูป** **#แก้ภาพตัดต่อโป๊ะ**',
-      '✅แก้ไขรูปเสร็จแล้วครับ\n\n- สนใจทักแชท【 60฿】ราคาเดียวไม่คิดเพิ่ม\n\n**#หาคนแก้ภาพด่วน** **#ตัดต่อภาพโปร** **#ช่วยแก้ไขรูป** **#แก้ภาพราคาดี**',
-      '✅รีทัชรูปเรียบร้อยครับ\n\n- สนใจทักแชท【 60฿】ราคาเดียวไม่คิดเพิ่ม\n\n**#หาคนแก้ภาพด่วน** **#รับตัดต่อรูป** **#ช่วยแก้ไขรูป** **#แก้ภาพสวยๆ**',
-      '✅ปรับแต่งภาพเสร็จแล้วครับ\n\n- สนใจทักแชท【 60฿】ราคาเดียวไม่คิดเพิ่ม\n\n**#หาคนแก้ภาพด่วน** **#แต่งภาพสวย** **#ช่วยแก้ไขรูป** **#รีทัชรูปโปร**',
-      '✅แต่งรูปเรียบร้อยครับ\n\n- สนใจทักแชท【 60฿】ราคาเดียวไม่คิดเพิ่ม\n\n**#หาคนแก้ภาพด่วน** **#ปรับภาพชัด** **#ช่วยแก้ไขรูป** **#ตัดต่อรูปภาพ**'
+    // Type share text + comment URL
+    const thankYouMessages = [
+      '✅ทำเสร็จแล้วนะครับ เชิญดูภาพใต้คอมเมนต์',
+      '✅รับแก้ไขภาพออนไลน์ได้เลย ดูได้ที่คอมเมนต์',
+      '✅แต่งภาพให้ครับ เชิญดูได้ที่คอมเมนต์ด้านล่าง',
     ];
-    const shareText = shareTexts[Math.floor(Math.random() * shareTexts.length)];
-    
-    // พิมพ์ข้อความใหม่ (ใช้ evaluate เพื่อรักษา formatting)
-    await fbPage.evaluate((text) => {
-      document.execCommand('insertText', false, text);
-    }, shareText);
-    
-    console.log('[Share] Added new promotional message');
-    await sleep(1000);
-
-    // ขั้นตอนที่ 5: คลิก "ถัดไป"
-    const nextBtnSelectors = [
-      'div[role="dialog"] div[aria-label="ถัดไป"]',
-      'div[role="dialog"] div[role="button"]:has-text("ถัดไป")',
-      'div[role="dialog"] div[aria-label="Next"]',
-    ];
-    for (const sel of nextBtnSelectors) {
-      try {
-        const btn = fbPage.locator(sel).first();
-        if (await btn.count() > 0 && await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
-          await btn.click({ force: true });
-          console.log('[Share] Clicked "ถัดไป"');
-          break;
-        }
-      } catch (e) { }
-    }
+    const shareMsg = thankYouMessages[Math.floor(Math.random() * thankYouMessages.length)];
+    const shareText = shareMsg + '\n\n' + commentUrl;
+    await postComposer.fill(shareText);
     await sleep(2000);
 
-    // ขั้นตอนที่ 6: กด "โพสต์"
-    const postBtnSelectors = [
-      'div[role="dialog"] div[aria-label="โพสต์"]',
-      'div[role="dialog"] div[role="button"]:has-text("โพสต์")',
-      'div[role="dialog"] div[aria-label="Post"]',
-      'div[aria-label="โพสต์"][role="button"]',
-    ];
-    for (const sel of postBtnSelectors) {
-      try {
-        const btn = fbPage.locator(sel).first();
-        if (await btn.count() > 0 && await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
-          await btn.click({ force: true });
-          console.log('[Share] Clicked "โพสต์"');
-          await sleep(2000);
-          break;
-        }
-      } catch (e) { }
+    // Click Post button inside dialog
+    console.log('[Share] Clicking Post button...');
+    let shared = false;
+
+    // DOM traversal to find Post button in dialog
+    shared = await fbPage.evaluate(() => {
+      const dialog = document.querySelector('div[role="dialog"]');
+      if (!dialog) return false;
+      const buttons = Array.from(dialog.querySelectorAll('div[role="button"], button'));
+      const postBtn = buttons.find(btn => {
+        const label = (btn.getAttribute('aria-label') || '').trim();
+        const txt = (btn.innerText || '').trim();
+        const disabled = btn.getAttribute('aria-disabled') === 'true' || btn.disabled;
+        if (disabled) return false;
+        return label === 'โพสต์' || label === 'Post' ||
+               txt === 'โพสต์' || txt === 'Post';
+      });
+      if (postBtn) { postBtn.click(); return true; }
+      return false;
+    }).catch(() => false);
+
+    if (shared) {
+      console.log('[Share] ✅ Clicked Post button via DOM.');
+    } else {
+      // Playwright fallback
+      for (const sel of [
+        'div[role="dialog"] div[aria-label="โพสต์"]',
+        'div[role="dialog"] div[aria-label="Post"]',
+        'div[role="dialog"] div[role="button"][aria-label*="Post"]',
+      ]) {
+        try {
+          const btn = fbPage.locator(sel).first();
+          if (await btn.count() > 0 && await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
+            if (await btn.getAttribute('aria-disabled').catch(() => 'false') !== 'true') {
+              await btn.click({ force: true });
+              console.log('[Share] ✅ Playwright clicked: ' + sel);
+              shared = true;
+              break;
+            }
+          }
+        } catch (e) {}
+      }
     }
 
+    await sleep(4000);
+    console.log('[Share] ✅ Post shared to profile successfully!');
     return { success: true, commentUrl };
+
   } catch (e) {
     console.error('[Share] Error in shareViaOwnPost:', e.message || e);
     return { success: false, reason: 'exception' };
@@ -1544,6 +1573,17 @@ async function pauseOnError(isDebugPause, message) {
   ];
 
   try {
+    // --- Kill any Chrome instance already using this user_data dir ---
+    try {
+      const userDataEscaped = USER_DATA_DIR.replace(/\\/g, '\\\\');
+      const killCmd = `cmd /c wmic process where "name='chrome.exe' and CommandLine like '%Facebook_Bot\\\\user_data%'" delete`;
+      await execPromise(killCmd, { timeout: 8000 }).catch(() => {});
+      console.log('[Pre-launch] Killed orphaned Chrome (if any).');
+      await sleep(1500); // รอให้ OS release file lock บน user_data
+    } catch (e) {
+      // ไม่มี process ค้าง หรือ wmic ไม่ทำงาน — ข้ามได้
+    }
+
     const context = await chromium.launchPersistentContext(USER_DATA_DIR, {
       headless: isHeadless,
       viewport: null,
@@ -1846,7 +1886,7 @@ async function pauseOnError(isDebugPause, message) {
 
             // --- Share ผ่านโพสต์ในหน้าตัวเอง ---
             await fbPage.bringToFront().catch(() => { });
-            const shareResult = await shareViaOwnPost(fbPage, article);
+            const shareResult = await shareViaOwnPost(fbPage, commentResult.commentUrl);
             if (shareResult && shareResult.success) {
               console.log(`[Share] Shared via own post: ${shareResult.commentUrl}`);
             } else {
