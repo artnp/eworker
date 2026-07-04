@@ -1769,8 +1769,10 @@
   // Only intercept REAL user paste events (isTrusted=true).
   // Programmatic events (from checkAndInjectAll) already have padded images
   // and must pass through to Gemini without interference.
+  // *** IMPORTANT: Only run on Gemini — do NOT intercept Facebook or other sites ***
   document.addEventListener('paste', (e) => {
     if (!e.isTrusted) return;
+    if (!location.hostname.includes('gemini.google.com')) return; // ← Gemini only!
 
     const items = e.clipboardData?.items;
     if (!items) return;
