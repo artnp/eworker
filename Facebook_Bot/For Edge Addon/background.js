@@ -9,12 +9,13 @@ const GEMINI_ACCOUNTS = [
     'https://gemini.google.com/u/3/app',
     'https://gemini.google.com/u/4/app',
     'https://gemini.google.com/u/5/app',
-    'https://gemini.google.com/u/6/app'
+    'https://gemini.google.com/u/6/app',
+    'https://gemini.google.com/u/7/app'
 ];
 
 async function rotateGeminiAccount() {
     const data = await chrome.storage.local.get('geminiUrl');
-    const currentUrl = data.geminiUrl || 'https://gemini.google.com/u/1/app';
+    const currentUrl = data.geminiUrl || 'https://gemini.google.com/u/0/app';
     const currentIndex = GEMINI_ACCOUNTS.indexOf(currentUrl);
     const nextIndex = currentIndex !== -1 ? (currentIndex + 1) % GEMINI_ACCOUNTS.length : 0;
     const nextUrl = GEMINI_ACCOUNTS[nextIndex];
@@ -103,18 +104,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message.action === 'RETRY_NEXT_ACCOUNT') {
         (async () => {
-             // For safety, force rotation of the URL immediately
-             const currentUrl = await rotateGeminiAccount();
-             const data = await chrome.storage.local.get('geminiUrl');
-             const nextUrl = data.geminiUrl || 'https://gemini.google.com/u/1/app';
-             
-             await chrome.storage.local.set({
-                 'pendingGeminiPrompt': message.payload.prompt,
-                 'pendingMultipleImages': message.payload.images,
-                 'pendingClipboardPaste': true,
-             });
-             
-             handleOpenGemini({ url: nextUrl }, sender);
+            // For safety, force rotation of the URL immediately
+            const currentUrl = await rotateGeminiAccount();
+            const data = await chrome.storage.local.get('geminiUrl');
+            const nextUrl = data.geminiUrl || 'https://gemini.google.com/u/1/app';
+
+            await chrome.storage.local.set({
+                'pendingGeminiPrompt': message.payload.prompt,
+                'pendingMultipleImages': message.payload.images,
+                'pendingClipboardPaste': true,
+            });
+
+            handleOpenGemini({ url: nextUrl }, sender);
         })();
         return true;
     }
@@ -167,18 +168,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     if (resp.ok) {
                         const blob = await resp.blob();
                         const bmp = await createImageBitmap(blob);
-                        
+
                         let w = bmp.width;
                         let h = bmp.height;
                         const maxSide = 1800;
-                        
+
                         // Resize logic to avoid 64MB extension limit
                         if (w > h) {
                             if (w > maxSide) { h = Math.floor(h * maxSide / w); w = maxSide; }
                         } else {
                             if (h > maxSide) { w = Math.floor(w * maxSide / h); h = maxSide; }
                         }
-                        
+
                         // Add padding
                         const padding = Math.max(180, Math.floor(h * 0.12));
                         const canvas = new OffscreenCanvas(w, h + padding);
@@ -186,7 +187,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                         ctx.fillStyle = 'white';
                         ctx.fillRect(0, 0, canvas.width, canvas.height);
                         ctx.drawImage(bmp, 0, 0, w, h);
-                        
+
                         const newBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.85 });
                         const dataUrl = await new Promise(r => {
                             const reader = new FileReader();
