@@ -432,96 +432,171 @@ def process_donate(full_path=None):
 
     # --- คำนวณความสูงแบนเนอร์ ---
     pad_v = int(10 * scale)
-    pad_h = int(14 * scale)
-    line_gap = int(5 * scale)
-
     dummy = ImageDraw.Draw(Image.new('RGB', (1, 1)))
-    txt1 = 'อยากจะแก้ไขบ้าง'
-    txt2 = 'เพียง 60 ฿'
-    txt3 = '/ ทำแกมให้หมด ช่วย ๆ กัน / inbox มาแน่ท่าน. /'
-    h1 = dummy.textbbox((0, 0), txt1, font=font_bold)[3]
-    h3 = dummy.textbbox((0, 0), txt3, font=font_small)[3]
-    banner_h = pad_v + h1 + line_gap + h3 + pad_v + int(4 * scale)  # +4 เผื่อเส้นประ
+    h1 = dummy.textbbox((0, 0), 'อยากจะแก้ไขบ้าง', font=font_bold)[3]
+    h3 = dummy.textbbox((0, 0), '/ ทำแถมให้หมด ช่วย ๆ กัน / inbox มาน้าท่าน.. /', font=font_small)[3]
+    banner_h = pad_v + h1 + int(5 * scale) + h3 + pad_v + int(4 * scale)
 
     # --- สร้าง banner RGBA (รองรับ alpha สำหรับ gradient) ---
     banner = Image.new('RGBA', (fw, banner_h), (0, 0, 0, 0))
-
-    # Gradient ฟ้าสด → น้ำเงินเข้ม (ซ้าย→ขวา) แบบของเดิม
     bd = ImageDraw.Draw(banner)
+
+    # 1. Premium Navy Blue Center-to-Edge Gradient (ไล่เฉดสีน้ำเงินสว่างตรงกลาง ขอบข้างน้ำเงินเข้มหรูหรา)
     for x in range(fw):
-        t = x / max(fw - 1, 1)
-        r = int(0 * (1 - t) + 0 * t)
-        g = int(162 * (1 - t) + 98 * t)
-        b = int(255 * (1 - t) + 230 * t)
+        t = abs(x - (fw / 2)) / (fw / 2)
+        r = int(22 * (1 - t) + 10 * t)
+        g = int(88 * (1 - t) + 38 * t)
+        b = int(165 * (1 - t) + 80 * t)
         bd.line([(x, 0), (x, banner_h - 1)], fill=(r, g, b, 255))
 
-    # --- วาดข้อความ row 1: 💞 อยากจะแก้ไขบ้าง  เพียง 60 ฿ ---
+    # --- การคำนวณตำแหน่งกึ่งกลาง ---
+    txt1 = 'อยากจะแก้ไขบ้าง'
+    txt2 = 'เพียง '
+    txt2_price = '60 ฿'
+    txt3 = '/ ทำแกมให้หมด ช่วย ๆ กัน / inbox มาแน่ท่าน.. /'
+
+    w_txt1 = dummy.textbbox((0, 0), txt1, font=font_bold)[2]
+    w_txt2 = dummy.textbbox((0, 0), txt2, font=font_large)[2]
+    w_price = dummy.textbbox((0, 0), txt2_price, font=font_bold)[2]
+    
+    heart_w = int(24 * scale)
+    heart_gap = int(6 * scale)
+    price_gap = int(8 * scale)
+    
+    row1_total_w = heart_w + heart_gap + w_txt1 + price_gap + w_txt2 + w_price
+    start_x = (fw - row1_total_w) // 2
     y1 = pad_v
-    x_text = pad_h
 
-    # วาดหัวใจ (วงกลมสีชมพู-แดง แทน emoji ที่ font ไม่รองรับ)
-    heart_r = int(10 * scale)
-    heart_cx = x_text + heart_r
-    heart_cy = y1 + h1 // 2
-    bd.ellipse([heart_cx - heart_r, heart_cy - heart_r,
-                heart_cx + heart_r, heart_cy + heart_r], fill=(255, 80, 120, 255))
-    bd.ellipse([heart_cx - heart_r + int(2*scale), heart_cy - heart_r + int(2*scale),
-                heart_cx + heart_r - int(2*scale), heart_cy + heart_r - int(2*scale)],
-               fill=(255, 130, 160, 255))
-    x_text = heart_cx + heart_r + int(6 * scale)
+    # --- วาดเวกเตอร์ไอคอนหัวใจ (💖) สีชมพูแดงไล่เฉดพร้อมประกายวิ้ง ---
+    hx = start_x + heart_w // 2
+    hy = y1 + h1 // 2
+    hr = int(7 * scale)
+    
+    # วาดรูปหัวใจเวกเตอร์ (ดึงวงกลม 2 วง + สามเหลี่ยมด้านล่าง)
+    bd.ellipse([hx - hr, hy - hr - int(2*scale), hx, hy - int(2*scale)], fill=(255, 65, 105, 255))
+    bd.ellipse([hx, hy - hr - int(2*scale), hx + hr, hy - int(2*scale)], fill=(255, 65, 105, 255))
+    bd.polygon([hx - hr, hy - int(3*scale), hx + hr, hy - int(3*scale), hx, hy + hr + int(2*scale)], fill=(255, 65, 105, 255))
+    
+    # วาดประกายดาววิ้งๆ สีเหลือง (Sparkle)
+    sparkle_pts = [
+        (hx + hr + int(2*scale), hy - hr), 
+        (hx + hr + int(4*scale), hy - hr - int(2*scale)),
+        (hx + hr + int(6*scale), hy - hr),
+        (hx + hr + int(4*scale), hy - hr + int(2*scale))
+    ]
+    bd.polygon(sparkle_pts, fill=(255, 230, 80, 255))
 
-    # เงาข้อความ row 1 (ออฟเซ็ต 1px)
-    bd.text((x_text + 1, y1 + 1), txt1, fill=(0, 0, 80, 180), font=font_bold)
-    bd.text((x_text, y1), txt1, fill=(255, 255, 255, 255), font=font_bold)
+    # --- วาดข้อความ Row 1 ---
+    x_pos = start_x + heart_w + heart_gap
+    
+    # 1. อยากจะแก้ไขบ้าง
+    bd.text((x_pos + 1, y1 + 1), txt1, fill=(5, 15, 45, 200), font=font_bold)
+    bd.text((x_pos, y1), txt1, fill=(255, 255, 255, 255), font=font_bold)
+    x_pos += w_txt1 + price_gap
 
-    # "เพียง 60 ฿" สีเหลืองสด ต่อท้าย
-    w1 = dummy.textbbox((0, 0), txt1, font=font_bold)[2]
-    x_price = x_text + w1 + int(8 * scale)
+    # 2. เพียง
+    bd.text((x_pos + 1, y1 + int(1*scale) + 1), txt2, fill=(5, 15, 45, 200), font=font_large)
+    bd.text((x_pos, y1 + int(1*scale)), txt2, fill=(210, 235, 255, 255), font=font_large)
+    x_pos += w_txt2
 
-    # กล่องพื้นหลังสีเหลืองใส
-    price_bbox = dummy.textbbox((0, 0), txt2, font=font_large)
-    pw, ph = price_bbox[2], price_bbox[3]
-    px1 = x_price - int(4 * scale)
-    py1 = y1 + (h1 - ph) // 2 - int(1 * scale)
-    px2 = x_price + pw + int(4 * scale)
-    py2 = y1 + (h1 + ph) // 2 + int(2 * scale)
-    bd.rounded_rectangle([px1, py1, px2, py2], radius=int(4 * scale), fill=(255, 220, 0, 220))
-    bd.text((x_price + 1, py1 + 1), txt2, fill=(0, 0, 0, 120), font=font_large)
-    bd.text((x_price, py1), txt2, fill=(20, 20, 20, 255), font=font_large)
+    # 3. 60 ฿
+    bd.text((x_pos + 1, y1 + 1), txt2_price, fill=(5, 15, 45, 200), font=font_bold)
+    bd.text((x_pos, y1), txt2_price, fill=(255, 225, 60, 255), font=font_bold)
 
-    # --- วาดข้อความ row 2 ---
-    y2 = y1 + h1 + line_gap
-    bd.text((pad_h + 1, y2 + 1), txt3, fill=(0, 0, 80, 150), font=font_small)
-    bd.text((pad_h, y2), txt3, fill=(220, 240, 255, 255), font=font_small)
+    # --- วาดข้อความ Row 2: บรรยาย (จัดกึ่งกลาง) ---
+    w_txt3 = dummy.textbbox((0, 0), txt3, font=font_small)[2]
+    x_row2 = (fw - w_txt3) // 2
+    y2 = y1 + h1 + int(5 * scale)
+    
+    bd.text((x_row2 + 1, y2 + 1), txt3, fill=(5, 15, 45, 180), font=font_small)
+    bd.text((x_row2, y2), txt3, fill=(210, 235, 255, 255), font=font_small)
 
-    # --- ไอคอนกรรไกร ✂ มุมขวาล่างของ banner ---
-    scissor_r = int(9 * scale)
-    sx = fw - scissor_r - int(8 * scale)
-    sy = banner_h - scissor_r - int(6 * scale)
-    # วงกลมสีแดงเป็น background
-    bd.ellipse([sx - scissor_r, sy - scissor_r, sx + scissor_r, sy + scissor_r],
-               fill=(220, 30, 30, 230))
-    # วาด X ขาว (แทน ✂)
-    cr = int(5 * scale)
-    bd.line([sx - cr, sy - cr, sx + cr, sy + cr], fill=(255, 255, 255, 255), width=max(2, int(2 * scale)))
-    bd.line([sx + cr, sy - cr, sx - cr, sy + cr], fill=(255, 255, 255, 255), width=max(2, int(2 * scale)))
-
-    # --- เส้นประสีเหลืองด้านล่าง banner ---
+    # --- เส้นประสีขาว ด้านล่างแบนเนอร์ ---
     dash_y = banner_h - int(3 * scale)
-    dash_len = int(14 * scale)
+    dash_len = int(10 * scale)
     gap_len = int(7 * scale)
-    x_pos = 0
-    while x_pos < fw:
-        end_x = min(x_pos + dash_len, fw)
-        bd.line([(x_pos, dash_y), (end_x, dash_y)],
-                fill=(255, 220, 0, 255), width=max(2, int(2 * scale)))
-        x_pos += dash_len + gap_len
+    x_pos_dash = 0
+    while x_pos_dash < fw:
+        end_x = min(x_pos_dash + dash_len, fw)
+        bd.line([(x_pos_dash, dash_y), (end_x, dash_y)],
+                fill=(255, 255, 255, 180), width=max(1, int(1.5 * scale)))
+        x_pos_dash += dash_len + gap_len
 
-    # --- รวม banner (RGBA) + ภาพหลัก ---
+    # --- วาดเวกเตอร์ไอคอนกรรไกร (✂️) ฝั่งขวาตรงเส้นประแบนเนอร์ ---
+    sc_x = fw - int(25 * scale)
+    sc_y = dash_y
+    sc_color = (255, 65, 65, 255)
+    
+    # 2 ห่วงจับของกรรไกร
+    bd.ellipse([sc_x - int(8*scale), sc_y - int(8*scale), sc_x - int(2*scale), sc_y - int(2*scale)], outline=sc_color, width=max(2, int(2*scale)))
+    bd.ellipse([sc_x - int(8*scale), sc_y + int(2*scale), sc_x - int(2*scale), sc_y + int(8*scale)], outline=sc_color, width=max(2, int(2*scale)))
+    
+    # ใบมีดขากรรไกรไขว้ตัดเส้นประ
+    bd.line([sc_x - int(3*scale), sc_y - int(2*scale), sc_x + int(10*scale), sc_y + int(5*scale)], fill=(210, 210, 210, 255), width=max(2, int(2.5 * scale)))
+    bd.line([sc_x - int(3*scale), sc_y + int(2*scale), sc_x + int(10*scale), sc_y - int(5*scale)], fill=(210, 210, 210, 255), width=max(2, int(2.5 * scale)))
+
+    # --- ตรวจจับและดึงโจทย์คำสั่งคอมเมนต์สำหรับเขียนบนรูปภาพ ---
+    prompt_text = ""
+    if "--prompt" in sys.argv:
+        try:
+            p_idx = sys.argv.index("--prompt")
+            if p_idx + 1 < len(sys.argv):
+                prompt_text = sys.argv[p_idx + 1].strip()
+        except Exception:
+            pass
+
+    # --- ฟังก์ชันเขียนข้อความโจทย์ลงแบนเนอร์สีดำแบบบรรทัดเดียว ---
+    prompt_banner_h = 0
+    prompt_banner = None
+    if prompt_text:
+        # เชื่อมคำนำหน้าโจทย์
+        full_prompt_text = f"โจทย์: {prompt_text}"
+        
+        # กำหนดขนาดฟอนต์โจทย์ให้มีขนาดเล็กพอเหมาะ
+        font_prompt = font_small
+        
+        # บังคับบรรทัดเดียว: คำนวณขอบเขตความกว้างสูงสุด
+        max_prompt_w = fw - int(40 * scale)
+        display_text = full_prompt_text
+        
+        # หากข้อความยาวเกินขอบภาพ ให้ตัดออกและใส่ ... ด้านท้าย
+        if dummy.textbbox((0, 0), display_text, font=font_prompt)[2] > max_prompt_w:
+            while len(display_text) > 5 and dummy.textbbox((0, 0), display_text + "...", font=font_prompt)[2] > max_prompt_w:
+                display_text = display_text[:-1]
+            display_text = display_text.strip() + "..."
+
+        # คำนวณความสูงแบนเนอร์ดำโจทย์สำหรับบรรทัดเดียว
+        line_h = dummy.textbbox((0, 0), "ก", font=font_prompt)[3]
+        pad_prompt_v = int(8 * scale) # ปรับ padding ให้บางลงเล็กน้อยเพื่อประหยัดพื้นที่
+        prompt_banner_h = pad_prompt_v * 2 + line_h
+
+        # สร้างแบนเนอร์โจทย์สีดำ (พื้นสีเข้มพรีเมียม)
+        prompt_banner = Image.new('RGB', (fw, prompt_banner_h), (20, 20, 20))
+        p_draw = ImageDraw.Draw(prompt_banner)
+
+        # วาดข้อความโจทย์บรรทัดเดียวสีขาวจัดกึ่งกลาง
+        line_w = p_draw.textbbox((0, 0), display_text, font=font_prompt)[2]
+        line_x = (fw - line_w) // 2
+        p_draw.text((line_x, pad_prompt_v), display_text, fill=(255, 255, 255), font=font_prompt)
+
+    # --- รวม banner (RGBA) + ภาพหลัก + แบนเนอร์โจทย์ (ถ้ามี) ---
     banner_rgb = banner.convert('RGB')
-    combined = Image.new('RGB', (fw, banner_h + fh), (0, 0, 0))
-    combined.paste(banner_rgb, (0, 0))
-    combined.paste(base_img, (0, banner_h))
+    
+    # คำนวณความสูงภาพรวมใหม่
+    total_h = banner_h + fh
+    if prompt_banner:
+        total_h += prompt_banner_h
+
+    combined = Image.new('RGB', (fw, total_h), (0, 0, 0))
+    
+    current_offset_y = 0
+    if prompt_banner:
+        combined.paste(prompt_banner, (0, 0))
+        current_offset_y += prompt_banner_h
+
+    combined.paste(banner_rgb, (0, current_offset_y))
+    current_offset_y += banner_h
+    combined.paste(base_img, (0, current_offset_y))
     final_export = combined
 
     # วาดกรอบสี Lime เขียวสด หนา 4px ล้อมรอบทั้งหมด (สวยกว่า)
