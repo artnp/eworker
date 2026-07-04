@@ -166,52 +166,47 @@ def auto_paste():
     except Exception as e:
         print(f"[AutoPaste] Error: {e}")
 
-def get_white_band_height(img):
-    w, h = img.size
-    img_rgb = img.convert('RGB')
-    
-    # เริ่มสแกนจากด้านล่างขึ้นไป หาจุดที่ไม่ใช่สีขาว
-    for y in range(h - 1, max(0, h - int(h * 0.5)), -1):  # สแกนมากขึ้น (50% แทน 40%)
-        white_count = 0
-        samples = 30  # เพิ่มจำนวน sample points
-        for i in range(samples):
-            x = int((i / samples) * (w * 0.9))  # ครอบคลุมพื้นที่มากขึ้น (90% แทน 75%)
-            r, g, b = img_rgb.getpixel((x, y))
-            # ใช้เกณฑ์เข้มงวดขึ้นสำหรับสีขาว (220 แทน 190)
-            if r > 220 and g > 220 and b > 220: 
-                white_count += 1
-        
-        # ถ้าไม่ใช่พื้นที่สีขาวส่วนใหญ่ (70% แทน 80%)
-        if white_count < samples * 0.7:
-            detected = h - y
-            # เพิ่มการตัดขั้นต่ำ (40px แทน 20px)
-            if detected >= 40: 
-                return detected + 20  # เพิ่ม buffer 20px
-            else: 
-                return 60  # minimum cut 60px
-    
-    # กรณี fallback ตัดมากขึ้น (10% แทน 6.5%)
-    return int(h * 0.1)
-
 def crop_watermark(source_path):
+    """Crop white/blank padding from the bottom of Gemini-generated images."""
     if not os.path.exists(source_path):
-        print(f"ไม่พบไฟล์: {source_path}")
+        print(f"\u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e44\u0e1f\u0e25\u0e4c: {source_path}")
         return None
     with Image.open(source_path) as img:
         img_rgb = img.convert('RGB')
         orig_w, orig_h = img_rgb.size
-        white_band_h = get_white_band_height(img_rgb)
-        
-        # *** แก้: ลบพื้นที่ขาวจริงๆ ไม่เพิ่ม ***
-        if white_band_h > 0:
-            # ตัดตามที่ detect ได้จริงๆ + เล็กน้อย buffer
-            crop_bottom = white_band_h + 10
-        else:
-            # ถ้า detect ไม่เจอ ก็ตัดน้อยลง (ไม่ใช่มากกว่า)
-            crop_bottom = int(orig_h * 0.08)  # ประมาณ 8% เท่านั้น
-        
-        print(f"[Crop] white_band_h={white_band_h}px, crop_bottom={crop_bottom}px, original_h={orig_h}px")
-        return img_rgb.crop((0, 0, orig_w, orig_h - crop_bottom))
+
+        CHUNK_H    = 20    # scan in chunks of 20px
+        BRIGHT_T   = 230   # pixel is "white" if r,g,b all >= this
+        WHITE_RATIO = 0.78 # chunk is white if 78%+ pixels are bright
+        MAX_SCAN   = 0.55  # scan only bottom 55% of image
+
+        last_content_y = orig_h  # assume full image has content
+
+        for chunk_y in range(orig_h - CHUNK_H, int(orig_h * (1 - MAX_SCAN)), -CHUNK_H):
+            bright = 0
+            total = 0
+            for y in range(chunk_y, min(chunk_y + CHUNK_H, orig_h)):
+                for x in range(0, orig_w, max(1, orig_w // 60)):
+                    r, g, b = img_rgb.getpixel((x, y))
+                    if r >= BRIGHT_T and g >= BRIGHT_T and b >= BRIGHT_T:
+                        bright += 1
+                    total += 1
+
+            ratio = bright / max(1, total)
+            if ratio < WHITE_RATIO:
+                # Found content — stop here, mark last content position
+                last_content_y = chunk_y + CHUNK_H
+                break
+
+        crop_bottom = orig_h - last_content_y
+        if crop_bottom > CHUNK_H:
+            crop_bottom = min(crop_bottom + 15, int(orig_h * MAX_SCAN))  # buffer + cap
+            print(f"[Crop] White band detected, crop_bottom={crop_bottom}px, original_h={orig_h}px")
+            return img_rgb.crop((0, 0, orig_w, orig_h - crop_bottom))
+
+        print(f"[Crop] No white band, crop_bottom=0, original_h={orig_h}px")
+        return img_rgb
+
 
 def process_clean_only(full_path=None):
     is_bot = '--bot' in sys.argv
