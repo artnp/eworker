@@ -1207,49 +1207,69 @@ async function postComment(article, imagePath) {
         await sleep(_attempt === 0 ? 3000 : 2000);
 
         commentUrl = await page.evaluate(({ profName, oldIds }) => {
-          // --- Strategy 1: Diff Snapshot (หา comment_id ตัวใหม่ที่เพิ่งเกิดหลังกดโพสต์) ---
-          const currentLinks = Array.from(document.querySelectorAll('a[href*="comment_id"]'));
-          const newLinks = [];
-          for (const a of currentLinks) {
-            try {
-              const href = a.href || '';
-              const url = new URL(href);
-              const cid = url.searchParams.get('comment_id');
-              if (cid && !oldIds.includes(cid)) {
-                newLinks.push({ href, cid });
-              }
-            } catch (e) { }
-          }
-          if (newLinks.length > 0) {
-            // คืนค่าลิงก์ตัวใหม่ล่าสุดที่พบ
-            return newLinks[newLinks.length - 1].href;
-          }
-
-          // --- Strategy 2: ค้นหาจาก container [role="article"] หรือคอมเมนต์ที่มีชื่อโปรไฟล์เรา ---
-          const commentArticles = Array.from(document.querySelectorAll('div[role="article"], div[class*="comment"]')).filter(art => {
-            const label = art.getAttribute('aria-label') || '';
-            const txt = art.innerText || art.textContent || '';
-            // กรองเอาตัวที่มีชื่อโปรไฟล์เรา และไม่อยู่ในกล่องป้อนคำตอบ
-            const isOurProfile = label.includes(profName) || txt.includes(profName);
-            const isComposer = art.closest('[role="textbox"]') || art.closest('form');
-            return isOurProfile && !isComposer;
+          // --- 1. ค้นหาคอมเมนต์ container ทั้งหมดที่เป็นโปรไฟล์เรา ('รับแก้ไขภาพออนไลน์') ---
+          const allEls = Array.from(document.querySelectorAll('div[role="article"], div[class*="comment"], div[class*="x1y1aw1k"], div[class*="xwib8y2"]'));
+          const ourContainers = allEls.filter(el => {
+            // ต้องไม่อยู่ในกล่องป้อนคำตอบ
+            if (el.closest('[role="textbox"]') || el.closest('form') || el.getAttribute('contenteditable') === 'true') {
+              return false;
+            }
+            const text = el.innerText || el.textContent || '';
+            const label = el.getAttribute('aria-label') || '';
+            return text.includes(profName) || label.includes(profName);
           });
 
-          for (let k = commentArticles.length - 1; k >= 0; k--) {
-            const container = commentArticles[k];
+          // --- 2. ดึงลิงก์ comment_id ทั้งหมดใต้ container ของเรา ---
+          const ourLinks = [];
+          for (const container of ourContainers) {
             const links = Array.from(container.querySelectorAll('a[href*="comment_id"]'));
             for (const a of links) {
-              const href = a.href || '';
-              if (href.includes('comment_id=')) {
-                return href;
-              }
+              if (a.href) ourLinks.push(a.href);
             }
           }
 
-          // --- Strategy 3: ค้นหาจากลิงก์ comment_id ตัวล่างสุดในหน้าเพจทั้งหมด ---
-          if (currentLinks.length > 0) {
-            const lastLink = currentLinks[currentLinks.length - 1];
-            return lastLink.href || null;
+          // 2.1 ลิงก์ที่เกิดใหม่ (ไม่อยู่ใน oldIds snapshot) ภายใต้โปรไฟล์เรา (แม่นยำสูงสุด)
+          for (let i = ourLinks.length - 1; i >= 0; i--) {
+            const href = ourLinks[i];
+            try {
+              const url = new URL(href);
+              const cid = url.searchParams.get('comment_id');
+              if (cid && !oldIds.includes(cid)) {
+                return href;
+              }
+            } catch (e) { }
+          }
+
+          // 2.2 ถ้าไม่มีใน diff ให้ใช้ลิงก์ตัวล่างสุดใต้ container ของเราเอง
+          if (ourLinks.length > 0) {
+            return ourLinks[ourLinks.length - 1];
+          }
+
+          // --- 3. Strict Fallback: วนลูปย้อนจากล่างสุดขึ้นบน ตรวจหาลิงก์ comment_id ตัวใหม่ที่ parentElement มีชื่อโปรไฟล์เรา ---
+          const allLinks = Array.from(document.querySelectorAll('a[href*="comment_id"]'));
+          for (let i = allLinks.length - 1; i >= 0; i--) {
+            const a = allLinks[i];
+            const href = a.href || '';
+            try {
+              const url = new URL(href);
+              const cid = url.searchParams.get('comment_id');
+              if (cid && !oldIds.includes(cid)) {
+                // เดินย้อนขึ้น parentElement ไป 10 ชั้นเพื่อตรวจสอบว่ามีชื่อเราหรือไม่
+                let p = a.parentElement;
+                let steps = 0;
+                let belongsToUs = false;
+                while (p && steps < 10) {
+                  const pTxt = p.innerText || p.textContent || '';
+                  if (pTxt.includes(profName)) {
+                    belongsToUs = true;
+                    break;
+                  }
+                  p = p.parentElement;
+                  steps++;
+                }
+                if (belongsToUs) return href;
+              }
+            } catch (e) { }
           }
 
           return null;
