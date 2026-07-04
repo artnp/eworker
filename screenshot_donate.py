@@ -453,7 +453,7 @@ def process_donate(full_path=None):
     txt1 = 'อยากจะแก้ไขบ้าง'
     txt2 = 'เพียง '
     txt2_price = '60 ฿'
-    txt3 = '/ ทำแกมให้หมด ช่วย ๆ กัน / inbox มาแน่ท่าน.. /'
+    txt3 = '/ ทำแถมให้หมด ช่วย ๆ กัน / inbox มาน้าท่าน.. /'
 
     w_txt1 = dummy.textbbox((0, 0), txt1, font=font_bold)[2]
     w_txt2 = dummy.textbbox((0, 0), txt2, font=font_large)[2]
