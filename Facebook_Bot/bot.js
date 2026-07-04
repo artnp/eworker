@@ -221,89 +221,46 @@ async function getPostText(article) {
       await sleep(500);
     }
   } catch (e) { }
-  
+
   try {
     return await article.evaluate((node) => {
-      // *** หาข้อความจากโครงสร้าง HTML ที่แท้จริงของ Facebook ***
-      
-      // 1. ลำดับความสำคัญ: หาจาก div[dir="auto"] ที่มี style="text-align: start;" ก่อน
-      const allDivs = node.querySelectorAll('div[dir="auto"]');
-      for (const el of allDivs) {
-        const style = el.getAttribute('style') || '';
-        if (style.includes('text-align: start')) {
-          // ข้าม element ที่อยู่ใน link, button, navigation
-          if (el.closest('a') || el.closest('button') || el.closest('[role="button"]') || 
-              el.closest('nav') || el.closest('[role="navigation"]')) {
-            continue;
-          }
-          
-          const text = (el.textContent || '').trim();
-          if (text && text.length > 5 && 
-              !text.includes('ถูกใจ') && !text.includes('แสดงความคิดเห็น') && 
-              !text.includes('แชร์') && !text.includes('นาที') && !text.includes('ชั่วโมง') &&
-              !text.includes('แชร์กับ')) {
-            // ลบ emoji และ clean ข้อความ
-            const cleanText = text.replace(/[\u{1F300}-\u{1F9FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').replace(/\s+/g, ' ').trim();
-            if (cleanText.length > 5) {
-              console.log(`✓ Found post text from style="text-align: start;": "${cleanText}"`);
-              return cleanText;
-            }
-          }
-        }
-      }
-      
-      // 2. หาจาก data-ad-comet-preview="message" หรือ data-ad-preview="message"
-      const messageElements = node.querySelectorAll('[data-ad-comet-preview="message"], [data-ad-preview="message"]');
-      for (const el of messageElements) {
-        const text = (el.textContent || '').trim();
-        if (text && text.length > 5) {
+      // 1. ดึงจาก data-ad-comet-preview หรือ data-ad-preview ของ Facebook โดยตรง (แม่นยำที่สุด 100%)
+      const messageElement = node.querySelector('[data-ad-comet-preview="message"], [data-ad-preview="message"]');
+      if (messageElement) {
+        const text = (messageElement.textContent || '').trim();
+        if (text) {
           const cleanText = text.replace(/[\u{1F300}-\u{1F9FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').replace(/\s+/g, ' ').trim();
-          if (cleanText.length > 5) {
+          if (cleanText.length > 2) {
             console.log(`✓ Found post text from data-ad-preview: "${cleanText}"`);
             return cleanText;
           }
         }
       }
-      
-      // 3. หาจาก span ที่มี dir="auto" แต่ไม่อยู่ใน navigation/button
-      const spanElements = node.querySelectorAll('span[dir="auto"]');
-      for (const el of spanElements) {
-        // ข้าม element ที่อยู่ใน link, button, navigation
-        if (el.closest('a') || el.closest('button') || el.closest('[role="button"]') || 
-            el.closest('nav') || el.closest('[role="navigation"]')) {
+
+      // 2. Fallback: หาจาก div[dir="auto"] หรือ span[dir="auto"] แต่ต้องอยู่นอกพื้นที่ของคอมเมนต์ (Comment list)
+      const allDivs = node.querySelectorAll('div[dir="auto"], span[dir="auto"]');
+      for (const el of allDivs) {
+        // ข้าม element ที่อยู่ใน link, button, navigation หรืออยู่ในกล่องคอมเมนต์/ตอบกลับ
+        if (el.closest('a') || el.closest('button') || el.closest('[role="button"]') ||
+          el.closest('nav') || el.closest('[role="navigation"]') ||
+          el.closest('ul') ||
+          el.closest('[class*="comment"]') || el.closest('[class*="reply"]')) {
           continue;
         }
-        
+
         const text = (el.textContent || '').trim();
-        if (text && text.length > 10 && 
-            !text.includes('ถูกใจ') && !text.includes('แสดงความคิดเห็น') && 
-            !text.includes('แชร์') && !text.includes('นาที') && !text.includes('ชั่วโมง')) {
+        if (text && text.length > 5 &&
+          !text.includes('ถูกใจ') && !text.includes('แสดงความคิดเห็น') &&
+          !text.includes('แชร์') && !text.includes('นาที') && !text.includes('ชั่วโมง') &&
+          !text.includes('แชร์กับ')) {
           const cleanText = text.replace(/[\u{1F300}-\u{1F9FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').replace(/\s+/g, ' ').trim();
           if (cleanText.length > 5) {
-            console.log(`✓ Found post text from span[dir="auto"]: "${cleanText}"`);
+            console.log(`✓ Found post text from fallback: "${cleanText}"`);
             return cleanText;
           }
         }
       }
-      
-      // 4. Fallback: หาจาก div[dir="auto"] ทั่วไป
-      for (const el of allDivs) {
-        if (el.closest('a') || el.closest('button') || el.closest('[role="button"]')) {
-          continue;
-        }
-        
-        const text = (el.textContent || '').trim();
-        if (text && text.length > 10) {
-          const cleanText = text.replace(/[\u{1F300}-\u{1F9FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').replace(/\s+/g, ' ').trim();
-          if (cleanText.length > 5 && 
-              !cleanText.includes('ถูกใจ') && !cleanText.includes('แสดงความคิดเห็น') && 
-              !cleanText.includes('แชร์') && !cleanText.includes('นาที')) {
-            console.log(`✓ Found post text from fallback div[dir="auto"]: "${cleanText}"`);
-            return cleanText;
-          }
-        }
-      }
-      
+
       console.warn('⚠️ No post text found with any method');
       return '';
     });
@@ -317,7 +274,7 @@ async function shouldFilterPost(article) {
   try {
     return await article.evaluate((node) => {
       const spamKeywords = [
-        'คิวว่าง', 'รับตัดต่อ', 'ราคาเพียง', 'สอบถามได้', 'เริ่มต้นแค่',
+        'คิวว่าง', 'รับตัดต่อ', 'ราคาเพียง', 'สอบถามได้', 'เริ่มต้นแค่', 'โป๊', 'เย็ด', 'นม', 'หี', 'หน้าอก', 'หรรม', '18+', 'เสียว', 'เงี่ยน', 'หนังผู้ใหญ่',
         'ฝากร้าน', 'เปิดรับ', 'สนใจสอบถาม', 'รับประกัน', 'สร้างรายได้',
         'สอบถามเพิ่มเติม', 'รับทำ', 'รีวิว', 'บริการ', 'เน็ตบ้าน', 'ด่วน',
         'อินเตอร์เน็ตบ้าน', 'สนใจทักแชท', 'ว่างทำให้', 'ว่างแล้ว', 'ขอส่ง', 'ให้ฟรี',
@@ -467,14 +424,17 @@ async function waitForFastDownload(timeoutMs = 90000) {
   return null;
 }
 
-async function runPythonImageEditor(imagePath) {
+async function runPythonImageEditor(imagePath, postText = '') {
   const desktopPath = path.join(process.env.USERPROFILE, 'Desktop', 'complete.png');
   const isBotMode = process.argv.includes('--bot');
   const outputName = isBotMode ? 'complete_bot.png' : 'complete.png';
   const desktopOutputPath = path.join(process.env.USERPROFILE, 'Desktop', outputName);
   try {
     const pythonScript = 'D:\\Github\\eworker\\screenshot_donate.py';
-    const cmd = `python "${pythonScript}" --donate-no-paste "${imagePath}" --bot`;
+    // หลีกเลี่ยงอักขระพิเศษใน prompt
+    const cleanPrompt = postText ? postText.replace(/"/g, '\\"').replace(/\n/g, ' ') : '';
+    const promptArg = cleanPrompt ? `--prompt "${cleanPrompt}"` : '';
+    const cmd = `python "${pythonScript}" --donate-no-paste "${imagePath}" ${promptArg} --bot`;
     console.log('Running cmd:', cmd);
     const { stdout, stderr } = await execPromise(cmd);
     if (stderr && !stderr.includes('DeprecationWarning') && !stderr.includes('UserWarning')) {
@@ -737,10 +697,10 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
         captured = true;
       } catch (e) {
         console.warn(`[FastDL] Fast Download button not found (attempt ${retryCount + 1}/${maxRetries + 1}):`, e.message);
-        
+
         if (retryCount < maxRetries) {
           console.log('[FastDL] Trying refresh Gemini...');
-          
+
           // คลิกปุ่ม refresh เพื่อลองใหม่
           try {
             const refreshBtn = page.locator('mat-icon[data-mat-icon-name="refresh"]').first();
@@ -757,9 +717,9 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
             console.warn('[FastDL] Refresh button click failed:', refreshError.message);
           }
         }
-        
-          console.warn('[FastDL] Max retries reached, skipping post.');
-          return null;
+
+        console.warn('[FastDL] Max retries reached, skipping post.');
+        return null;
 
         retryCount++;
       }
@@ -819,38 +779,38 @@ async function postComment(article, imagePath) {
     const page = article.page();
 
     // scroll article กลับเข้า viewport ก่อนทุกอย่าง
-    await article.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center' })).catch(() => {});
+    await article.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center' })).catch(() => { });
     await sleep(1000);
-    
+
     // ตรวจสอบสถานะของโพสต์ก่อน
     console.log('=== POST STATUS CHECK ===');
     const postStatus = await article.evaluate((node) => {
       const text = node.textContent || '';
-      
+
       // ตรวจสอบว่าโพสต์ถูกลบหรือไม่
-      if (text.includes('เนื้อหานี้ไม่พร้อมใช้งาน') || 
-          text.includes('This content isn\'t available') ||
-          text.includes('โพสต์นี้ไม่พร้อมใช้งาน')) {
+      if (text.includes('เนื้อหานี้ไม่พร้อมใช้งาน') ||
+        text.includes('This content isn\'t available') ||
+        text.includes('โพสต์นี้ไม่พร้อมใช้งาน')) {
         return 'deleted';
       }
-      
+
       // ตรวจสอบว่าปิดคอมเมนต์หรือไม่
-      if (text.includes('ปิดการแสดงความคิดเห็น') || 
-          text.includes('Comments are turned off') ||
-          text.includes('ไม่สามารถแสดงความคิดเห็น')) {
+      if (text.includes('ปิดการแสดงความคิดเห็น') ||
+        text.includes('Comments are turned off') ||
+        text.includes('ไม่สามารถแสดงความคิดเห็น')) {
         return 'comments_disabled';
       }
-      
+
       return 'normal';
     });
-    
+
     console.log(`Post status: ${postStatus}`);
-    
+
     if (postStatus === 'deleted') {
       console.log('Post was deleted, skipping...');
       return { success: false, reason: 'post_deleted' };
     }
-    
+
     if (postStatus === 'comments_disabled') {
       console.log('Comments are disabled for this post, skipping...');
       return { success: false, reason: 'comments_disabled' };
@@ -866,17 +826,17 @@ async function postComment(article, imagePath) {
         'div[role="textbox"][contenteditable="true"][aria-label*="Comment"]',
         'div[role="textbox"][contenteditable="true"][aria-placeholder*="ความคิดเห็น"]',
         'div[role="textbox"][contenteditable="true"][aria-placeholder*="comment"]',
-        
+
         // ทั่วไปใน article
         'div[role="textbox"][contenteditable="true"]',
         'textarea[placeholder*="ความคิดเห็น"]',
         'textarea[placeholder*="comment"]',
         'textarea[aria-label*="comment"]',
-        
+
         // Form elements
         'form div[role="textbox"][contenteditable="true"]',
         'form textarea',
-        
+
         // Fallback - ใช้ data attributes
         'div[contenteditable="true"][data-lexical-editor]',
         'div[contenteditable="true"][data-testid*="comment"]'
@@ -896,7 +856,7 @@ async function postComment(article, imagePath) {
           }
         } catch (e) { }
       }
-      
+
       // 2. ค้น page-wide
       for (const sel of composerSelectors) {
         try {
@@ -912,7 +872,7 @@ async function postComment(article, imagePath) {
                 const distance = Math.abs(rect1.top - rect2.bottom);
                 return distance < 500; // ห่างไม่เกิน 500px
               }, await article.elementHandle()).catch(() => true);
-              
+
               if (isNearArticle) {
                 console.log(`Found composer on page: ${sel}`);
                 return c;
@@ -930,7 +890,7 @@ async function postComment(article, imagePath) {
     if (!composer) {
       const commentBtnSelectors = [
         'div[role="button"][aria-label*="แสดงความคิดเห็น"]',
-        'div[role="button"][aria-label*="Comment"]', 
+        'div[role="button"][aria-label*="Comment"]',
         'div[role="button"][aria-label*="comment"]',
         '[role="button"]:has-text("ความคิดเห็น")',
         '[role="button"]:has-text("Comment")',
@@ -940,7 +900,7 @@ async function postComment(article, imagePath) {
         'div[aria-label*="Comment"][role="button"]',
         'div[data-testid*="comment"]'
       ];
-      
+
       let clicked = false;
       for (const sel of commentBtnSelectors) {
         try {
@@ -955,16 +915,16 @@ async function postComment(article, imagePath) {
           console.warn(`Failed to click ${sel}: ${e.message}`);
         }
       }
-      
+
       if (clicked) {
         await sleep(2000); // รอนานขึ้น
-        
+
         // ลอง scroll ดู เผื่อ comment section อยู่ล่างมาก
         await article.evaluate(el => {
           el.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        }).catch(() => {});
+        }).catch(() => { });
         await sleep(1000);
-        
+
         composer = await findComposer();
       }
     }
@@ -979,7 +939,7 @@ async function postComment(article, imagePath) {
           console.log('Composer found after waiting!');
           break;
         }
-        
+
         // ลอง scroll และคลิก comment อีกครั้งทุก 5 วินาที
         if ((Date.now() - startWait) % 5000 < 500) {
           console.log('Retrying comment button click...');
@@ -991,7 +951,7 @@ async function postComment(article, imagePath) {
             }
           } catch (e) { }
         }
-        
+
         await sleep(500);
       }
     }
@@ -999,16 +959,16 @@ async function postComment(article, imagePath) {
     if (!composer) {
       // พิมพ์ข้อมูล debug ช่วยวินิจฉัย
       console.log('=== COMPOSER DEBUG INFO ===');
-      
+
       try {
         // ดู elements ที่มีอยู่ใน page
         const allTextboxes = await page.locator('[role="textbox"]').count();
         const allContenteditable = await page.locator('[contenteditable="true"]').count();
         const allForms = await page.locator('form').count();
         const allTextareas = await page.locator('textarea').count();
-        
+
         console.log(`Found elements: textbox=${allTextboxes}, contenteditable=${allContenteditable}, form=${allForms}, textarea=${allTextareas}`);
-        
+
         // ตรวจสอบว่ามี comment section หรือไม่
         const hasCommentSection = await page.evaluate(() => {
           const keywords = ['comment', 'ความคิดเห็น', 'แสดงความคิดเห็น'];
@@ -1027,11 +987,11 @@ async function postComment(article, imagePath) {
           return found;
         });
         console.log(`Comment-related elements found: ${hasCommentSection}`);
-        
+
       } catch (e) {
         console.log(`Debug info error: ${e.message}`);
       }
-      
+
       console.log('========================');
       console.log('Comment composer not found.');
       return { success: false, reason: 'composer_not_found' };
@@ -1068,15 +1028,15 @@ async function postComment(article, imagePath) {
       ];
       fs.writeFileSync(tempPs1, psLines.join('\r\n'), 'utf8');
       await execPromise(`cmd /c powershell -STA -NoProfile -ExecutionPolicy Bypass -File "${tempPs1}"`, { timeout: 15000 });
-      try { fs.unlinkSync(tempPs1); } catch (_) {}
+      try { fs.unlinkSync(tempPs1); } catch (_) { }
       console.log('Image copied to clipboard (CF_PNG + CF_DIB).');
-      
+
       // 2. คลิกที่ composer และกด Ctrl+V
       await composer.click({ force: true });
       await sleep(500);
       await page.keyboard.press('Control+v');
       await sleep(4000); // รอให้ Facebook โหลดภาพ
-      
+
       // 3. ตรวจสอบว่าภาพอัพโหลดแล้วหรือยัง (หลายแบบ — อย่า strict เกินไป)
       const uploaded = await page.evaluate(() => {
         return !!(
@@ -1109,9 +1069,16 @@ async function postComment(article, imagePath) {
     }
 
     const promoMessages = [
-      '✅ทำให้นะ',
-      '✅ช่วยเหลือกัน',
-      '✅ทำให้ฟรี'
+      '✅ทำให้ฟรีขอรับ', '✅ทำให้ขอรับนายท่าน', '✅ช่วยเหลือกัน', '✅จัดให้นายท่าน', '✅ทำให้ด้วยใจขอรับเจ้านาย',
+      '✅สำหรับท่านจัดให้ฟรี', '✅แก้ให้ฟรีเพื่อท่าน', '✅ขอทำให้ฟรีๆ', '✅ยินดีช่วยเหลือขอรับ', '✅ทำให้แล้วนะครับเจ้านาย',
+      '✅ช่วยปรับให้นายท่าน', '✅บริการฟรีเพื่อความสุขของนายท่าน', '✅ทำให้ฟรีไม่คิดเงินนะขอรับ', '✅จัดให้ตามคำขอของนายท่าน', '✅ยินดีทำให้นายท่านคนเดียว',
+      '✅ทำให้ด้วยความยินดีขอรับ', '✅ช่วยเหลือเพื่อนร่วมกลุ่มของพวกเรา', '✅ขอให้นายท่านมีความสุข', '✅ขอดูแลนายท่านแบบสาธารณะประโยชน์', '✅ทำให้ฟรีเพื่อสังคมที่ดีขอรับ',
+      '✅ช่วยเหลือกันในกลุ่มขอรับ', '✅ไม่มีค่าใช้จ่าย 100%', '✅ดีใจที่ได้ช่วยเหลือนายท่านขอรับ', '✅ทำให้แบบทันใจไหมนายท่าน', '✅Ok ไหมขอรับนายท่าน',
+      '✅พึงพอใจไหมนายท่าน', '✅ถูกใจนายท่านไหมขอรับ', '✅เพื่อนายท่านคนเดียว', '✅แฮปปี้ไหมนายท่าน', '✅เรียบร้อยนายท่าน',
+      '✅สำเร็จ!ขอรับนายท่าน', '✅อยากให้ช่วยอะไรอีกไหมนายท่าน', '✅เสร็จสมบูรณ์ขอรับนายท่าน', '✅บริการสมาชิกกลุ่มที่น่ารักแบบนายท่าน', '✅หน่วยบริการมาแล้วขอรับนายท่าน',
+      '✅ทำให้ฟรีแบบไม่มีเงื่อนไขขอรับ', '✅ทำให้ฟรีสนุกดีจังขอรับ', '✅ดีใจที่ได้เจอนายท่านที่นี่', '✅เห็นนายท่านมีความสุข ก็ดีใจตาม', '✅สาธุในใจขอรับ',
+      '✅จัดไปตามคำสั่งนายท่าน', '✅นายท่านสั่งมาต้องได้ดั่งใจนึก', '✅ตามที่นายท่านปรารถนา', '✅เต็มสิบให้คะแนนเท่าไหร่ดีนายท่าน', '✅ยินดีที่ได้เจอนายท่านในนี้อีก',
+      '✅บริการ บริการ บริการนายท่าน', '✅ฟรีๆ เรียบร้อยขอรับ', '✅ปรึกษาต่อได้ในแชทนะนายท่าน', '✅ตกแต่งภาพให้นายท่าน!', '✅จัดไปด่วน ๆ ให้นายท่านทันที'
     ];
     const promoText = promoMessages[Math.floor(Math.random() * promoMessages.length)];
     // ใช้ insertText แทน fill() เพื่อไม่ลบภาพที่ paste ไปแล้ว
@@ -1121,18 +1088,17 @@ async function postComment(article, imagePath) {
     await sleep(200);
     await page.keyboard.type(promoText, { delay: 30 });
     await sleep(500);
-    
-    // *** �Ը�����: ��ԡ Submit button ᷹ Enter ���������� modal �Դ ***
+
+    // *** ปรับปรุง: ใช้ปุ่ม Submit button แทน Enter เพื่อให้ modal ปิด ***
 
     // --- บันทึก comment_id ที่มีอยู่แล้วก่อน submit (เพื่อหา comment ใหม่ภายหลัง) ---
     const existingCommentIds = await page.evaluate(() => {
-      return new Set(
-        Array.from(document.querySelectorAll('a[href*="comment_id"]'))
-          .map(a => { try { return new URL(a.href).searchParams.get('comment_id'); } catch { return null; } })
-          .filter(Boolean)
-      );
-    }).catch(() => new Set());
-    console.log('[Comment URL] Snapshot: ' + existingCommentIds.size + ' existing comment_ids');
+      const ids = Array.from(document.querySelectorAll('a[href*="comment_id"]'))
+        .map(a => { try { return new URL(a.href).searchParams.get('comment_id'); } catch { return null; } })
+        .filter(Boolean);
+      return Array.from(new Set(ids)); // คืนค่าเป็น Array เสมอเพื่อให้ Playwright serialize ได้
+    }).catch(() => []);
+    console.log('[Comment URL] Snapshot: ' + existingCommentIds.length + ' existing comment_ids');
 
     let commentPosted = false;
 
@@ -1153,15 +1119,15 @@ async function postComment(article, imagePath) {
         const buttons = Array.from(container.querySelectorAll('div[role="button"], button'));
         const submitBtn = buttons.find(btn => {
           const label = (btn.getAttribute('aria-label') || '').trim();
-          const txt   = (btn.innerText || '').trim();
+          const txt = (btn.innerText || '').trim();
           const disabled = btn.getAttribute('aria-disabled') === 'true' || btn.disabled;
           if (disabled) return false;
           return (
             label === '\u0e42\u0e1e\u0e2a\u0e15\u0e4c\u0e04\u0e27\u0e32\u0e21\u0e04\u0e34\u0e14\u0e40\u0e2b\u0e47\u0e19' ||
             label === 'Post comment' ||
             label.startsWith('Post') ||
-            txt   === '\u0e42\u0e1e\u0e2a\u0e15\u0e4c' ||
-            txt   === 'Post'
+            txt === '\u0e42\u0e1e\u0e2a\u0e15\u0e4c' ||
+            txt === 'Post'
           );
         });
         if (submitBtn) { submitBtn.click(); return true; }
@@ -1197,7 +1163,7 @@ async function postComment(article, imagePath) {
             break;
           }
           if (commentPosted) break;
-        } catch (e) {}
+        } catch (e) { }
       }
     }
 
@@ -1230,51 +1196,89 @@ async function postComment(article, imagePath) {
     }
 
     console.log('? Comment posted (keeping modal open for URL extraction)');
-    
-    // --- ค้นหา comment URL ของเราจาก promoText (Retry loop รอ Facebook render) ---
-    // --- ค้นหา comment URL ของเราจาก promoText ---
-    // --- ค้นหา comment URL ของเรา: หา comment_id ใหม่ที่ไม่ใช่ของเดิม ---
+
+    // --- ค้นหา comment URL ของความคิดเห็นเราแบบ Triple-Layer Verified ---
     let commentUrl = null;
     try {
-      console.log('[Comment URL] Looking for new comment_id after submit...');
-      // Retry ถึง 8 รอบ รอ Facebook render comment ใหม่
+      console.log('[Comment URL] Searching for newly created comment URL...');
+      const profileName = 'รับแก้ไขภาพออนไลน์'; // ข้อความภาษาไทยถูกต้องตรงตัว
+
       for (let _attempt = 0; _attempt < 8; _attempt++) {
         await sleep(_attempt === 0 ? 3000 : 2000);
-        commentUrl = await page.evaluate((existingIds) => {
-          const allLinks = Array.from(document.querySelectorAll('a[href*="comment_id"]'));
-          // หา link ที่มี comment_id ใหม่ (ไม่อยู่ใน snapshot ก่อน submit)
-          const newLinks = allLinks.filter(a => {
+
+        commentUrl = await page.evaluate(({ profName, oldIds }) => {
+          // --- Strategy 1: Diff Snapshot (หา comment_id ตัวใหม่ที่เพิ่งเกิดหลังกดโพสต์) ---
+          const currentLinks = Array.from(document.querySelectorAll('a[href*="comment_id"]'));
+          const newLinks = [];
+          for (const a of currentLinks) {
             try {
-              const cid = new URL(a.href).searchParams.get('comment_id');
-              return cid && !existingIds.has(cid);
-            } catch { return false; }
+              const href = a.href || '';
+              const url = new URL(href);
+              const cid = url.searchParams.get('comment_id');
+              if (cid && !oldIds.includes(cid)) {
+                newLinks.push({ href, cid });
+              }
+            } catch (e) { }
+          }
+          if (newLinks.length > 0) {
+            // คืนค่าลิงก์ตัวใหม่ล่าสุดที่พบ
+            return newLinks[newLinks.length - 1].href;
+          }
+
+          // --- Strategy 2: ค้นหาจาก container [role="article"] หรือคอมเมนต์ที่มีชื่อโปรไฟล์เรา ---
+          const commentArticles = Array.from(document.querySelectorAll('div[role="article"], div[class*="comment"]')).filter(art => {
+            const label = art.getAttribute('aria-label') || '';
+            const txt = art.innerText || art.textContent || '';
+            // กรองเอาตัวที่มีชื่อโปรไฟล์เรา และไม่อยู่ในกล่องป้อนคำตอบ
+            const isOurProfile = label.includes(profName) || txt.includes(profName);
+            const isComposer = art.closest('[role="textbox"]') || art.closest('form');
+            return isOurProfile && !isComposer;
           });
-          if (newLinks.length === 0) return null;
-          // เอา link ล่าสุด (อยู่ท้ายสุดใน DOM = comment ใหม่สุด)
-          const href = newLinks[newLinks.length - 1].href;
+
+          for (let k = commentArticles.length - 1; k >= 0; k--) {
+            const container = commentArticles[k];
+            const links = Array.from(container.querySelectorAll('a[href*="comment_id"]'));
+            for (const a of links) {
+              const href = a.href || '';
+              if (href.includes('comment_id=')) {
+                return href;
+              }
+            }
+          }
+
+          // --- Strategy 3: ค้นหาจากลิงก์ comment_id ตัวล่างสุดในหน้าเพจทั้งหมด ---
+          if (currentLinks.length > 0) {
+            const lastLink = currentLinks[currentLinks.length - 1];
+            return lastLink.href || null;
+          }
+
+          return null;
+        }, { profName: profileName, oldIds: existingCommentIds });
+
+        if (commentUrl) {
           try {
-            const url = new URL(href);
+            const url = new URL(commentUrl);
             const cid = url.searchParams.get('comment_id');
             url.search = '';
             if (cid) url.searchParams.set('comment_id', cid);
-            return url.toString();
+            commentUrl = url.toString();
           } catch {
-            const m = href.match(/comment_id=([^&]+)/);
-            return href.split('?')[0] + (m ? '?comment_id=' + m[1] : '');
+            const m = commentUrl.match(/comment_id=([^&]+)/);
+            if (m) {
+              commentUrl = commentUrl.split('?')[0] + '?comment_id=' + m[1];
+            }
           }
-        }, [...existingCommentIds]);
-
-        if (commentUrl) {
-          console.log('[Comment URL] Found new comment_id (attempt ' + (_attempt + 1) + '): ' + commentUrl);
+          console.log('[Comment URL] ✅ Found verified link: ' + commentUrl);
           break;
         }
-        console.log('[Comment URL] New comment_id not found yet (' + (_attempt + 1) + '/8), retrying...');
+        console.log('[Comment URL] Retrying (' + (_attempt + 1) + '/8)...');
       }
+
       if (!commentUrl) {
-        console.warn('[Comment URL] Could not find new comment after all retries — share will be skipped.');
+        console.warn('[Comment URL] Could not find link under our comment container.');
       }
     } catch (urlErr) {
-      console.warn('[Comment URL] Failed to extract:', urlErr.message);
+      console.warn('[Comment URL] Error:', urlErr.message);
     }
 
     return { success: true, promoText, commentUrl };
@@ -1307,7 +1311,7 @@ async function likePost(article) {
             return true;
           }
           // ใช้ click ปกติ (ไม่ force) เพื่อให้ Playwright ตรวจ interactability จริงๆ
-          await btn.scrollIntoViewIfNeeded().catch(() => {});
+          await btn.scrollIntoViewIfNeeded().catch(() => { });
           await btn.click({ timeout: 5000 });
           await sleep(1000);
           console.log('Liked post.');
@@ -1426,7 +1430,7 @@ async function shareViaOwnPost(fbPage, commentUrl) {
             console.log('[Share] ✅ Clicked via Playwright has-text: ' + txt);
             break;
           }
-        } catch (e) {}
+        } catch (e) { }
       }
     }
 
@@ -1453,7 +1457,7 @@ async function shareViaOwnPost(fbPage, commentUrl) {
           console.log('[Share] Found composer: ' + sel);
           break;
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     if (!postComposer) {
@@ -1466,61 +1470,111 @@ async function shareViaOwnPost(fbPage, commentUrl) {
 
     // Type share text + comment URL
     const thankYouMessages = [
-      '✅ทำเสร็จแล้วนะครับ เชิญดูภาพใต้คอมเมนต์',
-      '✅รับแก้ไขภาพออนไลน์ได้เลย ดูได้ที่คอมเมนต์',
-      '✅แต่งภาพให้ครับ เชิญดูได้ที่คอมเมนต์ด้านล่าง',
+      '✅รีทัชรูปสำเร็จ', '✅แต่งภาพเสร็จแล้ว', '✅แก้ไขภาพเรียบร้อย', '✅ปรับแต่งภาพให้เรียบร้อย', '✅ช่วยแก้ไขภาพสำเร็จ',
+      '✅ส่งงานแก้ไขภาพ', '✅แต่งภาพให้แล้ว', '✅รีทัชภาพเรียบร้อยแล้ว', '✅แต่งรูปเสร็จเรียบร้อย', '✅แก้ไขรูปภาพเสร็จแล้ว',
+      '✅รีทัชรูปภาพให้แล้ว', '✅ปรับแต่งรูปเสร็จเรียบร้อย', '✅ส่งงานรีทัชภาพเรียบร้อย', '✅แก้ไขงานแต่งรูปเสร็จแล้ว', '✅ตกแต่งรูปภาพเสร็จแล้ว',
+      '✅ส่งงานแต่งรูปเสร็จสมบูรณ์', '✅แก้ไขจุดบกพร่องรูปภาพเสร็จแล้ว', '✅แต่งรูปให้ใหม่เรียบร้อย', '✅รีทัชภาพเสร็จสมบูรณ์', '✅แต่งภาพเสร็จเรียบร้อย',
+      '✅แก้รูปภาพให้เรียบร้อยแล้ว', '✅แก้ไขภาพให้ใหม่เรียบร้อย', '✅ออกแบบแต่งภาพเสร็จแล้ว', '✅โมรูปใหม่เสร็จเรียบร้อย', '✅ทำภาพใหม่เสร็จแล้ว',
+      '✅ทำกราฟิกรีทัชรูปเสร็จแล้ว', '✅แต่งเติมภาพเสร็จเรียบร้อย', '✅ส่งงานรีทัชรูปภาพด่วนเสร็จแล้ว', '✅แก้รูปภาพด่วนให้แล้ว', '✅แต่งรูปเสร็จสมบูรณ์ 100%',
+      '✅จัดระเบียบภาพใหม่เสร็จแล้ว', '✅ส่งมอบงานแต่งภาพด่วน', '✅แต่งภาพตามคำขอเสร็จแล้ว', '✅แก้ไขภาพตามโจทย์เรียบร้อย',
+      '✅ทำภาพเนียนๆ เสร็จแล้ว', '✅ส่งรูปแต่งเสร็จแล้ว', '✅แต่งภาพให้ทันใจเรียบร้อย', '✅แก้รูปภาพตามต้องการเสร็จแล้ว', '✅ผลงานแต่งรูปเสร็จสมบูรณ์',
+      '✅ส่งงานตัดต่อรีทัชภาพเสร็จแล้ว', '✅โมดิฟายรูปภาพให้เสร็จแล้ว', '✅ทำรูปภาพเนียนๆ เสร็จแล้ว', '✅ส่งงานตกแต่งภาพเรียบร้อย',
+      '✅แต่งรูปภาพให้สวยงามเสร็จแล้ว', '✅ส่งมอบงานแก้ไขรูปภาพเสร็จสิ้น', '✅ปรับปรุงคุณภาพรูปภาพเสร็จเรียบร้อย', '✅รีทัชแต่งภาพด่วนเสร็จเรียบร้อย'
     ];
+
+    const allHashtags = ['#หาคนแก้ภาพด่วน', '#หาคนทำกราฟิก', '#หาคนแต่งรูป', '#หาคนรีทัชรูป', '#หาคนตัดต่อรูป', '#หาคนแก้ไขภาพ', '#หาคนแต่งภาพ', '#หาคนทำรูป', '#หาคนออกแบบภาพ', '#หาคนทำภาพโฆษณา',
+      '#รับแก้ภาพ', '#รับแก้ไขภาพ', '#รับแก้รูป', '#รับแต่งรูป', '#รับแต่งภาพ', '#รับรีทัชรูป', '#รับรีทัชภาพ', '#รับตัดต่อรูป', '#รับตัดต่อภาพ', '#รับทำรูป', '#รับทำรูปภาพ', '#รับทำกราฟิก', '#รับออกแบบภาพ', '#รับออกแบบกราฟิก', '#รับลบพื้นหลัง', '#รับลบคนออกจากภาพ', '#รับลบวัตถุ', '#รับซ่อมภาพ', '#รับฟื้นฟูภาพ', '#รับงานแต่งภาพ',
+      '#รับงานรีทัช', '#รับงานตัดต่อ', '#รับงานกราฟิก', '#รับงานด่วน', '#รับงานออนไลน์', '#รับจ้างแต่งรูป', '#รับจ้างรีทัชรูป', '#รับจ้างตัดต่อรูป', '#รับจ้างแก้ภาพ', '#รับจ้างทำกราฟิก', '#รับจ้างออกแบบภาพ', '#รับจ้างลบพื้นหลัง', '#รับจ้างทำภาพโฆษณา', '#รับจ้างทำแบนเนอร์',
+      '#จ้างแต่งรูป', '#จ้างรีทัชรูป', '#จ้างตัดต่อรูป', '#จ้างแก้ภาพ', '#จ้างทำกราฟิก', '#จ้างออกแบบภาพ', '#จ้างทำรูปสินค้า', '#จ้างทำภาพโฆษณา', '#จ้างฟรีแลนซ์', '#จ้างกราฟิก',
+      '#ร้านแต่งรูป', '#ร้านรีทัชรูป', '#ร้านตัดต่อรูป', '#ร้านกราฟิก', '#ร้านออกแบบ', '#ร้านทำป้าย', '#ร้านทำรูป', '#ร้านแต่งภาพ', '#ร้านแก้ภาพ', '#ร้านรับทำกราฟิก',
+      '#เพจแต่งรูป', '#เพจรีทัชรูป', '#เพจตัดต่อรูป', '#เพจกราฟิก', '#เพจรับงาน', '#เพจรับแต่งรูป', '#เพจรับตัดต่อ', '#เพจรับรีทัช', '#เพจออกแบบ', '#เพจฟรีแลนซ์',
+      '#แก้ไขภาพ', '#แก้ภาพ', '#แก้รูป', '#แต่งรูป', '#แต่งภาพ', '#รีทัชรูป', '#รีทัชภาพ', '#ตัดต่อรูป', '#ตัดต่อภาพ', '#ลบพื้นหลัง', '#เปลี่ยนพื้นหลัง', '#ลบคน', '#ลบวัตถุ', '#ซ่อมภาพ', '#ฟื้นฟูภาพ', '#ภาพสินค้า', '#แต่งรูปสินค้า', '#ภาพโฆษณา', '#ทำแบนเนอร์', '#ออกแบบกราฟิก', '#กราฟิกดีไซน์', '#งานกราฟิก', '#ฟรีแลนซ์กราฟิก', '#แม่ค้าออนไลน์', '#พ่อค้าออนไลน์', '#ร้านค้าออนไลน์', '#ภาพโปรไฟล์', '#ภาพปก', '#แต่งภาพด่วน', '#แก้ภาพด่วน', '#รีทัชภาพด่วน'];
+
+    // สุ่มแฮชแท็กมา 4 อันแบบไม่ซ้ำกัน
+    const shuffledHashtags = allHashtags.sort(() => 0.5 - Math.random()).slice(0, 4);
+    const hashtagStr = shuffledHashtags.join(' ');
+
     const shareMsg = thankYouMessages[Math.floor(Math.random() * thankYouMessages.length)];
-    const shareText = shareMsg + '\n\n' + commentUrl;
+    const shareText = `${shareMsg}\n- สนใจทักแชท【💵 60฿】ราคาเดียวไม่คิดเพิ่ม\n${hashtagStr}\n\n${commentUrl}`;
+
     await postComposer.fill(shareText);
     await sleep(2000);
 
-    // Click Post button inside dialog
-    console.log('[Share] Clicking Post button...');
+    // Multi-stage Submission Loop: กดปุ่ม "ถัดไป" -> "โพสต์" จนกว่า Dialog จะปิดลงจริง
+    console.log('[Share] Clicking Post/Next button loop...');
     let shared = false;
 
-    // DOM traversal to find Post button in dialog
-    shared = await fbPage.evaluate(() => {
-      const dialog = document.querySelector('div[role="dialog"]');
-      if (!dialog) return false;
-      const buttons = Array.from(dialog.querySelectorAll('div[role="button"], button'));
-      const postBtn = buttons.find(btn => {
-        const label = (btn.getAttribute('aria-label') || '').trim();
-        const txt = (btn.innerText || '').trim();
-        const disabled = btn.getAttribute('aria-disabled') === 'true' || btn.disabled;
-        if (disabled) return false;
-        return label === 'โพสต์' || label === 'Post' ||
-               txt === 'โพสต์' || txt === 'Post';
-      });
-      if (postBtn) { postBtn.click(); return true; }
-      return false;
-    }).catch(() => false);
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      const isDialogOpen = await fbPage.evaluate(() => !!document.querySelector('div[role="dialog"]'));
+      if (!isDialogOpen) {
+        console.log('[Share] ✅ Dialog closed. Profile post created successfully!');
+        shared = true;
+        break;
+      }
 
-    if (shared) {
-      console.log('[Share] ✅ Clicked Post button via DOM.');
-    } else {
-      // Playwright fallback
-      for (const sel of [
-        'div[role="dialog"] div[aria-label="โพสต์"]',
-        'div[role="dialog"] div[aria-label="Post"]',
-        'div[role="dialog"] div[role="button"][aria-label*="Post"]',
-      ]) {
-        try {
-          const btn = fbPage.locator(sel).first();
-          if (await btn.count() > 0 && await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
-            if (await btn.getAttribute('aria-disabled').catch(() => 'false') !== 'true') {
-              await btn.click({ force: true });
-              console.log('[Share] ✅ Playwright clicked: ' + sel);
-              shared = true;
-              break;
+      console.log(`[Share] Attempt ${attempt}: Searching for active Post/Next button...`);
+
+      // 1. ค้นหาและคลิกผ่าน DOM evaluate ใน dialog ล่าสุด
+      let clickedInLoop = await fbPage.evaluate(() => {
+        const dialogs = Array.from(document.querySelectorAll('div[role="dialog"]'));
+        if (dialogs.length === 0) return false;
+
+        // ใช้ dialog ชั้นในสุด (ล่าสุด)
+        const activeDialog = dialogs[dialogs.length - 1];
+        const buttons = Array.from(activeDialog.querySelectorAll('div[role="button"], button'));
+
+        const targetBtn = buttons.find(btn => {
+          const label = (btn.getAttribute('aria-label') || '').trim();
+          const txt = (btn.innerText || btn.textContent || '').trim();
+          const disabled = btn.getAttribute('aria-disabled') === 'true' || btn.disabled;
+          if (disabled) return false;
+
+          const matchWords = ['โพสต์', 'Post', 'ถัดไป', 'Next', 'แชร์', 'Share'];
+          return matchWords.includes(label) || matchWords.includes(txt) || label.startsWith('โพสต์') || label.startsWith('Post');
+        });
+
+        if (targetBtn) {
+          targetBtn.click();
+          return true;
+        }
+        return false;
+      }).catch(() => false);
+
+      // 2. Playwright Fallback หาก DOM evaluate ไม่เจอ
+      if (!clickedInLoop) {
+        for (const sel of [
+          'div[role="dialog"] div[aria-label="โพสต์"]',
+          'div[role="dialog"] div[aria-label="Post"]',
+          'div[role="dialog"] div[aria-label="ถัดไป"]',
+          'div[role="dialog"] div[aria-label="Next"]',
+          'div[role="dialog"] div[role="button"][aria-label*="โพสต์"]',
+          'div[role="dialog"] div[role="button"][aria-label*="Post"]',
+        ]) {
+          try {
+            const btn = fbPage.locator(sel).last();
+            if (await btn.count() > 0 && await btn.isVisible({ timeout: 500 }).catch(() => false)) {
+              if (await btn.getAttribute('aria-disabled').catch(() => 'false') !== 'true') {
+                await btn.click({ force: true });
+                console.log('[Share] ✅ Playwright clicked: ' + sel);
+                clickedInLoop = true;
+                break;
+              }
             }
-          }
-        } catch (e) {}
+          } catch (e) { }
+        }
+      }
+
+      if (clickedInLoop) {
+        console.log(`[Share] Action triggered in attempt ${attempt}, waiting for dialog state change...`);
+        await sleep(3000);
+      } else {
+        console.warn(`[Share] Attempt ${attempt}: Button not ready or not found yet.`);
+        await sleep(2000);
       }
     }
 
-    await sleep(4000);
-    console.log('[Share] ✅ Post shared to profile successfully!');
+    await sleep(2000);
+    console.log('[Share] ✅ Post shared to profile process completed!');
     return { success: true, commentUrl };
 
   } catch (e) {
@@ -1577,7 +1631,7 @@ async function pauseOnError(isDebugPause, message) {
     try {
       const userDataEscaped = USER_DATA_DIR.replace(/\\/g, '\\\\');
       const killCmd = `cmd /c wmic process where "name='chrome.exe' and CommandLine like '%Facebook_Bot\\\\user_data%'" delete`;
-      await execPromise(killCmd, { timeout: 8000 }).catch(() => {});
+      await execPromise(killCmd, { timeout: 8000 }).catch(() => { });
       console.log('[Pre-launch] Killed orphaned Chrome (if any).');
       await sleep(1500); // รอให้ OS release file lock บน user_data
     } catch (e) {
@@ -1603,7 +1657,7 @@ async function pauseOnError(isDebugPause, message) {
 
     console.log('\n⏭️ Skipping Gemini account check (loading cached accounts directly)...');
     const cached = loadActiveAccounts();
-    
+
     // *** ยกเลิกการเช็ค ใช้ cache เลย ***
     if (cached && cached.length > 0) {
       activeGeminiAccounts = cached;
@@ -1792,150 +1846,150 @@ async function pauseOnError(isDebugPause, message) {
           let pythonResult = null;
 
           try {
-          for (let i = 0; i < imageUrls.length; i++) {
-            const tempInputPath = path.join(DOWNLOADS_DIR, `fb_input_${Date.now()}_${i}.jpg`);
-            try {
-              const imageResponse = await fbPage.request.get(imageUrls[i]);
-              fs.writeFileSync(tempInputPath, await imageResponse.body());
-              tempInputPaths.push(tempInputPath);
-            } catch (dlErr) {
-              console.error(`Failed to download image ${i}:`, dlErr.message);
+            for (let i = 0; i < imageUrls.length; i++) {
+              const tempInputPath = path.join(DOWNLOADS_DIR, `fb_input_${Date.now()}_${i}.jpg`);
+              try {
+                const imageResponse = await fbPage.request.get(imageUrls[i]);
+                fs.writeFileSync(tempInputPath, await imageResponse.body());
+                tempInputPaths.push(tempInputPath);
+              } catch (dlErr) {
+                console.error(`Failed to download image ${i}:`, dlErr.message);
+              }
             }
-          }
 
-          if (tempInputPaths.length === 0) {
-            console.error('❌ Failed to download any images for post.');
-            await pauseOnError(isDebugPause, 'โหลดภาพจาก Facebook ไม่ได้');
-            await article.evaluate(el => {
-              el.style.display = 'none';
-              el.setAttribute('data-bot-processed', 'true');
-            }).catch(() => { });
-            continue;
-          }
+            if (tempInputPaths.length === 0) {
+              console.error('❌ Failed to download any images for post.');
+              await pauseOnError(isDebugPause, 'โหลดภาพจาก Facebook ไม่ได้');
+              await article.evaluate(el => {
+                el.style.display = 'none';
+                el.setAttribute('data-bot-processed', 'true');
+              }).catch(() => { });
+              continue;
+            }
 
-          const geminiUrl = getNextGeminiUrl();
-          if (!geminiUrl) {
-            console.error('No Gemini URL available.');
-            await pauseOnError(isDebugPause, 'ไม่มี Gemini URL ที่ใช้ได้');
-            await article.evaluate(el => {
-              el.style.display = 'none';
-              el.setAttribute('data-bot-processed', 'true');
-            }).catch(() => { });
-            continue;
-          }
+            const geminiUrl = getNextGeminiUrl();
+            if (!geminiUrl) {
+              console.error('No Gemini URL available.');
+              await pauseOnError(isDebugPause, 'ไม่มี Gemini URL ที่ใช้ได้');
+              await article.evaluate(el => {
+                el.style.display = 'none';
+                el.setAttribute('data-bot-processed', 'true');
+              }).catch(() => { });
+              continue;
+            }
 
-          geminiResult = await processWithGemini(geminiPage, tempInputPaths, postText, geminiUrl);
-          if (!geminiResult) {
-            console.error('Gemini processing failed.');
-            await pauseOnError(isDebugPause, 'Gemini ประมวลผลล้มเหลว');
-            await article.evaluate(el => {
-              el.style.display = 'none';
-              el.setAttribute('data-bot-processed', 'true');
-            }).catch(() => { });
-            continue;
-          }
+            geminiResult = await processWithGemini(geminiPage, tempInputPaths, postText, geminiUrl);
+            if (!geminiResult) {
+              console.error('Gemini processing failed.');
+              await pauseOnError(isDebugPause, 'Gemini ประมวลผลล้มเหลว');
+              await article.evaluate(el => {
+                el.style.display = 'none';
+                el.setAttribute('data-bot-processed', 'true');
+              }).catch(() => { });
+              continue;
+            }
 
-          // ⏸️ DEBUG PAUSE 3: ตรวจสอบผลจาก Gemini ก่อน Python แต่งภาพ
-          if (isDebugPause) {
-            await pauseForUser(`โหมด DEBUG — Gemini เสร็จแล้ว (${geminiResult})\nตรวจสอบภาพ แล้วกด Enter เพื่อให้ Python แต่งภาพต่อ`);
-          }
-
-          pythonResult = await runPythonImageEditor(geminiResult);
-          if (!pythonResult) {
-            console.error('Python image editing failed.');
-            await pauseOnError(isDebugPause, 'Python แต่งภาพล้มเหลว');
-            await article.evaluate(el => {
-              el.style.display = 'none';
-              el.setAttribute('data-bot-processed', 'true');
-            }).catch(() => { });
-            continue;
-          }
-
-          // ⏸️ DEBUG PAUSE 4: ตรวจสอบภาพที่แต่งแล้วก่อนโพสต์ comment
-          if (isDebugPause) {
-            await pauseForUser(`โหมด DEBUG — Python แต่งภาพเสร็จแล้ว (${pythonResult})\nตรวจสอบภาพ แล้วกด Enter เพื่อโพสต์ comment บน Facebook`);
-          }
-
-          await fbPage.bringToFront().catch(() => { });
-          const commentResult = await postComment(article, pythonResult);
-
-          // Extract post permalink for sharing
-          const postUrl = await getPostUrl(article).catch(() => null);
-          if (postUrl) console.log(`Post URL: ${postUrl}`);
-
-          let postId;
-          try {
-            postId = imageUrls.length > 0 ? hashString(new URL(imageUrls[0]).pathname) : hashString(postText.substring(0, 200));
-          } catch (e) {
-            postId = hashString(postText.substring(0, 200));
-          }
-
-          if (commentResult && commentResult.success) {
-            // ⏸️ DEBUG PAUSE 5: ตรวจสอบ comment ก่อน like/share
+            // ⏸️ DEBUG PAUSE 3: ตรวจสอบผลจาก Gemini ก่อน Python แต่งภาพ
             if (isDebugPause) {
-              await pauseForUser('โหมด DEBUG — Comment โพสต์แล้ว\nตรวจสอบ comment บน Facebook แล้วกด Enter เพื่อ Like และ Share ต่อ');
+              await pauseForUser(`โหมด DEBUG — Gemini เสร็จแล้ว (${geminiResult})\nตรวจสอบภาพ แล้วกด Enter เพื่อให้ Python แต่งภาพต่อ`);
             }
-            // ปิด popup/modal ก่อน like เพื่อไม่ให้คลิกผิด element
-            await closeFacebookModal(fbPage);
-            await sleep(800);
-            // scroll article กลับขึ้นไปให้มองเห็น like button
-            await article.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center' })).catch(() => {});
-            await sleep(600);
-            await likePost(article);
-            await sleep(2000);
 
-            // --- Share ผ่านโพสต์ในหน้าตัวเอง ---
+            pythonResult = await runPythonImageEditor(geminiResult, postText);
+            if (!pythonResult) {
+              console.error('Python image editing failed.');
+              await pauseOnError(isDebugPause, 'Python แต่งภาพล้มเหลว');
+              await article.evaluate(el => {
+                el.style.display = 'none';
+                el.setAttribute('data-bot-processed', 'true');
+              }).catch(() => { });
+              continue;
+            }
+
+            // ⏸️ DEBUG PAUSE 4: ตรวจสอบภาพที่แต่งแล้วก่อนโพสต์ comment
+            if (isDebugPause) {
+              await pauseForUser(`โหมด DEBUG — Python แต่งภาพเสร็จแล้ว (${pythonResult})\nตรวจสอบภาพ แล้วกด Enter เพื่อโพสต์ comment บน Facebook`);
+            }
+
             await fbPage.bringToFront().catch(() => { });
-            const shareResult = await shareViaOwnPost(fbPage, commentResult.commentUrl);
-            if (shareResult && shareResult.success) {
-              console.log(`[Share] Shared via own post: ${shareResult.commentUrl}`);
+            const commentResult = await postComment(article, pythonResult);
+
+            // Extract post permalink for sharing
+            const postUrl = await getPostUrl(article).catch(() => null);
+            if (postUrl) console.log(`Post URL: ${postUrl}`);
+
+            let postId;
+            try {
+              postId = imageUrls.length > 0 ? hashString(new URL(imageUrls[0]).pathname) : hashString(postText.substring(0, 200));
+            } catch (e) {
+              postId = hashString(postText.substring(0, 200));
+            }
+
+            if (commentResult && commentResult.success) {
+              // ⏸️ DEBUG PAUSE 5: ตรวจสอบ comment ก่อน like/share
+              if (isDebugPause) {
+                await pauseForUser('โหมด DEBUG — Comment โพสต์แล้ว\nตรวจสอบ comment บน Facebook แล้วกด Enter เพื่อ Like และ Share ต่อ');
+              }
+              // ปิด popup/modal ก่อน like เพื่อไม่ให้คลิกผิด element
+              await closeFacebookModal(fbPage);
+              await sleep(800);
+              // scroll article กลับขึ้นไปให้มองเห็น like button
+              await article.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center' })).catch(() => { });
+              await sleep(600);
+              await likePost(article);
+              await sleep(2000);
+
+              // --- Share ผ่านโพสต์ในหน้าตัวเอง ---
+              await fbPage.bringToFront().catch(() => { });
+              const shareResult = await shareViaOwnPost(fbPage, commentResult.commentUrl);
+              if (shareResult && shareResult.success) {
+                console.log(`[Share] Shared via own post: ${shareResult.commentUrl}`);
+              } else {
+                console.warn(`[Share] Share skipped or failed: ${shareResult?.reason}`);
+              }
+
+              // ⏸️ DEBUG PAUSE 6: หลัง share ให้ pause รอตรวจสอบก่อนเริ่มงานใหม่
+              if (isDebugPause) {
+                await pauseForUser('โหมด DEBUG — Share เสร็จแล้ว\nตรวจสอบโพสต์ใน profile ก่อน แล้วกด Enter เพื่อเริ่มงานถัดไป');
+              }
+
+              // กลับไปหน้า Facebook groups feed
+              await fbPage.goto(FB_URL, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => { });
+              await sleep(2000);
+              await closeFacebookModal(fbPage);
+
+              postsProcessedCount++;
+              processedPosts.add(postId);
+              saveProcessedPosts();
+              showWindowsNotification('Facebook Bot', `Task #${postsProcessedCount} completed!`);
+              console.log(`Post #${postsProcessedCount} processed successfully!`);
             } else {
-              console.warn(`[Share] Share skipped or failed: ${shareResult?.reason}`);
+              console.log('Comment failed, marking as processed.');
+              await pauseOnError(isDebugPause, 'Comment โพสต์ล้มเหลว');
+              processedPosts.add(postId);
+              saveProcessedPosts();
             }
-
-            // ⏸️ DEBUG PAUSE 6: หลัง share ให้ pause รอตรวจสอบก่อนเริ่มงานใหม่
-            if (isDebugPause) {
-              await pauseForUser('โหมด DEBUG — Share เสร็จแล้ว\nตรวจสอบโพสต์ใน profile ก่อน แล้วกด Enter เพื่อเริ่มงานถัดไป');
-            }
-
-            // กลับไปหน้า Facebook groups feed
-            await fbPage.goto(FB_URL, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => { });
-            await sleep(2000);
-            await closeFacebookModal(fbPage);
-
-            postsProcessedCount++;
-            processedPosts.add(postId);
-            saveProcessedPosts();
-            showWindowsNotification('Facebook Bot', `Task #${postsProcessedCount} completed!`);
-            console.log(`Post #${postsProcessedCount} processed successfully!`);
-          } else {
-            console.log('Comment failed, marking as processed.');
-            await pauseOnError(isDebugPause, 'Comment โพสต์ล้มเหลว');
-            processedPosts.add(postId);
-            saveProcessedPosts();
-          }
-          await article.evaluate(el => {
-            el.style.display = 'none';
-            el.setAttribute('data-bot-processed', 'true');
-          }).catch(() => { });
-          await sleep(3000);
+            await article.evaluate(el => {
+              el.style.display = 'none';
+              el.setAttribute('data-bot-processed', 'true');
+            }).catch(() => { });
+            await sleep(3000);
 
           } catch (err) {
             console.error('Error processing article:', err.message || err);
           } finally {
-          await article.evaluate(el => el.style.outline = '').catch(() => { });
-          // ✅ Cleanup: ลบไฟล์ชั่วคราวทั้งหมดใน downloads
-          for (const p of tempInputPaths) {
-            try { if (fs.existsSync(p)) fs.unlinkSync(p); } catch (e) { }
-          }
-          if (geminiResult) {
-            try { if (fs.existsSync(geminiResult)) fs.unlinkSync(geminiResult); } catch (e) { }
-          }
-          if (pythonResult) {
-            try { if (fs.existsSync(pythonResult)) fs.unlinkSync(pythonResult); } catch (e) { }
-          }
-          // ลบภาพ Desktop output — ไม่ลบแล้ว ใช้วิธี overwrite ใน screenshot_donate.py เอง
-          // (complete_bot.png จะถูก overwrite ในครั้งถัดไปเอง)
+            await article.evaluate(el => el.style.outline = '').catch(() => { });
+            // ✅ Cleanup: ลบไฟล์ชั่วคราวทั้งหมดใน downloads
+            for (const p of tempInputPaths) {
+              try { if (fs.existsSync(p)) fs.unlinkSync(p); } catch (e) { }
+            }
+            if (geminiResult) {
+              try { if (fs.existsSync(geminiResult)) fs.unlinkSync(geminiResult); } catch (e) { }
+            }
+            if (pythonResult) {
+              try { if (fs.existsSync(pythonResult)) fs.unlinkSync(pythonResult); } catch (e) { }
+            }
+            // ลบภาพ Desktop output — ไม่ลบแล้ว ใช้วิธี overwrite ใน screenshot_donate.py เอง
+            // (complete_bot.png จะถูก overwrite ในครั้งถัดไปเอง)
           }
         }
       }
