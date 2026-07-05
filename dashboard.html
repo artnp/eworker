@@ -1247,8 +1247,7 @@
             };
 
             const selectedModels = Array.from(document.querySelectorAll('input[name="model"]:checked')).map(el => el.value);
-            const hasGemini = selectedModels.includes('Gemini');
-            const otherModels = selectedModels.filter(m => m !== 'Gemini' && MODEL_URLS[m]);
+            const modelsToSend = selectedModels.length ? selectedModels : ['Gemini'];
 
             // Prepare images
             const imagePaths = [...selectedFilesList];
@@ -1257,42 +1256,42 @@
                 return dataUrl;
             }));
 
-            // === Gemini (ใช้ SUBMIT_HUB_DATA ซึ่ง extension รองรับ) ===
-            if (!selectedModels.length || hasGemini) {
-                showToast('🚀 ส่งไปยัง Gemini...');
+            // === Send to AI Models via Extension ===
+            showToast(`🚀 ส่งไปยัง ${modelsToSend.join(', ')}...`);
 
-                let res;
-                try {
-                    res = await callExtension('SUBMIT_HUB_DATA', {
-                        prompt,
-                        images: pastedImageDataUrls,
-                        imagePaths: imagePaths,
-                        models: selectedModels,
-                        origin: window.location.origin
-                    });
-                } catch (e) {
-                    showToast(`⚠️ เกิดข้อผิดพลาด: ${e.message || e}`);
-                    return;
-                }
+            let res;
+            try {
+                res = await callExtension('SUBMIT_HUB_DATA', {
+                    prompt,
+                    images: pastedImageDataUrls,
+                    imagePaths: imagePaths,
+                    models: modelsToSend,
+                    origin: window.location.origin
+                });
+            } catch (e) {
+                showToast(`⚠️ เกิดข้อผิดพลาด: ${e.message || e}`);
+                return;
+            }
 
-                if (res && res.success) {
-                    lastSubmitState = {
-                        prompt: prompt,
-                        pastedFiles: [...pastedFiles],
-                        pastedPreviews: previews.innerHTML,
-                        selectedFilesList: [...selectedFilesList]
-                    };
-                    document.getElementById('btn-undo').classList.add('visible');
+            if (res && res.success) {
+                lastSubmitState = {
+                    prompt: prompt,
+                    pastedFiles: [...pastedFiles],
+                    pastedPreviews: previews.innerHTML,
+                    selectedFilesList: [...selectedFilesList]
+                };
+                document.getElementById('btn-undo').classList.add('visible');
 
-                    showToast('✅ ส่งแล้ว!');
-                    promptInput.value = '';
-                    promptInput.style.height = 'auto';
-                    previews.innerHTML = '';
-                    pastedFiles = [];
-                    selectedFilesList = [];
-                    updateSelectionIndicators();
-                    document.querySelectorAll('input[name="model"]').forEach(cb => cb.checked = false);
+                showToast('✅ ส่งแล้ว!');
+                promptInput.value = '';
+                promptInput.style.height = 'auto';
+                previews.innerHTML = '';
+                pastedFiles = [];
+                selectedFilesList = [];
+                updateSelectionIndicators();
+                document.querySelectorAll('input[name="model"]').forEach(cb => cb.checked = false);
 
+                if (modelsToSend.includes('Gemini')) {
                     // Auto-rotate to the next Gemini Account
                     const currentIdx = Array.from(accountRadios).findIndex(r => r.checked);
                     let nextIdx = (currentIdx + 1) % accountRadios.length;
@@ -1305,18 +1304,11 @@
                     nextRadio.checked = true;
                     updateGeminiUrl(nextRadio.value);
                     setTimeout(() => showToast(`🔄 เตรียมพร้อมใช้งาน ${nextRadio.nextElementSibling.textContent}`), 1500);
-                } else if (res && res.error) {
-                    showToast(`⚠️ Gemini: ${res.error}`);
-                } else {
-                    showToast('⚠️ Gemini: ไม่สามารถส่งรูปภาพไปยังโมเดลนี้ได้');
                 }
-            }
-
-            // === External Models (เปิด tab ด้วย window.open — extension ไม่มี handler) ===
-            for (const model of otherModels) {
-                window.open(MODEL_URLS[model], '_blank');
-                showToast(`✅ เปิด ${model} แล้ว!`);
-                await new Promise(r => setTimeout(r, 1000));
+            } else if (res && res.error) {
+                showToast(`⚠️ AI: ${res.error}`);
+            } else {
+                showToast('⚠️ AI: ไม่สามารถส่งข้อมูลไปยังโมเดลได้');
             }
         } catch (e) {
             console.error('submitHubData error:', e);
