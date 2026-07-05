@@ -1227,8 +1227,16 @@
             }
         });
 
-        promptInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitHubData(); }
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                // Ignore if user is typing in another input element
+                if (document.activeElement && document.activeElement !== promptInput && 
+                    (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.isContentEditable)) {
+                    return;
+                }
+                e.preventDefault();
+                submitHubData();
+            }
         });
 
         async function submitHubData() {
