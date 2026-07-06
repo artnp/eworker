@@ -18,16 +18,16 @@ const originalLog = console.log;
 const originalError = console.error;
 const originalWarn = console.warn;
 
+// Delete old bot.log to save disk space
+try { if (fs.existsSync(LOG_FILE)) fs.unlinkSync(LOG_FILE); } catch (e) {}
+
 function logToFile(level, ...args) {
-  const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
-  const message = args.map(a => typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)).join(' ');
-  const line = `[${timestamp}] [${level}] ${message}\n`;
-  try { fs.appendFileSync(LOG_FILE, line); } catch (e) { }
+  // Disabled to save disk space
 }
 
-console.log = (...args) => { originalLog(...args); logToFile('INFO', ...args); };
-console.error = (...args) => { originalError(...args); logToFile('ERROR', ...args); };
-console.warn = (...args) => { originalWarn(...args); logToFile('WARN', ...args); };
+console.log = (...args) => { originalLog(...args); };
+console.error = (...args) => { originalError(...args); };
+console.warn = (...args) => { originalWarn(...args); };
 
 const NOTIFY_SCRIPT = path.join(__dirname, 'notify.ps1');
 
@@ -43,6 +43,23 @@ function showWindowsNotification(title, text, type = 'Info') {
 const USER_DATA_DIR = path.join(__dirname, 'user_data');
 const PROCESSED_DB_FILE = path.join(__dirname, 'processed_posts.json');
 const DOWNLOADS_DIR = path.join(__dirname, 'downloads');
+
+let currentPostIndex = 0;
+function reportStatus(percent, status, detail = '', logType = 'info', postIdx = currentPostIndex) {
+  try {
+    const statusFile = path.join(__dirname, 'status.json');
+    const payload = JSON.stringify({
+      postIndex: Math.max(1, postIdx),
+      maxPosts: AUTO_GROUPS_MAX || 10,
+      percent: Math.min(100, Math.max(0, Math.round(percent))),
+      status,
+      detail,
+      logType,
+      timestamp: Date.now()
+    }, null, 2);
+    fs.writeFileSync(statusFile, payload, 'utf8');
+  } catch (e) {}
+}
 
 function ensureDownloadsDir() {
   try {
@@ -147,7 +164,8 @@ async function checkGeminiAccountLogged(context, index) {
 async function detectActiveGeminiAccounts(context) {
   console.log('\n===== Auto-detecting Gemini accounts =====');
   const results = [];
-  for (let i = 0; i < GEMINI_SLOT_COUNT; i++) {
+  const checkCount = Math.max(activeGeminiAccounts.length, GEMINI_SLOT_COUNT);
+  for (let i = 0; i < checkCount; i++) {
     const isLogged = await checkGeminiAccountLogged(context, i);
     console.log(`  u/${i}: ${isLogged ? 'Logged in' : 'Not logged in'}`);
     if (isLogged) results.push(`https://gemini.google.com/u/${i}/app`);
@@ -283,37 +301,96 @@ async function shouldFilterPost(article) {
       const text = node.textContent || '';
 
       // Check if comments are disabled (text-based)
-      if (text.includes('ปิดการแสดงความคิดเห็น') || text.includes('ปิดการแสดงความคิดเห็นไว้ชั่วคราว')) {
-        return { action: 'hide', reason: 'Comments disabled (text)' };
+      const disabledKeywords = [
+        'ปิดการแสดงความคิดเห็น',
+        'ปิดการแสดงความคิดเห็นไว้ชั่วคราว',
+        'ปิดคอมเมนต์',
+        'จำกัดผู้ที่สามารถแสดงความคิดเห็น',
+        'ไม่สามารถแสดงความคิดเห็น',
+        'Comments are turned off',
+        'Comments on this post have been limited',
+        'Comments have been disabled'
+      ];
+      for (const kw of disabledKeywords) {
+        if (text.includes(kw)) {
+          return { action: 'hide', reason: `Comments disabled (text: "${kw}")` };
+        }
       }
 
-      // Check if the Comment button is actually present
-      const commentBtnSelectors = [
-        '[aria-label*="Comment"]',
-        '[aria-label*="comment"]',
-        '[aria-label*="แสดงความคิดเห็น"]',
-        '[aria-label*="ความคิดเห็น"]'
-      ];
+      // Check if a valid Comment button or comment icon is present in the post
       let hasCommentBtn = false;
-      for (const sel of commentBtnSelectors) {
-        if (node.querySelector(sel)) {
+      const candidates = node.querySelectorAll('[role="button"], button, div[aria-label], span[aria-label]');
+      for (const el of candidates) {
+        const label = (el.getAttribute('aria-label') || '').trim();
+        const innerText = (el.innerText || el.textContent || '').trim();
+        const lowerLabel = label.toLowerCase();
+        const lowerText = innerText.toLowerCase();
+
+        // Skip dropdowns, sort options, disabled notices, or view previous comments
+        if (
+          lowerLabel.includes('ปิดการแสดงความคิดเห็น') ||
+          lowerLabel.includes('เกี่ยวข้องมากที่สุด') ||
+          lowerLabel.includes('most relevant') ||
+          lowerLabel.includes('ดูความคิดเห็นก่อนหน้า') ||
+          lowerLabel.includes('view previous comments') ||
+          lowerLabel.includes('ซ่อนความคิดเห็น') ||
+          lowerLabel.includes('hide comments')
+        ) {
+          continue;
+        }
+
+        // Match Comment action button labels
+        const isCommentActionLabel = (
+          lowerLabel === 'แสดงความคิดเห็น' ||
+          lowerLabel.startsWith('แสดงความคิดเห็น') ||
+          lowerLabel === 'เขียนความคิดเห็น' ||
+          lowerLabel.startsWith('เขียนความคิดเห็น') ||
+          lowerLabel === 'comment' ||
+          lowerLabel === 'comments' ||
+          lowerLabel.startsWith('write a comment') ||
+          lowerLabel.startsWith('leave a comment') ||
+          lowerLabel.includes('comment as') ||
+          lowerLabel.includes('แสดงความคิดเห็นในฐานะ')
+        );
+
+        // Match Comment action button text
+        const isCommentActionText = (
+          lowerText === 'แสดงความคิดเห็น' ||
+          lowerText === 'เขียนความคิดเห็น' ||
+          lowerText === 'comment'
+        );
+
+        // Match Comment counter summary (e.g. "3 ความคิดเห็น", "1 Comment", "12 Comments")
+        const isCommentCounter = (
+          /^\d+\s*(ความคิดเห็น|comment|comments)$/i.test(label) ||
+          /^\d+\s*(ความคิดเห็น|comment|comments)$/i.test(innerText)
+        );
+
+        if (isCommentActionLabel || isCommentActionText || isCommentCounter) {
           hasCommentBtn = true;
           break;
         }
       }
-      // Also accept if the word "Comment" appears as a button text
+
+      // Fallback: search for buttons with aria-label containing comment keywords
       if (!hasCommentBtn) {
-        const btns = node.querySelectorAll('[role="button"], button');
-        for (const btn of btns) {
-          const label = (btn.getAttribute('aria-label') || btn.textContent || '').toLowerCase();
-          if (label.includes('comment') || label.includes('ความคิดเห็น')) {
+        const allBtns = node.querySelectorAll('[role="button"], button');
+        for (const btn of allBtns) {
+          const ariaLabel = (btn.getAttribute('aria-label') || '').toLowerCase().trim();
+          if (
+            (ariaLabel.includes('แสดงความคิดเห็น') || ariaLabel.includes('comment')) &&
+            !ariaLabel.includes('ปิด') &&
+            !ariaLabel.includes('เรียง') &&
+            !ariaLabel.includes('ซ่อน')
+          ) {
             hasCommentBtn = true;
             break;
           }
         }
       }
+
       if (!hasCommentBtn) {
-        return { action: 'hide', reason: 'No Comment button found (Comments disabled)' };
+        return { action: 'hide', reason: 'No Comment icon or button found (Comments disabled/unavailable)' };
       }
 
       // Check if post already liked
@@ -692,36 +769,41 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
 
     while (!captured && retryCount <= maxRetries) {
       try {
-        await page.locator('.fast-dl-button').first().waitFor({ state: 'visible', timeout: 90000 });
-        console.log('[FastDL] Image ready, capturing via canvas...');
+        const fastDl = page.locator('.fast-dl-button').first();
+        if (await fastDl.isVisible({ timeout: 12000 }).catch(() => false)) {
+          console.log('[FastDL] Image ready, capturing via canvas...');
+          captured = true;
+          break;
+        }
+
+        // Gemini image taking longer than 12s — auto pop up browser for user to inspect
+        console.warn('[FastDL] Gemini response taking time — automatically popping up browser window...');
+        await reportStatus(18, 'กำลังสร้างรูปภาพด้วย Gemini AI...', '⚠️ หากค้าง ระบบเปิดเบราว์เซอร์ให้คุณตรวจสอบแล้ว', 'warn', currentPostIndex, { showBrowser: true });
+
+        await fastDl.waitFor({ state: 'visible', timeout: 35000 });
+        console.log('[FastDL] Image ready (after browser popup), capturing via canvas...');
         captured = true;
       } catch (e) {
         console.warn(`[FastDL] Fast Download button not found (attempt ${retryCount + 1}/${maxRetries + 1}):`, e.message);
 
         if (retryCount < maxRetries) {
           console.log('[FastDL] Trying refresh Gemini...');
-
-          // คลิกปุ่ม refresh เพื่อลองใหม่
           try {
             const refreshBtn = page.locator('mat-icon[data-mat-icon-name="refresh"]').first();
             if (await refreshBtn.count() > 0 && await refreshBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
               await refreshBtn.click({ force: true });
               console.log('[FastDL] Clicked refresh button');
-              await sleep(3000); // รอ Gemini ประมวลผลใหม่
+              await sleep(3000);
               retryCount++;
               continue;
-            } else {
-              console.warn('[FastDL] Refresh button not found');
             }
           } catch (refreshError) {
             console.warn('[FastDL] Refresh button click failed:', refreshError.message);
           }
         }
 
-        console.warn('[FastDL] Max retries reached, skipping post.');
-        return null;
-
-        retryCount++;
+        console.warn('[FastDL] Max retries reached or timed out.');
+        break;
       }
     }
     // Capture the parent image of the Fast Download button, or any large image
@@ -1643,7 +1725,8 @@ async function pauseOnError(isDebugPause, message) {
     '--disable-web-security',
     '--disable-features=IsolateOrigins,site-per-process',
     `--load-extension=${extensionPath}`,
-    `--disable-extensions-except=${extensionPath}`
+    `--disable-extensions-except=${extensionPath}`,
+    '--start-minimized'
   ];
 
   try {
@@ -1696,28 +1779,119 @@ async function pauseOnError(isDebugPause, message) {
       if (activeGeminiAccounts.length === 0) {
         console.log('No Gemini accounts found.');
         showWindowsNotification('Facebook Bot', 'No Gemini accounts found! Please login.', 'Warning');
+        if (isHeadless) {
+          console.error('Cannot login in headless mode. Please run login mode first.');
+          try { await context.close(); } catch (e) { }
+          process.exit(1);
+        }
       }
       const server = http.createServer((req, res) => {
-        if (req.url === '/' || req.url === '/index.html') {
-          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        // Add CORS headers so local file:/// pages can connect to this server
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+        if (req.method === 'OPTIONS') {
+          res.writeHead(204);
           res.end();
-        } else if (req.url.startsWith('/check-account')) {
+          return;
+        }
+
+        if (req.url === '/' || req.url === '/index.html') {
+          const helperPath = path.join(__dirname, 'login_helper.html');
+          if (fs.existsSync(helperPath)) {
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(fs.readFileSync(helperPath));
+          } else {
+            res.writeHead(404);
+            res.end('login_helper.html not found');
+          }
+        } else if (req.url === '/get-active-accounts') {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(activeGeminiAccounts));
+          return;
+        } else if (req.url.startsWith('/open-login')) {
           const urlObj = new URL(req.url, `http://${req.headers.host}`);
           const index = parseInt(urlObj.searchParams.get('index'), 10);
-          if (isNaN(index)) { res.writeHead(400); res.end('Bad Request'); return; }
-          checkGeminiAccountLogged(context, index).then(isLogged => {
+          if (!isNaN(index)) {
+            const url = `https://gemini.google.com/u/${index}/app`;
+            console.log(`Opening login tab for index ${index}: ${url}`);
+            context.newPage().then(p => {
+              p.goto(url).catch(() => {});
+            });
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ index, isLogged }));
-          }).catch(() => { res.writeHead(500); res.end('{}'); });
-          return;
+            res.end(JSON.stringify({ success: true }));
+          } else {
+            res.writeHead(400);
+            res.end('Bad Request');
+          }
+        } else if (req.url.startsWith('/set-account-active')) {
+          const urlObj = new URL(req.url, `http://${req.headers.host}`);
+          const index = parseInt(urlObj.searchParams.get('index'), 10);
+          const active = urlObj.searchParams.get('active') === 'true';
+          if (!isNaN(index)) {
+            const url = `https://gemini.google.com/u/${index}/app`;
+            let currentActive = loadActiveAccounts() || [];
+            if (active) {
+              if (!currentActive.includes(url)) {
+                currentActive.push(url);
+              }
+            } else {
+              currentActive = currentActive.filter(u => u !== url);
+            }
+            // Sort in order: u/0, u/1, u/2...
+            currentActive.sort((a, b) => {
+              const idxA = parseInt(a.match(/\/u\/(\d+)\//)?.[1] || 0, 10);
+              const idxB = parseInt(b.match(/\/u\/(\d+)\//)?.[1] || 0, 10);
+              return idxA - idxB;
+            });
+            activeGeminiAccounts = currentActive;
+            saveActiveAccounts(activeGeminiAccounts);
+            console.log(`Saved active accounts:`, activeGeminiAccounts);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, activeGeminiAccounts }));
+          } else {
+            res.writeHead(400);
+            res.end('Bad Request');
+          }
+        } else if (req.url.startsWith('/update-slots')) {
+          const urlObj = new URL(req.url, `http://${req.headers.host}`);
+          const count = parseInt(urlObj.searchParams.get('count'), 10);
+          if (!isNaN(count)) {
+            console.log(`Updated UI to show ${count} slots.`);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true }));
+          } else {
+            res.writeHead(400);
+            res.end('Bad Request');
+          }
         } else {
           res.writeHead(404);
           res.end();
         }
       });
-      server.listen(0, '127.0.0.1');
+      server.listen(12121, '127.0.0.1', async () => {
+        const helperUrl = `http://127.0.0.1:12121/`;
+        console.log(`\n==================================================`);
+        console.log(`Login helper server started at: ${helperUrl}`);
+        console.log(`Please log in to your accounts.`);
+        console.log(`==================================================\n`);
+        
+        await fbPage.goto(helperUrl).catch(() => {});
+      });
+
+      if (isLoginMode) {
+        // Block and wait until the browser context is closed by the user
+        return new Promise((resolve) => {
+          context.on('close', () => {
+            console.log('Browser closed. Exiting login mode.');
+            process.exit(0);
+          });
+        });
+      }
+
       if (activeGeminiAccounts.length === 0) {
-        console.error('No Gemini accounts — exiting.');
+        console.error('No Gemini accounts configured. Please run login mode first (run_login.bat).');
         try { await context.close(); } catch (e) { }
         process.exit(1);
       }
@@ -1736,6 +1910,7 @@ async function pauseOnError(isDebugPause, message) {
 
     if (!isReviewMode) {
       console.log(`\nNavigating to Facebook groups: ${FB_URL}`);
+      await reportStatus(5, 'กำลังเปิด Facebook Feed...', 'เข้าสู่หน้ากลุ่ม Facebook Feed', 'info', 1);
       try {
         await fbPage.bringToFront().catch(() => { });
         await fbPage.goto(FB_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
@@ -1746,6 +1921,7 @@ async function pauseOnError(isDebugPause, message) {
       const fbReady = await waitForFacebookReady(fbPage);
       if (!fbReady) {
         console.error('Cannot login Facebook — exiting.');
+        await reportStatus(0, 'ไม่สามารถเข้าสู่ Facebook ได้', 'กรุณาตรวจสอบการล็อกอิน', 'error', 1);
         await context.close();
         process.exit(1);
       }
@@ -1772,7 +1948,10 @@ async function pauseOnError(isDebugPause, message) {
           break;
         }
 
+        currentPostIndex = postsProcessedCount + 1;
+        const basePct = Math.round((postsProcessedCount / AUTO_GROUPS_MAX) * 100);
         console.log(`\n📋 Scanning feed... Posts processed: ${postsProcessedCount}/${AUTO_GROUPS_MAX}`);
+        await reportStatus(basePct + 2, `สแกนหาโพสต์ที่ ${currentPostIndex}/${AUTO_GROUPS_MAX}...`, 'กำลังเลื่อนหาโพสต์ถัดไปใน Feed', 'info', currentPostIndex);
 
         await closeFacebookModal(fbPage);
 
@@ -1825,6 +2004,7 @@ async function pauseOnError(isDebugPause, message) {
           const filterResult = await shouldFilterPost(article);
           if (filterResult.action === 'hide' || filterResult.action === 'spam') {
             console.log(`--> Skipped: caught by shouldFilterPost. Action: ${filterResult.action}. Reason: ${filterResult.reason}`);
+            await reportStatus(basePct + 2, `กำลังข้ามโพสต์ที่ ${currentPostIndex}...`, `⚠️ ${filterResult.reason} -> ข้ามไปทำอันใหม่`, 'warn', currentPostIndex);
             await article.evaluate(el => {
               el.style.display = 'none';
               el.setAttribute('data-bot-processed', 'true');
@@ -1846,6 +2026,7 @@ async function pauseOnError(isDebugPause, message) {
           const imageUrls = imageUrlsForId; // already fetched above
           if (imageUrls.length === 0) {
             console.log('--> Skipped: No large images found.');
+            await reportStatus(basePct + 2, `ข้ามโพสต์ที่ ${currentPostIndex}`, '⚠️ ไม่พบรูปภาพในโพสต์ -> ข้ามไปอันใหม่', 'warn', currentPostIndex);
             await article.evaluate(el => {
               el.style.display = 'none';
               el.setAttribute('data-bot-processed', 'true');
@@ -1854,6 +2035,7 @@ async function pauseOnError(isDebugPause, message) {
           }
 
           console.log(`Processing ${imageUrls.length} images...`);
+          await reportStatus(basePct + 5, `พบโพสต์ที่ ${currentPostIndex} (${imageUrls.length} ภาพ)`, 'กำลังดาวน์โหลดรูปภาพจาก Facebook...', 'info', currentPostIndex);
 
           // ⏸️ DEBUG PAUSE 2: ตรวจสอบโพสต์ที่จะประมวลผลก่อนส่ง Gemini
           if (isDebugPause) {
@@ -1879,6 +2061,7 @@ async function pauseOnError(isDebugPause, message) {
 
             if (tempInputPaths.length === 0) {
               console.error('❌ Failed to download any images for post.');
+              await reportStatus(basePct, `โหลดรูปไม่สำเร็จ (โพสต์ ${currentPostIndex})`, '❌ ไม่สามารถดาวน์โหลดรูปภาพจาก FB ได้', 'error', currentPostIndex);
               await pauseOnError(isDebugPause, 'โหลดภาพจาก Facebook ไม่ได้');
               await article.evaluate(el => {
                 el.style.display = 'none';
@@ -1890,6 +2073,7 @@ async function pauseOnError(isDebugPause, message) {
             const geminiUrl = getNextGeminiUrl();
             if (!geminiUrl) {
               console.error('No Gemini URL available.');
+              await reportStatus(basePct, `ไม่มี Gemini URL (โพสต์ ${currentPostIndex})`, '❌ ไม่มีบัญชี Gemini ที่พร้อมใช้งาน', 'error', currentPostIndex);
               await pauseOnError(isDebugPause, 'ไม่มี Gemini URL ที่ใช้ได้');
               await article.evaluate(el => {
                 el.style.display = 'none';
@@ -1898,9 +2082,11 @@ async function pauseOnError(isDebugPause, message) {
               continue;
             }
 
+            await reportStatus(basePct + 15, `ส่งภาพให้ Gemini AI (โพสต์ ${currentPostIndex})...`, `กำลังประมวลผลสร้างรูปภาพใหม่ด้วย Gemini AI`, 'info', currentPostIndex);
             geminiResult = await processWithGemini(geminiPage, tempInputPaths, postText, geminiUrl);
             if (!geminiResult) {
               console.error('Gemini processing failed.');
+              await reportStatus(basePct, `Gemini ทำงานไม่สำเร็จ (โพสต์ ${currentPostIndex})`, '⚠️ ข้ามไปโพสต์ใหม่...', 'warn', currentPostIndex);
               await pauseOnError(isDebugPause, 'Gemini ประมวลผลล้มเหลว');
               await article.evaluate(el => {
                 el.style.display = 'none';
@@ -1914,9 +2100,11 @@ async function pauseOnError(isDebugPause, message) {
               await pauseForUser(`โหมด DEBUG — Gemini เสร็จแล้ว (${geminiResult})\nตรวจสอบภาพ แล้วกด Enter เพื่อให้ Python แต่งภาพต่อ`);
             }
 
+            await reportStatus(basePct + 35, `กำลังแต่งภาพด้วย Python (โพสต์ ${currentPostIndex})...`, 'ใส่โลโก้และปรับแต่งความสมบูรณ์ของภาพ', 'info', currentPostIndex);
             pythonResult = await runPythonImageEditor(geminiResult, postText);
             if (!pythonResult) {
               console.error('Python image editing failed.');
+              await reportStatus(basePct, `Python แต่งภาพล้มเหลว (โพสต์ ${currentPostIndex})`, '⚠️ ข้ามไปโพสต์ใหม่...', 'warn', currentPostIndex);
               await pauseOnError(isDebugPause, 'Python แต่งภาพล้มเหลว');
               await article.evaluate(el => {
                 el.style.display = 'none';
@@ -1930,6 +2118,7 @@ async function pauseOnError(isDebugPause, message) {
               await pauseForUser(`โหมด DEBUG — Python แต่งภาพเสร็จแล้ว (${pythonResult})\nตรวจสอบภาพ แล้วกด Enter เพื่อโพสต์ comment บน Facebook`);
             }
 
+            await reportStatus(basePct + 55, `กำลังโพสต์คอมเมนต์ (โพสต์ ${currentPostIndex})...`, 'อัปโหลดภาพลงช่องแสดงความคิดเห็นบน Facebook', 'info', currentPostIndex);
             await fbPage.bringToFront().catch(() => { });
             const commentResult = await postComment(article, pythonResult);
 
@@ -1959,6 +2148,7 @@ async function pauseOnError(isDebugPause, message) {
               await sleep(2000);
 
               // --- Share ผ่านโพสต์ในหน้าตัวเอง ---
+              await reportStatus(basePct + 75, `กำลังแชร์โพสต์ (โพสต์ ${currentPostIndex})...`, 'แชร์ผลงานไปยังหน้าโปรไฟล์หลัก', 'info', currentPostIndex);
               await fbPage.bringToFront().catch(() => { });
               const shareResult = await shareViaOwnPost(fbPage, commentResult.commentUrl);
               if (shareResult && shareResult.success) {
@@ -1978,12 +2168,16 @@ async function pauseOnError(isDebugPause, message) {
               await closeFacebookModal(fbPage);
 
               postsProcessedCount++;
+              const donePct = Math.round((postsProcessedCount / AUTO_GROUPS_MAX) * 100);
+              await reportStatus(donePct, `ทำรายการโพสต์ที่ ${postsProcessedCount}/${AUTO_GROUPS_MAX} สำเร็จ!`, 'โพสต์คอมเมนต์และแชร์เสร็จสมบูรณ์', 'success', postsProcessedCount);
+
               processedPosts.add(postId);
               saveProcessedPosts();
               showWindowsNotification('Facebook Bot', `Task #${postsProcessedCount} completed!`);
               console.log(`Post #${postsProcessedCount} processed successfully!`);
             } else {
               console.log('Comment failed, marking as processed.');
+              await reportStatus(basePct, `โพสต์คอมเมนต์ไม่สำเร็จ (โพสต์ ${currentPostIndex})`, '❌ เกิดข้อผิดพลาดในการลงคอมเมนต์', 'error', currentPostIndex);
               await pauseOnError(isDebugPause, 'Comment โพสต์ล้มเหลว');
               processedPosts.add(postId);
               saveProcessedPosts();
