@@ -44,6 +44,10 @@ const USER_DATA_DIR = path.join(__dirname, 'user_data');
 const PROCESSED_DB_FILE = path.join(__dirname, 'processed_posts.json');
 const DOWNLOADS_DIR = path.join(__dirname, 'downloads');
 
+// ตัวแปรสำหรับเก็บ context และควบคุมหน้าต่าง
+let browserContext = null;
+let isBrowserHidden = false;
+
 let currentPostIndex = 0;
 function reportStatus(percent, status, detail = '', logType = 'info', postIdx = currentPostIndex) {
   try {
@@ -447,28 +451,17 @@ async function getLargeImageUrls(article) {
 async function getPostUrl(article) {
   try {
     return await article.evaluate((node) => {
-      // Try to find a permalink link inside the post
       const links = node.querySelectorAll('a[href*="/groups/"], a[href*="facebook.com/"]');
       for (const a of links) {
         const href = a.href || '';
-        // Match group post URLs: /groups/ID/posts/ID or /permalink/
         if (/\/groups\/[\w.]+\/(posts|permalink)\//.test(href) || /facebook\.com\/permalink\//.test(href)) {
-          try {
-            const url = new URL(href);
-            url.search = '';
-            return url.toString();
-          } catch (e) { return href.split('?')[0]; }
+          try { const url = new URL(href); url.search = ''; return url.toString(); } catch (e) { return href.split('?')[0]; }
         }
       }
-      // Fallback: any link with /posts/ or ?story_fbid=
       for (const a of links) {
         const href = a.href || '';
         if (href.includes('/posts/') || href.includes('story_fbid=')) {
-          try {
-            const url = new URL(href);
-            url.search = '';
-            return url.toString();
-          } catch (e) { return href.split('?')[0]; }
+          try { const url = new URL(href); url.search = ''; return url.toString(); } catch (e) { return href.split('?')[0]; }
         }
       }
       return null;
@@ -760,53 +753,250 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
     }
     console.log('Sent message to Gemini. Capturing result...');
 
-    // --- PRIMARY: Wait for button as indicator, then capture via canvas directly ---
-    // We DON'T click the button (causes window close & download never completes).
-    // Instead we grab the image from the DOM via canvas.
+    // --- STEP 1: รอ Gemini ประมวลผลเสร็จ และตรวจสอบว่ามีรูปเลือกหรือไม่ ---
     let captured = false;
     let retryCount = 0;
     const maxRetries = 2;
+    let hasChoice = false;
 
     while (!captured && retryCount <= maxRetries) {
       try {
         const fastDl = page.locator('.fast-dl-button').first();
         if (await fastDl.isVisible({ timeout: 12000 }).catch(() => false)) {
-          console.log('[FastDL] Image ready, capturing via canvas...');
+          console.log('[FastDL] Image ready, checking for choice buttons...');
           captured = true;
           break;
         }
 
-        // Gemini image taking longer than 12s — auto pop up browser for user to inspect
-        console.warn('[FastDL] Gemini response taking time — automatically popping up browser window...');
-        await reportStatus(18, 'กำลังสร้างรูปภาพด้วย Gemini AI...', '⚠️ หากค้าง ระบบเปิดเบราว์เซอร์ให้คุณตรวจสอบแล้ว', 'warn', currentPostIndex, { showBrowser: true });
-
+        console.log('[FastDL] Gemini still processing, waiting...');
         await fastDl.waitFor({ state: 'visible', timeout: 35000 });
-        console.log('[FastDL] Image ready (after browser popup), capturing via canvas...');
+        console.log('[FastDL] Image ready, checking for choice buttons...');
         captured = true;
       } catch (e) {
         console.warn(`[FastDL] Fast Download button not found (attempt ${retryCount + 1}/${maxRetries + 1}):`, e.message);
 
         if (retryCount < maxRetries) {
-          console.log('[FastDL] Trying refresh Gemini...');
+          console.log(`[FastDL] Retry attempt ${retryCount + 1}/${maxRetries} — trying buttons...`);
+
+          let retryClicked = false;
+
+          // Strategy 1: Click retry/generate/refresh buttons via DOM evaluate (captures all positions correctly)
+          retryClicked = await page.evaluate(() => {
+            // Collect all clickable elements
+            const allBtns = Array.from(document.querySelectorAll('button, div[role="button"], span[role="button"], a, span'));
+            
+            // Helper: check visible and clickable
+            function isClickable(el) {
+              const rect = el.getBoundingClientRect();
+              const style = window.getComputedStyle(el);
+              return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
+            }
+            
+            // Priority 1: "ลองอีกครั้ง" / "Try again" exact match first
+            for (const btn of allBtns) {
+              const text = (btn.innerText || btn.textContent || '').trim();
+              const ariaLabel = (btn.getAttribute('aria-label') || '').trim();
+              if (text === 'ลองอีกครั้ง' || text === 'Try again' || ariaLabel === 'ลองอีกครั้ง' || ariaLabel === 'Try again') {
+                if (isClickable(btn)) { btn.click(); return true; }
+              }
+            }
+            
+            // Priority 2: includes "ลองอีกครั้ง" or "try again"
+            for (const btn of allBtns) {
+              const text = (btn.innerText || btn.textContent || '').trim().toLowerCase();
+              const ariaLabel = (btn.getAttribute('aria-label') || '').trim().toLowerCase();
+              if (text.includes('ลองอีกครั้ง') || text.includes('try again') || ariaLabel.includes('ลองอีกครั้ง') || ariaLabel.includes('try again')) {
+                if (isClickable(btn)) { btn.click(); return true; }
+              }
+            }
+            
+            // Priority 3: other retry patterns
+            const patterns = [
+              'สร้างภาพ', 'สร้างใหม่', 'retry', 'regenerate',
+              'สร้างรูป', 'ทำภาพ', 'ทำรูป', 'refresh',
+              'สร้าง', 'generate',
+            ];
+            for (const btn of allBtns) {
+              const text = (btn.innerText || btn.textContent || '').trim().toLowerCase();
+              const ariaLabel = (btn.getAttribute('aria-label') || '').trim().toLowerCase();
+              for (const pat of patterns) {
+                if (text.includes(pat) || ariaLabel.includes(pat)) {
+                  if (isClickable(btn)) { btn.click(); return true; }
+                }
+              }
+            }
+            
+            // Fallback: mat-icon refresh
+            const refreshIcon = document.querySelector('mat-icon[data-mat-icon-name="refresh"]');
+            if (refreshIcon) {
+              const parent = refreshIcon.closest('button, div[role="button"]');
+              if (parent) { parent.click(); return true; }
+              refreshIcon.click();
+              return true;
+            }
+            
+            return false;
+          }).catch(() => false);
+
+          if (retryClicked) {
+            console.log('[FastDL] ✅ Clicked retry/generate button via DOM evaluate');
+            await sleep(5000); // รอนานขึ้นหลังจากคลิก retry
+            retryCount++;
+            continue;
+          }
+
+          // Strategy 2: Playwright locator for visible retry buttons
+          const retrySelectors = [
+            // ลองอีก kommt first — highest priority
+            'div[role="button"]:has-text("ลองอีกครั้ง")',
+            'button:has-text("ลองอีกครั้ง")',
+            'span:has-text("ลองอีกครั้ง")',
+            // Try again / Retry
+            'div[role="button"]:has-text("Try again")',
+            'button:has-text("Try again")',
+            'div[role="button"]:has-text("Retry")',
+            'button:has-text("Retry")',
+            // สร้างภาพ / ทำภาพ
+            'div[role="button"]:has-text("สร้าง")',
+            'button:has-text("สร้าง")',
+            'div[role="button"]:has-text("ทำภาพ")',
+            'button:has-text("ทำภาพ")',
+            // Generate
+            'div[role="button"]:has-text("Generate")',
+            'button:has-text("Generate")',
+            // Fallback
+            'mat-icon[data-mat-icon-name="refresh"]',
+          ];
+          for (const sel of retrySelectors) {
+            try {
+              const btn = page.locator(sel).first();
+              if (await btn.count() > 0) {
+                await btn.click({ force: true, timeout: 3000 });
+                console.log('[FastDL] ✅ Clicked: ' + sel);
+                retryClicked = true;
+                break;
+              }
+            } catch (e) { }
+          }
+
+          if (retryClicked) {
+            await sleep(5000);
+            retryCount++;
+            continue;
+          }
+
+          // Strategy 3: ถ้าไม่เจอปุ่ม retry เลย -> ส่ง prompt ใหม่ (พิมพ์ใหม่แล้วกด Enter)
+          console.log('[FastDL] No retry button found — re-typing prompt...');
           try {
-            const refreshBtn = page.locator('mat-icon[data-mat-icon-name="refresh"]').first();
-            if (await refreshBtn.count() > 0 && await refreshBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-              await refreshBtn.click({ force: true });
-              console.log('[FastDL] Clicked refresh button');
-              await sleep(3000);
+            const textInput = page.locator(inputSelector).first();
+            if (await textInput.count() > 0 && await textInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+              await textInput.click({ force: true });
+              await sleep(500);
+              await textInput.fill(promptText);
+              await sleep(500);
+              await textInput.press('Enter');
+              console.log('[FastDL] ✅ Re-sent prompt to Gemini');
+              await sleep(5000);
               retryCount++;
               continue;
             }
-          } catch (refreshError) {
-            console.warn('[FastDL] Refresh button click failed:', refreshError.message);
+          } catch (retypeErr) {
+            console.warn('[FastDL] Re-typing prompt failed:', retypeErr.message);
           }
         }
 
-        console.warn('[FastDL] Max retries reached or timed out.');
+        console.warn('[FastDL] Max retries reached or retry failed.');
         break;
       }
     }
-    // Capture the parent image of the Fast Download button, or any large image
+
+    // --- STEP 2: ตรวจหา choice buttons (ถ้า Gemini แสดงตัวเลือก 2 รูป) ---
+    if (captured) {
+      try {
+        console.log('[Choice] Checking for image selection buttons...');
+        
+        // หาปุ่มเลือกภาพทั้งหมด (Gemini ใช้ aria-label "Select image 1", "Select image 2" ฯลฯ)
+        const choiceButtons = await page.evaluate(() => {
+          const btns = Array.from(document.querySelectorAll('button[aria-label*="Select image"], button[aria-label*="เลือกภาพ"]'));
+          return btns.length;
+        }).catch(() => 0);
+
+        if (choiceButtons >= 2) {
+          hasChoice = true;
+          console.log(`[Choice] ✅ Found ${choiceButtons} image choices. Selecting first image...`);
+          
+          // คลิกปุ่มแรก (Select image 1)
+          const firstChoice = page.locator('button[aria-label*="Select image 1"], button[aria-label*="เลือกภาพ 1"]').first();
+          if (await firstChoice.count() > 0) {
+            await firstChoice.click({ force: true });
+            console.log('[Choice] ✅ Clicked first image choice');
+            await sleep(2000); // รอให้ Gemini โหลดภาพที่เลือก
+          }
+        } else {
+          console.log('[Choice] No image choices found, proceeding with single result.');
+        }
+      } catch (choiceErr) {
+        console.warn('[Choice] Error checking for choices:', choiceErr.message);
+      }
+    }
+
+    // --- STEP 3: ตรวจสอบว่า Gemini ปฏิเสธทำรูป (จริยธรรม) ---
+    const refusalDetected = await page.evaluate(() => {
+      const text = document.body.innerText || '';
+      const refusalKeywords = [
+        // English
+        "I can't help with images of people",
+        "I'm not able to help with that",
+        "I can't assist with that",
+        "I cannot help with",
+        "against my guidelines",
+        "content policy",
+        "I'm unable to",
+        "I can't generate",
+        "I can't create",
+        "I'm not able to generate",
+        "cannot fulfill this request",
+        
+        // Thai
+        "ฉันไม่สามารถช่วยเหลือ",
+        "ฉันไม่สามารถทำ",
+        "ฉันไม่สามารถทำตาม",
+        "ไม่สามารถสร้าง",
+        "ไม่สามารถสร้างภาพ",
+        "ฉันไม่สามารถสร้างภาพ",
+        "ไม่สามารถช่วย",
+        "ขัดต่อนโยบาย",
+        "ขัดกับแนวทาง",
+        "ขัดต่อหลัก",
+        "ไม่สามารถดำเนินการ",
+        "ฉันทำไม่ได้",
+        "ทำไม่ได้",
+        "นโยบายความปลอดภัย",
+        "เนื้อหาชี้นำทางเพศ",
+        "ผิดกฎหมาย",
+        "เป็นอันตราย",
+        "การสนทนาของคุณยุติ",
+        "ขออภัย ฉันไม่สามารถ",
+        "ขออภัย ฉันสร้างรูปภาพที่ไม่ปลอดภัยไม่ได้",
+
+        // Gemini offers to create a different image of the same person (treat as refusal)
+        "ฉันสร้างภาพของบุคคลจริงได้นะ แต่ไม่ใช่ภาพแบบนั้น",
+        "ให้ฉันช่วยสร้างภาพอื่นของคนคนนี้แทนไหม",
+      ];
+      return refusalKeywords.some(kw => text.includes(kw));
+    }).catch(() => false);
+
+    if (refusalDetected) {
+      console.warn('[Gemini] ⚠️ Gemini refused due to content policy. Returning null to skip this post.');
+      return null;
+    }
+
+    // --- STEP 4: Capture ภาพจาก DOM ---
+    if (!captured) {
+      console.warn('[FastDL] No fast download button appeared — Gemini likely refused or failed. Returning null.');
+      return null;
+    }
+
     const dataUrl = await page.evaluate(() => {
       // Try parent of Fast Download button first
       const btn = document.querySelector('.fast-dl-button');
@@ -838,12 +1028,14 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
       }
       return null;
     }).catch(() => null);
+    
     if (dataUrl && dataUrl.startsWith('data:image/png;base64,')) {
       const destPath = path.join(DOWNLOADS_DIR, `gemini_result_${Date.now()}.png`);
       fs.writeFileSync(destPath, Buffer.from(dataUrl.replace(/^data:image\/png;base64,/, ''), 'base64'));
       console.log(`[FastDL] Captured result: ${destPath}`);
       return destPath;
     }
+    
     console.error('[FastDL] Could not capture Gemini result.');
     return null;
   } catch (e) {
@@ -856,7 +1048,34 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
   }
 }
 
-async function postComment(article, imagePath) {
+async function getLoggedInProfileName(page) {
+  try {
+    return await page.evaluate(() => {
+      // 1. หาจากลิงก์โปรไฟล์ — navigation sidebar มักมีลิงก์ไป profile
+      const profileLinks = document.querySelectorAll('a[href*="/me"], a[href*="/profile.php"], a[href*="/settings/"]');
+      for (const a of profileLinks) {
+        const txt = (a.innerText || a.textContent || '').trim();
+        if (txt && txt.length > 1 && txt.length < 60) return txt;
+      }
+      // 2. หาจาก area label หรือ alt ของ avatar รูปโปรไฟล์
+      const avatars = document.querySelectorAll('image[alt*="profile"], img[alt*="profile"], img[alt*="โปรไฟล์"]');
+      for (const img of avatars) {
+        const alt = img.getAttribute('alt') || '';
+        const match = alt.match(/profile\s*:\s*(.+)/i) || alt.match(/โปรไฟล์\s*(.+)/);
+        if (match) return match[1].trim();
+      }
+      // 3. หาจาก title ของหน้า (Facebook มักมีชื่อ user ใน title)
+      const title = document.title;
+      if (title) {
+        const m = title.match(/^\((\d+)\)\s*(.+?)\s*[|]/) || title.match(/^(.+?)\s*[|]/);
+        if (m && m[1] && !m[1].includes('Facebook') && !m[1].includes('Groups')) return m[1].trim();
+      }
+      return null;
+    }).catch(() => null);
+  } catch { return null; }
+}
+
+async function postComment(article, imagePath, postUrl) {
   try {
     const page = article.page();
 
@@ -1173,20 +1392,20 @@ async function postComment(article, imagePath) {
 
     // *** ปรับปรุง: ใช้ปุ่ม Submit button แทน Enter เพื่อให้ modal ปิด ***
 
-    // --- บันทึก comment_id ที่มีอยู่แล้วก่อน submit (เพื่อหา comment ใหม่ภายหลัง) ---
-    const existingCommentIds = await page.evaluate(() => {
-      const ids = Array.from(document.querySelectorAll('a[href*="comment_id"]'))
+    // --- บันทึก comment_id ที่มีอยู่แล้วก่อน submit (จำกัดเฉพาะใน article นี้เท่านั้น) ---
+    const existingCommentIds = await article.evaluate((node) => {
+      const ids = Array.from(node.querySelectorAll('a[href*="comment_id"]'))
         .map(a => { try { return new URL(a.href).searchParams.get('comment_id'); } catch { return null; } })
         .filter(Boolean);
-      return Array.from(new Set(ids)); // คืนค่าเป็น Array เสมอเพื่อให้ Playwright serialize ได้
+      return Array.from(new Set(ids));
     }).catch(() => []);
-    console.log('[Comment URL] Snapshot: ' + existingCommentIds.length + ' existing comment_ids');
+    console.log('[Comment URL] Snapshot: ' + existingCommentIds.length + ' existing comment_ids in this article');
 
     let commentPosted = false;
 
     // *** Submit: หาปุ่ม submit จาก DOM รอบ composer (ไม่ใช้ Enter ซึ่งทำให้ขึ้นบรรทัดใหม่) ***
 
-    // Strategy 1: evaluate DOM หาปุ่ม submit ที่อยู่ใกล้ composer แล้ว click ผ่าน JS
+    // Strategy 1: evaluate DOM หาปุ่ม submit ของ comment เท่านั้น ไม่ค้นหาไกล
     commentPosted = await page.evaluate(() => {
       const composer =
         document.activeElement ||
@@ -1194,21 +1413,32 @@ async function postComment(article, imagePath) {
         document.querySelector('div[role="textbox"][contenteditable="true"]');
       if (!composer) return false;
 
+      // หาเฉพาะ button ที่อยู่ถัดจาก composer ใน container ใกล้ๆ (3-4 level max)
       let container = composer;
-      for (let i = 0; i < 12; i++) {
+      for (let i = 0; i < 4; i++) {
         container = container.parentElement;
         if (!container) break;
-        const buttons = Array.from(container.querySelectorAll('div[role="button"], button'));
+        // จำกัด scope: หาเฉพาะปุ่มที่ child โดยตรงของ container นี้ ไม่รวมหลาน
+        const buttons = Array.from(container.querySelectorAll(':scope > div[role="button"], :scope > button'));
+        // + child ของ sibling ถัดไป (Facebook มักวาง submit ไว้ใน div ถัดจาก composer)
+        const sibling = container.nextElementSibling;
+        if (sibling) {
+          const siblingBtns = Array.from(sibling.querySelectorAll('div[role="button"], button'));
+          buttons.push(...siblingBtns);
+        }
         const submitBtn = buttons.find(btn => {
           const label = (btn.getAttribute('aria-label') || '').trim();
           const txt = (btn.innerText || '').trim();
           const disabled = btn.getAttribute('aria-disabled') === 'true' || btn.disabled;
           if (disabled) return false;
+          // ใช้ exact match เท่านั้น ไม่ใช้ startsWith เพื่อป้องกันกดผิดปุ่ม
           return (
             label === '\u0e42\u0e1e\u0e2a\u0e15\u0e4c\u0e04\u0e27\u0e32\u0e21\u0e04\u0e34\u0e14\u0e40\u0e2b\u0e47\u0e19' ||
             label === 'Post comment' ||
-            label.startsWith('Post') ||
-            txt === '\u0e42\u0e1e\u0e2a\u0e15\u0e4c' ||
+            label === '\u0e42\u0e1e\u0e2a\u0e15\u0e4c' ||
+            label === 'Post' ||
+            txt === '\u0e42\u0e1e\u0e2a\u0e15\u0e4c\u0e04\u0e27\u0e32\u0e21\u0e04\u0e34\u0e14\u0e40\u0e2b\u0e47\u0e19' ||
+            txt === 'Post comment' ||
             txt === 'Post'
           );
         });
@@ -1222,13 +1452,13 @@ async function postComment(article, imagePath) {
       await sleep(3000);
     }
 
-    // Strategy 2: Playwright locator หาปุ่ม submit visible ใกล้ composer
+    // Strategy 2: Playwright locator หาปุ่ม submit เฉพาะ exact match
     if (!commentPosted) {
       const submitSelectors = [
         'div[aria-label="\u0e42\u0e1e\u0e2a\u0e15\u0e4c\u0e04\u0e27\u0e32\u0e21\u0e04\u0e34\u0e14\u0e40\u0e2b\u0e47\u0e19"]',
         'div[aria-label="Post comment"]',
-        'div[role="button"][aria-label*="\u0e42\u0e1e\u0e2a\u0e15\u0e4c"]',
-        'div[role="button"][aria-label*="Post"]',
+        'div[aria-label="\u0e42\u0e1e\u0e2a\u0e15\u0e4c"]',
+        'div[aria-label="Post"]',
       ];
       for (const sel of submitSelectors) {
         try {
@@ -1279,83 +1509,63 @@ async function postComment(article, imagePath) {
 
     console.log('? Comment posted (keeping modal open for URL extraction)');
 
-    // --- ค้นหา comment URL ของความคิดเห็นเราแบบ Triple-Layer Verified ---
+    // --- ค้นหา comment URL ของความคิดเห็นเรา ---
     let commentUrl = null;
     try {
       console.log('[Comment URL] Searching for newly created comment URL...');
-      const profileName = 'รับแก้ไขภาพออนไลน์'; // ข้อความภาษาไทยถูกต้องตรงตัว
+      const profileName = await getLoggedInProfileName(page).catch(() => null) || 'รับแก้ไขภาพออนไลน์';
+      console.log('[Comment URL] Using profile name:', profileName);
 
-      for (let _attempt = 0; _attempt < 8; _attempt++) {
-        await sleep(_attempt === 0 ? 3000 : 2000);
+      // ดึง pathname ของโพสต์ไว้กรอง comment — comment ของโพสต์นี้ต้องมี pathname เดียวกัน
+      const postPath = (() => {
+        try { return postUrl ? new URL(postUrl).pathname.replace(/\/$/, '') : null; } catch { return null; }
+      })();
 
-        commentUrl = await page.evaluate(({ profName, oldIds }) => {
-          // --- 1. ค้นหาคอมเมนต์ container ทั้งหมดที่เป็นโปรไฟล์เรา ('รับแก้ไขภาพออนไลน์') ---
-          const allEls = Array.from(document.querySelectorAll('div[role="article"], div[class*="comment"], div[class*="x1y1aw1k"], div[class*="xwib8y2"]'));
-          const ourContainers = allEls.filter(el => {
-            // ต้องไม่อยู่ในกล่องป้อนคำตอบ
-            if (el.closest('[role="textbox"]') || el.closest('form') || el.getAttribute('contenteditable') === 'true') {
-              return false;
-            }
-            const text = el.innerText || el.textContent || '';
-            const label = el.getAttribute('aria-label') || '';
-            return text.includes(profName) || label.includes(profName);
-          });
+      for (let _attempt = 0; _attempt < 6; _attempt++) {
+        await sleep(_attempt === 0 ? 2500 : 1800);
 
-          // --- 2. ดึงลิงก์ comment_id ทั้งหมดใต้ container ของเรา ---
-          const ourLinks = [];
-          for (const container of ourContainers) {
-            const links = Array.from(container.querySelectorAll('a[href*="comment_id"]'));
-            for (const a of links) {
-              if (a.href) ourLinks.push(a.href);
-            }
-          }
-
-          // 2.1 ลิงก์ที่เกิดใหม่ (ไม่อยู่ใน oldIds snapshot) ภายใต้โปรไฟล์เรา (แม่นยำสูงสุด)
-          for (let i = ourLinks.length - 1; i >= 0; i--) {
-            const href = ourLinks[i];
-            try {
-              const url = new URL(href);
-              const cid = url.searchParams.get('comment_id');
-              if (cid && !oldIds.includes(cid)) {
-                return href;
-              }
-            } catch (e) { }
-          }
-
-          // 2.2 ถ้าไม่มีใน diff ให้ใช้ลิงก์ตัวล่างสุดใต้ container ของเราเอง
-          if (ourLinks.length > 0) {
-            return ourLinks[ourLinks.length - 1];
-          }
-
-          // --- 3. Strict Fallback: วนลูปย้อนจากล่างสุดขึ้นบน ตรวจหาลิงก์ comment_id ตัวใหม่ที่ parentElement มีชื่อโปรไฟล์เรา ---
+        commentUrl = await page.evaluate(({ profName, oldIds, _postPath }) => {
           const allLinks = Array.from(document.querySelectorAll('a[href*="comment_id"]'));
+
           for (let i = allLinks.length - 1; i >= 0; i--) {
             const a = allLinks[i];
-            const href = a.href || '';
             try {
-              const url = new URL(href);
+              const url = new URL(a.href);
               const cid = url.searchParams.get('comment_id');
-              if (cid && !oldIds.includes(cid)) {
-                // เดินย้อนขึ้น parentElement ไป 10 ชั้นเพื่อตรวจสอบว่ามีชื่อเราหรือไม่
-                let p = a.parentElement;
-                let steps = 0;
-                let belongsToUs = false;
-                while (p && steps < 10) {
-                  const pTxt = p.innerText || p.textContent || '';
-                  if (pTxt.includes(profName)) {
-                    belongsToUs = true;
-                    break;
-                  }
-                  p = p.parentElement;
-                  steps++;
-                }
-                if (belongsToUs) return href;
+              if (!cid || oldIds.includes(cid)) continue;
+
+              // กรองโดย pathname — comment ต้องอยู่ภายใต้โพสต์เดียวกัน
+              if (_postPath) {
+                const linkPath = url.pathname.replace(/\/$/, '');
+                if (linkPath !== _postPath) continue;
               }
+
+              // parent chain ต้องมีชื่อโปรไฟล์เรา
+              let p = a.parentElement;
+              let found = false;
+              for (let steps = 0; p && steps < 10; steps++) {
+                if ((p.innerText || p.textContent || '').includes(profName)) { found = true; break; }
+                p = p.parentElement;
+              }
+              if (found) return a.href;
             } catch (e) { }
           }
 
+          // Pass 2: fallback — pathname match อย่างเดียว (ไม่เช็คชื่อ)
+          if (_postPath) {
+            for (let i = allLinks.length - 1; i >= 0; i--) {
+              const a = allLinks[i];
+              try {
+                const url = new URL(a.href);
+                const cid = url.searchParams.get('comment_id');
+                if (!cid || oldIds.includes(cid)) continue;
+                const linkPath = url.pathname.replace(/\/$/, '');
+                if (linkPath === _postPath) return a.href;
+              } catch (e) { }
+            }
+          }
           return null;
-        }, { profName: profileName, oldIds: existingCommentIds });
+        }, { profName: profileName, oldIds: existingCommentIds, _postPath: postPath });
 
         if (commentUrl) {
           try {
@@ -1366,14 +1576,12 @@ async function postComment(article, imagePath) {
             commentUrl = url.toString();
           } catch {
             const m = commentUrl.match(/comment_id=([^&]+)/);
-            if (m) {
-              commentUrl = commentUrl.split('?')[0] + '?comment_id=' + m[1];
-            }
+            if (m) commentUrl = commentUrl.split('?')[0] + '?comment_id=' + m[1];
           }
           console.log('[Comment URL] ✅ Found verified link: ' + commentUrl);
           break;
         }
-        console.log('[Comment URL] Retrying (' + (_attempt + 1) + '/8)...');
+        console.log('[Comment URL] Retrying (' + (_attempt + 1) + '/6)...');
       }
 
       if (!commentUrl) {
@@ -1431,22 +1639,22 @@ async function likePost(article) {
 
 async function closeFacebookModal(page) {
   try {
+    // หาเฉพาะปุ่มที่อยู่ใน dialog/overlay เท่านั้น ไม่ค้นหาทั้งหน้า
+    const hasDialog = await page.evaluate(() => {
+      return !!document.querySelector('div[role="dialog"], div[role="alertdialog"]');
+    }).catch(() => false);
+    if (!hasDialog) return false;
+
     const closeSelectors = [
-      // Group rules / "Got it" dialogs
-      'div[role="button"]:has-text("เข้าใจแล้ว")',
-      'div[role="button"]:has-text("Got it")',
-      'div[role="button"]:has-text("OK")',
-      'div[role="button"]:has-text("ตกลง")',
-      'div[role="button"]:has-text("Dismiss")',
-      'div[role="button"]:has-text("ยกเลิก")',
-      // Standard close buttons
-      'div[role="button"][aria-label*="Close"]',
-      'div[role="button"][aria-label*="close"]',
-      'div[role="button"][aria-label*="ปิด"]',
-      'button[aria-label*="Close"]',
-      'button[aria-label*="ปิด"]',
-      'button:has-text("Close")',
-      'button:has-text("ปิด")'
+      'div[role="dialog"] div[role="button"]:has-text("เข้าใจ")',
+      'div[role="dialog"] div[role="button"]:has-text("เข้าใจแล้ว")',
+      'div[role="dialog"] div[role="button"]:has-text("Got it")',
+      'div[role="dialog"] div[role="button"]:has-text("Dismiss")',
+      'div[role="dialog"] div[role="button"][aria-label*="Close"]',
+      'div[role="dialog"] div[role="button"][aria-label*="close"]',
+      'div[role="dialog"] div[role="button"][aria-label*="ปิด"]',
+      'div[role="dialog"] button[aria-label*="Close"]',
+      'div[role="dialog"] button[aria-label*="ปิด"]',
     ];
     let closed = false;
     for (const sel of closeSelectors) {
@@ -1602,26 +1810,24 @@ async function shareViaOwnPost(fbPage, commentUrl) {
     await postComposer.fill(shareText);
     await sleep(2000);
 
-    // Multi-stage Submission Loop: กดปุ่ม "ถัดไป" -> "โพสต์" จนกว่า Dialog จะปิดลงจริง
+    // Multi-stage Submission Loop: กดปุ่ม "ถัดไป" -> "โพสต์"
     console.log('[Share] Clicking Post/Next button loop...');
-    let shared = false;
 
     for (let attempt = 1; attempt <= 4; attempt++) {
       const isDialogOpen = await fbPage.evaluate(() => !!document.querySelector('div[role="dialog"]'));
       if (!isDialogOpen) {
         console.log('[Share] ✅ Dialog closed. Profile post created successfully!');
-        shared = true;
         break;
       }
 
       console.log(`[Share] Attempt ${attempt}: Searching for active Post/Next button...`);
 
       // 1. ค้นหาและคลิกผ่าน DOM evaluate ใน dialog ล่าสุด
-      let clickedInLoop = await fbPage.evaluate(() => {
+      let clickedPost = false;
+      const clickedInLoop = await fbPage.evaluate(() => {
         const dialogs = Array.from(document.querySelectorAll('div[role="dialog"]'));
-        if (dialogs.length === 0) return false;
+        if (dialogs.length === 0) return 'none';
 
-        // ใช้ dialog ชั้นในสุด (ล่าสุด)
         const activeDialog = dialogs[dialogs.length - 1];
         const buttons = Array.from(activeDialog.querySelectorAll('div[role="button"], button'));
 
@@ -1637,13 +1843,14 @@ async function shareViaOwnPost(fbPage, commentUrl) {
 
         if (targetBtn) {
           targetBtn.click();
-          return true;
+          const label = (targetBtn.getAttribute('aria-label') || targetBtn.innerText || '').trim();
+          return label.includes('โพสต์') || label.includes('Post') ? 'post' : 'next';
         }
-        return false;
-      }).catch(() => false);
+        return 'none';
+      }).catch(() => 'none');
 
-      // 2. Playwright Fallback หาก DOM evaluate ไม่เจอ
-      if (!clickedInLoop) {
+      // 2. Playwright Fallback
+      if (clickedInLoop === 'none') {
         for (const sel of [
           'div[role="dialog"] div[aria-label="โพสต์"]',
           'div[role="dialog"] div[aria-label="Post"]',
@@ -1658,15 +1865,22 @@ async function shareViaOwnPost(fbPage, commentUrl) {
               if (await btn.getAttribute('aria-disabled').catch(() => 'false') !== 'true') {
                 await btn.click({ force: true });
                 console.log('[Share] ✅ Playwright clicked: ' + sel);
-                clickedInLoop = true;
+                if (sel.includes('โพสต์') || sel.includes('Post')) clickedPost = true;
                 break;
               }
             }
           } catch (e) { }
         }
+      } else {
+        clickedPost = (clickedInLoop === 'post');
       }
 
-      if (clickedInLoop) {
+      if (clickedPost) {
+        console.log('[Share] ✅ Post button clicked — done, no need to wait for dialog.');
+        break; // โพสต์สำเร็จแล้ว ไม่ต้องรอ dialog ปิด
+      }
+
+      if (clickedInLoop !== 'none' || clickedPost) {
         console.log(`[Share] Action triggered in attempt ${attempt}, waiting for dialog state change...`);
         await sleep(3000);
       } else {
@@ -1675,7 +1889,7 @@ async function shareViaOwnPost(fbPage, commentUrl) {
       }
     }
 
-    await sleep(2000);
+    await sleep(500);
     console.log('[Share] ✅ Post shared to profile process completed!');
     return { success: true, commentUrl };
 
@@ -1694,6 +1908,73 @@ async function getClipboardText() {
   }
 }
 
+// ฟังก์ชันควบคุมการแสดง/ซ่อนหน้าต่าง browser
+async function toggleBrowserVisibility() {
+  if (!browserContext) return { success: false, message: 'Browser not running' };
+  
+  try {
+    const pages = browserContext.pages();
+    if (pages.length === 0) return { success: false, message: 'No pages open' };
+    
+    const mainPage = pages[0];
+    
+    if (isBrowserHidden) {
+      // แสดงหน้าต่าง - ขยายเต็มจอและนำมาด้านหน้า
+      await mainPage.evaluate(() => {
+        window.moveTo(0, 0);
+        window.resizeTo(screen.availWidth, screen.availHeight);
+      });
+      await mainPage.bringToFront();
+      isBrowserHidden = false;
+      return { success: true, message: 'Browser shown', hidden: false };
+    } else {
+      // ซ่อนหน้าต่าง - ย่อและไปวางมุมล่างขวาจอสอง
+      await mainPage.evaluate(() => {
+        window.resizeTo(1024, 768);
+        window.moveTo(2816, 312);
+      });
+      isBrowserHidden = true;
+      return { success: true, message: 'Browser hidden', hidden: true };
+    }
+  } catch (e) {
+    return { success: false, message: e.message };
+  }
+}
+
+// HTTP server สำหรับรับคำสั่งควบคุม browser
+function startControlServer() {
+  const controlServer = http.createServer((req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
+    if (req.url === '/toggle-browser') {
+      toggleBrowserVisibility().then(result => {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(result));
+      });
+    } else if (req.url === '/browser-status') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ hidden: isBrowserHidden, running: !!browserContext }));
+    } else {
+      res.writeHead(404);
+      res.end();
+    }
+  });
+
+  controlServer.listen(12122, '127.0.0.1', () => {
+    console.log('Browser control server started at http://127.0.0.1:12122');
+  });
+
+  return controlServer;
+}
+
 async function pauseForUser(message) {
   console.log(`\n⏸️ ${message}`);
   console.log('กด Enter เพื่อดำเนินการต่อ...');
@@ -1710,6 +1991,17 @@ async function pauseOnError(isDebugPause, message) {
 
 // ===== MAIN BOT =====
 (async () => {
+  // ⚡ Global error handlers - force exit ถ้ามี unhandled error
+  process.on('unhandledRejection', (err) => {
+    console.error('Unhandled Rejection:', err);
+    setTimeout(() => process.exit(1), 1000);
+  });
+  
+  process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+    setTimeout(() => process.exit(1), 1000);
+  });
+
   const isHeadless = process.argv.includes('--headless');
   const isDebugPause = process.argv.includes('--debug-pause');
   const isReviewMode = process.argv.includes('--review');
@@ -1726,7 +2018,8 @@ async function pauseOnError(isDebugPause, message) {
     '--disable-features=IsolateOrigins,site-per-process',
     `--load-extension=${extensionPath}`,
     `--disable-extensions-except=${extensionPath}`,
-    '--start-minimized'
+    '--window-size=1024,768',  // ขนาดกลาง (ใหญ่พอให้ Gemini แสดง Fast Download)
+    '--window-position=2816,312',  // มุมล่างขวาจอสอง (x=1920+896, y=1080-768)
   ];
 
   try {
@@ -1744,11 +2037,15 @@ async function pauseOnError(isDebugPause, message) {
     const context = await chromium.launchPersistentContext(USER_DATA_DIR, {
       headless: isHeadless,
       viewport: null,
-      args: browserArgs
+      args: [...browserArgs, '--disable-background-timer-throttling'],
     });
 
     console.log('Browser launched successfully.');
-    await sleep(2500);
+
+    // ✅ ไม่ต้อง minimize เพราะ Playwright ต้องการหน้าต่างที่มองเห็นได้
+    // แทนที่จะ minimize ให้ย่อเล็กและซ่อนไว้มุมจอแทน (ทำผ่าน --window-size และ --window-position แล้ว)
+
+    await sleep(1700);
 
     const existingPages = context.pages();
     const fbPage = existingPages.length > 0 ? existingPages[0] : await context.newPage();
@@ -1758,16 +2055,14 @@ async function pauseOnError(isDebugPause, message) {
     ensureDownloadsDir();
     clearDownloadsDir();
 
-    console.log('\n⏭️ Skipping Gemini account check (loading cached accounts directly)...');
+    // *** โหลด cache เงียบๆ ไม่เปิดหน้าต่าง ***
     const cached = loadActiveAccounts();
 
-    // *** ยกเลิกการเช็ค ใช้ cache เลย ***
     if (cached && cached.length > 0) {
       activeGeminiAccounts = cached;
-      console.log(`✓ Loaded ${activeGeminiAccounts.length} cached Gemini accounts (skipped validation).`);
+      // ไม่พิมพ์อะไร เงียบสนิท
     } else {
-      // Fallback ถ้าไม่มี cache
-      console.log('No cached accounts, using default 8 accounts...');
+      // Fallback ถ้าไม่มี cache ใช้ default ทั้งหมด
       activeGeminiAccounts = GEMINI_ACCOUNTS;
     }
 
@@ -1945,7 +2240,16 @@ async function pauseOnError(isDebugPause, message) {
         const elapsedMs = Date.now() - BOT_START_TIME;
         if (postsProcessedCount < AUTO_GROUPS_MAX && elapsedMs >= MAX_RUNTIME_MS) {
           console.warn(`Bot runtime exceeded 20 minutes (${Math.round(elapsedMs / 1000)}s). Stopping.`);
-          break;
+          showWindowsNotification('Facebook Bot', `Timeout: ทำได้ ${postsProcessedCount}/${AUTO_GROUPS_MAX} โพสต์`, 'Warning');
+          
+          // Force cleanup และปิดทันที
+          try {
+            await execPromise('taskkill /F /IM chrome.exe /FI "WINDOWTITLE eq *user_data*"', { timeout: 2000 }).catch(() => {});
+            await context.close({ timeout: 2000 }).catch(() => {});
+          } catch (e) { /* ignore */ }
+          
+          setTimeout(() => process.exit(0), 1000);
+          process.exit(0);
         }
 
         currentPostIndex = postsProcessedCount + 1;
@@ -2085,13 +2389,32 @@ async function pauseOnError(isDebugPause, message) {
             await reportStatus(basePct + 15, `ส่งภาพให้ Gemini AI (โพสต์ ${currentPostIndex})...`, `กำลังประมวลผลสร้างรูปภาพใหม่ด้วย Gemini AI`, 'info', currentPostIndex);
             geminiResult = await processWithGemini(geminiPage, tempInputPaths, postText, geminiUrl);
             if (!geminiResult) {
-              console.error('Gemini processing failed.');
-              await reportStatus(basePct, `Gemini ทำงานไม่สำเร็จ (โพสต์ ${currentPostIndex})`, '⚠️ ข้ามไปโพสต์ใหม่...', 'warn', currentPostIndex);
-              await pauseOnError(isDebugPause, 'Gemini ประมวลผลล้มเหลว');
+              console.error('Gemini processing failed or refused.');
+              await reportStatus(basePct, `Gemini ปฏิเสธ/ล้มเหลว (โพสต์ ${currentPostIndex})`, '⚠️ กด Like แล้วข้ามไปโพสต์ใหม่...', 'warn', currentPostIndex);
+              
+              // ⚠️ กรณี Gemini ปฏิเสธ → กด Like แล้วข้าม
+              await fbPage.bringToFront().catch(() => { });
+              await article.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center' })).catch(() => { });
+              await sleep(600);
+              await likePost(article);
+              console.log('[Gemini Refused] ✅ Liked post and skipping to next.');
+              
+              await pauseOnError(isDebugPause, 'Gemini ประมวลผลล้มเหลว/ปฏิเสธ → กด Like แล้วข้าม');
               await article.evaluate(el => {
                 el.style.display = 'none';
                 el.setAttribute('data-bot-processed', 'true');
               }).catch(() => { });
+              
+              // Mark as processed เพื่อไม่ทำซ้ำ
+              let postId;
+              try {
+                postId = imageUrls.length > 0 ? hashString(new URL(imageUrls[0]).pathname) : hashString(postText.substring(0, 200));
+              } catch (e) {
+                postId = hashString(postText.substring(0, 200));
+              }
+              processedPosts.add(postId);
+              saveProcessedPosts();
+              
               continue;
             }
 
@@ -2120,11 +2443,10 @@ async function pauseOnError(isDebugPause, message) {
 
             await reportStatus(basePct + 55, `กำลังโพสต์คอมเมนต์ (โพสต์ ${currentPostIndex})...`, 'อัปโหลดภาพลงช่องแสดงความคิดเห็นบน Facebook', 'info', currentPostIndex);
             await fbPage.bringToFront().catch(() => { });
-            const commentResult = await postComment(article, pythonResult);
-
-            // Extract post permalink for sharing
+            // Extract post permalink ก่อนส่งให้ postComment (ใช้อ้างอิง comment URL)
             const postUrl = await getPostUrl(article).catch(() => null);
             if (postUrl) console.log(`Post URL: ${postUrl}`);
+            const commentResult = await postComment(article, pythonResult, postUrl);
 
             let postId;
             try {
@@ -2211,7 +2533,33 @@ async function pauseOnError(isDebugPause, message) {
       console.log('\n============================================');
       console.log(`Successfully completed ${postsProcessedCount} posts.`);
       console.log('============================================');
-      showWindowsNotification('Facebook Bot', `Completed ${postsProcessedCount} posts. Bot closing.`);
+      
+      // ✅ แสดง notification และปิด browser ทันที (ไม่รอ notification)
+      showWindowsNotification('Facebook Bot', `ทำรายการครบ ${postsProcessedCount}/10 สำเร็จ!`);
+      
+      console.log('Closing browser and process...');
+      
+      // Force kill Chrome processes ก่อน
+      try {
+        await execPromise('taskkill /F /IM chrome.exe /FI "WINDOWTITLE eq *user_data*"', { timeout: 3000 }).catch(() => {});
+      } catch (e) { /* ignore */ }
+      
+      try {
+        await context.close({ timeout: 3000 });
+        console.log('✅ Browser closed.');
+      } catch (e) {
+        console.warn('Browser close timeout, forcing exit...');
+      }
+      
+      console.log('✅ Bot finished. Exiting now.');
+      
+      // ⚡ Force exit หลัง 2 วินาทีไม่ว่าจะเกิดอะไร
+      setTimeout(() => {
+        console.log('⚠️ Force exit timeout reached.');
+        process.exit(0);
+      }, 2000);
+      
+      process.exit(0);
     } else {
       console.log('Review mode: accounts scanned, no processing.');
       console.log(`Active accounts: ${activeGeminiAccounts.length}`);
