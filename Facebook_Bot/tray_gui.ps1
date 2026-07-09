@@ -44,22 +44,15 @@ $script:browserVisible = $false
 # --- Functions to Find & Control Playwright Browser Window Hwnd ---
 function Get-PlaywrightBrowserHwnds {
     try {
-        # 1. Find the Node process running bot.js
         $nodeProc = Get-WmiObject Win32_Process | Where-Object {
             $_.Name -eq "node.exe" -and $_.CommandLine -like "*bot.js*"
         }
         if (-not $nodeProc) { return @() }
         
-        # 2. Get all processes to build the tree
         $allProcs = Get-WmiObject Win32_Process
-        
-        # Find all descendant process IDs recursively (Children, Grandchildren, etc.)
         $descendantPids = @()
         $queue = [System.Collections.Generic.Queue[int]]::new()
-        foreach ($np in $nodeProc) {
-            $queue.Enqueue($np.ProcessId)
-        }
-        
+        foreach ($np in $nodeProc) { $queue.Enqueue($np.ProcessId) }
         while ($queue.Count -gt 0) {
             $parentPid = $queue.Dequeue()
             $children = $allProcs | Where-Object { $_.ParentProcessId -eq $parentPid }
@@ -69,7 +62,6 @@ function Get-PlaywrightBrowserHwnds {
             }
         }
         
-        # 3. Retrieve window handles for browser processes in descendants
         $hwnds = @()
         foreach ($pid in $descendantPids) {
             try {
@@ -82,7 +74,6 @@ function Get-PlaywrightBrowserHwnds {
             } catch {}
         }
         
-        # Fallback: search by CommandLine containing Facebook_Bot
         if ($hwnds.Count -eq 0) {
             $chromeProcs = Get-WmiObject Win32_Process | Where-Object {
                 ($_.Name -eq "chrome.exe" -or $_.Name -eq "msedge.exe") -and $_.CommandLine -like "*Facebook_Bot*"
