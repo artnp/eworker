@@ -28,25 +28,29 @@ try {
     # Create XML payload for Toast Notification
     $xml = [Windows.Data.Xml.Dom.XmlDocument]::new()
     $template = @"
-<toast>
+<toast duration="short" scenario="default">
     <visual>
         <binding template="ToastGeneric">
             <text>$displayTitle</text>
             <text>$text</text>
         </binding>
     </visual>
+    <actions>
+    </actions>
 </toast>
 "@
     $xml.LoadXml($template)
     $toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
     
-    # Expiration time is set to 5 seconds. If not delivered/read in 5 seconds (e.g. screen locked/off),
-    # it expires and won't show up retroactively when the user returns.
-    $toast.ExpirationTime = [DateTimeOffset]::Now.AddSeconds(5)
+    # Auto-dismiss after 3 seconds
+    $toast.ExpirationTime = [DateTimeOffset]::Now.AddSeconds(3)
     
     $appId = "Microsoft.Windows.Shell.Run"
     $notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($appId)
     $notifier.Show($toast)
+    
+    # Exit immediately without blocking
+    exit 0
 } catch {
     # Fallback to NotifyIcon if ToastNotification fails
     Add-Type -AssemblyName System.Windows.Forms
@@ -62,7 +66,8 @@ try {
     $tray.BalloonTipIcon = [System.Windows.Forms.ToolTipIcon]::$Type
     $tray.BalloonTipTitle = $title
     $tray.BalloonTipText = $text
-    $tray.ShowBalloonTip(10000)
-    Start-Sleep -Seconds 3
+    $tray.ShowBalloonTip(3000)  # แสดง 3 วินาทีแทน 10 วินาที
+    Start-Sleep -Milliseconds 500  # รอแค่ 0.5 วินาทีแทน 3 วินาที
     $tray.Dispose()
+    exit 0
 }
