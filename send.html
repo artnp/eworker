@@ -1,0 +1,2041 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>เครื่องมือมาร์คจุดแก้ไข - Collaborative</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --danger: #ef4444;
+            --success: #10b981;
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: var(--bg-body);
+            color: var(--text-dark);
+            overflow: hidden;
+        }
+
+        /* Header - removed */
+
+        /* Upload Screen */
+        .upload-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        .upload-area {
+            background: white;
+            border: 3px dashed var(--border);
+            border-radius: 20px;
+            padding: 60px 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: #f8fafc;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(79, 70, 229, 0.15);
+        }
+
+        .upload-icon {
+            font-size: 64px;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .upload-area h2 {
+            font-size: 22px;
+            margin-bottom: 12px;
+        }
+
+        .upload-area p {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        /* Split View */
+        .split-container {
+            display: none;
+            height: 100vh;
+            position: relative;
+        }
+
+        .split-container.active {
+            display: flex;
+        }
+
+        .split-left {
+            flex: 1;
+            background: #1e293b;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Canvas Container with Zoom & Pan */
+        .canvas-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            cursor: grab;
+        }
+
+        .canvas-container.grabbing {
+            cursor: grabbing;
+        }
+
+        .canvas-wrapper {
+            position: absolute;
+            transform-origin: 0 0;
+            transition: transform 0.1s ease-out;
+        }
+
+        .main-image, .main-pdf {
+            display: block;
+            user-select: none;
+            pointer-events: none;
+        }
+
+        /* Markers on Canvas */
+        .marker {
+            position: absolute;
+            border: 3px solid var(--danger);
+            background: rgba(239, 68, 68, 0.15);
+            min-width: 40px;
+            min-height: 40px;
+            cursor: move;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+            transition: opacity 0.2s, border-color 0.2s;
+            z-index: 10;
+        }
+
+        .marker.dimmed {
+            opacity: 0.35;
+            border-color: #000;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .marker.active {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.2);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+            opacity: 1;
+        }
+
+        /* Marker Number Badge */
+        .marker-badge {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            width: 22px;
+            height: 22px;
+            background: var(--danger);
+            border: 2px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 11px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .marker.active .marker-badge {
+            background: #ef4444;
+        }
+
+        .marker.dimmed .marker-badge {
+            background: #000;
+        }
+
+        /* Resize Handles */
+        .resize-handle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--danger);
+            border: 1px solid white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            border-radius: 2px;
+        }
+
+        .resize-handle.tl { top: -4px; left: -4px; cursor: nw-resize; }
+        .resize-handle.tr { top: -4px; right: -4px; cursor: ne-resize; }
+        .resize-handle.bl { bottom: -4px; left: -4px; cursor: sw-resize; }
+        .resize-handle.br { bottom: -4px; right: -4px; cursor: se-resize; }
+
+        .marker.active .resize-handle {
+            background: #ef4444;
+        }
+
+        .marker.dimmed .resize-handle {
+            display: none;
+        }
+
+        /* Cross-page marker (belongs to another page) */
+        .marker.cross-page {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+            opacity: 0.75;
+            cursor: pointer;
+        }
+
+        .marker.cross-page:hover {
+            opacity: 1;
+            background: rgba(59, 130, 246, 0.2);
+            border-color: #60a5fa;
+        }
+
+        .marker.cross-page .marker-badge {
+            background: #3b82f6;
+        }
+
+        .marker.cross-page .resize-handle {
+            display: none;
+        }
+
+        .marker.cross-page .page-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10px;
+            color: white;
+            font-weight: 700;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        /* Arrow Line pointing to annotation card */
+        .arrow-line {
+            position: absolute;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .arrow-line line {
+            stroke: var(--danger);
+            stroke-width: 3;
+        }
+
+        .arrow-line polygon {
+            fill: var(--danger);
+        }
+
+        /* Right Panel */
+        .split-right {
+            width: 320px;
+            background: white;
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+
+        .count-badge {
+            background: var(--primary);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .btn-add {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-add:hover {
+            background: #059669;
+            transform: scale(1.05);
+        }
+
+        .annotations-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .annotation-card {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .annotation-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 2px 10px rgba(79, 70, 229, 0.15);
+        }
+
+        .annotation-card.active {
+            border-color: var(--danger);
+            background: #fff5f5;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .marker-number {
+            width: 28px;
+            height: 28px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .annotation-card.active .marker-number {
+            background: var(--danger);
+            box-shadow: 0 0 0 3px rgba(239,68,68,0.3);
+        }
+
+        .btn-delete {
+            background: none;
+            border: none;
+            color: #cbd5e1;
+            cursor: pointer;
+            padding: 5px 7px;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s;
+            line-height: 1;
+        }
+
+        .btn-delete:hover {
+            background: #fee2e2;
+            color: var(--danger);
+        }
+
+        .annotation-text {
+            width: 100%;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 10px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 64px;
+            transition: border-color 0.2s;
+            line-height: 1.6;
+            color: var(--text-dark);
+        }
+
+        .annotation-text:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
+        }
+
+        /* Floating Add Button in center of canvas */
+        .btn-add-float {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 15px;
+            box-shadow: 0 4px 16px rgba(16,185,129,0.45);
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            white-space: nowrap;
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        .btn-add-float:hover {
+            background: #059669;
+            transform: translateX(-50%) scale(1.06);
+            box-shadow: 0 6px 20px rgba(16,185,129,0.55);
+        }
+
+        .btn-add-float:active {
+            transform: translateX(-50%) scale(0.97);
+        }
+
+        /* Zoom Controls */
+        .zoom-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 50;
+        }
+
+        .zoom-btn {
+            width: 48px;
+            height: 48px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            color: var(--text-dark);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            transition: all 0.2s;
+        }
+
+        .zoom-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .zoom-level {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 8px 6px;
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Page Navigation */
+        .page-nav {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 50;
+            background: linear-gradient(135deg, #7c3aed, #4f46e5);
+            border: 2px solid #6366f1;
+            border-radius: 14px;
+            padding: 8px 18px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+        }
+
+        .page-nav button {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+
+        .page-nav button:hover:not(:disabled) {
+            background: rgba(255,255,255,0.25);
+            border-color: rgba(255,255,255,0.6);
+        }
+
+        .page-nav button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .page-nav .page-input {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            width: 48px;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 2px;
+            outline: none;
+            -moz-appearance: textfield;
+        }
+
+        .page-nav .page-input::-webkit-inner-spin-button,
+        .page-nav .page-input::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .page-nav .page-input:focus {
+            border-color: #c4b5fd;
+            box-shadow: 0 0 0 2px rgba(196, 181, 253, 0.4);
+        }
+
+        .page-nav .page-sep {
+            color: rgba(255,255,255,0.6);
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .page-nav .page-total {
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            user-select: none;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 16px;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 36px;
+            color: #cbd5e1;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive - Mobile */
+        @media (max-width: 768px) {
+            .split-container {
+                flex-direction: column;
+            }
+            .split-left {
+                flex: none;
+                height: 55vh;
+            }
+            .split-right {
+                width: 100%;
+                height: 45vh;
+                border-left: none;
+                border-top: 2px solid var(--border);
+            }
+            .zoom-controls {
+                bottom: 70px;
+                right: 10px;
+            }
+            .zoom-btn {
+                width: 42px;
+                height: 42px;
+                font-size: 18px;
+            }
+            .btn-add-float {
+                bottom: 14px;
+                font-size: 14px;
+                padding: 10px 20px;
+            }
+            .panel-header {
+                padding: 10px 12px;
+            }
+            .annotation-text {
+                font-size: 15px;
+                min-height: 60px;
+            }
+            /* บนมือถือ ปุ่ม float เลื่อนขวาไปหน่อยหนีจาก timer */
+            #expiryTimer {
+                bottom: 14px;
+                left: 14px;
+                font-size: 11px !important;
+                padding: 4px 10px !important;
+            }
+        }
+
+        /* Hidden */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Upload Screen -->
+    <div class="upload-container" id="uploadContainer">
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+            </div>
+            <h2>อัพโหลดไฟล์</h2>
+            <p>คลิกหรือลากไฟล์มาวางที่นี่<br>(PNG, JPG, JPEG, PDF)</p>
+            <input type="file" id="fileInput" accept="image/*,.pdf" hidden>
+        </div>
+    </div>
+
+    <!-- Split View -->
+    <div class="split-container" id="splitContainer">
+        <!-- Left: Canvas -->
+        <div class="split-left">
+            <div class="canvas-container" id="canvasContainer">
+                <div class="canvas-wrapper" id="canvasWrapper">
+                    <img id="mainImage" class="main-image" alt="Image" style="display: none;">
+                    <canvas id="pdfCanvas" class="main-pdf" style="display: none;"></canvas>
+                    <!-- Markers will be added here -->
+                    <!-- SVG arrows will be added here -->
+                </div>
+            </div>
+
+            <!-- Zoom Controls -->
+            <div class="zoom-controls">
+                <button class="zoom-btn" id="zoomInBtn" title="ซูมเข้า">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+                <div class="zoom-level" id="zoomLevel">100%</div>
+                <button class="zoom-btn" id="zoomOutBtn" title="ซูมออก">
+                    <i class="fa-solid fa-minus"></i>
+                </button>
+                <button class="zoom-btn" id="resetZoomBtn" title="รีเซ็ตซูม">
+                    <i class="fa-solid fa-maximize"></i>
+                </button>
+            </div>
+
+            <!-- Page Navigation -->
+            <div class="page-nav" id="pageNav">
+                <button id="prevPageBtn" disabled><i class="fa-solid fa-chevron-left"></i></button>
+                <input class="page-input" id="pageInput" type="number" min="1" value="1">
+                <span class="page-sep">/</span>
+                <span class="page-total" id="pageTotal">1</span>
+                <button id="nextPageBtn" disabled><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+
+            <!-- Expiry Timer - bottom left -->
+            <div id="expiryTimer" style="display: none; position: absolute; bottom: 14px; left: 14px; background: rgba(0,0,0,0.55); color: #fde68a; font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 20px; z-index: 50; backdrop-filter: blur(4px); pointer-events: none;">
+                ⏰ <span id="expiryTime">--:--:--</span>
+            </div>
+
+            <!-- Floating Add Button - bottom center -->
+            <button class="btn-add-float hidden" id="addMarkerFloatBtn">
+                <i class="fa-solid fa-plus"></i> เพิ่มจุดแก้ไข
+            </button>
+        </div>
+
+        <!-- Right: Annotations -->
+        <div class="split-right">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fa-solid fa-list-check"></i>
+                    จุดแก้ไข
+                    <span class="count-badge" id="annotationCount">0</span>
+                </div>
+                <button class="btn-add" id="addMarkerBtn">
+                    <i class="fa-solid fa-plus"></i> เพิ่ม
+                </button>
+            </div>
+
+            <div class="annotations-list" id="annotationsList">
+                <div class="empty-state">
+                    <i class="fa-regular fa-circle-dot"></i>
+                    <p><strong>ยังไม่มีจุดแก้ไข</strong></p>
+                    <p>คลิกปุ่ม "เพิ่ม" หรือคลิกที่ไฟล์ด้านซ้าย</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p id="loadingText">กำลังอัพโหลด...</p>
+        </div>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDbey3w2Pd3WsFxEBs1uMYr_mNhSMZaO9c",
+            authDomain: "chat-11059.firebaseapp.com",
+            databaseURL: "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "chat-11059",
+            storageBucket: "chat-11059.firebasestorage.app",
+            messagingSenderId: "488357665824",
+            appId: "1:488357665824:web:717a7be19945cc2462b045"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // PDF.js Configuration
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        // Upload APIs (smart fallback system)
+        const UPLOAD_APIS = {
+            litterbox: 'https://litterbox.catbox.moe/resources/internals/api.php',
+            tmpfiles: 'https://tmpfiles.org/api/v1/upload',
+            uguu: 'https://uguu.se/upload',
+            fileio: 'https://file.io/'
+        };
+
+        // Elements
+        const uploadContainer = document.getElementById('uploadContainer');
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const splitContainer = document.getElementById('splitContainer');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const canvasWrapper = document.getElementById('canvasWrapper');
+        const mainImage = document.getElementById('mainImage');
+        const pdfCanvas = document.getElementById('pdfCanvas');
+        const annotationsList = document.getElementById('annotationsList');
+        const annotationCount = document.getElementById('annotationCount');
+        const addMarkerBtn = document.getElementById('addMarkerBtn');
+        const addMarkerFloatBtn = document.getElementById('addMarkerFloatBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const resetZoomBtn = document.getElementById('resetZoomBtn');
+        const zoomLevel = document.getElementById('zoomLevel');
+        const expiryTimer = document.getElementById('expiryTimer');
+        const expiryTime = document.getElementById('expiryTime');
+        const pageNav = document.getElementById('pageNav');
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+        const pageInput = document.getElementById('pageInput');
+        const pageTotal = document.getElementById('pageTotal');
+
+        // State
+        let sessionId = null;
+        let fileUrl = null;
+        let fileType = null;
+        let annotations = {};
+        let markerCounter = 1;
+        let activeMarkerId = null;
+        let pdfDoc = null;
+        let currentPage = 1;
+        let totalPages = 0;
+        
+        // Zoom & Pan State
+        let scale = 1;
+        let translateX = 0;
+        let translateY = 0;
+        let isPanning = false;
+        let startPanX = 0;
+        let startPanY = 0;
+        
+        // Drag & Resize State
+        let isDragging = false;
+        let isResizing = false;
+        let currentMarker = null;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let markerStartX = 0;
+        let markerStartY = 0;
+        let resizePos = null;
+
+        // Check URL for existing session
+        const urlParams = new URLSearchParams(window.location.search);
+        const existingSession = urlParams.get('id');
+
+        // ลบ session หมดอายุทุกครั้งที่เปิดหน้า (ไม่ว่าจะมี ?id หรือเปล่า)
+        cleanupExpiredSessions();
+
+        if (existingSession) {
+            loadExistingSession(existingSession);
+        }
+
+        // Upload handlers
+        uploadArea.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+
+        ['dragover', 'dragenter'].forEach(evt => {
+            uploadArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = 'var(--primary)';
+                uploadArea.style.background = '#eef2ff';
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(evt => {
+            uploadArea.addEventListener(evt, (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = '';
+                uploadArea.style.background = '';
+                if (e.type === 'drop' && e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFileSelect();
+                }
+            });
+        });
+
+        async function handleFileSelect() {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const isPDF = file.type === 'application/pdf';
+            const isImage = file.type.startsWith('image/');
+
+            if (!isPDF && !isImage) {
+                alert('กรุณาเลือกไฟล์รูปภาพหรือ PDF เท่านั้น');
+                return;
+            }
+
+            showLoading('กำลังอัพโหลดไฟล์...');
+
+            try {
+                // Upload file
+                const uploadResult = await uploadFile(file);
+                
+                if (!uploadResult.success) {
+                    throw new Error(uploadResult.error || 'อัพโหลดล้มเหลว');
+                }
+
+                fileUrl = uploadResult.url;
+                fileType = isPDF ? 'pdf' : 'image';
+
+                // Create new session in Firebase
+                sessionId = generateSessionId();
+                await database.ref(`annotations/${sessionId}`).set({
+                    fileUrl: fileUrl,
+                    fileType: fileType,
+                    createdAt: Date.now(),
+                    expiresAt: Date.now() + (60 * 60 * 1000), // 1 hour from now
+                    markers: {}
+                });
+
+                // Update URL
+                const newUrl = `${window.location.origin}${window.location.pathname}?id=${sessionId}`;
+                window.history.pushState({}, '', newUrl);
+
+                // Load file
+                await loadFile(fileUrl, fileType);
+                
+                hideLoading();
+                uploadContainer.classList.add('hidden');
+                splitContainer.classList.add('active');
+                addMarkerFloatBtn.classList.remove('hidden');
+
+                // Listen for changes
+                listenToChanges();
+                
+                // Start countdown
+                startExpiryCountdown(Date.now() + (60 * 60 * 1000));
+                
+                // รอให้ DOM update ก่อนเรียก fitToScreen อีกครั้ง
+                setTimeout(() => fitToScreen(), 100);
+            } catch (err) {
+                hideLoading();
+                console.error(err);
+                alert('เกิดข้อผิดพลาด: ' + err.message);
+            }
+        }
+
+        async function loadExistingSession(id) {
+            console.log('🔄 Loading existing session:', id);
+            showLoading('กำลังโหลดข้อมูล...');
+            
+            try {
+                const snapshot = await database.ref(`annotations/${id}`).once('value');
+                const data = snapshot.val();
+                
+                console.log('📦 Firebase data:', data);
+                
+                if (!data) {
+                    throw new Error('ไม่พบข้อมูล');
+                }
+
+                // Check if expired
+                if (data.expiresAt && Date.now() > data.expiresAt) {
+                    console.warn('⏰ Session expired');
+                    // Delete expired session
+                    await database.ref(`annotations/${id}`).remove();
+                    throw new Error('เซสชันหมดอายุแล้ว (1 ชม.)');
+                }
+
+                sessionId = id;
+                fileUrl = data.fileUrl;
+                fileType = data.fileType;
+                annotations = data.markers || {};
+
+                console.log('✅ Session loaded:', { sessionId, fileUrl, fileType, markersCount: Object.keys(annotations).length });
+
+                // Count markers
+                markerCounter = Object.keys(annotations).length + 1;
+
+                // Load file
+                console.log('🚀 Calling loadFile with:', fileUrl, fileType);
+                await loadFile(fileUrl, fileType);
+                
+                hideLoading();
+                uploadContainer.classList.add('hidden');
+                splitContainer.classList.add('active');
+                addMarkerFloatBtn.classList.remove('hidden');
+                
+                // รอให้ DOM update ก่อนเรียก fitToScreen
+                await new Promise(resolve => setTimeout(resolve, 50));
+                
+                // Listen for changes (handles initial render too)
+                listenToChanges();
+                
+                // Start countdown
+                startExpiryCountdown(data.expiresAt);
+                
+                console.log('✅ Everything loaded successfully!');
+            } catch (err) {
+                hideLoading();
+                console.error('❌ Load error:', err);
+                alert('เกิดข้อผิดพลาดในการโหลด: ' + err.message);
+                
+                // Reset to upload screen
+                uploadContainer.classList.remove('hidden');
+                splitContainer.classList.remove('active');
+            }
+        }
+
+        async function uploadFile(file) {
+            const isPDF = file.type === 'application/pdf';
+            const isImage = file.type.startsWith('image/');
+
+            console.log('📤 Starting upload:', { type: file.type, size: file.size });
+
+            // Try upload services based on file type
+            if (isPDF) {
+                // For PDF: Litterbox → Uguu → file.io → tmpfiles (สุดท้าย)
+                let result = await uploadLitterbox(file);
+                if (result.success) {
+                    console.log('✅ Uploaded via Litterbox');
+                    return result;
+                }
+
+                console.warn('⚠️ Litterbox failed, trying Uguu...');
+                result = await uploadUguu(file);
+                if (result.success) {
+                    console.log('✅ Uploaded via Uguu');
+                    return result;
+                }
+
+                console.warn('⚠️ Uguu failed, trying file.io...');
+                result = await uploadFileIO(file);
+                if (result.success) {
+                    console.log('✅ Uploaded via file.io');
+                    return result;
+                }
+
+                console.warn('⚠️ file.io failed, trying tmpfiles (last resort)...');
+                result = await uploadTmpfiles(file);
+                if (result.success) {
+                    console.log('✅ Uploaded via tmpfiles');
+                    return result;
+                }
+            } else if (isImage) {
+                // For images: Litterbox → Uguu → file.io → tmpfiles (สุดท้าย)
+                let result = await uploadLitterbox(file);
+                if (result.success) {
+                    console.log('✅ Uploaded via Litterbox');
+                    return result;
+                }
+
+                console.warn('⚠️ Litterbox failed, trying Uguu...');
+                result = await uploadUguu(file);
+                if (result.success) {
+                    console.log('✅ Uploaded via Uguu');
+                    return result;
+                }
+
+                console.warn('⚠️ Uguu failed, trying file.io...');
+                result = await uploadFileIO(file);
+                if (result.success) {
+                    console.log('✅ Uploaded via file.io');
+                    return result;
+                }
+
+                console.warn('⚠️ file.io failed, trying tmpfiles (last resort)...');
+                result = await uploadTmpfiles(file);
+                if (result.success) {
+                    console.log('✅ Uploaded via tmpfiles');
+                    return result;
+                }
+            }
+
+            console.error('❌ All upload services failed');
+            return { success: false, error: 'ทุกเซิร์ฟเวอร์ล้มเหลว' };
+        }
+
+        async function uploadLitterbox(file) {
+            try {
+                console.log('🔄 Trying Litterbox...');
+                const formData = new FormData();
+                formData.append('reqtype', 'fileupload');
+                formData.append('time', '1h');
+                formData.append('fileToUpload', file);
+
+                const response = await fetch(UPLOAD_APIS.litterbox, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const text = await response.text();
+                if (response.ok && text.startsWith('http')) {
+                    console.log('✅ Litterbox success:', text.substring(0, 50) + '...');
+                    return { success: true, url: text.trim() };
+                }
+                
+                console.error('❌ Litterbox failed:', response.status, text.substring(0, 100));
+                return { success: false };
+            } catch (err) {
+                console.error('❌ Litterbox error:', err.message);
+                return { success: false };
+            }
+        }
+
+        async function uploadTmpfiles(file) {
+            try {
+                console.log('🔄 Trying tmpfiles.org...');
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('expire', '3600');
+
+                const response = await fetch(UPLOAD_APIS.tmpfiles, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.status === 'success' && result.data?.url) {
+                    const downloadUrl = result.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
+                    console.log('✅ tmpfiles success:', downloadUrl);
+                    return { success: true, url: downloadUrl };
+                }
+                
+                console.error('❌ tmpfiles failed:', result);
+                return { success: false };
+            } catch (err) {
+                console.error('❌ tmpfiles error:', err.message);
+                return { success: false };
+            }
+        }
+
+        async function uploadUguu(file) {
+            try {
+                console.log('🔄 Trying Uguu.se...');
+                const formData = new FormData();
+                formData.append('files[]', file);
+
+                const response = await fetch(UPLOAD_APIS.uguu, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.success && result.files?.[0]?.url) {
+                    console.log('✅ Uguu success:', result.files[0].url);
+                    return { success: true, url: result.files[0].url };
+                }
+                
+                console.error('❌ Uguu failed:', result);
+                return { success: false };
+            } catch (err) {
+                console.error('❌ Uguu error:', err.message);
+                return { success: false };
+            }
+        }
+
+        async function uploadFileIO(file) {
+            try {
+                console.log('🔄 Trying file.io...');
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('expires', '1d');
+
+                const response = await fetch(UPLOAD_APIS.fileio, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.success && result.link) {
+                    console.log('✅ file.io success:', result.link);
+                    return { success: true, url: result.link };
+                }
+                
+                console.error('❌ file.io failed:', result);
+                return { success: false };
+            } catch (err) {
+                console.error('❌ file.io error:', err.message);
+                return { success: false };
+            }
+        }
+
+        async function loadFile(url, type) {
+            console.log('🔍 loadFile called:', { url, type });
+            
+            // ถ้าเป็น tmpfiles.org ที่ถูกบล็อก ให้ใช้ CORS proxy
+            let finalUrl = url;
+            if (url.includes('tmpfiles.org')) {
+                console.warn('⚠️ tmpfiles.org detected - using CORS proxy');
+                finalUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
+            }
+            
+            if (type === 'image') {
+                return new Promise((resolve, reject) => {
+                    console.log('📸 Loading image...');
+                    mainImage.onload = () => {
+                        console.log('✅ Image loaded successfully');
+                        mainImage.style.display = 'block';
+                        pdfCanvas.style.display = 'none';
+                        fitToScreen();
+                        resolve();
+                    };
+                    mainImage.onerror = (err) => {
+                        console.error('❌ Image load error:', err);
+                        console.error('Image URL:', finalUrl);
+                        
+                        // ถ้าใช้ proxy แล้วยังไม่ได้ ลองอีก proxy
+                        if (url.includes('tmpfiles.org') && !finalUrl.includes('api.allorigins.win')) {
+                            console.warn('🔄 Trying alternative proxy...');
+                            finalUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+                            mainImage.src = finalUrl;
+                            return;
+                        }
+                        
+                        reject(new Error('โหลดรูปภาพไม่สำเร็จ'));
+                    };
+                    mainImage.src = finalUrl;
+                    console.log('📌 Image src set to:', mainImage.src);
+                });
+            } else if (type === 'pdf') {
+                try {
+                    console.log('📄 Loading PDF...');
+                    pdfDoc = await pdfjsLib.getDocument(finalUrl).promise;
+                    totalPages = pdfDoc.numPages;
+                    currentPage = 1;
+                    
+                    await renderPdfPage(currentPage);
+                    
+                    console.log('✅ PDF loaded successfully, pages:', totalPages);
+                    pdfCanvas.style.display = 'block';
+                    mainImage.style.display = 'none';
+                    pageNav.style.display = 'flex';
+                    updatePageInfo();
+                    fitToScreen();
+                } catch (err) {
+                    console.error('❌ PDF load error:', err);
+                    throw new Error('โหลด PDF ไม่สำเร็จ');
+                }
+            }
+        }
+
+        async function renderPdfPage(pageNum) {
+            const page = await pdfDoc.getPage(pageNum);
+            const viewport = page.getViewport({ scale: 2 });
+            pdfCanvas.width = viewport.width;
+            pdfCanvas.height = viewport.height;
+            const ctx = pdfCanvas.getContext('2d');
+            await page.render({
+                canvasContext: ctx,
+                viewport: viewport
+            }).promise;
+        }
+
+        function updatePageInfo() {
+            pageInput.value = currentPage;
+            pageTotal.textContent = totalPages;
+            prevPageBtn.disabled = currentPage <= 1;
+            nextPageBtn.disabled = currentPage >= totalPages;
+        }
+
+        async function gotoPage(pageNum) {
+            if (pageNum < 1 || pageNum > totalPages) return;
+            currentPage = pageNum;
+            await renderPdfPage(currentPage);
+            updatePageInfo();
+            fitToScreen();
+            renderAllMarkers();
+        }
+
+        function generateSessionId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        function showLoading(text) {
+            loadingText.textContent = text;
+            loadingOverlay.classList.add('active');
+        }
+
+        function hideLoading() {
+            loadingOverlay.classList.remove('active');
+        }
+
+        // ===== ZOOM & PAN =====
+        function fitToScreen() {
+            const container = canvasContainer.getBoundingClientRect();
+            const content = fileType === 'image' ? mainImage : pdfCanvas;
+            const contentWidth = content.naturalWidth || content.width;
+            const contentHeight = content.naturalHeight || content.height;
+
+            console.log('📐 fitToScreen:', {
+                containerWidth: container.width,
+                containerHeight: container.height,
+                contentWidth,
+                contentHeight,
+                fileType
+            });
+
+            if (!contentWidth || !contentHeight) {
+                console.error('❌ Invalid content dimensions!');
+                return;
+            }
+
+            // ถ้า container ยังไม่มีขนาด (0x0) ให้รอแล้วลองใหม่
+            if (container.width === 0 || container.height === 0) {
+                console.warn('⚠️ Container not ready, retrying...');
+                setTimeout(() => fitToScreen(), 100);
+                return;
+            }
+
+            const scaleX = container.width / contentWidth;
+            const scaleY = container.height / contentHeight;
+            scale = Math.min(scaleX, scaleY, 1) * 0.9;
+
+            translateX = (container.width - contentWidth * scale) / 2;
+            translateY = (container.height - contentHeight * scale) / 2;
+
+            console.log('✅ Calculated scale:', { scale, translateX, translateY });
+            updateTransform();
+        }
+
+        function updateTransform() {
+            canvasWrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            zoomLevel.textContent = Math.round(scale * 100) + '%';
+            
+            console.log('🎨 Transform updated:', {
+                transform: canvasWrapper.style.transform,
+                wrapperDisplay: getComputedStyle(canvasWrapper).display,
+                imageDisplay: getComputedStyle(mainImage).display,
+                imageVisible: mainImage.offsetWidth > 0 && mainImage.offsetHeight > 0
+            });
+        }
+
+        zoomInBtn.addEventListener('click', () => {
+            scale = Math.min(scale * 1.2, 5);
+            updateTransform();
+            renderArrows();
+        });
+
+        zoomOutBtn.addEventListener('click', () => {
+            scale = Math.max(scale / 1.2, 0.1);
+            updateTransform();
+            renderArrows();
+        });
+
+        resetZoomBtn.addEventListener('click', () => {
+            fitToScreen();
+            renderArrows();
+        });
+
+        // Page Navigation
+        prevPageBtn.addEventListener('click', () => gotoPage(currentPage - 1));
+        nextPageBtn.addEventListener('click', () => gotoPage(currentPage + 1));
+
+        let pageInputTimeout;
+        pageInput.addEventListener('input', () => {
+            clearTimeout(pageInputTimeout);
+            pageInputTimeout = setTimeout(() => {
+                const num = parseInt(pageInput.value);
+                if (!isNaN(num) && num >= 1 && num <= totalPages) {
+                    gotoPage(num);
+                } else {
+                    pageInput.value = currentPage;
+                }
+            }, 400);
+        });
+
+        // Mouse wheel zoom
+        canvasContainer.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            const rect = canvasContainer.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const oldScale = scale;
+            scale = Math.max(0.1, Math.min(5, scale * delta));
+
+            translateX = mouseX - (mouseX - translateX) * (scale / oldScale);
+            translateY = mouseY - (mouseY - translateY) * (scale / oldScale);
+
+            updateTransform();
+            renderArrows();
+        });
+
+        // Pan with mouse
+        canvasContainer.addEventListener('mousedown', (e) => {
+            if (e.target === canvasContainer || e.target === canvasWrapper || e.target === mainImage || e.target === pdfCanvas) {
+                isPanning = true;
+                canvasContainer.classList.add('grabbing');
+                startPanX = e.clientX - translateX;
+                startPanY = e.clientY - translateY;
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isPanning) {
+                translateX = e.clientX - startPanX;
+                translateY = e.clientY - startPanY;
+                updateTransform();
+                renderArrows();
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isPanning = false;
+            canvasContainer.classList.remove('grabbing');
+        });
+
+        // Touch support (mobile)
+        let touchStartDist = 0;
+        let touchStartScale = 1;
+
+        canvasContainer.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                touchStartDist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                touchStartScale = scale;
+            } else if (e.touches.length === 1) {
+                isPanning = true;
+                startPanX = e.touches[0].clientX - translateX;
+                startPanY = e.touches[0].clientY - translateY;
+            }
+        });
+
+        canvasContainer.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            
+            if (e.touches.length === 2) {
+                const dist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                scale = Math.max(0.1, Math.min(5, touchStartScale * (dist / touchStartDist)));
+                updateTransform();
+                renderArrows();
+            } else if (e.touches.length === 1 && isPanning) {
+                translateX = e.touches[0].clientX - startPanX;
+                translateY = e.touches[0].clientY - startPanY;
+                updateTransform();
+                renderArrows();
+            }
+        });
+
+        canvasContainer.addEventListener('touchend', () => {
+            isPanning = false;
+        });
+
+        // ===== MARKERS =====
+        function addMarker(x = 25, y = 25, width = 15, height = 10, text = '') {
+            const markerId = 'marker_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            const number = markerCounter++;
+
+            const marker = {
+                id: markerId,
+                number: number,
+                page: currentPage,
+                x: x,
+                y: y,
+                width: width,
+                height: height,
+                text: text
+            };
+
+            // Save to Firebase
+            database.ref(`annotations/${sessionId}/markers/${markerId}`).set(marker);
+        }
+
+        addMarkerBtn.addEventListener('click', () => {
+            addMarker();
+        });
+
+        addMarkerFloatBtn.addEventListener('click', () => {
+            addMarker();
+        });
+
+        // Click on canvas to add marker
+        mainImage.addEventListener('click', (e) => {
+            if (!isDragging && !isResizing) {
+                const rect = mainImage.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                addMarker(x, y);
+            }
+        });
+
+        pdfCanvas.addEventListener('click', (e) => {
+            if (!isDragging && !isResizing) {
+                const rect = pdfCanvas.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                addMarker(x, y);
+            }
+        });
+
+        function renderAllMarkers() {
+            // Clear existing markers
+            document.querySelectorAll('.marker').forEach(el => el.remove());
+            document.querySelectorAll('.arrow-line').forEach(el => el.remove());
+            annotationsList.innerHTML = '';
+
+            const allMarkers = Object.values(annotations);
+
+            if (allMarkers.length === 0) {
+                annotationsList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-regular fa-circle-dot"></i>
+                        <p><strong>ยังไม่มีจุดแก้ไข</strong></p>
+                        <p>คลิกปุ่ม "เพิ่ม" หรือคลิกที่ไฟล์ด้านซ้าย</p>
+                    </div>
+                `;
+                annotationCount.textContent = '0';
+                return;
+            }
+
+            const sortedMarkers = allMarkers.sort((a, b) => a.number - b.number);
+            
+            sortedMarkers.forEach(marker => {
+                if (!marker.page || marker.page === currentPage) {
+                    renderMarker(marker);
+                }
+                renderAnnotationCard(marker);
+            });
+
+            annotationCount.textContent = sortedMarkers.length;
+            
+            // Render arrows
+            setTimeout(renderArrows, 100);
+        }
+
+        function renderMarker(marker) {
+            const isCrossPage = marker.page && marker.page !== currentPage;
+            const markerEl = document.createElement('div');
+            markerEl.className = 'marker' + (isCrossPage ? ' cross-page' : '');
+            markerEl.dataset.id = marker.id;
+            markerEl.style.left = marker.x + '%';
+            markerEl.style.top = marker.y + '%';
+            markerEl.style.width = marker.width + '%';
+            markerEl.style.height = marker.height + '%';
+
+            const badge = document.createElement('div');
+            badge.className = 'marker-badge';
+            badge.textContent = marker.number;
+            markerEl.appendChild(badge);
+
+            if (isCrossPage) {
+                const pageLabel = document.createElement('div');
+                pageLabel.className = 'page-label';
+                pageLabel.textContent = 'p.' + marker.page;
+                markerEl.appendChild(pageLabel);
+            }
+
+            // Resize handles (only for current-page markers)
+            if (!isCrossPage) {
+                ['tl', 'tr', 'bl', 'br'].forEach(pos => {
+                    const handle = document.createElement('div');
+                    handle.className = `resize-handle ${pos}`;
+                    handle.dataset.pos = pos;
+                    markerEl.appendChild(handle);
+
+                    handle.addEventListener('mousedown', (e) => {
+                        e.stopPropagation();
+                        startResize(e, marker, pos);
+                    });
+                });
+            }
+
+            markerEl.addEventListener('mousedown', (e) => {
+                if (isCrossPage) return;
+                if (!e.target.classList.contains('resize-handle')) {
+                    e.stopPropagation();
+                    startDrag(e, marker);
+                }
+            });
+
+            markerEl.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (isCrossPage) {
+                    await gotoPage(marker.page);
+                }
+                setActiveMarker(marker.id);
+            });
+
+            canvasWrapper.appendChild(markerEl);
+        }
+
+        function startDrag(e, marker) {
+            isDragging = true;
+            currentMarker = marker;
+            const markerEl = document.querySelector(`.marker[data-id="${marker.id}"]`);
+            
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            markerStartX = marker.x;
+            markerStartY = marker.y;
+
+            document.addEventListener('mousemove', onDragMove);
+            document.addEventListener('mouseup', onDragEnd);
+        }
+
+        function onDragMove(e) {
+            if (!isDragging || !currentMarker) return;
+
+            const content = fileType === 'image' ? mainImage : pdfCanvas;
+            const contentRect = content.getBoundingClientRect();
+
+            const dx = ((e.clientX - dragStartX) / contentRect.width) * 100;
+            const dy = ((e.clientY - dragStartY) / contentRect.height) * 100;
+
+            currentMarker.x = Math.max(0, Math.min(100 - currentMarker.width, markerStartX + dx));
+            currentMarker.y = Math.max(0, Math.min(100 - currentMarker.height, markerStartY + dy));
+
+            const markerEl = document.querySelector(`.marker[data-id="${currentMarker.id}"]`);
+            markerEl.style.left = currentMarker.x + '%';
+            markerEl.style.top = currentMarker.y + '%';
+
+            renderArrows();
+        }
+
+        function onDragEnd() {
+            if (isDragging && currentMarker) {
+                // Save to Firebase
+                database.ref(`annotations/${sessionId}/markers/${currentMarker.id}`).update({
+                    x: currentMarker.x,
+                    y: currentMarker.y
+                });
+                renderArrows();
+            }
+            isDragging = false;
+            currentMarker = null;
+            document.removeEventListener('mousemove', onDragMove);
+            document.removeEventListener('mouseup', onDragEnd);
+        }
+
+        function startResize(e, marker, pos) {
+            isResizing = true;
+            currentMarker = marker;
+            resizePos = pos;
+
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            markerStartX = marker.x;
+            markerStartY = marker.y;
+
+            const markerStartWidth = marker.width;
+            const markerStartHeight = marker.height;
+
+            document.addEventListener('mousemove', onResizeMove);
+            document.addEventListener('mouseup', onResizeEnd);
+
+            function onResizeMove(e) {
+                if (!isResizing || !currentMarker) return;
+
+                const content = fileType === 'image' ? mainImage : pdfCanvas;
+                const contentRect = content.getBoundingClientRect();
+
+                const dx = ((e.clientX - dragStartX) / contentRect.width) * 100;
+                const dy = ((e.clientY - dragStartY) / contentRect.height) * 100;
+
+                const markerEl = document.querySelector(`.marker[data-id="${currentMarker.id}"]`);
+
+                if (resizePos.includes('r')) {
+                    currentMarker.width = Math.max(5, Math.min(100 - currentMarker.x, markerStartWidth + dx));
+                }
+                if (resizePos.includes('l')) {
+                    const newWidth = Math.max(5, markerStartWidth - dx);
+                    const newX = markerStartX + (markerStartWidth - newWidth);
+                    if (newX >= 0) {
+                        currentMarker.width = newWidth;
+                        currentMarker.x = newX;
+                        markerEl.style.left = currentMarker.x + '%';
+                    }
+                }
+                if (resizePos.includes('b')) {
+                    currentMarker.height = Math.max(5, Math.min(100 - currentMarker.y, markerStartHeight + dy));
+                }
+                if (resizePos.includes('t')) {
+                    const newHeight = Math.max(5, markerStartHeight - dy);
+                    const newY = markerStartY + (markerStartHeight - newHeight);
+                    if (newY >= 0) {
+                        currentMarker.height = newHeight;
+                        currentMarker.y = newY;
+                        markerEl.style.top = currentMarker.y + '%';
+                    }
+                }
+
+                markerEl.style.width = currentMarker.width + '%';
+                markerEl.style.height = currentMarker.height + '%';
+
+                renderArrows();
+            }
+
+            function onResizeEnd() {
+                if (isResizing && currentMarker) {
+                    // Save to Firebase
+                    database.ref(`annotations/${sessionId}/markers/${currentMarker.id}`).update({
+                        x: currentMarker.x,
+                        y: currentMarker.y,
+                        width: currentMarker.width,
+                        height: currentMarker.height
+                    });
+                    renderArrows();
+                }
+                isResizing = false;
+                currentMarker = null;
+                resizePos = null;
+                document.removeEventListener('mousemove', onResizeMove);
+                document.removeEventListener('mouseup', onResizeEnd);
+            }
+        }
+
+        // ===== ANNOTATION CARDS =====
+        function renderAnnotationCard(marker) {
+            const card = document.createElement('div');
+            card.className = 'annotation-card';
+            card.dataset.id = marker.id;
+
+            card.innerHTML = `
+                <div class="card-header">
+                    <div class="marker-number">${marker.number}</div>
+                    <div style="font-size:12px;color:var(--text-muted);font-weight:600;">
+                        <i class="fa-solid fa-file"></i> หน้า ${marker.page || 1}
+                    </div>
+                    <button class="btn-delete" title="ลบ">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+                <textarea class="annotation-text" placeholder="พิมพ์รายละเอียดที่ต้องการแก้ไข...">${marker.text || ''}</textarea>
+            `;
+
+            const textarea = card.querySelector('.annotation-text');
+            let saveTimeout;
+            textarea.addEventListener('input', () => {
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(() => {
+                    // Auto-save to Firebase
+                    database.ref(`annotations/${sessionId}/markers/${marker.id}/text`).set(textarea.value);
+                }, 500);
+            });
+
+            const deleteBtn = card.querySelector('.btn-delete');
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (confirm('ต้องการลบจุดแก้ไขนี้ใช่ไหม?')) {
+                    database.ref(`annotations/${sessionId}/markers/${marker.id}`).remove();
+                }
+            });
+
+            card.addEventListener('click', async () => {
+                if (marker.page && marker.page !== currentPage) {
+                    await gotoPage(marker.page);
+                }
+                setActiveMarker(marker.id);
+            });
+
+            annotationsList.appendChild(card);
+        }
+
+        function setActiveMarker(markerId) {
+            activeMarkerId = markerId;
+
+            // Update cards
+            document.querySelectorAll('.annotation-card').forEach(card => {
+                card.classList.toggle('active', card.dataset.id === markerId);
+                if (card.dataset.id === markerId) {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    card.querySelector('.annotation-text').focus();
+                }
+            });
+
+            // Update markers - dim others
+            document.querySelectorAll('.marker').forEach(marker => {
+                if (marker.dataset.id === markerId) {
+                    marker.classList.add('active');
+                    marker.classList.remove('dimmed');
+                } else {
+                    marker.classList.remove('active');
+                    marker.classList.add('dimmed');
+                }
+            });
+
+            renderArrows();
+        }
+
+        // ===== ARROWS =====
+        function renderArrows() {
+            document.querySelectorAll('.arrow-line').forEach(el => el.remove());
+
+            const sortedMarkers = Object.values(annotations).sort((a, b) => a.number - b.number);
+            
+            sortedMarkers.forEach(marker => {
+                // Skip arrows for markers on other pages
+                if (marker.page && marker.page !== currentPage) return;
+
+                const markerEl = document.querySelector(`.marker[data-id="${marker.id}"]`);
+                const cardEl = document.querySelector(`.annotation-card[data-id="${marker.id}"]`);
+
+                if (!markerEl || !cardEl) return;
+
+                const markerRect = markerEl.getBoundingClientRect();
+                const cardRect = cardEl.getBoundingClientRect();
+                const containerRect = canvasContainer.getBoundingClientRect();
+
+                // From marker right-center to card left-center
+                const x1 = markerRect.right - containerRect.left;
+                const y1 = markerRect.top + markerRect.height / 2 - containerRect.top;
+                const x2 = cardRect.left - containerRect.left;
+                const y2 = cardRect.top + cardRect.height / 2 - containerRect.top;
+
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.classList.add('arrow-line');
+                svg.style.position = 'absolute';
+                svg.style.left = '0';
+                svg.style.top = '0';
+                svg.style.width = '100%';
+                svg.style.height = '100%';
+                svg.style.pointerEvents = 'none';
+                svg.style.zIndex = '5';
+
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x1);
+                line.setAttribute('y1', y1);
+                line.setAttribute('x2', x2);
+                line.setAttribute('y2', y2);
+                
+                // Apply dimmed style if not active
+                if (activeMarkerId && marker.id !== activeMarkerId) {
+                    line.setAttribute('stroke', '#000');
+                    line.setAttribute('stroke-width', '2');
+                    line.setAttribute('opacity', '0.2');
+                } else {
+                    line.setAttribute('stroke', marker.id === activeMarkerId ? 'var(--primary)' : 'var(--danger)');
+                    line.setAttribute('stroke-width', '3');
+                }
+
+                svg.appendChild(line);
+
+                // Arrow head
+                const angle = Math.atan2(y2 - y1, x2 - x1);
+                const arrowSize = 10;
+                const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                const points = [
+                    [x2, y2],
+                    [x2 - arrowSize * Math.cos(angle - Math.PI / 6), y2 - arrowSize * Math.sin(angle - Math.PI / 6)],
+                    [x2 - arrowSize * Math.cos(angle + Math.PI / 6), y2 - arrowSize * Math.sin(angle + Math.PI / 6)]
+                ];
+                polygon.setAttribute('points', points.map(p => p.join(',')).join(' '));
+                
+                if (activeMarkerId && marker.id !== activeMarkerId) {
+                    polygon.setAttribute('fill', '#000');
+                    polygon.setAttribute('opacity', '0.2');
+                } else {
+                    polygon.setAttribute('fill', marker.id === activeMarkerId ? 'var(--primary)' : 'var(--danger)');
+                }
+
+                svg.appendChild(polygon);
+
+                splitContainer.appendChild(svg);
+            });
+        }
+
+        // Redraw arrows on window resize
+        window.addEventListener('resize', renderArrows);
+
+        // Redraw arrows when scrolling annotation list
+        annotationsList.addEventListener('scroll', () => {
+            requestAnimationFrame(renderArrows);
+        });
+
+        // ===== EXPIRY COUNTDOWN =====
+        let expiryInterval = null;
+
+        function startExpiryCountdown(expiresAt) {
+            if (!expiresAt) return;
+            
+            expiryTimer.style.display = 'block';
+            
+            expiryInterval = setInterval(() => {
+                const now = Date.now();
+                const remaining = expiresAt - now;
+                
+                if (remaining <= 0) {
+                    clearInterval(expiryInterval);
+                    expiryTime.textContent = 'หมดอายุแล้ว';
+                    
+                    // Delete session from Firebase
+                    if (sessionId) {
+                        database.ref(`annotations/${sessionId}`).remove();
+                    }
+                    
+                    alert('⚠️ เซสชันหมดอายุแล้ว (1 ชม.)\n\nไฟล์และข้อมูลทั้งหมดถูกลบแล้ว\nกรุณาอัพโหลดใหม่');
+                    location.reload();
+                    return;
+                }
+                
+                const hours = Math.floor(remaining / 3600000);
+                const minutes = Math.floor((remaining % 3600000) / 60000);
+                const seconds = Math.floor((remaining % 60000) / 1000);
+                
+                expiryTime.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                
+                // Change color when < 5 minutes
+                if (remaining < 5 * 60 * 1000) {
+                    expiryTimer.style.color = '#fbbf24';
+                }
+                if (remaining < 1 * 60 * 1000) {
+                    expiryTimer.style.color = '#ef4444';
+                }
+            }, 1000);
+        }
+
+        // ===== FIREBASE SYNC =====
+        function listenToChanges() {
+            const markersRef = database.ref(`annotations/${sessionId}/markers`);
+
+            // Clear existing DOM elements
+            document.querySelectorAll('.marker').forEach(el => el.remove());
+            document.querySelectorAll('.arrow-line').forEach(el => el.remove());
+            annotationsList.innerHTML = '';
+            annotations = {};
+
+            let isInitialLoad = true;
+
+            markersRef.on('child_added', (snapshot) => {
+                const marker = { id: snapshot.key, ...snapshot.val() };
+                annotations[marker.id] = marker;
+                markerCounter = Math.max(markerCounter, (marker.number || 0) + 1);
+
+                if (!isInitialLoad) {
+                    if (!marker.page || marker.page === currentPage) {
+                        renderMarker(marker);
+                    }
+                    renderAnnotationCard(marker);
+                    annotationCount.textContent = Object.keys(annotations).length;
+                    setTimeout(renderArrows, 100);
+                }
+            });
+
+            markersRef.once('value', () => {
+                isInitialLoad = false;
+
+                if (Object.keys(annotations).length === 0) {
+                    annotationsList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fa-regular fa-circle-dot"></i>
+                            <p><strong>ยังไม่มีจุดแก้ไข</strong></p>
+                            <p>คลิกปุ่ม "เพิ่ม" หรือคลิกที่ไฟล์ด้านซ้าย</p>
+                        </div>
+                    `;
+                    annotationCount.textContent = '0';
+                    return;
+                }
+
+                const sorted = Object.values(annotations).sort((a, b) => a.number - b.number);
+                sorted.forEach(marker => {
+                    if (!marker.page || marker.page === currentPage) {
+                        renderMarker(marker);
+                    }
+                    renderAnnotationCard(marker);
+                });
+                annotationCount.textContent = sorted.length;
+                setTimeout(renderArrows, 100);
+            });
+
+            markersRef.on('child_changed', (snapshot) => {
+                const updated = { id: snapshot.key, ...snapshot.val() };
+                annotations[updated.id] = updated;
+
+                const markerEl = document.querySelector(`.marker[data-id="${updated.id}"]`);
+                if (markerEl) {
+                    markerEl.style.left = updated.x + '%';
+                    markerEl.style.top = updated.y + '%';
+                    markerEl.style.width = updated.width + '%';
+                    markerEl.style.height = updated.height + '%';
+                }
+
+                const card = document.querySelector(`.annotation-card[data-id="${updated.id}"]`);
+                if (card) {
+                    const textarea = card.querySelector('.annotation-text');
+                    if (textarea && document.activeElement !== textarea) {
+                        textarea.value = updated.text || '';
+                    }
+                }
+
+                renderArrows();
+            });
+
+            markersRef.on('child_removed', (snapshot) => {
+                const id = snapshot.key;
+                delete annotations[id];
+
+                document.querySelector(`.marker[data-id="${id}"]`)?.remove();
+                document.querySelector(`.annotation-card[data-id="${id}"]`)?.remove();
+
+                const count = Object.keys(annotations).length;
+                annotationCount.textContent = count;
+                if (count === 0) {
+                    annotationsList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fa-regular fa-circle-dot"></i>
+                            <p><strong>ยังไม่มีจุดแก้ไข</strong></p>
+                            <p>คลิกปุ่ม "เพิ่ม" หรือคลิกที่ไฟล์ด้านซ้าย</p>
+                        </div>
+                    `;
+                }
+                renderArrows();
+            });
+        }
+
+        // ===== CLEANUP EXPIRED SESSIONS =====
+        async function cleanupExpiredSessions() {
+            try {
+                const snapshot = await database.ref('annotations').once('value');
+                const allSessions = snapshot.val();
+                if (!allSessions) return;
+
+                const now = Date.now();
+                const deletePromises = [];
+
+                Object.entries(allSessions).forEach(([id, data]) => {
+                    if (data && data.expiresAt && now > data.expiresAt) {
+                        deletePromises.push(database.ref(`annotations/${id}`).remove());
+                    }
+                });
+
+                if (deletePromises.length > 0) {
+                    await Promise.all(deletePromises);
+                    console.log(`🗑️ Cleaned up ${deletePromises.length} expired session(s)`);
+                }
+            } catch (err) {
+                // ไม่แสดง error ถ้า cleanup ล้มเหลว (silent)
+                console.warn('⚠️ Cleanup skipped:', err.message);
+            }
+        }
+
+        // ===== FIREBASE SYNC =====
+        // Redraw arrows when tab becomes visible
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                renderArrows();
+            }
+        });
+    </script>
+</body>
+</html>
