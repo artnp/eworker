@@ -569,7 +569,7 @@ function generateSmartPrompt(postText) {
 
 async function processWithGemini(page, imagePaths, postText, geminiUrl) {
   try {
-    await page.bringToFront().catch(() => { });
+    await bringWindowToFront(page).catch(() => { });
     const currentUrl = page.url();
     if (!currentUrl.startsWith(geminiUrl)) {
       console.log(`Navigating to Gemini: ${geminiUrl}`);
@@ -1908,31 +1908,46 @@ async function getClipboardText() {
   }
 }
 
-// ฟังก์ชันควบคุมการแสดง/ซ่อนหน้าต่าง browser
+// restore window แล้ว bring to front (ใช้แทน bringToFront() ตรง ๆ เพราะโดน minimize ไม่ทำงาน)
+async function bringWindowToFront(page) {
+  await minimizeBrowser(false).catch(() => {});
+  await sleep(300);
+  await page.bringToFront().catch(() => {});
+}
+
+// minimize/restore ผ่าน PowerShell ShowWindowAsync (CDP ยังทำงานได้ปกติแม้ minimize)
+async function minimizeBrowser(minimize = true) {
+  try {
+    const action = minimize ? 6 : 9; // SW_MINIMIZE=6, SW_RESTORE=9
+    await execPromise(`powershell -NoProfile -Command "
+      Add-Type @\\\"
+        [DllImport(\\\"user32.dll\\\")] public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+        [DllImport(\\\"user32.dll\\\")] public static extern bool SetForegroundWindow(IntPtr hWnd);
+      \\\@
+      Get-Process | Where-Object { \\\$_.MainWindowTitle -match 'Facebook|Chromium' } | Select-Object -First 1 | ForEach-Object {
+        [User32]::ShowWindowAsync(\\\$_.MainWindowHandle, ${action});
+        if (${+!minimize}) { [User32]::SetForegroundWindow(\\\$_.MainWindowHandle); }
+      }
+    "`, { timeout: 5000 }).catch(() => {});
+    return { success: true };
+  } catch (e) {
+    return { success: false, message: e.message };
+  }
+}
+
+// ฟังก์ชันควบคุมการแสดง/ซ่อนหน้าต่าง browser (ใช้ ShowWindowAsync จริง)
 async function toggleBrowserVisibility() {
   if (!browserContext) return { success: false, message: 'Browser not running' };
   
   try {
-    const pages = browserContext.pages();
-    if (pages.length === 0) return { success: false, message: 'No pages open' };
-    
-    const mainPage = pages[0];
-    
     if (isBrowserHidden) {
-      // แสดงหน้าต่าง - ขยายเต็มจอและนำมาด้านหน้า
-      await mainPage.evaluate(() => {
-        window.moveTo(0, 0);
-        window.resizeTo(screen.availWidth, screen.availHeight);
-      });
-      await mainPage.bringToFront();
+      await minimizeBrowser(false); // restore
+      const pages = browserContext.pages();
+      if (pages.length > 0) await pages[0].bringToFront();
       isBrowserHidden = false;
       return { success: true, message: 'Browser shown', hidden: false };
     } else {
-      // ซ่อนหน้าต่าง - ย่อและไปวางมุมล่างขวาจอสอง
-      await mainPage.evaluate(() => {
-        window.resizeTo(1024, 768);
-        window.moveTo(2816, 312);
-      });
+      await minimizeBrowser(true); // minimize
       isBrowserHidden = true;
       return { success: true, message: 'Browser hidden', hidden: true };
     }
@@ -2042,8 +2057,9 @@ async function pauseOnError(isDebugPause, message) {
 
     console.log('Browser launched successfully.');
 
-    // ✅ ไม่ต้อง minimize เพราะ Playwright ต้องการหน้าต่างที่มองเห็นได้
-    // แทนที่จะ minimize ให้ย่อเล็กและซ่อนไว้มุมจอแทน (ทำผ่าน --window-size และ --window-position แล้ว)
+    // ซ่อน browser — Playwright ยังทำงานได้ปกติเพราะใช้ CDP
+    await minimizeBrowser(true).catch(() => {});
+    isBrowserHidden = true;
 
     await sleep(1700);
 
@@ -2207,7 +2223,7 @@ async function pauseOnError(isDebugPause, message) {
       console.log(`\nNavigating to Facebook groups: ${FB_URL}`);
       await reportStatus(5, 'กำลังเปิด Facebook Feed...', 'เข้าสู่หน้ากลุ่ม Facebook Feed', 'info', 1);
       try {
-        await fbPage.bringToFront().catch(() => { });
+        await bringWindowToFront(fbPage).catch(() => { });
         await fbPage.goto(FB_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
       } catch (e) {
         console.warn('Facebook navigation slow, continuing...');
@@ -2393,7 +2409,7 @@ async function pauseOnError(isDebugPause, message) {
               await reportStatus(basePct, `Gemini ปฏิเสธ/ล้มเหลว (โพสต์ ${currentPostIndex})`, '⚠️ กด Like แล้วข้ามไปโพสต์ใหม่...', 'warn', currentPostIndex);
               
               // ⚠️ กรณี Gemini ปฏิเสธ → กด Like แล้วข้าม
-              await fbPage.bringToFront().catch(() => { });
+              await bringWindowToFront(fbPage).catch(() => { });
               await article.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center' })).catch(() => { });
               await sleep(600);
               await likePost(article);
@@ -2442,7 +2458,7 @@ async function pauseOnError(isDebugPause, message) {
             }
 
             await reportStatus(basePct + 55, `กำลังโพสต์คอมเมนต์ (โพสต์ ${currentPostIndex})...`, 'อัปโหลดภาพลงช่องแสดงความคิดเห็นบน Facebook', 'info', currentPostIndex);
-            await fbPage.bringToFront().catch(() => { });
+            await bringWindowToFront(fbPage).catch(() => { });
             // Extract post permalink ก่อนส่งให้ postComment (ใช้อ้างอิง comment URL)
             const postUrl = await getPostUrl(article).catch(() => null);
             if (postUrl) console.log(`Post URL: ${postUrl}`);
@@ -2471,7 +2487,7 @@ async function pauseOnError(isDebugPause, message) {
 
               // --- Share ผ่านโพสต์ในหน้าตัวเอง ---
               await reportStatus(basePct + 75, `กำลังแชร์โพสต์ (โพสต์ ${currentPostIndex})...`, 'แชร์ผลงานไปยังหน้าโปรไฟล์หลัก', 'info', currentPostIndex);
-              await fbPage.bringToFront().catch(() => { });
+              await bringWindowToFront(fbPage).catch(() => { });
               const shareResult = await shareViaOwnPost(fbPage, commentResult.commentUrl);
               if (shareResult && shareResult.success) {
                 console.log(`[Share] Shared via own post: ${shareResult.commentUrl}`);
@@ -2488,6 +2504,7 @@ async function pauseOnError(isDebugPause, message) {
               await fbPage.goto(FB_URL, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => { });
               await sleep(2000);
               await closeFacebookModal(fbPage);
+              await sleep(2000); // รอ 2 วิ ก่อนเริ่ม task ใหม่
 
               postsProcessedCount++;
               const donePct = Math.round((postsProcessedCount / AUTO_GROUPS_MAX) * 100);
@@ -2534,31 +2551,26 @@ async function pauseOnError(isDebugPause, message) {
       console.log(`Successfully completed ${postsProcessedCount} posts.`);
       console.log('============================================');
       
-      // ✅ แสดง notification และปิด browser ทันที (ไม่รอ notification)
       showWindowsNotification('Facebook Bot', `ทำรายการครบ ${postsProcessedCount}/10 สำเร็จ!`);
       
       console.log('Closing browser and process...');
       
-      // Force kill Chrome processes ก่อน
+      // ปิด modal/notification ของ Facebook ก่อน
+      await closeFacebookModal(fbPage).catch(() => {});
+      await sleep(500);
+
+      // ปิด browser context — ถ้า timeout ก็ force kill
       try {
-        await execPromise('taskkill /F /IM chrome.exe /FI "WINDOWTITLE eq *user_data*"', { timeout: 3000 }).catch(() => {});
-      } catch (e) { /* ignore */ }
-      
-      try {
-        await context.close({ timeout: 3000 });
-        console.log('✅ Browser closed.');
+        const closePromise = context.close({ timeout: 5000 });
+        const timeoutPromise = new Promise(r => setTimeout(r, 5000)).then(() => { throw new Error('timeout'); });
+        await Promise.race([closePromise, timeoutPromise]);
+        console.log('✅ Browser context closed.');
       } catch (e) {
-        console.warn('Browser close timeout, forcing exit...');
+        console.warn('Browser close timeout, force killing Chrome...');
+        try { await execPromise('taskkill /F /IM chrome.exe', { timeout: 3000 }).catch(() => {}); } catch (e) {}
       }
       
       console.log('✅ Bot finished. Exiting now.');
-      
-      // ⚡ Force exit หลัง 2 วินาทีไม่ว่าจะเกิดอะไร
-      setTimeout(() => {
-        console.log('⚠️ Force exit timeout reached.');
-        process.exit(0);
-      }, 2000);
-      
       process.exit(0);
     } else {
       console.log('Review mode: accounts scanned, no processing.');
