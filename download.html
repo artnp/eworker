@@ -1048,60 +1048,61 @@
 
             console.log('Original fileUrl:', fileUrl);
 
-            // Handle different URL formats
             let downloadUrl = fileUrl;
             let previewUrl = fileUrl;
             
-            // TmpFiles.org format
-            if (fileUrl.includes('tmpfiles.org')) {
-                // URL format: https://tmpfiles.org/wuwaYvwgVKsn/filename.jpg (landing page)
-                // Need to use: https://tmpfiles.org/dl/wuwaYvwgVKsn (direct download)
-                
-                let fileId = null;
-                
-                // Extract file ID from different possible formats
-                if (fileUrl.includes('/dl/')) {
-                    // Already has /dl/ - extract ID
-                    const match = fileUrl.match(/\/dl\/([^\/\?#]+)/);
-                    if (match) fileId = match[1];
-                } else {
-                    // Regular format: https://tmpfiles.org/ID/filename.jpg
-                    const match = fileUrl.match(/tmpfiles\.org\/([^\/\?#]+)/);
-                    if (match) fileId = match[1];
-                }
-                
+            // Pixeldrain format: https://pixeldrain.com/u/abc123
+            if (fileUrl.includes('pixeldrain.com')) {
+                const fileId = fileUrl.split('/u/')[1];
                 if (fileId) {
-                    // Use /dl/ endpoint for direct access
-                    previewUrl = `https://tmpfiles.org/dl/${fileId}`;
-                    downloadUrl = `https://tmpfiles.org/dl/${fileId}`;
-                    console.log('TmpFiles converted:', { original: fileUrl, fileId, directUrl: previewUrl });
+                    previewUrl = `https://pixeldrain.com/api/file/${fileId}`;
+                    downloadUrl = `https://pixeldrain.com/api/file/${fileId}?download`;
+                    console.log('Pixeldrain detected:', { fileId, previewUrl });
                 }
             }
-            // Litterbox format: https://litter.catbox.moe/abc123.jpg
+            // GoFile format: https://gofile.io/d/abc123
+            else if (fileUrl.includes('gofile.io')) {
+                // GoFile requires web page, can't direct link easily
+                // Just open the page
+                previewUrl = fileUrl;
+                downloadUrl = fileUrl;
+                console.log('GoFile detected - redirecting to page');
+                window.location.href = fileUrl;
+                return;
+            }
+            // TmpFiles.org format
+            else if (fileUrl.includes('tmpfiles.org')) {
+                let fileId = fileUrl.split(/tmpfiles\.org\//)[1];
+                if (fileId) {
+                    fileId = fileId.replace('dl/', '').split('/')[0].split('?')[0].split('#')[0];
+                    previewUrl = `https://tmpfiles.org/dl/${fileId}`;
+                    downloadUrl = `https://tmpfiles.org/dl/${fileId}`;
+                    console.log('TmpFiles converted:', { fileId, previewUrl });
+                }
+            }
+            // Litterbox/Catbox format
             else if (fileUrl.includes('litter.catbox.moe') || fileUrl.includes('catbox.moe')) {
                 previewUrl = fileUrl;
                 downloadUrl = fileUrl;
-                console.log('Litterbox URL:', downloadUrl);
+                console.log('Catbox URL:', downloadUrl);
             }
-            // Generic http/https URL
+            // Generic URL
             else if (fileUrl.startsWith('http')) {
                 previewUrl = fileUrl;
                 downloadUrl = fileUrl;
                 console.log('Generic URL:', downloadUrl);
             }
 
-            // Store download URL globally for later use
+            // Store download URL globally
             window.__downloadUrl = downloadUrl;
 
-            // Load image directly
+            // Load image
             previewImage.src = previewUrl + (previewUrl.includes('?') ? '&' : '?') + 'v=' + Date.now();
             
             previewImage.onload = function() {
                 console.log('✅ Image loaded successfully');
                 loadingText.classList.add('hidden');
                 previewImage.classList.remove('hidden');
-                
-                // เช็คว่าต้องป้องกันหรือไม่
                 applyProtection();
             };
             
