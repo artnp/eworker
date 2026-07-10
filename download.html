@@ -1051,8 +1051,29 @@
             let downloadUrl = fileUrl;
             let previewUrl = fileUrl;
             
+            // tmpfiles.org format: https://tmpfiles.org/dl/123456/file.jpg
+            if (fileUrl.includes('tmpfiles.org')) {
+                // tmpfiles.org ใช้ URL เดียวกันทั้งดูและโหลด
+                previewUrl = fileUrl;
+                downloadUrl = fileUrl;
+                console.log('tmpfiles.org detected:', downloadUrl);
+            }
+            // file.io format: https://file.io/abc123
+            else if (fileUrl.includes('file.io')) {
+                // file.io ใช้ URL เดียวกันทั้งดูและโหลด (แต่จะลบหลังโหลด 1 ครั้ง)
+                previewUrl = fileUrl;
+                downloadUrl = fileUrl;
+                console.log('file.io detected:', downloadUrl);
+            }
+            // Uguu.se format: https://uguu.se/abc123.jpg
+            else if (fileUrl.includes('uguu.se')) {
+                // Uguu direct link works as-is
+                previewUrl = fileUrl;
+                downloadUrl = fileUrl;
+                console.log('Uguu.se detected:', downloadUrl);
+            }
             // Pixeldrain format: https://pixeldrain.com/u/abc123
-            if (fileUrl.includes('pixeldrain.com')) {
+            else if (fileUrl.includes('pixeldrain.com')) {
                 const fileId = fileUrl.split('/u/')[1];
                 if (fileId) {
                     previewUrl = `https://pixeldrain.com/api/file/${fileId}`;
@@ -1062,23 +1083,50 @@
             }
             // GoFile format: https://gofile.io/d/abc123
             else if (fileUrl.includes('gofile.io')) {
-                // GoFile requires web page, can't direct link easily
-                // Just open the page
                 previewUrl = fileUrl;
                 downloadUrl = fileUrl;
                 console.log('GoFile detected - redirecting to page');
                 window.location.href = fileUrl;
                 return;
             }
-            // TmpFiles.org format
-            else if (fileUrl.includes('tmpfiles.org')) {
-                let fileId = fileUrl.split(/tmpfiles\.org\//)[1];
-                if (fileId) {
-                    fileId = fileId.replace('dl/', '').split('/')[0].split('?')[0].split('#')[0];
-                    previewUrl = `https://tmpfiles.org/dl/${fileId}`;
-                    downloadUrl = `https://tmpfiles.org/dl/${fileId}`;
-                    console.log('TmpFiles converted:', { fileId, previewUrl });
-                }
+            // Firebase format: fb_12345678_abcd
+            else if (fileUrl.startsWith('fb_')) {
+                const fileId = fileUrl.substring(3);
+                const firebaseUrl = `https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/${fileId}.json`;
+                console.log('Firebase detected, fetching data...', fileId);
+                
+                // Fetch base64 data from Firebase
+                fetch(firebaseUrl)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data && data.data) {
+                            // Convert base64 to blob
+                            const binary = atob(data.data);
+                            const bytes = new Uint8Array(binary.length);
+                            for (let i = 0; i < binary.length; i++) {
+                                bytes[i] = binary.charCodeAt(i);
+                            }
+                            const blob = new Blob([bytes]);
+                            const blobUrl = URL.createObjectURL(blob);
+                            
+                            previewImage.src = blobUrl;
+                            window.__downloadUrl = blobUrl;
+                            
+                            previewImage.onload = function() {
+                                console.log('✅ Firebase image loaded');
+                                loadingText.classList.add('hidden');
+                                previewImage.classList.remove('hidden');
+                                applyProtection();
+                            };
+                        } else {
+                            showError('โหลดไฟล์ไม่สำเร็จ', 'ไม่พบข้อมูลใน Firebase');
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Firebase fetch error:', err);
+                        showError('โหลดไฟล์ไม่สำเร็จ', 'ไม่สามารถดึงข้อมูลจาก Firebase ได้');
+                    });
+                return; // Early exit for Firebase
             }
             // Litterbox/Catbox format
             else if (fileUrl.includes('litter.catbox.moe') || fileUrl.includes('catbox.moe')) {
@@ -1108,7 +1156,20 @@
             
             previewImage.onerror = function() {
                 console.error('❌ Image load failed for URL:', previewUrl);
-                showError('โหลดไฟล์ไม่สำเร็จ', 'ลิงก์อาจหมดอายุหรือถูกลบแล้ว');
+                
+                // สำหรับ file.io หรือ tmpfiles: ถ้าโหลดภาพตัวอย่างไม่ได้ แสดงข้อความแทน
+                if (fileUrl.includes('file.io') || fileUrl.includes('tmpfiles.org')) {
+                    loadingText.innerHTML = `
+                        <div style="text-align: center; color: var(--text-muted);">
+                            <div style="font-size: 4rem; margin-bottom: 15px;">📄</div>
+                            <p style="font-size: 1.1rem; margin-bottom: 8px;">ไฟล์พร้อมดาวน์โหลด</p>
+                            <p style="font-size: 0.85rem;">(ไม่แสดงตัวอย่าง - กดปุ่มดาวน์โหลดเพื่อรับไฟล์)</p>
+                        </div>
+                    `;
+                    applyProtection();
+                } else {
+                    showError('โหลดไฟล์ไม่สำเร็จ', 'ลิงก์อาจหมดอายุหรือถูกลบแล้ว');
+                }
             };
         }
 
@@ -1202,7 +1263,20 @@
                 return;
             }
 
-            // สำหรับ Browser ปกติ: ดาวน์โหลดตรง
+            // สำหรับ file.io: เปิดลิงก์ในแท็บใหม่ (เพราะมันลบหลังโหลด 1 ครั้ง)
+            if (downloadUrl.includes('file.io')) {
+                window.open(downloadUrl, '_blank');
+                btn.innerHTML = '✅ เปิดลิงก์ดาวน์โหลดแล้ว!';
+                setTimeout(() => {
+                    btn.innerHTML = '⚠️ ลิงก์ใช้ได้ครั้งเดียว!';
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                    btn.style.cursor = 'not-allowed';
+                }, 2000);
+                return;
+            }
+
+            // สำหรับ tmpfiles.org หรือ Browser ปกติ: ดาวน์โหลดตรง
             fetch(downloadUrl)
                 .then(response => {
                     if (!response.ok) {
