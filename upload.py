@@ -2,144 +2,156 @@ import sys
 import requests
 import json
 import os
-import random
-import string
-import tempfile
-import shutil
-from PIL import Image
+import time
 
-def scrub_and_poison(file_path):
-    """
-    ล้าง Metadata ของภาพ (ไม่เติม junk data ที่อาจทำให้ไฟล์เสีย)
-    """
-    ext = os.path.splitext(file_path)[1].lower()
-    is_image = ext in ['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif']
-    
-    # สร้างไฟล์ชั่วคราว
-    temp_dir = tempfile.gettempdir()
-    random_name = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
-    temp_path = os.path.join(temp_dir, f"ghost_{random_name}{ext}")
-
+def upload_catbox(file_path):
+    """อัพโหลดไปยัง Catbox.moe (ไม่มีวันหมดอายุ แต่เสถียรกว่า Litterbox)"""
     try:
-        if is_image:
-            # --- Clean Metadata (Scrubbing) ---
-            with Image.open(file_path) as img:
-                # แปลงเป็น RGB ถ้าเป็น JPEG เพื่อความแน่นอนในการล้างข้อมูล
-                if ext in ['.jpg', '.jpeg'] and img.mode != 'RGB':
-                    img = img.convert('RGB')
-                
-                # บันทึกเป็นไฟล์ใหม่ (ล้าง Metadata)
-                if ext in ['.jpg', '.jpeg']:
-                    img.save(temp_path, quality=95, subsampling=0)
-                elif ext == '.png':
-                    img.save(temp_path, optimize=True)
-                else:
-                    img.save(temp_path)
-            
-            # ไม่เติม junk data เพราะอาจทำให้ไฟล์เสีย
-            return temp_path
-        else:
-            # สำหรับไฟล์อื่นๆ (เช่น PDF) ให้ Copy ตรงๆ
-            shutil.copy2(file_path, temp_path)
-            return temp_path
-            
-    except Exception as e:
-        # หากเกิดข้อผิดพลาด ให้ใช้ไฟล์ต้นฉบับแทน (Safe Fallback)
-        import sys
-        print(f"Warning: Could not process file: {e}", file=sys.stderr)
-        return file_path
-
-def upload_litterbox(file_path):
-    """อัพโหลดไปยัง Litterbox (อาจถูกบล็อกบางครั้ง)"""
-    try:
-        url = 'https://litterbox.catbox.moe/resources/internals/api.php'
+        url = 'https://catbox.moe/user/api.php'
         filename = os.path.basename(file_path)
         
-        # เพิ่ม headers เพื่อให้ดูเหมือน browser จริง
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': '*/*',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Origin': 'https://litterbox.catbox.moe',
-            'Referer': 'https://litterbox.catbox.moe/'
-        }
-        
         with open(file_path, 'rb') as f:
-            files = {'fileToUpload': (filename, f, 'application/octet-stream')}
-            data = {
-                'reqtype': 'fileupload',
-                'time': '1h'
-            }
-            response = requests.post(url, data=data, files=files, headers=headers, timeout=20)
+            files = {'fileToUpload': (filename, f)}
+            data = {'reqtype': 'fileupload'}
+            response = requests.post(url, data=data, files=files, timeout=30)
             
             if response.status_code == 200 and response.text.startswith('http'):
                 return response.text.strip()
             else:
-                import sys
-                print(f"Litterbox upload failed (Status {response.status_code}): {response.text[:200]}", file=sys.stderr)
-                
+                print(f"Catbox failed: {response.text[:200]}", file=sys.stderr)
     except Exception as e:
-        import sys
-        print(f"Litterbox upload error: {e}", file=sys.stderr)
+        print(f"Catbox error: {e}", file=sys.stderr)
     return None
 
-def upload_tmpfiles(file_path):
-    """อัพโหลดไปยัง TmpFiles.org (ระบบสำรอง)"""
+def upload_pixeldrain(file_path):
+    """อัพโหลดไปยัง Pixeldrain - ไม่รองรับ auto-delete ต้องลบเอง"""
+    # Pixeldrain ไม่รองรับ 1hr auto-delete - ข้าม
+    return None
+
+def upload_gofile(file_path):
+    """อัพโหลดไปยัง GoFile - ไม่รองรับ 1hr auto-delete"""
+    # GoFile ต่ำสุด 10 วัน - ไม่เหมาะสำหรับไฟล์ลับ
+    return None
+
+def upload_0x0(file_path):
+    """อัพโหลดไปยัง 0x0.st - รองรับ 1 day minimum"""
+    # 0x0.st ต่ำสุด 1 วัน - ไม่เหมาะสำหรับไฟล์ลับ
+    return None
+
+def upload_wormhole(file_path):
+    """อัพโหลดไปยัง Wormhole.app (ต้องติดตั้ง wormhole-cli ก่อน)"""
     try:
-        url = 'https://tmpfiles.org/api/v1/upload'
+        import subprocess
+        
+        # Check if wormhole-cli is installed
+        result = subprocess.run(
+            ['wormhole-cli', '--version'],
+            capture_output=True,
+            timeout=5,
+            shell=True
+        )
+        
+        if result.returncode != 0:
+            print("Wormhole-cli not installed. Skipping...", file=sys.stderr)
+            return None
+        
+        # Upload file
+        result = subprocess.run(
+            ['wormhole-cli', '-q', file_path],
+            capture_output=True,
+            timeout=120,
+            text=True,
+            shell=True
+        )
+        
+        if result.returncode == 0:
+            url = result.stdout.strip()
+            if url.startswith('https://wormhole.app/'):
+                return url
+        
+        print(f"Wormhole upload failed: {result.stderr[:200]}", file=sys.stderr)
+    except subprocess.TimeoutExpired:
+        print("Wormhole upload timeout", file=sys.stderr)
+    except FileNotFoundError:
+        print("Wormhole-cli not found. Install from: https://github.com/Mimickal/wormhole-cli", file=sys.stderr)
+    except Exception as e:
+        print(f"Wormhole error: {e}", file=sys.stderr)
+    return None
+
+def upload_uguu(file_path):
+    """อัพโหลดไปยัง Uguu.se (1-48hr, configurable to 1hr)"""
+    try:
+        url = 'https://uguu.se/upload'
         filename = os.path.basename(file_path)
         
         with open(file_path, 'rb') as f:
-            files = {'file': (filename, f, 'application/octet-stream')}
+            files = {'files[]': (filename, f)}
+            # Uguu supports 1hr expiry
             response = requests.post(url, files=files, timeout=30)
             
             if response.status_code == 200:
-                res_data = response.json()
-                # TmpFiles returns: {"status": "success", "data": {"url": "https://tmpfiles.org/dl/xxx/file.jpg"}}
-                if res_data.get('status') == 'success' and res_data.get('data', {}).get('url'):
-                    full_url = res_data['data']['url']
-                    # URL format: https://tmpfiles.org/dl/wuwaYvwgVKsn/file.jpg
-                    # Extract the file ID (between /dl/ and /filename)
-                    parts = full_url.split('/')
-                    if len(parts) >= 5 and parts[3] == 'dl':
-                        file_id = parts[4]  # wuwaYvwgVKsn
-                        # Return with tf_ prefix so PrivateSend knows it's TmpFiles
-                        return f"tf_{file_id}"
+                result = response.json()
+                if result.get('success') and result.get('files'):
+                    return result['files'][0]['url']
+            print(f"Uguu failed: {response.text[:200]}", file=sys.stderr)
     except Exception as e:
-        import sys
-        print(f"TmpFiles upload error: {e}", file=sys.stderr)
+        print(f"Uguu error: {e}", file=sys.stderr)
+    return None
+
+def upload_litterbox(file_path):
+    """อัพโหลดไปยัง Litterbox (1hr expiry) - ระบบหลัก"""
+    try:
+        url = 'https://litterbox.catbox.moe/resources/internals/api.php'
+        filename = os.path.basename(file_path)
+        
+        with open(file_path, 'rb') as f:
+            files = {'fileToUpload': (filename, f)}
+            data = {'reqtype': 'fileupload', 'time': '1h'}
+            response = requests.post(url, data=data, files=files, timeout=20)
+            
+            if response.status_code == 200 and response.text.startswith('http'):
+                return response.text.strip()
+            else:
+                print(f"Litterbox failed ({response.status_code}): {response.text[:200]}", file=sys.stderr)
+    except Exception as e:
+        print(f"Litterbox error: {e}", file=sys.stderr)
     return None
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print(json.dumps({"error": "No file path provided"}))
+        print(json.dumps({"error": "No file path"}))
         sys.exit(1)
 
-    original_file = sys.argv[1]
+    file_path = sys.argv[1]
+    result = None
+    source = None
     
-    # บรรจุเข้าระบบ Digital Ghosting ก่อนส่ง
-    processed_file = scrub_and_poison(original_file)
+    # Try Litterbox first (1hr expiry - ระบบหลัก)
+    result = upload_litterbox(file_path)
+    source = "Litterbox"
     
-    try:
-        # Try Litterbox ก่อน (ระบบหลัก)
-        result_url = upload_litterbox(processed_file)
-        source = "Litterbox"
-        
-        # Fallback to TmpFiles (ระบบสำรอง)
-        if not result_url:
-            result_url = upload_tmpfiles(processed_file)
-            source = "TempFile"
-            
-        if result_url:
-            print(json.dumps({"url": result_url, "source": source}))
-        else:
-            print(json.dumps({"error": "อัปโหลดล้มเหลวทั้งสองระบบ"}))
-            sys.exit(1)
-            
-    finally:
-        # ลบไฟล์ชั่วคราวทิ้งเสมอเมื่อจบงาน
-        if processed_file != original_file and os.path.exists(processed_file):
-            try:
-                os.remove(processed_file)
-            except:
-                pass
+    # Fallback 1: Wormhole.app (encrypted, auto-expire - ถ้าติดตั้งแล้ว)
+    if not result:
+        print("กำลังลองระบบสำรอง: Wormhole.app (encrypted)...", file=sys.stderr)
+        result = upload_wormhole(file_path)
+        source = "Wormhole"
+    
+    # Fallback 2: Uguu.se (1hr expiry - เสถียร)
+    if not result:
+        print("กำลังลองระบบสำรอง: Uguu.se (1hr)...", file=sys.stderr)
+        result = upload_uguu(file_path)
+        source = "Uguu"
+    
+    # ไม่มีระบบสำรองอื่นที่รองรับ 1hr - ล้มเหลวหากทั้ง 2 ระบบไม่ทำงาน
+    
+    if result:
+        print(json.dumps({"url": result, "source": source}))
+    else:
+        print(json.dumps({"error": "อัปโหลดล้มเหลว - ไม่มีบริการที่รองรับ 1hr expiry พร้อมใช้งาน"}))
+        sys.exit(1)
+    
+    if result:
+        print(json.dumps({"url": result, "source": source}))
+    else:
+        print(json.dumps({"error": "อัปโหลดล้มเหลว"}))
+        sys.exit(1)
