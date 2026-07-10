@@ -81,7 +81,21 @@ else {
 
 # 4. สร้าง URL และ Copy ลง Clipboard
 $baseUrl = "https://artnp.github.io/eworker/download.html"
-$b64Url = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($uploadUrl))
+
+# แปลง URL ให้ถูกรูปแบบ
+if ($uploadUrl -match "^tf_(.+)$") {
+    # TmpFiles format: tf_123456 -> https://tmpfiles.org/123456
+    $fileId = $Matches[1]
+    $fullUrl = "https://tmpfiles.org/$fileId"
+} elseif ($uploadUrl -match "^https?://") {
+    # URL เต็มจาก Litterbox
+    $fullUrl = $uploadUrl
+} else {
+    # Fallback: ถือว่าเป็น file ID ของ Litterbox
+    $fullUrl = $uploadUrl
+}
+
+$b64Url = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($fullUrl))
 $viewUrl = "$($baseUrl)?d=$($b64Url)&exp=$($timestamp)&type=$($fileTypeParam)"
 
 if ($noPrice) {
