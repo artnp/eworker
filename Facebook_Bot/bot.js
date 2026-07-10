@@ -49,7 +49,7 @@ let browserContext = null;
 let isBrowserHidden = false;
 
 let currentPostIndex = 0;
-function reportStatus(percent, status, detail = '', logType = 'info', postIdx = currentPostIndex) {
+function reportStatus(percent, status, detail = '', logType = 'info', postIdx = currentPostIndex, action = '') {
   try {
     const statusFile = path.join(__dirname, 'status.json');
     const payload = JSON.stringify({
@@ -59,6 +59,7 @@ function reportStatus(percent, status, detail = '', logType = 'info', postIdx = 
       status,
       detail,
       logType,
+      action,
       timestamp: Date.now()
     }, null, 2);
     fs.writeFileSync(statusFile, payload, 'utf8');
@@ -2570,6 +2571,7 @@ async function pauseOnError(isDebugPause, message) {
         try { await execPromise('taskkill /F /IM chrome.exe', { timeout: 3000 }).catch(() => {}); } catch (e) {}
       }
       
+      reportStatus(100, '✅ บอททำงานครบ 10 โพสต์แล้ว', 'ปิดระบบเรียบร้อย', 'success', AUTO_GROUPS_MAX, 'exit');
       console.log('✅ Bot finished. Exiting now.');
       process.exit(0);
     } else {
