@@ -83,12 +83,15 @@ else {
 $baseUrl = "https://artnp.github.io/eworker/download.html"
 
 # แปลง URL ให้ถูกรูปแบบ
-if ($uploadUrl -match "^tf_(.+)$") {
+if ($uploadUrl -match "^fb_(.+)$") {
+    # Firebase format: fb_12345_abcd -> ส่งตรงไป (download.html จะแปลงเอง)
+    $fullUrl = $uploadUrl
+} elseif ($uploadUrl -match "^tf_(.+)$") {
     # TmpFiles format: tf_123456 -> https://tmpfiles.org/123456
     $fileId = $Matches[1]
     $fullUrl = "https://tmpfiles.org/$fileId"
 } elseif ($uploadUrl -match "^https?://") {
-    # URL เต็มจาก Litterbox
+    # URL เต็มจาก Litterbox/Uguu
     $fullUrl = $uploadUrl
 } else {
     # Fallback: ถือว่าเป็น file ID ของ Litterbox
