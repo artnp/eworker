@@ -1,23 +1,22 @@
 <!DOCTYPE html>
 <html lang="th">
-
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>บันทึกงาน - PrivateSend</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Prompt:wght@300;400;600&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
     <style>
         :root {
             --primary: #6366f1;
             --danger: #ef4444;
             --success: #10b981;
             --bg: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.8);
+            --card-bg: rgba(30, 41, 59, 0.95);
             --text: #f8fafc;
             --text-muted: #94a3b8;
             --border: rgba(255, 255, 255, 0.1);
@@ -32,3090 +31,1324 @@
         body {
             font-family: 'Inter', 'Prompt', sans-serif;
             background: var(--bg);
-            background-size: 400% 400%;
-            animation: gradient-bg 15s ease infinite;
-            background-image:
-                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(239, 68, 68, 0.15) 0px, transparent 50%),
-                radial-gradient(at 50% 50%, rgba(30, 41, 59, 0.1) 0px, transparent 100%);
+            background-image: 
+                radial-gradient(at 20% 20%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
+                radial-gradient(at 80% 80%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
             color: var(--text);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             min-height: 100vh;
-            padding: 16px;
+            padding: 20px;
         }
 
-        @keyframes gradient-bg {
-            0% {
-                background-position: 0% 50%;
-            }
-
-            50% {
-                background-position: 100% 50%;
-            }
-
-            100% {
-                background-position: 0% 50%;
-            }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
-        .pulse-premium {
-            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
-            animation: pulse-green 2s infinite;
-        }
-
-        @keyframes pulse-green {
-            0% {
-                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
-            }
-
-            70% {
-                box-shadow: 0 0 0 15px rgba(16, 185, 129, 0);
-            }
-
-            100% {
-                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-            }
-        }
-
-        /* Verifying Overlay */
-        .verifying-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 23, 42, 0.95);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            border-radius: 32px;
-            backdrop-filter: blur(8px);
-        }
-
-        .spinner-premium {
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(16, 185, 129, 0.2);
-            border-top: 3px solid #10b981;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-bottom: 15px;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
+        /* Header */
         .header {
-            width: 100%;
-            max-width: 800px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
-            padding: 0 8px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .logo {
+            font-size: 1.5rem;
             font-weight: 700;
-            font-size: 1.1rem;
-            letter-spacing: -0.025em;
+            color: var(--primary);
         }
 
         .timer-badge {
             background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
             color: var(--danger);
-            padding: 6px 14px;
-            border-radius: 99px;
-            font-size: 0.8rem;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 0.9rem;
             font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+        }
+        
+        .timer-badge .timer-text {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-right: 5px;
+        }
+        
+        .timer-badge .timer-value {
+            font-family: monospace;
+            font-weight: 700;
         }
 
-        .safety-badge {
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            color: var(--success);
-            padding: 6px 14px;
-            border-radius: 99px;
-            font-size: 0.8rem;
-            font-weight: 600;
+        /* Main Content Layout */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        @media (min-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr 420px;
+            }
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Image Preview */
+        .image-preview {
+            text-align: center;
+        }
+
+        .image-container {
+            position: relative;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 300px;
             display: flex;
             align-items: center;
-            gap: 6px;
-            cursor: help;
+            justify-content: center;
+        }
+
+        .image-container img {
+            max-width: 100%;
+            max-height: 60vh;
+            border-radius: 8px;
+            cursor: zoom-in;
+            transition: transform 0.3s ease;
+            pointer-events: auto;
+        }
+
+        .image-container img:hover {
+            transform: scale(1.02);
+        }
+
+        .image-container.protected img {
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            cursor: not-allowed;
+        }
+
+        .image-container.protected {
             position: relative;
         }
 
-        .tooltip {
-            visibility: hidden;
-            width: 260px;
-            background-color: #1e293b;
-            color: #fff;
-            text-align: left;
-            border-radius: 12px;
-            padding: 15px;
-            position: absolute;
-            z-index: 100;
-            top: 130%;
-            right: 0;
-            opacity: 0;
-            transition: all 0.3s ease;
-            font-size: 0.8rem;
-            font-weight: 400;
-            line-height: 1.5;
-            border: 1px solid var(--border);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-            pointer-events: none;
-        }
-
-        .tooltip.show {
-            visibility: visible;
-            opacity: 1;
-            transform: translateY(5px);
-        }
-
-        /* Moving Security Grid for Locked Image */
-        .security-grid {
+        .protection-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-image:
-                linear-gradient(hwb(51 13% 11% / 0.719) 1px, transparent 1px),
-                linear-gradient(90deg, lab(96.84% -23.12 93.44 / 0.747) 1px, transparent 1px);
-            background-size: 30px 30px;
-            z-index: 17;
             display: none;
             pointer-events: none;
-            animation: grid-flow 20s linear infinite;
-        }
-
-        @keyframes grid-flow {
-            from {
-                background-position: 0 0;
-            }
-
-            to {
-                background-position: 300px 300px;
-            }
-        }
-
-        .pay-lock .security-grid {
-            display: block;
-        }
-
-        .pay-lock #image-zoom-container {
-            cursor: not-allowed !important;
-        }
-
-        .pay-lock #image-zoom-container,
-        .pay-lock .pdf-preview-box {
-            cursor: not-allowed !important;
-            pointer-events: none !important;
-        }
-
-        /* Chains and Lock Decor */
-        .lock-decor {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 19;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            pointer-events: none;
-        }
-
-        .pay-lock .lock-decor {
-            display: flex;
-        }
-
-        .chain-svg {
-            position: absolute;
-            width: 130%;
-            height: 130%;
-            top: -15%;
-            left: -15%;
-            opacity: 0.15;
-            filter: drop-shadow(0 0 10px rgba(0, 0, 0, 0.8));
-            pointer-events: none;
-        }
-
-        /* Modern Snake Border Animation for Button */
-        .btn-loading-active {
-            position: relative;
-            pointer-events: none;
-            overflow: visible !important;
-        }
-
-        .btn-loading-active .btn-border-container {
-            display: block !important;
-        }
-
-        .btn-border-container {
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            pointer-events: none;
-            display: none;
             z-index: 5;
         }
 
-        .btn-border-svg {
-            width: 100%;
-            height: 100%;
-            overflow: visible;
-        }
-
-        .btn-border-path {
-            fill: none;
-            stroke: #34d399;
-            stroke-width: 2.5;
-            stroke-linecap: round;
-            vector-effect: non-scaling-stroke;
-            stroke-dasharray: 120 600;
-            /* Line length 120, Gap 600 ensures only one line visible */
-            animation: snake-run 0.7s linear infinite;
-            /* Ultra high speed */
-            filter: drop-shadow(0 0 5px #10b981);
-            /* Glowing effect */
-        }
-
-        @keyframes snake-run {
-            0% {
-                stroke-dashoffset: 720;
-                /* Full loop offset */
-            }
-
-            100% {
-                stroke-dashoffset: 0;
-            }
-        }
-
-        .tooltip::after {
-            content: "";
-            position: absolute;
-            bottom: 100%;
-            right: 20px;
-            margin-left: -5px;
-            border-width: 8px;
-            border-style: solid;
-            border-color: transparent transparent #1e293b transparent;
-        }
-
-        .safety-badge:hover .tooltip {
-            visibility: visible;
-            opacity: 1;
-            transform: translateY(5px);
-        }
-
-        .tooltip b {
-            color: var(--success);
+        .image-container.protected .protection-overlay {
             display: block;
-            margin-bottom: 4px;
         }
 
-        .timer-badge span {
-            font-family: monospace;
-            font-size: 0.95rem;
+        .watermark-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 3rem;
+            font-weight: 900;
+            color: rgba(239, 68, 68, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 8px;
+            white-space: nowrap;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
         }
 
-        .main-content {
-            flex: 1;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
-            width: 100%;
-            max-width: 1200px;
-            /* Reduced max-width for better compactness */
-            padding: 20px 16px;
-            align-items: start;
-            margin: 0 auto;
+        /* ป้องกันดาวน์โหลดภาพก่อนจ่ายเงิน */
+        .image-protected {
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            -webkit-touch-callout: none;
+            cursor: not-allowed !important;
         }
 
-        /* 2-Column Layout for Desktop */
-        @media (min-width: 1024px) {
-            .main-content {
-                grid-template-columns: 1fr 420px;
-                gap: 40px;
-                padding: 40px 24px;
-                max-width: 1100px;
-            }
-
-            .content-wrapper {
-                order: 1;
-            }
-
-            .payment-bar {
-                order: 2;
-                position: sticky;
-                top: 24px;
-                margin: 0;
-                width: 100%;
-                max-width: 100%;
-                transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-            }
-
-            .main-content.connected-state {
-                display: flex;
-                flex-direction: row;
-                justify-content: center;
-                align-items: stretch;
-                gap: 0px;
-                max-width: 1100px;
-            }
-
-            .connected-state .content-wrapper {
-                flex: 1;
-                max-width: 500px;
-                animation: slide-right-connect 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-            }
-
-            .connected-state .image-container {
-                height: 100%;
-                margin-bottom: 0;
-                border-top-right-radius: 0;
-                border-bottom-right-radius: 0;
-                border-right: none;
-            }
-
-            .connected-state .payment-bar {
-                flex: 0 0 420px;
-                animation: slide-left-connect 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-                border-top-left-radius: 0;
-                border-bottom-left-radius: 0;
-                border-left: 1px solid rgba(255, 255, 255, 0.08);
-                box-shadow:
-                    25px 25px 50px -12px rgba(0, 0, 0, 0.5);
-                margin: 0;
-            }
-
-            @keyframes slide-right-connect {
-                from {
-                    transform: translateX(-50px);
-                    opacity: 0.8;
-                }
-
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-            }
-
-            @keyframes slide-left-connect {
-                from {
-                    transform: translateX(50px);
-                    opacity: 0.8;
-                }
-
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-            }
+        .protection-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: transparent;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            border-radius: 12px;
+            pointer-events: none;
         }
 
-        /* Mobile Layout */
-        @media (max-width: 1023px) {
-
-            html,
-            body {
-                overflow-x: hidden;
-                width: 100%;
-            }
-
-            body {
-                padding: 10px;
-            }
-
-            .header {
-                flex-direction: column;
-                gap: 12px;
-                margin-bottom: 16px;
-                text-align: center;
-            }
-
-            .header>div {
-                justify-content: center !important;
-                width: 100%;
-            }
-
-            .main-content {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 12px;
-                padding: 8px;
-                width: 100%;
-                overflow-x: hidden;
-            }
-
-            .content-wrapper {
-                order: 1;
-                gap: 12px;
-                width: 100%;
-                align-items: center;
-            }
-
-            .image-container {
-                margin-bottom: 10px;
-                border-radius: 16px;
-            }
-
-            .image-container>div {
-                padding: 12px !important;
-            }
-
-            img {
-                max-height: 40vh;
-            }
-
-            .payment-bar {
-                order: 2;
-                width: 100% !important;
-                max-width: 100%;
-                margin: 0;
-                border-radius: 24px;
-            }
-
-            .payment-header {
-                padding: 12px 16px;
-            }
-
-            .payment-body {
-                padding: 20px 16px 20px;
-            }
-
-            .qr-wrapper {
-                margin-bottom: 10px;
-                padding: 8px;
-            }
-
-            #payment-amount-box {
-                margin-bottom: 10px !important;
-            }
-
-            #checkbox-hint-wrapper {
-                margin-top: 10px !important;
-            }
-
-            .final-download-container {
-                margin-top: 10px !important;
-                padding: 15px !important;
-            }
-
-            /* Simplified dashed lines for performance on mobile */
-            #connection-svg {
-                filter: none !important;
-                opacity: 0.5 !important;
-            }
-
-            #connection-svg path[id^="pipe-base"] {
-                display: none;
-            }
-
-            #connection-svg #line-1-2,
-            #connection-svg #line-2-3 {
-                animation: none !important;
-                stroke-width: 1.5 !important;
-                stroke-dasharray: 4, 10 !important;
-            }
-
-            /* Responsive Watermark */
-            .watermark-overlay {
-                font-size: 1.6rem;
-                letter-spacing: 3px;
-            }
+        .protection-overlay.active {
+            display: flex;
         }
 
-        .content-wrapper {
+        .protection-message {
+            background: rgba(239, 68, 68, 0.85);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(8px);
+        }
+
+        #loading-text {
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        /* Payment Card */
+        .payment-card {
             display: flex;
             flex-direction: column;
-            gap: 24px;
-            width: 100%;
-            min-width: 0;
-            /* Prevent flex overflow */
+            gap: 20px;
         }
 
-        .image-container {
-            background: var(--card-bg);
-            padding: 8px;
+        .payment-header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .payment-header h2 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: var(--text);
+        }
+
+        .payment-amount {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 10px 0;
+            background: linear-gradient(135deg, #f97316, #fb923c, #fbbf24, #f59e0b, #f97316);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 3s ease infinite;
+            display: inline-block;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .payment-amount .currency {
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, #94a3b8, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* QR Code */
+        .qr-wrapper {
+            background: white;
+            padding: 20px;
             border-radius: 16px;
-            border: 1px solid var(--border);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            margin-bottom: 20px;
+            display: inline-block;
+            margin: 0 auto;
+            cursor: pointer;
+            transition: transform 0.3s ease;
             position: relative;
-            overflow: hidden;
+        }
+
+        .qr-wrapper:hover {
+            transform: scale(1.05);
+        }
+
+        #qrcode-display {
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 150px;
-            width: 100%;
-            cursor: pointer;
+            min-height: 200px;
+            position: relative;
         }
 
-        img {
-            max-width: 100%;
-            max-height: 45vh;
-            /* Reduced to ensure it fits on one screen without scrolling */
-            object-fit: contain;
-            border-radius: 8px;
-            display: block;
-            border: none;
-        }
-
-        .pdf-preview-box {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            padding: 40px 20px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            width: 100%;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .pdf-preview-box:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .pdf-preview-box img {
-            width: 80px;
+        .promptpay-logo {
+            width: 60px;
             height: auto;
-            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.2));
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+
+        .promptpay-logo img {
+            width: 100%;
+            height: auto;
+            object-fit: contain;
             display: block;
         }
 
+        .qr-code-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
+        .qr-header-text {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .qr-hint {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 10px;
+        }
+
+        /* Bank Icons */
+        .bank-icons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+        }
+
+        .bank-logo {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: transform 0.2s ease;
+        }
+        
+        .bank-logo:hover {
+            transform: scale(1.1);
+        }
+
+        .bank-kbank { background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/KBANK.png'); }
+        .bank-scb { background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/SCB.png'); }
+        .bank-bay { background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/BAY.png'); }
+        .bank-bbl { background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/BBL.png'); }
+        .bank-ktb { background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/KTB.png'); }
+        .bank-ttb { background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/TTB.png'); }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 14px 24px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
 
         .btn-primary {
-            background: var(--primary);
+            background: linear-gradient(135deg, var(--primary), #4f46e5);
             color: white;
         }
 
-        .btn-primary:active {
-            transform: scale(0.98);
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
         }
 
-        .info-text {
-            margin-top: 20px;
-            color: var(--text-muted);
-            font-size: 0.85rem;
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Success Message */
+        .success-message {
             text-align: center;
-            line-height: 1.5;
-            padding: 0 20px;
+            padding: 30px 20px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 16px;
         }
 
+        .success-message h3 {
+            font-size: 1.5rem;
+            color: var(--success);
+            margin-bottom: 15px;
+        }
+
+        .success-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.1); }
+        }
+
+        /* Help Text with Animation */
+        .help-text {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .help-text strong {
+            color: var(--text);
+        }
+
+        /* Animation สอนวิธีดาวน์โหลด */
+        .download-tutorial {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            margin-top: 15px;
+            padding: 12px 10px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.03), rgba(139, 92, 246, 0.03));
+            border-radius: 12px;
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            animation: fadeInUp 0.5s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tutorial-icon {
+            font-size: 2rem;
+            margin-bottom: 2px;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        /* Animation for Mobile - กดค้าง */
+        .press-hold-animation {
+            position: relative;
+            display: inline-block;
+        }
+
+        .finger-icon {
+            font-size: 1.8rem;
+            display: inline-block;
+            animation: pressDown 2s ease-in-out infinite;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        @keyframes pressDown {
+            0%, 100% { transform: translateY(0) scale(1); opacity: 0.9; }
+            50% { transform: translateY(5px) scale(0.95); opacity: 1; }
+        }
+
+        .ripple-effect {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(99, 102, 241, 0.3);
+            transform: translate(-50%, -50%);
+            animation: ripple 2s ease-out infinite;
+        }
+
+        @keyframes ripple {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 1;
+            }
+            100% {
+                width: 60px;
+                height: 60px;
+                opacity: 0;
+            }
+        }
+
+        /* Animation for Desktop - คลิกขวา */
+        .right-click-animation {
+            position: relative;
+            display: inline-block;
+        }
+
+        .mouse-icon {
+            font-size: 2.5rem;
+            display: inline-block;
+            animation: mouseClick 2s ease-in-out infinite;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+        }
+
+        @keyframes mouseClick {
+            0%, 100% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+
+        .click-indicator {
+            position: absolute;
+            top: 20%;
+            right: -10%;
+            font-size: 1.2rem;
+            animation: clickBlink 2s ease-in-out infinite;
+        }
+
+        @keyframes clickBlink {
+            0%, 100% { opacity: 0; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .tutorial-text {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .tutorial-text strong {
+            color: var(--text);
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.8rem;
+        }
+
+        .tutorial-gif {
+            width: 100%;
+            max-width: 240px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            margin-bottom: 8px;
+        }
+
+        /* Error State */
         .error-state {
             text-align: center;
-            padding: 40px;
+            padding: 60px 20px;
         }
 
         .error-state h2 {
             font-size: 1.5rem;
-            margin-bottom: 12px;
             color: var(--danger);
+            margin-bottom: 10px;
         }
 
-        .expired {
-            animation: pulse 1s infinite;
-        }
-
-        .btn-success {
-            background: var(--success) !important;
-        }
-
-        @keyframes pulse {
-            0% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.5;
-            }
-
-            100% {
-                opacity: 1;
-            }
-        }
-
-
-        .copy-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(16, 185, 129, 0.1);
-            color: #10b981;
-            padding: 8px 16px;
-            border-radius: 99px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            transition: all 0.2s;
-            font-weight: 500;
-        }
-
-        .copy-pill:hover {
-            background: rgba(16, 185, 129, 0.2);
-        }
-
-        .copy-pill:active {
-            transform: scale(0.95);
-            background: #10b981;
-            color: white;
-        }
-
-        /* Payment Bar Styles (Modern & Premium) */
-        .image-container {
-            width: 100%;
-            max-width: 500px;
-            margin: 0 auto;
-            background: linear-gradient(145deg, #1a1f35 0%, #0f1419 100%);
-            border-radius: 24px;
-            overflow: visible;
-            border: 1px solid rgba(99, 102, 241, 0.25);
-            box-shadow:
-                0 20px 60px -10px rgba(0, 0, 0, 0.6),
-                0 0 0 1px rgba(99, 102, 241, 0.1) inset;
-            position: relative;
-            z-index: 10;
-        }
-
-        .payment-bar {
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 32px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow:
-                0 25px 50px -12px rgba(0, 0, 0, 0.5),
-                0 0 0 1px rgba(255, 255, 255, 0.05);
-            width: 92%;
-            max-width: 440px;
-            overflow: visible;
-            position: relative;
-            z-index: 30;
-            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        @media (min-width: 1024px) {
-            .payment-bar {
-                margin: 0;
-            }
-        }
-
-        .payment-header {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.15));
-            padding: 18px 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            position: relative;
-            overflow: hidden;
-            border-bottom: 1px solid rgba(99, 102, 241, 0.15);
-        }
-
-        .payment-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #6366f1 50%, transparent);
-        }
-
-        .payment-alert-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-            animation: pulse-alert 2.5s ease-in-out infinite;
-            filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.5));
-        }
-
-        .step-circle {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.85rem;
-            font-weight: 800;
-            position: relative;
-            z-index: 50;
-        }
-
-        @keyframes pulse-alert {
-
-            0%,
-            100% {
-                transform: scale(1);
-                filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.4));
-            }
-
-            50% {
-                transform: scale(1.15);
-                filter: drop-shadow(0 0 20px rgba(251, 191, 36, 0.7));
-            }
-        }
-
-        .payment-title {
-            font-weight: 600;
-            font-size: 0.95rem;
-            color: #f1f5f9;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-            letter-spacing: 0.3px;
-        }
-
-        .payment-body {
-            padding: 32px 24px 28px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .qr-wrapper {
-            position: relative;
-            background: white;
-            padding: 16px;
-            border-radius: 20px;
-            box-shadow:
-                0 10px 40px rgba(99, 102, 241, 0.25),
-                0 0 0 4px rgba(99, 102, 241, 0.08);
+        .error-icon {
+            font-size: 4rem;
             margin-bottom: 20px;
-            cursor: pointer;
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-            display: inline-block;
-            z-index: 12;
         }
 
-        .qr-wrapper:hover {
-            transform: translateY(-6px);
-            box-shadow:
-                0 16px 56px rgba(99, 102, 241, 0.35),
-                0 0 0 4px rgba(99, 102, 241, 0.15);
-        }
-
-        .qr-wrapper:active {
-            transform: translateY(-2px);
-        }
-
-        .qr-container {
-            position: relative;
-            overflow: hidden;
-            border-radius: 14px;
-        }
-
-        .qr-container img {
-            width: 200px;
-            height: 200px;
-            display: block;
-        }
-
-        .save-qr-hint {
-            position: absolute;
-            bottom: -32px;
-            left: 50%;
-            transform: translateX(-50%);
-            white-space: nowrap;
-            font-size: 0.75rem;
-            color: #94a3b8;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
-        }
-
-        .qr-wrapper:hover .save-qr-hint {
-            opacity: 1;
-        }
-
-        .payment-amount {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #f8fafc;
-            margin: 8px 0 6px;
-            letter-spacing: -0.5px;
-        }
-
-        .payment-amount span {
-            color: #34d399;
-            text-shadow: 0 0 20px rgba(52, 211, 153, 0.3);
-        }
-
-        .payment-note {
-            font-size: 0.9rem;
-            color: #94a3b8;
-            font-weight: 300;
-        }
-
-        /* QR & Download Styles */
-        .qr-wrapper {
-            position: relative;
-            background: white;
-            padding: 12px;
-            border-radius: 16px;
-            box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
-            /* Soft glow */
-            margin-bottom: 16px;
-            cursor: pointer;
-            transition: transform 0.2s;
-            display: inline-block;
-        }
-
-        .qr-wrapper:hover {
-            transform: scale(1.02);
-        }
-
-        .save-qr-hint {
-            position: absolute;
-            bottom: -25px;
-            left: 50%;
-            transform: translateX(-50%);
-            white-space: nowrap;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .qr-wrapper:hover .save-qr-hint {
-            opacity: 1;
-        }
-
-        .download-qr-btn {
-            margin-top: 10px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: var(--text-muted);
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .actions {
-            display: flex;
-            justify-content: center;
-            width: 100%;
-            margin-top: 24px;
-        }
-
-        #download-btn {
-            background: linear-gradient(135deg, #10b981, #059669);
-            border: none;
-            padding: 16px 36px;
-            border-radius: 99px;
-            color: white;
-            font-weight: 700;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.2);
-            position: relative;
-            overflow: visible;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* Zoom / Lightbox */
-        .lightbox-overlay {
+        /* Lightbox */
+        .lightbox {
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.95);
-            display: none;
-            align-items: flex-start;
-            justify-content: center;
-            z-index: 3000;
-            overflow: auto;
-            /* Enable scrolling */
-            -webkit-overflow-scrolling: touch;
-            padding: 40px 10px;
+            z-index: 1000;
             cursor: zoom-out;
-            opacity: 0;
-            transition: opacity 0.3s ease;
+            padding: 40px 20px;
+            overflow: auto;
         }
 
-        .lightbox-overlay.active {
-            display: flex;
-            opacity: 1;
-        }
-
-        .lightbox-img {
-            max-width: 95%;
-            max-height: 95%;
-            border-radius: 12px;
-            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .lightbox-close {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            color: white;
-            font-size: 2rem;
-            cursor: pointer;
-            width: 40px;
-            height: 40px;
+        .lightbox.active {
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
         }
 
-        .zoom-hint {
-            position: absolute;
-            bottom: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 9px 20px;
-            border-radius: 99px;
-            font-size: 0.85rem;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            pointer-events: none;
-            /* Let clicks pass through to parent */
-            z-index: 25;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            font-weight: 500;
-            white-space: nowrap;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            transition: opacity 0.3s ease;
-        }
-
-        #image-zoom-container:hover .zoom-hint {
-            opacity: 0;
-        }
-
-        #image-zoom-container {
-            pointer-events: auto !important;
-            /* Ensure it can be clicked */
-            cursor: zoom-in;
-        }
-
-        .pay-lock #image-zoom-container {
-            cursor: not-allowed !important;
-        }
-
-        #download-btn:hover {
-            transform: translateY(-3px) scale(1.02);
-            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.7), inset 0 0 15px rgba(255, 255, 255, 0.3);
-        }
-
-        #download-btn::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(135deg, #10b981, #34d399, #059669);
-            z-index: -1;
-            filter: blur(10px);
-            opacity: 0;
-            transition: opacity 0.3s;
-            border-radius: 99px;
-        }
-
-        #download-btn:hover::before {
-            opacity: 1;
-        }
-
-        .final-download-container {
-            margin-top: 25px;
-            padding: 18px 10px;
-            background: rgba(16, 185, 129, 0.05);
-            border: 1.5px dashed rgba(16, 185, 129, 0.3);
-            border-radius: 24px;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            animation: fadeIn 0.6s ease-out forwards;
-        }
-
-        .step-circle-standalone {
-            position: absolute;
-            bottom: 35px;
-            right: 5px;
-            width: 32px;
-            height: 32px;
-            background: white;
-            color: #ef4444;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            font-size: 1.1rem;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-            z-index: 20;
-            border: 2px solid #ef4444;
-            animation: bounce-right 1.5s infinite alternate;
-        }
-
-        .guard-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0);
-            z-index: 15;
+        .lightbox.protected {
             cursor: not-allowed;
         }
 
-        .watermark {
+        .lightbox-content {
+            position: relative;
+            display: inline-block;
+        }
+
+        .lightbox img {
+            max-width: 95%;
+            max-height: 95vh;
+            border-radius: 12px;
+            box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .lightbox.protected img {
+            pointer-events: none;
+        }
+
+        .lightbox-watermark {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%) rotate(-30deg);
-            color: rgba(255, 255, 255, 0.25);
-            font-size: 3.2rem;
+            font-size: 5rem;
             font-weight: 900;
+            color: rgba(239, 68, 68, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 15px;
             white-space: nowrap;
             pointer-events: none;
-            z-index: 10;
-            text-transform: uppercase;
-            letter-spacing: 5px;
-            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.4);
-        }
-
-        .pay-lock #image {
-            user-select: none;
-            -webkit-user-drag: none;
-        }
-
-        .image-wrapper {
-            position: relative;
-            display: inline-block;
-            margin: 0 auto;
-        }
-
-        .step-circle-standalone {
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            width: 32px;
-            height: 32px;
-            background: white;
-            color: #ef4444;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            font-size: 1.1rem;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-            z-index: 50;
-            border: 2px solid #ef4444;
-            animation: bounce-right 1.5s infinite alternate;
-        }
-
-        /* Animated Arrows */
-        @keyframes bounce-right {
-
-            0%,
-            100% {
-                transform: translateX(0);
-            }
-
-            50% {
-                transform: translateX(5px);
-            }
-        }
-
-        @keyframes bounce-left {
-
-            0%,
-            100% {
-                transform: translateX(0);
-            }
-
-            50% {
-                transform: translateX(-5px);
-            }
-        }
-
-        .arrow-bounce-right {
-            display: inline-block;
-            animation: bounce-right 1s infinite alternate;
-        }
-
-        .arrow-bounce-left {
-            display: inline-block;
-            animation: bounce-left 1s infinite alternate;
-        }
-
-        /* Step Circles */
-        .step-circle {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 26px;
-            height: 26px;
-            background-color: #ef4444;
-            color: white;
-            border-radius: 50%;
-            font-size: 1rem;
-            font-weight: bold;
-            box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
-            margin: 0 6px;
-            z-index: 10000 !important;
-        }
-
-        /* Tornado Animation */
-        @keyframes tornado-spin {
-            0% {
-                transform: scale(1) rotateY(0deg);
-                opacity: 1;
-            }
-
-            50% {
-                transform: scale(0.5) rotateY(720deg);
-                opacity: 0.5;
-            }
-
-            100% {
-                transform: scale(0) rotateY(1440deg);
-                opacity: 0;
-            }
-        }
-
-        .tornado-active {
-            animation: tornado-spin 1.5s ease-in forwards !important;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .fade-out {
-            animation: fadeOut 0.5s ease-out forwards;
-        }
-
-        @keyframes fadeOut {
-            from {
-                opacity: 1;
-                transform: translateY(0);
-            }
-
-            to {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-        }
-
-        .fade-in-msg {
-            animation: fadeIn 0.5s ease-out forwards;
-        }
-
-        /* Visual Connect Line */
-        .visual-connector {
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
             display: none;
         }
 
-        @media (min-width: 1024px) {
-            .main-content {
-                position: relative;
-            }
-
-            .visual-connector {
-                display: flex;
-                position: absolute;
-                top: 40%;
-                left: calc(100% - 380px - 24px);
-                width: 100px;
-                transform: translateX(-50%);
-                align-items: center;
-                justify-content: center;
-                z-index: 10;
-            }
-
-            .visual-connector::before {
-                content: '';
-                position: absolute;
-                width: 100%;
-                height: 2px;
-                background: linear-gradient(to right, #ef4444 50%, transparent 50%);
-                background-size: 15px 2px;
-                z-index: -1;
-                animation: dash-flow 0.5s linear infinite;
-            }
-
-            @keyframes dash-flow {
-                0% {
-                    background-position: 0 0;
-                }
-
-                100% {
-                    background-position: 15px 0;
-                }
-            }
-
-            .connector-text {
-                background: var(--bg);
-                color: #ef4444;
-                font-size: 0.75rem;
-                padding: 4px;
-                border-radius: 4px;
-                font-weight: 600;
-                text-align: center;
-                line-height: 1.2;
-            }
-        }
-
-        @keyframes scan-line {
-            0% {
-                top: 0%;
-                opacity: 0;
-            }
-
-            15% {
-                opacity: 1;
-                box-shadow: 0 0 10px 2px rgba(239, 68, 68, 0.8);
-            }
-
-            85% {
-                opacity: 1;
-                box-shadow: 0 0 10px 2px rgba(239, 68, 68, 0.8);
-            }
-
-            100% {
-                top: 100%;
-                opacity: 0;
-            }
-        }
-
-        @keyframes bounce-updown {
-            0% {
-                transform: translateY(0);
-            }
-
-            100% {
-                transform: translateY(6px);
-            }
-        }
-
-        /* Bank Icon Styles from thai-banks-logo */
-        .bank-logo {
-            width: 26px;
-            height: 26px;
-            border-radius: 6px;
-            background-size: contain;
-            background-position: center;
-            background-repeat: no-repeat;
-            display: inline-block;
-            flex: 0 0 auto;
-            transition: transform 0.2s;
-        }
-
-        .bank-logo:hover {
-            transform: scale(1.1);
-        }
-
-        .bank-kbank {
-            background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/KBANK.png');
-        }
-
-        .bank-scb {
-            background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/SCB.png');
-        }
-
-        .bank-bay {
-            background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/BAY.png');
-        }
-
-        .bank-bbl {
-            background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/BBL.png');
-        }
-
-        .bank-ktb {
-            background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/KTB.png');
-        }
-
-        .bank-gsb {
-            background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/GSB.png');
-        }
-
-        .bank-ttb {
-            background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/TTB.png');
-        }
-
-        .bank-uob {
-            background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/UOB.png');
-        }
-
-        @keyframes pulse-heart {
-            0% {
-                transform: scale(1);
-                filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.5));
-            }
-
-            100% {
-                transform: scale(1.2);
-                filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.8));
-            }
-        }
-
-        .pulse-red-heart {
-            display: inline-block;
-            color: #ef4444;
-            font-size: 3rem;
-            animation: pulse-heart 0.8s infinite alternate;
-            margin-top: 5px;
-        }
-
-        /* === DONATE MODE STYLES === */
-        .donate-bar {
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 32px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow:
-                0 25px 50px -12px rgba(0, 0, 0, 0.5),
-                0 0 0 1px rgba(255, 255, 255, 0.05);
-            width: 92%;
-            max-width: 440px;
-            overflow: visible;
-            position: relative;
-            z-index: 30;
-        }
-
-        .donate-header {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(251, 146, 60, 0.12));
-            padding: 18px 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            position: relative;
-            overflow: hidden;
-            border-bottom: 1px solid rgba(239, 68, 68, 0.1);
-        }
-
-        .donate-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, #ef4444, #f59e0b, transparent);
-        }
-
-        .donate-body {
-            padding: 28px 24px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .donate-title {
-            font-weight: 600;
-            font-size: 0.95rem;
-            color: #f1f5f9;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-            letter-spacing: 0.3px;
-        }
-
-        .donate-heart {
-            font-size: 2rem;
-            animation: pulse-heart 1s infinite alternate;
-            filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.5));
-        }
-
-        .donate-msg {
-            color: #94a3b8;
-            font-size: 0.88rem;
-            line-height: 1.6;
-            margin-bottom: 18px;
-        }
-
-        .donate-msg b {
-            color: #f8fafc;
-        }
-
-        .donate-qr-wrapper {
-            background: white;
-            padding: 14px;
-            border-radius: 18px;
-            box-shadow: 0 8px 30px rgba(239, 68, 68, 0.15);
-            margin-bottom: 16px;
-            cursor: pointer;
-            transition: transform 0.2s;
-            display: inline-block;
-        }
-
-        .donate-qr-wrapper:hover {
-            transform: scale(1.03);
-        }
-
-        .donate-amount {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #34d399;
-            margin-bottom: 5px;
-        }
-
-        .donate-note {
-            font-size: 0.78rem;
-            color: #64748b;
-            line-height: 1.4;
-        }
-
-        .donate-thanks {
-            margin-top: 15px;
-            padding: 12px 18px;
-            background: rgba(16, 185, 129, 0.08);
-            border: 1px solid rgba(16, 185, 129, 0.15);
-            border-radius: 14px;
-            color: #10b981;
-            font-size: 0.82rem;
-            font-weight: 600;
-            width: 100%;
-        }
-
-        @media (min-width: 1024px) {
-            .donate-bar {
-                position: sticky;
-                top: 24px;
-                margin: 0;
-                width: 100%;
-                max-width: 100%;
-            }
-        }
-
-        @media (max-width: 1023px) {
-            .donate-bar {
-                width: 100% !important;
-                max-width: 100%;
-                margin: 0;
-                border-radius: 24px;
-            }
-        }
-
-        /* Mission System Styles */
-        .mission-grid {
-            display: grid;
-            gap: 10px;
-            width: 100%;
-        }
-
-        .mission-btn {
-            background: rgba(30, 41, 59, 0.4);
-            border: 1px solid rgba(251, 206, 3, 0.2);
-            padding: 8px 12px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            text-decoration: none;
-            color: white;
-            transition: 0.3s all ease;
-            text-align: left;
-        }
-
-        .mission-btn:hover {
-            border-color: #fbce03;
-            background: rgba(30, 41, 59, 0.8);
-            transform: translateY(-1px);
-        }
-
-        .icon-box {
-            width: 32px;
-            height: 32px;
-            background: rgba(251, 206, 3, 0.1);
-            border: 1px solid rgba(251, 206, 3, 0.4);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-            flex-shrink: 0;
-        }
-
-        .mission-text {
-            flex: 1;
-            margin-left: 10px;
-        }
-
-        .mission-text b {
+        .lightbox.protected .lightbox-watermark {
             display: block;
-            font-size: 0.8rem;
-            color: #fbce03;
-            margin-bottom: -1px;
         }
 
-        .mission-text span {
-            font-size: 0.7rem;
-            color: #94a3b8;
-        }
-
-        .mission-input-box {
-            margin-bottom: 15px;
-            text-align: left;
-            width: 100%;
-        }
-
-        .mission-label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 0.75rem;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            color: #fbce03;
-            font-weight: 600;
-        }
-
-        .mission-input {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1.5px solid #334155;
-            padding: 12px;
-            border-radius: 10px;
-            color: #fbce03;
-            font-size: 1rem;
-            outline: none;
-            transition: 0.3s;
-        }
-
-        .mission-input:focus {
-            border-color: #fbce03;
-            box-shadow: 0 0 15px rgba(251, 206, 3, 0.2);
-        }
-
-        .mission-btn-action {
-            width: 100%;
-            padding: 14px;
-            background: #fbce03;
-            color: #000;
-            border: none;
-            border-radius: 10px;
-            font-weight: 800;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: 0.3s;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-        }
-
-        .mission-btn-action:hover {
-            transform: scale(1.02);
-            filter: brightness(1.1);
-        }
-
-        .mission-btn-back {
-            display: block;
-            text-align: center;
-            color: #64748b;
-            text-decoration: none;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-
-        .mission-success-circle {
-            width: 60px;
-            height: 60px;
-            border: 3px solid #fbce03;
+        .lightbox-close {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 15px;
-            font-size: 1.8rem;
-            color: #fbce03;
-            box-shadow: 0 0 20px rgba(251, 206, 3, 0.3);
-        }
-
-        .mission-line-button {
-            background: #00b900;
+            font-size: 2rem;
             color: white;
-            padding: 12px 24px;
-            border-radius: 50px;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            font-weight: 800;
-            margin-top: 15px;
-            font-size: 0.9rem;
-            transition: 0.3s;
-            box-shadow: 0 5px 15px rgba(0, 185, 0, 0.3);
+            cursor: pointer;
+            transition: background 0.3s ease;
         }
 
-        .mission-line-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 185, 0, 0.4);
+        .lightbox-close:hover {
+            background: rgba(255, 255, 255, 0.2);
         }
 
-        .mission-shake {
-            animation: missionShakeEffect 0.5s;
-        }
-
-        @keyframes missionShakeEffect {
-
-            0%,
-            100% {
-                transform: translateX(0);
+        /* Responsive */
+        @media (max-width: 767px) {
+            .header {
+                flex-direction: column;
+                text-align: center;
             }
-
-            25% {
-                transform: translateX(-10px);
+            
+            .payment-amount {
+                font-size: 2rem;
             }
-
-            75% {
-                transform: translateX(10px);
+            
+            .image-container img {
+                max-height: 50vh;
             }
         }
 
-        .steps-mini {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 20px;
+        /* Loading Animation */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto;
         }
 
-        .step-mini-dot {
-            width: 30px;
-            height: 4px;
-            background: #334155;
-            border-radius: 2px;
-            transition: 0.4s;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
-        .step-mini-dot.active {
-            background: #fbce03;
-            box-shadow: 0 0 8px #fbce03;
+        /* Hidden Elements */
+        .hidden {
+            display: none !important;
         }
     </style>
+</head>
 
 <body>
-
-
-    <div class="header">
-        <div class="logo">PrivateSend</div>
-        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
-            <div class="safety-badge" onclick="toggleTooltip(event)">🛡️ ปลอดภัย <div class="tooltip"
-                    id="safety-tooltip"><b>Clean Privacy:</b>
-                    <hr>ลบข้อมูล GPS และข้อมูลที่ถูกฝังมาในไฟล์ให้แล้ว<br><br><b>Clean Metadata:</b>
-                    <hr>ตรวจไม่พบว่าทำมาจากโปรแกรมตัดต่อรูป<br><br><b>No Footprint:</b>
-                    <hr>ไฟล์สลายตัวอัตโนมัติ ไม่ทิ้งประวัติไว้บนอินเทอร์เน็ต
-                </div>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">📦 PrivateSend</div>
+            <div class="timer-badge" id="countdown">
+                <span class="timer-text">ไฟล์จะถูกลบภายใน:</span>
+                <span class="timer-value">--:--:--</span>
             </div>
-            <div class="timer-badge" id="timer-badge"><span id="countdown">--:--:--</span></div>
         </div>
-    </div>
 
-    <div class="main-content" id="viewer-content">
-
-        <!-- Payment Bar -->
-        <div id="payment-bar" class="payment-bar" style="display: none;">
-            <div class="payment-header">
-                <div class="payment-alert-icon">🔔</div>
-                <div class="payment-title">กรุณาชำระค่าบริการ</div>
+        <!-- Main Content -->
+        <div class="content-grid">
+            <!-- Left: Image Preview -->
+            <div class="card image-preview">
+                <div class="image-container" id="image-container">
+                    <div id="loading-text">
+                        <div class="spinner"></div>
+                        <p style="margin-top: 20px;">กำลังโหลดไฟล์...</p>
+                    </div>
+                    <img id="preview-image" class="hidden" alt="Preview" onclick="handleImageClick()">
+                    
+                    <!-- Protection Overlay -->
+                    <div class="protection-overlay" id="protection-overlay">
+                        <div class="protection-message">
+                            🔒 กรุณาชำระเงินก่อนดาวน์โหลด
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="payment-body" style="position: relative;">
-                <canvas id="payment-confetti-canvas"
-                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;"></canvas>
-                <div id="payment-amount-box" class="payment-amount"
-                    style="position: relative; margin-bottom: 15px; display: inline-block; padding: 0 10px;">
-                    <span class="step-circle"
-                        style="position: absolute; top: 0px; left: -30px; background: #3b82f6; color: white; border: 2px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); animation: bounce-left 1.5s infinite alternate;">2</span>
-                    <div
-                        style="position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: #ef4444; animation: scan-line 1.5s infinite ease-in-out; z-index: 5; border-radius: 50%;">
-                    </div>
-                    <span id="payment-amount" style="position: relative; z-index: 1;">0.00</span> <span
-                        style="position: relative; z-index: 1;">THB</span>
-                </div>
-                <div class="qr-wrapper" id="qr-wrapper" title="คลิกเพื่อบันทึก QR Code">
-                    <div class="qr-container"
-                        style="background: white; padding: 10px; display: flex; justify-content: center; align-items: center; min-height: 180px;">
-                        <div id="qrcode-display"></div>
-                    </div>
-                    <div class="payment-note" id="payment-note-txt"
-                        style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; background: rgba(255,255,255,0.08); padding: 8px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); width: max-content; margin-left: auto; margin-right: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
-                        <div style="display: flex; gap: 9px; align-items: center; padding: 2px 0;">
-                            <div class="bank-logo bank-kbank" title="Kasikorn Bank"></div>
-                            <div class="bank-logo bank-scb" title="Siam Commercial Bank"></div>
-                            <div class="bank-logo bank-bay" title="Krungsri Bank"></div>
-                            <div class="bank-logo bank-ktb" title="Krungthai Bank"></div>
-                            <div class="bank-logo bank-ttb" title="TTB Bank"></div>
 
-                            <span
-                                style="font-weight: 800; color: rgba(226,232,240,0.9); font-size: 1.05rem; margin-left: 2px;">+</span>
+            <!-- Right: Payment/Download Card -->
+            <div class="card payment-card" id="payment-card">
+                <!-- Payment Section -->
+                <div id="payment-section">
+                    <div class="payment-header">
+                        <h2>💳 ชำระค่าบริการ</h2>
+                        <div class="payment-amount">
+                            <span id="price-display">0.00</span> <span class="currency">THB</span>
+                        </div>
+                        <p class="qr-header-text" style="color: var(--text-muted); font-size: 0.85rem;">
+                            <span>สแกน QR เพื่อชำระเงิน
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/120px-PromptPay-logo.png" 
+                                 alt="PromptPay" 
+                                 style="width: 24%; height: auto; vertical-align: middle; transform: skewX(-10deg); display: inline-block;"></span>
+                        </p>
+                    </div>
+
+                    <div style="text-align: center;">
+                        <div class="qr-wrapper" id="qr-wrapper" onclick="downloadQR()">
+                            <div id="qrcode-display"></div>
+                        </div>
+                        <div class="qr-hint">💡 คลิกที่ QR Code เพื่อบันทึก</div>
+
+                        <div class="bank-icons">
+                            <div class="bank-logo bank-kbank" title="ธนาคารกสิกรไทย"></div>
+                            <div class="bank-logo bank-scb" title="ธนาคารไทยพาณิชย์"></div>
+                            <div class="bank-logo bank-bay" title="ธนาคารกรุงศรีอยุธยา"></div>
+                            <div class="bank-logo bank-bbl" title="ธนาคารกรุงเทพ"></div>
+                            <div class="bank-logo bank-ktb" title="ธนาคารกรุงไทย"></div>
+                            <div class="bank-logo bank-ttb" title="ธนาคารทหารไทยธนชาต"></div>
                         </div>
                     </div>
-                    <div class="save-qr-hint">บันทึก QR Code</div>
-                </div>
 
-                <div id="checkbox-hint-wrapper"
-                    style="position: relative; width: 100%; margin-top: 20px; overflow: visible; z-index: 1000;">
-                    <button id="paid-btn" class="pulse-premium"
-                        style="position: relative; background: rgba(16, 185, 129, 0.1); border: 1.5px solid rgba(16, 185, 129, 0.3); color: #f8fafc; padding: 12px 10px; border-radius: 12px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 8px; overflow: visible;"
-                        onmouseover="this.style.background='rgba(16, 185, 129, 0.2)'"
-                        onmouseout="this.style.background='rgba(16, 185, 129, 0.1)'"
-                        onclick="document.getElementById('paid-checkbox').checked = true; startVerification()">
-                        <span class="step-circle"
-                            style="position: absolute; top: -12px; left: -12px; background: #10b981; color: white; border: 2px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); animation: bounce-right 1.5s infinite alternate; z-index: 60;">3</span>
-
-                        <div
-                            style="position: relative; display: flex; align-items: center; justify-content: center; z-index: 2;">
-                            <div id="checkbox-hint"
-                                style="position: absolute; bottom: 120%; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; z-index: 100000; width: max-content; pointer-events: none;">
-                                <span
-                                    style="font-size: 0.75rem; color: white; background: #ef4444; padding: 3px 10px; border-radius: 12px; margin-bottom: 0px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">กดตรงนี้</span>
-                                <span
-                                    style="font-size: 1.5rem; line-height: 1; animation: bounce-updown 0.8s infinite alternate;">👇</span>
-                            </div>
-                            <input type="checkbox" id="paid-checkbox"
-                                style="width: 28px; height: 28px; accent-color: #34d399; pointer-events: none; margin-top: 2px; cursor: pointer;">
-                        </div>
-
-                        <span style="font-size: 0.95rem; white-space: nowrap;">ฉันโอนแล้วนะ <span
-                                style="font-size: 0.75rem; color: #94a3b8; font-weight: normal; margin-left: 2px;">(*ไม่ต้องส่งสลิป)</span></span>
-
-                        <!-- SVG Snake Border -->
-                        <div class="btn-border-container">
-                            <svg class="btn-border-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-                                <rect x="0" y="0" width="100" height="100" rx="4" class="btn-border-path" />
-                            </svg>
-                        </div>
+                    <button class="btn btn-success" id="confirm-payment-btn" onclick="confirmPayment()">
+                        ✅ ฉันโอนเงินเรียบร้อยแล้ว
                     </button>
+                    <p style="text-align: center; color: var(--text-muted); font-size: 0.8rem; margin-top: 8px;">
+                        (ไม่ต้องส่งสลิปเข้าหน้าแชทนะ)
+                    </p>
                 </div>
 
-                <!-- Free Mode Container -->
-                <div id="free-mode-container"
-                    style="display: none; flex-direction: column; align-items: center; justify-content: center; width: 100%; min-height: 250px; position: relative;">
-                    <div
-                        style="z-index: 1; text-align: center; color: #10b981; padding: 20px; background: rgba(16,185,129,0.1); border-radius: 20px; border: 1px solid rgba(16,185,129,0.2); animation: fadeIn 0.8s ease-out forwards; width: 90%;">
-                        <div
-                            style="font-size: 1.4rem; font-weight: bold; margin-bottom: 0px; background: linear-gradient(to right, #10b981, #34d399); -webkit-background-clip: text; background-clip: text; color: transparent;">
-                            ขอบคุณที่ใช้บริการ</div>
-                        <div style="font-size: 2.5rem; animation: pulse 1s infinite;">💖</div>
+                <!-- Success Section (Hidden by default) -->
+                <div id="success-section" class="hidden">
+                    <div class="success-message">
+                        <div class="success-icon">✨</div>
+                        <h3>ไฟล์พร้อมใช้งานแล้ว!</h3>
+                        <p style="color: var(--text-muted); margin-top: 10px;">คุณสามารถดาวน์โหลดไฟล์ได้แล้ว</p>
                     </div>
+
+                    <button class="btn btn-primary" id="download-btn" onclick="downloadFile()">
+                        💾 ดาวน์โหลดไฟล์
+                    </button>
+
+                    <div id="download-tutorial-container"></div>
                 </div>
 
-                <!-- Final Action Container (Shared) -->
-                <div id="final-action-wrapper" style="display: none; width: 100%;">
-                    <div class="final-download-container">
-                        <div style="color: #34d399; font-size: 0.85rem; font-weight: 600; margin-bottom: -5px;">
-                            ไฟล์ของคุณพร้อมแล้ว! ✨</div>
-                        <button id="download-btn" class="btn btn-primary"
-                            style="position: relative; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); width: 95%; padding: 16px 10px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-                            <span class="arrow-bounce-right" style="font-size: 1.1rem; line-height: 1;">👉</span>💾
-                            <span style="font-size: 1.1rem; font-weight: 800;">บันทึกรูปภาพ</span>
-                        </button>
-                        <div id="help-instruction-box"
-                            style="margin-top: 15px; text-align: left; background: rgba(0,0,0,0.15); border: 1px dashed rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 18px; color: #94a3b8; font-size: 0.85rem; width: 95%; max-width: 400px; line-height: 1.5; margin-left: auto; margin-right: auto;">
-                            <p
-                                style="margin: 0; color: #10b981; font-weight: 700; margin-bottom: 8px; font-size: 0.9rem;">
-                                * หากดาวน์โหลดไม่ได้</p>
-                            <div
-                                style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px; white-space: nowrap;">
-                                <span>-</span>
-                                <div><b>มือถือ:</b> ให้กดนิ้วจิ้มค้างที่ภาพ</div>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 10px; white-space: nowrap;">
-                                <span>-</span>
-                                <div><b>คอมพิวเตอร์:</b> กดคลิกขวาที่ภาพ</div>
-                            </div>
-                        </div>
+                <!-- Free Mode Section -->
+                <div id="free-section" class="hidden">
+                    <div class="success-message">
+                        <div class="success-icon">🎉</div>
+                        <h3>ไฟล์ของคุณพร้อมแล้ว!</h3>
                     </div>
+
+                    <button class="btn btn-primary" id="download-btn-free" onclick="downloadFile()">
+                        💾 ดาวน์โหลดไฟล์
+                    </button>
+
+                    <div id="download-tutorial-container-free"></div>
                 </div>
-
-                <div id="thank-you-msg" class="thank-you-text"
-                    style="display:none; text-align: center; color: #10b981; padding: 30px 10px; position: relative; min-height: 200px; flex-direction: column; align-items: center; justify-content: center;">
-                    <div style="z-index: 1; position: relative; width: 100%;">
-                        <div id="thx-content-wrapper">
-                            <div
-                                style="font-size: 1.2rem; margin-bottom: 5px; font-weight: bold; background: linear-gradient(to right, #10b981, #34d399); -webkit-background-clip: text; background-clip: text; color: transparent;">
-                                ขอบคุณที่ใช้บริการ</div>
-                            <div style="font-size: 2.5rem; animation: pulse 1s infinite;">💖</div>
-                        </div>
-                        <div id="final-action-placeholder"></div>
-                        <button id="show-slip-again-btn" onclick="showSlipAgain()"
-                            style="margin-top: 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 8px 16px; border-radius: 99px; cursor: pointer; font-size: 0.85rem; transition: 0.3s; display: inline-block;">
-                            🔄 แสดง QR โอนเงินอีกครั้ง
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="no-price-bar" class="payment-bar"
-            style="display: none; padding: 32px 24px; text-align: center; flex-direction: column; align-items: center; justify-content: center;">
-            <div style="margin-bottom: 24px; position: relative; width: 100%;">
-                <div style="color: #94a3b8; font-size: 0.85rem; font-weight: 600;">นี่คือเสี้ยวตัวอย่างชิ้นงานของคุณ
-                </div>
-            </div>
-
-            <div style="position: relative; width: 100%;">
-                <span id="step-2-circle-no-price" class="step-circle"
-                    style="position: absolute; top: -12px; left: -12px; background: #3b82f6; color: white; border: 2px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.3); animation: bounce-left 1.5s infinite alternate; z-index: 60; width: 34px; height: 34px; border-radius: 50%; font-weight: 800; display: flex; align-items: center; justify-content: center;">2</span>
-
-                <button onclick="smartClose()" class="pulse-premium"
-                    style="position: relative; background: linear-gradient(135deg, #10b981, #059669); border: none; color: #f8fafc; padding: 18px 20px; border-radius: 18px; cursor: pointer; width: 100%; font-weight: 800; transition: 0.3s; display: flex; justify-content: center; align-items: center; gap: 10px; box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4); font-size: 1.1rem; overflow: visible;">
-                    <span style="white-space: nowrap;">👌ถูกใจมั้ย! กลับไปโอนเงินกัน</span>
-                </button>
-            </div>
-
-            <div
-                style="margin-top: 25px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.08); border-radius: 12px; padding: 15px; color: #94a3b8; font-size: 0.8rem; line-height: 1.6; text-align: left; width: 100%;">
-                <p style="margin: 0; color: hwb(29 3% 3%); font-weight: 700; margin-bottom: 5px;">* คำชี้แจง</p>
-                - ภาพขนาดเต็มจะได้เมื่อชำระเงินแล้ว<br>
-                - ปิดหน้านี้ได้เลย! <b><u>กลับไปต่อกันที่หน้าแชท</u></b>
-            </div>
-        </div>
-
-
-        <!-- checkbox styles removed, scan-detect styles are in main <style> -->
-
-        <!-- Content Wrapper -->
-        <div class="content-wrapper">
-            <!-- Contextmenu enabled to allow long pressing -->
-            <div class="image-container" id="img-box" oncontextmenu="return false;"
-                style="padding: 0; flex-direction: column; position: relative; z-index: 10;">
-                <div id="preview-wrapper"
-                    style="padding: 20px; display: flex; justify-content: center; align-items: center; width: 100%; min-height: 150px; position: relative;">
-                    <div id="image-zoom-container" class="image-wrapper" onclick="openLightbox()"
-                        style="position: relative;">
-                        <img id="image" alt="กำลังเตรียมภาพของคุณ..."
-                            style="display: none; pointer-events: none; max-width: 100%; border-radius: 8px;">
-                    </div>
-
-                    <div id="pdf-preview" class="pdf-preview-box"
-                        style="position: relative; overflow: hidden; padding: 0; background: #1a1f35; width: 100%; display: none; justify-content: center; z-index: 1;">
-                        <canvas id="pdf-canvas"
-                            style="max-width: 100%; max-height: 45vh; height: auto; display: block; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);"></canvas>
-                        <div id="pdf-icon-fallback"
-                            style="display: none; flex-direction: column; align-items: center; gap: 15px; padding: 40px 20px;">
-                            <img id="pdf-icon" src="" alt="Icon" style="width: 80px;">
-                            <div style="font-weight: 600; font-size: 0.9rem; color: var(--text-muted);">ไฟล์เอกสาร
-                                (คลิก)</div>
-                        </div>
-                    </div>
-
-                    <!-- Layout Shared Protection Layers (Overlay both img and pdf) -->
-                    <div id="guard-layer" class="guard-layer" style="display: none; z-index: 100;"></div>
-                    <div id="security-grid" class="security-grid" style="z-index: 90;"></div>
-                    <div id="scan-line" class="scan-line-security" style="z-index: 95;"></div>
-
-                    <div class="lock-decor" id="lock-decor" style="z-index: 110;">
-                        <svg class="chain-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M0,50 L200,150 M0,150 L200,50 M50,0 L150,200 M150,0 L50,200"
-                                stroke="rgba(255,255,255,0.4)" stroke-width="6" stroke-dasharray="10,8" />
-                        </svg>
-                    </div>
-
-                    <div id="watermark" class="watermark" style="display: none; z-index: 85;">ภาพตัวอย่าง</div>
-                    <span id="step-1-circle" class="step-circle-standalone" style="z-index: 120;">1</span>
-                    <div id="zoom-hint" class="zoom-hint" style="display: none; z-index: 120;">🔍 ขยายภาพ</div>
-
-                    <div id="loading-text" style="color: var(--text-muted); text-align: center; padding: 20px;">
-                        กำลังดาวน์โหลดไฟล์...<br><small>(หากรอนานเกินไป กรุณารีเฟรชหน้าจอ)</small></div>
-                </div>
-
-                <!-- PDF specific menu below thumbnail -->
-                <div id="pdf-action-menu"
-                    style="display: none; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 25px; animation: fadeIn 0.8s ease-out;">
-                    <!-- Pagination Controls -->
-                    <div id="pdf-pagination"
-                        style="display: flex; align-items: center; gap: 20px; background: rgba(15, 23, 42, 0.6); padding: 8px 16px; border-radius: 99px; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(10px);">
-                        <button id="pdf-prev-btn" class="nav-btn"
-                            style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1.2rem; transition: color 0.3s; display: flex; align-items: center;">◀</button>
-                        <span id="pdf-page-num"
-                            style="color: #f8fafc; font-weight: 600; font-size: 0.9rem; min-width: 80px; text-align: center; letter-spacing: 1px;">หน้า
-                            1 / 1</span>
-                        <button id="pdf-next-btn" class="nav-btn"
-                            style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1.2rem; transition: color 0.3s; display: flex; align-items: center;">▶</button>
-                    </div>
-                </div>
-
-                <div id="hold-instruction" style="display: none;"></div>
-            </div>
-
-            <div class="actions" style="display: none;">
-                <!-- Original download btn removed from bottom -->
             </div>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <div class="lightbox-close">×</div>
+        <img id="lightbox-image" alt="Full View">
+    </div>
+
     <script>
-        // PDF.js worker configuration
+        // PDF.js Configuration
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    </script>
-    <script>// Fix: clean &amp; → & in URL before parsing
-        const cleanSearch = window.location.search.replace(/&amp;/gi, '&');
-        const params = new URLSearchParams(cleanSearch);
-        const fileUrl = params.get('d') ? atob(params.get('d')) : decodeURIComponent(params.get('url'));
-        const expiryTimestamp = parseInt(params.get('exp')) || 0;
-        const fileType = params.get('type') || 'img';
-        const isDonateMode = params.get('donate') === '1';
 
-        const countdownElement = document.getElementById('countdown');
-        const imageElement = document.getElementById('image');
-        const pdfPreview = document.getElementById('pdf-preview');
-        const pdfIcon = document.getElementById('pdf-icon');
+        // Parse URL Parameters
+        const urlParams = new URLSearchParams(window.location.search.replace(/&amp;/gi, '&'));
+        const fileUrl = urlParams.get('d') ? atob(urlParams.get('d')) : decodeURIComponent(urlParams.get('url'));
+        const expiryTimestamp = parseInt(urlParams.get('exp')) || 0;
+        const price = parseFloat(urlParams.get('price')) || 0;
+        const fileType = urlParams.get('type') || 'img';
+        const promptPayId = "0988573074";
+
+        console.log('Parsed URL:', fileUrl);
+        console.log('Price:', price);
+        console.log('Expiry:', new Date(expiryTimestamp));
+
+        // Elements
+        const imageContainer = document.getElementById('image-container');
+        const previewImage = document.getElementById('preview-image');
         const loadingText = document.getElementById('loading-text');
-        const downloadBtn = document.getElementById('download-btn');
-        const viewerContent = document.getElementById('viewer-content');
-        const timerBadge = document.getElementById('timer-badge');
+        const paymentSection = document.getElementById('payment-section');
+        const successSection = document.getElementById('success-section');
+        const freeSection = document.getElementById('free-section');
+        const priceDisplay = document.getElementById('price-display');
+        const countdownElement = document.getElementById('countdown');
 
-        let pdfDoc = null;
-        let pdfCurrentPage = 1;
-        let pdfTotalPages = 1;
-
-        function applyProtection(isPdf = false) {
-            const imgBox = document.getElementById('img-box');
-            const watermark = document.getElementById('watermark');
-            const guard = document.getElementById('guard-layer');
-            const secGrid = document.getElementById('security-grid');
-            const scanLine = document.getElementById('scan-line');
-            const lDecor = document.getElementById('lock-decor');
-
-            if (imgBox) imgBox.classList.add('pay-lock');
-            if (watermark) {
-                watermark.style.display = 'block';
-                if (isPdf) watermark.style.fontSize = '2.5rem';
-            }
-            if (guard) guard.style.display = 'block';
-            if (secGrid) secGrid.style.display = 'block';
-            if (scanLine) scanLine.style.display = 'block';
-            if (lDecor) lDecor.style.display = 'flex';
-        }
-
-        // Initial Protection Check (PROACTIVE) - Run as soon as we have params
-        const priceForGuard = parseFloat(params.get('price'));
-        const isPaidForGuard = localStorage.getItem('paid_' + fileUrl) === '1';
-        if (!isNaN(priceForGuard) && priceForGuard > 0 && !isPaidForGuard && !isDonateMode) {
-            // Apply protection IMMEDIATELY before loading starts
-            setTimeout(() => {
-                applyProtection(fileType === 'pdf');
-            }, 0);
-        }
-
-        // Hide zoom hint for PDF immediately
-        if (fileType === 'pdf' || fileType === 'file') {
-            document.title = "รับไฟล์เอกสาร - PrivateSend";
-            document.getElementById('zoom-hint').style.display = 'none';
-            document.getElementById('pdf-action-menu').style.display = 'flex';
-
-            // Update help instructions for PDF
-            const helpBox = document.getElementById('help-instruction-box');
-            if (helpBox) {
-                helpBox.innerHTML = `
-                    <p style="margin: 0; color: #10b981; font-weight: 700; margin-bottom: 8px; font-size: 0.9rem;">* หากดาวน์โหลดไม่ได้</p>
-                    <div style="display: flex; align-items: center; gap: 10px; white-space: nowrap;">
-                        <span>-</span>
-                        <div>กดที่เอกสาร > บันทึก(มุมขวาบน)</div>
-                    </div>
-                `;
-            }
-        }
-
-        // Helper for downloading files safely (especially on LINE App)
-        window.performDownload = function (btnElement, urlToDownload) {
-            const originalText = btnElement.innerHTML;
-            btnElement.innerHTML = '<span>⏳ กำลังเปิดไฟล์...</span>';
-
+        // Initialize
+        function init() {
+            // ตรวจสอบ In-App Browser และแสดงคำเตือน
             const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            const isInAppBrowser = /Line|FBAV|FBAN|Instagram/i.test(userAgent);
-
+            const isInAppBrowser = /Line|FBAV|FBAN|Instagram|Messenger|Fastwork/i.test(userAgent);
+            
             if (isInAppBrowser) {
-                // Force LINE/FB to bounce out to Safari/Chrome to allow saving natively.
-                const sep = urlToDownload.includes('?') ? '&' : '?';
-                window.location.href = urlToDownload + sep + 'openExternalBrowser=1';
-                btnElement.innerHTML = '<span>🚀 เปิดรูปในเบราว์เซอร์หลัก...</span>';
-                setTimeout(() => { btnElement.innerHTML = originalText; }, 4000);
+                showInAppBrowserWarning();
+            }
+
+            // Update price display
+            if (price > 0) {
+                priceDisplay.textContent = price.toFixed(2);
+                generateQRCode();
+            } else {
+                // Free mode
+                paymentSection.classList.add('hidden');
+                freeSection.classList.remove('hidden');
+                // แสดง Tutorial สำหรับ Free mode
+                setTimeout(() => showDownloadTutorial(), 100);
+            }
+
+            // Load file
+            loadFile();
+
+            // Start countdown
+            if (expiryTimestamp) {
+                updateCountdown();
+                setInterval(updateCountdown, 1000);
+            }
+
+            // แสดง Tutorial ถ้าจ่ายเงินแล้ว
+            if (price > 0 && localStorage.getItem('paid_' + fileUrl) === '1') {
+                setTimeout(() => showDownloadTutorial(), 100);
+            }
+        }
+
+        // แสดง Animation Tutorial ตามอุปกรณ์
+        function showDownloadTutorial() {
+            console.log('=== showDownloadTutorial called ===');
+            
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const isInAppBrowser = /Line|FBAV|FBAN|Instagram|Messenger|Fastwork/i.test(navigator.userAgent);
+            
+            console.log('Device detection:', { isMobile, isInAppBrowser });
+            
+            // หา container ที่จะแสดง
+            let container = null;
+            
+            const successSectionHidden = document.getElementById('success-section').classList.contains('hidden');
+            const freeSectionHidden = document.getElementById('free-section').classList.contains('hidden');
+            
+            console.log('Section visibility:', { successSectionHidden, freeSectionHidden });
+            
+            // ตรวจสอบว่า section ไหนกำลังแสดงอยู่
+            if (!successSectionHidden) {
+                container = document.getElementById('download-tutorial-container');
+                console.log('Using success-section container');
+            } else if (!freeSectionHidden) {
+                container = document.getElementById('download-tutorial-container-free');
+                console.log('Using free-section container');
+            }
+            
+            if (!container) {
+                console.error('❌ No visible container found!');
                 return;
             }
 
-            fetch(urlToDownload)
-                .then(response => response.blob())
+            console.log('✅ Container found:', container.id);
+
+            let tutorialHTML = '<div class="download-tutorial">';
+
+            if (isInAppBrowser) {
+                // สำหรับ In-App Browser
+                tutorialHTML += `
+                    <div class="tutorial-text">
+                        <strong>💡 หากกดปุ่มดาวน์โหลดไม่ได้:</strong>
+                        กดปุ่ม <strong>"⋯"</strong> หรือ <strong>"..."</strong> มุมบนขวา<br>
+                        → เลือก <strong>"เปิดในเบราว์เซอร์"</strong> หรือ <strong>"Open in Browser"</strong>
+                    </div>
+                `;
+            } else if (isMobile) {
+                // สำหรับ Mobile Browser
+                tutorialHTML += `
+                    <div class="tutorial-text">
+                        <strong>💡 หากกดปุ่มดาวน์โหลดไม่ได้:</strong>
+                        <strong>กดนิ้วค้าง</strong>ที่รูปภาพด้านซ้าย<br>
+                        → เลือก <strong>"บันทึกรูปภาพ"</strong> หรือ <strong>"Save Image"</strong>
+                    </div>
+                `;
+            } else {
+                // สำหรับ Desktop
+                tutorialHTML += `
+                    <div class="tutorial-text">
+                        <strong>💡 หากกดปุ่มดาวน์โหลดไม่ได้:</strong>
+                        <strong>คลิกขวา</strong>ที่รูปภาพด้านซ้าย<br>
+                        → เลือก <strong>"Save Image As..."</strong> หรือ <strong>"บันทึกรูปภาพเป็น..."</strong>
+                    </div>
+                `;
+            }
+
+            tutorialHTML += '</div>';
+            container.innerHTML = tutorialHTML;
+            
+            console.log('✅ Tutorial HTML injected');
+            console.log('Tutorial type:', isMobile ? 'Mobile' : isInAppBrowser ? 'In-App Browser' : 'Desktop');
+        }
+
+        // Show In-App Browser Warning
+        function showInAppBrowserWarning() {
+            const warningBanner = document.createElement('div');
+            warningBanner.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                background: linear-gradient(135deg, #f59e0b, #d97706);
+                color: white;
+                padding: 12px 20px;
+                text-align: center;
+                font-size: 0.9rem;
+                font-weight: 600;
+                z-index: 1000;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                animation: slideDown 0.5s ease;
+            `;
+            warningBanner.innerHTML = `
+                ⚠️ <strong>แนะนำ:</strong> กดปุ่ม "..." มุมบนขวา → เปิดในเบราว์เซอร์ เพื่อดาวน์โหลดได้สะดวกกว่า
+            `;
+            document.body.insertBefore(warningBanner, document.body.firstChild);
+            document.querySelector('.container').style.marginTop = '60px';
+
+            // Add animation
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideDown {
+                    from { transform: translateY(-100%); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // Generate QR Code for PromptPay
+        function generateQRCode() {
+            const payload = generatePromptPayPayload(promptPayId, price);
+            const qrDisplay = document.getElementById('qrcode-display');
+            
+            // Clear และสร้าง QR Code ธรรมดา
+            qrDisplay.innerHTML = '';
+            
+            new QRCode(qrDisplay, {
+                text: payload,
+                width: 200,
+                height: 200,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
+
+        // PromptPay Payload Generator
+        function generatePromptPayPayload(id, amount) {
+            const crc16 = (data) => {
+                let crc = 0xFFFF;
+                for (let i = 0; i < data.length; i++) {
+                    crc ^= data.charCodeAt(i) << 8;
+                    for (let j = 0; j < 8; j++) {
+                        crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) & 0xFFFF : (crc << 1) & 0xFFFF;
+                    }
+                }
+                return crc.toString(16).toUpperCase().padStart(4, '0');
+            };
+
+            let target = id.replace(/[^0-9]/g, '');
+            if (target.length === 10 && target.startsWith('0')) {
+                target = '0066' + target.substring(1);
+            }
+
+            let merchantInfo = '0016A000000677010111' + '01' + ('00' + target.length).slice(-2) + target;
+            let payload = '000201010211' + '29' + ('00' + merchantInfo.length).slice(-2) + merchantInfo + '5802TH5303764';
+
+            if (!isNaN(amount) && amount > 0) {
+                const amtStr = amount.toFixed(2);
+                payload += '54' + ('00' + amtStr.length).slice(-2) + amtStr;
+            }
+
+            payload += '6304';
+            return payload + crc16(payload);
+        }
+
+        // Load File (Image/PDF)
+        function loadFile() {
+            if (!fileUrl) {
+                showError('ไม่พบลิงก์', 'กรุณาตรวจสอบ URL');
+                return;
+            }
+
+            console.log('Original fileUrl:', fileUrl);
+
+            // Handle different URL formats
+            let downloadUrl = fileUrl;
+            let previewUrl = fileUrl;
+            
+            // TmpFiles.org format
+            if (fileUrl.includes('tmpfiles.org')) {
+                // URL format: https://tmpfiles.org/wuwaYvwgVKsn/filename.jpg (landing page)
+                // Need to use: https://tmpfiles.org/dl/wuwaYvwgVKsn (direct download)
+                
+                let fileId = null;
+                
+                // Extract file ID from different possible formats
+                if (fileUrl.includes('/dl/')) {
+                    // Already has /dl/ - extract ID
+                    const match = fileUrl.match(/\/dl\/([^\/\?#]+)/);
+                    if (match) fileId = match[1];
+                } else {
+                    // Regular format: https://tmpfiles.org/ID/filename.jpg
+                    const match = fileUrl.match(/tmpfiles\.org\/([^\/\?#]+)/);
+                    if (match) fileId = match[1];
+                }
+                
+                if (fileId) {
+                    // Use /dl/ endpoint for direct access
+                    previewUrl = `https://tmpfiles.org/dl/${fileId}`;
+                    downloadUrl = `https://tmpfiles.org/dl/${fileId}`;
+                    console.log('TmpFiles converted:', { original: fileUrl, fileId, directUrl: previewUrl });
+                }
+            }
+            // Litterbox format: https://litter.catbox.moe/abc123.jpg
+            else if (fileUrl.includes('litter.catbox.moe') || fileUrl.includes('catbox.moe')) {
+                previewUrl = fileUrl;
+                downloadUrl = fileUrl;
+                console.log('Litterbox URL:', downloadUrl);
+            }
+            // Generic http/https URL
+            else if (fileUrl.startsWith('http')) {
+                previewUrl = fileUrl;
+                downloadUrl = fileUrl;
+                console.log('Generic URL:', downloadUrl);
+            }
+
+            // Store download URL globally for later use
+            window.__downloadUrl = downloadUrl;
+
+            // Load image directly
+            previewImage.src = previewUrl + (previewUrl.includes('?') ? '&' : '?') + 'v=' + Date.now();
+            
+            previewImage.onload = function() {
+                console.log('✅ Image loaded successfully');
+                loadingText.classList.add('hidden');
+                previewImage.classList.remove('hidden');
+                
+                // เช็คว่าต้องป้องกันหรือไม่
+                applyProtection();
+            };
+            
+            previewImage.onerror = function() {
+                console.error('❌ Image load failed for URL:', previewUrl);
+                showError('โหลดไฟล์ไม่สำเร็จ', 'ลิงก์อาจหมดอายุหรือถูกลบแล้ว');
+            };
+        }
+
+        // ฟังก์ชันป้องกันดาวน์โหลด
+        function applyProtection() {
+            const isPaid = localStorage.getItem('paid_' + fileUrl) === '1';
+            const isFree = price === 0;
+            
+            console.log('Protection check:', { price, isPaid, isFree });
+            
+            if (!isFree && !isPaid) {
+                // ยังไม่จ่ายเงิน - เปิดการป้องกัน
+                console.log('🔒 Applying protection');
+                imageContainer.classList.add('protected');
+                document.getElementById('protection-overlay').classList.add('active');
+                previewImage.style.pointerEvents = 'none';
+                previewImage.ondragstart = () => false;
+                previewImage.oncontextmenu = () => false;
+            } else {
+                // จ่ายเงินแล้วหรือฟรี - ปิดการป้องกัน
+                console.log('✅ Removing protection');
+                removeProtection();
+            }
+        }
+
+        // ฟังก์ชันลบการป้องกัน
+        function removeProtection() {
+            imageContainer.classList.remove('protected');
+            document.getElementById('protection-overlay').classList.remove('active');
+            previewImage.style.pointerEvents = 'auto';
+            previewImage.ondragstart = null;
+            previewImage.oncontextmenu = null;
+        }
+
+        // จัดการการคลิกที่รูป
+        function handleImageClick() {
+            const isPaid = localStorage.getItem('paid_' + fileUrl) === '1';
+            const isFree = price === 0;
+            
+            if (!isFree && !isPaid) {
+                // ยังไม่จ่ายเงิน - แสดง alert
+                alert('🔒 กรุณาชำระเงินก่อนดูรูปแบบเต็ม');
+                return;
+            }
+            
+            // จ่ายเงินแล้ว - เปิด Lightbox พร้อมลายน้ำ
+            openLightbox();
+        }
+
+        // Confirm Payment
+        function confirmPayment() {
+            localStorage.setItem('paid_' + fileUrl, '1');
+            paymentSection.classList.add('hidden');
+            successSection.classList.remove('hidden');
+            
+            // ลบการป้องกันหลังจ่ายเงิน
+            removeProtection();
+            
+            // แสดง Tutorial หลังจากชำระเงินเสร็จ
+            setTimeout(() => {
+                showDownloadTutorial();
+            }, 100);
+        }
+
+        // Download File
+        function downloadFile() {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ กำลังดาวน์โหลด...';
+
+            // Use the download URL we stored during loadFile
+            let downloadUrl = window.__downloadUrl || fileUrl;
+            
+            console.log('Downloading from:', downloadUrl);
+
+            // ตรวจสอบว่าเป็น In-App Browser หรือไม่
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            const isInAppBrowser = /Line|FBAV|FBAN|Instagram|Messenger|Fastwork/i.test(userAgent);
+
+            if (isInAppBrowser) {
+                // สำหรับ In-App Browser: เปิดใน Browser ภายนอก
+                btn.innerHTML = '🌐 กำลังเปิดในเบราว์เซอร์...';
+                
+                // พยายามเปิดใน default browser
+                window.location.href = downloadUrl;
+                
+                setTimeout(() => {
+                    btn.innerHTML = '💡 กรุณาเลือก "เปิดในเบราว์เซอร์"';
+                    setTimeout(() => btn.innerHTML = originalText, 4000);
+                }, 1500);
+                return;
+            }
+
+            // สำหรับ Browser ปกติ: ดาวน์โหลดตรง
+            fetch(downloadUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        console.error('Download fetch failed:', response.status, response.statusText);
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.blob();
+                })
                 .then(blob => {
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.style.display = 'none';
                     a.href = url;
-                    const fileName = urlToDownload.split('/').pop().split('?')[0] || 'image_download.jpg';
-                    a.download = fileName;
+                    
+                    // Extract filename from URL
+                    let filename = 'download.jpg';
+                    const urlParts = downloadUrl.split('/');
+                    const lastPart = urlParts[urlParts.length - 1].split('?')[0];
+                    if (lastPart && lastPart.includes('.')) {
+                        filename = lastPart;
+                    } else {
+                        // Use file type from params
+                        filename = 'file.' + (fileType === 'pdf' ? 'pdf' : 'jpg');
+                    }
+                    
+                    a.download = filename;
                     document.body.appendChild(a);
                     a.click();
-                    window.URL.revokeObjectURL(url);
                     document.body.removeChild(a);
-                    btnElement.innerHTML = '<span>✅ ดาวน์โหลดสำเร็จ!</span>';
-                    setTimeout(() => { btnElement.innerHTML = originalText; }, 3000);
-
-                    if (isDonateMode && typeof showReviewPopup === 'function') {
-                        setTimeout(showReviewPopup, 800);
-                    }
+                    window.URL.revokeObjectURL(url);
+                    btn.innerHTML = '✅ ดาวน์โหลดสำเร็จ!';
+                    setTimeout(() => btn.innerHTML = originalText, 3000);
                 })
                 .catch(err => {
                     console.error('Download failed:', err);
-                    window.open(urlToDownload, '_blank');
-                    btnElement.innerHTML = '<span>⚠️ เปิดไฟล์ในแท็บใหม่</span>';
-                    setTimeout(() => { btnElement.innerHTML = originalText; }, 3000);
-                });
-        };
-
-        function showError(title, msg, showRawLink = false) {
-            viewerContent.innerHTML = `
-                <div class="error-state">
-                    <h2 style="font-size: 3rem; margin-bottom: 20px;">${title === 'ลิงก์หมดอายุ' ? '⌛' : '⚠️'}</h2>
-                    <h2>${title}</h2>
-                    <p style="color: var(--text-muted); margin-bottom: 25px;">${msg}</p>
-                    <div style="display: flex; flex-direction: column; gap: 12px; align-items: center;">
-                        ${showRawLink ? `<a href="${fileUrl}" target="_blank" class="btn btn-primary" style="display: inline-flex; width: auto; padding: 12px 30px;">เปิดดูไฟล์โดยตรง</a>` : ''}
-                    </div>
-                </div>
-            `;
-            countdownElement.textContent = title;
-            countdownElement.style.color = 'var(--danger)';
-        }
-
-        if (!fileUrl || fileUrl === 'null' || fileUrl === 'undefined') {
-            showError('ไม่พบลิงก์', 'พารามิเตอร์ URL ไม่ถูกต้องหรือสูญหาย');
-        } else {
-            const isTempFile = fileUrl.includes('tempfile.org');
-            let previewUrl = fileUrl;
-            let downloadUrl = fileUrl;
-
-            // จัดการลิงก์สำหรับ TempFile
-            if (isTempFile) {
-                const parts = fileUrl.split('/').filter(Boolean);
-                const fileId = parts[parts.length - 1];
-                previewUrl = `https://tempfile.org/${fileId}/preview`;
-                downloadUrl = `https://tempfile.org/${fileId}/download`;
-            }
-
-            if (fileType === 'pdf' || fileType === 'file') {
-                document.title = "รับไฟล์ - PrivateSend";
-                pdfIcon.src = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM5NGEzYjgiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxyZWN0IHg9IjMiIHk9IjMiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgcng9IjIiIHJ5PSIyIi8+PGNpcmNsZSBjeD0iOC41IiBjeT0iOC41IiByPSIxLjUiLz48cGF0aCBkPSJNMjEgMTVMMTYgMTBMNSAyMSIvPjwvc3ZnPg==";
-                pdfPreview.style.display = 'flex';
-                loadingText.style.display = 'none';
-
-                // Fix: Target the second span to avoid overwriting the arrow icon and creating double text
-                const btnSpans = downloadBtn.querySelectorAll('span');
-                if (btnSpans.length > 1) {
-                    btnSpans[1].textContent = 'ดาวน์โหลดไฟล์';
-                } else {
-                    downloadBtn.textContent = 'ดาวน์โหลดไฟล์';
-                }
-
-                // --- PDF Rendering Logic ---
-                if (fileType === 'pdf') {
-                    const canvas = document.getElementById('pdf-canvas');
-                    const fallback = document.getElementById('pdf-icon-fallback');
-                    const pageDisplay = document.getElementById('pdf-page-num');
-                    const prevBtn = document.getElementById('pdf-prev-btn');
-                    const nextBtn = document.getElementById('pdf-next-btn');
-
-                    function renderPdfPage(num) {
-                        pdfDoc.getPage(num).then(page => {
-                            const viewport = page.getViewport({ scale: 1.5 });
-                            const context = canvas.getContext('2d');
-                            const containerWidth = pdfPreview.clientWidth || 400;
-                            const scale = containerWidth / viewport.width;
-                            const scaledViewport = page.getViewport({ scale: scale * 1.5 });
-
-                            canvas.height = scaledViewport.height;
-                            canvas.width = scaledViewport.width;
-
-                            page.render({
-                                canvasContext: context,
-                                viewport: scaledViewport
-                            }).promise.then(() => {
-                                console.log('PDF Page ' + num + ' rendered');
-                                canvas.style.display = 'block';
-                                fallback.style.display = 'none';
-                                pageDisplay.textContent = `หน้า ${num} / ${pdfTotalPages}`;
-
-                                // Maintain protection layers
-                                if (document.getElementById('img-box').classList.contains('pay-lock')) {
-                                    applyProtection(true);
-                                }
-                                setTimeout(updateConnections, 100);
-                            });
-                        });
-                    }
-
-                    pdfjsLib.getDocument(downloadUrl).promise.then(pdf => {
-                        pdfDoc = pdf;
-                        pdfTotalPages = pdf.numPages;
-                        pdfCurrentPage = 1;
-                        renderPdfPage(pdfCurrentPage);
-                    }).catch(err => {
-                        console.warn('PDF.js failed to render:', err);
-                        canvas.style.display = 'none';
-                        fallback.style.display = 'flex';
-                        fallback.querySelector('div').textContent = "ไฟล์เอกสาร PDF (คลิก)";
-                        document.getElementById('pdf-pagination').style.display = 'none';
-                    });
-
-                    prevBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        if (pdfCurrentPage <= 1) return;
-                        pdfCurrentPage--;
-                        renderPdfPage(pdfCurrentPage);
-                    };
-
-                    nextBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        if (pdfCurrentPage >= pdfTotalPages) return;
-                        pdfCurrentPage++;
-                        renderPdfPage(pdfCurrentPage);
-                    };
-                } else {
-                    document.getElementById('pdf-canvas').style.display = 'none';
-                    document.getElementById('pdf-icon-fallback').style.display = 'flex';
-                    document.getElementById('pdf-icon-fallback').querySelector('div').textContent = "ไฟล์ทั่วไป (คลิก)";
-                }
-
-                pdfPreview.onclick = () => {
-                    if (document.getElementById('img-box').classList.contains('pay-lock')) return;
+                    // Fallback: เปิดในแท็บใหม่
                     window.open(downloadUrl, '_blank');
-                };
-            }
-
-            else {
-                // สำหรับรูปภาพ
-                const cacheBuster = previewUrl.includes('?') ? '&' : '?';
-                imageElement.src = previewUrl + cacheBuster + 'v=' + Date.now();
-
-                window.startFadeTimer = function () {
-                    console.log("Fade timer started"); // To prevent reference error
-                };
-
-                imageElement.onload = function () {
-                    loadingText.style.display = 'none';
-                    imageElement.style.display = 'block';
-                    pdfPreview.style.display = 'none';
-
-                    // Update connections
-                    setTimeout(updateConnections, 50);
-                    setTimeout(updateConnections, 500);
-                    setTimeout(updateConnections, 1500);
-
-                    // Re-check zoom if already paid
-                    const priceParam = params.get('price');
-                    const isPaid = localStorage.getItem('paid_' + fileUrl) === '1';
-                    if (priceParam === '0' || (priceParam !== null && isPaid) || isDonateMode) {
-                        const zoomCont = document.getElementById('image-zoom-container');
-                        if (zoomCont) {
-                            zoomCont.style.pointerEvents = 'auto';
-                            zoomCont.style.cursor = 'zoom-in';
-                        }
-                    }
-                };
-
-                imageElement.onerror = () => {
-                    // Fallback ถ้าโหลดพรีวิวไม่ขึ้น
-                    imageElement.style.display = 'none';
-                    pdfIcon.src = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSI4MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2MzY2ZjEiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxyZWN0IHg9IjMiIHk9IjMiIHdpZHRoPSIxOCIgaGVpZ2h0PSIxOCIgcng9IjIiIHJ5PSIyIi8+PGNpcmNsZSBjeD0iOC41IiBjeT0iOC41IiByPSIxLjUiLz48cGF0aCBkPSJNMjEgMTVMMTYgMTBMNSAyMSIvPjwvc3ZnPg==";
-                    pdfPreview.style.display = 'flex';
-                    loadingText.style.display = 'none';
-                    pdfPreview.querySelector('div').textContent = "โหลดภาพพรีวิวไม่สำเร็จ (คลิกเพื่อเปิดดู)";
-                    pdfPreview.onclick = () => window.open(downloadUrl, '_blank');
-                };
-            }
-
-
-
-
-            // Payment Bar Initialization
-            const priceParam = params.get('price');
-            const price = parseFloat(priceParam);
-
-            // Function to download QR Code (with CORS workaround)
-            window.downloadQR = async function () {
-                const qrImg = document.getElementById('payment-qrcode');
-                if (qrImg && qrImg.src) {
-                    try {
-                        // Fetch image as blob to bypass CORS restrictions
-                        const response = await fetch(qrImg.src);
-                        const blob = await response.blob();
-                        const url = window.URL.createObjectURL(blob);
-
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = `QR_Code_${price}THB.png`;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-
-                        // Clean up blob URL
-                        window.URL.revokeObjectURL(url);
-                    } catch (error) {
-                        console.error('Failed to download QR code:', error);
-                        // Fallback: open in new tab
-                        window.open(qrImg.src, '_blank');
-                    }
-                }
-            };
-
-
-
-            // --- PromptPay Generator Logic ---
-            function crc16(data) {
-                let crc = 0xFFFF;
-                for (let i = 0; i < data.length; i++) {
-                    crc ^= data.charCodeAt(i) << 8;
-                    for (let j = 0; j < 8; j++) {
-                        if ((crc & 0x8000) > 0) crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
-                        else crc = (crc << 1) & 0xFFFF;
-                    }
-                }
-                return crc.toString(16).toUpperCase().padStart(4, '0');
-            }
-
-            function generatePayload(id, amount) {
-                let target = id.replace(/[^0-9]/g, '');
-                if (target.length === 10 && target.startsWith('0')) {
-                    target = '0066' + target.substring(1);
-                }
-
-                let merchantInfo = '0016A000000677010111' + '01' + ('00' + target.length).slice(-2) + target;
-                let merchantInfoLen = ('00' + merchantInfo.length).slice(-2);
-                let payload = '000201' + '010211' + '29' + merchantInfoLen + merchantInfo + '5802TH' + '5303764'; // 010211 = Reusable, 010212 = One-time
-
-                let amtVal = parseFloat(amount);
-                if (!isNaN(amtVal) && amtVal > 0) {
-                    let amtStr = amtVal.toFixed(2);
-                    payload += '54' + ('00' + amtStr.length).slice(-2) + amtStr;
-                }
-
-                payload += '6304';
-                return payload + crc16(payload);
-            }
-
-            // === FREE DOWNLOAD MODE (price=0) ===
-            const isFreeMode = priceParam !== null && !isNaN(price) && price === 0;
-            const isNoPriceMode = priceParam === null;
-
-            // === DONATE MODE ===
-            if (isDonateMode) {
-                document.title = 'ดาวน์โหลดไฟล์ - DonateShare';
-                document.querySelector('.logo').textContent = '💝 เพราะรักจึงแบ่งปัน';
-
-                // Remove ALL protection layers (no watermark)
-                const guard = document.getElementById('guard-layer');
-                const watermark = document.getElementById('watermark');
-                const imgBox = document.getElementById('img-box');
-                const img = document.getElementById('image');
-                const step1 = document.getElementById('step-1-circle');
-                if (guard) guard.style.display = 'none';
-                if (watermark) watermark.style.display = 'none';
-                if (document.getElementById('security-grid')) document.getElementById('security-grid').style.display = 'none';
-                if (document.getElementById('scan-line')) document.getElementById('scan-line').style.display = 'none';
-                if (document.getElementById('lock-decor')) document.getElementById('lock-decor').style.display = 'none';
-                if (imgBox) { imgBox.removeAttribute('oncontextmenu'); imgBox.classList.remove('pay-lock'); }
-                if (img) {
-                    img.style.pointerEvents = 'auto';
-                    img.style.webkitTouchCallout = 'default';
-                }
-                if (step1) step1.style.display = 'none';
-
-                // Enable zoom
-                const zoomCont = document.getElementById('image-zoom-container');
-                const zHint = document.getElementById('zoom-hint');
-                if (zoomCont) { zoomCont.style.pointerEvents = 'auto'; zoomCont.style.cursor = 'zoom-in'; }
-                if (zHint) { zHint.style.display = 'flex'; zHint.innerHTML = '🔍 ขยายภาพ'; }
-
-                // Hide existing bars
-                const paymentBar = document.getElementById('payment-bar');
-                const noPriceBar = document.getElementById('no-price-bar');
-                if (paymentBar) paymentBar.style.display = 'none';
-                if (noPriceBar) noPriceBar.style.display = 'none';
-
-                // Build donate bar (right panel) - Now Mission Bar
-                const donateBar = document.createElement('div');
-                donateBar.className = 'payment-bar';
-                donateBar.id = 'donate-bar';
-                donateBar.style.display = 'block';
-                donateBar.innerHTML = `
-                    <div class="payment-body" style="position: relative; padding: 24px 20px;">
-                        <canvas id="donate-confetti-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;"></canvas>
-
-                        <!-- Download Section -->
-                        <div style="margin-bottom: 20px; width: 100%;">
-                            <div style="color: #34d399; font-size: 0.85rem; font-weight: 600; margin-bottom: 10px;">ไฟล์ของคุณพร้อมแล้ว! ✨</div>
-                            <button id="donate-download-btn" style="position: relative; background: linear-gradient(135deg, #10b981, #059669); border: none; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); width: 100%; padding: 14px 10px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 99px; color: white; font-weight: 700; font-size: 1.05rem; cursor: pointer; transition: all 0.3s;">
-                                <span class="arrow-bounce-right" style="font-size: 1.1rem; line-height: 1;">👉</span>💾
-                                <span style="font-size: 1rem; font-weight: 800;">${(fileType === 'pdf' || fileType === 'file') ? 'ดาวน์โหลดไฟล์' : 'บันทึกรูปภาพ'}</span>
-                            </button>
-                            <div id="donate-help-box" style="margin-top: 10px; text-align: left; background: rgba(0,0,0,0.15); border: 1px dashed rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 14px; color: #94a3b8; font-size: 0.8rem; width: 100%; line-height: 1.4;">
-                                <p style="margin: 0; color: #10b981; font-weight: 700; margin-bottom: 6px; font-size: 0.85rem;">* หากดาวน์โหลดไม่ได้</p>
-                                ${(fileType === 'pdf' || fileType === 'file') ?
-                        `<div style="display: flex; align-items: center; gap: 8px;"><span>-</span><div>กดที่เอกสาร > บันทึก(มุมขวาบน)</div></div>` :
-                        `<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;"><span>-</span><div><b>มือถือ:</b> ให้กดนิ้วจิ้มค้างที่ภาพ</div></div>
-                                     <div style="display: flex; align-items: center; gap: 8px;"><span>-</span><div><b>คอมพิวเตอร์:</b> กดคลิกขวาที่ภาพ</div></div>`
-                    }
-                            </div>
-                        </div>
-
-                        <!-- Divider -->
-                        <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.08); margin: 15px 0 20px;"></div>
-
-                        <!-- Contact Section -->
-                        <div id="contact-content" style="width: 100%; opacity: 0; transition: opacity 1s ease; text-align: center;">
-                            <div style="background: linear-gradient(145deg, rgba(29, 78, 216, 0.15), rgba(30, 64, 175, 0.05)); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px; padding: 20px 15px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); backdrop-filter: blur(10px);">
-                                <div style="display: flex; justify-content: center; margin-bottom: 12px;">
-                                    <div style="background: rgba(59, 130, 246, 0.2); width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);">
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                                    </div>
-                                </div>
-                                <h3 style="color: #60a5fa; font-size: 1.1rem; font-weight: 800; margin-bottom: 6px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">อยากแก้ไขภาพนี้เพิ่มเติม?</h3>
-                                <div style="color: #cbd5e1; font-size: 0.85rem; margin-bottom: 15px; line-height: 1.5;">
-                                    มาแก้ไขกันต่อแบบละเอียด<br>ในราคาเพียง <span style="color: #fbce03; font-weight: 800; font-size: 0.95rem;">60 บาท</span><br>
-                                </div>
-                                <a href="https://www.facebook.com/ImageTextEditor" target="_blank" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; text-decoration: none; padding: 12px 20px; border-radius: 99px; font-weight: 700; font-size: 0.95rem; width: 100%; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4); transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 0.5px;">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                                    ติดต่อฉันที่เพจได้เลย
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                // Insert mission bar into main content
-                const mainContent = document.querySelector('.main-content');
-                if (mainContent && donateBar) {
-                    mainContent.appendChild(donateBar);
-                    mainContent.classList.add('connected-state');
-                }
-
-                // Download button click handler
-                const donateDlBtn = document.getElementById('donate-download-btn');
-                if (donateDlBtn) {
-                    donateDlBtn.onclick = () => window.performDownload(donateDlBtn, downloadUrl);
-                }
-
-                // Initial Confetti
-                setTimeout(() => {
-                    const donateCanvas = document.getElementById('donate-confetti-canvas');
-                    if (typeof confetti === 'function' && donateCanvas) {
-                        const myConfetti = confetti.create(donateCanvas, { resize: true, useWorker: true });
-                        myConfetti({ particleCount: 60, spread: 50, origin: { y: 0.5 }, colors: ['#fbce03', '#ffffff', '#f59e0b'] });
-                    }
-                }, 600);
-
-                // Delay fade-in for Contact Content by 2.5 seconds
-                setTimeout(() => {
-                    const contactBox = document.getElementById('contact-content');
-                    if (contactBox) contactBox.style.opacity = '1';
-                }, 2500);
-
-                // --- Donate Countdown ---
-                if (expiryTimestamp) {
-                    function updateDonateCountdown() {
-                        const now = Date.now();
-                        const timeLeft = expiryTimestamp - now;
-                        if (timeLeft <= 0) {
-                            const db = document.getElementById('donate-bar');
-                            if (db) db.style.display = 'none';
-                            showError('ลิงก์หมดอายุ', 'ไฟล์ของคุณถูกลบออกจากระบบเรียบร้อยแล้ว');
-                            return;
-                        }
-                        const h = String(Math.floor(timeLeft / 36e5)).padStart(2, '0');
-                        const m = String(Math.floor((timeLeft % 36e5) / 6e4)).padStart(2, '0');
-                        const s = String(Math.floor((timeLeft % 6e4) / 1e3)).padStart(2, '0');
-                        countdownElement.textContent = `ไฟล์จะลบใน: ${h}:${m}:${s}`;
-                    }
-                    updateDonateCountdown();
-                    setInterval(updateDonateCountdown, 1000);
-                }
-
-            } else if (isNoPriceMode) {
-                const noPriceBar = document.getElementById('no-price-bar');
-                const mainContent = document.querySelector('.main-content');
-                const svg = document.getElementById('connection-svg');
-                if (noPriceBar) {
-                    noPriceBar.style.display = 'flex';
-                    if (mainContent) mainContent.classList.add('connected-state');
-                }
-                if (svg) {
-                    svg.style.display = 'block';
-                    svg.style.opacity = '1';
-                }
-            } else if (isFreeMode) {
-                // Free mode logic for connection and confetti
-                setTimeout(() => {
-                    const dlBtnStep = document.querySelector('#download-btn .step-circle');
-                    if (dlBtnStep) dlBtnStep.style.display = 'none';
-
-                    const sharedCanvas = document.getElementById('payment-confetti-canvas');
-                    if (typeof confetti === 'function' && sharedCanvas) {
-                        const myConfetti = confetti.create(sharedCanvas, {
-                            resize: true,
-                            useWorker: true
-                        });
-                        myConfetti({
-                            particleCount: 80,
-                            spread: 60,
-                            origin: { y: 0.5 },
-                            colors: ['#10b981', '#34d399', '#ffffff']
-                        });
-                    }
-                }, 500);
-
-                // Show payment bar but update it for free mode
-                const paymentBar = document.getElementById('payment-bar');
-                if (paymentBar) {
-                    paymentBar.style.display = 'block';
-                    // Hide payment elements
-                    const header = paymentBar.querySelector('.payment-header');
-                    const amtBox = document.getElementById('payment-amount-box');
-                    const qrWrapper = document.getElementById('qr-wrapper');
-                    const cbHint = document.getElementById('checkbox-hint-wrapper');
-                    const freeContainer = document.getElementById('free-mode-container');
-                    const finalAction = document.getElementById('final-action-wrapper');
-
-                    if (header) header.style.display = 'none';
-                    if (amtBox) amtBox.style.display = 'none';
-                    if (qrWrapper) qrWrapper.style.display = 'none';
-                    if (cbHint) cbHint.style.display = 'none';
-
-                    // Step 1: Show Thank you first
-                    if (freeContainer) {
-                        freeContainer.style.display = 'flex';
-                        freeContainer.style.opacity = '1';
-                    }
-                    if (finalAction) finalAction.style.display = 'none';
-
-                    // Step 2: After 2 seconds, fade out thank you and show record button
-                    setTimeout(() => {
-                        if (freeContainer) {
-                            freeContainer.classList.add('fade-out');
-                            setTimeout(() => {
-                                freeContainer.style.display = 'none';
-                                if (finalAction) {
-                                    finalAction.style.display = 'block';
-                                    finalAction.classList.add('fade-in-msg'); // reuse existing fade
-                                }
-                            }, 500);
-                        } else {
-                            if (finalAction) finalAction.style.display = 'block';
-                        }
-                    }, 2000);
-
-                    // Add connection state for free mode too
-                    const mainContent = document.querySelector('.main-content');
-                    if (mainContent) mainContent.classList.add('connected-state');
-                }
-
-                // Remove all protection layers immediately
-                const guard = document.getElementById('guard-layer');
-                const watermark = document.getElementById('watermark');
-                const imgBox = document.getElementById('img-box');
-                const img = document.getElementById('image');
-                const badge = document.querySelector('.status-badge');
-                const step1 = document.getElementById('step-1-circle');
-
-                if (guard) guard.style.display = 'none';
-                if (watermark) watermark.style.display = 'none';
-                if (document.getElementById('security-grid')) document.getElementById('security-grid').style.display = 'none';
-                if (document.getElementById('scan-line')) document.getElementById('scan-line').style.display = 'none';
-                const lDecor = document.getElementById('lock-decor');
-                if (lDecor) lDecor.style.display = 'none';
-
-                if (imgBox) {
-                    imgBox.removeAttribute('oncontextmenu');
-                    imgBox.classList.remove('pay-lock');
-                }
-                if (img) {
-                    img.style.pointerEvents = 'auto';
-                    img.style.webkitTouchCallout = 'default';
-                }
-                if (badge) badge.style.display = 'none';
-                if (step1) step1.style.display = 'none';
-
-                // Set download button to direct download
-                const dBtn = document.getElementById('download-btn');
-                if (dBtn) {
-                    dBtn.onclick = () => window.performDownload(dBtn, downloadUrl);
-                }
-            } else if (priceParam && !isNaN(price) && price > 0) {
-                // Initial hide for instruction on price > 0 mode
-                const holdInstr = document.getElementById('hold-instruction');
-                if (holdInstr) holdInstr.style.display = 'none';
-                const paymentBar = document.getElementById('payment-bar');
-                const paymentAmount = document.getElementById('payment-amount');
-                const qrDisplay = document.getElementById('qrcode-display');
-
-                // Hardcoded PromptPay ID
-                const promptPayId = "0988573074";
-
-                if (paymentBar && qrDisplay) {
-                    paymentBar.style.display = 'block';
-                    console.log("Showing payment bar for price:", price);
-                    paymentAmount.textContent = parseFloat(price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-                    // Generate Payload
-                    const ppPayload = generatePayload(promptPayId, price);
-
-                    // Render QR
-                    qrDisplay.innerHTML = ""; // Clear old
-                    new QRCode(qrDisplay, {
-                        text: ppPayload,
-                        width: 160,
-                        height: 160,
-                        colorDark: "#000000",
-                        colorLight: "#ffffff",
-                        correctLevel: QRCode.CorrectLevel.L
-                    });
-
-                    // Setup Download Click on Wrapper
-                    const qrWrapper = document.getElementById('qr-wrapper');
-                    if (qrWrapper) {
-                        qrWrapper.onclick = () => {
-                            const img = qrDisplay.querySelector('img');
-                            if (img && img.src) {
-                                const link = document.createElement('a');
-                                link.href = img.src;
-                                link.download = `QR_${price}THB.png`;
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                            }
-                        };
-                    }
-                }
-            }
-
-            if (expiryTimestamp && !isDonateMode) {
-                function updateCountdown() {
-                    const now = Date.now();
-                    const timeLeft = expiryTimestamp - now;
-                    if (timeLeft <= 0) {
-                        localStorage.removeItem('paid_' + fileUrl);
-                        showError('ลิงก์หมดอายุ', 'ไฟล์ของคุณถูกลบออกจากระบบเซิร์ฟเวอร์เรียบร้อยแล้ว');
-                        return;
-                    }
-                    const h = String(Math.floor(timeLeft / 36e5)).padStart(2, '0');
-                    const m = String(Math.floor((timeLeft % 36e5) / 6e4)).padStart(2, '0');
-                    const s = String(Math.floor((timeLeft % 6e4) / 1e3)).padStart(2, '0');
-                    const timeStr = `${h}:${m}:${s}`;
-
-                    countdownElement.textContent = `ไฟล์จะลบใน: ${timeStr}`;
-                }
-                updateCountdown();
-                setInterval(updateCountdown, 1000);
-            }
-        }
-
-        function toggleTooltip(e) {
-            e.stopPropagation();
-            document.getElementById('safety-tooltip').classList.toggle('show');
-        }
-
-        document.addEventListener('click', () => {
-            const t = document.getElementById('safety-tooltip');
-            if (t) t.classList.remove('show');
-        });
-
-
-        // Set direct download link logic for the button
-        const dUrlParam = new URLSearchParams(window.location.search);
-        const fUrlDirect = dUrlParam.get('d') ? atob(dUrlParam.get('d')) : decodeURIComponent(dUrlParam.get('url'));
-        const isTfDirect = fUrlDirect.includes('tempfile.org');
-        let dlUrlDirect = fUrlDirect;
-        if (isTfDirect) {
-            const parts = fUrlDirect.split('/').filter(Boolean);
-            dlUrlDirect = `https://tempfile.org/${parts[parts.length - 1]}/download`;
-        }
-
-        downloadBtn.onclick = () => window.performDownload(downloadBtn, dlUrlDirect);
-
-        function showSlipAgain() {
-            const qrWrapper = document.getElementById('qr-wrapper');
-            const amtBox = document.getElementById('payment-amount-box');
-            const noteTxt = document.getElementById('payment-note-txt');
-            const paidBtn = document.getElementById('paid-btn');
-            const thxMsg = document.getElementById('thank-you-msg');
-            const header = document.querySelector('.payment-header');
-
-            if (header) header.style.display = 'flex';
-            if (amtBox) amtBox.style.display = 'inline-block';
-            if (noteTxt) noteTxt.style.display = 'flex';
-            if (paidBtn) paidBtn.style.display = 'flex';
-            if (qrWrapper) {
-                qrWrapper.style.display = 'inline-block';
-                qrWrapper.classList.remove('tornado-active');
-            }
-            if (thxMsg) thxMsg.style.display = 'none';
-            const finalAction = document.getElementById('final-action-wrapper');
-            if (finalAction) finalAction.style.display = 'none';
-
-            const holdInstr = document.getElementById('hold-instruction');
-            if (holdInstr) holdInstr.style.display = 'none';
-
-            const step1 = document.getElementById('step-1-circle');
-            if (step1) step1.style.display = 'flex';
-
-            // Enable zoom feature after payment confirmed
-            const zoomCont = document.getElementById('image-zoom-container');
-            const zHint = document.getElementById('zoom-hint');
-            if (zoomCont) {
-                zoomCont.style.pointerEvents = 'auto';
-                zoomCont.style.cursor = 'zoom-in';
-            }
-            if (zHint) {
-                zHint.style.display = 'flex';
-                zHint.innerHTML = '🔍 ขยายภาพ';
-                zHint.style.background = 'rgba(0, 0, 0, 0.7)';
-            }
-            if (svg) {
-                svg.style.display = 'block';
-                setTimeout(() => svg.style.opacity = '1', 50);
-            }
-            updateConnections();
-        }
-
-        function hideElementsForTornado() {
-            const qrWrapper = document.getElementById('qr-wrapper');
-            const amtBox = document.getElementById('payment-amount-box');
-            const noteTxt = document.getElementById('payment-note-txt');
-            const paidBtn = document.getElementById('paid-btn');
-            const thxMsg = document.getElementById('thank-you-msg');
-            const header = document.querySelector('.payment-header');
-
-            if (header) header.style.display = 'none';
-            if (amtBox) amtBox.style.display = 'none';
-            if (noteTxt) noteTxt.style.display = 'none';
-            if (paidBtn) paidBtn.style.display = 'none';
-            if (qrWrapper) qrWrapper.style.display = 'none';
-
-            const thxContent = document.getElementById('thx-content-wrapper');
-            const finalAction = document.getElementById('final-action-wrapper');
-            const placeholder = document.getElementById('final-action-placeholder');
-
-            if (thxMsg) {
-                thxMsg.style.display = 'flex';
-                thxMsg.style.position = 'relative';
-                thxMsg.classList.add('fade-in-msg');
-            }
-            if (thxContent) thxContent.style.display = 'block';
-            if (finalAction) finalAction.style.display = 'none';
-
-            // 2s Transition
-            setTimeout(() => {
-                if (thxContent) {
-                    thxContent.classList.add('fade-out');
-                    setTimeout(() => {
-                        thxContent.style.display = 'none';
-                        if (finalAction && placeholder) {
-                            placeholder.appendChild(finalAction);
-                            finalAction.style.display = 'block';
-                            finalAction.classList.add('fade-in-msg');
-                        }
-                    }, 500);
-                }
-            }, 2000);
-
-            const step1 = document.getElementById('step-1-circle');
-            if (step1) step1.style.display = 'none';
-
-            const svg = document.getElementById('connection-svg');
-            if (svg) {
-                svg.style.transition = 'opacity 0.3s ease';
-                svg.style.opacity = '0';
-                setTimeout(() => svg.style.display = 'none', 300);
-            }
-
-            const checkboxHint = document.getElementById('checkbox-hint');
-            if (checkboxHint) {
-                checkboxHint.style.display = 'none';
-            }
-
-            // Enable zoom feature if already paid
-            const zoomCont = document.getElementById('image-zoom-container');
-            const zHint = document.getElementById('zoom-hint');
-            if (zoomCont) {
-                zoomCont.style.pointerEvents = 'auto';
-                zoomCont.style.cursor = 'zoom-in';
-            }
-            if (zHint) {
-                zHint.style.display = 'flex';
-            }
-        }
-
-        function startVerification() {
-            const paidBtn = document.getElementById('paid-btn');
-
-            // Add Modern Border Spin class to button ONLY
-            if (paidBtn) paidBtn.classList.add('btn-loading-active');
-
-            // Just a short wait with only border animation (No deceptive text)
-            setTimeout(() => {
-                if (paidBtn) paidBtn.classList.remove('btn-loading-active');
-                animateTornado();
-            }, 1800);
-        }
-
-        function animateTornado() {
-            localStorage.setItem('paid_' + fileUrl, '1');
-            const qrWrapper = document.getElementById('qr-wrapper');
-            const amtBox = document.getElementById('payment-amount-box');
-            const noteTxt = document.getElementById('payment-note-txt');
-            const paidBtn = document.getElementById('paid-btn');
-            const header = document.querySelector('.payment-header');
-
-            if (header) header.style.display = 'none';
-            if (amtBox) amtBox.style.display = 'none';
-            if (noteTxt) noteTxt.style.display = 'none';
-            if (paidBtn) paidBtn.style.display = 'none';
-
-            const svg = document.getElementById('connection-svg');
-            if (svg) {
-                svg.style.transition = 'opacity 0.3s ease';
-                svg.style.opacity = '0';
-                setTimeout(() => svg.style.display = 'none', 300);
-            }
-
-            const dlBtnStep = document.querySelector('#download-btn .step-circle');
-            if (dlBtnStep) dlBtnStep.style.display = 'none';
-
-            const sharedCanvas = document.getElementById('payment-confetti-canvas');
-            if (typeof confetti === 'function' && sharedCanvas) {
-                const myConfetti = confetti.create(sharedCanvas, {
-                    resize: true,
-                    useWorker: true
+                    btn.innerHTML = '📱 เปิดไฟล์ในแท็บใหม่';
+                    setTimeout(() => btn.innerHTML = originalText, 3000);
                 });
-                myConfetti({
-                    particleCount: 140,
-                    spread: 70,
-                    origin: { y: 0.5 },
-                    colors: ['#10b981', '#ef4444', '#3b82f6', '#f59e0b']
+        }
+
+        // Download QR Code (ไม่มีโลโก้ในภาพ QR แล้ว)
+        function downloadQR() {
+            const qrImg = document.querySelector('#qrcode-display canvas, #qrcode-display img');
+            
+            if (!qrImg) return;
+
+            // ดาวน์โหลด QR Code ธรรมดา
+            if (qrImg.tagName === 'CANVAS') {
+                qrImg.toBlob((blob) => {
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `PromptPay_QR_${price}THB.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
                 });
-            }
-
-            // NO INSTRUCTIONS AFTER PAYMENT AS REQUESTED
-            const holdInstr = document.getElementById('hold-instruction');
-            if (holdInstr) holdInstr.style.display = 'none';
-
-            // REMOVE PROTECTION
-            const guard = document.getElementById('guard-layer');
-            const watermark = document.getElementById('watermark');
-            const imgBox = document.getElementById('img-box');
-            if (guard) guard.style.display = 'none';
-            if (watermark) watermark.style.display = 'none';
-            if (document.getElementById('security-grid')) document.getElementById('security-grid').style.display = 'none';
-            if (document.getElementById('scan-line')) document.getElementById('scan-line').style.display = 'none';
-            if (document.getElementById('lock-decor')) document.getElementById('lock-decor').style.display = 'none';
-            if (imgBox) {
-                imgBox.classList.remove('pay-lock');
-                imgBox.removeAttribute('oncontextmenu');
-            }
-            if (imageElement) {
-                imageElement.style.pointerEvents = 'auto';
-                imageElement.style.webkitTouchCallout = 'default';
-            }
-
-            if (qrWrapper) {
-                qrWrapper.classList.add('tornado-active');
-                setTimeout(() => {
-                    hideElementsForTornado();
-                    const paymentBar = document.getElementById('payment-bar');
-                    const mainContent = document.querySelector('.main-content');
-                    if (paymentBar) paymentBar.style.width = '100%';
-                    if (mainContent) mainContent.classList.add('connected-state');
-                }, 1500);
+            } else if (qrImg.src) {
+                const link = document.createElement('a');
+                link.href = qrImg.src;
+                link.download = `PromptPay_QR_${price}THB.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             }
         }
 
-        const autoPriceCheck = params.get('price');
-        if (autoPriceCheck !== null && autoPriceCheck !== '0' && localStorage.getItem('paid_' + fileUrl) === '1') {
-            hideElementsForTornado();
-        }
-
-        if (params.get('price') === '0') {
-            localStorage.removeItem('paid_' + fileUrl);
-            const svg = document.getElementById('connection-svg');
-            if (svg) {
-                svg.style.display = 'block';
-                svg.style.opacity = '1';
-            }
-            updateConnections();
-        }
-
-        function updateConnections() {
-            const svg = document.getElementById('connection-svg');
-            if (!svg || svg.style.display === 'none') return;
-
-            // Clear all paths first to avoid messy lines
-            const pathIds = ['line-1-2', 'line-2-3', 'pipe-base-1-2', 'pipe-base-2-3'];
-            pathIds.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.setAttribute('d', '');
-            });
-
-            const getCenter = (el) => {
-                if (!el || el.offsetParent === null) return null;
-                const r = el.getBoundingClientRect();
-                return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-            };
-
-            const c1 = document.getElementById('step-1-circle');
-            let c2 = document.querySelector('#payment-amount-box .step-circle');
-            const priceParamForConn = new URLSearchParams(window.location.search).get('price');
-
-            if (priceParamForConn === null) {
-                c2 = document.getElementById('step-2-circle-no-price');
-            }
-            const c3 = document.querySelector('#paid-btn .step-circle');
-
-            const p1 = getCenter(c1);
-            const p2 = getCenter(c2);
-            const p3 = getCenter(c3);
-
-            const path1 = document.getElementById('line-1-2');
-            const path2 = document.getElementById('line-2-3');
-            const base1 = document.getElementById('pipe-base-1-2');
-            const base2 = document.getElementById('pipe-base-2-3');
-
-            // No Price Mode Connection (price is null)
-            if (priceParamForConn === null) {
-                if (p1 && p2 && path1) {
-                    const startX = p1.x;
-                    const startY = p1.y;
-                    const endX = p2.x;
-                    const endY = p2.y;
-                    // Sweeping curve from step 1 (image) to point 2 (button)
-                    const d = `M${startX},${startY} C${startX + 120},${startY} ${endX - 80},${endY - 60} ${endX},${endY}`;
-                    path1.setAttribute('d', d);
-                    if (base1) base1.setAttribute('d', d);
-                }
-                return;
-            }
-
-            // Free mode connection (Price 0)
-            if (priceParamForConn === '0') {
-                const imgBox = document.getElementById('img-box');
-                const imgRect = imgBox ? imgBox.getBoundingClientRect() : null;
-                if (p1 && imgRect && path1) {
-                    const startX = imgRect.left + Math.max(28, imgRect.width * 0.22);
-                    const startY = imgRect.bottom + 16;
-                    const endX = p1.x;
-                    const endY = p1.y;
-                    const d = `M${startX},${startY} C${startX},${startY + 70} ${endX - 90},${endY - 25} ${endX},${endY}`;
-                    path1.setAttribute('d', d);
-                    if (base1) base1.setAttribute('d', d);
-                }
-                return;
-            }
-
-            // Formal Paid Mode (Price > 0)
-            if (p1 && p2 && path1) {
-                const startX = p1.x;
-                const startY = p1.y;
-                const endX = p2.x;
-                const endY = p2.y;
-                const d = `M${startX},${startY} C${startX + 220},${startY - 20} ${endX + 180},${endY - 140} ${endX},${endY}`;
-                path1.setAttribute('d', d);
-                if (base1) base1.setAttribute('d', d);
-            }
-            if (p2 && p3 && path2) {
-                const startX = p2.x;
-                const startY = p2.y;
-                const endX = p3.x;
-                const endY = p3.y;
-                const d = `M${startX},${startY} C${startX - 260},${startY + 80} ${endX - 260},${endY - 80} ${endX},${endY}`;
-                path2.setAttribute('d', d);
-                if (base2) base2.setAttribute('d', d);
-            }
-        }
-
-        function smartClose() {
-            window.close();
-            setTimeout(function () {
-                if (!window.closed) {
-                    window.location.href = 'https://chat.fastwork.co/message';
-                }
-            }, 300);
-        }
-
-        window.addEventListener('resize', updateConnections);
-        window.addEventListener('scroll', updateConnections);
-        setInterval(updateConnections, 500);
-        setTimeout(updateConnections, 500);
-        setTimeout(updateConnections, 1500); // Wait for images
-
-        // Hand icon positioning is now handled by absolute CSS within the button container.
         // Lightbox Functions
         function openLightbox() {
-            // Disable zoom if image is still locked
-            const isLocked = document.getElementById('img-box').classList.contains('pay-lock');
-            if (isLocked) return;
-
-            const src = document.getElementById('image').src;
-            if (!src) return;
-            const overlay = document.getElementById('lightbox-overlay');
-            const lImg = document.getElementById('lightbox-img');
-            lImg.src = src;
-            overlay.classList.add('active');
-
-            // Apply watermark to zoom if still locked (redundant now but kept for safety)
-            const lWatermark = document.getElementById('lightbox-watermark');
-            if (isLocked) {
-                lWatermark.style.display = 'block';
+            const isPaid = localStorage.getItem('paid_' + fileUrl) === '1';
+            const isFree = price === 0;
+            
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImage = document.getElementById('lightbox-image');
+            
+            lightboxImage.src = previewImage.src;
+            lightbox.classList.add('active');
+            
+            // เพิ่มลายน้ำถ้ายังไม่จ่ายเงิน
+            if (!isFree && !isPaid) {
+                lightbox.classList.add('protected');
+                
+                // สร้างลายน้ำถ้ายังไม่มี
+                if (!document.querySelector('.lightbox-watermark')) {
+                    const watermark = document.createElement('div');
+                    watermark.className = 'lightbox-watermark';
+                    watermark.textContent = 'ยังไม่ชำระเงิน';
+                    lightbox.appendChild(watermark);
+                }
             } else {
-                lWatermark.style.display = 'none';
+                lightbox.classList.remove('protected');
             }
         }
 
         function closeLightbox() {
-            document.getElementById('lightbox-overlay').classList.remove('active');
+            document.getElementById('lightbox').classList.remove('active');
+            document.getElementById('lightbox').classList.remove('protected');
         }
 
-        // Review Popup Functions
-        function showReviewPopup() {
-            const popup = document.getElementById('review-popup');
-            if (popup) {
-                popup.style.display = 'flex';
-                setTimeout(() => popup.style.opacity = '1', 10);
+        // Countdown Timer
+        function updateCountdown() {
+            if (!expiryTimestamp) return;
+            
+            const now = Date.now();
+            const timeLeft = expiryTimestamp - now;
+            
+            if (timeLeft <= 0) {
+                showError('ลิงก์หมดอายุ', 'ไฟล์ถูกลบออกจากระบบแล้ว');
+                return;
+            }
+
+            const hours = String(Math.floor(timeLeft / 3600000)).padStart(2, '0');
+            const minutes = String(Math.floor((timeLeft % 3600000) / 60000)).padStart(2, '0');
+            const seconds = String(Math.floor((timeLeft % 60000) / 1000)).padStart(2, '0');
+            
+            const timerValue = document.querySelector('.timer-value');
+            if (timerValue) {
+                timerValue.textContent = `${hours}:${minutes}:${seconds}`;
             }
         }
 
-        function closeReviewPopup() {
-            const popup = document.getElementById('review-popup');
-            if (popup) {
-                popup.style.opacity = '0';
-                setTimeout(() => popup.style.display = 'none', 300);
-            }
+        // Show Error
+        function showError(title, message) {
+            document.querySelector('.container').innerHTML = `
+                <div class="error-state">
+                    <div class="error-icon">⚠️</div>
+                    <h2>${title}</h2>
+                    <p style="color: var(--text-muted); margin-top: 15px;">${message}</p>
+                </div>
+            `;
         }
 
-        function openReviewTab() {
-            window.open('https://www.facebook.com/ImageTextEditor/reviews', '_blank');
-            closeReviewPopup();
+        // Check if already paid
+        if (price > 0 && localStorage.getItem('paid_' + fileUrl) === '1') {
+            paymentSection.classList.add('hidden');
+            successSection.classList.remove('hidden');
+            // แสดง Tutorial ทันทีสำหรับคนที่จ่ายเงินแล้ว
+            setTimeout(() => {
+                showDownloadTutorial();
+            }, 200);
         }
 
+        // Initialize on load
+        init();
     </script>
-
-    <!-- Lightbox Modal -->
-    <div id="lightbox-overlay" class="lightbox-overlay" onclick="closeLightbox()">
-        <div class="lightbox-close">×</div>
-        <div style="position: relative; display: flex; justify-content: center; align-items: center;">
-            <img id="lightbox-img" class="lightbox-img" alt="Zoomed View">
-            <div id="lightbox-watermark" class="watermark" style="display: none; font-size: 5rem; opacity: 0.3;">
-                ภาพตัวอย่าง</div>
-        </div>
-    </div>
-    <svg id="connection-svg"
-        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.4)); opacity: 0.8;">
-        <defs>
-            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"
-                markerUnits="strokeWidth">
-                <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444"></polygon>
-            </marker>
-        </defs>
-        <path id="pipe-base-1-2" d="" fill="none" stroke="rgba(239, 68, 68, 0.16)" stroke-width="14"
-            stroke-linecap="round" />
-        <path id="pipe-base-2-3" d="" fill="none" stroke="rgba(239, 68, 68, 0.16)" stroke-width="14"
-            stroke-linecap="round" />
-        <path id="line-1-2" d="" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round"
-            stroke-dasharray="6, 20" />
-        <path id="line-2-3" d="" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round"
-            stroke-dasharray="6, 20" />
-        <style>
-            #connection-svg #line-1-2,
-            #connection-svg #line-2-3 {
-                animation: flow-modern 0.6s linear infinite;
-            }
-
-            @keyframes flow-modern {
-                to {
-                    stroke-dashoffset: -26;
-                }
-            }
-        </style>
-    </svg>
-
-    <!-- Review Popup Modal -->
-    <div id="review-popup"
-        style="display: none; opacity: 0; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(8px); transition: opacity 0.3s ease;">
-        <div
-            style="background: linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95)); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 24px; padding: 35px 25px; width: 90%; max-width: 380px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); text-align: center; position: relative;">
-            <div onclick="closeReviewPopup()"
-                style="position: absolute; top: 15px; right: 15px; width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,0.05); color: #94a3b8; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; transition: all 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
-                ✕</div>
-
-            <div
-                style="font-size: 3.5rem; margin-bottom: 15px; filter: drop-shadow(0 4px 10px rgba(251, 191, 36, 0.4)); animation: pulse 2s infinite;">
-                ⭐</div>
-            <h3
-                style="color: #f8fafc; font-size: 1.4rem; font-weight: 800; margin-bottom: 12px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
-                ถูกใจผลงานไหมคะ?</h3>
-            <p style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 25px; line-height: 1.6;">
-                รบกวนสละเวลาสักนิด มารีวิวผลงานให้หนูหน่อยน้าา<br>ทุกรีวิวคือกำลังใจในการทำงานค่ะ 💖
-            </p>
-
-            <button onclick="openReviewTab()"
-                style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); border: none; color: white; padding: 15px 20px; width: 100%; border-radius: 99px; font-weight: 700; font-size: 1.1rem; cursor: pointer; box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4); display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.3s;">
-                ไปเขียนรีวิวกันเลย 🚀
-            </button>
-            <button onclick="closeReviewPopup()"
-                style="background: none; border: none; color: #64748b; margin-top: 18px; font-size: 0.9rem; cursor: pointer; text-decoration: underline; transition: color 0.3s;">
-                ไว้โอกาสหน้านะ
-            </button>
-        </div>
-    </div>
-
 </body>
-
 </html>
