@@ -10,7 +10,7 @@ from PIL import Image
 
 def scrub_and_poison(file_path):
     """
-    ล้าง Metadata ของภาพ และเติมข้อมูลสุ่มท้ายไฟล์เพื่อเปลี่ยน Hash
+    ล้าง Metadata ของภาพ (ไม่เติม junk data ที่อาจทำให้ไฟล์เสีย)
     """
     ext = os.path.splitext(file_path)[1].lower()
     is_image = ext in ['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif']
@@ -22,65 +22,92 @@ def scrub_and_poison(file_path):
 
     try:
         if is_image:
-            # --- 1. Clean Metadata (Scrubbing) ---
-            # เปิดภาพและบันทึกใหม่โดยไม่เอา EXIF/Metadata เดิมมาด้วย
+            # --- Clean Metadata (Scrubbing) ---
             with Image.open(file_path) as img:
                 # แปลงเป็น RGB ถ้าเป็น JPEG เพื่อความแน่นอนในการล้างข้อมูล
                 if ext in ['.jpg', '.jpeg'] and img.mode != 'RGB':
                     img = img.convert('RGB')
                 
-                # บันทึกเป็นไฟล์ใหม่ (การ save ใหม่ใน Pillow จะไม่นำ Metadata เดิมมาหากไม่สั่ง)
+                # บันทึกเป็นไฟล์ใหม่ (ล้าง Metadata)
                 if ext in ['.jpg', '.jpeg']:
                     img.save(temp_path, quality=95, subsampling=0)
+                elif ext == '.png':
+                    img.save(temp_path, optimize=True)
                 else:
                     img.save(temp_path)
-        else:
-            # สำหรับไฟล์อื่นๆ (เช่น PDF) ให้ใช้วิธี Copy แทนการแปลง
-            shutil.copy2(file_path, temp_path)
-        
-        # --- 2. Change File Hash (Poisoning) ---
-        # เติมข้อมูลสุ่มเล็กน้อยท้ายไฟล์ (ไม่กระทบการเปิดดู แต่ทำให้รหัสไฟล์เปลี่ยน 100%)
-        with open(temp_path, 'ab') as f:
-            random_junk = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
-            # ใส่เป็น Comment หรือข้อมูลขยะท้ายไฟล์
-            f.write(f"\n#GS_{random_junk}".encode())
             
-        return temp_path
+            # ไม่เติม junk data เพราะอาจทำให้ไฟล์เสีย
+            return temp_path
+        else:
+            # สำหรับไฟล์อื่นๆ (เช่น PDF) ให้ Copy ตรงๆ
+            shutil.copy2(file_path, temp_path)
+            return temp_path
+            
     except Exception as e:
         # หากเกิดข้อผิดพลาด ให้ใช้ไฟล์ต้นฉบับแทน (Safe Fallback)
+        import sys
+        print(f"Warning: Could not process file: {e}", file=sys.stderr)
         return file_path
 
 def upload_litterbox(file_path):
+    """อัพโหลดไปยัง Litterbox (อาจถูกบล็อกบางครั้ง)"""
     try:
         url = 'https://litterbox.catbox.moe/resources/internals/api.php'
-        # เปิดไฟล์ในโหมด 'rb' (read binary)
+        filename = os.path.basename(file_path)
+        
+        # เพิ่ม headers เพื่อให้ดูเหมือน browser จริง
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': '*/*',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Origin': 'https://litterbox.catbox.moe',
+            'Referer': 'https://litterbox.catbox.moe/'
+        }
+        
         with open(file_path, 'rb') as f:
-            files = {'fileToUpload': f}
+            files = {'fileToUpload': (filename, f, 'application/octet-stream')}
             data = {
                 'reqtype': 'fileupload',
                 'time': '1h'
             }
-            response = requests.post(url, data=data, files=files, timeout=15)
+            response = requests.post(url, data=data, files=files, headers=headers, timeout=20)
+            
             if response.status_code == 200 and response.text.startswith('http'):
                 return response.text.strip()
-    except Exception:
-        pass
+            else:
+                import sys
+                print(f"Litterbox upload failed (Status {response.status_code}): {response.text[:200]}", file=sys.stderr)
+                
+    except Exception as e:
+        import sys
+        print(f"Litterbox upload error: {e}", file=sys.stderr)
     return None
 
-def upload_tempfile(file_path, expiry_hours=1):
+def upload_tmpfiles(file_path):
+    """อัพโหลดไปยัง TmpFiles.org (ระบบสำรอง)"""
     try:
-        url = 'https://tempfile.org/api/upload/local'
+        url = 'https://tmpfiles.org/api/v1/upload'
+        filename = os.path.basename(file_path)
+        
         with open(file_path, 'rb') as f:
-            files = {'files': f}
-            data = {'expiryHours': str(expiry_hours)}
-            response = requests.post(url, data=data, files=files, timeout=30)
+            files = {'file': (filename, f, 'application/octet-stream')}
+            response = requests.post(url, files=files, timeout=30)
+            
             if response.status_code == 200:
                 res_data = response.json()
-                if res_data.get('success') and res_data.get('files'):
-                    file_id = res_data['files'][0]['id']
-                    return f"https://tempfile.org/{file_id}"
-    except Exception:
-        pass
+                # TmpFiles returns: {"status": "success", "data": {"url": "https://tmpfiles.org/dl/xxx/file.jpg"}}
+                if res_data.get('status') == 'success' and res_data.get('data', {}).get('url'):
+                    full_url = res_data['data']['url']
+                    # URL format: https://tmpfiles.org/dl/wuwaYvwgVKsn/file.jpg
+                    # Extract the file ID (between /dl/ and /filename)
+                    parts = full_url.split('/')
+                    if len(parts) >= 5 and parts[3] == 'dl':
+                        file_id = parts[4]  # wuwaYvwgVKsn
+                        # Return with tf_ prefix so PrivateSend knows it's TmpFiles
+                        return f"tf_{file_id}"
+    except Exception as e:
+        import sys
+        print(f"TmpFiles upload error: {e}", file=sys.stderr)
     return None
 
 if __name__ == "__main__":
@@ -94,13 +121,13 @@ if __name__ == "__main__":
     processed_file = scrub_and_poison(original_file)
     
     try:
-        # Try Litterbox (ระบบหลัก)
+        # Try Litterbox ก่อน (ระบบหลัก)
         result_url = upload_litterbox(processed_file)
         source = "Litterbox"
         
-        # Fallback to TempFile (ระบบสำรอง)
+        # Fallback to TmpFiles (ระบบสำรอง)
         if not result_url:
-            result_url = upload_tempfile(processed_file)
+            result_url = upload_tmpfiles(processed_file)
             source = "TempFile"
             
         if result_url:
