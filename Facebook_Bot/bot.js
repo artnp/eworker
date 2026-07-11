@@ -100,7 +100,17 @@ function clearDownloadsDir() {
 const AUTO_GROUPS_MAX = 10;
 const FB_URL = 'https://www.facebook.com/groups/feed/';
 
-const GEMINI_SLOT_COUNT = 8;
+let GEMINI_SLOT_COUNT = 8;
+try {
+  const accountsFile = path.join(__dirname, 'gemini_active_accounts.json');
+  if (fs.existsSync(accountsFile)) {
+    const list = JSON.parse(fs.readFileSync(accountsFile, 'utf8'));
+    if (Array.isArray(list) && list.length > 0) {
+      GEMINI_SLOT_COUNT = list.length;
+    }
+  }
+} catch (e) { }
+
 const GEMINI_ACCOUNTS = Array.from({ length: GEMINI_SLOT_COUNT }, (_, i) => `https://gemini.google.com/u/${i}/app`);
 
 let activeGeminiAccounts = [];
@@ -222,7 +232,7 @@ async function getPostText(article) {
   try {
     const seeMoreBtn = article.locator('div[role="button"]:has-text("ดูเพิ่มเติม"), div[role="button"]:has-text("See more")');
     if (await seeMoreBtn.count() > 0 && await seeMoreBtn.isVisible()) {
-      await seeMoreBtn.first().click();
+      await seeMoreBtn.first().click({ timeout: 2000 }).catch(() => {});
       await sleep(500);
     }
   } catch (e) { }
@@ -1050,8 +1060,9 @@ async function getLoggedInProfileName(page) {
       // 3. หาจาก title ของหน้า (Facebook มักมีชื่อ user ใน title)
       const title = document.title;
       if (title) {
-        const m = title.match(/^\((\d+)\)\s*(.+?)\s*[|]/) || title.match(/^(.+?)\s*[|]/);
-        if (m && m[1] && !m[1].includes('Facebook') && !m[1].includes('Groups')) return m[1].trim();
+        // เลี่ยงการจับตัวเลข notification ในวงเล็บ
+        const m = title.match(/^\(\d+\)\s*(.+?)\s*[|]/) || title.match(/^(.+?)\s*[|]/);
+        if (m && m[1] && !m[1].includes('Facebook') && !m[1].includes('Groups') && !m[1].includes('กลุ่ม')) return m[1].trim();
       }
       return null;
     }).catch(() => null);
@@ -1100,141 +1111,105 @@ async function postComment(article, imagePath, postUrl) {
       return { success: false, reason: 'comments_disabled' };
     }
 
-    // ฟังก์ชันหา composer — ค้นทั้งใน article และ page-wide (ปรับปรุงใหม่)
+    // ฟังก์ชันหา composer — ใช้ DOM evaluate ไม่พึ่ง isVisible (ทำงานได้แม้หน้าต่างซ่อนอยู่)
     async function findComposer() {
-      // รูปแบบการค้นหา composer ที่หลากหลายขึ้น
-      const composerSelectors = [
-        // ใน article ก่อน - comment textbox
-        'div[role="textbox"][contenteditable="true"][aria-label*="ความคิดเห็น"]',
-        'div[role="textbox"][contenteditable="true"][aria-label*="comment"]',
-        'div[role="textbox"][contenteditable="true"][aria-label*="Comment"]',
-        'div[role="textbox"][contenteditable="true"][aria-placeholder*="ความคิดเห็น"]',
-        'div[role="textbox"][contenteditable="true"][aria-placeholder*="comment"]',
+      // ค้น composer จาก DOM โดยตรง ไม่ต้องตรวจ visibility
+      const composerHandle = await page.evaluateHandle((articleEl) => {
+        const selectors = [
+          'div[role="textbox"][contenteditable="true"][aria-label*="ความคิดเห็น"]',
+          'div[role="textbox"][contenteditable="true"][aria-label*="comment"]',
+          'div[role="textbox"][contenteditable="true"][aria-label*="Comment"]',
+          'div[role="textbox"][contenteditable="true"][aria-placeholder*="ความคิดเห็น"]',
+          'div[role="textbox"][contenteditable="true"][aria-placeholder*="comment"]',
+          'div[role="textbox"][contenteditable="true"]',
+          'div[contenteditable="true"][data-lexical-editor]',
+          'div[contenteditable="true"][data-testid*="comment"]',
+          'form div[role="textbox"][contenteditable="true"]',
+          'textarea[placeholder*="ความคิดเห็น"]',
+          'textarea[placeholder*="comment"]',
+        ];
+        // ลองหาใน article ก่อน
+        for (const sel of selectors) {
+          const found = articleEl ? articleEl.querySelector(sel) : null;
+          if (found) return found;
+        }
+        // fallback: หาทั่วหน้า
+        for (const sel of selectors) {
+          const found = document.querySelector(sel);
+          if (found) return found;
+        }
+        return null;
+      }, await article.elementHandle().catch(() => null));
 
-        // ทั่วไปใน article
-        'div[role="textbox"][contenteditable="true"]',
-        'textarea[placeholder*="ความคิดเห็น"]',
-        'textarea[placeholder*="comment"]',
-        'textarea[aria-label*="comment"]',
-
-        // Form elements
-        'form div[role="textbox"][contenteditable="true"]',
-        'form textarea',
-
-        // Fallback - ใช้ data attributes
-        'div[contenteditable="true"][data-lexical-editor]',
-        'div[contenteditable="true"][data-testid*="comment"]'
-      ];
-
-      // 1. ค้นใน article ก่อน
-      for (const sel of composerSelectors) {
-        try {
-          const inArticle = article.locator(sel);
-          const aCount = await inArticle.count();
-          for (let i = 0; i < aCount; i++) {
-            const c = inArticle.nth(i);
-            if (await c.isVisible({ timeout: 500 }).catch(() => false)) {
-              console.log(`Found composer in article: ${sel}`);
-              return c;
-            }
-          }
-        } catch (e) { }
-      }
-
-      // 2. ค้น page-wide
-      for (const sel of composerSelectors) {
-        try {
-          const pageBoxes = page.locator(sel);
-          const pCount = await pageBoxes.count();
-          for (let i = 0; i < pCount; i++) {
-            const c = pageBoxes.nth(i);
-            if (await c.isVisible({ timeout: 500 }).catch(() => false)) {
-              // ตรวจสอบว่าใกล้ article หรือไม่
-              const isNearArticle = await c.evaluate((el, articleEl) => {
-                const rect1 = el.getBoundingClientRect();
-                const rect2 = articleEl.getBoundingClientRect();
-                const distance = Math.abs(rect1.top - rect2.bottom);
-                return distance < 500; // ห่างไม่เกิน 500px
-              }, await article.elementHandle()).catch(() => true);
-
-              if (isNearArticle) {
-                console.log(`Found composer on page: ${sel}`);
-                return c;
-              }
-            }
-          }
-        } catch (e) { }
-      }
-      return null;
+      if (!composerHandle) return null;
+      const el = composerHandle.asElement();
+      if (!el) return null;
+      console.log('Found composer via DOM evaluate');
+      return el;
     }
 
     let composer = await findComposer();
 
-    // ถ้ายังไม่มี composer ให้คลิก Comment button
+    // ถ้ายังไม่มี composer ให้คลิก Comment button ด้วย DOM (ทำงานได้แม้ซ่อนหน้าต่าง)
     if (!composer) {
-      const commentBtnSelectors = [
-        'div[role="button"][aria-label*="แสดงความคิดเห็น"]',
-        'div[role="button"][aria-label*="Comment"]',
-        'div[role="button"][aria-label*="comment"]',
-        '[role="button"]:has-text("ความคิดเห็น")',
-        '[role="button"]:has-text("Comment")',
-        'span[role="button"]:has-text("ความคิดเห็น")',
-        // เพิ่ม selectors สำหรับปุ่ม comment ที่อาจจะแตกต่าง
-        'div[aria-label*="แสดงความคิดเห็น"]',
-        'div[aria-label*="Comment"][role="button"]',
-        'div[data-testid*="comment"]'
-      ];
-
-      let clicked = false;
-      for (const sel of commentBtnSelectors) {
-        try {
-          const btn = article.locator(sel).first();
-          if (await btn.count() > 0 && await btn.isVisible({ timeout: 1000 }).catch(() => false)) {
-            await btn.click({ force: true });
-            console.log(`Clicked comment button: ${sel}`);
-            clicked = true;
-            break;
+      const clicked = await page.evaluate((articleEl) => {
+        const selectors = [
+          '[role="button"][aria-label*="แสดงความคิดเห็น"]',
+          '[role="button"][aria-label*="Comment"]',
+          '[role="button"][aria-label*="comment"]',
+          '[data-testid*="comment-button"]',
+        ];
+        for (const sel of selectors) {
+          const btn = articleEl ? articleEl.querySelector(sel) : document.querySelector(sel);
+          if (btn) {
+            btn.click();
+            return sel;
           }
-        } catch (e) {
-          console.warn(`Failed to click ${sel}: ${e.message}`);
         }
-      }
+        // Fallback: หาทุกปุ่มที่มีข้อความ "ความคิดเห็น"
+        const allBtns = articleEl ? articleEl.querySelectorAll('[role="button"]') : [];
+        for (const btn of allBtns) {
+          if ((btn.textContent || '').includes('ความคิดเห็น') || (btn.getAttribute('aria-label') || '').includes('ความคิดเห็น')) {
+            btn.click();
+            return 'text-match:ความคิดเห็น';
+          }
+        }
+        return null;
+      }, await article.elementHandle().catch(() => null));
 
       if (clicked) {
-        await sleep(2000); // รอนานขึ้น
-
-        // ลอง scroll ดู เผื่อ comment section อยู่ล่างมาก
-        await article.evaluate(el => {
-          el.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        }).catch(() => { });
-        await sleep(1000);
-
+        console.log(`Clicked comment button via DOM: ${clicked}`);
+        await sleep(2000);
         composer = await findComposer();
       }
     }
 
-    // รอ composer ปรากฏสูงสุด 20 วิ (เพิ่มจาก 15 วิ)
+    // รอ composer ปรากฏสูงสุด 20 วิ
     if (!composer) {
       console.log('Waiting for composer to appear...');
       const startWait = Date.now();
       while (Date.now() - startWait < 20000) {
-        await closeFacebookModal(page); // Clear any popup that blocks composer
+        await closeFacebookModal(page);
         composer = await findComposer();
         if (composer) {
           console.log('Composer found after waiting!');
           break;
         }
 
-        // ลอง scroll และคลิก comment อีกครั้งทุก 5 วินาที
-        if ((Date.now() - startWait) % 5000 < 500) {
-          console.log('Retrying comment button click...');
-          try {
-            const retryBtn = article.locator('[role="button"][aria-label*="ความคิดเห็น"], [role="button"][aria-label*="Comment"]').first();
-            if (await retryBtn.count() > 0) {
-              await retryBtn.click({ force: true });
-              await sleep(1000);
+        // ลอง DOM click comment button ซ้ำทุก 5 วินาที
+        if ((Date.now() - startWait) % 5000 < 800) {
+          console.log('Retrying comment button DOM click...');
+          await page.evaluate((articleEl) => {
+            const selectors = [
+              '[role="button"][aria-label*="แสดงความคิดเห็น"]',
+              '[role="button"][aria-label*="Comment"]',
+            ];
+            for (const sel of selectors) {
+              const btn = articleEl ? articleEl.querySelector(sel) : document.querySelector(sel);
+              if (btn) { btn.click(); return; }
             }
-          } catch (e) { }
+          }, await article.elementHandle().catch(() => null)).catch(() => {});
+          await sleep(1000);
         }
 
         await sleep(500);
@@ -1316,8 +1291,8 @@ async function postComment(article, imagePath, postUrl) {
       try { fs.unlinkSync(tempPs1); } catch (_) { }
       console.log('Image copied to clipboard (CF_PNG + CF_DIB).');
 
-      // 2. คลิกที่ composer และกด Ctrl+V
-      await composer.click({ force: true });
+      // 2. focus composer ด้วย DOM แล้วกด Ctrl+V (ทำงานได้แม้ซ่อนหน้าต่าง)
+      await composer.evaluate((el) => { el.focus(); el.click(); }).catch(() => {});
       await sleep(500);
       await page.keyboard.press('Control+v');
       await sleep(4000); // รอให้ Facebook โหลดภาพ
@@ -1367,7 +1342,7 @@ async function postComment(article, imagePath, postUrl) {
     ];
     const promoText = promoMessages[Math.floor(Math.random() * promoMessages.length)];
     // ใช้ insertText แทน fill() เพื่อไม่ลบภาพที่ paste ไปแล้ว
-    await composer.click();
+    await composer.evaluate((el) => { el.focus(); }).catch(() => {});
     await sleep(300);
     await page.keyboard.press('End'); // ไปท้ายสุดก่อน
     await sleep(200);
@@ -1393,7 +1368,7 @@ async function postComment(article, imagePath, postUrl) {
 
     // *** Submit: หาปุ่ม submit จาก DOM รอบ composer (ไม่ใช้ Enter ซึ่งทำให้ขึ้นบรรทัดใหม่) ***
 
-    // Strategy 1: evaluate DOM หาปุ่ม submit ของ comment เท่านั้น ไม่ค้นหาไกล
+    // Strategy 1: evaluate DOM หาปุ่ม submit ของ comment เท่านั้น โดยขยายกรอบหาในช่องพิมพ์ขึ้นไปเรื่อยๆ
     commentPosted = await page.evaluate(() => {
       const composer =
         document.activeElement ||
@@ -1401,36 +1376,41 @@ async function postComment(article, imagePath, postUrl) {
         document.querySelector('div[role="textbox"][contenteditable="true"]');
       if (!composer) return false;
 
-      // หาเฉพาะ button ที่อยู่ถัดจาก composer ใน container ใกล้ๆ (3-4 level max)
+      // เดินขึ้นหา parent container (เช่น form หรือ div ที่หุ้มช่องพิมพ์ทั้งหมด) เพื่อหาปุ่มส่ง
       let container = composer;
-      for (let i = 0; i < 4; i++) {
-        container = container.parentElement;
-        if (!container) break;
-        // จำกัด scope: หาเฉพาะปุ่มที่ child โดยตรงของ container นี้ ไม่รวมหลาน
-        const buttons = Array.from(container.querySelectorAll(':scope > div[role="button"], :scope > button'));
-        // + child ของ sibling ถัดไป (Facebook มักวาง submit ไว้ใน div ถัดจาก composer)
-        const sibling = container.nextElementSibling;
-        if (sibling) {
-          const siblingBtns = Array.from(sibling.querySelectorAll('div[role="button"], button'));
-          buttons.push(...siblingBtns);
-        }
+      while (container && container.tagName !== 'BODY') {
+        const buttons = Array.from(container.querySelectorAll('div[role="button"], button'));
         const submitBtn = buttons.find(btn => {
           const label = (btn.getAttribute('aria-label') || '').trim();
           const txt = (btn.innerText || '').trim();
           const disabled = btn.getAttribute('aria-disabled') === 'true' || btn.disabled;
           if (disabled) return false;
-          // ใช้ exact match เท่านั้น ไม่ใช้ startsWith เพื่อป้องกันกดผิดปุ่ม
+
           return (
-            label === 'โพสต์ความคิดเห็น' ||
-            label === 'Post comment' ||
+            label === 'ส่ง' ||
+            label === 'Send' ||
+            label === 'แสดงความคิดเห็น' ||
             label === 'โพสต์' ||
             label === 'Post' ||
+            label === 'โพสต์ความคิดเห็น' ||
+            label === 'Post comment' ||
+            label === 'Comment' ||
+            txt === 'ส่ง' ||
+            txt === 'Send' ||
+            txt === 'แสดงความคิดเห็น' ||
+            txt === 'โพสต์' ||
+            txt === 'Post' ||
             txt === 'โพสต์ความคิดเห็น' ||
             txt === 'Post comment' ||
-            txt === 'Post'
+            txt === 'Comment'
           );
         });
-        if (submitBtn) { submitBtn.click(); return true; }
+        
+        if (submitBtn) {
+          submitBtn.click();
+          return true;
+        }
+        container = container.parentElement;
       }
       return false;
     }).catch(() => false);
@@ -1440,13 +1420,16 @@ async function postComment(article, imagePath, postUrl) {
       await sleep(3000);
     }
 
-    // Strategy 2: Playwright locator หาปุ่ม submit เฉพาะ exact match
+    // Strategy 2: Playwright locator หาปุ่ม submit เฉพาะ exact match (ลบแสดงความคิดเห็นออก ป้องกันกดปุ่มบนโพสต์)
     if (!commentPosted) {
       const submitSelectors = [
         'div[aria-label="โพสต์ความคิดเห็น"]',
         'div[aria-label="Post comment"]',
+        'div[aria-label="Comment"]',
         'div[aria-label="โพสต์"]',
         'div[aria-label="Post"]',
+        'div[aria-label="ส่ง"]',
+        'div[aria-label="Send"]',
       ];
       for (const sel of submitSelectors) {
         try {
@@ -1488,18 +1471,37 @@ async function postComment(article, imagePath, postUrl) {
           await page.keyboard.press('Space');
           console.log('[Submit] \u2705 Tab+Tab+Space fallback.');
         }
-        commentPosted = true;
-        await sleep(3000);
+        await sleep(2000);
+        // ตรวจสอบว่าหลังจากกดแล้วตัวข้อความยังค้างอยู่ไหม (ถ้าส่งผ่าน ข้อความจะถูกเคลียร์เป็นว่างเปล่า)
+        const isStillDrafting = await page.evaluate((el) => {
+          return el && (el.textContent || '').trim().length > 0;
+        }, composer).catch(() => false);
+        commentPosted = !isStillDrafting;
+        if (commentPosted) {
+          console.log('[Submit] \u2705 Composer cleared, submit confirmed.');
+        } else {
+          console.warn('[Submit] ⚠️ Composer still has text after Tab+Space.');
+        }
       } catch (e) {
         console.warn('[Submit] Tab+Space failed:', e.message);
       }
     }
 
-      const dismissedPopup = await closeFacebookModal(page);
-      if (dismissedPopup) {
-        console.log(`[Submit] Detected group rules popup after submit attempt ${submitAttempts}. Dismissed it. Retrying submit...`);
-        commentPosted = false;
-        await sleep(1500);
+      // เช็กว่าเป็น modal กฎกลุ่มของ Facebook จริงๆ หรือไม่ (ไม่เอาป๊อปอัป Chromium)
+      const hasRulesDialog = await page.evaluate(() => {
+        const dialog = document.querySelector('div[role="dialog"], div[role="alertdialog"]');
+        if (!dialog) return false;
+        const text = dialog.textContent || '';
+        return text.includes('กฎ') || text.includes('กติกา') || text.includes('Rules') || text.includes('rules');
+      }).catch(() => false);
+
+      if (hasRulesDialog) {
+        const dismissedPopup = await closeFacebookModal(page);
+        if (dismissedPopup) {
+          console.log(`[Submit] Detected group rules popup after submit attempt ${submitAttempts}. Dismissed it. Retrying submit...`);
+          commentPosted = false;
+          await sleep(1500);
+        }
       }
     }
 
@@ -1512,15 +1514,18 @@ async function postComment(article, imagePath, postUrl) {
       const profileName = await getLoggedInProfileName(page).catch(() => null) || 'รับแก้ไขภาพออนไลน์';
       console.log('[Comment URL] Using profile name:', profileName);
 
-      // ดึง pathname ของโพสต์ไว้กรอง comment — comment ของโพสต์นี้ต้องมี pathname เดียวกัน
-      const postPath = (() => {
-        try { return postUrl ? new URL(postUrl).pathname.replace(/\/$/, '') : null; } catch { return null; }
+      // ดึง ID ของโพสต์จาก URL ไว้กรอง comment (เช่น 4444885335784287)
+      const postId = (() => {
+        if (!postUrl) return null;
+        const m = postUrl.match(/\/(posts|permalink|multi_permalinks)\/(\d+)/) || postUrl.match(/story_fbid=(\d+)/);
+        return m ? m[2] : null;
       })();
+      console.log('[Comment URL] Target Post ID for filtering:', postId);
 
       for (let _attempt = 0; _attempt < 6; _attempt++) {
         await sleep(_attempt === 0 ? 2500 : 1800);
 
-        commentUrl = await page.evaluate(({ profName, oldIds, _postPath }) => {
+        commentUrl = await page.evaluate(({ profName, oldIds, _postId }) => {
           const allLinks = Array.from(document.querySelectorAll('a[href*="comment_id"]'));
 
           for (let i = allLinks.length - 1; i >= 0; i--) {
@@ -1530,10 +1535,9 @@ async function postComment(article, imagePath, postUrl) {
               const cid = url.searchParams.get('comment_id');
               if (!cid || oldIds.includes(cid)) continue;
 
-              // กรองโดย pathname — comment ต้องอยู่ภายใต้โพสต์เดียวกัน
-              if (_postPath) {
-                const linkPath = url.pathname.replace(/\/$/, '');
-                if (linkPath !== _postPath) continue;
+              // กรองโดย post ID — comment ต้องอยู่ภายใต้โพสต์เดียวกัน
+              if (_postId) {
+                if (!a.href.includes('/' + _postId) && !a.href.includes('=' + _postId)) continue;
               }
 
               // parent chain ต้องมีชื่อโปรไฟล์เรา
@@ -1547,21 +1551,20 @@ async function postComment(article, imagePath, postUrl) {
             } catch (e) { }
           }
 
-          // Pass 2: fallback — pathname match อย่างเดียว (ไม่เช็คชื่อ)
-          if (_postPath) {
+          // Pass 2: fallback — post ID match อย่างเดียว (ไม่เช็คชื่อ)
+          if (_postId) {
             for (let i = allLinks.length - 1; i >= 0; i--) {
               const a = allLinks[i];
               try {
                 const url = new URL(a.href);
                 const cid = url.searchParams.get('comment_id');
                 if (!cid || oldIds.includes(cid)) continue;
-                const linkPath = url.pathname.replace(/\/$/, '');
-                if (linkPath === _postPath) return a.href;
+                if (a.href.includes('/' + _postId) || a.href.includes('=' + _postId)) return a.href;
               } catch (e) { }
             }
           }
           return null;
-        }, { profName: profileName, oldIds: existingCommentIds, _postPath: postPath });
+        }, { profName: profileName, oldIds: existingCommentIds, _postId: postId });
 
         if (commentUrl) {
           try {
@@ -2045,20 +2048,30 @@ async function bringWindowToFront(page) {
 
 // minimize/restore ผ่าน PowerShell ShowWindowAsync (CDP ยังทำงานได้ปกติแม้ minimize)
 async function minimizeBrowser(minimize = true) {
+  const tempPs1 = path.join(os.tmpdir(), `min_chrome_${Date.now()}.ps1`);
   try {
-    const action = minimize ? 6 : 9; // SW_MINIMIZE=6, SW_RESTORE=9
-    await execPromise(`powershell -NoProfile -Command "
-      Add-Type @\\\"
-        [DllImport(\\\"user32.dll\\\")] public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
-        [DllImport(\\\"user32.dll\\\")] public static extern bool SetForegroundWindow(IntPtr hWnd);
-      \\\@
-      Get-Process | Where-Object { \\\$_.MainWindowTitle -match 'Facebook|Chromium' } | Select-Object -First 1 | ForEach-Object {
-        [User32]::ShowWindowAsync(\\\$_.MainWindowHandle, ${action});
-        if (${+!minimize}) { [User32]::SetForegroundWindow(\\\$_.MainWindowHandle); }
-      }
-    "`, { timeout: 5000 }).catch(() => {});
+    const posX = minimize ? -2000 : 2816;
+    const posY = minimize ? -2000 : 312;
+    const psLines = [
+      'Add-Type -TypeDefinition @"',
+      '  using System;',
+      '  using System.Runtime.InteropServices;',
+      '  public class Win32 {',
+      '    [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);',
+      '    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);',
+      '  }',
+      '"@',
+      "Get-CimInstance Win32_Process -Filter \"Name = 'chrome.exe' or Name = 'msedge.exe' or Name = 'chromium.exe'\" | Where-Object { \$_.CommandLine -like '*Facebook_Bot*user_data*' } | ForEach-Object { Get-Process -Id \$_.ProcessId } | Where-Object { \$_.MainWindowHandle -ne 0 } | ForEach-Object {",
+      `  [Win32]::SetWindowPos($_.MainWindowHandle, 0, ${posX}, ${posY}, 0, 0, 5) | Out-Null`,
+      minimize ? '' : '  [Win32]::SetForegroundWindow($_.MainWindowHandle) | Out-Null',
+      '}',
+    ];
+    fs.writeFileSync(tempPs1, psLines.filter(Boolean).join('\r\n'), 'utf8');
+    await execPromise(`cmd /c powershell -NoProfile -ExecutionPolicy Bypass -File "${tempPs1}"`, { timeout: 5000 }).catch(() => {});
+    try { fs.unlinkSync(tempPs1); } catch (_) {}
     return { success: true };
   } catch (e) {
+    try { fs.unlinkSync(tempPs1); } catch (_) {}
     return { success: false, message: e.message };
   }
 }
@@ -2163,6 +2176,9 @@ async function pauseOnError(isDebugPause, message) {
     `--disable-extensions-except=${extensionPath}`,
     '--window-size=1024,768',  // ขนาดกลาง (ใหญ่พอให้ Gemini แสดง Fast Download)
     '--window-position=2816,312',  // มุมล่างขวาจอสอง (x=1920+896, y=1080-768)
+    '--disable-backgrounding-occluded-windows',
+    '--disable-renderer-backgrounding',
+    '--disable-background-timer-throttling',
   ];
 
   try {
@@ -2184,10 +2200,9 @@ async function pauseOnError(isDebugPause, message) {
     });
 
     console.log('Browser launched successfully.');
-
-    // ซ่อน browser — Playwright ยังทำงานได้ปกติเพราะใช้ CDP
-    await minimizeBrowser(true).catch(() => {});
-    isBrowserHidden = true;
+    // หน้าต่างเบราว์เซอร์จะแสดงที่จอที่ 2 ตาม --window-position ที่ตั้งไว้ใน browserArgs
+    // ไม่ซ่อนหน้าต่างตอน launch เพราะ Facebook virtual DOM ต้องการ viewport จริงในการ render
+    isBrowserHidden = false;
 
     await sleep(1700);
 
@@ -2374,6 +2389,7 @@ async function pauseOnError(isDebugPause, message) {
 
       console.log('\nStarting main processing loop...');
       let postsProcessedCount = 0;
+      let postsEvaluatedCount = 0;
       let consecutiveEmptyScrolls = 0;
       let consecutiveFilteredPosts = 0;
       const MAX_EMPTY_SCROLLS = 15;
@@ -2402,6 +2418,14 @@ async function pauseOnError(isDebugPause, message) {
 
         await closeFacebookModal(fbPage);
 
+        // ตรวจสอบและเคลียร์เมมโมรี่ทุกๆ 15 โพสต์ที่ตรวจหา
+        if (postsEvaluatedCount > 0 && postsEvaluatedCount % 15 === 0) {
+          console.log(`[Memory Cleanup] Evaluated ${postsEvaluatedCount} posts. Reloading Facebook page...`);
+          await fbPage.goto(FB_URL, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => { });
+          await sleep(3000);
+          postsEvaluatedCount = 0;
+        }
+
         const article = fbPage.locator('div[role="article"]:not([data-bot-processed="true"])').first();
 
         if (await article.count() === 0) {
@@ -2417,6 +2441,8 @@ async function pauseOnError(isDebugPause, message) {
           continue;
         }
 
+        postsEvaluatedCount++;
+
         { // outer block
           await article.evaluate(el => {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -2425,6 +2451,18 @@ async function pauseOnError(isDebugPause, message) {
           await sleep(500);
 
           const postText = await getPostText(article);
+          
+          // เพิ่มเงื่อนไข: หากโพสต์ไม่มีข้อความ ให้ข้ามโพสต์นี้ไปเลย
+          if (!postText || postText.trim().length === 0) {
+            console.log("--> Skipped: Post has no text content.");
+            await reportStatus(basePct + 2, `กำลังข้ามโพสต์ที่ ${currentPostIndex}...`, `⚠️ โพสต์ไม่มีข้อความ -> ข้าม`, 'warn', currentPostIndex);
+            await article.evaluate(el => {
+              el.style.display = 'none';
+              el.setAttribute('data-bot-processed', 'true');
+            }).catch(() => { });
+            continue;
+          }
+
           // Compute post ID early for logging
           const imageUrlsForId = await getLargeImageUrls(article);
           let earlyPostId;
@@ -2567,7 +2605,10 @@ async function pauseOnError(isDebugPause, message) {
             await reportStatus(basePct + 55, `กำลังโพสต์คอมเมนต์ (โพสต์ ${currentPostIndex})...`, 'อัปโหลดภาพลงช่องแสดงความคิดเห็นบน Facebook', 'info', currentPostIndex);
             await bringWindowToFront(fbPage).catch(() => { });
             // Extract post permalink ก่อนส่งให้ postComment (ใช้อ้างอิง comment URL)
-            const postUrl = await getPostUrl(article).catch(() => null);
+            let postUrl = await getPostUrl(article).catch(() => null);
+            if (!postUrl) {
+              postUrl = fbPage.url(); // Fallback ไปใช้ URL ปัจจุบันถ้าเปิดโพสต์แบบเจาะจง/permalink
+            }
             if (postUrl) console.log(`Post URL: ${postUrl}`);
             const commentResult = await postComment(article, pythonResult, postUrl);
 
