@@ -1133,8 +1133,37 @@
       });
     };
 
+    // --- Auto Dismiss Gemini Popups/Updates ---
+    const dismissGeminiPopups = () => {
+      try {
+        const dialogs = document.querySelectorAll('mat-dialog-container, div[role="dialog"], div[role="alertdialog"], .update-popup, .modal');
+        dialogs.forEach(dialog => {
+          const buttons = dialog.querySelectorAll('button, [role="button"], span, div');
+          buttons.forEach(btn => {
+            const text = (btn.innerText || btn.textContent || '').trim().toLowerCase();
+            const targetTexts = ['\u0e22\u0e2d\u0e21\u0e23\u0e31\u0e1a', '\u0e15\u0e01\u0e25\u0e07', '\u0e22\u0e34\u0e19\u0e22\u0e2d\u0e21', '\u0e40\u0e02\u0e49\u0e32\u0e43\u0e05\u0e41\u0e25\u0e49\u0e27', 'accept', 'agree', 'ok', 'got it', 'dismiss'];
+            if (targetTexts.includes(text) || targetTexts.some(t => text.includes(t) && text.length < 15)) {
+              console.log('[Extension] Auto-dismissing Gemini popup button:', text);
+              btn.click();
+            }
+          });
+        });
+
+        // Standalone/banner consent buttons
+        const consentButtons = document.querySelectorAll('button, [role="button"]');
+        consentButtons.forEach(btn => {
+          const text = (btn.innerText || btn.textContent || '').trim().toLowerCase();
+          if (['\u0e22\u0e2d\u0e21\u0e23\u0e31\u0e1a', '\u0e15\u0e01\u0e25\u0e07', '\u0e22\u0e34\u0e19\u0e22\u0e2d\u0e21', 'accept', 'agree'].includes(text)) {
+            console.log('[Extension] Auto-dismissing standalone consent button:', text);
+            btn.click();
+          }
+        });
+      } catch (e) { }
+    };
+
     // Run automatically if requested via URL or for all images
     setInterval(injectGeminiFastButtons, 2000);
+    setInterval(dismissGeminiPopups, 2000);
 
     // Check for auto-download trigger in URL
     if (window.location.search.includes('autoDownload=true')) {
