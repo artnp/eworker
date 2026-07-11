@@ -138,6 +138,30 @@
             background: rgba(0, 0, 0, 0.1);
         }
 
+        .marker.completed {
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.15);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .marker.completed .marker-badge {
+            background: var(--success);
+        }
+
+        .marker.completed .resize-handle {
+            background: var(--success);
+        }
+
+        .annotation-card.completed {
+            border-color: var(--success);
+            background: #f0fdf4;
+        }
+
+        .annotation-card.completed .marker-number {
+            background: var(--success);
+            box-shadow: 0 0 0 3px rgba(16,185,129,0.3);
+        }
+
         .marker.active {
             border-color: #ef4444;
             background: rgba(239, 68, 68, 0.2);
@@ -1484,7 +1508,8 @@
                 y: y,
                 width: width,
                 height: height,
-                text: text
+                text: text,
+                done: false
             };
 
             // Save to Firebase
@@ -1556,7 +1581,7 @@
         function renderMarker(marker) {
             const isCrossPage = marker.page && marker.page !== currentPage;
             const markerEl = document.createElement('div');
-            markerEl.className = 'marker' + (isCrossPage ? ' cross-page' : '');
+            markerEl.className = 'marker' + (isCrossPage ? ' cross-page' : '') + (marker.done ? ' completed' : '');
             markerEl.dataset.id = marker.id;
             markerEl.style.left = marker.x + '%';
             markerEl.style.top = marker.y + '%';
@@ -1761,19 +1786,31 @@
         // ===== ANNOTATION CARDS =====
         function renderAnnotationCard(marker) {
             const card = document.createElement('div');
-            card.className = 'annotation-card';
+            card.className = 'annotation-card' + (marker.done ? ' completed' : '');
             card.dataset.id = marker.id;
 
             card.innerHTML = `
                 <div class="card-header">
                     <div class="marker-number">${marker.number}</div>
-                    ${fileType === 'pdf' ? `<div style="font-size:12px;color:var(--text-muted);font-weight:600;"><i class="fa-solid fa-file"></i> หน้า ${marker.page || 1}</div>` : ''}
-                    <button class="btn-delete" title="ลบ">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
+                    <label class="done-check" style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-muted);cursor:pointer;margin:0 auto;">
+                        <input type="checkbox" class="done-input" ${marker.done ? 'checked' : ''} style="width:15px;height:15px;cursor:pointer;accent-color:var(--success);">
+                        เสร็จ
+                    </label>
+                    <div style="display:flex;align-items:center;gap:4px;">
+                        ${fileType === 'pdf' ? `<div style="font-size:12px;color:var(--text-muted);font-weight:600;"><i class="fa-solid fa-file"></i> หน้า ${marker.page || 1}</div>` : ''}
+                        <button class="btn-delete" title="ลบ">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
                 <textarea class="annotation-text" placeholder="พิมพ์รายละเอียดที่ต้องการแก้ไข...">${marker.text || ''}</textarea>
             `;
+
+            const doneInput = card.querySelector('.done-input');
+            doneInput.addEventListener('change', () => {
+                const done = doneInput.checked;
+                database.ref(`annotations/${sessionId}/markers/${marker.id}/done`).set(done);
+            });
 
             const textarea = card.querySelector('.annotation-text');
             let saveTimeout;
@@ -1853,7 +1890,8 @@
 
                 const isActive = marker.id === activeMarkerId;
                 const dimmed = !!(activeMarkerId && marker.id !== activeMarkerId);
-                const col = dimmed ? 'rgba(239,68,68,0.25)' : (isActive ? '#ef4444' : 'var(--danger)');
+                const isDone = marker.done;
+                const col = isDone ? 'var(--success)' : (dimmed ? 'rgba(239,68,68,0.25)' : (isActive ? '#ef4444' : 'var(--danger)'));
                 const w = dimmed ? '2' : '2.5';
                 const op = '1';
 
@@ -2041,6 +2079,7 @@
                     markerEl.style.top = updated.y + '%';
                     markerEl.style.width = updated.width + '%';
                     markerEl.style.height = updated.height + '%';
+                    markerEl.classList.toggle('completed', !!updated.done);
                 }
 
                 const card = document.querySelector(`.annotation-card[data-id="${updated.id}"]`);
@@ -2048,6 +2087,11 @@
                     const textarea = card.querySelector('.annotation-text');
                     if (textarea && document.activeElement !== textarea) {
                         textarea.value = updated.text || '';
+                    }
+                    card.classList.toggle('completed', !!updated.done);
+                    const doneInput = card.querySelector('.done-input');
+                    if (doneInput) {
+                        doneInput.checked = !!updated.done;
                     }
                 }
 
