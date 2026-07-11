@@ -41,7 +41,6 @@ function showWindowsNotification(title, text, type = 'Info') {
 }
 
 const USER_DATA_DIR = path.join(__dirname, 'user_data');
-const PROCESSED_DB_FILE = path.join(__dirname, 'processed_posts.json');
 const DOWNLOADS_DIR = path.join(__dirname, 'downloads');
 
 // ตัวแปรสำหรับเก็บ context และควบคุมหน้าต่าง
@@ -122,23 +121,6 @@ function loadActiveAccounts() {
 function saveActiveAccounts(accounts) {
   try {
     fs.writeFileSync(GEMINI_STATE_FILE, JSON.stringify(accounts, null, 2));
-  } catch (e) { }
-}
-
-let processedPosts = new Set();
-
-function loadProcessedPosts() {
-  try {
-    if (fs.existsSync(PROCESSED_DB_FILE)) {
-      const data = JSON.parse(fs.readFileSync(PROCESSED_DB_FILE, 'utf8'));
-      if (Array.isArray(data)) processedPosts = new Set(data);
-    }
-  } catch (e) { }
-}
-
-function saveProcessedPosts() {
-  try {
-    fs.writeFileSync(PROCESSED_DB_FILE, JSON.stringify(Array.from(processedPosts), null, 2));
   } catch (e) { }
 }
 
@@ -2068,7 +2050,6 @@ async function pauseOnError(isDebugPause, message) {
     const fbPage = existingPages.length > 0 ? existingPages[0] : await context.newPage();
     const geminiPage = await context.newPage();
 
-    loadProcessedPosts();
     ensureDownloadsDir();
     clearDownloadsDir();
 
@@ -2312,16 +2293,6 @@ async function pauseOnError(isDebugPause, message) {
           console.log(`Content: "${postText.substring(0, 80).replace(/\n/g, ' ')}..."`);
           if (imageUrlsForId.length > 0) console.log('--> Processing images:', JSON.stringify(imageUrlsForId, null, 2));
 
-          // Skip if already processed
-          if (processedPosts.has(earlyPostId)) {
-            console.log('--> Skipped: Already processed.');
-            await article.evaluate(el => {
-              el.style.display = 'none';
-              el.setAttribute('data-bot-processed', 'true');
-            }).catch(() => { });
-            continue;
-          }
-
           const filterResult = await shouldFilterPost(article);
           if (filterResult.action === 'hide' || filterResult.action === 'spam') {
             console.log(`--> Skipped: caught by shouldFilterPost. Action: ${filterResult.action}. Reason: ${filterResult.reason}`);
@@ -2422,16 +2393,6 @@ async function pauseOnError(isDebugPause, message) {
                 el.setAttribute('data-bot-processed', 'true');
               }).catch(() => { });
               
-              // Mark as processed เพื่อไม่ทำซ้ำ
-              let postId;
-              try {
-                postId = imageUrls.length > 0 ? hashString(new URL(imageUrls[0]).pathname) : hashString(postText.substring(0, 200));
-              } catch (e) {
-                postId = hashString(postText.substring(0, 200));
-              }
-              processedPosts.add(postId);
-              saveProcessedPosts();
-              
               continue;
             }
 
@@ -2464,13 +2425,6 @@ async function pauseOnError(isDebugPause, message) {
             const postUrl = await getPostUrl(article).catch(() => null);
             if (postUrl) console.log(`Post URL: ${postUrl}`);
             const commentResult = await postComment(article, pythonResult, postUrl);
-
-            let postId;
-            try {
-              postId = imageUrls.length > 0 ? hashString(new URL(imageUrls[0]).pathname) : hashString(postText.substring(0, 200));
-            } catch (e) {
-              postId = hashString(postText.substring(0, 200));
-            }
 
             if (commentResult && commentResult.success) {
               // ⏸️ DEBUG PAUSE 5: ตรวจสอบ comment ก่อน like/share
@@ -2511,16 +2465,12 @@ async function pauseOnError(isDebugPause, message) {
               const donePct = Math.round((postsProcessedCount / AUTO_GROUPS_MAX) * 100);
               await reportStatus(donePct, `ทำรายการโพสต์ที่ ${postsProcessedCount}/${AUTO_GROUPS_MAX} สำเร็จ!`, 'โพสต์คอมเมนต์และแชร์เสร็จสมบูรณ์', 'success', postsProcessedCount);
 
-              processedPosts.add(postId);
-              saveProcessedPosts();
               showWindowsNotification('Facebook Bot', `Task #${postsProcessedCount} completed!`);
               console.log(`Post #${postsProcessedCount} processed successfully!`);
             } else {
               console.log('Comment failed, marking as processed.');
               await reportStatus(basePct, `โพสต์คอมเมนต์ไม่สำเร็จ (โพสต์ ${currentPostIndex})`, '❌ เกิดข้อผิดพลาดในการลงคอมเมนต์', 'error', currentPostIndex);
               await pauseOnError(isDebugPause, 'Comment โพสต์ล้มเหลว');
-              processedPosts.add(postId);
-              saveProcessedPosts();
             }
             await article.evaluate(el => {
               el.style.display = 'none';
