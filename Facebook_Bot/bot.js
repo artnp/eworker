@@ -1218,6 +1218,7 @@ async function postComment(article, imagePath, postUrl) {
       console.log('Waiting for composer to appear...');
       const startWait = Date.now();
       while (Date.now() - startWait < 20000) {
+        await closeFacebookModal(page); // Clear any popup that blocks composer
         composer = await findComposer();
         if (composer) {
           console.log('Composer found after waiting!');
@@ -1310,7 +1311,7 @@ async function postComment(article, imagePath, postUrl) {
         '[System.Windows.Forms.Clipboard]::SetDataObject($do, $true)',
         '$bmp.Dispose()',
       ];
-      fs.writeFileSync(tempPs1, psLines.join('\r\n'), 'utf8');
+      fs.writeFileSync(tempPs1, psLines.join('\n'), 'utf8');
       await execPromise(`cmd /c powershell -STA -NoProfile -ExecutionPolicy Bypass -File "${tempPs1}"`, { timeout: 15000 });
       try { fs.unlinkSync(tempPs1); } catch (_) { }
       console.log('Image copied to clipboard (CF_PNG + CF_DIB).');
@@ -1385,6 +1386,10 @@ async function postComment(article, imagePath, postUrl) {
     console.log('[Comment URL] Snapshot: ' + existingCommentIds.length + ' existing comment_ids in this article');
 
     let commentPosted = false;
+    let submitAttempts = 0;
+    while (submitAttempts < 3 && !commentPosted) {
+      submitAttempts++;
+      await closeFacebookModal(page);
 
     // *** Submit: หาปุ่ม submit จาก DOM รอบ composer (ไม่ใช้ Enter ซึ่งทำให้ขึ้นบรรทัดใหม่) ***
 
@@ -1392,7 +1397,7 @@ async function postComment(article, imagePath, postUrl) {
     commentPosted = await page.evaluate(() => {
       const composer =
         document.activeElement ||
-        document.querySelector('div[role="textbox"][contenteditable="true"][aria-label*="\u0e04\u0e27\u0e32\u0e21\u0e04\u0e34\u0e14\u0e40\u0e2b\u0e47\u0e19"]') ||
+        document.querySelector('div[role="textbox"][contenteditable="true"][aria-label*="ความคิดเห็น"]') ||
         document.querySelector('div[role="textbox"][contenteditable="true"]');
       if (!composer) return false;
 
@@ -1416,11 +1421,11 @@ async function postComment(article, imagePath, postUrl) {
           if (disabled) return false;
           // ใช้ exact match เท่านั้น ไม่ใช้ startsWith เพื่อป้องกันกดผิดปุ่ม
           return (
-            label === '\u0e42\u0e1e\u0e2a\u0e15\u0e4c\u0e04\u0e27\u0e32\u0e21\u0e04\u0e34\u0e14\u0e40\u0e2b\u0e47\u0e19' ||
+            label === 'โพสต์ความคิดเห็น' ||
             label === 'Post comment' ||
-            label === '\u0e42\u0e1e\u0e2a\u0e15\u0e4c' ||
+            label === 'โพสต์' ||
             label === 'Post' ||
-            txt === '\u0e42\u0e1e\u0e2a\u0e15\u0e4c\u0e04\u0e27\u0e32\u0e21\u0e04\u0e34\u0e14\u0e40\u0e2b\u0e47\u0e19' ||
+            txt === 'โพสต์ความคิดเห็น' ||
             txt === 'Post comment' ||
             txt === 'Post'
           );
@@ -1431,16 +1436,16 @@ async function postComment(article, imagePath, postUrl) {
     }).catch(() => false);
 
     if (commentPosted) {
-      console.log('[Submit] \u2705 Clicked submit button via DOM traversal.');
+      console.log('[Submit] ✅ Clicked submit button via DOM traversal.');
       await sleep(3000);
     }
 
     // Strategy 2: Playwright locator หาปุ่ม submit เฉพาะ exact match
     if (!commentPosted) {
       const submitSelectors = [
-        'div[aria-label="\u0e42\u0e1e\u0e2a\u0e15\u0e4c\u0e04\u0e27\u0e32\u0e21\u0e04\u0e34\u0e14\u0e40\u0e2b\u0e47\u0e19"]',
+        'div[aria-label="โพสต์ความคิดเห็น"]',
         'div[aria-label="Post comment"]',
-        'div[aria-label="\u0e42\u0e1e\u0e2a\u0e15\u0e4c"]',
+        'div[aria-label="โพสต์"]',
         'div[aria-label="Post"]',
       ];
       for (const sel of submitSelectors) {
@@ -1452,7 +1457,7 @@ async function postComment(article, imagePath, postUrl) {
             if (!await btn.isVisible({ timeout: 500 }).catch(() => false)) continue;
             if (await btn.getAttribute('aria-disabled').catch(() => 'false') === 'true') continue;
             await btn.click({ force: true });
-            console.log('[Submit] \u2705 Playwright clicked: ' + sel);
+            console.log('[Submit] ✅ Playwright clicked: ' + sel);
             commentPosted = true;
             await sleep(3000);
             break;
@@ -1461,7 +1466,7 @@ async function postComment(article, imagePath, postUrl) {
         } catch (e) { }
       }
     }
-
+    
     // Strategy 3: Tab ออกจาก textbox ไปที่ปุ่ม submit แล้วกด Space
     if (!commentPosted) {
       try {
@@ -1487,6 +1492,14 @@ async function postComment(article, imagePath, postUrl) {
         await sleep(3000);
       } catch (e) {
         console.warn('[Submit] Tab+Space failed:', e.message);
+      }
+    }
+
+      const dismissedPopup = await closeFacebookModal(page);
+      if (dismissedPopup) {
+        console.log(`[Submit] Detected group rules popup after submit attempt ${submitAttempts}. Dismissed it. Retrying submit...`);
+        commentPosted = false;
+        await sleep(1500);
       }
     }
 
@@ -1633,6 +1646,12 @@ async function closeFacebookModal(page) {
       'div[role="dialog"] div[role="button"]:has-text("เข้าใจแล้ว")',
       'div[role="dialog"] div[role="button"]:has-text("Got it")',
       'div[role="dialog"] div[role="button"]:has-text("Dismiss")',
+      'div[role="dialog"] [role="button"]:has-text("เข้าใจ")',
+      'div[role="dialog"] [role="button"]:has-text("เข้าใจแล้ว")',
+      'div[role="dialog"] [role="button"]:has-text("Got it")',
+      'div[role="dialog"] button:has-text("เข้าใจ")',
+      'div[role="dialog"] button:has-text("เข้าใจแล้ว")',
+      'div[role="dialog"] button:has-text("Got it")',
       'div[role="dialog"] div[role="button"][aria-label*="Close"]',
       'div[role="dialog"] div[role="button"][aria-label*="close"]',
       'div[role="dialog"] div[role="button"][aria-label*="ปิด"]',
@@ -1650,8 +1669,134 @@ async function closeFacebookModal(page) {
         }
       } catch (e) { }
     }
+
+    if (!closed) {
+      // Evaluate fallback
+      closed = await page.evaluate(() => {
+        const dialog = document.querySelector('div[role="dialog"], div[role="alertdialog"]');
+        if (!dialog) return false;
+        const keywords = ['เข้าใจแล้ว', 'เข้าใจ', 'got it', 'dismiss', 'ยอมรับ', 'ตกลง', 'close', 'ปิด'];
+        const clickables = Array.from(dialog.querySelectorAll('div[role="button"], button, span, div'));
+        for (const el of clickables) {
+          const text = (el.innerText || el.textContent || '').trim().toLowerCase();
+          const ariaLabel = (el.getAttribute('aria-label') || '').trim().toLowerCase();
+          const matchesText = keywords.some(kw => text === kw || (text.includes(kw) && text.length < 25));
+          const matchesAria = keywords.some(kw => ariaLabel === kw || (ariaLabel.includes(kw) && ariaLabel.length < 25));
+          if (matchesText || matchesAria) {
+            el.click();
+            return true;
+          }
+        }
+        return false;
+      }).catch(() => false);
+      if (closed) await sleep(600);
+    }
+
     return closed;
   } catch (e) { }
+  return false;
+}
+
+async function dismissGeminiPopups(page) {
+  try {
+    const dialogs = page.locator('mat-dialog-container, div[role="dialog"], div[role="alertdialog"], .update-popup, .modal');
+    const dialogCount = await dialogs.count();
+    
+    if (dialogCount > 0) {
+      console.log(`[Gemini Popup] Found ${dialogCount} potential popups/dialogs.`);
+      for (let i = 0; i < dialogCount; i++) {
+        const dialog = dialogs.nth(i);
+        if (await dialog.isVisible().catch(() => false)) {
+          const buttons = dialog.locator('button, [role="button"], span, div');
+          const btnCount = await buttons.count();
+          for (let j = 0; j < btnCount; j++) {
+            const btn = buttons.nth(j);
+            if (await btn.isVisible().catch(() => false)) {
+              const text = (await btn.innerText().catch(() => '')).trim().toLowerCase();
+              const targetTexts = ['ยอมรับ', 'ตกลง', 'ยินยอม', 'เข้าใจแล้ว', 'accept', 'agree', 'ok', 'got it', 'dismiss'];
+              if (targetTexts.includes(text) || targetTexts.some(t => text.includes(t) && text.length < 15)) {
+                console.log(`[Gemini Popup] Playwright clicking dialog button: "${text}"`);
+                await btn.click({ force: true });
+                await sleep(500);
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    // Standalone buttons fallback
+    const consentButtons = page.locator('button, [role="button"]');
+    const cCount = await consentButtons.count();
+    for (let i = 0; i < cCount; i++) {
+      const btn = consentButtons.nth(i);
+      if (await btn.isVisible().catch(() => false)) {
+        const text = (await btn.innerText().catch(() => '')).trim().toLowerCase();
+        if (['ยอมรับ', 'ตกลง', 'ยินยอม', 'accept', 'agree'].includes(text)) {
+          console.log(`[Gemini Popup] Playwright clicking standalone button: "${text}"`);
+          await btn.click({ force: true });
+          await sleep(500);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Gemini Popup] Error dismissing popups:', err.message);
+  }
+}
+
+async function clickGeminiTryAgainDropdown(page) {
+  try {
+    const selectors = [
+      'button[aria-haspopup="true"]',
+      'button[aria-label*="ตัวเลือกเพิ่มเติม"]',
+      'button[aria-label*="More options"]',
+      'button[aria-label*="เพิ่มเติม"]',
+      'mat-icon[data-mat-icon-name="more_vert"]',
+      'button:has(mat-icon[data-mat-icon-name="more_vert"])'
+    ];
+    
+    for (const sel of selectors) {
+      const triggers = page.locator(sel);
+      const count = await triggers.count();
+      for (let i = 0; i < count; i++) {
+        const trigger = triggers.nth(i);
+        if (await trigger.isVisible().catch(() => false)) {
+          console.log(`[Gemini Dropdown] Clicking menu trigger: ${sel}`);
+          await trigger.click({ force: true });
+          await sleep(600);
+          
+          const menuOptions = [
+            'div[role="menuitem"]',
+            '[role="option"]',
+            'button',
+            'span',
+            'div'
+          ];
+          for (const optSel of menuOptions) {
+            const options = page.locator(optSel);
+            const optCount = await options.count();
+            for (let j = 0; j < optCount; j++) {
+              const opt = options.nth(j);
+              if (await opt.isVisible().catch(() => false)) {
+                const text = (await opt.innerText().catch(() => '')).trim();
+                if (text === 'ลองอีกครั้ง' || text === 'Try again' || text.includes('ลองอีกครั้ง') || text.includes('Try again') || text.includes('สร้างใหม่') || text.includes('สร้างอีกครั้ง')) {
+                  console.log(`[Gemini Dropdown] Found target menu item: "${text}". Clicking it...`);
+                  await opt.click({ force: true });
+                  await sleep(2000);
+                  return true;
+                }
+              }
+            }
+          }
+          await trigger.click({ force: true }).catch(() => {});
+          await sleep(300);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Gemini Dropdown] Error clicking try again dropdown:', err.message);
+  }
   return false;
 }
 
@@ -2449,6 +2594,9 @@ async function pauseOnError(isDebugPause, message) {
               } else {
                 console.warn(`[Share] Share skipped or failed: ${shareResult?.reason}`);
               }
+              // โพสต์แชร์แล้ว รอ 2วิ ค่อยเริ่ม task ใหม่
+              console.log('[Share] Waiting 2 seconds before starting next task...');
+              await sleep(2000);
 
               // ⏸️ DEBUG PAUSE 6: หลัง share ให้ pause รอตรวจสอบก่อนเริ่มงานใหม่
               if (isDebugPause) {
