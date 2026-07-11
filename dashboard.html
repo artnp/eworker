@@ -686,6 +686,33 @@
             border-color: var(--primary);
             background: rgba(66, 133, 244, 0.05);
         }
+
+        .all-ai-btn {
+            padding: 4px 12px;
+            background: linear-gradient(135deg, #4285f4, #ab47bc);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            height: 23px;
+        }
+
+        .all-ai-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(171, 71, 188, 0.4);
+            filter: brightness(1.1);
+        }
+
+        .all-ai-btn:active {
+            transform: translateY(0);
+        }
     </style>
 </head>
 
@@ -739,8 +766,10 @@
                 <input type="checkbox" name="model" value="META">
                 <span>META</span>
             </label>
-
-
+            |
+            <button id="btn-all-ai" type="button" class="all-ai-btn" onclick="submitAllAI(event)">
+                ✨ All AI
+            </button>
         </div>
 
         <div class="quick-tags">
@@ -1238,6 +1267,12 @@
                 submitHubData();
             }
         });
+
+        async function submitAllAI(event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            document.querySelectorAll('input[name="model"]').forEach(cb => cb.checked = true);
+            await submitHubData();
+        }
 
         async function submitHubData() {
             try {
