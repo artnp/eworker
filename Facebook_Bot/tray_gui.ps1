@@ -38,8 +38,8 @@ $botDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $botDir
 $statusFile = Join-Path $botDir "status.json"
 
-# --- State for Browser Visibility (Default to False/Minimized) ---
-$script:browserVisible = $false
+# --- State for Browser Visibility (Default to True/Shown) ---
+$script:browserVisible = $true
 
 # --- Functions to Find & Control Playwright Browser Window Hwnd ---
 function Get-PlaywrightBrowserHwnds {
@@ -100,6 +100,17 @@ function Show-ChromeWindow {
 
 function Toggle-ChromeWindow {
     $script:browserVisible = -not $script:browserVisible
+    try {
+        $hwnds = Get-PlaywrightBrowserHwnds
+        foreach ($hwnd in $hwnds) {
+            if ($script:browserVisible) {
+                [Win32Gui]::ShowWindow($hwnd, 9) | Out-Null  # SW_RESTORE
+                [Win32Gui]::SetForegroundWindow($hwnd) | Out-Null
+            } else {
+                [Win32Gui]::ShowWindow($hwnd, 6) | Out-Null  # SW_MINIMIZE
+            }
+        }
+    } catch {}
 }
 
 # --- Extract Globe Icon for Tray ---
@@ -345,7 +356,9 @@ $script:lastReadTimestamp = 0
 $timer = New-Object System.Windows.Forms.Timer
 $timer.Interval = 300
 $timer.add_Tick({
-    # Continuously maintain Browser visibility state
+    # บังคับให้หน้าต่าง widget อยู่บนสุดเสมอ (Always on top)
+    $form.TopMost = $true
+    # ไม่บังคับให้ Chrome minimize อัตโนมัติ — แค่จัดการตามคำสั่ง Toggle
     try {
         $hwnds = Get-PlaywrightBrowserHwnds
         if ($hwnds.Count -gt 0) {
@@ -353,13 +366,9 @@ $timer.add_Tick({
                 if ($script:browserVisible) {
                     if ([Win32Gui]::IsIconic($hwnd)) {
                         [Win32Gui]::ShowWindow($hwnd, 9) | Out-Null # SW_RESTORE = 9
-                        [Win32Gui]::SetForegroundWindow($hwnd) | Out-Null
-                    }
-                } else {
-                    if (-not [Win32Gui]::IsIconic($hwnd)) {
-                        [Win32Gui]::ShowWindow($hwnd, 6) | Out-Null # SW_MINIMIZE = 6
                     }
                 }
+                # หากปิดหน้าต่าง = minimize ตามคำสั่ง ไม่แสดง
             }
         }
     } catch {}
