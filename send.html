@@ -111,7 +111,6 @@
         .canvas-wrapper {
             position: absolute;
             transform-origin: 0 0;
-            transition: transform 0.1s ease-out;
         }
 
         .main-image, .main-pdf {
@@ -842,6 +841,14 @@
         let markerStartY = 0;
         let resizePos = null;
 
+        // Get event position (works for both mouse and touch)
+        function getEventPos(e) {
+            if (e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+            return { x: e.clientX, y: e.clientY };
+        }
+
         // Check URL for existing session
         const urlParams = new URLSearchParams(window.location.search);
         const existingSession = urlParams.get('id');
@@ -983,7 +990,10 @@
                 // รอให้ DOM update ก่อนเรียก fitToScreen
                 await new Promise(resolve => setTimeout(resolve, 50));
                 
-                // Listen for changes (handles initial render too)
+                // Render markers immediately from loaded data (ไม่ต้องพึ่ง realtime sync)
+                renderAllMarkers();
+
+                // Listen for changes (realtime sync)
                 listenToChanges();
                 
                 // Start countdown
@@ -1188,29 +1198,41 @@
             if (type === 'image') {
                 return new Promise((resolve, reject) => {
                     console.log('📸 Loading image...');
-                    mainImage.onload = () => {
-                        console.log('✅ Image loaded successfully');
-                        mainImage.style.display = 'block';
-                        pdfCanvas.style.display = 'none';
-                        fitToScreen();
-                        resolve();
-                    };
-                    mainImage.onerror = (err) => {
-                        console.error('❌ Image load error:', err);
-                        console.error('Image URL:', finalUrl);
-                        
-                        // ถ้าใช้ proxy แล้วยังไม่ได้ ลองอีก proxy
-                        if (url.includes('tmpfiles.org') && !finalUrl.includes('api.allorigins.win')) {
-                            console.warn('🔄 Trying alternative proxy...');
-                            finalUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-                            mainImage.src = finalUrl;
-                            return;
-                        }
-                        
-                        reject(new Error('โหลดรูปภาพไม่สำเร็จ'));
-                    };
-                    mainImage.src = finalUrl;
-                    console.log('📌 Image src set to:', mainImage.src);
+                    const proxies = [
+                        null,
+                        'https://api.allorigins.win/raw?url=',
+                        'https://corsproxy.io/?',
+                        'https://api.codetabs.com/v1/proxy?quest='
+                    ];
+                    let proxyIndex = 0;
+
+                    function tryLoadImage() {
+                        const currentUrl = proxyIndex === 0
+                            ? finalUrl
+                            : proxies[proxyIndex] + encodeURIComponent(url);
+                        console.log(`📸 Loading image (attempt ${proxyIndex + 1}/${proxies.length}):`, currentUrl.substring(0, 60) + '...');
+
+                        mainImage.onload = () => {
+                            console.log('✅ Image loaded successfully');
+                            mainImage.style.display = 'block';
+                            pdfCanvas.style.display = 'none';
+                            fitToScreen();
+                            resolve();
+                        };
+                        mainImage.onerror = () => {
+                            proxyIndex++;
+                            if (proxyIndex < proxies.length) {
+                                console.warn(`🔄 Attempt ${proxyIndex} failed, trying next...`);
+                                tryLoadImage();
+                            } else {
+                                console.error('❌ All image loading attempts failed');
+                                reject(new Error('โหลดรูปภาพไม่สำเร็จ'));
+                            }
+                        };
+                        mainImage.src = currentUrl;
+                    }
+
+                    tryLoadImage();
                 });
             } else if (type === 'pdf') {
                 try {
@@ -1413,6 +1435,8 @@
                 );
                 touchStartScale = scale;
             } else if (e.touches.length === 1) {
+                // Don't start panning if touching a marker
+                if (e.target.closest('.marker')) return;
                 isPanning = true;
                 startPanX = e.touches[0].clientX - translateX;
                 startPanY = e.touches[0].clientY - translateY;
@@ -1558,6 +1582,11 @@
                         e.stopPropagation();
                         startResize(e, marker, pos);
                     });
+                    handle.addEventListener('touchstart', (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        startResize(e, marker, pos);
+                    }, { passive: false });
                 });
             }
 
@@ -1568,6 +1597,14 @@
                     startDrag(e, marker);
                 }
             });
+            markerEl.addEventListener('touchstart', (e) => {
+                if (isCrossPage) return;
+                if (!e.target.classList.contains('resize-handle')) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    startDrag(e, marker);
+                }
+            }, { passive: false });
 
             markerEl.addEventListener('click', async (e) => {
                 e.stopPropagation();
@@ -1583,15 +1620,17 @@
         function startDrag(e, marker) {
             isDragging = true;
             currentMarker = marker;
-            const markerEl = document.querySelector(`.marker[data-id="${marker.id}"]`);
+            const pos = getEventPos(e);
             
-            dragStartX = e.clientX;
-            dragStartY = e.clientY;
+            dragStartX = pos.x;
+            dragStartY = pos.y;
             markerStartX = marker.x;
             markerStartY = marker.y;
 
             document.addEventListener('mousemove', onDragMove);
             document.addEventListener('mouseup', onDragEnd);
+            document.addEventListener('touchmove', onDragMove, { passive: false });
+            document.addEventListener('touchend', onDragEnd);
         }
 
         function onDragMove(e) {
@@ -1599,9 +1638,10 @@
 
             const content = fileType === 'image' ? mainImage : pdfCanvas;
             const contentRect = content.getBoundingClientRect();
+            const pos = getEventPos(e);
 
-            const dx = ((e.clientX - dragStartX) / contentRect.width) * 100;
-            const dy = ((e.clientY - dragStartY) / contentRect.height) * 100;
+            const dx = ((pos.x - dragStartX) / contentRect.width) * 100;
+            const dy = ((pos.y - dragStartY) / contentRect.height) * 100;
 
             currentMarker.x = Math.max(0, Math.min(100 - currentMarker.width, markerStartX + dx));
             currentMarker.y = Math.max(0, Math.min(100 - currentMarker.height, markerStartY + dy));
@@ -1626,6 +1666,8 @@
             currentMarker = null;
             document.removeEventListener('mousemove', onDragMove);
             document.removeEventListener('mouseup', onDragEnd);
+            document.removeEventListener('touchmove', onDragMove);
+            document.removeEventListener('touchend', onDragEnd);
         }
 
         function startResize(e, marker, pos) {
@@ -1633,8 +1675,9 @@
             currentMarker = marker;
             resizePos = pos;
 
-            dragStartX = e.clientX;
-            dragStartY = e.clientY;
+            const eventPos = getEventPos(e);
+            dragStartX = eventPos.x;
+            dragStartY = eventPos.y;
             markerStartX = marker.x;
             markerStartY = marker.y;
 
@@ -1643,15 +1686,18 @@
 
             document.addEventListener('mousemove', onResizeMove);
             document.addEventListener('mouseup', onResizeEnd);
+            document.addEventListener('touchmove', onResizeMove, { passive: false });
+            document.addEventListener('touchend', onResizeEnd);
 
             function onResizeMove(e) {
                 if (!isResizing || !currentMarker) return;
 
                 const content = fileType === 'image' ? mainImage : pdfCanvas;
                 const contentRect = content.getBoundingClientRect();
+                const pos = getEventPos(e);
 
-                const dx = ((e.clientX - dragStartX) / contentRect.width) * 100;
-                const dy = ((e.clientY - dragStartY) / contentRect.height) * 100;
+                const dx = ((pos.x - dragStartX) / contentRect.width) * 100;
+                const dy = ((pos.y - dragStartY) / contentRect.height) * 100;
 
                 const markerEl = document.querySelector(`.marker[data-id="${currentMarker.id}"]`);
 
@@ -1702,6 +1748,8 @@
                 resizePos = null;
                 document.removeEventListener('mousemove', onResizeMove);
                 document.removeEventListener('mouseup', onResizeEnd);
+                document.removeEventListener('touchmove', onResizeMove);
+                document.removeEventListener('touchend', onResizeEnd);
             }
         }
 
@@ -1783,35 +1831,42 @@
             document.querySelectorAll('.arrow-line').forEach(el => el.remove());
 
             const sortedMarkers = Object.values(annotations).sort((a, b) => a.number - b.number);
+            const isMobile = window.innerWidth <= 768;
+            const containerRect = splitContainer.getBoundingClientRect();
             
             sortedMarkers.forEach(marker => {
-                // Skip arrows for markers on other pages
                 if (marker.page && marker.page !== currentPage) return;
 
                 const markerEl = document.querySelector(`.marker[data-id="${marker.id}"]`);
                 const cardEl = document.querySelector(`.annotation-card[data-id="${marker.id}"]`);
-
                 if (!markerEl || !cardEl) return;
 
                 const markerRect = markerEl.getBoundingClientRect();
                 const cardRect = cardEl.getBoundingClientRect();
-                const containerRect = canvasContainer.getBoundingClientRect();
 
-                // From marker right-center to card left-center
-                const x1 = markerRect.right - containerRect.left;
-                const y1 = markerRect.top + markerRect.height / 2 - containerRect.top;
-                const x2 = cardRect.left - containerRect.left;
-                const y2 = cardRect.top + cardRect.height / 2 - containerRect.top;
+                let x1, y1, x2, y2;
+
+                if (isMobile) {
+                    // Column: marker top → card bottom → connect bottom-center ↔ top-center
+                    x1 = markerRect.left + markerRect.width / 2 - containerRect.left;
+                    y1 = markerRect.bottom - containerRect.top;
+                    x2 = cardRect.left + cardRect.width / 2 - containerRect.left;
+                    y2 = cardRect.top - containerRect.top;
+                } else {
+                    // Row: marker left, card right → connect right-center ↔ left-center
+                    x1 = markerRect.right - containerRect.left;
+                    y1 = markerRect.top + markerRect.height / 2 - containerRect.top;
+                    x2 = cardRect.left - containerRect.left;
+                    y2 = cardRect.top + cardRect.height / 2 - containerRect.top;
+                }
+
+                const dx = x2 - x1;
+                const dy = y2 - y1;
+                if (Math.hypot(dx, dy) < 5) return;
 
                 const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
                 svg.classList.add('arrow-line');
-                svg.style.position = 'absolute';
-                svg.style.left = '0';
-                svg.style.top = '0';
-                svg.style.width = '100%';
-                svg.style.height = '100%';
-                svg.style.pointerEvents = 'none';
-                svg.style.zIndex = '5';
+                svg.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:5;';
 
                 const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                 line.setAttribute('x1', x1);
@@ -1819,7 +1874,6 @@
                 line.setAttribute('x2', x2);
                 line.setAttribute('y2', y2);
                 
-                // Apply dimmed style if not active
                 if (activeMarkerId && marker.id !== activeMarkerId) {
                     line.setAttribute('stroke', '#000');
                     line.setAttribute('stroke-width', '2');
@@ -1828,11 +1882,9 @@
                     line.setAttribute('stroke', marker.id === activeMarkerId ? 'var(--primary)' : 'var(--danger)');
                     line.setAttribute('stroke-width', '3');
                 }
-
                 svg.appendChild(line);
 
-                // Arrow head
-                const angle = Math.atan2(y2 - y1, x2 - x1);
+                const angle = Math.atan2(dy, dx);
                 const arrowSize = 10;
                 const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
                 const points = [
@@ -1848,7 +1900,6 @@
                 } else {
                     polygon.setAttribute('fill', marker.id === activeMarkerId ? 'var(--primary)' : 'var(--danger)');
                 }
-
                 svg.appendChild(polygon);
 
                 splitContainer.appendChild(svg);
@@ -1909,16 +1960,20 @@
         function listenToChanges() {
             const markersRef = database.ref(`annotations/${sessionId}/markers`);
 
-            // Clear existing DOM elements
-            document.querySelectorAll('.marker').forEach(el => el.remove());
-            document.querySelectorAll('.arrow-line').forEach(el => el.remove());
-            annotationsList.innerHTML = '';
-            annotations = {};
+            const hasExistingData = Object.keys(annotations).length > 0;
 
-            let isInitialLoad = true;
+            if (!hasExistingData) {
+                document.querySelectorAll('.marker').forEach(el => el.remove());
+                document.querySelectorAll('.arrow-line').forEach(el => el.remove());
+                annotationsList.innerHTML = '';
+                annotations = {};
+            }
+
+            let isInitialLoad = !hasExistingData;
 
             markersRef.on('child_added', (snapshot) => {
                 const marker = { id: snapshot.key, ...snapshot.val() };
+                if (annotations[marker.id]) return;
                 annotations[marker.id] = marker;
                 markerCounter = Math.max(markerCounter, (marker.number || 0) + 1);
 
@@ -1932,30 +1987,43 @@
                 }
             });
 
-            markersRef.once('value', () => {
-                isInitialLoad = false;
+            markersRef.once('value', (snapshot) => {
+                if (isInitialLoad) {
+                    isInitialLoad = false;
 
-                if (Object.keys(annotations).length === 0) {
-                    annotationsList.innerHTML = `
-                        <div class="empty-state">
-                            <i class="fa-regular fa-circle-dot"></i>
-                            <p><strong>ยังไม่มีจุดแก้ไข</strong></p>
-                            <p>คลิกปุ่ม "เพิ่ม" หรือคลิกที่ไฟล์ด้านซ้าย</p>
-                        </div>
-                    `;
-                    annotationCount.textContent = '0';
-                    return;
-                }
-
-                const sorted = Object.values(annotations).sort((a, b) => a.number - b.number);
-                sorted.forEach(marker => {
-                    if (!marker.page || marker.page === currentPage) {
-                        renderMarker(marker);
+                    if (Object.keys(annotations).length === 0) {
+                        annotationsList.innerHTML = `
+                            <div class="empty-state">
+                                <i class="fa-regular fa-circle-dot"></i>
+                                <p><strong>ยังไม่มีจุดแก้ไข</strong></p>
+                                <p>คลิกปุ่ม "เพิ่ม" หรือคลิกที่ไฟล์ด้านซ้าย</p>
+                            </div>
+                        `;
+                        annotationCount.textContent = '0';
+                        return;
                     }
-                    renderAnnotationCard(marker);
-                });
-                annotationCount.textContent = sorted.length;
-                setTimeout(renderArrows, 100);
+
+                    const sorted = Object.values(annotations).sort((a, b) => a.number - b.number);
+                    sorted.forEach(marker => {
+                        if (!marker.page || marker.page === currentPage) {
+                            renderMarker(marker);
+                        }
+                        renderAnnotationCard(marker);
+                    });
+                    annotationCount.textContent = sorted.length;
+                    setTimeout(renderArrows, 100);
+                } else {
+                    // Reconcile: remove markers deleted by others while page was loading
+                    const fbIds = new Set(Object.keys(snapshot.val() || {}));
+                    Object.keys(annotations).forEach(id => {
+                        if (!fbIds.has(id)) {
+                            delete annotations[id];
+                            document.querySelector(`.marker[data-id="${id}"]`)?.remove();
+                            document.querySelector(`.annotation-card[data-id="${id}"]`)?.remove();
+                        }
+                    });
+                    annotationCount.textContent = Object.keys(annotations).length;
+                }
             });
 
             markersRef.on('child_changed', (snapshot) => {
