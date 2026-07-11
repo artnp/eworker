@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>เครื่องมือมาร์คจุดแก้ไข - Collaborative</title>
+    <title>ชี้จุดแก้ไข</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -645,12 +645,16 @@
                 font-size: 15px;
                 min-height: 60px;
             }
-            /* บนมือถือ ปุ่ม float เลื่อนขวาไปหน่อยหนีจาก timer */
             #expiryTimer {
                 bottom: 14px;
                 left: 14px;
                 font-size: 11px !important;
                 padding: 4px 10px !important;
+            }
+            #extendBtn {
+                font-size: 11px !important;
+                padding: 2px 8px !important;
+                margin-left: 6px !important;
             }
         }
 
@@ -711,8 +715,9 @@
             </div>
 
             <!-- Expiry Timer - bottom left -->
-            <div id="expiryTimer" style="display: none; position: absolute; bottom: 14px; left: 14px; background: rgba(0,0,0,0.55); color: #fde68a; font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 20px; z-index: 50; backdrop-filter: blur(4px); pointer-events: none;">
+            <div id="expiryTimer" style="display: none; position: absolute; bottom: 14px; left: 14px; background: rgba(0,0,0,0.55); color: #fde68a; font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 20px; z-index: 50; backdrop-filter: blur(4px);">
                 ⏰ <span id="expiryTime">--:--:--</span>
+                <button id="extendBtn" style="display:none;margin-left:8px;background:#10b981;color:#fff;border:none;border-radius:12px;padding:2px 10px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">+10 นาที</button>
             </div>
 
             <!-- Floating Add Button - bottom center -->
@@ -975,8 +980,8 @@
 
                 console.log('✅ Session loaded:', { sessionId, fileUrl, fileType, markersCount: Object.keys(annotations).length });
 
-                // Count markers
-                markerCounter = Object.keys(annotations).length + 1;
+                // Count markers (max number + 1)
+                markerCounter = Object.values(annotations).reduce((max, m) => Math.max(max, m.number || 0), 0) + 1;
 
                 // Load file
                 console.log('🚀 Calling loadFile with:', fileUrl, fileType);
@@ -1762,9 +1767,7 @@
             card.innerHTML = `
                 <div class="card-header">
                     <div class="marker-number">${marker.number}</div>
-                    <div style="font-size:12px;color:var(--text-muted);font-weight:600;">
-                        <i class="fa-solid fa-file"></i> หน้า ${marker.page || 1}
-                    </div>
+                    ${fileType === 'pdf' ? `<div style="font-size:12px;color:var(--text-muted);font-weight:600;"><i class="fa-solid fa-file"></i> หน้า ${marker.page || 1}</div>` : ''}
                     <button class="btn-delete" title="ลบ">
                         <i class="fa-solid fa-trash"></i>
                     </button>
@@ -1833,77 +1836,63 @@
             const sortedMarkers = Object.values(annotations).sort((a, b) => a.number - b.number);
             const isMobile = window.innerWidth <= 768;
             const containerRect = splitContainer.getBoundingClientRect();
-            
+
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.classList.add('arrow-line');
+            svg.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:5;';
+
             sortedMarkers.forEach(marker => {
                 if (marker.page && marker.page !== currentPage) return;
-
                 const markerEl = document.querySelector(`.marker[data-id="${marker.id}"]`);
                 const cardEl = document.querySelector(`.annotation-card[data-id="${marker.id}"]`);
                 if (!markerEl || !cardEl) return;
 
-                const markerRect = markerEl.getBoundingClientRect();
-                const cardRect = cardEl.getBoundingClientRect();
+                const mRect = markerEl.getBoundingClientRect();
+                const markerNumber = cardEl.querySelector('.marker-number');
+                const tRect = markerNumber ? markerNumber.getBoundingClientRect() : cardEl.getBoundingClientRect();
 
-                let x1, y1, x2, y2;
+                const isActive = marker.id === activeMarkerId;
+                const dimmed = !!(activeMarkerId && marker.id !== activeMarkerId);
+                const col = dimmed ? 'rgba(239,68,68,0.25)' : (isActive ? '#ef4444' : 'var(--danger)');
+                const w = dimmed ? '2' : '2.5';
+                const op = '1';
 
+                let d, ax, ay;
                 if (isMobile) {
-                    // Column: marker top → card bottom → connect bottom-center ↔ top-center
-                    x1 = markerRect.left + markerRect.width / 2 - containerRect.left;
-                    y1 = markerRect.bottom - containerRect.top;
-                    x2 = cardRect.left + cardRect.width / 2 - containerRect.left;
-                    y2 = cardRect.top - containerRect.top;
+                    const mx = mRect.left + mRect.width / 2 - containerRect.left;
+                    const my = mRect.bottom - containerRect.top;
+                    const tx = tRect.left + tRect.width / 2 - containerRect.left;
+                    const ty = tRect.top - containerRect.top;
+                    const dy = (ty - my) * 0.45;
+                    d = `M ${mx} ${my} C ${mx} ${my + dy}, ${tx} ${ty - dy}, ${tx} ${ty}`;
+                    ax = tx; ay = ty;
                 } else {
-                    // Row: marker left, card right → connect right-center ↔ left-center
-                    x1 = markerRect.right - containerRect.left;
-                    y1 = markerRect.top + markerRect.height / 2 - containerRect.top;
-                    x2 = cardRect.left - containerRect.left;
-                    y2 = cardRect.top + cardRect.height / 2 - containerRect.top;
+                    const mx = mRect.right - containerRect.left;
+                    const my = mRect.top + mRect.height / 2 - containerRect.top;
+                    const tx = tRect.left + tRect.width / 2 - containerRect.left;
+                    const ty = tRect.top + tRect.height / 2 - containerRect.top;
+                    const dx = (tx - mx) * 0.45;
+                    d = `M ${mx} ${my} C ${mx + dx} ${my}, ${tx - dx} ${ty}, ${tx} ${ty}`;
+                    ax = tx; ay = ty;
                 }
 
-                const dx = x2 - x1;
-                const dy = y2 - y1;
-                if (Math.hypot(dx, dy) < 5) return;
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', d);
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke', col);
+                path.setAttribute('stroke-width', w);
+                path.setAttribute('opacity', op);
+                svg.appendChild(path);
 
-                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svg.classList.add('arrow-line');
-                svg.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:5;';
-
-                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                line.setAttribute('x1', x1);
-                line.setAttribute('y1', y1);
-                line.setAttribute('x2', x2);
-                line.setAttribute('y2', y2);
-                
-                if (activeMarkerId && marker.id !== activeMarkerId) {
-                    line.setAttribute('stroke', '#000');
-                    line.setAttribute('stroke-width', '2');
-                    line.setAttribute('opacity', '0.2');
-                } else {
-                    line.setAttribute('stroke', marker.id === activeMarkerId ? 'var(--primary)' : 'var(--danger)');
-                    line.setAttribute('stroke-width', '3');
-                }
-                svg.appendChild(line);
-
-                const angle = Math.atan2(dy, dx);
-                const arrowSize = 10;
-                const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-                const points = [
-                    [x2, y2],
-                    [x2 - arrowSize * Math.cos(angle - Math.PI / 6), y2 - arrowSize * Math.sin(angle - Math.PI / 6)],
-                    [x2 - arrowSize * Math.cos(angle + Math.PI / 6), y2 - arrowSize * Math.sin(angle + Math.PI / 6)]
-                ];
-                polygon.setAttribute('points', points.map(p => p.join(',')).join(' '));
-                
-                if (activeMarkerId && marker.id !== activeMarkerId) {
-                    polygon.setAttribute('fill', '#000');
-                    polygon.setAttribute('opacity', '0.2');
-                } else {
-                    polygon.setAttribute('fill', marker.id === activeMarkerId ? 'var(--primary)' : 'var(--danger)');
-                }
-                svg.appendChild(polygon);
-
-                splitContainer.appendChild(svg);
+                const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                const s = 8, p = Math.PI / 6;
+                arrow.setAttribute('points', `${ax},${ay} ${ax - s * Math.cos(p)},${ay - s * Math.sin(p)} ${ax - s * Math.cos(p)},${ay + s * Math.sin(p)}`);
+                arrow.setAttribute('fill', col);
+                arrow.setAttribute('opacity', op);
+                svg.appendChild(arrow);
             });
+
+            splitContainer.appendChild(svg);
         }
 
         // Redraw arrows on window resize
@@ -1916,26 +1905,30 @@
 
         // ===== EXPIRY COUNTDOWN =====
         let expiryInterval = null;
+        let currentExpiresAt = null;
+        const extendBtn = document.getElementById('extendBtn');
 
         function startExpiryCountdown(expiresAt) {
             if (!expiresAt) return;
-            
+            currentExpiresAt = expiresAt;
             expiryTimer.style.display = 'block';
-            
+
+            extendBtn.onclick = extendSession;
+
             expiryInterval = setInterval(() => {
                 const now = Date.now();
-                const remaining = expiresAt - now;
+                const remaining = currentExpiresAt - now;
                 
                 if (remaining <= 0) {
                     clearInterval(expiryInterval);
+                    extendBtn.style.display = 'none';
                     expiryTime.textContent = 'หมดอายุแล้ว';
                     
-                    // Delete session from Firebase
                     if (sessionId) {
                         database.ref(`annotations/${sessionId}`).remove();
                     }
                     
-                    alert('⚠️ เซสชันหมดอายุแล้ว (1 ชม.)\n\nไฟล์และข้อมูลทั้งหมดถูกลบแล้ว\nกรุณาอัพโหลดใหม่');
+                    alert('⚠️ เซสชันหมดอายุแล้ว\n\nไฟล์และข้อมูลทั้งหมดถูกลบแล้ว\nกรุณาอัพโหลดใหม่');
                     location.reload();
                     return;
                 }
@@ -1946,14 +1939,25 @@
                 
                 expiryTime.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
                 
-                // Change color when < 5 minutes
+                // Show extend button when < 5 minutes
                 if (remaining < 5 * 60 * 1000) {
                     expiryTimer.style.color = '#fbbf24';
+                    extendBtn.style.display = 'inline';
+                } else {
+                    extendBtn.style.display = 'none';
                 }
                 if (remaining < 1 * 60 * 1000) {
                     expiryTimer.style.color = '#ef4444';
                 }
             }, 1000);
+        }
+
+        async function extendSession() {
+            if (!sessionId) return;
+            currentExpiresAt = Date.now() + 10 * 60 * 1000;
+            await database.ref(`annotations/${sessionId}`).update({ expiresAt: currentExpiresAt });
+            extendBtn.style.display = 'none';
+            expiryTimer.style.color = '#fde68a';
         }
 
         // ===== FIREBASE SYNC =====
@@ -1973,9 +1977,9 @@
 
             markersRef.on('child_added', (snapshot) => {
                 const marker = { id: snapshot.key, ...snapshot.val() };
+                markerCounter = Math.max(markerCounter, (marker.number || 0) + 1);
                 if (annotations[marker.id]) return;
                 annotations[marker.id] = marker;
-                markerCounter = Math.max(markerCounter, (marker.number || 0) + 1);
 
                 if (!isInitialLoad) {
                     if (!marker.page || marker.page === currentPage) {
@@ -2023,6 +2027,7 @@
                         }
                     });
                     annotationCount.textContent = Object.keys(annotations).length;
+                    markerCounter = Object.values(annotations).reduce((max, m) => Math.max(max, m.number || 0), 0) + 1;
                 }
             });
 
@@ -2058,6 +2063,8 @@
 
                 const count = Object.keys(annotations).length;
                 annotationCount.textContent = count;
+                // Recalculate counter from remaining markers
+                markerCounter = Object.values(annotations).reduce((max, m) => Math.max(max, m.number || 0), 0) + 1;
                 if (count === 0) {
                     annotationsList.innerHTML = `
                         <div class="empty-state">
