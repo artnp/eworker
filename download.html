@@ -705,6 +705,35 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* Loading Progress Bar styles */
+        .progress-container {
+            width: 200px;
+            background: rgba(255, 255, 255, 0.15);
+            height: 8px;
+            border-radius: 4px;
+            margin: 15px auto 5px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: none;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), #818cf8);
+            box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
+            transition: width 0.1s ease-out;
+            border-radius: 4px;
+        }
+
+        .loading-percent {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-top: 5px;
+            display: none;
+        }
+
         /* Hidden Elements */
         .hidden {
             display: none !important;
@@ -730,7 +759,11 @@
                 <div class="image-container" id="image-container">
                     <div id="loading-text">
                         <div class="spinner"></div>
-                        <p style="margin-top: 20px;">กำลังโหลดไฟล์...</p>
+                        <p style="margin-top: 20px;" id="loading-step-text">กำลังโหลดไฟล์...</p>
+                        <div class="progress-container" id="download-progress-container">
+                            <div class="progress-bar" id="download-progress-bar"></div>
+                        </div>
+                        <div class="loading-percent" id="download-percent-text">0%</div>
                     </div>
                     <img id="preview-image" class="hidden" alt="Preview" onclick="handleImageClick()">
                     
@@ -1095,37 +1128,41 @@
                 const firebaseUrl = `https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/${fileId}.json`;
                 console.log('Firebase detected, fetching data...', fileId);
                 
-                // Fetch base64 data from Firebase
-                fetch(firebaseUrl)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data && data.data) {
-                            // Convert base64 to blob
-                            const binary = atob(data.data);
-                            const bytes = new Uint8Array(binary.length);
-                            for (let i = 0; i < binary.length; i++) {
-                                bytes[i] = binary.charCodeAt(i);
-                            }
-                            const blob = new Blob([bytes]);
-                            const blobUrl = URL.createObjectURL(blob);
-                            
-                            previewImage.src = blobUrl;
-                            window.__downloadUrl = blobUrl;
-                            
-                            previewImage.onload = function() {
-                                console.log('✅ Firebase image loaded');
-                                loadingText.classList.add('hidden');
-                                previewImage.classList.remove('hidden');
-                                applyProtection();
-                            };
-                        } else {
-                            showError('โหลดไฟล์ไม่สำเร็จ', 'ไม่พบข้อมูลใน Firebase');
+                updateDownloadProgress('กำลังโหลดข้อมูลจากฐานข้อมูล...', 0);
+                
+                // Fetch base64 data from Firebase with progress
+                downloadWithProgress(firebaseUrl, 'กำลังโหลดข้อมูลจากฐานข้อมูล...', (percent) => {
+                    updateDownloadProgress('กำลังโหลดข้อมูลจากฐานข้อมูล...', percent);
+                })
+                .then(data => {
+                    if (data && data.data) {
+                        updateDownloadProgress('กำลังประมวลผลรูปภาพ...', 100);
+                        // Convert base64 to blob
+                        const binary = atob(data.data);
+                        const bytes = new Uint8Array(binary.length);
+                        for (let i = 0; i < binary.length; i++) {
+                            bytes[i] = binary.charCodeAt(i);
                         }
-                    })
-                    .catch(err => {
-                        console.error('Firebase fetch error:', err);
-                        showError('โหลดไฟล์ไม่สำเร็จ', 'ไม่สามารถดึงข้อมูลจาก Firebase ได้');
-                    });
+                        const blob = new Blob([bytes]);
+                        const blobUrl = URL.createObjectURL(blob);
+                        
+                        previewImage.src = blobUrl;
+                        window.__downloadUrl = blobUrl;
+                        
+                        previewImage.onload = function() {
+                            console.log('✅ Firebase image loaded');
+                            loadingText.classList.add('hidden');
+                            previewImage.classList.remove('hidden');
+                            applyProtection();
+                        };
+                    } else {
+                        showError('โหลดไฟล์ไม่สำเร็จ', 'ไม่พบข้อมูลใน Firebase');
+                    }
+                })
+                .catch(err => {
+                    console.error('Firebase fetch error:', err);
+                    showError('โหลดไฟล์ไม่สำเร็จ', 'ไม่สามารถดึงข้อมูลจาก Firebase ได้');
+                });
                 return; // Early exit for Firebase
             }
             // Litterbox/Catbox format
@@ -1144,33 +1181,57 @@
             // Store download URL globally
             window.__downloadUrl = downloadUrl;
 
-            // Load image
-            previewImage.src = previewUrl + (previewUrl.includes('?') ? '&' : '?') + 'v=' + Date.now();
+            // Load image using XMLHttpRequest with progress, with fallback to CORS proxy
+            updateDownloadProgress('กำลังดาวน์โหลดไฟล์เพื่อแสดงผล...', 0);
             
-            previewImage.onload = function() {
-                console.log('✅ Image loaded successfully');
-                loadingText.classList.add('hidden');
-                previewImage.classList.remove('hidden');
-                applyProtection();
-            };
-            
-            previewImage.onerror = function() {
-                console.error('❌ Image load failed for URL:', previewUrl);
-                
-                // สำหรับ file.io หรือ tmpfiles: ถ้าโหลดภาพตัวอย่างไม่ได้ แสดงข้อความแทน
-                if (fileUrl.includes('file.io') || fileUrl.includes('tmpfiles.org')) {
-                    loadingText.innerHTML = `
-                        <div style="text-align: center; color: var(--text-muted);">
-                            <div style="font-size: 4rem; margin-bottom: 15px;">📄</div>
-                            <p style="font-size: 1.1rem; margin-bottom: 8px;">ไฟล์พร้อมดาวน์โหลด</p>
-                            <p style="font-size: 0.85rem;">(ไม่แสดงตัวอย่าง - กดปุ่มดาวน์โหลดเพื่อรับไฟล์)</p>
-                        </div>
-                    `;
+            downloadWithProgress(previewUrl, 'กำลังดาวน์โหลดไฟล์เพื่อแสดงผล...', (percent) => {
+                updateDownloadProgress('กำลังดาวน์โหลดไฟล์เพื่อแสดงผล...', percent);
+            })
+            .then(blob => {
+                const blobUrl = URL.createObjectURL(blob);
+                previewImage.src = blobUrl;
+                previewImage.onload = function() {
+                    console.log('✅ Image loaded successfully');
+                    loadingText.classList.add('hidden');
+                    previewImage.classList.remove('hidden');
                     applyProtection();
-                } else {
-                    showError('โหลดไฟล์ไม่สำเร็จ', 'ลิงก์อาจหมดอายุหรือถูกลบแล้ว');
-                }
-            };
+                };
+            })
+            .catch(err => {
+                console.warn('Direct load failed, trying CORS proxy fallback...', err);
+                const fallbackUrl = 'https://corsproxy.io/?' + encodeURIComponent(previewUrl);
+                
+                downloadWithProgress(fallbackUrl, 'กำลังดาวน์โหลดไฟล์เพื่อแสดงผล (Proxy)...', (percent) => {
+                    updateDownloadProgress('กำลังดาวน์โหลดไฟล์เพื่อแสดงผล (Proxy)...', percent);
+                })
+                .then(blob => {
+                    const blobUrl = URL.createObjectURL(blob);
+                    previewImage.src = blobUrl;
+                    previewImage.onload = function() {
+                        console.log('✅ Image loaded successfully (Proxy)');
+                        loadingText.classList.add('hidden');
+                        previewImage.classList.remove('hidden');
+                        applyProtection();
+                    };
+                })
+                .catch(fallbackErr => {
+                    console.error('Download failed:', fallbackErr);
+                    
+                    // สำหรับ file.io หรือ tmpfiles: ถ้าโหลดภาพตัวอย่างไม่ได้ แสดงข้อความแทน
+                    if (fileUrl.includes('file.io') || fileUrl.includes('tmpfiles.org')) {
+                        loadingText.innerHTML = `
+                            <div style="text-align: center; color: var(--text-muted);">
+                                <div style="font-size: 4rem; margin-bottom: 15px;">📄</div>
+                                <p style="font-size: 1.1rem; margin-bottom: 8px;">ไฟล์พร้อมดาวน์โหลด</p>
+                                <p style="font-size: 0.85rem;">(ไม่แสดงตัวอย่าง - กดปุ่มดาวน์โหลดเพื่อรับไฟล์)</p>
+                            </div>
+                        `;
+                        applyProtection();
+                    } else {
+                        showError('โหลดไฟล์ไม่สำเร็จ', 'ลิงก์อาจหมดอายุหรือถูกลบแล้ว');
+                    }
+                });
+            });
         }
 
         // ฟังก์ชันป้องกันดาวน์โหลด
@@ -1234,11 +1295,68 @@
             }, 100);
         }
 
+        function updateDownloadProgress(text, percent) {
+            const stepText = document.getElementById('loading-step-text');
+            const progressContainer = document.getElementById('download-progress-container');
+            const progressBar = document.getElementById('download-progress-bar');
+            const percentText = document.getElementById('download-percent-text');
+
+            if (stepText) stepText.textContent = text;
+            if (progressContainer) progressContainer.style.display = 'block';
+            if (percentText) percentText.style.display = 'block';
+            if (progressBar) progressBar.style.width = percent + '%';
+            if (percentText) percentText.textContent = percent + '%';
+        }
+
+        function downloadWithProgress(url, stepName, onProgress) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true);
+                
+                // If it's a firebase fetch, we want json response type, else blob
+                const isFirebase = url.includes('.firebasedatabase.app') || url.includes('/temp_files/');
+                if (!isFirebase) {
+                    xhr.responseType = 'blob';
+                }
+
+                xhr.onload = function() {
+                    if (this.status >= 200 && this.status < 300) {
+                        if (isFirebase) {
+                            try {
+                                resolve(JSON.parse(this.responseText));
+                            } catch (e) {
+                                reject(e);
+                            }
+                        } else {
+                            resolve(this.response);
+                        }
+                    } else {
+                        reject(new Error(`Download failed with status ${this.status}`));
+                    }
+                };
+
+                xhr.onerror = function() {
+                    reject(new Error('Network error during download'));
+                };
+
+                xhr.onprogress = function(e) {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        onProgress(percent);
+                    }
+                };
+
+                xhr.send();
+            });
+        }
+
         // Download File
         function downloadFile() {
             const btn = event.target;
             const originalText = btn.innerHTML;
-            btn.innerHTML = '⏳ กำลังดาวน์โหลด...';
+            btn.innerHTML = '⏳ กำลังดาวน์โหลด... (0%)';
+            btn.disabled = true;
+            btn.style.opacity = '0.7';
 
             // Use the download URL we stored during loadFile
             let downloadUrl = window.__downloadUrl || fileUrl;
@@ -1252,6 +1370,8 @@
             if (isInAppBrowser) {
                 // สำหรับ In-App Browser: เปิดใน Browser ภายนอก
                 btn.innerHTML = '🌐 กำลังเปิดในเบราว์เซอร์...';
+                btn.disabled = false;
+                btn.style.opacity = '1';
                 
                 // พยายามเปิดใน default browser
                 window.location.href = downloadUrl;
@@ -1267,6 +1387,8 @@
             if (downloadUrl.includes('file.io')) {
                 window.open(downloadUrl, '_blank');
                 btn.innerHTML = '✅ เปิดลิงก์ดาวน์โหลดแล้ว!';
+                btn.disabled = false;
+                btn.style.opacity = '1';
                 setTimeout(() => {
                     btn.innerHTML = '⚠️ ลิงก์ใช้ได้ครั้งเดียว!';
                     btn.disabled = true;
@@ -1276,47 +1398,46 @@
                 return;
             }
 
-            // สำหรับ tmpfiles.org หรือ Browser ปกติ: ดาวน์โหลดตรง
-            fetch(downloadUrl)
-                .then(response => {
-                    if (!response.ok) {
-                        console.error('Download fetch failed:', response.status, response.statusText);
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.blob();
-                })
-                .then(blob => {
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = url;
-                    
-                    // Extract filename from URL
-                    let filename = 'download.jpg';
-                    const urlParts = downloadUrl.split('/');
-                    const lastPart = urlParts[urlParts.length - 1].split('?')[0];
-                    if (lastPart && lastPart.includes('.')) {
-                        filename = lastPart;
-                    } else {
-                        // Use file type from params
-                        filename = 'file.' + (fileType === 'pdf' ? 'pdf' : 'jpg');
-                    }
-                    
-                    a.download = filename;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);
-                    btn.innerHTML = '✅ ดาวน์โหลดสำเร็จ!';
-                    setTimeout(() => btn.innerHTML = originalText, 3000);
-                })
-                .catch(err => {
-                    console.error('Download failed:', err);
-                    // Fallback: เปิดในแท็บใหม่
-                    window.open(downloadUrl, '_blank');
-                    btn.innerHTML = '📱 เปิดไฟล์ในแท็บใหม่';
-                    setTimeout(() => btn.innerHTML = originalText, 3000);
-                });
+            // สำหรับ tmpfiles.org หรือ Browser ปกติ: ดาวน์โหลดตรง พร้อม % การดาวน์โหลด
+            downloadWithProgress(downloadUrl, 'กำลังดาวน์โหลด...', (percent) => {
+                btn.innerHTML = `⏳ กำลังดาวน์โหลด... (${percent}%)`;
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                
+                // Extract filename from URL
+                let filename = 'download.jpg';
+                const urlParts = downloadUrl.split('/');
+                const lastPart = urlParts[urlParts.length - 1].split('?')[0];
+                if (lastPart && lastPart.includes('.')) {
+                    filename = lastPart;
+                } else {
+                    // Use file type from params
+                    filename = 'file.' + (fileType === 'pdf' ? 'pdf' : 'jpg');
+                }
+                
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                btn.innerHTML = '✅ ดาวน์โหลดสำเร็จ!';
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                setTimeout(() => btn.innerHTML = originalText, 3000);
+            })
+            .catch(err => {
+                console.error('Download failed:', err);
+                // Fallback: เปิดในแท็บใหม่
+                window.open(downloadUrl, '_blank');
+                btn.innerHTML = '📱 เปิดไฟล์ในแท็บใหม่';
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                setTimeout(() => btn.innerHTML = originalText, 3000);
+            });
         }
 
         // Download QR Code (ไม่มีโลโก้ในภาพ QR แล้ว)
