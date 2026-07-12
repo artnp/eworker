@@ -135,7 +135,66 @@ function saveActiveAccounts(accounts) {
 }
 
 function hashString(str) {
-  return crypto.createHash('md5').update(str).digest('hex');
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+  }
+  return (hash >>> 0).toString(16);
+}
+
+const processedPostIds = new Set();
+
+async function hideProcessedPosts(page, processedPostIds) {
+  if (!processedPostIds || processedPostIds.size === 0) return;
+  const idsArray = Array.from(processedPostIds);
+  await page.evaluate((ids) => {
+    const hashString = (str) => {
+      let hash = 5381;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) + hash) + str.charCodeAt(i);
+      }
+      return (hash >>> 0).toString(16);
+    };
+
+    const getPostText = (el) => {
+      const msgDiv = el.querySelector('div[data-ad-comet-preview="post_message"]');
+      if (msgDiv) return msgDiv.innerText || '';
+      return el.innerText || '';
+    };
+
+    const getLargeImageUrls = (el) => {
+      const urls = [];
+      const imgs = el.querySelectorAll('img');
+      for (const img of imgs) {
+        const src = img.src;
+        if (!src) continue;
+        if (src.includes('emoji') || src.includes('rsrc.php')) continue;
+        const width = img.naturalWidth || img.width || 0;
+        const height = img.naturalHeight || img.height || 0;
+        if (width > 200 || height > 200 || src.includes('safe_image.php') || src.includes('fna.fbcdn.net')) {
+          urls.push(src);
+        }
+      }
+      return urls;
+    };
+
+    const articles = document.querySelectorAll('div[role="article"]:not([data-bot-processed="true"])');
+    for (const art of articles) {
+      const text = getPostText(art);
+      if (!text || text.trim().length === 0) continue;
+      const imgs = getLargeImageUrls(art);
+      let id;
+      try {
+        id = imgs.length > 0 ? hashString(new URL(imgs[0]).pathname) : hashString(text.substring(0, 200));
+      } catch (e) {
+        id = hashString(text.substring(0, 200));
+      }
+      if (ids.includes(id)) {
+        art.style.display = 'none';
+        art.setAttribute('data-bot-processed', 'true');
+      }
+    }
+  }, idsArray).catch(() => {});
 }
 
 async function sleep(ms) {
@@ -819,12 +878,13 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
               }
             }
             
-            // Fallback: mat-icon refresh
-            const refreshIcon = document.querySelector('mat-icon[data-mat-icon-name="refresh"]');
-            if (refreshIcon) {
-              const parent = refreshIcon.closest('button, div[role="button"]');
+            // Fallback: last mat-icon refresh (latest response is at the bottom of the page)
+            const refreshIcons = Array.from(document.querySelectorAll('mat-icon[data-mat-icon-name="refresh"], mat-icon[fonticon="refresh"]'));
+            if (refreshIcons.length > 0) {
+              const lastRefreshIcon = refreshIcons[refreshIcons.length - 1];
+              const parent = lastRefreshIcon.closest('button, div[role="button"]');
               if (parent) { parent.click(); return true; }
-              refreshIcon.click();
+              lastRefreshIcon.click();
               return true;
             }
             
@@ -857,19 +917,40 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
             // Generate
             'div[role="button"]:has-text("Generate")',
             'button:has-text("Generate")',
-            // Fallback
-            'mat-icon[data-mat-icon-name="refresh"]',
           ];
           for (const sel of retrySelectors) {
             try {
               const btn = page.locator(sel).first();
-              if (await btn.count() > 0) {
-                await btn.click({ force: true, timeout: 3000 });
+              if (await btn.count() > 0 && await btn.isVisible({ timeout: 1500 }).catch(() => false)) {
+                await btn.click({ force: true });
                 console.log('[FastDL] ✅ Clicked: ' + sel);
                 retryClicked = true;
                 break;
               }
             } catch (e) { }
+          }
+
+          if (!retryClicked) {
+            // Fallback: Click last refresh icon or its parent button
+            try {
+              const refreshIcons = page.locator('mat-icon[data-mat-icon-name="refresh"], mat-icon[fonticon="refresh"]');
+              const count = await refreshIcons.count();
+              if (count > 0) {
+                const lastIcon = refreshIcons.last();
+                const parentBtn = page.locator('button:has(mat-icon[data-mat-icon-name="refresh"]), button:has(mat-icon[fonticon="refresh"])').last();
+                if (await parentBtn.count() > 0 && await parentBtn.isVisible({ timeout: 1500 }).catch(() => false)) {
+                  await parentBtn.click({ force: true });
+                  console.log('[FastDL] ✅ Clicked last refresh button parent');
+                  retryClicked = true;
+                } else {
+                  await lastIcon.click({ force: true });
+                  console.log('[FastDL] ✅ Clicked last refresh icon');
+                  retryClicked = true;
+                }
+              }
+            } catch (e) {
+              console.warn('[FastDL] Fallback refresh icon click failed:', e.message);
+            }
           }
 
           if (retryClicked) {
@@ -1638,63 +1719,45 @@ async function likePost(article) {
 
 async function closeFacebookModal(page) {
   try {
-    // หาเฉพาะปุ่มที่อยู่ใน dialog/overlay เท่านั้น ไม่ค้นหาทั้งหน้า
-    const hasDialog = await page.evaluate(() => {
-      return !!document.querySelector('div[role="dialog"], div[role="alertdialog"]');
-    }).catch(() => false);
-    if (!hasDialog) return false;
-
-    const closeSelectors = [
-      'div[role="dialog"] div[role="button"]:has-text("เข้าใจ")',
-      'div[role="dialog"] div[role="button"]:has-text("เข้าใจแล้ว")',
-      'div[role="dialog"] div[role="button"]:has-text("Got it")',
-      'div[role="dialog"] div[role="button"]:has-text("Dismiss")',
-      'div[role="dialog"] [role="button"]:has-text("เข้าใจ")',
-      'div[role="dialog"] [role="button"]:has-text("เข้าใจแล้ว")',
-      'div[role="dialog"] [role="button"]:has-text("Got it")',
-      'div[role="dialog"] button:has-text("เข้าใจ")',
-      'div[role="dialog"] button:has-text("เข้าใจแล้ว")',
-      'div[role="dialog"] button:has-text("Got it")',
-      'div[role="dialog"] div[role="button"][aria-label*="Close"]',
-      'div[role="dialog"] div[role="button"][aria-label*="close"]',
-      'div[role="dialog"] div[role="button"][aria-label*="ปิด"]',
-      'div[role="dialog"] button[aria-label*="Close"]',
-      'div[role="dialog"] button[aria-label*="ปิด"]',
-    ];
-    let closed = false;
-    for (const sel of closeSelectors) {
-      try {
-        const btn = page.locator(sel).first();
-        if (await btn.count() > 0 && await btn.isVisible({ timeout: 500 }).catch(() => false)) {
-          await btn.click({ force: true });
-          await sleep(600);
-          closed = true;
+    const closed = await page.evaluate(() => {
+      const dialogs = Array.from(document.querySelectorAll('div[role="dialog"], div[role="alertdialog"]'));
+      if (dialogs.length === 0) return false;
+      
+      let anyClosed = false;
+      for (const dialog of dialogs) {
+        // Skip post overlay/modal (post modals have role="article" or article element inside them)
+        if (dialog.querySelector('[role="article"], article')) {
+          continue;
         }
-      } catch (e) { }
-    }
+        
+        const safeKeywords = ['เข้าใจแล้ว', 'เข้าใจ', 'got it', 'dismiss', 'ยอมรับ', 'ตกลง', 'ok'];
+        const closeKeywords = ['close', 'ปิด'];
+        
+        const textContent = (dialog.textContent || '').toLowerCase();
+        // Check if it is a rules, guidelines, warning, standards, or agreement popup
+        const isRulesOrWarning = ['กฎ', 'กติกา', 'rules', 'มาตรฐานชุมชน', 'standards', 'policy', 'นโยบาย', 'ข้อตกลง'].some(kw => textContent.includes(kw));
 
-    if (!closed) {
-      // Evaluate fallback
-      closed = await page.evaluate(() => {
-        const dialog = document.querySelector('div[role="dialog"], div[role="alertdialog"]');
-        if (!dialog) return false;
-        const keywords = ['เข้าใจแล้ว', 'เข้าใจ', 'got it', 'dismiss', 'ยอมรับ', 'ตกลง', 'close', 'ปิด'];
         const clickables = Array.from(dialog.querySelectorAll('div[role="button"], button, span, div'));
         for (const el of clickables) {
           const text = (el.innerText || el.textContent || '').trim().toLowerCase();
           const ariaLabel = (el.getAttribute('aria-label') || '').trim().toLowerCase();
-          const matchesText = keywords.some(kw => text === kw || (text.includes(kw) && text.length < 25));
-          const matchesAria = keywords.some(kw => ariaLabel === kw || (ariaLabel.includes(kw) && ariaLabel.length < 25));
-          if (matchesText || matchesAria) {
+          
+          const matchesSafe = safeKeywords.some(kw => text === kw || ariaLabel === kw || (text.includes(kw) && text.length < 25) || (ariaLabel.includes(kw) && ariaLabel.length < 25));
+          const matchesClose = isRulesOrWarning && closeKeywords.some(kw => text === kw || ariaLabel === kw || (text.includes(kw) && text.length < 25) || (ariaLabel.includes(kw) && ariaLabel.length < 25));
+          
+          if (matchesSafe || matchesClose) {
             el.click();
-            return true;
+            anyClosed = true;
+            break;
           }
         }
-        return false;
-      }).catch(() => false);
-      if (closed) await sleep(600);
-    }
+      }
+      return anyClosed;
+    }).catch(() => false);
 
+    if (closed) {
+      await sleep(600);
+    }
     return closed;
   } catch (e) { }
   return false;
@@ -2394,6 +2457,8 @@ async function pauseOnError(isDebugPause, message) {
       let consecutiveFilteredPosts = 0;
       const MAX_EMPTY_SCROLLS = 15;
       const MAX_FILTERED_POSTS = 60;
+      
+      let lastPostFoundTime = Date.now();
 
       while (postsProcessedCount < AUTO_GROUPS_MAX) {
         const elapsedMs = Date.now() - BOT_START_TIME;
@@ -2411,6 +2476,24 @@ async function pauseOnError(isDebugPause, message) {
           process.exit(0);
         }
 
+        // 5-minute inactivity check (if no valid posts found to process)
+        const elapsedSinceLastFound = Date.now() - lastPostFoundTime;
+        if (elapsedSinceLastFound >= 5 * 60 * 1000) {
+          console.warn(`No valid posts found to process for 5 minutes. Stopping bot.`);
+          showWindowsNotification('Facebook Bot', 'No posts found to process for 5 minutes. Closing.', 'Warning');
+          
+          try {
+            await execPromise('taskkill /F /IM chrome.exe /FI "WINDOWTITLE eq *user_data*"', { timeout: 2000 }).catch(() => {});
+            await context.close({ timeout: 2000 }).catch(() => {});
+          } catch (e) { /* ignore */ }
+          
+          setTimeout(() => process.exit(0), 1000);
+          process.exit(0);
+        }
+
+        // Hide any previously processed posts from the feed dynamically
+        await hideProcessedPosts(fbPage, processedPostIds);
+
         currentPostIndex = postsProcessedCount + 1;
         const basePct = Math.round((postsProcessedCount / AUTO_GROUPS_MAX) * 100);
         console.log(`\n📋 Scanning feed... Posts processed: ${postsProcessedCount}/${AUTO_GROUPS_MAX}`);
@@ -2423,6 +2506,7 @@ async function pauseOnError(isDebugPause, message) {
           console.log(`[Memory Cleanup] Evaluated ${postsEvaluatedCount} posts. Reloading Facebook page...`);
           await fbPage.goto(FB_URL, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => { });
           await sleep(3000);
+          await hideProcessedPosts(fbPage, processedPostIds);
           postsEvaluatedCount = 0;
         }
 
@@ -2433,10 +2517,12 @@ async function pauseOnError(isDebugPause, message) {
           if (consecutiveEmptyScrolls >= MAX_EMPTY_SCROLLS) {
             await fbPage.goto(FB_URL, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => { });
             await sleep(2000);
+            await hideProcessedPosts(fbPage, processedPostIds);
             consecutiveEmptyScrolls = 0;
           } else {
             await fbPage.evaluate(() => window.scrollBy(0, 1500));
             await sleep(2000);
+            await hideProcessedPosts(fbPage, processedPostIds);
           }
           continue;
         }
@@ -2452,6 +2538,18 @@ async function pauseOnError(isDebugPause, message) {
 
           const postText = await getPostText(article);
           
+          // Compute post ID early
+          const imageUrlsForId = await getLargeImageUrls(article);
+          let earlyPostId;
+          try {
+            earlyPostId = imageUrlsForId.length > 0 ? hashString(new URL(imageUrlsForId[0]).pathname) : hashString((postText || '').substring(0, 200));
+          } catch (e) {
+            earlyPostId = hashString((postText || '').substring(0, 200));
+          }
+
+          // Add to memory list of processed posts immediately
+          processedPostIds.add(earlyPostId);
+
           // เพิ่มเงื่อนไข: หากโพสต์ไม่มีข้อความ ให้ข้ามโพสต์นี้ไปเลย
           if (!postText || postText.trim().length === 0) {
             console.log("--> Skipped: Post has no text content.");
@@ -2463,14 +2561,6 @@ async function pauseOnError(isDebugPause, message) {
             continue;
           }
 
-          // Compute post ID early for logging
-          const imageUrlsForId = await getLargeImageUrls(article);
-          let earlyPostId;
-          try {
-            earlyPostId = imageUrlsForId.length > 0 ? hashString(new URL(imageUrlsForId[0]).pathname) : hashString(postText.substring(0, 200));
-          } catch (e) {
-            earlyPostId = hashString(postText.substring(0, 200));
-          }
           console.log('\n--------------------------------------------');
           console.log(`Evaluating Post ID: ${earlyPostId}`);
           console.log(`Content: "${postText.substring(0, 80).replace(/\n/g, ' ')}..."`);
@@ -2489,6 +2579,7 @@ async function pauseOnError(isDebugPause, message) {
               console.warn(`Reached ${MAX_FILTERED_POSTS} consecutive filtered posts. Reloading Facebook...`);
               await fbPage.goto(FB_URL, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => { });
               await sleep(3000);
+              await hideProcessedPosts(fbPage, processedPostIds);
               consecutiveFilteredPosts = 0;
               consecutiveEmptyScrolls = 0;
             }
@@ -2508,6 +2599,9 @@ async function pauseOnError(isDebugPause, message) {
             }).catch(() => { });
             continue;
           }
+
+          // Found a valid post with images!
+          lastPostFoundTime = Date.now();
 
           console.log(`Processing ${imageUrls.length} images...`);
           await reportStatus(basePct + 5, `พบโพสต์ที่ ${currentPostIndex} (${imageUrls.length} ภาพ)`, 'กำลังดาวน์โหลดรูปภาพจาก Facebook...', 'info', currentPostIndex);
