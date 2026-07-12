@@ -633,6 +633,36 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* Loading Progress Bar styles */
+        .progress-container {
+            width: 280px;
+            background: rgba(255, 255, 255, 0.15);
+            height: 10px;
+            border-radius: 10px;
+            margin: 15px auto 5px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(2px);
+            display: none;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            transition: width 0.1s ease-out;
+            border-radius: 10px;
+        }
+
+        .loading-percent {
+            font-size: 15px;
+            color: #34d399;
+            font-weight: 700;
+            margin-top: 5px;
+            display: none;
+        }
+
         /* Responsive - Mobile */
         @media (max-width: 768px) {
             .split-container {
@@ -778,6 +808,10 @@
         <div class="loading-content">
             <div class="spinner"></div>
             <p id="loadingText">กำลังอัพโหลด...</p>
+            <div class="progress-container" id="loadingProgressContainer">
+                <div class="progress-bar" id="loadingProgressBar"></div>
+            </div>
+            <div class="loading-percent" id="loadingPercent">0%</div>
         </div>
     </div>
 
@@ -1117,18 +1151,16 @@
                 formData.append('time', '1h');
                 formData.append('fileToUpload', file);
 
-                const response = await fetch(UPLOAD_APIS.litterbox, {
-                    method: 'POST',
-                    body: formData
-                });
+                const stepName = 'กำลังอัปโหลดไฟล์ผ่าน Litterbox...';
+                updateLoadingProgress(stepName, 0);
 
-                const text = await response.text();
-                if (response.ok && text.startsWith('http')) {
-                    console.log('✅ Litterbox success:', text.substring(0, 50) + '...');
-                    return { success: true, url: text.trim() };
+                const responseText = await uploadWithXHR(UPLOAD_APIS.litterbox, formData, stepName);
+                if (responseText.startsWith('http')) {
+                    console.log('✅ Litterbox success:', responseText.substring(0, 50) + '...');
+                    return { success: true, url: responseText.trim() };
                 }
                 
-                console.error('❌ Litterbox failed:', response.status, text.substring(0, 100));
+                console.error('❌ Litterbox failed response:', responseText.substring(0, 100));
                 return { success: false };
             } catch (err) {
                 console.error('❌ Litterbox error:', err.message);
@@ -1143,12 +1175,11 @@
                 formData.append('file', file);
                 formData.append('expire', '3600');
 
-                const response = await fetch(UPLOAD_APIS.tmpfiles, {
-                    method: 'POST',
-                    body: formData
-                });
+                const stepName = 'กำลังอัปโหลดไฟล์ผ่าน tmpfiles.org...';
+                updateLoadingProgress(stepName, 0);
 
-                const result = await response.json();
+                const responseText = await uploadWithXHR(UPLOAD_APIS.tmpfiles, formData, stepName);
+                const result = JSON.parse(responseText);
                 if (result.status === 'success' && result.data?.url) {
                     const downloadUrl = result.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/');
                     console.log('✅ tmpfiles success:', downloadUrl);
@@ -1169,12 +1200,11 @@
                 const formData = new FormData();
                 formData.append('files[]', file);
 
-                const response = await fetch(UPLOAD_APIS.uguu, {
-                    method: 'POST',
-                    body: formData
-                });
+                const stepName = 'กำลังอัปโหลดไฟล์ผ่าน Uguu.se...';
+                updateLoadingProgress(stepName, 0);
 
-                const result = await response.json();
+                const responseText = await uploadWithXHR(UPLOAD_APIS.uguu, formData, stepName);
+                const result = JSON.parse(responseText);
                 if (result.success && result.files?.[0]?.url) {
                     console.log('✅ Uguu success:', result.files[0].url);
                     return { success: true, url: result.files[0].url };
@@ -1195,12 +1225,11 @@
                 formData.append('file', file);
                 formData.append('expires', '1d');
 
-                const response = await fetch(UPLOAD_APIS.fileio, {
-                    method: 'POST',
-                    body: formData
-                });
+                const stepName = 'กำลังอัปโหลดไฟล์ผ่าน file.io...';
+                updateLoadingProgress(stepName, 0);
 
-                const result = await response.json();
+                const responseText = await uploadWithXHR(UPLOAD_APIS.fileio, formData, stepName);
+                const result = JSON.parse(responseText);
                 if (result.success && result.link) {
                     console.log('✅ file.io success:', result.link);
                     return { success: true, url: result.link };
@@ -1224,49 +1253,44 @@
                 finalUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
             }
             
+            const stepName = 'กำลังดาวน์โหลดไฟล์เพื่อแสดงผล...';
+            showLoadingProgress(stepName, 0);
+
+            let blob;
+            try {
+                blob = await downloadWithProgress(finalUrl, stepName);
+            } catch (err) {
+                console.warn('Direct load failed, trying CORS proxy fallback...', err);
+                // Try fallback proxy
+                const fallbackUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
+                try {
+                    blob = await downloadWithProgress(fallbackUrl, stepName);
+                } catch (fallbackErr) {
+                    throw new Error('ไม่สามารถดาวน์โหลดไฟล์มาแสดงผลได้');
+                }
+            }
+
+            const blobUrl = URL.createObjectURL(blob);
+            
             if (type === 'image') {
                 return new Promise((resolve, reject) => {
                     console.log('📸 Loading image...');
-                    const proxies = [
-                        null,
-                        'https://api.allorigins.win/raw?url=',
-                        'https://corsproxy.io/?',
-                        'https://api.codetabs.com/v1/proxy?quest='
-                    ];
-                    let proxyIndex = 0;
-
-                    function tryLoadImage() {
-                        const currentUrl = proxyIndex === 0
-                            ? finalUrl
-                            : proxies[proxyIndex] + encodeURIComponent(url);
-                        console.log(`📸 Loading image (attempt ${proxyIndex + 1}/${proxies.length}):`, currentUrl.substring(0, 60) + '...');
-
-                        mainImage.onload = () => {
-                            console.log('✅ Image loaded successfully');
-                            mainImage.style.display = 'block';
-                            pdfCanvas.style.display = 'none';
-                            fitToScreen();
-                            resolve();
-                        };
-                        mainImage.onerror = () => {
-                            proxyIndex++;
-                            if (proxyIndex < proxies.length) {
-                                console.warn(`🔄 Attempt ${proxyIndex} failed, trying next...`);
-                                tryLoadImage();
-                            } else {
-                                console.error('❌ All image loading attempts failed');
-                                reject(new Error('โหลดรูปภาพไม่สำเร็จ'));
-                            }
-                        };
-                        mainImage.src = currentUrl;
-                    }
-
-                    tryLoadImage();
+                    mainImage.onload = () => {
+                        console.log('✅ Image loaded successfully');
+                        mainImage.style.display = 'block';
+                        pdfCanvas.style.display = 'none';
+                        fitToScreen();
+                        resolve();
+                    };
+                    mainImage.onerror = () => {
+                        reject(new Error('โหลดรูปภาพไม่สำเร็จ'));
+                    };
+                    mainImage.src = blobUrl;
                 });
             } else if (type === 'pdf') {
                 try {
                     console.log('📄 Loading PDF...');
-                    pdfDoc = await pdfjsLib.getDocument(finalUrl).promise;
+                    pdfDoc = await pdfjsLib.getDocument(blobUrl).promise;
                     totalPages = pdfDoc.numPages;
                     currentPage = 1;
                     
@@ -1320,10 +1344,111 @@
         function showLoading(text) {
             loadingText.textContent = text;
             loadingOverlay.classList.add('active');
+            
+            // Hide progress container initially for standard showLoading calls
+            const progressContainer = document.getElementById('loadingProgressContainer');
+            const loadingPercent = document.getElementById('loadingPercent');
+            if (progressContainer && loadingPercent) {
+                progressContainer.style.display = 'none';
+                loadingPercent.style.display = 'none';
+            }
         }
 
         function hideLoading() {
             loadingOverlay.classList.remove('active');
+        }
+
+        function updateLoadingProgress(text, percent) {
+            loadingText.textContent = text;
+            const progressContainer = document.getElementById('loadingProgressContainer');
+            const progressBar = document.getElementById('loadingProgressBar');
+            const loadingPercent = document.getElementById('loadingPercent');
+            
+            if (progressContainer && progressBar && loadingPercent) {
+                progressContainer.style.display = 'block';
+                loadingPercent.style.display = 'block';
+                progressBar.style.width = percent + '%';
+                loadingPercent.textContent = percent + '%';
+            }
+        }
+
+        function showLoadingProgress(text, percent = null) {
+            loadingText.textContent = text;
+            const progressContainer = document.getElementById('loadingProgressContainer');
+            const progressBar = document.getElementById('loadingProgressBar');
+            const loadingPercent = document.getElementById('loadingPercent');
+            
+            if (percent !== null) {
+                if (progressContainer && progressBar && loadingPercent) {
+                    progressContainer.style.display = 'block';
+                    loadingPercent.style.display = 'block';
+                    progressBar.style.width = percent + '%';
+                    loadingPercent.textContent = percent + '%';
+                }
+            } else {
+                if (progressContainer && loadingPercent) {
+                    progressContainer.style.display = 'none';
+                    loadingPercent.style.display = 'none';
+                }
+            }
+            loadingOverlay.classList.add('active');
+        }
+
+        function uploadWithXHR(url, formData, stepName) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', url, true);
+
+                xhr.upload.onprogress = function(e) {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        updateLoadingProgress(stepName, percent);
+                    }
+                };
+
+                xhr.onload = function() {
+                    if (this.status >= 200 && this.status < 300) {
+                        resolve(this.responseText);
+                    } else {
+                        reject(new Error(`Upload failed with status ${this.status}`));
+                    }
+                };
+
+                xhr.onerror = function() {
+                    reject(new Error('Network error during upload'));
+                };
+
+                xhr.send(formData);
+            });
+        }
+
+        function downloadWithProgress(url, stepName) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true);
+                xhr.responseType = 'blob';
+
+                xhr.onload = function() {
+                    if (this.status >= 200 && this.status < 300) {
+                        resolve(this.response);
+                    } else {
+                        reject(new Error(`Download failed with status ${this.status}`));
+                    }
+                };
+
+                xhr.onerror = function() {
+                    reject(new Error('Network error during download'));
+                };
+
+                xhr.onprogress = function(e) {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        updateLoadingProgress(stepName, percent);
+                    }
+                };
+
+                xhr.send();
+            });
         }
 
         // ===== ZOOM & PAN =====
