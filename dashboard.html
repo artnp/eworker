@@ -363,6 +363,61 @@
             color: var(--primary);
         }
 
+        /* Modern Capsule and Hover Styles for Gemini Accounts */
+        .account-item-container {
+            display: inline-flex;
+            align-items: center;
+            position: relative;
+        }
+        .account-item-container label {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+            margin: 0;
+        }
+        .account-item-container label:hover {
+            background: #f1f3f4;
+            border-color: #ccc;
+        }
+        .account-item-container input[type="radio"] {
+            display: none; /* Hide default radio */
+        }
+        .account-item-container label.selected {
+            background: rgba(66, 133, 244, 0.08);
+            border-color: var(--primary);
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .account-item-container .inline-quota-btn {
+            display: inline-block;
+            opacity: 0;
+            width: 0;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            font-size: 0.65rem;
+            padding: 2px 0;
+            border-radius: 4px;
+            background: #db4437;
+            color: white;
+            border: none;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .account-item-container:hover .inline-quota-btn.visible-active {
+            opacity: 1;
+            width: 40px;
+            padding: 2px 4px;
+            margin-left: 4px;
+        }
+
         .tag-item:hover {
             filter: brightness(1.2);
             transform: translateY(-3px);
@@ -795,64 +850,14 @@
                 </h3>
 
                 <!-- Gemini Account Selector with Status Dots -->
-                <div class="account-selector"
-                    style="margin: 0; padding: 0; background: transparent; border: none; gap: 8px;">
-                    <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
-                        <label style="padding: 2px 4px;">
-                            <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/0/app" checked>
-                            <span>u/0</span>
-                        </label>
-                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/0/app"
-                            style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
-                    </div>
-                    <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
-                        <label style="padding: 2px 4px;">
-                            <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/1/app">
-                            <span>u/1</span>
-                        </label>
-                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/1/app"
-                            style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
-                    </div>
-                    <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
-                        <label style="padding: 2px 4px;">
-                            <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/2/app">
-                            <span>u/2</span>
-                        </label>
-                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/2/app"
-                            style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
-                    </div>
-                    <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
-                        <label style="padding: 2px 4px;">
-                            <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/3/app">
-                            <span>u/3</span>
-                        </label>
-                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/3/app"
-                            style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
-                    </div>
-                    <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
-                        <label style="padding: 2px 4px;">
-                            <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/4/app">
-                            <span>u/4</span>
-                        </label>
-                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/4/app"
-                            style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
-                    </div>
-                    <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
-                        <label style="padding: 2px 4px;">
-                            <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/5/app">
-                            <span>u/5</span>
-                        </label>
-                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/5/app"
-                            style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
-                    </div>
-                    <div style="display: inline-flex; flex-direction: column; align-items: center; gap: 2px;">
-                        <label style="padding: 2px 4px;">
-                            <input type="radio" name="geminiAccount" value="https://gemini.google.com/u/6/app">
-                            <span>u/6</span>
-                        </label>
-                        <button class="inline-quota-btn" data-url="https://gemini.google.com/u/6/app"
-                            style="font-size: 0.6rem; padding: 1px 4px; border-radius: 4px; border: none; cursor: pointer; display: none;">บล็อก</button>
-                    </div>
+                <div class="account-selector" id="gemini-account-selector"
+                    style="margin: 0; padding: 0; background: transparent; border: none; gap: 8px; display: inline-flex; align-items: center; flex-wrap: wrap;">
+                    <!-- Generated dynamically -->
+                </div>
+
+                <div style="display: inline-flex; align-items: center; gap: 4px; border-left: 1px solid var(--border); padding-left: 10px; margin-left: 5px;">
+                    <button onclick="changeGeminiAccountCount(-1)" style="font-size: 0.7rem; padding: 2px 6px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; color: var(--text-sub);" title="ลดบัญชี">- บัญชี</button>
+                    <button onclick="changeGeminiAccountCount(1)" style="font-size: 0.7rem; padding: 2px 6px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; color: var(--text-sub);" title="เพิ่มบัญชี">+ บัญชี</button>
                 </div>
 
                 <!-- Compact Status Summary -->
@@ -1336,17 +1341,22 @@
 
                 if (modelsToSend.includes('Gemini')) {
                     // Auto-rotate to the next Gemini Account
-                    const currentIdx = Array.from(accountRadios).findIndex(r => r.checked);
-                    let nextIdx = (currentIdx + 1) % accountRadios.length;
-                    let attempts = 0;
-                    while (accountRadios[nextIdx].parentElement.style.opacity === '0.5' && attempts < accountRadios.length) {
-                        nextIdx = (nextIdx + 1) % accountRadios.length;
-                        attempts++;
+                    const radios = getAccountRadios();
+                    if (radios.length > 0) {
+                        const currentIdx = Array.from(radios).findIndex(r => r.checked);
+                        let nextIdx = (currentIdx + 1) % radios.length;
+                        let attempts = 0;
+                        while (radios[nextIdx] && radios[nextIdx].parentElement.style.opacity === '0.5' && attempts < radios.length) {
+                            nextIdx = (nextIdx + 1) % radios.length;
+                            attempts++;
+                        }
+                        const nextRadio = radios[nextIdx];
+                        if (nextRadio) {
+                            nextRadio.checked = true;
+                            updateGeminiUrl(nextRadio.value);
+                            setTimeout(() => showToast(`🔄 เตรียมพร้อมใช้งาน ${nextRadio.nextElementSibling.textContent}`), 1500);
+                        }
                     }
-                    const nextRadio = accountRadios[nextIdx];
-                    nextRadio.checked = true;
-                    updateGeminiUrl(nextRadio.value);
-                    setTimeout(() => showToast(`🔄 เตรียมพร้อมใช้งาน ${nextRadio.nextElementSibling.textContent}`), 1500);
                 }
             } else if (res && res.error) {
                 showToast(`⚠️ AI: ${res.error}`);
@@ -1420,32 +1430,144 @@
         });
 
         // --- Gemini Account Selection Logic ---
-        const accountRadios = document.querySelectorAll('input[name="geminiAccount"]');
+        const DEFAULT_GEMINI_ACCOUNTS = [
+            'https://gemini.google.com/u/0/app',
+            'https://gemini.google.com/u/1/app',
+            'https://gemini.google.com/u/2/app',
+            'https://gemini.google.com/u/3/app',
+            'https://gemini.google.com/u/4/app',
+            'https://gemini.google.com/u/5/app',
+            'https://gemini.google.com/u/6/app'
+        ];
+
+        let geminiAccounts = [];
+
+        function getAccountRadios() {
+            return document.querySelectorAll('input[name="geminiAccount"]');
+        }
 
         function updateGeminiUrl(url) {
             callExtension('SET_GEMINI_URL', { url }).catch(err => console.log("Extension not ready or origin blocked:", err));
         }
 
-        accountRadios.forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                if (e.target.checked) {
-                    const url = e.target.value;
-                    localStorage.setItem('lastGeminiUrl', url);
-                    updateGeminiUrl(url);
-                    showToast(`🔄 เปลี่ยนเป็น Gemini ${e.target.nextElementSibling.textContent}`);
+        function renderGeminiAccounts() {
+            const selector = document.getElementById('gemini-account-selector');
+            if (!selector) return;
+
+            // Find current selection
+            const checkedRadio = selector.querySelector('input[name="geminiAccount"]:checked');
+            let checkedValue = checkedRadio ? checkedRadio.value : localStorage.getItem('lastGeminiUrl');
+
+            // If checked value is no longer in the list, fallback to first
+            if (checkedValue && !geminiAccounts.includes(checkedValue)) {
+                checkedValue = geminiAccounts[0];
+                if (checkedValue) {
+                    localStorage.setItem('lastGeminiUrl', checkedValue);
+                    updateGeminiUrl(checkedValue);
                 }
+            }
+
+            selector.innerHTML = '';
+            geminiAccounts.forEach((url, index) => {
+                const urlMatch = url.match(/\/u\/(\d+)\//);
+                const baseName = urlMatch ? `u/${urlMatch[1]}` : `u/${index}`;
+                const isChecked = url === checkedValue || (!checkedValue && index === 0);
+
+                const div = document.createElement('div');
+                div.className = 'account-item-container';
+
+                div.innerHTML = `
+                    <label class="${isChecked ? 'selected' : ''}" title="พร้อมใช้ (คลิกขวาเพื่อบล็อก)">
+                        <input type="radio" name="geminiAccount" value="${url}" ${isChecked ? 'checked' : ''}>
+                        <span><span style="font-size: 0.7rem; margin-right: 2px;">🟢</span>${baseName}</span>
+                    </label>
+                    <button class="inline-quota-btn" data-url="${url}">บล็อก</button>
+                `;
+
+                // Add change event listener to radio inside this container
+                const radioInput = div.querySelector('input[type="radio"]');
+                radioInput.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        // Unselect all other labels
+                        selector.querySelectorAll('label').forEach(lbl => lbl.classList.remove('selected'));
+                        // Select current label
+                        e.target.parentElement.classList.add('selected');
+                        
+                        const val = e.target.value;
+                        localStorage.setItem('lastGeminiUrl', val);
+                        updateGeminiUrl(val);
+                        showToast(`🔄 เปลี่ยนเป็น Gemini ${baseName}`);
+                    }
+                });
+
+                selector.appendChild(div);
             });
-        });
+            
+            // Reload status to apply color dots and bind quick actions
+            loadQuotaStatus();
+        }
+
+        async function changeGeminiAccountCount(change) {
+            const currentLen = geminiAccounts.length;
+            if (change === 1) {
+                // Add next account in sequence
+                const nextIndex = currentLen;
+                const nextUrl = `https://gemini.google.com/u/${nextIndex}/app`;
+                if (!geminiAccounts.includes(nextUrl)) {
+                    geminiAccounts.push(nextUrl);
+                }
+                showToast(`➕ เพิ่มบัญชี ${nextUrl.match(/\/u\/(\d+)\//)?.[0] || nextUrl}`);
+            } else if (change === -1) {
+                if (currentLen <= 1) {
+                    showToast('⚠️ ต้องมีอย่างน้อย 1 บัญชี');
+                    return;
+                }
+                const removedUrl = geminiAccounts.pop();
+                showToast(`➖ ลดบัญชี ${removedUrl.match(/\/u\/(\d+)\//)?.[0] || removedUrl}`);
+            }
+
+            // Save both locally and via extension
+            localStorage.setItem('geminiAccountsList', JSON.stringify(geminiAccounts));
+            try {
+                await callExtension('SET_GEMINI_ACCOUNTS', { accounts: geminiAccounts });
+            } catch (e) {
+                console.log("Extension update failed:", e);
+            }
+
+            renderGeminiAccounts();
+        }
 
         // Initialize: Sync current account status from Extension memory or localStorage
         async function syncAccountSelection() {
-            // Priority 1: Check localStorage for immediate response
+            let loadedAccounts = DEFAULT_GEMINI_ACCOUNTS;
+            
+            try {
+                const localSaved = localStorage.getItem('geminiAccountsList');
+                if (localSaved) {
+                    loadedAccounts = JSON.parse(localSaved);
+                }
+            } catch (e) {
+                console.log("Failed to load accounts list from localStorage:", e);
+            }
+
+            try {
+                const accountsRes = await callExtension('GET_GEMINI_ACCOUNTS');
+                if (accountsRes && accountsRes.success && accountsRes.accounts) {
+                    loadedAccounts = accountsRes.accounts;
+                    localStorage.setItem('geminiAccountsList', JSON.stringify(loadedAccounts));
+                }
+            } catch (e) {
+                console.log("Failed to load accounts list from extension:", e);
+            }
+
+            geminiAccounts = loadedAccounts;
+            renderGeminiAccounts();
+
             const localUrl = localStorage.getItem('lastGeminiUrl');
             if (localUrl) {
                 const targetRadio = document.querySelector(`input[name="geminiAccount"][value="${localUrl}"]`);
                 if (targetRadio) {
                     targetRadio.checked = true;
-                    // Don't call updateGeminiUrl yet, wait for extension sync to be sure
                 }
             }
 
@@ -1456,7 +1578,6 @@
                     if (targetRadio) {
                         targetRadio.checked = true;
                         localStorage.setItem('lastGeminiUrl', res.url);
-                        // Also make sure extension knows we are in hub mode
                         updateGeminiUrl(res.url);
                     }
                 }
@@ -1541,7 +1662,7 @@
                 }
 
                 // Also update account selector radio visual with status dots
-                accountRadios.forEach(radio => {
+                getAccountRadios().forEach(radio => {
                     const acc = accounts.find(a => a.url === radio.value);
                     const label = radio.parentElement;
                     const span = label.querySelector('span');
@@ -1557,9 +1678,17 @@
                     if (isExhausted) {
                         label.style.opacity = '0.5';
                         label.title = 'โควต้าหมด/ถูกบล็อก (คลิกขวาเพื่อปลดล็อค)';
+                        label.classList.remove('selected');
                     } else {
                         label.style.opacity = '1';
                         label.title = 'พร้อมใช้ (คลิกขวาเพื่อบล็อก)';
+                    }
+
+                    // Sync the "selected" class based on checked status
+                    if (radio.checked) {
+                        label.classList.add('selected');
+                    } else {
+                        label.classList.remove('selected');
                     }
 
                     // Quick Toggle: Right click to Block/Unlock
@@ -1573,13 +1702,11 @@
                     const inlineBtn = label.parentElement.querySelector('.inline-quota-btn');
                     if (inlineBtn) {
                         if (isExhausted) {
-                            inlineBtn.style.display = 'none';
+                            inlineBtn.classList.remove('visible-active');
+                            inlineBtn.onclick = null;
                         } else {
-                            inlineBtn.style.display = 'block';
-                            inlineBtn.textContent = 'บล็อก';
-                            inlineBtn.style.background = '#db4437';
-                            inlineBtn.style.color = 'white';
-                            inlineBtn.onclick = (e) => { e.preventDefault(); blockAccount(radio.value); };
+                            inlineBtn.classList.add('visible-active');
+                            inlineBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); blockAccount(radio.value); };
                         }
                     }
                 });
