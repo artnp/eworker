@@ -1,9 +1,9 @@
 @echo off
 chcp 65001 >nul
-title GitHub Uploader - artnp/eworker
+title GitHub Uploader - artnp/ebookAI
 echo.
 echo ========================================
-echo   Uploading to artnp/eworker (main)
+echo   Uploading to artnp/ebookAI (main)
 echo ========================================
 echo.
 
