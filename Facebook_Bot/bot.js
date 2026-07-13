@@ -1932,7 +1932,6 @@ async function likePost(article) {
             console.log('Post already liked.');
             return true;
           }
-          // ใช้ click ปกติ (ไม่ force) เพื่อให้ Playwright ตรวจ interactability จริงๆ
           await btn.scrollIntoViewIfNeeded().catch(() => { });
           await btn.click({ timeout: 5000 });
           await sleep(1000);
@@ -1941,7 +1940,46 @@ async function likePost(article) {
         }
       } catch (e) { }
     }
-    console.log('Like button not found in article scope.');
+    console.log('Like button not found via Playwright locator in article scope. Trying page.evaluate fallback...');
+
+    // Fallback: ใช้ page.evaluate ค้นปุ่ม Like โดยตรงจาก DOM (แก้กรณีหลัง comment Facebook re-render DOM)
+    const liked = await page.evaluate(() => {
+      const processedAttr = 'data-bot-processed';
+      const articles = document.querySelectorAll('div[role="article"]');
+      let targetArticle = null;
+      for (const art of articles) {
+        if (!art.getAttribute(processedAttr)) {
+          targetArticle = art;
+          break;
+        }
+      }
+      if (!targetArticle) targetArticle = articles[0];
+      if (!targetArticle) return { success: false, reason: 'no article found' };
+
+      const likeLabels = ['like', 'ถูกใจ'];
+      const unlikeLabels = ['unlike', 'เลิกถูกใจ', 'เลิกชอบ', 'ลบถูกใจ'];
+      const allButtons = targetArticle.querySelectorAll('div[role="button"], span[role="button"], a[role="button"]');
+      for (const btn of allButtons) {
+        const label = (btn.getAttribute('aria-label') || '').toLowerCase();
+        if (!likeLabels.some(l => label.includes(l))) continue;
+        const pressed = btn.getAttribute('aria-pressed');
+        const isLiked = pressed === 'true' || unlikeLabels.some(l => label.includes(l));
+        if (isLiked) continue;
+        const rect = btn.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) continue;
+        btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        btn.click();
+        return { success: true, label: btn.getAttribute('aria-label') };
+      }
+      return { success: false, reason: 'no unliked button found in article' };
+    }).catch(err => ({ success: false, reason: 'evaluate error: ' + err.message }));
+
+    if (liked && liked.success) {
+      await sleep(1000);
+      console.log(`Liked post via page.evaluate fallback. (label: ${liked.label})`);
+      return true;
+    }
+    console.log('Like button not found (page.evaluate fallback):', liked?.reason || 'unknown');
     return false;
   } catch (e) {
     console.error('Error liking post:', e.message || e);
