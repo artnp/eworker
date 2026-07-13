@@ -2,7 +2,7 @@ import { chromium } from 'playwright';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
-import { exec } from 'child_process';
+import { exec, execFile } from 'child_process';
 import { promisify } from 'util';
 import crypto from 'crypto';
 import readline from 'readline';
@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url';
 import os from 'os';
 
 const execPromise = promisify(exec);
+const execFilePromise = promisify(execFile);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -551,18 +552,26 @@ async function runPythonImageEditor(imagePath, postText = '') {
   const isBotMode = process.argv.includes('--bot');
   const outputName = isBotMode ? 'complete_bot.png' : 'complete.png';
   const desktopOutputPath = path.join(process.env.USERPROFILE, 'Desktop', outputName);
+
+
   try {
     const pythonScript = 'D:\\Github\\eworker\\screenshot_donate.py';
-    // หลีกเลี่ยงอักขระพิเศษใน prompt
-    const cleanPrompt = postText ? postText.replace(/"/g, '\\"').replace(/\n/g, ' ') : '';
-    const promptArg = cleanPrompt ? `--prompt "${cleanPrompt}"` : '';
-    const cmd = `python "${pythonScript}" --donate-no-paste "${imagePath}" ${promptArg} --bot`;
-    console.log('Running cmd:', cmd);
-    const { stdout, stderr } = await execPromise(cmd);
+    
+    // ใช้ execFile แทน exec เพื่อป้องกันการปนเปื้อนของ parameter/character escaping
+    const args = ['--donate-no-paste', imagePath];
+    if (postText) {
+      args.push('--prompt', postText);
+    }
+    args.push('--bot');
+
+    console.log('Running python script via execFile:', pythonScript, args);
+    const { stdout, stderr } = await execFilePromise('python', [pythonScript, ...args]);
+    
     if (stderr && !stderr.includes('DeprecationWarning') && !stderr.includes('UserWarning')) {
       console.warn('Python stderr:', stderr);
     }
     console.log('Python stdout:', stdout);
+    
     if (fs.existsSync(desktopOutputPath)) {
       const botImagePath = path.join(DOWNLOADS_DIR, `final_post_${Date.now()}.png`);
       fs.copyFileSync(desktopOutputPath, botImagePath);
@@ -623,12 +632,17 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
   try {
     await bringWindowToFront(page).catch(() => { });
     const currentUrl = page.url();
-    if (!currentUrl.startsWith(geminiUrl)) {
-      console.log(`Navigating to Gemini: ${geminiUrl}`);
+    // ตรวจสอบว่าเป็นหน้าหลักแบบสะอาด (ไม่มีรหัสแชทต่อท้าย) หรือไม่
+    // URL สะอาดจะเป็น https://gemini.google.com/u/X/app หรือมี / หรือ query parameter ต่อท้ายเท่านั้น
+    const cleanUrlRegex = new RegExp(`^${geminiUrl.replace(/\//g, '\\/')}\\/?(\\?.*)?$`);
+    const isCleanUrl = cleanUrlRegex.test(currentUrl);
+
+    if (!isCleanUrl) {
+      console.log(`Navigating to clean Gemini page: ${geminiUrl}`);
       await page.goto(geminiUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
-      await sleep(1500);
+      await sleep(2000); // รอเพิ่มอีกนิดให้หน้าแชทใหม่โหลดเสร็จ
     } else {
-      console.log(`Already on Gemini page: ${geminiUrl}, skipping navigation.`);
+      console.log(`Already on clean Gemini page: ${currentUrl}, skipping navigation.`);
       await sleep(200);
     }
     const inputSelectors = [
@@ -1210,14 +1224,17 @@ async function postComment(article, imagePath, postUrl) {
           'textarea[placeholder*="comment"]',
         ];
         // ลองหาใน article ก่อน
-        for (const sel of selectors) {
-          const found = articleEl ? articleEl.querySelector(sel) : null;
-          if (found) return found;
-        }
-        // fallback: หาทั่วหน้า
-        for (const sel of selectors) {
-          const found = document.querySelector(sel);
-          if (found) return found;
+        if (articleEl) {
+          for (const sel of selectors) {
+            const found = articleEl.querySelector(sel);
+            if (found) return found;
+          }
+        } else {
+          // fallback หาทั่วหน้าเฉพาะกรณีที่ไม่มี articleEl
+          for (const sel of selectors) {
+            const found = document.querySelector(sel);
+            if (found) return found;
+          }
         }
         return null;
       }, await article.elementHandle().catch(() => null));
@@ -1234,25 +1251,42 @@ async function postComment(article, imagePath, postUrl) {
     // ถ้ายังไม่มี composer ให้คลิก Comment button ด้วย DOM (ทำงานได้แม้ซ่อนหน้าต่าง)
     if (!composer) {
       const clicked = await page.evaluate((articleEl) => {
-        const selectors = [
-          '[role="button"][aria-label*="แสดงความคิดเห็น"]',
-          '[role="button"][aria-label*="Comment"]',
-          '[role="button"][aria-label*="comment"]',
-          '[data-testid*="comment-button"]',
-        ];
-        for (const sel of selectors) {
-          const btn = articleEl ? articleEl.querySelector(sel) : document.querySelector(sel);
-          if (btn) {
-            btn.click();
-            return sel;
+        if (!articleEl) return null;
+        
+        // ค้นหาปุ่มแสดงความคิดเห็นในบทความ (ตรวจสอบทั้ง role, tag, และ attribute)
+        const candidates = articleEl.querySelectorAll('[role="button"], button, div[aria-label], span[aria-label]');
+        for (const el of candidates) {
+          const label = (el.getAttribute('aria-label') || '').trim();
+          const innerText = (el.innerText || el.textContent || '').trim();
+          const lowerLabel = label.toLowerCase();
+          const lowerText = innerText.toLowerCase();
+
+          // ข้ามปุ่มหรือรายการที่ไม่ได้เป็นปุ่มเปิดคอมเมนต์หลัก
+          if (
+            lowerLabel.includes('ปิดการแสดงความคิดเห็น') ||
+            lowerLabel.includes('เรียง') ||
+            lowerLabel.includes('ซ่อน') ||
+            lowerLabel.includes('เกี่ยวข้องมากที่สุด') ||
+            lowerLabel.includes('most relevant')
+          ) {
+            continue;
           }
-        }
-        // Fallback: หาทุกปุ่มที่มีข้อความ "ความคิดเห็น"
-        const allBtns = articleEl ? articleEl.querySelectorAll('[role="button"]') : [];
-        for (const btn of allBtns) {
-          if ((btn.textContent || '').includes('ความคิดเห็น') || (btn.getAttribute('aria-label') || '').includes('ความคิดเห็น')) {
-            btn.click();
-            return 'text-match:ความคิดเห็น';
+
+          // ตรวจสอบว่าตรงกับคีย์เวิร์ดของปุ่มแสดงความคิดเห็นหรือไม่
+          const matchesComment = (
+            lowerLabel.includes('แสดงความคิดเห็น') ||
+            lowerLabel.includes('เขียนความคิดเห็น') ||
+            lowerLabel.includes('comment') ||
+            lowerLabel.includes('write a comment') ||
+            lowerLabel.includes('leave a comment') ||
+            lowerText === 'แสดงความคิดเห็น' ||
+            lowerText === 'เขียนความคิดเห็น' ||
+            lowerText === 'comment'
+          );
+
+          if (matchesComment) {
+            el.click();
+            return `label: "${label}", text: "${innerText}"`;
           }
         }
         return null;
@@ -1281,13 +1315,28 @@ async function postComment(article, imagePath, postUrl) {
         if ((Date.now() - startWait) % 5000 < 800) {
           console.log('Retrying comment button DOM click...');
           await page.evaluate((articleEl) => {
-            const selectors = [
-              '[role="button"][aria-label*="แสดงความคิดเห็น"]',
-              '[role="button"][aria-label*="Comment"]',
-            ];
-            for (const sel of selectors) {
-              const btn = articleEl ? articleEl.querySelector(sel) : document.querySelector(sel);
-              if (btn) { btn.click(); return; }
+            if (!articleEl) return;
+            const candidates = articleEl.querySelectorAll('[role="button"], button, div[aria-label], span[aria-label]');
+            for (const el of candidates) {
+              const label = (el.getAttribute('aria-label') || '').toLowerCase().trim();
+              const text = (el.innerText || el.textContent || '').toLowerCase().trim();
+              if (
+                label.includes('ปิดการแสดงความคิดเห็น') ||
+                label.includes('เรียง') ||
+                label.includes('ซ่อน')
+              ) continue;
+
+              if (
+                label.includes('แสดงความคิดเห็น') ||
+                label.includes('เขียนความคิดเห็น') ||
+                label.includes('comment') ||
+                text === 'แสดงความคิดเห็น' ||
+                text === 'เขียนความคิดเห็น' ||
+                text === 'comment'
+              ) {
+                el.click();
+                return;
+              }
             }
           }, await article.elementHandle().catch(() => null)).catch(() => {});
           await sleep(1000);
@@ -1514,7 +1563,7 @@ async function postComment(article, imagePath, postUrl) {
       ];
       for (const sel of submitSelectors) {
         try {
-          const btns = page.locator(sel);
+          const btns = article.locator(sel);
           const count = await btns.count();
           for (let i = 0; i < count; i++) {
             const btn = btns.nth(i);
@@ -2228,6 +2277,29 @@ async function pauseOnError(isDebugPause, message) {
   const BOT_START_TIME = Date.now();
   const MAX_RUNTIME_MS = 1200000;
 
+  // Hard limit 20 minutes execution timeout
+  setTimeout(async () => {
+    console.warn(`[Timeout] Bot execution reached hard limit of 20 minutes. Force exiting.`);
+    try {
+      showWindowsNotification('Facebook Bot', `หมดเวลา: ระบบปิดอัตโนมัติ (เกิน 20 นาที)`, 'Warning');
+    } catch (e) {}
+    try {
+      reportStatus(100, '⚠️ บอททำงานเกินเวลา 20 นาที', 'ระบบปิดการทำงานอัตโนมัติ', 'error', currentPostIndex, 'exit');
+    } catch (e) {}
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      // Force kill chrome instances linked to user_data to release lock
+      const killCmd = `cmd /c wmic process where "name='chrome.exe' and CommandLine like '%Facebook_Bot\\\\user_data%'" delete`;
+      exec(killCmd, () => {});
+    } catch (e) {}
+    try {
+      if (typeof context !== 'undefined' && context) {
+        await context.close({ timeout: 2000 }).catch(() => {});
+      }
+    } catch (e) {}
+    process.exit(0);
+  }, MAX_RUNTIME_MS);
+
   const extensionPath = path.join(__dirname, 'For Edge Addon');
   const browserArgs = [
     '--disable-blink-features=AutomationControlled',
@@ -2276,14 +2348,20 @@ async function pauseOnError(isDebugPause, message) {
     ensureDownloadsDir();
     clearDownloadsDir();
 
-    // *** โหลด cache เงียบๆ ไม่เปิดหน้าต่าง ***
-    const cached = loadActiveAccounts();
-
-    if (cached && cached.length > 0) {
-      activeGeminiAccounts = cached;
-      // ไม่พิมพ์อะไร เงียบสนิท
-    } else {
-      // Fallback ถ้าไม่มี cache ใช้ default ทั้งหมด
+    // *** โหลดจาก gemini_active_accounts.json เพื่อใช้ทุกบัญชี ***
+    try {
+      const accountsFile = path.join(__dirname, 'gemini_active_accounts.json');
+      if (fs.existsSync(accountsFile)) {
+        const list = JSON.parse(fs.readFileSync(accountsFile, 'utf8'));
+        if (Array.isArray(list) && list.length > 0) {
+          activeGeminiAccounts = list;
+        } else {
+          activeGeminiAccounts = GEMINI_ACCOUNTS;
+        }
+      } else {
+        activeGeminiAccounts = GEMINI_ACCOUNTS;
+      }
+    } catch (e) {
       activeGeminiAccounts = GEMINI_ACCOUNTS;
     }
 
