@@ -1223,14 +1223,25 @@ async function postComment(article, imagePath, postUrl) {
           'textarea[placeholder*="ความคิดเห็น"]',
           'textarea[placeholder*="comment"]',
         ];
-        // ลองหาใน article ก่อน
+        // 1. ถ้ามี dialog/modal เปิดอยู่บนจอ (ที่ยังแสดงอยู่จริง) ให้ค้นใน dialog ก่อน
+        const activeDialog = Array.from(document.querySelectorAll('div[role="dialog"], div[role="alertdialog"]'))
+          .find(d => { const r = d.getBoundingClientRect(); return r.width > 0 && r.height > 0; });
+        if (activeDialog) {
+          for (const sel of selectors) {
+            const found = activeDialog.querySelector(sel);
+            if (found) return found;
+          }
+        }
+        // 2. ลองหาใน article ก่อน (สำหรับโพสต์ในหน้า Feed)
         if (articleEl) {
           for (const sel of selectors) {
             const found = articleEl.querySelector(sel);
             if (found) return found;
           }
-        } else {
-          // fallback หาทั่วหน้าเฉพาะกรณีที่ไม่มี articleEl
+        }
+        // 3. fallback หาทั่วหน้าเฉพาะกรณีที่เป็นหน้า permalink (มีโพสต์เดียว) หรือไม่มี articleEl
+        const isPermalink = window.location.href.includes('/permalink/') || window.location.href.includes('/posts/') || window.location.href.includes('story_fbid=');
+        if (isPermalink || !articleEl) {
           for (const sel of selectors) {
             const found = document.querySelector(sel);
             if (found) return found;
@@ -1253,41 +1264,66 @@ async function postComment(article, imagePath, postUrl) {
       const clicked = await page.evaluate((articleEl) => {
         if (!articleEl) return null;
         
-        // ค้นหาปุ่มแสดงความคิดเห็นในบทความ (ตรวจสอบทั้ง role, tag, และ attribute)
-        const candidates = articleEl.querySelectorAll('[role="button"], button, div[aria-label], span[aria-label]');
-        for (const el of candidates) {
-          const label = (el.getAttribute('aria-label') || '').trim();
-          const innerText = (el.innerText || el.textContent || '').trim();
-          const lowerLabel = label.toLowerCase();
-          const lowerText = innerText.toLowerCase();
+        const clickBtn = (root) => {
+          const candidates = root.querySelectorAll('[role="button"], button, div[aria-label], span[aria-label]');
+          for (const el of candidates) {
+            const label = (el.getAttribute('aria-label') || '').trim();
+            const innerText = (el.innerText || el.textContent || '').trim();
+            const lowerLabel = label.toLowerCase();
+            const lowerText = innerText.toLowerCase();
 
-          // ข้ามปุ่มหรือรายการที่ไม่ได้เป็นปุ่มเปิดคอมเมนต์หลัก
-          if (
-            lowerLabel.includes('ปิดการแสดงความคิดเห็น') ||
-            lowerLabel.includes('เรียง') ||
-            lowerLabel.includes('ซ่อน') ||
-            lowerLabel.includes('เกี่ยวข้องมากที่สุด') ||
-            lowerLabel.includes('most relevant')
-          ) {
-            continue;
+            // ข้ามปุ่มหรือรายการที่ไม่ได้เป็นปุ่มเปิดคอมเมนต์หลัก
+            if (
+              lowerLabel.includes('ปิดการแสดงความคิดเห็น') ||
+              lowerLabel.includes('เรียง') ||
+              lowerLabel.includes('ซ่อน') ||
+              lowerLabel.includes('เกี่ยวข้องมากที่สุด') ||
+              lowerLabel.includes('most relevant')
+            ) {
+              continue;
+            }
+
+            // ตรวจสอบว่าตรงกับคีย์เวิร์ดของปุ่มแสดงความคิดเห็นหรือไม่ (ใช้การจับคู่แบบแม่นยำเพื่อป้องกันการคลิกแจ้งเตือนมั่ว)
+            const matchesComment = (
+              lowerLabel === 'แสดงความคิดเห็น' ||
+              lowerLabel === 'เขียนความคิดเห็น' ||
+              lowerLabel === 'comment' ||
+              lowerLabel === 'write a comment' ||
+              lowerLabel === 'leave a comment' ||
+              lowerLabel.startsWith('แสดงความคิดเห็นในชื่อ') ||
+              lowerLabel.startsWith('comment as') ||
+              lowerLabel.startsWith('write a comment as') ||
+              lowerLabel.startsWith('leave a comment as') ||
+              lowerText === 'แสดงความคิดเห็น' ||
+              lowerText === 'เขียนความคิดเห็น' ||
+              lowerText === 'comment'
+            );
+
+            if (matchesComment) {
+              el.click();
+              return `label: "${label}", text: "${innerText}"`;
+            }
           }
+          return null;
+        };
 
-          // ตรวจสอบว่าตรงกับคีย์เวิร์ดของปุ่มแสดงความคิดเห็นหรือไม่
-          const matchesComment = (
-            lowerLabel.includes('แสดงความคิดเห็น') ||
-            lowerLabel.includes('เขียนความคิดเห็น') ||
-            lowerLabel.includes('comment') ||
-            lowerLabel.includes('write a comment') ||
-            lowerLabel.includes('leave a comment') ||
-            lowerText === 'แสดงความคิดเห็น' ||
-            lowerText === 'เขียนความคิดเห็น' ||
-            lowerText === 'comment'
-          );
+        // 1. ถ้ามี dialog เปิดอยู่ ให้ลองคลิกใน dialog parent
+        const activeDialog = Array.from(document.querySelectorAll('div[role="dialog"], div[role="alertdialog"]'))
+          .find(d => { const r = d.getBoundingClientRect(); return r.width > 0 && r.height > 0; });
+        if (activeDialog) {
+          let res = clickBtn(activeDialog);
+          if (res) return res;
+        }
 
-          if (matchesComment) {
-            el.click();
-            return `label: "${label}", text: "${innerText}"`;
-          }
+        // 2. ลองคลิกใน article
+        let res = clickBtn(articleEl);
+        if (res) return res;
+
+        // 3. ลองคลิกทั่วหน้าเฉพาะกรณีที่เป็น permalink
+        const isPermalink = window.location.href.includes('/permalink/') || window.location.href.includes('/posts/') || window.location.href.includes('story_fbid=');
+        if (isPermalink) {
+          res = clickBtn(document);
+          return res;
         }
         return null;
       }, await article.elementHandle().catch(() => null));
@@ -1316,27 +1352,50 @@ async function postComment(article, imagePath, postUrl) {
           console.log('Retrying comment button DOM click...');
           await page.evaluate((articleEl) => {
             if (!articleEl) return;
-            const candidates = articleEl.querySelectorAll('[role="button"], button, div[aria-label], span[aria-label]');
-            for (const el of candidates) {
-              const label = (el.getAttribute('aria-label') || '').toLowerCase().trim();
-              const text = (el.innerText || el.textContent || '').toLowerCase().trim();
-              if (
-                label.includes('ปิดการแสดงความคิดเห็น') ||
-                label.includes('เรียง') ||
-                label.includes('ซ่อน')
-              ) continue;
+            const clickBtn = (root) => {
+              const candidates = root.querySelectorAll('[role="button"], button, div[aria-label], span[aria-label]');
+              for (const el of candidates) {
+                const label = (el.getAttribute('aria-label') || '').toLowerCase().trim();
+                const text = (el.innerText || el.textContent || '').toLowerCase().trim();
+                if (
+                  label.includes('ปิดการแสดงความคิดเห็น') ||
+                  label.includes('เรียง') ||
+                  label.includes('ซ่อน')
+                ) continue;
 
-              if (
-                label.includes('แสดงความคิดเห็น') ||
-                label.includes('เขียนความคิดเห็น') ||
-                label.includes('comment') ||
-                text === 'แสดงความคิดเห็น' ||
-                text === 'เขียนความคิดเห็น' ||
-                text === 'comment'
-              ) {
-                el.click();
-                return;
+                if (
+                  label === 'แสดงความคิดเห็น' ||
+                  label === 'เขียนความคิดเห็น' ||
+                  label === 'comment' ||
+                  label === 'write a comment' ||
+                  label === 'leave a comment' ||
+                  label.startsWith('แสดงความคิดเห็นในชื่อ') ||
+                  label.startsWith('comment as') ||
+                  label.startsWith('write a comment as') ||
+                  label.startsWith('leave a comment as') ||
+                  text === 'แสดงความคิดเห็น' ||
+                  text === 'เขียนความคิดเห็น' ||
+                  text === 'comment'
+                ) {
+                  el.click();
+                  return true;
+                }
               }
+              return false;
+            };
+
+            // 1. ลองใน dialog parent
+            const activeDialog = Array.from(document.querySelectorAll('div[role="dialog"], div[role="alertdialog"]'))
+              .find(d => { const r = d.getBoundingClientRect(); return r.width > 0 && r.height > 0; });
+            if (activeDialog && clickBtn(activeDialog)) return;
+
+            // 2. ลองใน article
+            if (clickBtn(articleEl)) return;
+
+            // 3. ลองทั่วหน้าเฉพาะกรณีที่เป็น permalink
+            const isPermalink = window.location.href.includes('/permalink/') || window.location.href.includes('/posts/') || window.location.href.includes('story_fbid=');
+            if (isPermalink) {
+              clickBtn(document);
             }
           }, await article.elementHandle().catch(() => null)).catch(() => {});
           await sleep(1000);
@@ -1421,32 +1480,101 @@ async function postComment(article, imagePath, postUrl) {
       try { fs.unlinkSync(tempPs1); } catch (_) { }
       console.log('Image copied to clipboard (CF_PNG + CF_DIB).');
 
-      // 2. focus composer ด้วย DOM แล้วกด Ctrl+V (ทำงานได้แม้ซ่อนหน้าต่าง)
+      // 2. focus composer ด้วย DOM และ Playwright แล้วกด Ctrl+V
       await composer.evaluate((el) => { el.focus(); el.click(); }).catch(() => {});
+      await composer.focus().catch(() => {});
+      await composer.click({ force: true }).catch(() => {});
       await sleep(500);
       await page.keyboard.press('Control+v');
       await sleep(4000); // รอให้ Facebook โหลดภาพ
 
-      // 3. ตรวจสอบว่าภาพอัพโหลดแล้วหรือยัง (หลายแบบ — อย่า strict เกินไป)
-      const uploaded = await page.evaluate(() => {
-        return !!(
-          document.querySelector('div[role="progressbar"]') ||
-          document.querySelector('img[src*="blob:"]') ||
-          document.querySelector('div[data-type="image"]') ||
-          document.querySelector('img[alt*="รูปภาพ"]') ||
-          document.querySelector('[data-visualcompletion="media-vc-image"]') ||
-          document.querySelector('div[class*="attachment"] img') ||
-          document.querySelector('div[class*="UFIImageAttach"]') ||
-          document.querySelector('div[class*="commentContent"] img')
-        );
-      }).catch(() => false);
+      // 3. ตรวจสอบว่าภาพอัพโหลดแล้วหรือยัง (เช็คเฉพาะใน container ของ composer)
+      const checkUploaded = async () => {
+        return await page.evaluate((compEl) => {
+          if (!compEl) return false;
+          let container = compEl;
+          while (container && container.tagName !== 'BODY') {
+            const attachment = 
+              container.querySelector('div[role="progressbar"]') ||
+              container.querySelector('img[src*="blob:"]') ||
+              container.querySelector('div[data-type="image"]') ||
+              container.querySelector('[data-visualcompletion="media-vc-image"]') ||
+              container.querySelector('div[class*="attachment"] img') ||
+              container.querySelector('div[class*="UFIImageAttach"]') ||
+              container.querySelector('div[class*="commentContent"] img');
+            if (attachment) return true;
+            
+            const imgs = Array.from(container.querySelectorAll('img'));
+            for (const img of imgs) {
+              if (img.src && img.src.startsWith('blob:')) return true;
+              const closeBtn = container.querySelector('div[role="button"][aria-label*="Remove"], div[role="button"][aria-label*="ลบ"], button[aria-label*="Remove"], button[aria-label*="ลบ"]');
+              if (closeBtn && container.contains(img)) return true;
+            }
+            container = container.parentElement;
+          }
+          return false;
+        }, composer).catch(() => false);
+      };
 
-      imageUploaded = uploaded;
-      if (imageUploaded) {
+      let uploaded = await checkUploaded();
+
+      if (uploaded) {
+        imageUploaded = true;
         console.log('Image uploaded via Ctrl+V successfully.');
       } else {
-        // ถึงแม้ตรวจไม่เจอ indicator ก็ proceed ต่อ — Facebook อาจแสดงผลช้า
-        console.warn('Ctrl+V executed, no upload indicator found — proceeding anyway.');
+        console.warn('Ctrl+V paste failed or preview not ready. Trying JS DOM paste fallback...');
+        const base64Str = fs.readFileSync(imagePath).toString('base64');
+        const mimeType = 'image/png';
+        
+        const domPasteSuccess = await page.evaluate(async ({ base64, mimeType, compEl }) => {
+          if (!compEl) return false;
+          compEl.focus();
+          compEl.click();
+          
+          try {
+            const resp = await fetch(`data:${mimeType};base64,${base64}`);
+            const blob = await resp.blob();
+            const file = new File([blob], `comment_image_${Date.now()}.png`, { type: mimeType });
+            
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            
+            const pasteEvent = new ClipboardEvent('paste', {
+              bubbles: true,
+              cancelable: true,
+              composed: true
+            });
+            
+            Object.defineProperty(pasteEvent, 'clipboardData', {
+              value: dt,
+              configurable: true,
+              enumerable: true,
+              writable: false
+            });
+            
+            compEl.dispatchEvent(pasteEvent);
+            return true;
+          } catch (err) {
+            return false;
+          }
+        }, { base64: base64Str, mimeType, compEl: composer }).catch(() => false);
+
+        if (domPasteSuccess) {
+          console.log('Dispatched JS DOM paste event. Waiting 4s for preview...');
+          await sleep(4000);
+          uploaded = await checkUploaded();
+          if (uploaded) {
+            imageUploaded = true;
+            console.log('Image uploaded via JS DOM paste fallback successfully.');
+          } else {
+            console.warn('JS DOM paste fallback did not show preview either.');
+          }
+        }
+      }
+
+      // ถ้าลองทั้งสองวิธีแล้วยังไม่เจอ preview ก็ฝืนไปต่อตามเดิมกันเหนียว
+      if (!imageUploaded) {
+        console.warn('Proceeding anyway without confirmed upload preview.');
         imageUploaded = true;
       }
     } catch (e) {
@@ -1483,7 +1611,10 @@ async function postComment(article, imagePath, postUrl) {
 
     // --- บันทึก comment_id ที่มีอยู่แล้วก่อน submit (จำกัดเฉพาะใน article นี้เท่านั้น) ---
     const existingCommentIds = await article.evaluate((node) => {
-      const ids = Array.from(node.querySelectorAll('a[href*="comment_id"]'))
+      const activeDialog = Array.from(document.querySelectorAll('div[role="dialog"], div[role="alertdialog"]'))
+        .find(d => { const r = d.getBoundingClientRect(); return r.width > 0 && r.height > 0; });
+      const container = activeDialog || node;
+      const ids = Array.from(container.querySelectorAll('a[href*="comment_id"]'))
         .map(a => { try { return new URL(a.href).searchParams.get('comment_id'); } catch { return null; } })
         .filter(Boolean);
       return Array.from(new Set(ids));
@@ -1499,16 +1630,19 @@ async function postComment(article, imagePath, postUrl) {
     // *** Submit: หาปุ่ม submit จาก DOM รอบ composer (ไม่ใช้ Enter ซึ่งทำให้ขึ้นบรรทัดใหม่) ***
 
     // Strategy 1: evaluate DOM หาปุ่ม submit ของ comment เท่านั้น โดยขยายกรอบหาในช่องพิมพ์ขึ้นไปเรื่อยๆ
-    commentPosted = await page.evaluate(() => {
+    commentPosted = await page.evaluate((compEl) => {
       const composer =
+        compEl ||
         document.activeElement ||
         document.querySelector('div[role="textbox"][contenteditable="true"][aria-label*="ความคิดเห็น"]') ||
         document.querySelector('div[role="textbox"][contenteditable="true"]');
       if (!composer) return false;
 
-      // เดินขึ้นหา parent container (เช่น form หรือ div ที่หุ้มช่องพิมพ์ทั้งหมด) เพื่อหาปุ่มส่ง
+      // เดินขึ้นหา parent container (เช่น form หรือ div ที่หุ้มช่องพิมพ์ทั้งหมด) เพื่อหาปุ่มส่ง (จำกัดระดับขึ้นไม่เกิน 4 ชั้นเพื่อไม่ให้ลามไปที่ปุ่มแสดงความคิดเห็นด้านนอก)
       let container = composer;
-      while (container && container.tagName !== 'BODY') {
+      let depth = 0;
+      while (container && container.tagName !== 'BODY' && depth < 5) {
+        depth++;
         const buttons = Array.from(container.querySelectorAll('div[role="button"], button'));
         const submitBtn = buttons.find(btn => {
           const label = (btn.getAttribute('aria-label') || '').trim();
@@ -1519,20 +1653,18 @@ async function postComment(article, imagePath, postUrl) {
           return (
             label === 'ส่ง' ||
             label === 'Send' ||
-            label === 'แสดงความคิดเห็น' ||
             label === 'โพสต์' ||
             label === 'Post' ||
             label === 'โพสต์ความคิดเห็น' ||
             label === 'Post comment' ||
-            label === 'Comment' ||
+            (label === 'Comment' && txt.length < 5) ||
+            (label === 'แสดงความคิดเห็น' && txt.length < 5) ||
             txt === 'ส่ง' ||
             txt === 'Send' ||
-            txt === 'แสดงความคิดเห็น' ||
             txt === 'โพสต์' ||
             txt === 'Post' ||
             txt === 'โพสต์ความคิดเห็น' ||
-            txt === 'Post comment' ||
-            txt === 'Comment'
+            txt === 'Post comment'
           );
         });
         
@@ -1543,7 +1675,7 @@ async function postComment(article, imagePath, postUrl) {
         container = container.parentElement;
       }
       return false;
-    }).catch(() => false);
+    }, composer).catch(() => false);
 
     if (commentPosted) {
       console.log('[Submit] ✅ Clicked submit button via DOM traversal.');
@@ -1561,9 +1693,16 @@ async function postComment(article, imagePath, postUrl) {
         'div[aria-label="ส่ง"]',
         'div[aria-label="Send"]',
       ];
+      
+      const hasActiveDialog = await page.evaluate(() => {
+        const dialogs = Array.from(document.querySelectorAll('div[role="dialog"], div[role="alertdialog"]'));
+        return dialogs.some(d => { const r = d.getBoundingClientRect(); return r.width > 0 && r.height > 0; });
+      }).catch(() => false);
+      const locatorRoot = hasActiveDialog ? page.locator('div[role="dialog"], div[role="alertdialog"]').last() : article;
+
       for (const sel of submitSelectors) {
         try {
-          const btns = article.locator(sel);
+          const btns = locatorRoot.locator(sel);
           const count = await btns.count();
           for (let i = 0; i < count; i++) {
             const btn = btns.nth(i);
@@ -1655,46 +1794,90 @@ async function postComment(article, imagePath, postUrl) {
       for (let _attempt = 0; _attempt < 6; _attempt++) {
         await sleep(_attempt === 0 ? 2500 : 1800);
 
-        commentUrl = await page.evaluate(({ profName, oldIds, _postId }) => {
-          const allLinks = Array.from(document.querySelectorAll('a[href*="comment_id"]'));
+        const evalResult = await page.evaluate(({ profName, oldIds, _postId, articleEl }) => {
+          const debug = [];
+          const dialogs = Array.from(document.querySelectorAll('div[role="dialog"], div[role="alertdialog"]'));
+          const activeDialog = dialogs.find(d => { const r = d.getBoundingClientRect(); return r.width > 0 && r.height > 0; });
+          const container = activeDialog || articleEl || document;
+
+          debug.push('Selected container: ' + (container ? container.tagName + '.' + container.className : 'null'));
+
+          const allLinks = Array.from(container.querySelectorAll('a[href*="comment_id"]'));
+          debug.push('Total comment_id links found: ' + allLinks.length);
+
+          let commentUrl = null;
 
           for (let i = allLinks.length - 1; i >= 0; i--) {
             const a = allLinks[i];
             try {
               const url = new URL(a.href);
               const cid = url.searchParams.get('comment_id');
-              if (!cid || oldIds.includes(cid)) continue;
+              if (!cid) continue;
+
+              const isOld = oldIds.includes(cid);
+              debug.push(`Link ${i}: href=${a.href}, cid=${cid}, isOld=${isOld}`);
+              if (isOld) continue;
 
               // กรองโดย post ID — comment ต้องอยู่ภายใต้โพสต์เดียวกัน
               if (_postId) {
-                if (!a.href.includes('/' + _postId) && !a.href.includes('=' + _postId)) continue;
+                if (!a.href.includes('/' + _postId) && !a.href.includes('=' + _postId)) {
+                  debug.push(`Link ${i} skipped: does not match postId ${_postId}`);
+                  continue;
+                }
               }
 
-              // parent chain ต้องมีชื่อโปรไฟล์เรา
-              let p = a.parentElement;
-              let found = false;
-              for (let steps = 0; p && steps < 10; steps++) {
-                if ((p.innerText || p.textContent || '').includes(profName)) { found = true; break; }
-                p = p.parentElement;
+              // ค้นหาขึ้นไป 12 ระดับ หรือจนกว่าจะเจอ comment container หลัก
+              // จากนั้นตรวจดูว่าใน container นั้นมีชื่อโปรไฟล์ของเราหรือไม่
+              let parent = a.parentElement;
+              let hasAuthor = false;
+              let pathStr = '';
+              for (let steps = 0; parent && steps < 12; steps++) {
+                pathStr += ' -> ' + parent.tagName;
+                const text = (parent.textContent || parent.innerText || '');
+                if (text.includes(profName)) {
+                  hasAuthor = true;
+                  debug.push(`Author "${profName}" found at step ${steps} via path: ${pathStr}`);
+                  break;
+                }
+                parent = parent.parentElement;
               }
-              if (found) return a.href;
-            } catch (e) { }
+              
+              if (hasAuthor) {
+                commentUrl = a.href;
+                break;
+              } else {
+                debug.push(`Link ${i} failed author match for "${profName}"`);
+              }
+            } catch (e) {
+              debug.push(`Link ${i} parsing error: ` + e.message);
+            }
           }
 
           // Pass 2: fallback — post ID match อย่างเดียว (ไม่เช็คชื่อ)
-          if (_postId) {
+          if (!commentUrl && _postId) {
+            debug.push('Executing Pass 2 fallback with postId: ' + _postId);
             for (let i = allLinks.length - 1; i >= 0; i--) {
               const a = allLinks[i];
               try {
                 const url = new URL(a.href);
                 const cid = url.searchParams.get('comment_id');
                 if (!cid || oldIds.includes(cid)) continue;
-                if (a.href.includes('/' + _postId) || a.href.includes('=' + _postId)) return a.href;
+                if (a.href.includes('/' + _postId) || a.href.includes('=' + _postId)) {
+                  commentUrl = a.href;
+                  debug.push('Pass 2 fallback matched: ' + commentUrl);
+                  break;
+                }
               } catch (e) { }
             }
           }
-          return null;
-        }, { profName: profileName, oldIds: existingCommentIds, _postId: postId });
+          return { commentUrl, debug };
+        }, { profName: profileName, oldIds: existingCommentIds, _postId: postId, articleEl: await article.elementHandle().catch(() => null) }).catch((err) => ({ commentUrl: null, debug: ['Eval error: ' + err.message] }));
+
+        commentUrl = evalResult.commentUrl;
+        if (evalResult.debug && evalResult.debug.length > 0) {
+          console.log('[Comment URL Debug]');
+          evalResult.debug.forEach(line => console.log('  → ' + line));
+        }
 
         if (commentUrl) {
           try {
