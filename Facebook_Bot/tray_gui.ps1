@@ -96,6 +96,13 @@ function Get-PlaywrightBrowserHwnds {
 
 function Show-ChromeWindow {
     $script:browserVisible = $true
+    try {
+        $hwnds = Get-PlaywrightBrowserHwnds
+        foreach ($hwnd in $hwnds) {
+            [Win32Gui]::ShowWindow($hwnd, 9) | Out-Null  # SW_RESTORE = 9
+            [Win32Gui]::SetForegroundWindow($hwnd) | Out-Null
+        }
+    } catch {}
 }
 
 function Toggle-ChromeWindow {
@@ -321,58 +328,68 @@ function Update-StatusUI ($data) {
     }
 
     if ($data.postIndex -and $data.maxPosts) {
-        $lblTitle.Text = "ⓕ Facebook Bot (โพสต์ $($data.postIndex)/$($data.maxPosts))"
+        $newTitle = "ⓕ Facebook Bot (โพสต์ $($data.postIndex)/$($data.maxPosts))"
+        if ($lblTitle.Text -ne $newTitle) {
+            $lblTitle.Text = $newTitle
+        }
     }
 
     if ($null -ne $data.percent) {
         $val = [Math]::Max(0, [Math]::Min(100, [int]$data.percent))
-        $progressBar.Value = $val
-        $lblPercent.Text = "$val%"
+        if ($progressBar.Value -ne $val) {
+            $progressBar.Value = $val
+        }
+        $newPercent = "$val%"
+        if ($lblPercent.Text -ne $newPercent) {
+            $lblPercent.Text = $newPercent
+        }
     }
 
     if ($data.status) {
-        $lblStatus.Text = $data.status
-        $trayIcon.Text = "FB Bot: $($data.status)"
+        if ($lblStatus.Text -ne $data.status) {
+            $lblStatus.Text = $data.status
+        }
+        
+        $newTrayText = "FB Bot: $($data.status)"
+        # WinForms NotifyIcon.Text has a strict limit of 63 characters.
+        # Exceeding it will throw an exception.
+        if ($newTrayText.Length -gt 63) {
+            $newTrayText = $newTrayText.Substring(0, 60) + "..."
+        }
+        
+        # Only update if it has changed to prevent Win32 tray redraw focus stealing
+        if ($trayIcon.Text -ne $newTrayText) {
+            $trayIcon.Text = $newTrayText
+        }
     }
 
     if ($data.detail) {
-        $lblDetail.Text = $data.detail
+        if ($lblDetail.Text -ne $data.detail) {
+            $lblDetail.Text = $data.detail
+        }
     }
 
+    # Only update ForeColor if it changes to prevent redundant WinForms paint events
+    $targetColor = [System.Drawing.Color]::FromArgb(79, 195, 247)
     if ($data.logType -eq "warn") {
-        $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(255, 183, 77)
+        $targetColor = [System.Drawing.Color]::FromArgb(255, 183, 77)
     } elseif ($data.logType -eq "error") {
-        $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(239, 83, 80)
+        $targetColor = [System.Drawing.Color]::FromArgb(239, 83, 80)
         Show-ChromeWindow
     } elseif ($data.logType -eq "success") {
-        $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(102, 187, 106)
-    } else {
-        $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(79, 195, 247)
+        $targetColor = [System.Drawing.Color]::FromArgb(102, 187, 106)
+    }
+
+    if ($lblStatus.ForeColor -ne $targetColor) {
+        $lblStatus.ForeColor = $targetColor
     }
 }
 
-# WinForms Timer to Poll status.json every 300ms
+# WinForms Timer to Poll status.json every 1000ms (1 second)
 $script:lastReadTimestamp = 0
 $timer = New-Object System.Windows.Forms.Timer
-$timer.Interval = 300
+$timer.Interval = 1000
 $timer.add_Tick({
-    # บังคับให้หน้าต่าง widget อยู่บนสุดเสมอ (Always on top)
-    $form.TopMost = $true
-    # ไม่บังคับให้ Chrome minimize อัตโนมัติ — แค่จัดการตามคำสั่ง Toggle
-    try {
-        $hwnds = Get-PlaywrightBrowserHwnds
-        if ($hwnds.Count -gt 0) {
-            foreach ($hwnd in $hwnds) {
-                if ($script:browserVisible) {
-                    if ([Win32Gui]::IsIconic($hwnd)) {
-                        [Win32Gui]::ShowWindow($hwnd, 9) | Out-Null # SW_RESTORE = 9
-                    }
-                }
-                # หากปิดหน้าต่าง = minimize ตามคำสั่ง ไม่แสดง
-            }
-        }
-    } catch {}
-
     # Read status.json
     if (Test-Path $statusFile) {
         try {
