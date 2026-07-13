@@ -220,6 +220,8 @@ def process_clean_only(full_path=None):
         print(f"[Done] {target}")
     else:
         print("[Error] Failed")
+        sys.exit(1)
+
 
 def _upload_with_timeout(file_path, timeout_sec=30):
     """Upload ไปที่ Litterbox โดยมี timeout ที่แน่นอน ผ่าน threading"""
@@ -253,7 +255,8 @@ def process_donate(full_path=None):
     target = os.path.join(os.environ['USERPROFILE'], 'Desktop', target_name)
     
     original_img = crop_watermark(source)
-    if not original_img: return
+    if not original_img:
+        sys.exit(1)
 
     # // ส่วนนี้ถูก bypass ทั้งหมด — upload littlebox + สร้าง QR + แถบ QR
     # // คอมเมนต์ไว้เพื่อกู้คืนได้ในอนาคต ไม่ได้ลบทิ้ง
