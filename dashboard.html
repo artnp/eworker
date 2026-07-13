@@ -369,6 +369,7 @@
             align-items: center;
             position: relative;
         }
+
         .account-item-container label {
             display: inline-flex;
             align-items: center;
@@ -383,19 +384,24 @@
             user-select: none;
             margin: 0;
         }
+
         .account-item-container label:hover {
             background: #f1f3f4;
             border-color: #ccc;
         }
+
         .account-item-container input[type="radio"] {
-            display: none; /* Hide default radio */
+            display: none;
+            /* Hide default radio */
         }
+
         .account-item-container label.selected {
             background: rgba(66, 133, 244, 0.08);
             border-color: var(--primary);
             color: var(--primary);
             font-weight: 600;
         }
+
         .account-item-container .inline-quota-btn {
             display: inline-block;
             opacity: 0;
@@ -411,6 +417,7 @@
             cursor: pointer;
             white-space: nowrap;
         }
+
         .account-item-container:hover .inline-quota-btn.visible-active {
             opacity: 1;
             width: 40px;
@@ -466,6 +473,7 @@
             color: var(--text-sub);
             opacity: 0.5;
         }
+
         #toast-container {
             position: fixed;
             bottom: 30px;
@@ -755,7 +763,7 @@
             align-items: center;
             gap: 5px;
             transition: all 0.2s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
             height: 23px;
         }
 
@@ -855,9 +863,14 @@
                     <!-- Generated dynamically -->
                 </div>
 
-                <div style="display: inline-flex; align-items: center; gap: 4px; border-left: 1px solid var(--border); padding-left: 10px; margin-left: 5px;">
-                    <button onclick="changeGeminiAccountCount(-1)" style="font-size: 0.7rem; padding: 2px 6px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; color: var(--text-sub);" title="ลดบัญชี">- บัญชี</button>
-                    <button onclick="changeGeminiAccountCount(1)" style="font-size: 0.7rem; padding: 2px 6px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; color: var(--text-sub);" title="เพิ่มบัญชี">+ บัญชี</button>
+                <div
+                    style="display: inline-flex; align-items: center; gap: 4px; border-left: 1px solid var(--border); padding-left: 10px; margin-left: 5px;">
+                    <button onclick="changeGeminiAccountCount(-1)"
+                        style="font-size: 0.7rem; padding: 2px 6px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; color: var(--text-sub);"
+                        title="ลดบัญชี">- บัญชี</button>
+                    <button onclick="changeGeminiAccountCount(1)"
+                        style="font-size: 0.7rem; padding: 2px 6px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; color: var(--text-sub);"
+                        title="เพิ่มบัญชี">+ บัญชี</button>
                 </div>
 
                 <!-- Compact Status Summary -->
@@ -884,45 +897,89 @@
                 <p style="font-size: 0.85rem; color: #ff4d4d; margin-bottom: 12px; font-weight: 600; cursor: default;">
                     ตรวจเช็คและครอปภาพ 4 ทิศทาง (คลิกตำแหน่งที่ต้องการตัด)</p>
                 <div style="display: flex; gap: 12px; align-items: stretch; justify-content: center; width: 100%;">
-                    
+
                     <!-- Left Crop Column -->
-                    <div style="flex: 1; min-width: 120px; max-width: 180px; display: flex; flex-direction: column; align-items: center; border: 1px solid #eee; border-radius: 10px; padding: 8px; background: #fafafa;">
-                        <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬅️ ซ้าย</span>
-                        <div style="width: 100%; height: 260px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #ddd; border-radius: 6px;">
-                            <canvas id="crop-canvas-left" style="max-width: 100%; max-height: 100%; object-fit: contain; cursor: w-resize; display: block;"></canvas>
+                    <div
+                        style="flex: 1; min-width: 120px; max-width: 180px; display: flex; flex-direction: column; align-items: center; border: 1px solid #eee; border-radius: 10px; padding: 8px; background: #fafafa;">
+                        <span
+                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬅️
+                            ซ้าย</span>
+                        <div
+                            style="width: 100%; height: 260px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #ddd; border-radius: 6px;">
+                            <canvas id="crop-canvas-left"
+                                style="max-width: 100%; max-height: 100%; object-fit: contain; cursor: w-resize; display: block;"></canvas>
                         </div>
                     </div>
 
                     <!-- Center Column (Top & Bottom Crop) -->
-                    <div style="flex: 2; display: flex; flex-direction: column; gap: 12px; justify-content: space-between;">
+                    <div
+                        style="flex: 2; display: flex; flex-direction: column; gap: 12px; justify-content: space-between;">
                         <!-- Top Crop Panel -->
-                        <div style="display: flex; flex-direction: column; align-items: center; border: 1px solid #eee; border-radius: 10px; padding: 8px; background: #fafafa; flex: 1;">
-                            <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬆️ บน</span>
-                            <div style="width: 100%; height: 110px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #ddd; border-radius: 6px;">
-                                <canvas id="crop-canvas-top" style="width: 100%; height: auto; max-height: 100%; object-fit: contain; cursor: n-resize; display: block;"></canvas>
+                        <div
+                            style="display: flex; flex-direction: column; align-items: center; border: 1px solid #eee; border-radius: 10px; padding: 8px; background: #fafafa; flex: 1;">
+                            <span
+                                style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬆️
+                                บน</span>
+                            <div
+                                style="width: 100%; height: 110px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #ddd; border-radius: 6px;">
+                                <canvas id="crop-canvas-top"
+                                    style="width: 100%; height: auto; max-height: 100%; object-fit: contain; cursor: n-resize; display: block;"></canvas>
                             </div>
                         </div>
                         <!-- Bottom Crop Panel -->
-                        <div style="display: flex; flex-direction: column; align-items: center; border: 1px solid #eee; border-radius: 10px; padding: 8px; background: #fafafa; flex: 1;">
-                            <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬇️ ล่าง</span>
-                            <div style="width: 100%; height: 110px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #ddd; border-radius: 6px;">
-                                <canvas id="crop-canvas-bottom" style="width: 100%; height: auto; max-height: 100%; object-fit: contain; cursor: s-resize; display: block;"></canvas>
+                        <div
+                            style="display: flex; flex-direction: column; align-items: center; border: 1px solid #eee; border-radius: 10px; padding: 8px; background: #fafafa; flex: 1;">
+                            <span
+                                style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬇️
+                                ล่าง</span>
+                            <div
+                                style="width: 100%; height: 110px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #ddd; border-radius: 6px;">
+                                <canvas id="crop-canvas-bottom"
+                                    style="width: 100%; height: auto; max-height: 100%; object-fit: contain; cursor: s-resize; display: block;"></canvas>
                             </div>
                         </div>
                     </div>
 
                     <!-- Right Crop Column -->
-                    <div style="flex: 1; min-width: 120px; max-width: 180px; display: flex; flex-direction: column; align-items: center; border: 1px solid #eee; border-radius: 10px; padding: 8px; background: #fafafa;">
-                        <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">➡️ ขวา</span>
-                        <div style="width: 100%; height: 260px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #ddd; border-radius: 6px;">
-                            <canvas id="crop-canvas-right" style="max-width: 100%; max-height: 100%; object-fit: contain; cursor: e-resize; display: block;"></canvas>
+                    <div
+                        style="flex: 1; min-width: 120px; max-width: 180px; display: flex; flex-direction: column; align-items: center; border: 1px solid #eee; border-radius: 10px; padding: 8px; background: #fafafa;">
+                        <span
+                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">➡️
+                            ขวา</span>
+                        <div
+                            style="width: 100%; height: 260px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #ddd; border-radius: 6px;">
+                            <canvas id="crop-canvas-right"
+                                style="max-width: 100%; max-height: 100%; object-fit: contain; cursor: e-resize; display: block;"></canvas>
                         </div>
+                    </div>
+
+                    <!-- Tools / Clone Stamp Column -->
+                    <div
+                        style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; border: 1px solid #eee; border-radius: 10px; padding: 12px 8px; background: #fafafa; min-width: 90px;">
+                        <span
+                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">เครื่องมือ</span>
+                        <button id="btn-clone-stamp" onclick="toggleCloneStampMode()"
+                            style="width: 72px; height: 72px; border-radius: 14px; border: 1px solid #dadce0; background: #ffffff; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.2s ease-in-out; padding: 6px;"
+                            title="เครื่องมือลบลายน้ำ Clone Stamp: กดใช้แล้วเมาส์จะเป็นวงกลม คลิกที่ลายน้ำเพื่อลบได้เลย (คัดลอกจากพิกเซลใกล้เคียง) หรือกด Alt+คลิก เพื่อเลือกพิกเซลต้นฉบับได้เอง">
+                            <!-- SVG Stamp Icon -->
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+                                style="color: #4285f4; margin-bottom: 4px; transition: transform 0.2s ease;">
+                                <path d="M12 2a3 3 0 0 0-3 3v3h6V5a3 3 0 0 0-3-3z" />
+                                <path d="M6 12a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3H6v-3z" />
+                                <path d="M4 18h16" />
+                                <path d="M4 21h16" />
+                            </svg>
+                            <span
+                                style="font-size: 0.68rem; font-weight: 600; color: #3c4043; white-space: nowrap;">ลบลายน้ำ</span>
+                        </button>
                     </div>
 
                 </div>
             </div>
             <div id="watermark-check-placeholder">
-                <p style="color: var(--text-sub); font-size: 0.85rem; margin: 0;">📸 ภาพตัวอย่างจาก Desktop จะปรากฏที่นี่อัตโนมัติ (ครอปได้ 4 ทิศทาง)</p>
+                <p style="color: var(--text-sub); font-size: 0.85rem; margin: 0;">📸 ภาพตัวอย่างจาก Desktop
+                    จะปรากฏที่นี่อัตโนมัติ (ครอปได้ 4 ทิศทาง)</p>
             </div>
         </div>
     </div>
@@ -934,6 +991,182 @@
     <div id="toast-container"></div>
 
     <script>
+        // --- Clone Stamp Tool Variables & Functions ---
+        let cloneStampActive = false;
+        let cloneSourceX = null;
+        let cloneSourceY = null;
+        const brushRadius = 15;
+        let mainImageCanvas = document.createElement('canvas');
+
+        function toggleCloneStampMode() {
+            cloneStampActive = !cloneStampActive;
+            const btn = document.getElementById('btn-clone-stamp');
+            if (cloneStampActive) {
+                btn.style.borderColor = 'var(--primary)';
+                btn.style.background = '#e8f0fe';
+                showToast('🩹 เปิดโหมดลบลายน้ำ');
+
+                document.getElementById('crop-canvas-top').style.cursor = 'crosshair';
+                document.getElementById('crop-canvas-bottom').style.cursor = 'crosshair';
+                document.getElementById('crop-canvas-left').style.cursor = 'crosshair';
+                document.getElementById('crop-canvas-right').style.cursor = 'crosshair';
+            } else {
+                btn.style.borderColor = '#ccc';
+                btn.style.background = 'white';
+                showToast('🩹 ปิดโหมดลบลายน้ำ');
+
+                document.getElementById('crop-canvas-top').style.cursor = 'n-resize';
+                document.getElementById('crop-canvas-bottom').style.cursor = 's-resize';
+                document.getElementById('crop-canvas-left').style.cursor = 'w-resize';
+                document.getElementById('crop-canvas-right').style.cursor = 'e-resize';
+
+                redrawAllCropCanvases();
+            }
+        }
+
+        function redrawAllCropCanvases() {
+            if (!currentWatermarkImg) return;
+            const canvasTop = document.getElementById('crop-canvas-top');
+            const canvasBottom = document.getElementById('crop-canvas-bottom');
+            const canvasLeft = document.getElementById('crop-canvas-left');
+            const canvasRight = document.getElementById('crop-canvas-right');
+
+            // 1. Draw Top Canvas
+            canvasTop.width = mainImageCanvas.width;
+            canvasTop.height = currentCropHeight;
+            canvasTop.getContext('2d').drawImage(mainImageCanvas,
+                0, 0, mainImageCanvas.width, currentCropHeight,
+                0, 0, mainImageCanvas.width, currentCropHeight
+            );
+
+            // 2. Draw Bottom Canvas
+            const startY = mainImageCanvas.height - currentCropHeight;
+            canvasBottom.width = mainImageCanvas.width;
+            canvasBottom.height = currentCropHeight;
+            canvasBottom.getContext('2d').drawImage(mainImageCanvas,
+                0, startY, mainImageCanvas.width, currentCropHeight,
+                0, 0, mainImageCanvas.width, currentCropHeight
+            );
+
+            // 3. Draw Left Canvas
+            canvasLeft.width = currentCropWidth;
+            canvasLeft.height = mainImageCanvas.height;
+            canvasLeft.getContext('2d').drawImage(mainImageCanvas,
+                0, 0, currentCropWidth, mainImageCanvas.height,
+                0, 0, currentCropWidth, mainImageCanvas.height
+            );
+
+            // 4. Draw Right Canvas
+            const startX = mainImageCanvas.width - currentCropWidth;
+            canvasRight.width = currentCropWidth;
+            canvasRight.height = mainImageCanvas.height;
+            canvasRight.getContext('2d').drawImage(mainImageCanvas,
+                startX, 0, currentCropWidth, mainImageCanvas.height,
+                0, 0, currentCropWidth, mainImageCanvas.height
+            );
+        }
+
+        function drawStampCursor(canvas, localX, localY, isAltPressed) {
+            const ctx = canvas.getContext('2d');
+            const startY = mainImageCanvas.height - currentCropHeight;
+            const startX = mainImageCanvas.width - currentCropWidth;
+
+            if (canvas.id === 'crop-canvas-top') {
+                ctx.drawImage(mainImageCanvas, 0, 0, mainImageCanvas.width, currentCropHeight, 0, 0, mainImageCanvas.width, currentCropHeight);
+            } else if (canvas.id === 'crop-canvas-bottom') {
+                ctx.drawImage(mainImageCanvas, 0, startY, mainImageCanvas.width, currentCropHeight, 0, 0, mainImageCanvas.width, currentCropHeight);
+            } else if (canvas.id === 'crop-canvas-left') {
+                ctx.drawImage(mainImageCanvas, 0, 0, currentCropWidth, mainImageCanvas.height, 0, 0, currentCropWidth, mainImageCanvas.height);
+            } else if (canvas.id === 'crop-canvas-right') {
+                ctx.drawImage(mainImageCanvas, startX, 0, currentCropWidth, mainImageCanvas.height, 0, 0, currentCropWidth, mainImageCanvas.height);
+            }
+
+            // Draw circle with 50% opacity (red for stamp, blue for alt-select source)
+            ctx.beginPath();
+            ctx.arc(localX, localY, brushRadius, 0, Math.PI * 2);
+            ctx.fillStyle = isAltPressed ? 'rgba(0, 136, 255, 0.5)' : 'rgba(255, 0, 0, 0.5)';
+            ctx.fill();
+            ctx.strokeStyle = isAltPressed ? '#0088ff' : '#ff0000';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            if (isAltPressed) {
+                ctx.beginPath();
+                ctx.moveTo(localX - 5, localY);
+                ctx.lineTo(localX + 5, localY);
+                ctx.moveTo(localX, localY - 5);
+                ctx.lineTo(localX, localY + 5);
+                ctx.strokeStyle = '#0088ff';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+        }
+
+        async function handleCanvasStamp(canvas, e) {
+            if (!currentWatermarkImg) return;
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const localX = (e.clientX - rect.left) * scaleX;
+            const localY = (e.clientY - rect.top) * scaleY;
+
+            let globalX = localX;
+            let globalY = localY;
+
+            if (canvas.id === 'crop-canvas-bottom') {
+                globalY = mainImageCanvas.height - currentCropHeight + localY;
+            } else if (canvas.id === 'crop-canvas-right') {
+                globalX = mainImageCanvas.width - currentCropWidth + localX;
+            } else if (canvas.id === 'crop-canvas-top') {
+                globalY = localY;
+            } else if (canvas.id === 'crop-canvas-left') {
+                globalX = localX;
+            }
+
+            if (e.altKey) {
+                cloneSourceX = globalX;
+                cloneSourceY = globalY;
+                showToast(`📍 กำหนดจุดต้นทางคัดลอกที่: X=${Math.round(globalX)}, Y=${Math.round(globalY)}`);
+                drawStampCursor(canvas, localX, localY, true);
+                return;
+            }
+
+            let srcX = cloneSourceX;
+            let srcY = cloneSourceY;
+
+            if (srcX === null || srcY === null) {
+                srcX = Math.max(0, globalX - 50);
+                srcY = globalY;
+            }
+
+            const mainCtx = mainImageCanvas.getContext('2d');
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = brushRadius * 2;
+            tempCanvas.height = brushRadius * 2;
+            const tempCtx = tempCanvas.getContext('2d');
+
+            tempCtx.beginPath();
+            tempCtx.arc(brushRadius, brushRadius, brushRadius, 0, Math.PI * 2);
+            tempCtx.clip();
+
+            tempCtx.drawImage(mainImageCanvas,
+                srcX - brushRadius, srcY - brushRadius, brushRadius * 2, brushRadius * 2,
+                0, 0, brushRadius * 2, brushRadius * 2
+            );
+
+            mainCtx.save();
+            mainCtx.beginPath();
+            mainCtx.arc(globalX, globalY, brushRadius, 0, Math.PI * 2);
+            mainCtx.clip();
+            mainCtx.drawImage(tempCanvas, globalX - brushRadius, globalY - brushRadius);
+            mainCtx.restore();
+
+            redrawAllCropCanvases();
+            drawStampCursor(canvas, localX, localY, false);
+
+            await saveCroppedImage(mainImageCanvas.toDataURL('image/png', 1.0));
+        }
+
         const pendingRequests = new Map();
         function callExtension(action, payload = {}, timeout = 10000) {
             return new Promise((resolve) => {
@@ -1264,7 +1497,7 @@
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 // Ignore if user is typing in another input element
-                if (document.activeElement && document.activeElement !== promptInput && 
+                if (document.activeElement && document.activeElement !== promptInput &&
                     (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.isContentEditable)) {
                     return;
                 }
@@ -1281,92 +1514,92 @@
 
         async function submitHubData() {
             try {
-            const prompt = promptInput.value.trim();
-            if (pastedFiles.length === 0 && !prompt && selectedFilesList.length === 0) return;
+                const prompt = promptInput.value.trim();
+                if (pastedFiles.length === 0 && !prompt && selectedFilesList.length === 0) return;
 
-            // URL mapping for external AI models
-            const MODEL_URLS = {
-                'GPT': 'https://chatgpt.com',
-                'Gemini': 'https://gemini.google.com/app',
-                'GROK': 'https://grok.com',
-                'META': 'https://www.meta.ai',
-                'QWEN': 'https://chat.qwen.ai/?inputFeature=image_edit',
-                'COPILOT': 'https://copilot.microsoft.com'
-            };
-
-            const selectedModels = Array.from(document.querySelectorAll('input[name="model"]:checked')).map(el => el.value);
-            const modelsToSend = selectedModels.length ? selectedModels : ['Gemini'];
-
-            // Prepare images
-            const imagePaths = [...selectedFilesList];
-            const pastedImageDataUrls = await Promise.all(pastedFiles.map(async (item) => {
-                let dataUrl = await new Promise(r => { const rd = new FileReader(); rd.onloadend = () => r(rd.result); rd.readAsDataURL(item.blob); });
-                return dataUrl;
-            }));
-
-            // === Send to AI Models via Extension ===
-            showToast(`🚀 ส่งไปยัง ${modelsToSend.join(', ')}...`);
-
-            let res;
-            try {
-                res = await callExtension('SUBMIT_HUB_DATA', {
-                    prompt,
-                    images: pastedImageDataUrls,
-                    imagePaths: imagePaths,
-                    models: modelsToSend,
-                    origin: window.location.origin
-                });
-            } catch (e) {
-                showToast(`⚠️ เกิดข้อผิดพลาด: ${e.message || e}`);
-                return;
-            }
-
-            if (res && res.success) {
-                lastSubmitState = {
-                    prompt: prompt,
-                    pastedFiles: [...pastedFiles],
-                    pastedPreviews: previews.innerHTML,
-                    selectedFilesList: [...selectedFilesList]
+                // URL mapping for external AI models
+                const MODEL_URLS = {
+                    'GPT': 'https://chatgpt.com',
+                    'Gemini': 'https://gemini.google.com/app',
+                    'GROK': 'https://grok.com',
+                    'META': 'https://www.meta.ai',
+                    'QWEN': 'https://chat.qwen.ai/?inputFeature=image_edit',
+                    'COPILOT': 'https://copilot.microsoft.com'
                 };
-                document.getElementById('btn-undo').classList.add('visible');
 
-                showToast('✅ ส่งแล้ว!');
-                promptInput.value = '';
-                promptInput.style.height = 'auto';
-                previews.innerHTML = '';
-                pastedFiles = [];
-                selectedFilesList = [];
-                updateSelectionIndicators();
-                document.querySelectorAll('input[name="model"]').forEach(cb => cb.checked = false);
+                const selectedModels = Array.from(document.querySelectorAll('input[name="model"]:checked')).map(el => el.value);
+                const modelsToSend = selectedModels.length ? selectedModels : ['Gemini'];
 
-                if (modelsToSend.includes('Gemini')) {
-                    // Auto-rotate to the next Gemini Account
-                    const radios = getAccountRadios();
-                    if (radios.length > 0) {
-                        const currentIdx = Array.from(radios).findIndex(r => r.checked);
-                        let nextIdx = (currentIdx + 1) % radios.length;
-                        let attempts = 0;
-                        while (radios[nextIdx] && radios[nextIdx].parentElement.style.opacity === '0.5' && attempts < radios.length) {
-                            nextIdx = (nextIdx + 1) % radios.length;
-                            attempts++;
-                        }
-                        const nextRadio = radios[nextIdx];
-                        if (nextRadio) {
-                            nextRadio.checked = true;
-                            updateGeminiUrl(nextRadio.value);
-                            setTimeout(() => showToast(`🔄 เตรียมพร้อมใช้งาน ${nextRadio.nextElementSibling.textContent}`), 1500);
+                // Prepare images
+                const imagePaths = [...selectedFilesList];
+                const pastedImageDataUrls = await Promise.all(pastedFiles.map(async (item) => {
+                    let dataUrl = await new Promise(r => { const rd = new FileReader(); rd.onloadend = () => r(rd.result); rd.readAsDataURL(item.blob); });
+                    return dataUrl;
+                }));
+
+                // === Send to AI Models via Extension ===
+                showToast(`🚀 ส่งไปยัง ${modelsToSend.join(', ')}...`);
+
+                let res;
+                try {
+                    res = await callExtension('SUBMIT_HUB_DATA', {
+                        prompt,
+                        images: pastedImageDataUrls,
+                        imagePaths: imagePaths,
+                        models: modelsToSend,
+                        origin: window.location.origin
+                    });
+                } catch (e) {
+                    showToast(`⚠️ เกิดข้อผิดพลาด: ${e.message || e}`);
+                    return;
+                }
+
+                if (res && res.success) {
+                    lastSubmitState = {
+                        prompt: prompt,
+                        pastedFiles: [...pastedFiles],
+                        pastedPreviews: previews.innerHTML,
+                        selectedFilesList: [...selectedFilesList]
+                    };
+                    document.getElementById('btn-undo').classList.add('visible');
+
+                    showToast('✅ ส่งแล้ว!');
+                    promptInput.value = '';
+                    promptInput.style.height = 'auto';
+                    previews.innerHTML = '';
+                    pastedFiles = [];
+                    selectedFilesList = [];
+                    updateSelectionIndicators();
+                    document.querySelectorAll('input[name="model"]').forEach(cb => cb.checked = false);
+
+                    if (modelsToSend.includes('Gemini')) {
+                        // Auto-rotate to the next Gemini Account
+                        const radios = getAccountRadios();
+                        if (radios.length > 0) {
+                            const currentIdx = Array.from(radios).findIndex(r => r.checked);
+                            let nextIdx = (currentIdx + 1) % radios.length;
+                            let attempts = 0;
+                            while (radios[nextIdx] && radios[nextIdx].parentElement.style.opacity === '0.5' && attempts < radios.length) {
+                                nextIdx = (nextIdx + 1) % radios.length;
+                                attempts++;
+                            }
+                            const nextRadio = radios[nextIdx];
+                            if (nextRadio) {
+                                nextRadio.checked = true;
+                                updateGeminiUrl(nextRadio.value);
+                                setTimeout(() => showToast(`🔄 เตรียมพร้อมใช้งาน ${nextRadio.nextElementSibling.textContent}`), 1500);
+                            }
                         }
                     }
+                } else if (res && res.error) {
+                    showToast(`⚠️ AI: ${res.error}`);
+                } else {
+                    showToast('⚠️ AI: ไม่สามารถส่งข้อมูลไปยังโมเดลได้');
                 }
-            } else if (res && res.error) {
-                showToast(`⚠️ AI: ${res.error}`);
-            } else {
-                showToast('⚠️ AI: ไม่สามารถส่งข้อมูลไปยังโมเดลได้');
+            } catch (e) {
+                console.error('submitHubData error:', e);
+                showToast(`⚠️ เกิดข้อผิดพลาด: ${e.message || e}`);
             }
-        } catch (e) {
-            console.error('submitHubData error:', e);
-            showToast(`⚠️ เกิดข้อผิดพลาด: ${e.message || e}`);
-        }
         }
 
         function showToast(msg) {
@@ -1492,7 +1725,7 @@
                         selector.querySelectorAll('label').forEach(lbl => lbl.classList.remove('selected'));
                         // Select current label
                         e.target.parentElement.classList.add('selected');
-                        
+
                         const val = e.target.value;
                         localStorage.setItem('lastGeminiUrl', val);
                         updateGeminiUrl(val);
@@ -1502,7 +1735,7 @@
 
                 selector.appendChild(div);
             });
-            
+
             // Reload status to apply color dots and bind quick actions
             loadQuotaStatus();
         }
@@ -1540,7 +1773,7 @@
         // Initialize: Sync current account status from Extension memory or localStorage
         async function syncAccountSelection() {
             let loadedAccounts = DEFAULT_GEMINI_ACCOUNTS;
-            
+
             try {
                 const localSaved = localStorage.getItem('geminiAccountsList');
                 if (localSaved) {
@@ -1739,7 +1972,7 @@
         // Show Desktop complete.png in watermark preview on initial load
         fetch('/get-img?path=' + encodeURIComponent('C:\\Users\\artwh\\Desktop\\complete.png'))
             .then(r => { if (r.ok) showWatermarkCheck('/get-img?path=' + encodeURIComponent('C:\\Users\\artwh\\Desktop\\complete.png') + '&v=' + Date.now()); })
-            .catch(() => {});
+            .catch(() => { });
 
         let currentWatermarkImg = null;
         let currentWatermarkPath = null;
@@ -1771,43 +2004,17 @@
             img.crossOrigin = "Anonymous";
             img.onload = () => {
                 currentWatermarkImg = img;
-                
+
                 currentCropHeight = img.height * 0.20;
                 currentCropWidth = img.width * 0.20;
 
-                // 1. Draw Top Canvas
-                canvasTop.width = img.width;
-                canvasTop.height = currentCropHeight;
-                canvasTop.getContext('2d').drawImage(img,
-                    0, 0, img.width, currentCropHeight,
-                    0, 0, img.width, currentCropHeight
-                );
+                // Initialize main image canvas as editing source of truth
+                mainImageCanvas.width = img.width;
+                mainImageCanvas.height = img.height;
+                mainImageCanvas.getContext('2d').drawImage(img, 0, 0);
 
-                // 2. Draw Bottom Canvas
-                const startY = img.height - currentCropHeight;
-                canvasBottom.width = img.width;
-                canvasBottom.height = currentCropHeight;
-                canvasBottom.getContext('2d').drawImage(img,
-                    0, startY, img.width, currentCropHeight,
-                    0, 0, img.width, currentCropHeight
-                );
-
-                // 3. Draw Left Canvas
-                canvasLeft.width = currentCropWidth;
-                canvasLeft.height = img.height;
-                canvasLeft.getContext('2d').drawImage(img,
-                    0, 0, currentCropWidth, img.height,
-                    0, 0, currentCropWidth, img.height
-                );
-
-                // 4. Draw Right Canvas
-                const startX = img.width - currentCropWidth;
-                canvasRight.width = currentCropWidth;
-                canvasRight.height = img.height;
-                canvasRight.getContext('2d').drawImage(img,
-                    startX, 0, currentCropWidth, img.height,
-                    0, 0, currentCropWidth, img.height
-                );
+                // Draw all four crop canvas panels from mainImageCanvas
+                redrawAllCropCanvases();
 
                 document.getElementById('watermark-check-content').style.display = 'block';
                 document.getElementById('watermark-check-placeholder').style.display = 'none';
@@ -1842,12 +2049,21 @@
         // Add Crop Interactivity
         document.getElementById('crop-canvas-top').addEventListener('mousemove', function (e) {
             if (!currentWatermarkImg) return;
-            const ctx = this.getContext('2d');
-            ctx.drawImage(currentWatermarkImg, 0, 0, currentWatermarkImg.width, currentCropHeight, 0, 0, currentWatermarkImg.width, currentCropHeight);
-            
             const rect = this.getBoundingClientRect();
+            const scaleX = this.width / rect.width;
             const scaleY = this.height / rect.height;
-            const lineY = (e.clientY - rect.top) * scaleY;
+            const localX = (e.clientX - rect.left) * scaleX;
+            const localY = (e.clientY - rect.top) * scaleY;
+
+            if (cloneStampActive) {
+                drawStampCursor(this, localX, localY, e.altKey);
+                return;
+            }
+
+            const ctx = this.getContext('2d');
+            ctx.drawImage(mainImageCanvas, 0, 0, mainImageCanvas.width, currentCropHeight, 0, 0, mainImageCanvas.width, currentCropHeight);
+
+            const lineY = localY;
 
             ctx.beginPath();
             ctx.moveTo(0, lineY);
@@ -1864,24 +2080,28 @@
 
         document.getElementById('crop-canvas-top').addEventListener('mouseleave', function () {
             if (!currentWatermarkImg) return;
-            this.getContext('2d').drawImage(currentWatermarkImg, 0, 0, currentWatermarkImg.width, currentCropHeight, 0, 0, currentWatermarkImg.width, currentCropHeight);
+            this.getContext('2d').drawImage(mainImageCanvas, 0, 0, mainImageCanvas.width, currentCropHeight, 0, 0, mainImageCanvas.width, currentCropHeight);
         });
 
         document.getElementById('crop-canvas-top').addEventListener('click', async function (e) {
             if (!currentWatermarkImg) return;
+            if (cloneStampActive) {
+                await handleCanvasStamp(this, e);
+                return;
+            }
             const rect = this.getBoundingClientRect();
             const scaleY = this.height / rect.height;
             const lineY = (e.clientY - rect.top) * scaleY;
 
-            const newHeight = currentWatermarkImg.height - lineY;
+            const newHeight = mainImageCanvas.height - lineY;
             const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = currentWatermarkImg.width;
+            tempCanvas.width = mainImageCanvas.width;
             tempCanvas.height = newHeight;
             const tempCtx = tempCanvas.getContext('2d');
 
-            tempCtx.drawImage(currentWatermarkImg,
-                0, lineY, currentWatermarkImg.width, newHeight,
-                0, 0, currentWatermarkImg.width, newHeight
+            tempCtx.drawImage(mainImageCanvas,
+                0, lineY, mainImageCanvas.width, newHeight,
+                0, 0, mainImageCanvas.width, newHeight
             );
 
             await saveCroppedImage(tempCanvas.toDataURL('image/png', 1.0));
@@ -1889,13 +2109,22 @@
 
         document.getElementById('crop-canvas-bottom').addEventListener('mousemove', function (e) {
             if (!currentWatermarkImg) return;
-            const ctx = this.getContext('2d');
-            const startY = currentWatermarkImg.height - currentCropHeight;
-            ctx.drawImage(currentWatermarkImg, 0, startY, currentWatermarkImg.width, currentCropHeight, 0, 0, currentWatermarkImg.width, currentCropHeight);
-            
             const rect = this.getBoundingClientRect();
+            const scaleX = this.width / rect.width;
             const scaleY = this.height / rect.height;
-            const lineY = (e.clientY - rect.top) * scaleY;
+            const localX = (e.clientX - rect.left) * scaleX;
+            const localY = (e.clientY - rect.top) * scaleY;
+
+            if (cloneStampActive) {
+                drawStampCursor(this, localX, localY, e.altKey);
+                return;
+            }
+
+            const ctx = this.getContext('2d');
+            const startY = mainImageCanvas.height - currentCropHeight;
+            ctx.drawImage(mainImageCanvas, 0, startY, mainImageCanvas.width, currentCropHeight, 0, 0, mainImageCanvas.width, currentCropHeight);
+
+            const lineY = localY;
 
             ctx.beginPath();
             ctx.moveTo(0, lineY);
@@ -1912,26 +2141,30 @@
 
         document.getElementById('crop-canvas-bottom').addEventListener('mouseleave', function () {
             if (!currentWatermarkImg) return;
-            const startY = currentWatermarkImg.height - currentCropHeight;
-            this.getContext('2d').drawImage(currentWatermarkImg, 0, startY, currentWatermarkImg.width, currentCropHeight, 0, 0, currentWatermarkImg.width, currentCropHeight);
+            const startY = mainImageCanvas.height - currentCropHeight;
+            this.getContext('2d').drawImage(mainImageCanvas, 0, startY, mainImageCanvas.width, currentCropHeight, 0, 0, mainImageCanvas.width, currentCropHeight);
         });
 
         document.getElementById('crop-canvas-bottom').addEventListener('click', async function (e) {
             if (!currentWatermarkImg) return;
+            if (cloneStampActive) {
+                await handleCanvasStamp(this, e);
+                return;
+            }
             const rect = this.getBoundingClientRect();
             const scaleY = this.height / rect.height;
             const lineY = (e.clientY - rect.top) * scaleY;
 
-            const startY = currentWatermarkImg.height - currentCropHeight;
+            const startY = mainImageCanvas.height - currentCropHeight;
             const newHeight = startY + lineY;
             const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = currentWatermarkImg.width;
+            tempCanvas.width = mainImageCanvas.width;
             tempCanvas.height = newHeight;
             const tempCtx = tempCanvas.getContext('2d');
 
-            tempCtx.drawImage(currentWatermarkImg,
-                0, 0, currentWatermarkImg.width, newHeight,
-                0, 0, currentWatermarkImg.width, newHeight
+            tempCtx.drawImage(mainImageCanvas,
+                0, 0, mainImageCanvas.width, newHeight,
+                0, 0, mainImageCanvas.width, newHeight
             );
 
             await saveCroppedImage(tempCanvas.toDataURL('image/png', 1.0));
@@ -1939,12 +2172,21 @@
 
         document.getElementById('crop-canvas-left').addEventListener('mousemove', function (e) {
             if (!currentWatermarkImg) return;
-            const ctx = this.getContext('2d');
-            ctx.drawImage(currentWatermarkImg, 0, 0, currentCropWidth, currentWatermarkImg.height, 0, 0, currentCropWidth, currentWatermarkImg.height);
-            
             const rect = this.getBoundingClientRect();
             const scaleX = this.width / rect.width;
-            const lineX = (e.clientX - rect.left) * scaleX;
+            const scaleY = this.height / rect.height;
+            const localX = (e.clientX - rect.left) * scaleX;
+            const localY = (e.clientY - rect.top) * scaleY;
+
+            if (cloneStampActive) {
+                drawStampCursor(this, localX, localY, e.altKey);
+                return;
+            }
+
+            const ctx = this.getContext('2d');
+            ctx.drawImage(mainImageCanvas, 0, 0, currentCropWidth, mainImageCanvas.height, 0, 0, currentCropWidth, mainImageCanvas.height);
+
+            const lineX = localX;
 
             ctx.beginPath();
             ctx.moveTo(lineX, 0);
@@ -1961,24 +2203,28 @@
 
         document.getElementById('crop-canvas-left').addEventListener('mouseleave', function () {
             if (!currentWatermarkImg) return;
-            this.getContext('2d').drawImage(currentWatermarkImg, 0, 0, currentCropWidth, currentWatermarkImg.height, 0, 0, currentCropWidth, currentWatermarkImg.height);
+            this.getContext('2d').drawImage(mainImageCanvas, 0, 0, currentCropWidth, mainImageCanvas.height, 0, 0, currentCropWidth, mainImageCanvas.height);
         });
 
         document.getElementById('crop-canvas-left').addEventListener('click', async function (e) {
             if (!currentWatermarkImg) return;
+            if (cloneStampActive) {
+                await handleCanvasStamp(this, e);
+                return;
+            }
             const rect = this.getBoundingClientRect();
             const scaleX = this.width / rect.width;
             const lineX = (e.clientX - rect.left) * scaleX;
 
-            const newWidth = currentWatermarkImg.width - lineX;
+            const newWidth = mainImageCanvas.width - lineX;
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = newWidth;
-            tempCanvas.height = currentWatermarkImg.height;
+            tempCanvas.height = mainImageCanvas.height;
             const tempCtx = tempCanvas.getContext('2d');
 
-            tempCtx.drawImage(currentWatermarkImg,
-                lineX, 0, newWidth, currentWatermarkImg.height,
-                0, 0, newWidth, currentWatermarkImg.height
+            tempCtx.drawImage(mainImageCanvas,
+                lineX, 0, newWidth, mainImageCanvas.height,
+                0, 0, newWidth, mainImageCanvas.height
             );
 
             await saveCroppedImage(tempCanvas.toDataURL('image/png', 1.0));
@@ -1986,13 +2232,22 @@
 
         document.getElementById('crop-canvas-right').addEventListener('mousemove', function (e) {
             if (!currentWatermarkImg) return;
-            const ctx = this.getContext('2d');
-            const startX = currentWatermarkImg.width - currentCropWidth;
-            ctx.drawImage(currentWatermarkImg, startX, 0, currentCropWidth, currentWatermarkImg.height, 0, 0, currentCropWidth, currentWatermarkImg.height);
-            
             const rect = this.getBoundingClientRect();
             const scaleX = this.width / rect.width;
-            const lineX = (e.clientX - rect.left) * scaleX;
+            const scaleY = this.height / rect.height;
+            const localX = (e.clientX - rect.left) * scaleX;
+            const localY = (e.clientY - rect.top) * scaleY;
+
+            if (cloneStampActive) {
+                drawStampCursor(this, localX, localY, e.altKey);
+                return;
+            }
+
+            const ctx = this.getContext('2d');
+            const startX = mainImageCanvas.width - currentCropWidth;
+            ctx.drawImage(mainImageCanvas, startX, 0, currentCropWidth, mainImageCanvas.height, 0, 0, currentCropWidth, mainImageCanvas.height);
+
+            const lineX = localX;
 
             ctx.beginPath();
             ctx.moveTo(lineX, 0);
@@ -2009,26 +2264,30 @@
 
         document.getElementById('crop-canvas-right').addEventListener('mouseleave', function () {
             if (!currentWatermarkImg) return;
-            const startX = currentWatermarkImg.width - currentCropWidth;
-            this.getContext('2d').drawImage(currentWatermarkImg, startX, 0, currentCropWidth, currentWatermarkImg.height, 0, 0, currentCropWidth, currentWatermarkImg.height);
+            const startX = mainImageCanvas.width - currentCropWidth;
+            this.getContext('2d').drawImage(mainImageCanvas, startX, 0, currentCropWidth, mainImageCanvas.height, 0, 0, currentCropWidth, mainImageCanvas.height);
         });
 
         document.getElementById('crop-canvas-right').addEventListener('click', async function (e) {
             if (!currentWatermarkImg) return;
+            if (cloneStampActive) {
+                await handleCanvasStamp(this, e);
+                return;
+            }
             const rect = this.getBoundingClientRect();
             const scaleX = this.width / rect.width;
             const lineX = (e.clientX - rect.left) * scaleX;
 
-            const startX = currentWatermarkImg.width - currentCropWidth;
+            const startX = mainImageCanvas.width - currentCropWidth;
             const newWidth = startX + lineX;
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = newWidth;
-            tempCanvas.height = currentWatermarkImg.height;
+            tempCanvas.height = mainImageCanvas.height;
             const tempCtx = tempCanvas.getContext('2d');
 
-            tempCtx.drawImage(currentWatermarkImg,
-                0, 0, newWidth, currentWatermarkImg.height,
-                0, 0, newWidth, currentWatermarkImg.height
+            tempCtx.drawImage(mainImageCanvas,
+                0, 0, newWidth, mainImageCanvas.height,
+                0, 0, newWidth, mainImageCanvas.height
             );
 
             await saveCroppedImage(tempCanvas.toDataURL('image/png', 1.0));
