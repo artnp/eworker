@@ -1198,39 +1198,56 @@
                 };
             })
             .catch(err => {
-                console.warn('Direct load failed, trying CORS proxy fallback...', err);
-                const fallbackUrl = 'https://corsproxy.io/?' + encodeURIComponent(previewUrl);
+                console.warn('Direct XHR load failed, trying fallback methods...', err);
                 
-                downloadWithProgress(fallbackUrl, 'กำลังดาวน์โหลดไฟล์เพื่อแสดงผล (Proxy)...', (percent) => {
-                    updateDownloadProgress('กำลังดาวน์โหลดไฟล์เพื่อแสดงผล (Proxy)...', percent);
-                })
-                .then(blob => {
-                    const blobUrl = URL.createObjectURL(blob);
-                    previewImage.src = blobUrl;
+                let fallbackIndex = 0;
+                const fallbacks = [
+                    { name: 'direct src (no-referrer)', getUrl: () => previewUrl, opts: { referrer: 'no-referrer' } },
+                    { name: 'proxy corsproxy.io', getUrl: () => 'https://corsproxy.io/?' + encodeURIComponent(previewUrl) },
+                    { name: 'proxy api.allorigins.win', getUrl: () => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(previewUrl) },
+                    { name: 'proxy images.weserv.nl', getUrl: () => 'https://images.weserv.nl/?url=' + encodeURIComponent(previewUrl) },
+                ];
+                
+                const tryFallback = () => {
+                    if (fallbackIndex >= fallbacks.length) {
+                        console.error('All fallbacks failed');
+                        if (fileUrl.includes('file.io') || fileUrl.includes('tmpfiles.org')) {
+                            loadingText.innerHTML = `
+                                <div style="text-align: center; color: var(--text-muted);">
+                                    <div style="font-size: 4rem; margin-bottom: 15px;">📄</div>
+                                    <p style="font-size: 1.1rem; margin-bottom: 8px;">ไฟล์พร้อมดาวน์โหลด</p>
+                                    <p style="font-size: 0.85rem;">(ไม่แสดงตัวอย่าง - กดปุ่มดาวน์โหลดเพื่อรับไฟล์)</p>
+                                </div>
+                            `;
+                            applyProtection();
+                        } else {
+                            showError('โหลดไฟล์ไม่สำเร็จ', 'ลิงก์อาจหมดอายุหรือถูกลบแล้ว');
+                        }
+                        return;
+                    }
+                    
+                    const fb = fallbacks[fallbackIndex];
+                    fallbackIndex++;
+                    updateDownloadProgress('กำลังโหลดไฟล์เพื่อแสดงผล (' + fb.name + ')...', 50);
+                    
+                    if (fb.opts?.referrer) {
+                        previewImage.referrerPolicy = fb.opts.referrer;
+                    }
+                    
                     previewImage.onload = function() {
-                        console.log('✅ Image loaded successfully (Proxy)');
+                        console.log('✅ Image loaded via ' + fb.name);
                         loadingText.classList.add('hidden');
                         previewImage.classList.remove('hidden');
                         applyProtection();
                     };
-                })
-                .catch(fallbackErr => {
-                    console.error('Download failed:', fallbackErr);
-                    
-                    // สำหรับ file.io หรือ tmpfiles: ถ้าโหลดภาพตัวอย่างไม่ได้ แสดงข้อความแทน
-                    if (fileUrl.includes('file.io') || fileUrl.includes('tmpfiles.org')) {
-                        loadingText.innerHTML = `
-                            <div style="text-align: center; color: var(--text-muted);">
-                                <div style="font-size: 4rem; margin-bottom: 15px;">📄</div>
-                                <p style="font-size: 1.1rem; margin-bottom: 8px;">ไฟล์พร้อมดาวน์โหลด</p>
-                                <p style="font-size: 0.85rem;">(ไม่แสดงตัวอย่าง - กดปุ่มดาวน์โหลดเพื่อรับไฟล์)</p>
-                            </div>
-                        `;
-                        applyProtection();
-                    } else {
-                        showError('โหลดไฟล์ไม่สำเร็จ', 'ลิงก์อาจหมดอายุหรือถูกลบแล้ว');
-                    }
-                });
+                    previewImage.onerror = function() {
+                        console.warn(fb.name + ' failed, trying next...');
+                        tryFallback();
+                    };
+                    previewImage.src = fb.getUrl();
+                };
+                
+                tryFallback();
             });
         }
 
