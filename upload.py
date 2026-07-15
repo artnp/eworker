@@ -107,17 +107,17 @@ if __name__ == "__main__":
         result = upload_litterbox(file_path)
         source = "Litterbox"
         
-        # 2nd: tmpfiles.org (รองรับ PDF)
-        if not result:
-            print("กำลังลองระบบสำรอง: tmpfiles.org (1hr)...", file=sys.stderr)
-            result = upload_tmpfiles(file_path)
-            source = "tmpfiles.org"
-        
-        # 3rd: file.io (สำหรับ PDF - ลบหลังโหลด 1 ครั้ง)
+        # 2nd: file.io (สำหรับ PDF - ลบหลังโหลด 1 ครั้ง)
         if not result:
             print("กำลังลองระบบสำรอง: file.io (ลบหลังโหลด 1 ครั้ง)...", file=sys.stderr)
             result = upload_fileio(file_path)
             source = "file.io"
+        
+        # 3rd: tmpfiles.org (รองรับ PDF)
+        if not result:
+            print("กำลังลองระบบสำรอง: tmpfiles.org (1hr)...", file=sys.stderr)
+            result = upload_tmpfiles(file_path)
+            source = "tmpfiles.org"
     
     # === สำหรับรูปภาพ ===
     elif is_image:
@@ -125,23 +125,23 @@ if __name__ == "__main__":
         result = upload_litterbox(file_path)
         source = "Litterbox"
         
-        # 2nd: tmpfiles.org (รองรับรูปภาพ)
-        if not result:
-            print("กำลังลองระบบสำรอง: tmpfiles.org (1hr)...", file=sys.stderr)
-            result = upload_tmpfiles(file_path)
-            source = "tmpfiles.org"
-        
-        # 3rd: Uguu.se (รองรับเฉพาะรูปภาพ)
+        # 2nd: Uguu.se (รองรับเฉพาะรูปภาพ)
         if not result:
             print("กำลังลองระบบสำรอง: Uguu.se (1hr)...", file=sys.stderr)
             result = upload_uguu(file_path)
             source = "Uguu"
         
-        # 4th: file.io (สำรองสุดท้าย)
+        # 3rd: file.io (สำรอง)
         if not result:
             print("กำลังลองระบบสำรอง: file.io (ลบหลังโหลด 1 ครั้ง)...", file=sys.stderr)
             result = upload_fileio(file_path)
             source = "file.io"
+        
+        # 4th: tmpfiles.org (สำรองสุดท้าย)
+        if not result:
+            print("กำลังลองระบบสำรอง: tmpfiles.org (1hr)...", file=sys.stderr)
+            result = upload_tmpfiles(file_path)
+            source = "tmpfiles.org"
     
     # === สำหรับไฟล์ประเภทอื่นๆ ===
     else:
@@ -149,17 +149,17 @@ if __name__ == "__main__":
         result = upload_litterbox(file_path)
         source = "Litterbox"
         
-        # 2nd: tmpfiles.org
-        if not result:
-            print("กำลังลองระบบสำรอง: tmpfiles.org (1hr)...", file=sys.stderr)
-            result = upload_tmpfiles(file_path)
-            source = "tmpfiles.org"
-        
-        # 3rd: file.io
+        # 2nd: file.io
         if not result:
             print("กำลังลองระบบสำรอง: file.io (ลบหลังโหลด 1 ครั้ง)...", file=sys.stderr)
             result = upload_fileio(file_path)
             source = "file.io"
+        
+        # 3rd: tmpfiles.org
+        if not result:
+            print("กำลังลองระบบสำรอง: tmpfiles.org (1hr)...", file=sys.stderr)
+            result = upload_tmpfiles(file_path)
+            source = "tmpfiles.org"
     
     if result:
         print(json.dumps({"url": result, "source": source}))
