@@ -98,17 +98,14 @@ function clearDownloadsDir() {
   }
 }
 
-const AUTO_GROUPS_MAX = 10;
+let AUTO_GROUPS_MAX = 10;
 const FB_URL = 'https://www.facebook.com/groups/feed/';
 
 let GEMINI_SLOT_COUNT = 8;
 try {
-  const accountsFile = path.join(__dirname, 'gemini_active_accounts.json');
-  if (fs.existsSync(accountsFile)) {
-    const list = JSON.parse(fs.readFileSync(accountsFile, 'utf8'));
-    if (Array.isArray(list) && list.length > 0) {
-      GEMINI_SLOT_COUNT = list.length;
-    }
+  const state = loadActiveAccounts();
+  if (Array.isArray(state) && state.length > 0) {
+    GEMINI_SLOT_COUNT = state.length;
   }
 } catch (e) { }
 
@@ -345,9 +342,40 @@ async function getPostText(article) {
   }
 }
 
-async function shouldFilterPost(article) {
+async function shouldFilterPost(article, botProfileName) {
   try {
-    return await article.evaluate((node) => {
+    return await article.evaluate((node, botName) => {
+      // --- Check if post is authored by the bot itself ---
+      if (botName && botName.length > 1) {
+        const authorLinks = node.querySelectorAll('a[href*="/user/"], a[href*="/profile.php"], a[href*="/pages/"], a[role="link"][tabindex="0"]');
+        for (const a of authorLinks) {
+          const authorText = (a.textContent || '').trim();
+          if (authorText && authorText === botName) {
+            return { action: 'hide', reason: `Post authored by bot itself (${botName})` };
+          }
+        }
+        // Fallback: check strong/a tags at the top of the article (Facebook post header)
+        const headerStrongs = node.querySelectorAll('h3 a, h4 a, h2 a, strong a, span > a');
+        for (const a of headerStrongs) {
+          const authorText = (a.textContent || '').trim();
+          if (authorText && authorText === botName) {
+            return { action: 'hide', reason: `Post authored by bot itself (${botName})` };
+          }
+        }
+        // Final fallback: check the first few links for profile name
+        const allLinks = node.querySelectorAll('a');
+        let linkIdx = 0;
+        for (const a of allLinks) {
+          if (linkIdx > 10) break;
+          linkIdx++;
+          const href = a.href || '';
+          const authorText = (a.textContent || '').trim();
+          if (authorText === botName && (href.includes('facebook.com/') || href.includes('/profile.php'))) {
+            return { action: 'hide', reason: `Post authored by bot itself (${botName})` };
+          }
+        }
+      }
+
       const spamKeywords = [
         'คิวว่าง', 'รับตัดต่อ', 'ราคาเพียง', 'สอบถามได้', 'เริ่มต้นแค่', 'โป๊', 'เย็ด', 'นม', 'หี', 'หน้าอก', 'หรรม', '18+', 'เสียว', 'เงี่ยน', 'หนังผู้ใหญ่',
         'ฝากร้าน', 'เปิดรับ', 'สนใจสอบถาม', 'รับประกัน', 'สร้างรายได้',
@@ -1168,6 +1196,17 @@ async function postComment(article, imagePath, postUrl) {
   try {
     const page = article.page();
 
+    // ✅ ตรวจสอบว่าหน้าปัจจุบันยังเป็น Facebook group feed หรือ permalink ไม่ใช่หน้าโปรไฟล์ตัวเอง
+    const currentUrl = page.url();
+    const isOnGroupFeed = currentUrl.includes('facebook.com/groups/');
+    const isOnPermalink = currentUrl.includes('/posts/') || currentUrl.includes('/permalink/') || currentUrl.includes('story_fbid=');
+    const isOnMyProfile = currentUrl.includes('facebook.com/me');
+    const isOnOwnPage = currentUrl.match(/facebook\.com\/[^/]+\/?(\?|$)/) && !isOnGroupFeed && !isOnPermalink;
+    if (isOnMyProfile || isOnOwnPage) {
+      console.warn(`[Guard] Current URL is NOT a group post: ${currentUrl}. Aborting comment to prevent self-profile commenting.`);
+      return { success: false, reason: 'wrong_page' };
+    }
+
     // scroll article กลับเข้า viewport ก่อนทุกอย่าง
     await article.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center' })).catch(() => { });
     await sleep(1000);
@@ -1813,6 +1852,18 @@ async function postComment(article, imagePath, postUrl) {
               const url = new URL(a.href);
               const cid = url.searchParams.get('comment_id');
               if (!cid) continue;
+
+              // ❌ ข้าม comment_id ที่เป็น client reference (เช่น comment_id=client:xxx) — 
+              //    พวกนี้เป็นลิงก์ไปหน้าโปรไฟล์ตัวเอง ไม่ใช่ comment จริงในกลุ่ม
+              if (cid.startsWith('client:')) {
+                debug.push(`Link ${i} skipped: client-side comment_id (${cid})`);
+                continue;
+              }
+              // ❌ ข้าม URL ที่ไม่มี /groups/ — แปลว่าไม่ใช่ comment ในกลุ่ม
+              if (!a.href.includes('/groups/')) {
+                debug.push(`Link ${i} skipped: not a group URL (${a.href})`);
+                continue;
+              }
 
               const isOld = oldIds.includes(cid);
               debug.push(`Link ${i}: href=${a.href}, cid=${cid}, isOld=${isOld}`);
@@ -2483,13 +2534,33 @@ async function pauseOnError(isDebugPause, message) {
   // ⚡ Global error handlers - force exit ถ้ามี unhandled error
   process.on('unhandledRejection', (err) => {
     console.error('Unhandled Rejection:', err);
+    // Force kill chrome ที่เชื่อมกับ user_data
+    try {
+      const killCmd = `cmd /c wmic process where "name='chrome.exe' and CommandLine like '%Facebook_Bot\\\\user_data%'" delete`;
+      exec(killCmd, () => {});
+    } catch (e) {}
     setTimeout(() => process.exit(1), 1000);
   });
   
   process.on('uncaughtException', (err) => {
     console.error('Uncaught Exception:', err);
+    try {
+      const killCmd = `cmd /c wmic process where "name='chrome.exe' and CommandLine like '%Facebook_Bot\\\\user_data%'" delete`;
+      exec(killCmd, () => {});
+    } catch (e) {}
     setTimeout(() => process.exit(1), 1000);
   });
+
+  // ✅ ทำความสะอาดเมื่อ process ถูกปิด (SIGINT, SIGTERM, etc.)
+  const cleanupOnExit = async () => {
+    console.log('[Cleanup] Process exiting, killing Chrome...');
+    try {
+      const killCmd = `cmd /c wmic process where "name='chrome.exe' and CommandLine like '%Facebook_Bot\\\\user_data%'" delete`;
+      exec(killCmd, () => {});
+    } catch (e) {}
+  };
+  process.on('SIGINT', cleanupOnExit);
+  process.on('SIGTERM', cleanupOnExit);
 
   const isHeadless = process.argv.includes('--headless');
   const isDebugPause = process.argv.includes('--debug-pause');
@@ -2560,6 +2631,42 @@ async function pauseOnError(isDebugPause, message) {
     // ไม่ซ่อนหน้าต่างตอน launch เพราะ Facebook virtual DOM ต้องการ viewport จริงในการ render
     isBrowserHidden = false;
 
+    // ✅ ตรวจจับเมื่อ Playwright browser ปิดตัว/ขัดข้อง — force exit ทันที
+    context.on('disconnected', () => {
+      console.error('[Browser] ⚠️ Browser context disconnected/crashed! Force exiting...');
+      try {
+        showWindowsNotification('Facebook Bot', 'เบราว์เซอร์ถูกปิด/ขัดข้อง — ปิดบอททั้งหมด', 'Error');
+      } catch (e) {}
+      try {
+        reportStatus(100, '❌ เบราว์เซอร์ขัดข้อง', 'ระบบปิดอัตโนมัติ', 'error', currentPostIndex, 'crash');
+      } catch (e) {}
+      // Force kill chrome processes linked to user_data
+      try {
+        const killCmd = `cmd /c wmic process where "name='chrome.exe' and CommandLine like '%Facebook_Bot\\\\user_data%'" delete`;
+        exec(killCmd, () => {});
+      } catch (e) {}
+      setTimeout(() => process.exit(1), 500);
+    });
+
+    // ✅ ตรวจจับ crash ของ browser process
+    const browser = context.browser();
+    if (browser) {
+      browser.on('disconnected', () => {
+        console.error('[Browser] ⚠️ Browser process disconnected! Force exiting...');
+        try {
+          showWindowsNotification('Facebook Bot', 'เบราว์เซอร์ถูกปิด/ขัดข้อง — ปิดบอททั้งหมด', 'Error');
+        } catch (e) {}
+        try {
+          reportStatus(100, '❌ เบราว์เซอร์ขัดข้อง', 'ระบบปิดอัตโนมัติ', 'error', currentPostIndex, 'crash');
+        } catch (e) {}
+        try {
+          const killCmd = `cmd /c wmic process where "name='chrome.exe' and CommandLine like '%Facebook_Bot\\\\user_data%'" delete`;
+          exec(killCmd, () => {});
+        } catch (e) {}
+        setTimeout(() => process.exit(1), 500);
+      });
+    }
+
     await sleep(1700);
 
     const existingPages = context.pages();
@@ -2569,22 +2676,21 @@ async function pauseOnError(isDebugPause, message) {
     ensureDownloadsDir();
     clearDownloadsDir();
 
-    // *** โหลดจาก gemini_active_accounts.json เพื่อใช้ทุกบัญชี ***
+    // *** โหลดจาก gemini_state.json เพื่อใช้ทุกบัญชี ***
     try {
-      const accountsFile = path.join(__dirname, 'gemini_active_accounts.json');
-      if (fs.existsSync(accountsFile)) {
-        const list = JSON.parse(fs.readFileSync(accountsFile, 'utf8'));
-        if (Array.isArray(list) && list.length > 0) {
-          activeGeminiAccounts = list;
-        } else {
-          activeGeminiAccounts = GEMINI_ACCOUNTS;
-        }
+      const state = loadActiveAccounts();
+      if (Array.isArray(state) && state.length > 0) {
+        activeGeminiAccounts = state;
       } else {
         activeGeminiAccounts = GEMINI_ACCOUNTS;
       }
     } catch (e) {
       activeGeminiAccounts = GEMINI_ACCOUNTS;
     }
+
+    // กำหนดจำนวนโพสต์ตามจำนวนบัญชี Gemini
+    AUTO_GROUPS_MAX = Math.max(1, activeGeminiAccounts.length);
+    console.log(`Auto-configured: processing up to ${AUTO_GROUPS_MAX} posts (based on ${activeGeminiAccounts.length} Gemini accounts)`);
 
     if (activeGeminiAccounts.length > 0) {
       saveActiveAccounts(activeGeminiAccounts);
@@ -2759,6 +2865,10 @@ async function pauseOnError(isDebugPause, message) {
       
       let lastPostFoundTime = Date.now();
 
+      // ตรวจจับชื่อโปรไฟล์ของบอท 1 ครั้ง ใช้สำหรับกรองโพสต์ของตัวเอง
+      const botProfileName = await getLoggedInProfileName(fbPage).catch(() => null);
+      console.log(`[Self-Filter] Bot profile name: "${botProfileName || '(unknown)'}"`);
+
       while (postsProcessedCount < AUTO_GROUPS_MAX) {
         const elapsedMs = Date.now() - BOT_START_TIME;
         if (postsProcessedCount < AUTO_GROUPS_MAX && elapsedMs >= MAX_RUNTIME_MS) {
@@ -2836,7 +2946,23 @@ async function pauseOnError(isDebugPause, message) {
           await sleep(500);
 
           const postText = await getPostText(article);
-          
+
+          // *** Check for video/reel content — skip these posts ***
+          const hasVideo = await article.evaluate((node) => {
+            return node.querySelector('video') !== null;
+          }).catch(() => false);
+
+          if (hasVideo) {
+            console.log('--> Skipped: Post contains video/reel content.');
+            const textHash = hashString((postText || '').substring(0, 200));
+            processedPostIds.add(textHash);
+            await article.evaluate(el => {
+              el.style.display = 'none';
+              el.setAttribute('data-bot-processed', 'true');
+            }).catch(() => { });
+            continue;
+          }
+
           // Compute post ID early
           const imageUrlsForId = await getLargeImageUrls(article);
           let earlyPostId;
@@ -2865,7 +2991,7 @@ async function pauseOnError(isDebugPause, message) {
           console.log(`Content: "${postText.substring(0, 80).replace(/\n/g, ' ')}..."`);
           if (imageUrlsForId.length > 0) console.log('--> Processing images:', JSON.stringify(imageUrlsForId, null, 2));
 
-          const filterResult = await shouldFilterPost(article);
+          const filterResult = await shouldFilterPost(article, botProfileName);
           if (filterResult.action === 'hide' || filterResult.action === 'spam') {
             console.log(`--> Skipped: caught by shouldFilterPost. Action: ${filterResult.action}. Reason: ${filterResult.reason}`);
             await reportStatus(basePct + 2, `กำลังข้ามโพสต์ที่ ${currentPostIndex}...`, `⚠️ ${filterResult.reason} -> ข้ามไปทำอันใหม่`, 'warn', currentPostIndex);
@@ -3022,7 +3148,19 @@ async function pauseOnError(isDebugPause, message) {
               // --- Share ผ่านโพสต์ในหน้าตัวเอง ---
               await reportStatus(basePct + 75, `กำลังแชร์โพสต์ (โพสต์ ${currentPostIndex})...`, 'แชร์ผลงานไปยังหน้าโปรไฟล์หลัก', 'info', currentPostIndex);
               await bringWindowToFront(fbPage).catch(() => { });
-              const shareResult = await shareViaOwnPost(fbPage, commentResult.commentUrl);
+
+              // 🔒 Safety check: ห้ามแชร์ URL หน้าโปรไฟล์ตัวเองเด็ดขาด
+              const commentUrl = commentResult.commentUrl || '';
+              const isOwnProfileUrl = commentUrl.includes('facebook.com/me') ||
+                commentUrl.includes('facebook.com/profile.php') ||
+                !commentUrl.includes('/groups/');
+              let shareResult;
+              if (isOwnProfileUrl) {
+                console.warn(`[Share] ⛔ Skipping share — comment URL is own profile URL: ${commentUrl}`);
+                shareResult = { success: false, reason: 'own_profile_url' };
+              } else {
+                shareResult = await shareViaOwnPost(fbPage, commentResult.commentUrl);
+              }
               if (shareResult && shareResult.success) {
                 console.log(`[Share] Shared via own post: ${shareResult.commentUrl}`);
               } else {
