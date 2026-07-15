@@ -107,7 +107,7 @@ if ($noPrice) {
 } else {
     # Format ปกติพร้อมเก็บเงิน
     $viewUrl += "&price=$price"
-    $message = "$($viewUrl)"
+    $message = "✅เสร็จแล้ว!`n$($viewUrl)"
 }
 
 Set-Clipboard -Value $message
