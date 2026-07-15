@@ -2,7 +2,7 @@
 title PrivateSend - Processing...
 
 :: ตั้งค่าไฟล์ที่ต้องการส่งคงที่
-set "target_file=C:\Users\artwh\Desktop\render_xyz.png"
+set "target_file=%USERPROFILE%\complete.png"
 
 :: ตรวจสอบว่าไฟล์มีอยู่จริงหรือไม่
 if not exist "%target_file%" (
