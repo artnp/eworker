@@ -318,7 +318,7 @@ function Stop-FacebookBotProcess {
 function Update-StatusUI ($data) {
     if (-not $data) { return }
 
-    if ($data.action -eq "exit") {
+    if ($data.action -eq "exit" -or $data.action -eq "crash") {
         Stop-FacebookBotProcess
         return
     }
@@ -387,9 +387,36 @@ function Update-StatusUI ($data) {
 
 # WinForms Timer to Poll status.json every 1000ms (1 second)
 $script:lastReadTimestamp = 0
+$script:nodeProcessCheckCount = 0
 $timer = New-Object System.Windows.Forms.Timer
 $timer.Interval = 1000
 $timer.add_Tick({
+    # ✅ ตรวจจับเมื่อ bot.js process 退出 — ปิด tray ตามอัตโนมัติ
+    $script:nodeProcessCheckCount++
+    if ($script:nodeProcessCheckCount -ge 5) {
+        $script:nodeProcessCheckCount = 0
+        $nodeRunning = Get-WmiObject Win32_Process | Where-Object {
+            $_.Name -eq "node.exe" -and $_.CommandLine -like "*bot.js*"
+        }
+        if (-not $nodeRunning) {
+            # ตรวจสอบ status.json ว่ามี action=exit หรือ crash หรือไม่
+            $shouldExit = $false
+            if (Test-Path $statusFile) {
+                try {
+                    $s = Get-Content $statusFile -Raw -ErrorAction SilentlyContinue | ConvertFrom-Json
+                    if ($s.action -eq "exit" -or $s.logType -eq "error") {
+                        $shouldExit = $true
+                    }
+                } catch {}
+            }
+            # ถ้า node หยุดทำงานและ status ไม่ใช่ running ให้ปิดตัว
+            if ($shouldExit -or -not (Test-Path $statusFile)) {
+                Stop-FacebookBotProcess
+                return
+            }
+        }
+    }
+
     # Read status.json
     if (Test-Path $statusFile) {
         try {
