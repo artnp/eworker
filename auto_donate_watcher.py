@@ -264,6 +264,77 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
             return
+
+        if parsed_url.path == '/mark-points':
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            try:
+                data = json.loads(post_data)
+                img_url = data.get('url')
+                img_data = data.get('dataUrl')
+                
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                temp_filename = "temp_mark.jpg"
+                temp_path = os.path.join(script_dir, temp_filename)
+                
+                # Remove old file if exists
+                if os.path.exists(temp_path):
+                    try:
+                        os.remove(temp_path)
+                    except:
+                        pass
+                
+                download_success = False
+                if img_url:
+                    try:
+                        req = urllib.request.Request(
+                            img_url, 
+                            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+                        )
+                        with urllib.request.urlopen(req, timeout=15) as response:
+                            with open(temp_path, 'wb') as f:
+                                f.write(response.read())
+                        download_success = True
+                    except Exception as download_err:
+                        print(f"[Watcher] Error downloading image URL: {download_err}")
+                
+                if not download_success and img_data and ',' in img_data:
+                    try:
+                        header, encoded = img_data.split(',', 1)
+                        import base64
+                        binary_data = base64.b64decode(encoded)
+                        with open(temp_path, 'wb') as f:
+                            f.write(binary_data)
+                        download_success = True
+                    except Exception as base64_err:
+                        print(f"[Watcher] Error parsing base64 image data: {base64_err}")
+                
+                if download_success and os.path.exists(temp_path):
+                    import subprocess
+                    ps_script = os.path.join(script_dir, "MarkPoints.ps1")
+                    # Run MarkPoints.ps1 asynchronously
+                    cmd = f'powershell -ExecutionPolicy Bypass -File "{ps_script}" "{temp_path}"'
+                    subprocess.Popen(cmd, shell=True)
+                    
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"success": True, "message": "MarkPoints triggered successfully."}).encode())
+                else:
+                    self.send_response(400)
+                    self.send_header('Content-type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"success": False, "error": "Failed to obtain image."}).encode())
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode())
+            return
+
         self.send_response(404)
         self.end_headers()
 
