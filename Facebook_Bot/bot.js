@@ -199,12 +199,53 @@ async function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
+async function checkIsGeminiLoggedOut(page) {
+  try {
+    return await page.evaluate(() => {
+      // 1. ตรวจสอบปุ่ม/สแปน/ลิงก์ "ลงชื่อเข้าใช้" หรือ "Sign in"
+      const elements = document.querySelectorAll('span, button, a, div');
+      for (const el of elements) {
+        const text = (el.textContent || '').trim();
+        const href = (el.getAttribute('href') || '').toLowerCase();
+        if (
+          text === 'ลงชื่อเข้าใช้' || 
+          text === 'Sign in' || 
+          href.includes('accounts.google.com/servicelogin') || 
+          href.includes('accounts.google.com/interactive-login')
+        ) {
+          return true;
+        }
+      }
+
+      // 2. ตรวจสอบว่ามีช่องพิมพ์ข้อความหรือไม่ ถ้าไม่มีและมีข้อความเตือนให้ลงชื่อเข้าใช้
+      const hasInput = document.querySelector('div.ql-editor[role="textbox"], div[contenteditable="true"][role="textbox"], rich-textarea div[contenteditable="true"]') !== null;
+      if (!hasInput) {
+        const bodyText = document.body ? (document.body.innerText || '') : '';
+        if (bodyText.includes('ลงชื่อเข้าใช้') || bodyText.includes('Sign in')) {
+          return true;
+        }
+      }
+
+      return false;
+    }).catch(() => false);
+  } catch (e) {
+    return false;
+  }
+}
+
 async function checkGeminiAccountLogged(context, index) {
   const url = `https://gemini.google.com/u/${index}/app`;
   try {
     const page = await context.newPage();
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
     await sleep(2000);
+
+    const isLoggedOut = await checkIsGeminiLoggedOut(page);
+    if (isLoggedOut) {
+      await page.close().catch(() => { });
+      return false;
+    }
+
     const hasInput = await page.evaluate(() => {
       return document.querySelector('div.ql-editor[role="textbox"], div[contenteditable="true"][role="textbox"]') !== null;
     }).catch(() => false);
@@ -384,22 +425,38 @@ async function shouldFilterPost(article, botProfileName) {
         'ภาพเคลื่อนไหว', 'vdo', 'video', 'วิดีโอ', 'วีดีโอ', 'clip', 'คลิป', '#'
       ];
       const text = node.textContent || '';
+      const cleanText = text.replace(/[\u200B-\u200D\uFEFF\u00AD]/g, '').replace(/[\s\u00A0]+/g, ' ');
 
-      // Check if comments are disabled (text-based)
+      // Check if comments are disabled (text-based with normalized string & zero-width space handling)
       const disabledKeywords = [
         'ปิดการแสดงความคิดเห็น',
         'ปิดการแสดงความคิดเห็นไว้ชั่วคราว',
+        'ผู้ดูแลได้ปิด',
+        'ผู้ดูแลปิด',
         'ปิดคอมเมนต์',
+        'ปิดรับความคิดเห็น',
+        'ปิดการตอบกลับ',
         'จำกัดผู้ที่สามารถแสดงความคิดเห็น',
         'ไม่สามารถแสดงความคิดเห็น',
+        'ไม่อนุญาตให้แสดงความคิดเห็น',
         'Comments are turned off',
         'Comments on this post have been limited',
-        'Comments have been disabled'
+        'Comments have been disabled',
+        'turned off commenting',
+        'turned off comments'
       ];
       for (const kw of disabledKeywords) {
-        if (text.includes(kw)) {
+        if (cleanText.includes(kw) || text.includes(kw)) {
           return { action: 'hide', reason: `Comments disabled (text: "${kw}")` };
         }
+      }
+      if (
+        /ปิด.*ความคิดเห็น/i.test(cleanText) ||
+        /ปิด.*คอมเมนต์/i.test(cleanText) ||
+        /จำกัด.*ความคิดเห็น/i.test(cleanText) ||
+        /turned off.*comment/i.test(cleanText)
+      ) {
+        return { action: 'hide', reason: 'Comments disabled (regex match)' };
       }
 
       // Check if a valid Comment button or comment icon is present in the post
@@ -445,13 +502,7 @@ async function shouldFilterPost(article, botProfileName) {
           lowerText === 'comment'
         );
 
-        // Match Comment counter summary (e.g. "3 ความคิดเห็น", "1 Comment", "12 Comments")
-        const isCommentCounter = (
-          /^\d+\s*(ความคิดเห็น|comment|comments)$/i.test(label) ||
-          /^\d+\s*(ความคิดเห็น|comment|comments)$/i.test(innerText)
-        );
-
-        if (isCommentActionLabel || isCommentActionText || isCommentCounter) {
+        if (isCommentActionLabel || isCommentActionText) {
           hasCommentBtn = true;
           break;
         }
@@ -1214,7 +1265,8 @@ async function postComment(article, imagePath, postUrl) {
     // ตรวจสอบสถานะของโพสต์ก่อน
     console.log('=== POST STATUS CHECK ===');
     const postStatus = await article.evaluate((node) => {
-      const text = node.textContent || '';
+      const rawText = node.textContent || '';
+      const text = rawText.replace(/[\u200B-\u200D\uFEFF\u00AD]/g, '').replace(/[\s\u00A0]+/g, ' ');
 
       // ตรวจสอบว่าโพสต์ถูกลบหรือไม่
       if (text.includes('เนื้อหานี้ไม่พร้อมใช้งาน') ||
@@ -1224,9 +1276,34 @@ async function postComment(article, imagePath, postUrl) {
       }
 
       // ตรวจสอบว่าปิดคอมเมนต์หรือไม่
-      if (text.includes('ปิดการแสดงความคิดเห็น') ||
-        text.includes('Comments are turned off') ||
-        text.includes('ไม่สามารถแสดงความคิดเห็น')) {
+      const disabledKeywords = [
+        'ปิดการแสดงความคิดเห็น',
+        'ปิดการแสดงความคิดเห็นไว้ชั่วคราว',
+        'ผู้ดูแลได้ปิด',
+        'ผู้ดูแลปิด',
+        'ปิดคอมเมนต์',
+        'ปิดรับความคิดเห็น',
+        'ปิดการตอบกลับ',
+        'จำกัดผู้ที่สามารถแสดงความคิดเห็น',
+        'ไม่สามารถแสดงความคิดเห็น',
+        'ไม่อนุญาตให้แสดงความคิดเห็น',
+        'Comments are turned off',
+        'Comments on this post have been limited',
+        'Comments have been disabled',
+        'turned off commenting',
+        'turned off comments'
+      ];
+      for (const kw of disabledKeywords) {
+        if (text.includes(kw) || rawText.includes(kw)) {
+          return 'comments_disabled';
+        }
+      }
+      if (
+        /ปิด.*ความคิดเห็น/i.test(text) ||
+        /ปิด.*คอมเมนต์/i.test(text) ||
+        /จำกัด.*ความคิดเห็น/i.test(text) ||
+        /turned off.*comment/i.test(text)
+      ) {
         return 'comments_disabled';
       }
 
@@ -1379,6 +1456,25 @@ async function postComment(article, imagePath, postUrl) {
       console.log('Waiting for composer to appear...');
       const startWait = Date.now();
       while (Date.now() - startWait < 20000) {
+        // ตรวจสอบด่วนว่ามีป้ายปิดคอมเมนต์ขึ้นมาหรือไม่
+        const isLockedNow = await article.evaluate((node) => {
+          const raw = node ? (node.textContent || '') : (document.body ? document.body.innerText || '' : '');
+          const text = raw.replace(/[\u200B-\u200D\uFEFF\u00AD]/g, '').replace(/[\s\u00A0]+/g, ' ');
+          return (
+            text.includes('ปิดการแสดงความคิดเห็น') ||
+            text.includes('ผู้ดูแลได้ปิด') ||
+            text.includes('ผู้ดูแลปิด') ||
+            text.includes('ปิดคอมเมนต์') ||
+            text.includes('Comments are turned off') ||
+            /ปิด.*ความคิดเห็น/i.test(text)
+          );
+        }).catch(() => false);
+
+        if (isLockedNow) {
+          console.log('Detected comments disabled banner while waiting for composer!');
+          return { success: false, reason: 'comments_disabled' };
+        }
+
         await closeFacebookModal(page);
         composer = await findComposer();
         if (composer) {
@@ -2823,6 +2919,37 @@ async function pauseOnError(isDebugPause, message) {
     }
 
     console.log(`Ready with ${activeGeminiAccounts.length} Gemini accounts.`);
+
+    // ✅ ตรวจสอบสถานะการ Login ของ Gemini ก่อนเริ่มรันบอท Facebook
+    if (!isReviewMode && activeGeminiAccounts.length > 0) {
+      console.log('\n🔍 กำลังตรวจสอบสถานะการ Login ของบัญชี Gemini...');
+      const targetGeminiUrl = activeGeminiAccounts[0];
+      await geminiPage.goto(targetGeminiUrl, { waitUntil: 'domcontentloaded', timeout: 20000 }).catch(() => {});
+      await sleep(2000);
+
+      const isLoggedOut = await checkIsGeminiLoggedOut(geminiPage);
+      if (isLoggedOut) {
+        console.warn('⚠️ [Gemini Login Check] พบว่าบัญชี Gemini ไม่ได้ลงชื่อเข้าใช้ (พบปุ่ม "ลงชื่อเข้าใช้")!');
+        showWindowsNotification('Facebook Bot ⚠️', 'บัญชี Gemini ไม่ได้ลงชื่อเข้าใช้! กรุณา Login ก่อน', 'Warning');
+        await reportStatus(0, '⚠️ บัญชี Gemini ไม่ได้ Login', 'พบปุ่ม "ลงชื่อเข้าใช้" (Gemini ไม่ได้ login) กรุณา Login ก่อนบอททำงานต่อ', 'warn');
+        await bringWindowToFront(geminiPage).catch(() => {});
+
+        let waitCount = 0;
+        while (await checkIsGeminiLoggedOut(geminiPage)) {
+          waitCount++;
+          if (waitCount % 3 === 0) {
+            showWindowsNotification('Facebook Bot ⚠️', 'กรุณา Login ลงชื่อเข้าใช้ Gemini เพื่อให้บอททำงานต่อ', 'Warning');
+          }
+          console.log('[Gemini Pre-check] ⏸️ พักการทำงาน... กรุณาลงชื่อเข้าใช้ Gemini ในหน้าต่างเบราว์เซอร์');
+          await sleep(5000);
+        }
+        console.log('✅ [Gemini Pre-check] ลงชื่อเข้าใช้ Gemini สำเร็จ!');
+        await reportStatus(2, '✅ ลงชื่อเข้าใช้ Gemini แล้ว', 'พร้อมเริ่มทำงานบอท Facebook', 'info');
+        await sleep(1500);
+      } else {
+        console.log('✅ [Gemini Pre-check] บัญชี Gemini พร้อมใช้งาน (Logged in)');
+      }
+    }
 
     if (isDebugPause) {
       await pauseForUser('โหมด DEBUG — กด Enter เพื่อเริ่มสแกน Facebook');
