@@ -103,5 +103,24 @@ Write-Host "🌐 กำลังเปิดเบราว์เซอร์...
 Write-Host "   $sendUrl" -ForegroundColor Gray
 Start-Process $sendUrl
 
+# 5. คัดลอกข้อความลง Clipboard
+$clipMessage = "⭕เช็คหน่อย!! ตำแหน่งแก้ไขถูกต้องไหมท่าน?`n$sendUrl"
+Set-Clipboard -Value $clipMessage
+Write-Host "📋 คัดลอกข้อความลง Clipboard เรียบร้อยแล้ว" -ForegroundColor Cyan
+
+# 6. เปิดไฟล์เข้า Photoshop
+try {
+    Write-Host "🎨 กำลังเปิดไฟล์ใน Photoshop..." -ForegroundColor Yellow
+    $psPath = (Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\Photoshop.exe" -ErrorAction SilentlyContinue)."(default)"
+    if ($psPath -and (Test-Path $psPath)) {
+        Start-Process -FilePath $psPath -ArgumentList "`"$filePath`""
+    } else {
+        Start-Process "photoshop" -ArgumentList "`"$filePath`""
+    }
+    Write-Host "✅ เปิดไฟล์ใน Photoshop เรียบร้อยแล้ว" -ForegroundColor Green
+} catch {
+    Write-Host "⚠️ ไม่สามารถเปิด Photoshop ได้: $_" -ForegroundColor Yellow
+}
+
 Write-Host ""
 Write-Host "✅ เสร็จสิ้น! สามารถเริ่มมาร์คจุดได้เลย" -ForegroundColor Green
