@@ -981,14 +981,43 @@
         const priceDisplay = document.getElementById('price-display');
         const countdownElement = document.getElementById('countdown');
 
+        let __isPaid = false;
+
+        function getLinkKey() {
+            const raw = fileUrl || window.location.search;
+            let hash = 0;
+            for (let i = 0; i < raw.length; i++) {
+                hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+                hash |= 0;
+            }
+            return 'k' + Math.abs(hash);
+        }
+
         // Initialize
-        function init() {
-            // ตรวจสอบว่าไฟล์ถูกทำลายแล้วหรือยัง
-            const isDestroyed = (fileUrl && localStorage.getItem('destroyed_' + fileUrl) === '1') || 
-                                localStorage.getItem('destroyed_' + window.location.search) === '1';
-            if (isDestroyed) {
-                showError('404 Not Found', 'ไม่พบไฟล์นี้ หรือลิงก์ถูกทำลายแล้ว');
-                return;
+        async function init() {
+            // ตรวจสอบระบบส่วนกลางจาก Firebase (พร้อมระบบ auto-clean ข้อมูลเก่าเกิน 24 ชม.)
+            const linkKey = getLinkKey();
+            try {
+                const res = await fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/destroyed_${linkKey}.json`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data) {
+                        const now = Date.now();
+                        const recordTime = typeof data === 'object' && data.t ? data.t : null;
+                        
+                        // ถ้าข้อมูลงลบเกิน 24 ชั่วโมงแล้ว (86,400,000 ms) ให้ลบทิ้งจาก Firebase อัตโนมัติ
+                        if (recordTime && (now - recordTime > 86400000)) {
+                            fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/destroyed_${linkKey}.json`, {
+                                method: 'DELETE'
+                            }).catch(e => {});
+                        } else if (data === true || (typeof data === 'object' && data.d === true)) {
+                            showError('404 Not Found', 'ไม่พบไฟล์นี้ หรือลิงก์ถูกทำลายแล้ว');
+                            return;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('Check destroy status error:', e);
             }
 
             // ตรวจสอบ In-App Browser และแสดงคำเตือน
@@ -1361,7 +1390,7 @@
 
         // ฟังก์ชันป้องกันดาวน์โหลด
         function applyProtection() {
-            const isPaid = localStorage.getItem('paid_' + fileUrl) === '1';
+            const isPaid = __isPaid || price === 0;
             const isFree = price === 0;
             
             console.log('Protection check:', { price, isPaid, isFree });
@@ -1392,7 +1421,7 @@
 
         // จัดการการคลิกที่รูป
         function handleImageClick() {
-            const isPaid = localStorage.getItem('paid_' + fileUrl) === '1';
+            const isPaid = __isPaid || price === 0;
             const isFree = price === 0;
             
             if (!isFree && !isPaid) {
@@ -1407,7 +1436,7 @@
 
         // Confirm Payment
         function confirmPayment() {
-            localStorage.setItem('paid_' + fileUrl, '1');
+            __isPaid = true;
             paymentSection.classList.add('hidden');
             successSection.classList.remove('hidden');
             
@@ -1422,7 +1451,7 @@
 
         // Request QR Code Again
         function requestQRAgain() {
-            localStorage.removeItem('paid_' + fileUrl);
+            __isPaid = false;
             successSection.classList.add('hidden');
             paymentSection.classList.remove('hidden');
             applyProtection();
@@ -1603,7 +1632,7 @@
 
         // Lightbox Functions
         function openLightbox() {
-            const isPaid = localStorage.getItem('paid_' + fileUrl) === '1';
+            const isPaid = __isPaid || price === 0;
             const isFree = price === 0;
             
             const lightbox = document.getElementById('lightbox');
@@ -1676,7 +1705,7 @@
         }
 
         function checkPin(val) {
-            if (val === '123455') {
+            if (btoa(val) === 'MTIzNDU1') {
                 executeDestruction();
             } else if (val.length >= 6) {
                 const input = document.getElementById('destroy-pin-input');
@@ -1688,18 +1717,26 @@
             }
         }
 
-        function executeDestruction() {
-            if (fileUrl) {
-                localStorage.setItem('destroyed_' + fileUrl, '1');
-            }
-            localStorage.setItem('destroyed_' + window.location.search, '1');
+        async function executeDestruction() {
+            const linkKey = getLinkKey();
             
-            // ถ้าเป็นไฟล์ Firebase ให้ลบข้อมูลออกจาก Firebase ด้วย
+            // 1. บันทึกสถานะทำลายพร้อมเวลาสร้าง (t) เพื่อให้ระบบลบข้อมูลเก่าออกอัตโนมัติเมื่อครบ 24 ชม.
+            try {
+                await fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/destroyed_${linkKey}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ d: true, t: Date.now() })
+                });
+            } catch (e) {
+                console.error('Firebase destroy error:', e);
+            }
+
+            // 2. ถ้าเป็นไฟล์ Firebase Payload ให้ลบไฟล์หลักทิ้งด้วย
             if (fileUrl && fileUrl.startsWith('fb_')) {
                 const fileId = fileUrl.substring(3);
                 fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/${fileId}.json`, {
                     method: 'DELETE'
-                }).catch(err => console.error('Firebase delete error:', err));
+                }).catch(err => console.error('Firebase payload delete error:', err));
             }
 
             showError('404 Not Found', 'ไม่พบไฟล์นี้ หรือลิงก์ถูกทำลายแล้ว');
@@ -1716,16 +1753,6 @@
             `;
             const destroyWrapper = document.getElementById('destroy-wrapper');
             if (destroyWrapper) destroyWrapper.remove();
-        }
-
-        // Check if already paid
-        if (price > 0 && localStorage.getItem('paid_' + fileUrl) === '1') {
-            paymentSection.classList.add('hidden');
-            successSection.classList.remove('hidden');
-            // แสดง Tutorial ทันทีสำหรับคนที่จ่ายเงินแล้ว
-            setTimeout(() => {
-                showDownloadTutorial();
-            }, 200);
         }
 
         // Initialize on load
