@@ -1081,60 +1081,32 @@
             console.log('📤 Starting upload:', { type: file.type, size: file.size });
 
             // Try upload services based on file type
-            if (isPDF) {
-                // For PDF: Litterbox → Uguu → file.io → tmpfiles (สุดท้าย)
+            if (isPDF || isImage) {
+                // Order: Litterbox → tmpfiles → file.io → Uguu (สุดท้าย)
                 let result = await uploadLitterbox(file);
                 if (result.success) {
                     console.log('✅ Uploaded via Litterbox');
                     return result;
                 }
 
-                console.warn('⚠️ Litterbox failed, trying Uguu...');
-                result = await uploadUguu(file);
+                console.warn('⚠️ Litterbox failed, trying tmpfiles...');
+                result = await uploadTmpfiles(file);
                 if (result.success) {
-                    console.log('✅ Uploaded via Uguu');
+                    console.log('✅ Uploaded via tmpfiles');
                     return result;
                 }
 
-                console.warn('⚠️ Uguu failed, trying file.io...');
+                console.warn('⚠️ tmpfiles failed, trying file.io...');
                 result = await uploadFileIO(file);
                 if (result.success) {
                     console.log('✅ Uploaded via file.io');
                     return result;
                 }
 
-                console.warn('⚠️ file.io failed, trying tmpfiles (last resort)...');
-                result = await uploadTmpfiles(file);
-                if (result.success) {
-                    console.log('✅ Uploaded via tmpfiles');
-                    return result;
-                }
-            } else if (isImage) {
-                // For images: Litterbox → Uguu → file.io → tmpfiles (สุดท้าย)
-                let result = await uploadLitterbox(file);
-                if (result.success) {
-                    console.log('✅ Uploaded via Litterbox');
-                    return result;
-                }
-
-                console.warn('⚠️ Litterbox failed, trying Uguu...');
+                console.warn('⚠️ file.io failed, trying Uguu (last resort)...');
                 result = await uploadUguu(file);
                 if (result.success) {
                     console.log('✅ Uploaded via Uguu');
-                    return result;
-                }
-
-                console.warn('⚠️ Uguu failed, trying file.io...');
-                result = await uploadFileIO(file);
-                if (result.success) {
-                    console.log('✅ Uploaded via file.io');
-                    return result;
-                }
-
-                console.warn('⚠️ file.io failed, trying tmpfiles (last resort)...');
-                result = await uploadTmpfiles(file);
-                if (result.success) {
-                    console.log('✅ Uploaded via tmpfiles');
                     return result;
                 }
             }
@@ -1260,12 +1232,64 @@
             try {
                 blob = await downloadWithProgress(finalUrl, stepName);
             } catch (err) {
-                console.warn('Direct load failed, trying CORS proxy fallback...', err);
-                // Try fallback proxy
-                const fallbackUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
-                try {
-                    blob = await downloadWithProgress(fallbackUrl, stepName);
-                } catch (fallbackErr) {
+                console.warn('Direct load failed, trying CORS proxies...', err);
+                const proxyUrls = [
+                    'https://corsproxy.io/?' + encodeURIComponent(url),
+                    'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
+                    'https://images.weserv.nl/?url=' + encodeURIComponent(url)
+                ];
+                
+                let success = false;
+                for (const proxyUrl of proxyUrls) {
+                    try {
+                        console.log('Trying proxy:', proxyUrl);
+                        blob = await downloadWithProgress(proxyUrl, stepName);
+                        success = true;
+                        break;
+                    } catch (proxyErr) {
+                        console.warn('Proxy failed:', proxyUrl, proxyErr);
+                    }
+                }
+                if (!success) {
+                    // ถ้าดึง Blob ด้วย XHR ผ่าน proxy ไม่ได้ทั้งหมด แต่เป็นไฟล์รูปภาพ ให้ลองโหลดผ่าน <img> src ตรงๆ หรือ Proxy src
+                    if (type === 'image') {
+                        console.warn('⚠️ All XHR proxies failed. Attempting direct <img> tag load...');
+                        return new Promise((resolve, reject) => {
+                            mainImage.crossOrigin = 'anonymous';
+                            mainImage.onload = () => {
+                                console.log('✅ Image loaded via direct <img> src fallback!');
+                                mainImage.style.display = 'block';
+                                pdfCanvas.style.display = 'none';
+                                fitToScreen();
+                                resolve();
+                            };
+                            mainImage.onerror = () => {
+                                // ลองอีกครั้งแบบไม่ระบุ crossOrigin
+                                mainImage.removeAttribute('crossOrigin');
+                                mainImage.onload = () => {
+                                    console.log('✅ Image loaded via direct <img> src (no crossOrigin)');
+                                    mainImage.style.display = 'block';
+                                    pdfCanvas.style.display = 'none';
+                                    fitToScreen();
+                                    resolve();
+                                };
+                                mainImage.onerror = () => {
+                                    // ลองใช้ weserv.nl ใน <img> src เป็นตัวเลือกสุดท้าย
+                                    mainImage.src = 'https://images.weserv.nl/?url=' + encodeURIComponent(url);
+                                    mainImage.onload = () => {
+                                        console.log('✅ Image loaded via weserv <img> src');
+                                        mainImage.style.display = 'block';
+                                        pdfCanvas.style.display = 'none';
+                                        fitToScreen();
+                                        resolve();
+                                    };
+                                    mainImage.onerror = () => reject(new Error('ไม่สามารถดาวน์โหลดไฟล์มาแสดงผลได้'));
+                                };
+                                mainImage.src = url;
+                            };
+                            mainImage.src = url;
+                        });
+                    }
                     throw new Error('ไม่สามารถดาวน์โหลดไฟล์มาแสดงผลได้');
                 }
             }
