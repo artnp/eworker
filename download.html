@@ -398,6 +398,17 @@
             box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
         }
 
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
         /* Success Message */
         .success-message {
             text-align: center;
@@ -738,6 +749,75 @@
         .hidden {
             display: none !important;
         }
+
+        /* Destroy Button & Input */
+        .destroy-wrapper {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+        }
+
+        .destroy-btn {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #fca5a5;
+            padding: 10px 16px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .destroy-btn:hover {
+            background: rgba(239, 68, 68, 0.85);
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+
+        .destroy-pin-input {
+            width: 120px;
+            padding: 9px 14px;
+            border-radius: 50px;
+            border: 2px solid #ef4444;
+            background: rgba(15, 23, 42, 0.95);
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-align: center;
+            outline: none;
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.5);
+            backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
+        }
+
+        .destroy-pin-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+            letter-spacing: normal;
+            font-weight: 400;
+            font-size: 0.85rem;
+        }
+
+        .destroy-pin-input.pin-error {
+            border-color: #f87171;
+            background: rgba(239, 68, 68, 0.3);
+            animation: shake 0.3s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
     </style>
 </head>
 
@@ -829,6 +909,10 @@
                         💾 ดาวน์โหลดไฟล์
                     </button>
 
+                    <button class="btn btn-secondary" id="request-qr-btn" onclick="requestQRAgain()" style="margin-top: 12px;">
+                        🔄 ขอ QR โอนเงินอีกรอบ!
+                    </button>
+
                     <div id="download-tutorial-container"></div>
                 </div>
 
@@ -853,6 +937,22 @@
     <div class="lightbox" id="lightbox" onclick="closeLightbox()">
         <div class="lightbox-close">×</div>
         <img id="lightbox-image" alt="Full View">
+    </div>
+
+    <!-- Destroy Button -->
+    <div class="destroy-wrapper" id="destroy-wrapper">
+        <button class="destroy-btn" id="destroy-btn" onclick="showPinInput()">
+            💣 ทำลายทิ้ง
+        </button>
+        <input type="password" 
+               id="destroy-pin-input" 
+               class="destroy-pin-input hidden" 
+               placeholder="กรอก PIN" 
+               maxlength="6" 
+               oninput="checkPin(this.value)" 
+               onblur="hidePinInputIfEmpty(this)"
+               autocomplete="off"
+               inputmode="numeric">
     </div>
 
     <script>
@@ -883,6 +983,14 @@
 
         // Initialize
         function init() {
+            // ตรวจสอบว่าไฟล์ถูกทำลายแล้วหรือยัง
+            const isDestroyed = (fileUrl && localStorage.getItem('destroyed_' + fileUrl) === '1') || 
+                                localStorage.getItem('destroyed_' + window.location.search) === '1';
+            if (isDestroyed) {
+                showError('404 Not Found', 'ไม่พบไฟล์นี้ หรือลิงก์ถูกทำลายแล้ว');
+                return;
+            }
+
             // ตรวจสอบ In-App Browser และแสดงคำเตือน
             const userAgent = navigator.userAgent || navigator.vendor || window.opera;
             const isInAppBrowser = /Line|FBAV|FBAN|Instagram|Messenger|Fastwork/i.test(userAgent);
@@ -1312,6 +1420,14 @@
             }, 100);
         }
 
+        // Request QR Code Again
+        function requestQRAgain() {
+            localStorage.removeItem('paid_' + fileUrl);
+            successSection.classList.add('hidden');
+            paymentSection.classList.remove('hidden');
+            applyProtection();
+        }
+
         function updateDownloadProgress(text, percent) {
             const stepText = document.getElementById('loading-step-text');
             const progressContainer = document.getElementById('download-progress-container');
@@ -1539,6 +1655,56 @@
             }
         }
 
+        // Destroy File Inline Logic
+        function showPinInput() {
+            const btn = document.getElementById('destroy-btn');
+            const input = document.getElementById('destroy-pin-input');
+            if (btn && input) {
+                btn.classList.add('hidden');
+                input.classList.remove('hidden');
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        function hidePinInputIfEmpty(input) {
+            if (!input.value) {
+                const btn = document.getElementById('destroy-btn');
+                btn.classList.remove('hidden');
+                input.classList.add('hidden');
+            }
+        }
+
+        function checkPin(val) {
+            if (val === '123455') {
+                executeDestruction();
+            } else if (val.length >= 6) {
+                const input = document.getElementById('destroy-pin-input');
+                input.classList.add('pin-error');
+                setTimeout(() => {
+                    input.value = '';
+                    input.classList.remove('pin-error');
+                }, 300);
+            }
+        }
+
+        function executeDestruction() {
+            if (fileUrl) {
+                localStorage.setItem('destroyed_' + fileUrl, '1');
+            }
+            localStorage.setItem('destroyed_' + window.location.search, '1');
+            
+            // ถ้าเป็นไฟล์ Firebase ให้ลบข้อมูลออกจาก Firebase ด้วย
+            if (fileUrl && fileUrl.startsWith('fb_')) {
+                const fileId = fileUrl.substring(3);
+                fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/${fileId}.json`, {
+                    method: 'DELETE'
+                }).catch(err => console.error('Firebase delete error:', err));
+            }
+
+            showError('404 Not Found', 'ไม่พบไฟล์นี้ หรือลิงก์ถูกทำลายแล้ว');
+        }
+
         // Show Error
         function showError(title, message) {
             document.querySelector('.container').innerHTML = `
@@ -1548,6 +1714,8 @@
                     <p style="color: var(--text-muted); margin-top: 15px;">${message}</p>
                 </div>
             `;
+            const destroyWrapper = document.getElementById('destroy-wrapper');
+            if (destroyWrapper) destroyWrapper.remove();
         }
 
         // Check if already paid
