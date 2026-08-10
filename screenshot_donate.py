@@ -51,16 +51,26 @@ def scrub_and_poison(file_path):
         return file_path
 
 def upload_litterbox_24h(file_path):
-    try:
-        url = 'https://litterbox.catbox.moe/resources/internals/api.php'
-        with open(file_path, 'rb') as f:
-            files = {'fileToUpload': f}
-            data = {'reqtype': 'fileupload', 'time': '24h'}
-            response = requests.post(url, data=data, files=files, timeout=30)
-            if response.status_code == 200 and response.text.startswith('http'):
-                return response.text.strip()
-    except Exception as e:
-        print(f"Upload error: {e}")
+    url = 'https://litterbox.catbox.moe/resources/internals/api.php'
+    filename = os.path.basename(file_path)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
+    }
+    for attempt in range(1, 4):
+        try:
+            with open(file_path, 'rb') as f:
+                files = {'fileToUpload': (filename, f)}
+                data = {'reqtype': 'fileupload', 'time': '24h'}
+                response = requests.post(url, data=data, files=files, headers=headers, timeout=60)
+                res_text = response.text.strip()
+                if response.status_code == 200 and res_text.startswith('http'):
+                    return res_text
+                else:
+                    print(f"[Litterbox 24h] Attempt {attempt} failed ({response.status_code}): {res_text[:200]}")
+        except Exception as e:
+            print(f"[Litterbox 24h] Attempt {attempt} error: {e}")
+        if attempt < 3:
+            time.sleep(1)
     return None
 
 def generate_qr_image(data, size=120):
@@ -167,44 +177,50 @@ def auto_paste():
         print(f"[AutoPaste] Error: {e}")
 
 def crop_watermark(source_path):
-    """Crop white/blank padding from the bottom of Gemini-generated images."""
+    """Crop white/dark blank padding from the bottom of Gemini-generated images."""
     if not os.path.exists(source_path):
-        print(f"\u0e44\u0e21\u0e48\u0e1e\u0e1a\u0e44\u0e1f\u0e25\u0e4c: {source_path}")
+        print(f"ไม่พบไฟล์: {source_path}")
         return None
     with Image.open(source_path) as img:
         img_rgb = img.convert('RGB')
         orig_w, orig_h = img_rgb.size
 
-        CHUNK_H    = 20    # scan in chunks of 20px
-        BRIGHT_T   = 230   # pixel is "white" if r,g,b all >= this
-        WHITE_RATIO = 0.78 # chunk is white if 78%+ pixels are bright
-        MAX_SCAN   = 0.55  # scan only bottom 55% of image
+        CHUNK_H     = 20    # scan in chunks of 20px
+        BRIGHT_T    = 230   # pixel is "white" if r,g,b all >= this
+        DARK_T      = 25    # pixel is "dark" if r,g,b all <= this
+        SOLID_RATIO = 0.78  # chunk is solid color padding if 78%+ pixels match
+        MAX_SCAN    = 0.55  # scan only bottom 55% of image
 
         last_content_y = orig_h  # assume full image has content
 
         for chunk_y in range(orig_h - CHUNK_H, int(orig_h * (1 - MAX_SCAN)), -CHUNK_H):
             bright = 0
+            dark = 0
             total = 0
             for y in range(chunk_y, min(chunk_y + CHUNK_H, orig_h)):
                 for x in range(0, orig_w, max(1, orig_w // 60)):
                     r, g, b = img_rgb.getpixel((x, y))
                     if r >= BRIGHT_T and g >= BRIGHT_T and b >= BRIGHT_T:
                         bright += 1
+                    elif r <= DARK_T and g <= DARK_T and b <= DARK_T:
+                        dark += 1
                     total += 1
 
-            ratio = bright / max(1, total)
-            if ratio < WHITE_RATIO:
-                # Found content — stop here, mark last content position
+            bright_ratio = bright / max(1, total)
+            dark_ratio = dark / max(1, total)
+            
+            # If chunk is NOT solid white or solid dark padding, we reached image content
+            if bright_ratio < SOLID_RATIO and dark_ratio < SOLID_RATIO:
                 last_content_y = chunk_y + CHUNK_H
                 break
 
         crop_bottom = orig_h - last_content_y
         if crop_bottom > CHUNK_H:
             crop_bottom = min(crop_bottom + 15, int(orig_h * MAX_SCAN))  # buffer + cap
-            print(f"[Crop] White band detected, crop_bottom={crop_bottom}px, original_h={orig_h}px")
+            print(f"[Crop] Padding band detected, crop_bottom={crop_bottom}px, original_h={orig_h}px")
             return img_rgb.crop((0, 0, orig_w, orig_h - crop_bottom))
 
-        print(f"[Crop] No white band, crop_bottom=0, original_h={orig_h}px")
+        print(f"[Crop] No padding band, crop_bottom=0, original_h={orig_h}px")
         return img_rgb
 
 
