@@ -278,13 +278,33 @@ function getNextGeminiUrl() {
   return url;
 }
 
-async function waitForFacebookReady(page, timeoutMs = 600000) {
+async function checkIsFacebookLoggedOut(page) {
+  try {
+    return await page.evaluate(() => {
+      const url = window.location.href.toLowerCase();
+      if (url.includes('/login') || url.includes('/checkpoint')) return true;
+      if (document.querySelector('input[name="email"], input[name="pass"], button[name="login"], form[action*="/login/"]')) return true;
+      const bodyText = document.body ? (document.body.innerText || '') : '';
+      if (bodyText.includes('เข้าสู่ระบบ Facebook') || bodyText.includes('Log into Facebook') || bodyText.includes('Log In')) return true;
+      return false;
+    }).catch(() => false);
+  } catch (e) {
+    return false;
+  }
+}
+
+async function waitForFacebookReady(page, timeoutMs = 60000) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     try {
+      const isLoggedOut = await checkIsFacebookLoggedOut(page);
+      if (isLoggedOut) {
+        console.warn('⚠️ [FB Check] Facebook session is logged out!');
+        return false;
+      }
       const url = page.url();
       if (url.includes('facebook.com')) {
-        const ready = await page.evaluate(() => document.querySelector('div[role="feed"], div[role="main"]') !== null).catch(() => false);
+        const ready = await page.evaluate(() => document.querySelector('div[role="feed"]') !== null).catch(() => false);
         if (ready) return true;
       }
     } catch (e) { }
@@ -2519,31 +2539,32 @@ async function getClipboardText() {
   }
 }
 
+let silentModeActive = false;
+
 // restore window แล้ว bring to front (ใช้แทน bringToFront() ตรง ๆ เพราะโดน minimize ไม่ทำงาน)
-async function bringWindowToFront(page) {
+async function bringWindowToFront(page, force = false) {
+  await page.bringToFront().catch(() => {});
+  if (silentModeActive && !force) return;
   await minimizeBrowser(false).catch(() => {});
   await sleep(300);
-  await page.bringToFront().catch(() => {});
 }
 
-// minimize/restore ผ่าน PowerShell ShowWindowAsync (CDP ยังทำงานได้ปกติแม้ minimize)
+// minimize/restore ผ่าน PowerShell ShowWindow (SW_MINIMIZE = 6, SW_RESTORE = 9)
 async function minimizeBrowser(minimize = true) {
   const tempPs1 = path.join(os.tmpdir(), `min_chrome_${Date.now()}.ps1`);
   try {
-    const posX = minimize ? -2000 : 2816;
-    const posY = minimize ? -2000 : 312;
     const psLines = [
       'Add-Type -TypeDefinition @"',
       '  using System;',
       '  using System.Runtime.InteropServices;',
       '  public class Win32 {',
-      '    [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);',
+      '    [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);',
       '    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);',
       '  }',
       '"@',
       "Get-CimInstance Win32_Process -Filter \"Name = 'chrome.exe' or Name = 'msedge.exe' or Name = 'chromium.exe'\" | Where-Object { \$_.CommandLine -like '*Facebook_Bot*user_data*' } | ForEach-Object { Get-Process -Id \$_.ProcessId } | Where-Object { \$_.MainWindowHandle -ne 0 } | ForEach-Object {",
-      `  [Win32]::SetWindowPos($_.MainWindowHandle, 0, ${posX}, ${posY}, 0, 0, 5) | Out-Null`,
-      minimize ? '' : '  [Win32]::SetForegroundWindow($_.MainWindowHandle) | Out-Null',
+      minimize ? '  [Win32]::ShowWindow($_.MainWindowHandle, 6) | Out-Null'
+               : '  [Win32]::ShowWindow($_.MainWindowHandle, 9) | Out-Null; [Win32]::SetForegroundWindow($_.MainWindowHandle) | Out-Null',
       '}',
     ];
     fs.writeFileSync(tempPs1, psLines.filter(Boolean).join('\r\n'), 'utf8');
@@ -2662,6 +2683,7 @@ async function pauseOnError(isDebugPause, message) {
   const isDebugPause = process.argv.includes('--debug-pause');
   const isReviewMode = process.argv.includes('--review');
   const isLoginMode = process.argv.includes('--login');
+  const silentMode = !process.argv.includes('--show-browser') && !isDebugPause && !isLoginMode;
   const BOT_START_TIME = Date.now();
   const MAX_RUNTIME_MS = 1200000;
 
@@ -2697,12 +2719,28 @@ async function pauseOnError(isDebugPause, message) {
     '--disable-features=IsolateOrigins,site-per-process',
     `--load-extension=${extensionPath}`,
     `--disable-extensions-except=${extensionPath}`,
-    '--window-size=1024,768',  // ขนาดกลาง (ใหญ่พอให้ Gemini แสดง Fast Download)
+    '--window-size=1024,650',  // ปรับความสูงลงเพื่อให้วาง Status Widget ต่อท้ายด้านล่างได้พอดี
     '--window-position=2816,312',  // มุมล่างขวาจอสอง (x=1920+896, y=1080-768)
     '--disable-backgrounding-occluded-windows',
     '--disable-renderer-backgrounding',
     '--disable-background-timer-throttling',
+    '--hide-crash-restore-bubble',
+    '--disable-session-crashed-bubble',
+    '--disable-infobars',
   ];
+
+  function fixChromePreferencesCleanExit() {
+    try {
+      const prefsPath = path.join(USER_DATA_DIR, 'Default', 'Preferences');
+      if (fs.existsSync(prefsPath)) {
+        let content = fs.readFileSync(prefsPath, 'utf8');
+        content = content.replace(/"exit_type"\s*:\s*"Crashed"/g, '"exit_type":"Normal"');
+        content = content.replace(/"exited_cleanly"\s*:\s*false/g, '"exited_cleanly":true');
+        fs.writeFileSync(prefsPath, content, 'utf8');
+        console.log('[Pre-launch] Reset Chrome Preferences crash state to clean exit.');
+      }
+    } catch (e) { }
+  }
 
   try {
     // --- Kill any Chrome instance already using this user_data dir ---
@@ -2716,6 +2754,8 @@ async function pauseOnError(isDebugPause, message) {
       // ไม่มี process ค้าง หรือ wmic ไม่ทำงาน — ข้ามได้
     }
 
+    fixChromePreferencesCleanExit();
+
     const context = await chromium.launchPersistentContext(USER_DATA_DIR, {
       headless: isHeadless,
       viewport: null,
@@ -2723,8 +2763,6 @@ async function pauseOnError(isDebugPause, message) {
     });
 
     console.log('Browser launched successfully.');
-    // หน้าต่างเบราว์เซอร์จะแสดงที่จอที่ 2 ตาม --window-position ที่ตั้งไว้ใน browserArgs
-    // ไม่ซ่อนหน้าต่างตอน launch เพราะ Facebook virtual DOM ต้องการ viewport จริงในการ render
     isBrowserHidden = false;
 
     // ✅ ตรวจจับเมื่อ Playwright browser ปิดตัว/ขัดข้อง — force exit ทันที
@@ -2966,11 +3004,13 @@ async function pauseOnError(isDebugPause, message) {
         console.warn('Facebook navigation slow, continuing...');
       }
 
-      const fbReady = await waitForFacebookReady(fbPage);
+      const fbReady = await waitForFacebookReady(fbPage, 30000);
       if (!fbReady) {
-        console.error('Cannot login Facebook — exiting.');
-        await reportStatus(0, 'ไม่สามารถเข้าสู่ Facebook ได้', 'กรุณาตรวจสอบการล็อกอิน', 'error', 1);
-        await context.close();
+        console.error('Facebook profile is logged out or feed not found.');
+        showWindowsNotification('Facebook Bot ⚠️', 'บัญชี Facebook ไม่ได้ลงชื่อเข้าใช้! กรุณา Login ก่อน', 'Warning');
+        await reportStatus(0, '⚠️ บัญชี Facebook ไม่ได้ Login', 'พบหน้าเข้าสู่ระบบ กรุณาล็อกอิน Facebook ในเบราว์เซอร์ก่อนเริ่มงาน', 'error', 1);
+        await sleep(3000);
+        await context.close().catch(() => {});
         process.exit(1);
       }
 
