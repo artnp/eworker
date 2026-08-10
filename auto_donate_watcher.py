@@ -35,24 +35,26 @@ class DownloadHandler(FileSystemEventHandler):
     def _handle(self, event):
         global current_mode
         if event.is_directory: return
-        filename = os.path.basename(event.src_path)
+        target_file = getattr(event, 'dest_path', event.src_path)
+        filename = os.path.basename(target_file)
         
-        # เมื่อ Gemini เซฟ complete.png มา
-        if filename.lower() == "complete.png":
+        # เมื่อ Gemini/Copilot/Fast Download เซฟ complete.png หรือ complete_bot.png มา
+        fname_lower = filename.lower()
+        if fname_lower in ["complete.png", "complete_bot.png"] or (fname_lower.startswith("complete") and fname_lower.endswith(".png")):
             # ★ ป้องกัน process ซ้ำ: เช็ค mtime ว่าเป็นไฟล์ใหม่จริงๆ
             if not self._processing_lock.acquire(blocking=False):
                 print("[Watcher] Already processing, skipping duplicate trigger")
                 return
             try:
-                time.sleep(2) # รอให้ไฟล์เขียนเสร็จสนิท
+                time.sleep(1.5) # รอให้ไฟล์เขียนเสร็จสนิท
                 
-                if not os.path.exists(event.src_path):
+                if not os.path.exists(target_file):
                     print("[Watcher] File disappeared, skipping")
                     return
                 
-                file_mtime = os.path.getmtime(event.src_path)
-                if abs(file_mtime - self._last_processed_mtime) < 3:
-                    print(f"[Watcher] Same file (mtime diff < 3s), skipping duplicate")
+                file_mtime = os.path.getmtime(target_file)
+                if abs(file_mtime - self._last_processed_mtime) < 1.0:
+                    print(f"[Watcher] Same file (mtime diff < 1s), skipping duplicate")
                     return
                 DownloadHandler._last_processed_mtime = file_mtime
                 
@@ -71,12 +73,13 @@ class DownloadHandler(FileSystemEventHandler):
                 
                 import subprocess, sys
                 result = subprocess.run(
-                    [sys.executable, script_path, mode_flag, event.src_path],
+                    [sys.executable, script_path, mode_flag, target_file],
                     capture_output=True, text=True, timeout=60
                 )
                 
                 # ไฟล์ผลลัพธ์อยู่ที่ Desktop เสมอ
-                target_path = os.path.join(DESKTOP_PATH, "complete.png")
+                output_name = "complete_bot.png" if filename.lower() == "complete_bot.png" else "complete.png"
+                target_path = os.path.join(DESKTOP_PATH, output_name)
                 global last_exported_path
                 last_exported_path = target_path
                 
@@ -90,13 +93,13 @@ class DownloadHandler(FileSystemEventHandler):
                 # ★ chrome_hub mode: ไม่ลบต้นฉบับ
                 if not skip_delete:
                     try:
-                        if os.path.exists(event.src_path):
-                            os.remove(event.src_path)
-                            print(f"[Watcher] ✅ Deleted source {event.src_path} to prevent stale image reuse")
+                        if os.path.exists(target_file):
+                            os.remove(target_file)
+                            print(f"[Watcher] ✅ Deleted source {target_file} to prevent stale image reuse")
                     except Exception as del_err:
                         print(f"[Watcher] Could not delete source (non-critical): {del_err}")
                 else:
-                    print(f"[Watcher] (Chrome hub) Keeping original {event.src_path}")
+                    print(f"[Watcher] (Chrome hub) Keeping original {target_file}")
                     
             except Exception as e:
                 print(f"[Watcher] Error: {e}")
@@ -107,6 +110,9 @@ class DownloadHandler(FileSystemEventHandler):
         self._handle(event)
 
     def on_modified(self, event):
+        self._handle(event)
+
+    def on_moved(self, event):
         self._handle(event)
 
 class DesktopHandler(FileSystemEventHandler):
