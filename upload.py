@@ -5,41 +5,51 @@ import os
 
 def upload_litterbox(file_path):
     """อัพโหลดไปยัง Litterbox (1hr expiry) - ระบบหลัก"""
-    try:
-        url = 'https://litterbox.catbox.moe/resources/internals/api.php'
-        filename = os.path.basename(file_path)
+    url = 'https://litterbox.catbox.moe/resources/internals/api.php'
+    filename = os.path.basename(file_path)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
+    }
+    
+    # ลองอัปโหลดสูงสุด 3 ครั้ง เพื่อรองรับกรณีเน็ตช้าหรือ SSL/Cloudflare ติดขัดชั่วคราว
+    for attempt in range(1, 4):
+        try:
+            with open(file_path, 'rb') as f:
+                files = {'fileToUpload': (filename, f)}
+                data = {'reqtype': 'fileupload', 'time': '1h'}
+                response = requests.post(url, data=data, files=files, headers=headers, timeout=60)
+                res_text = response.text.strip()
+                
+                if response.status_code == 200 and res_text.startswith('http'):
+                    return res_text
+                else:
+                    print(f"Litterbox attempt {attempt} failed ({response.status_code}): {res_text[:200]}", file=sys.stderr)
+        except Exception as e:
+            print(f"Litterbox attempt {attempt} error: {e}", file=sys.stderr)
         
-        with open(file_path, 'rb') as f:
-            files = {'fileToUpload': (filename, f)}
-            data = {'reqtype': 'fileupload', 'time': '1h'}
-            response = requests.post(url, data=data, files=files, timeout=20)
+        if attempt < 3:
+            import time
+            time.sleep(1)
             
-            if response.status_code == 200 and response.text.startswith('http'):
-                return response.text.strip()
-            else:
-                print(f"Litterbox failed ({response.status_code}): {response.text[:200]}", file=sys.stderr)
-    except Exception as e:
-        print(f"Litterbox error: {e}", file=sys.stderr)
     return None
 
 def upload_tmpfiles(file_path):
     """อัพโหลดไปยัง tmpfiles.org (1hr expiry) - รองรับทุกไฟล์"""
+    url = 'https://tmpfiles.org/api/v1/upload'
+    filename = os.path.basename(file_path)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
+    }
     try:
-        url = 'https://tmpfiles.org/api/v1/upload'
-        filename = os.path.basename(file_path)
-        
         with open(file_path, 'rb') as f:
             files = {'file': (filename, f)}
             data = {'expire': '3600'}  # 1 hour = 3600 seconds
-            response = requests.post(url, data=data, files=files, timeout=30)
+            response = requests.post(url, data=data, files=files, headers=headers, timeout=45)
             
             if response.status_code == 200:
                 result = response.json()
                 if result.get('status') == 'success' and result.get('data', {}).get('url'):
-                    # tmpfiles.org returns: https://tmpfiles.org/123456/file.pdf
-                    # Need to convert to direct download: https://tmpfiles.org/dl/123456/file.pdf
                     original_url = result['data']['url']
-                    # Insert /dl/ after domain
                     download_url = original_url.replace('tmpfiles.org/', 'tmpfiles.org/dl/')
                     return download_url
             print(f"tmpfiles.org failed: {response.text[:200]}", file=sys.stderr)
@@ -49,13 +59,15 @@ def upload_tmpfiles(file_path):
 
 def upload_uguu(file_path):
     """อัพโหลดไปยัง Uguu.se (1hr expiry) - รองรับเฉพาะรูปภาพ"""
+    url = 'https://uguu.se/upload'
+    filename = os.path.basename(file_path)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
+    }
     try:
-        url = 'https://uguu.se/upload'
-        filename = os.path.basename(file_path)
-        
         with open(file_path, 'rb') as f:
             files = {'files[]': (filename, f)}
-            response = requests.post(url, files=files, timeout=30)
+            response = requests.post(url, files=files, headers=headers, timeout=45)
             
             if response.status_code == 200:
                 result = response.json()
@@ -68,15 +80,16 @@ def upload_uguu(file_path):
 
 def upload_fileio(file_path):
     """อัพโหลดไปยัง file.io (ลบอัตโนมัติหลัง 1 ครั้ง หรือ 14 วัน) - รองรับทุกไฟล์"""
+    url = 'https://file.io/'
+    filename = os.path.basename(file_path)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
+    }
     try:
-        url = 'https://file.io/'
-        filename = os.path.basename(file_path)
-        
         with open(file_path, 'rb') as f:
             files = {'file': (filename, f)}
-            # expires=1d means 1 day (free tier max)
             data = {'expires': '1d'}
-            response = requests.post(url, data=data, files=files, timeout=30)
+            response = requests.post(url, data=data, files=files, headers=headers, timeout=45)
             
             if response.status_code == 200:
                 result = response.json()
