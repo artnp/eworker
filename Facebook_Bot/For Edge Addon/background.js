@@ -24,7 +24,7 @@ async function rotateGeminiAccount() {
 }
 
 // --- Download Name Interceptor ---
-// ทุกการดาวน์โหลดจาก Gemini จะเซฟเป็น complete.png เสมอ
+// ทุกการดาวน์โหลดจาก Gemini / Copilot จะเซฟเป็น complete.png เสมอ
 chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
     const lowerName = (item.filename || '').toLowerCase();
     const url = (item.url || '').toLowerCase();
@@ -38,14 +38,30 @@ chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
         return;
     }
 
-    // ตรวจสอบว่ามาจาก Gemini domain จริงๆ หรือไม่
-    const isFromGeminiDomain = referrer.includes('gemini.google.com') ||
+    // ตรวจสอบว่ามาจาก Gemini หรือ Copilot domain จริงๆ หรือไม่
+    const isFromTargetDomain = referrer.includes('gemini.google.com') ||
         url.includes('gemini.google.com') ||
-        url.includes('googleusercontent.com');
+        url.includes('googleusercontent.com') ||
+        referrer.includes('copilot.microsoft.com') ||
+        referrer.includes('designer.microsoft.com') ||
+        referrer.includes('bing.com') ||
+        url.includes('copilot.microsoft.com') ||
+        url.includes('designer.microsoft.com') ||
+        url.includes('bing.com') ||
+        url.includes('bing.net') ||
+        url.includes('microsoft.com');
 
-    // data: หรือ blob: URL → เปลี่ยนชื่อเฉพาะเมื่อ referrer มาจาก Gemini เท่านั้น
+    const isImage = /\.(png|jpg|jpeg|webp)$/i.test(lowerName) || (item.mime && item.mime.startsWith('image/'));
+
+    if (isFromTargetDomain && isImage) {
+        console.log('[Background] Target domain (Gemini/Copilot) download intercepted -> complete.png');
+        suggest({ filename: 'complete.png', conflictAction: 'overwrite' });
+        return;
+    }
+
+    // data: หรือ blob: URL → เปลี่ยนชื่อเฉพาะเมื่อ referrer มาจาก Gemini หรือ Copilot เท่านั้น
     if (url.startsWith('data:') || url.startsWith('blob:')) {
-        if (isFromGeminiDomain) {
+        if (isFromTargetDomain) {
             suggest({ filename: 'complete.png', conflictAction: 'overwrite' });
         } else {
             suggest(); // ไม่ยุ่ง ปล่อยใช้ชื่อเดิม
@@ -58,17 +74,20 @@ chrome.downloads.onDeterminingFilename.addListener((item, suggest) => {
         return;
     }
 
-    // เปลี่ยนชื่อเป็น complete.png เฉพาะเมื่อมาจาก Gemini domain เท่านั้น
-    const isGeminiFile = isFromGeminiDomain && (
+    // เปลี่ยนชื่อเป็น complete.png เฉพาะเมื่อมาจาก Gemini / Copilot domain เท่านั้น
+    const isTargetFile = isFromTargetDomain && (
         lowerName.includes('gemini_generate') ||
         lowerName.includes('gemini_image') ||
+        lowerName.includes('copilot') ||
+        lowerName.includes('designer') ||
+        lowerName.includes('bing') ||
         lowerName.includes('input_file') ||
         lowerName.includes('complete') ||
         lowerName.includes('ดาวน์โหลด') ||
         lowerName.includes('download'));
 
-    if (isGeminiFile) {
-        console.log('[Background] Gemini download -> complete.png');
+    if (isTargetFile) {
+        console.log('[Background] Target download -> complete.png');
         suggest({ filename: 'complete.png', conflictAction: 'overwrite' });
     } else {
         suggest();
