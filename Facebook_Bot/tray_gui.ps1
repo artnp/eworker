@@ -1,4 +1,4 @@
-# tray_gui.ps1 - System Tray Icon & Status Popup Widget for Facebook Bot (File-based IPC)
+# tray_gui.ps1 - Status Popup Widget docked under Playwright Chrome Window (File-based IPC)
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
@@ -11,10 +11,19 @@ Get-WmiObject Win32_Process | Where-Object {
 }
 Start-Sleep -Milliseconds 200
 
-# --- Win32 API Definitions for Window Management & Dragging ---
+# --- Win32 API Definitions for Window Management, Dragging & Rect Tracking ---
 $code = @"
 using System;
 using System.Runtime.InteropServices;
+
+[StructLayout(LayoutKind.Sequential)]
+public struct RECT {
+    public int Left;
+    public int Top;
+    public int Right;
+    public int Bottom;
+}
+
 public class Win32Gui {
     public const int WM_NCLBUTTONDOWN = 0xA1;
     public const int HT_CAPTION = 0x2;
@@ -30,6 +39,8 @@ public class Win32Gui {
     public static extern bool SetForegroundWindow(IntPtr hWnd);
     [DllImport("user32.dll")]
     public static extern bool IsIconic(IntPtr hWnd);
+    [DllImport("user32.dll")]
+    public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 }
 "@
 Add-Type -TypeDefinition $code -ErrorAction SilentlyContinue
@@ -38,10 +49,7 @@ $botDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $botDir
 $statusFile = Join-Path $botDir "status.json"
 
-# --- State for Browser Visibility (Default to True/Shown) ---
-$script:browserVisible = $true
-
-# --- Functions to Find & Control Playwright Browser Window Hwnd ---
+# --- Functions to Find Playwright Browser Window Hwnd ---
 function Get-PlaywrightBrowserHwnds {
     try {
         $nodeProc = Get-WmiObject Win32_Process | Where-Object {
@@ -73,54 +81,13 @@ function Get-PlaywrightBrowserHwnds {
                 }
             } catch {}
         }
-        
-        if ($hwnds.Count -eq 0) {
-            $chromeProcs = Get-WmiObject Win32_Process | Where-Object {
-                ($_.Name -eq "chrome.exe" -or $_.Name -eq "msedge.exe") -and $_.CommandLine -like "*Facebook_Bot*"
-            }
-            foreach ($cp in $chromeProcs) {
-                try {
-                    $p = [System.Diagnostics.Process]::GetProcessById($cp.ProcessId)
-                    if ($p -and $p.MainWindowHandle -ne [IntPtr]::Zero) {
-                        $hwnds += $p.MainWindowHandle
-                    }
-                } catch {}
-            }
-        }
-        
         return $hwnds
     } catch {
         return @()
     }
 }
 
-function Show-ChromeWindow {
-    $script:browserVisible = $true
-    try {
-        $hwnds = Get-PlaywrightBrowserHwnds
-        foreach ($hwnd in $hwnds) {
-            [Win32Gui]::ShowWindow($hwnd, 9) | Out-Null  # SW_RESTORE = 9
-            [Win32Gui]::SetForegroundWindow($hwnd) | Out-Null
-        }
-    } catch {}
-}
-
-function Toggle-ChromeWindow {
-    $script:browserVisible = -not $script:browserVisible
-    try {
-        $hwnds = Get-PlaywrightBrowserHwnds
-        foreach ($hwnd in $hwnds) {
-            if ($script:browserVisible) {
-                [Win32Gui]::ShowWindow($hwnd, 9) | Out-Null  # SW_RESTORE
-                [Win32Gui]::SetForegroundWindow($hwnd) | Out-Null
-            } else {
-                [Win32Gui]::ShowWindow($hwnd, 6) | Out-Null  # SW_MINIMIZE
-            }
-        }
-    } catch {}
-}
-
-# --- Extract Globe Icon for Tray ---
+# --- Extract Globe Icon for Form ---
 $hIcon = [Win32Gui]::ExtractIcon(0, "shell32.dll", 13)
 if ($hIcon -ne [IntPtr]::Zero) {
     $fbIcon = [System.Drawing.Icon]::FromHandle($hIcon)
@@ -128,11 +95,11 @@ if ($hIcon -ne [IntPtr]::Zero) {
     $fbIcon = [System.Drawing.SystemIcons]::Application
 }
 
-# --- Create Form (Popup Widget) ---
+# --- Create Form (Status Popup Widget) ---
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "Facebook Bot Status"
 $form.Icon = $fbIcon
-$form.Size = New-Object System.Drawing.Size(390, 155)
+$form.Size = New-Object System.Drawing.Size(390, 140)
 $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::None
 $form.TopMost = $true
 $form.ShowInTaskbar = $false
@@ -140,16 +107,12 @@ $form.BackColor = [System.Drawing.Color]::FromArgb(30, 30, 46)
 
 $null = $form.Handle
 
-# Position at Bottom-Right of Screen 2 (if exists) or Screen 1
+# Position initially at Bottom-Right of Screen
 $screens = [System.Windows.Forms.Screen]::AllScreens
-if ($screens.Count -gt 1) {
-    $targetScreen = $screens[1]
-} else {
-    $targetScreen = $screens[0]
-}
+$targetScreen = if ($screens.Count -gt 1) { $screens[1] } else { $screens[0] }
 $wa = $targetScreen.WorkingArea
 $posX = $wa.Right - 390 - 20
-$posY = $wa.Bottom - 155 - 20
+$posY = $wa.Bottom - 140 - 20
 $form.StartPosition = [System.Windows.Forms.FormStartPosition]::Manual
 $form.Location = New-Object System.Drawing.Point($posX, $posY)
 
@@ -173,31 +136,14 @@ $panelHeader.add_MouseDown({
 })
 
 $lblTitle = New-Object System.Windows.Forms.Label
-$lblTitle.Text = "ⓕ Facebook Bot (กำลังเตรียมระบบ...)"
+$lblTitle.Text = "ⓕ Facebook Bot Status"
 $lblTitle.Font = New-Object System.Drawing.Font("Segoe UI", 9.5, [System.Drawing.FontStyle]::Bold)
 $lblTitle.ForeColor = [System.Drawing.Color]::White
 $lblTitle.AutoSize = $true
 $lblTitle.Location = New-Object System.Drawing.Point(10, 6)
 $panelHeader.Controls.Add($lblTitle)
 
-# Button to Show/Hide Browser on Widget Header
-$btnToggleBrowser = New-Object System.Windows.Forms.Button
-$btnToggleBrowser.Text = "ⓕ เบราว์เซอร์"
-$btnToggleBrowser.Size = New-Object System.Drawing.Size(95, 23)
-$btnToggleBrowser.Location = New-Object System.Drawing.Point(255, 4)
-$btnToggleBrowser.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
-$btnToggleBrowser.FlatAppearance.BorderSize = 1
-$btnToggleBrowser.FlatAppearance.BorderColor = [System.Drawing.Color]::FromArgb(79, 195, 247)
-$btnToggleBrowser.BackColor = [System.Drawing.Color]::FromArgb(35, 45, 65)
-$btnToggleBrowser.ForeColor = [System.Drawing.Color]::FromArgb(79, 195, 247)
-$btnToggleBrowser.Font = New-Object System.Drawing.Font("Segoe UI", 8.5, [System.Drawing.FontStyle]::Bold)
-$btnToggleBrowser.Cursor = [System.Windows.Forms.Cursors]::Hand
-$btnToggleBrowser.add_Click({
-    Toggle-ChromeWindow
-})
-$panelHeader.Controls.Add($btnToggleBrowser)
-
-# Close (Hide) Button on Widget
+# Close Button on Widget (Exits entire bot process)
 $btnCloseWidget = New-Object System.Windows.Forms.Button
 $btnCloseWidget.Text = "✕"
 $btnCloseWidget.Size = New-Object System.Drawing.Size(26, 22)
@@ -207,7 +153,7 @@ $btnCloseWidget.FlatAppearance.BorderSize = 0
 $btnCloseWidget.ForeColor = [System.Drawing.Color]::FromArgb(180, 180, 180)
 $btnCloseWidget.Cursor = [System.Windows.Forms.Cursors]::Hand
 $btnCloseWidget.add_Click({
-    $form.Hide()
+    Stop-FacebookBotProcess
 })
 $panelHeader.Controls.Add($btnCloseWidget)
 $panelBorder.Controls.Add($panelHeader)
@@ -223,7 +169,7 @@ $panelBorder.Controls.Add($lblStatus)
 
 # Progress Bar
 $progressBar = New-Object System.Windows.Forms.ProgressBar
-$progressBar.Location = New-Object System.Drawing.Point(12, 66)
+$progressBar.Location = New-Object System.Drawing.Point(12, 64)
 $progressBar.Size = New-Object System.Drawing.Size(315, 18)
 $progressBar.Minimum = 0
 $progressBar.Maximum = 100
@@ -235,66 +181,19 @@ $lblPercent = New-Object System.Windows.Forms.Label
 $lblPercent.Text = "0%"
 $lblPercent.Font = New-Object System.Drawing.Font("Segoe UI", 9, [System.Drawing.FontStyle]::Bold)
 $lblPercent.ForeColor = [System.Drawing.Color]::White
-$lblPercent.Location = New-Object System.Drawing.Point(332, 66)
+$lblPercent.Location = New-Object System.Drawing.Point(332, 64)
 $lblPercent.Size = New-Object System.Drawing.Size(45, 18)
 $lblPercent.TextAlign = [System.Drawing.ContentAlignment]::MiddleRight
 $panelBorder.Controls.Add($lblPercent)
 
-# Detail / Reason Label
+# Detail Label
 $lblDetail = New-Object System.Windows.Forms.Label
 $lblDetail.Text = "รอการเชื่อมต่อจาก Facebook Bot..."
 $lblDetail.Font = New-Object System.Drawing.Font("Segoe UI", 8.5)
 $lblDetail.ForeColor = [System.Drawing.Color]::FromArgb(186, 194, 222)
-$lblDetail.Location = New-Object System.Drawing.Point(12, 90)
-$lblDetail.Size = New-Object System.Drawing.Size(365, 52)
+$lblDetail.Location = New-Object System.Drawing.Point(12, 88)
+$lblDetail.Size = New-Object System.Drawing.Size(365, 45)
 $panelBorder.Controls.Add($lblDetail)
-
-# System Tray Icon & Context Menu
-$trayIcon = New-Object System.Windows.Forms.NotifyIcon
-$trayIcon.Icon = $fbIcon
-$trayIcon.Text = "Facebook Bot (Running)"
-$trayIcon.Visible = $true
-
-$contextMenu = New-Object System.Windows.Forms.ContextMenuStrip
-
-$menuToggle = New-Object System.Windows.Forms.ToolStripMenuItem
-$menuToggle.Text = "📌 แสดง/ซ่อน หน้าต่างสถานะ"
-$menuToggle.add_Click({
-    if ($form.Visible) {
-        $form.Hide()
-    } else {
-        $form.Show()
-        $form.BringToFront()
-    }
-})
-$contextMenu.Items.Add($menuToggle) | Out-Null
-
-$menuBrowser = New-Object System.Windows.Forms.ToolStripMenuItem
-$menuBrowser.Text = "ⓕ แสดง/ซ่อน หน้าต่างเบราว์เซอร์"
-$menuBrowser.add_Click({
-    Toggle-ChromeWindow
-})
-$contextMenu.Items.Add($menuBrowser) | Out-Null
-
-$contextMenu.Items.Add((New-Object System.Windows.Forms.ToolStripSeparator)) | Out-Null
-
-$menuExit = New-Object System.Windows.Forms.ToolStripMenuItem
-$menuExit.Text = "❌ ปิดโปรเซส (Exit Bot)"
-$menuExit.add_Click({
-    Stop-FacebookBotProcess
-})
-$contextMenu.Items.Add($menuExit) | Out-Null
-
-$trayIcon.ContextMenuStrip = $contextMenu
-
-$trayIcon.add_DoubleClick({
-    if ($form.Visible) {
-        $form.Hide()
-    } else {
-        $form.Show()
-        $form.BringToFront()
-    }
-})
 
 function Stop-FacebookBotProcess {
     try {
@@ -305,10 +204,6 @@ function Stop-FacebookBotProcess {
         }
     } catch {}
 
-    if ($trayIcon) {
-        $trayIcon.Visible = $false
-        $trayIcon.Dispose()
-    }
     if ($form) {
         $form.Close()
     }
@@ -323,10 +218,6 @@ function Update-StatusUI ($data) {
         return
     }
 
-    if ($data.showBrowser) {
-        Show-ChromeWindow
-    }
-
     if ($data.postIndex -and $data.maxPosts) {
         $newTitle = "ⓕ Facebook Bot (โพสต์ $($data.postIndex)/$($data.maxPosts))"
         if ($lblTitle.Text -ne $newTitle) {
@@ -336,46 +227,24 @@ function Update-StatusUI ($data) {
 
     if ($null -ne $data.percent) {
         $val = [Math]::Max(0, [Math]::Min(100, [int]$data.percent))
-        if ($progressBar.Value -ne $val) {
-            $progressBar.Value = $val
-        }
+        if ($progressBar.Value -ne $val) { $progressBar.Value = $val }
         $newPercent = "$val%"
-        if ($lblPercent.Text -ne $newPercent) {
-            $lblPercent.Text = $newPercent
-        }
+        if ($lblPercent.Text -ne $newPercent) { $lblPercent.Text = $newPercent }
     }
 
     if ($data.status) {
-        if ($lblStatus.Text -ne $data.status) {
-            $lblStatus.Text = $data.status
-        }
-        
-        $newTrayText = "FB Bot: $($data.status)"
-        # WinForms NotifyIcon.Text has a strict limit of 63 characters.
-        # Exceeding it will throw an exception.
-        if ($newTrayText.Length -gt 63) {
-            $newTrayText = $newTrayText.Substring(0, 60) + "..."
-        }
-        
-        # Only update if it has changed to prevent Win32 tray redraw focus stealing
-        if ($trayIcon.Text -ne $newTrayText) {
-            $trayIcon.Text = $newTrayText
-        }
+        if ($lblStatus.Text -ne $data.status) { $lblStatus.Text = $data.status }
     }
 
     if ($data.detail) {
-        if ($lblDetail.Text -ne $data.detail) {
-            $lblDetail.Text = $data.detail
-        }
+        if ($lblDetail.Text -ne $data.detail) { $lblDetail.Text = $data.detail }
     }
 
-    # Only update ForeColor if it changes to prevent redundant WinForms paint events
     $targetColor = [System.Drawing.Color]::FromArgb(79, 195, 247)
     if ($data.logType -eq "warn") {
         $targetColor = [System.Drawing.Color]::FromArgb(255, 183, 77)
     } elseif ($data.logType -eq "error") {
         $targetColor = [System.Drawing.Color]::FromArgb(239, 83, 80)
-        Show-ChromeWindow
     } elseif ($data.logType -eq "success") {
         $targetColor = [System.Drawing.Color]::FromArgb(102, 187, 106)
     }
@@ -385,39 +254,44 @@ function Update-StatusUI ($data) {
     }
 }
 
-# WinForms Timer to Poll status.json every 1000ms (1 second)
+# --- Timer to Sync Widget Position Right Under Chrome Window & Read status.json ---
 $script:lastReadTimestamp = 0
 $script:nodeProcessCheckCount = 0
 $timer = New-Object System.Windows.Forms.Timer
-$timer.Interval = 1000
+$timer.Interval = 500
 $timer.add_Tick({
-    # ✅ ตรวจจับเมื่อ bot.js process 退出 — ปิด tray ตามอัตโนมัติ
+    # Align widget directly below Chrome's bottom-right edge
+    try {
+        $hwnds = Get-PlaywrightBrowserHwnds
+        if ($hwnds.Count -gt 0) {
+            $rect = New-Object RECT
+            if ([Win32Gui]::GetWindowRect($hwnds[0], [ref]$rect)) {
+                if ($rect.Right -gt $rect.Left -and $rect.Bottom -gt $rect.Top) {
+                    $dockX = $rect.Right - 390
+                    $dockY = $rect.Bottom + 2
+                    $screen = [System.Windows.Forms.Screen]::FromHandle($hwnds[0])
+                    if ($dockY + 140 -gt $screen.WorkingArea.Bottom) {
+                        $dockY = $screen.WorkingArea.Bottom - 140
+                    }
+                    $newLoc = New-Object System.Drawing.Point($dockX, $dockY)
+                    if ($form.Location -ne $newLoc) { $form.Location = $newLoc }
+                }
+            }
+        }
+    } catch {}
+
     $script:nodeProcessCheckCount++
-    if ($script:nodeProcessCheckCount -ge 5) {
+    if ($script:nodeProcessCheckCount -ge 6) {
         $script:nodeProcessCheckCount = 0
         $nodeRunning = Get-WmiObject Win32_Process | Where-Object {
             $_.Name -eq "node.exe" -and $_.CommandLine -like "*bot.js*"
         }
         if (-not $nodeRunning) {
-            # ตรวจสอบ status.json ว่ามี action=exit หรือ crash หรือไม่
-            $shouldExit = $false
-            if (Test-Path $statusFile) {
-                try {
-                    $s = Get-Content $statusFile -Raw -ErrorAction SilentlyContinue | ConvertFrom-Json
-                    if ($s.action -eq "exit" -or $s.logType -eq "error") {
-                        $shouldExit = $true
-                    }
-                } catch {}
-            }
-            # ถ้า node หยุดทำงานและ status ไม่ใช่ running ให้ปิดตัว
-            if ($shouldExit -or -not (Test-Path $statusFile)) {
-                Stop-FacebookBotProcess
-                return
-            }
+            Stop-FacebookBotProcess
+            return
         }
     }
 
-    # Read status.json
     if (Test-Path $statusFile) {
         try {
             $stream = [System.IO.File]::Open($statusFile, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
@@ -425,7 +299,6 @@ $timer.add_Tick({
             $content = $reader.ReadToEnd()
             $reader.Close()
             $stream.Close()
-
             if ($content) {
                 $json = $content | ConvertFrom-Json
                 if ($json.timestamp -and $json.timestamp -ne $script:lastReadTimestamp) {
