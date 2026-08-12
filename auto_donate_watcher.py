@@ -38,9 +38,10 @@ class DownloadHandler(FileSystemEventHandler):
         target_file = getattr(event, 'dest_path', event.src_path)
         filename = os.path.basename(target_file)
         
-        # เมื่อ Gemini/Copilot/Fast Download เซฟ complete.png หรือ complete_bot.png มา
+        # เมื่อ Gemini/Copilot/Fast Download เซฟ complete.* หรือ complete_bot.* มา
         fname_lower = filename.lower()
-        if fname_lower in ["complete.png", "complete_bot.png"] or (fname_lower.startswith("complete") and fname_lower.endswith(".png")):
+        is_complete_file = (fname_lower.startswith("complete") and fname_lower.endswith((".png", ".jpg", ".jpeg", ".webp"))) or fname_lower in ["complete.png", "complete_bot.png", "complete.jpg", "complete.jpeg", "complete.webp"]
+        if is_complete_file:
             # ★ ป้องกัน process ซ้ำ: เช็ค mtime ว่าเป็นไฟล์ใหม่จริงๆ
             if not self._processing_lock.acquire(blocking=False):
                 print("[Watcher] Already processing, skipping duplicate trigger")
@@ -78,7 +79,7 @@ class DownloadHandler(FileSystemEventHandler):
                 )
                 
                 # ไฟล์ผลลัพธ์อยู่ที่ Desktop เสมอ
-                output_name = "complete_bot.png" if filename.lower() == "complete_bot.png" else "complete.png"
+                output_name = "complete_bot.png" if "complete_bot" in filename.lower() else "complete.png"
                 target_path = os.path.join(DESKTOP_PATH, output_name)
                 global last_exported_path
                 last_exported_path = target_path
@@ -88,7 +89,7 @@ class DownloadHandler(FileSystemEventHandler):
                 export_event.set()
                 export_event.clear()
                 
-                # ★ ลบ complete.png ใน Downloads หลัง process เสร็จ
+                # ★ ลบ complete.* ใน Downloads หลัง process เสร็จ
                 # เพื่อป้องกัน watcher หยิบภาพเก่าที่มีกรอบเขียวจาก Desktop/Downloads ย้อนกลับมาใช้
                 # ★ chrome_hub mode: ไม่ลบต้นฉบับ
                 if not skip_delete:
@@ -119,7 +120,8 @@ class DesktopHandler(FileSystemEventHandler):
     def _handle(self, event):
         if event.is_directory: return
         filename = os.path.basename(event.src_path)
-        if filename.lower() == "complete.png":
+        fname_lower = filename.lower()
+        if (fname_lower.startswith("complete") and fname_lower.endswith((".png", ".jpg", ".jpeg", ".webp"))) or fname_lower in ["complete.png", "complete_bot.png", "complete.jpg", "complete.jpeg", "complete.webp"]:
             time.sleep(1) # wait for file write
             global last_exported_path
             last_exported_path = event.src_path
@@ -172,17 +174,17 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                             "shortname": f,
                             "mtime": os.path.getmtime(full_path)
                         })
-                # Also include Desktop\complete.png if exists
-                desktop_complete = os.path.join(DESKTOP_PATH, "complete.png")
-                if os.path.exists(desktop_complete):
-                    # Check if already in list (avoid duplicate)
-                    already = any(f['filename'] == desktop_complete for f in files)
-                    if not already:
-                        files.append({
-                            "filename": desktop_complete,
-                            "shortname": "📍 complete.png (Desktop)",
-                            "mtime": os.path.getmtime(desktop_complete)
-                        })
+                # Also include Desktop complete image if exists (.png, .jpg, .jpeg, .webp)
+                for ext in ['.png', '.jpg', '.jpeg', '.webp']:
+                    desktop_complete = os.path.join(DESKTOP_PATH, f"complete{ext}")
+                    if os.path.exists(desktop_complete):
+                        already = any(f['filename'] == desktop_complete for f in files)
+                        if not already:
+                            files.append({
+                                "filename": desktop_complete,
+                                "shortname": f"📍 complete{ext} (Desktop)",
+                                "mtime": os.path.getmtime(desktop_complete)
+                            })
                 self.wfile.write(json.dumps(files[:12]).encode())
             except:
                 self.wfile.write(json.dumps([]).encode())
