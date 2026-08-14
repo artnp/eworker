@@ -2541,57 +2541,64 @@ async function getClipboardText() {
 
 let silentModeActive = false;
 
-// restore window แล้ว bring to front (ใช้แทน bringToFront() ตรง ๆ เพราะโดน minimize ไม่ทำงาน)
+// bring tab to front (และ restore window เฉพาะกรณีจำเป็นต้องให้ User ดู/ล็อกอิน)
 async function bringWindowToFront(page, force = false) {
   await page.bringToFront().catch(() => {});
-  if (silentModeActive && !force) return;
-  await minimizeBrowser(false).catch(() => {});
-  await sleep(300);
+  if (isBrowserHidden && !force) return;
+  if (!isBrowserHidden || force) {
+    await setBrowserVisibility(true).catch(() => {});
+    await sleep(300);
+  }
 }
 
-// minimize/restore ผ่าน PowerShell ShowWindow (SW_MINIMIZE = 6, SW_RESTORE = 9)
-async function minimizeBrowser(minimize = true) {
-  const tempPs1 = path.join(os.tmpdir(), `min_chrome_${Date.now()}.ps1`);
+// เลื่อนหน้าต่างไประหว่างพิกัดในจอ (100, 100) และนอกจอ (10000, 10000)
+async function setBrowserVisibility(show = true) {
+  const tempPs1 = path.join(os.tmpdir(), `toggle_chrome_${Date.now()}.ps1`);
   try {
     const psLines = [
       'Add-Type -TypeDefinition @"',
       '  using System;',
       '  using System.Runtime.InteropServices;',
       '  public class Win32 {',
+      '    [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);',
       '    [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);',
       '    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);',
       '  }',
       '"@',
       "Get-CimInstance Win32_Process -Filter \"Name = 'chrome.exe' or Name = 'msedge.exe' or Name = 'chromium.exe'\" | Where-Object { \$_.CommandLine -like '*Facebook_Bot*user_data*' } | ForEach-Object { Get-Process -Id \$_.ProcessId } | Where-Object { \$_.MainWindowHandle -ne 0 } | ForEach-Object {",
-      minimize ? '  [Win32]::ShowWindow($_.MainWindowHandle, 6) | Out-Null'
-               : '  [Win32]::ShowWindow($_.MainWindowHandle, 9) | Out-Null; [Win32]::SetForegroundWindow($_.MainWindowHandle) | Out-Null',
+      show ? '  [Win32]::ShowWindow($_.MainWindowHandle, 9) | Out-Null; [Win32]::SetWindowPos($_.MainWindowHandle, [IntPtr]::Zero, 100, 100, 1280, 800, 0x0040) | Out-Null; [Win32]::SetForegroundWindow($_.MainWindowHandle) | Out-Null'
+           : '  [Win32]::ShowWindow($_.MainWindowHandle, 4) | Out-Null; [Win32]::SetWindowPos($_.MainWindowHandle, [IntPtr]::Zero, 10000, 10000, 1280, 800, 0x0054) | Out-Null',
       '}',
     ];
     fs.writeFileSync(tempPs1, psLines.filter(Boolean).join('\r\n'), 'utf8');
     await execPromise(`cmd /c powershell -NoProfile -ExecutionPolicy Bypass -File "${tempPs1}"`, { timeout: 5000 }).catch(() => {});
     try { fs.unlinkSync(tempPs1); } catch (_) {}
-    return { success: true };
+    isBrowserHidden = !show;
+    return { success: true, hidden: isBrowserHidden };
   } catch (e) {
     try { fs.unlinkSync(tempPs1); } catch (_) {}
     return { success: false, message: e.message };
   }
 }
 
-// ฟังก์ชันควบคุมการแสดง/ซ่อนหน้าต่าง browser (ใช้ ShowWindowAsync จริง)
+// Alias สำหรับ minimizeBrowser
+async function minimizeBrowser(minimize = true) {
+  return setBrowserVisibility(!minimize);
+}
+
+// ฟังก์ชันควบคุมการแสดง/ซ่อนหน้าต่าง browser
 async function toggleBrowserVisibility() {
   if (!browserContext) return { success: false, message: 'Browser not running' };
   
   try {
     if (isBrowserHidden) {
-      await minimizeBrowser(false); // restore
+      await setBrowserVisibility(true); // show
       const pages = browserContext.pages();
-      if (pages.length > 0) await pages[0].bringToFront();
-      isBrowserHidden = false;
+      if (pages.length > 0) await pages[0].bringToFront().catch(() => {});
       return { success: true, message: 'Browser shown', hidden: false };
     } else {
-      await minimizeBrowser(true); // minimize
-      isBrowserHidden = true;
-      return { success: true, message: 'Browser hidden', hidden: true };
+      await setBrowserVisibility(false); // hide offscreen
+      return { success: true, message: 'Browser hidden offscreen', hidden: true };
     }
   } catch (e) {
     return { success: false, message: e.message };
@@ -2711,19 +2718,23 @@ async function pauseOnError(isDebugPause, message) {
   }, MAX_RUNTIME_MS);
 
   const extensionPath = path.join(__dirname, 'For Edge Addon');
+  // ถ้าเป็น silentMode (บอททำงานอัตโนมัติ) ให้เปิดพิกัดนอกจอ 10000,10000 ตั้งแต่เริ่ม เพื่อไม่ให้หน้าต่างกะพริบ
+  const defaultWinPos = silentMode ? '--window-position=10000,10000' : '--window-position=100,100';
   const browserArgs = [
     '--disable-blink-features=AutomationControlled',
     '--disable-dev-shm-usage',
     '--no-sandbox',
     '--disable-web-security',
-    '--disable-features=IsolateOrigins,site-per-process',
+    '--disable-features=CalculateNativeWinOcclusion,IsolateOrigins,site-per-process',
     `--load-extension=${extensionPath}`,
     `--disable-extensions-except=${extensionPath}`,
-    '--window-size=1024,650',  // ปรับความสูงลงเพื่อให้วาง Status Widget ต่อท้ายด้านล่างได้พอดี
-    '--window-position=2816,312',  // มุมล่างขวาจอสอง (x=1920+896, y=1080-768)
+    '--window-size=1280,800',
+    defaultWinPos,
     '--disable-backgrounding-occluded-windows',
     '--disable-renderer-backgrounding',
     '--disable-background-timer-throttling',
+    '--disable-ipc-flooding-protection',
+    '--disable-hang-monitor',
     '--hide-crash-restore-bubble',
     '--disable-session-crashed-bubble',
     '--disable-infobars',
@@ -2759,11 +2770,19 @@ async function pauseOnError(isDebugPause, message) {
     const context = await chromium.launchPersistentContext(USER_DATA_DIR, {
       headless: isHeadless,
       viewport: null,
-      args: [...browserArgs, '--disable-background-timer-throttling'],
+      args: browserArgs,
     });
 
-    console.log('Browser launched successfully.');
-    isBrowserHidden = false;
+    console.log(`Browser launched successfully. Mode: ${silentMode ? 'Silent/Off-Screen' : 'Visible Window'}`);
+    browserContext = context;
+    isBrowserHidden = silentMode;
+    silentModeActive = silentMode;
+
+    try {
+      startControlServer();
+    } catch (e) {
+      console.warn('[ControlServer] Failed to start:', e.message);
+    }
 
     // ✅ ตรวจจับเมื่อ Playwright browser ปิดตัว/ขัดข้อง — force exit ทันที
     context.on('disconnected', () => {
@@ -2970,7 +2989,7 @@ async function pauseOnError(isDebugPause, message) {
         console.warn('⚠️ [Gemini Login Check] พบว่าบัญชี Gemini ไม่ได้ลงชื่อเข้าใช้ (พบปุ่ม "ลงชื่อเข้าใช้")!');
         showWindowsNotification('Facebook Bot ⚠️', 'บัญชี Gemini ไม่ได้ลงชื่อเข้าใช้! กรุณา Login ก่อน', 'Warning');
         await reportStatus(0, '⚠️ บัญชี Gemini ไม่ได้ Login', 'พบปุ่ม "ลงชื่อเข้าใช้" (Gemini ไม่ได้ login) กรุณา Login ก่อนบอททำงานต่อ', 'warn');
-        await bringWindowToFront(geminiPage).catch(() => {});
+        await bringWindowToFront(geminiPage, true).catch(() => {});
 
         let waitCount = 0;
         while (await checkIsGeminiLoggedOut(geminiPage)) {
@@ -2982,6 +3001,9 @@ async function pauseOnError(isDebugPause, message) {
           await sleep(5000);
         }
         console.log('✅ [Gemini Pre-check] ลงชื่อเข้าใช้ Gemini สำเร็จ!');
+        if (silentModeActive) {
+          await setBrowserVisibility(false).catch(() => {});
+        }
         await reportStatus(2, '✅ ลงชื่อเข้าใช้ Gemini แล้ว', 'พร้อมเริ่มทำงานบอท Facebook', 'info');
         await sleep(1500);
       } else {
