@@ -143,6 +143,22 @@ $lblTitle.AutoSize = $true
 $lblTitle.Location = New-Object System.Drawing.Point(10, 6)
 $panelHeader.Controls.Add($lblTitle)
 
+# Toggle Browser View Button on Widget (👁 Show / Hide Offscreen Browser)
+$btnToggleBrowser = New-Object System.Windows.Forms.Button
+$btnToggleBrowser.Text = "👁"
+$btnToggleBrowser.Size = New-Object System.Drawing.Size(26, 22)
+$btnToggleBrowser.Location = New-Object System.Drawing.Point(326, 4)
+$btnToggleBrowser.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
+$btnToggleBrowser.FlatAppearance.BorderSize = 0
+$btnToggleBrowser.ForeColor = [System.Drawing.Color]::FromArgb(180, 180, 180)
+$btnToggleBrowser.Cursor = [System.Windows.Forms.Cursors]::Hand
+$btnToggleBrowser.add_Click({
+    try {
+        Invoke-RestMethod -Uri "http://127.0.0.1:12122/toggle-browser" -Method POST -TimeoutSec 2 -ErrorAction SilentlyContinue | Out-Null
+    } catch {}
+})
+$panelHeader.Controls.Add($btnToggleBrowser)
+
 # Close Button on Widget (Exits entire bot process)
 $btnCloseWidget = New-Object System.Windows.Forms.Button
 $btnCloseWidget.Text = "✕"
@@ -254,19 +270,20 @@ function Update-StatusUI ($data) {
     }
 }
 
-# --- Timer to Sync Widget Position Right Under Chrome Window & Read status.json ---
+# --- Timer to Sync Widget Position & Read status.json ---
 $script:lastReadTimestamp = 0
 $script:nodeProcessCheckCount = 0
 $timer = New-Object System.Windows.Forms.Timer
 $timer.Interval = 500
 $timer.add_Tick({
-    # Align widget directly below Chrome's bottom-right edge
+    # Align widget directly below Chrome's bottom-right edge IF Chrome is on visible screen
     try {
         $hwnds = Get-PlaywrightBrowserHwnds
         if ($hwnds.Count -gt 0) {
             $rect = New-Object RECT
             if ([Win32Gui]::GetWindowRect($hwnds[0], [ref]$rect)) {
-                if ($rect.Right -gt $rect.Left -and $rect.Bottom -gt $rect.Top) {
+                $isChromeVisibleOnScreen = ($rect.Left -ge -100 -and $rect.Left -lt 5000 -and $rect.Top -ge -100 -and $rect.Top -lt 5000 -and ($rect.Right - $rect.Left) -gt 100)
+                if ($isChromeVisibleOnScreen) {
                     $dockX = $rect.Right - 390
                     $dockY = $rect.Bottom + 2
                     $screen = [System.Windows.Forms.Screen]::FromHandle($hwnds[0])
@@ -275,6 +292,15 @@ $timer.add_Tick({
                     }
                     $newLoc = New-Object System.Drawing.Point($dockX, $dockY)
                     if ($form.Location -ne $newLoc) { $form.Location = $newLoc }
+                } else {
+                    # Chrome is offscreen: keep status widget at bottom-right corner of target screen
+                    $screens = [System.Windows.Forms.Screen]::AllScreens
+                    $targetScreen = if ($screens.Count -gt 1) { $screens[1] } else { $screens[0] }
+                    $wa = $targetScreen.WorkingArea
+                    $defX = $wa.Right - 390 - 20
+                    $defY = $wa.Bottom - 140 - 20
+                    $defLoc = New-Object System.Drawing.Point($defX, $defY)
+                    if ($form.Location -ne $defLoc) { $form.Location = $defLoc }
                 }
             }
         }
