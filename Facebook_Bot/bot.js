@@ -652,7 +652,6 @@ async function runPythonImageEditor(imagePath, postText = '') {
   const outputName = isBotMode ? 'complete_bot.png' : 'complete.png';
   const desktopOutputPath = path.join(process.env.USERPROFILE, 'Desktop', outputName);
 
-
   try {
     const pythonScript = 'D:\\Github\\eworker\\screenshot_donate.py';
     
@@ -730,20 +729,10 @@ function generateSmartPrompt(postText) {
 async function processWithGemini(page, imagePaths, postText, geminiUrl) {
   try {
     await bringWindowToFront(page).catch(() => { });
-    const currentUrl = page.url();
-    // ตรวจสอบว่าเป็นหน้าหลักแบบสะอาด (ไม่มีรหัสแชทต่อท้าย) หรือไม่
-    // URL สะอาดจะเป็น https://gemini.google.com/u/X/app หรือมี / หรือ query parameter ต่อท้ายเท่านั้น
-    const cleanUrlRegex = new RegExp(`^${geminiUrl.replace(/\//g, '\\/')}\\/?(\\?.*)?$`);
-    const isCleanUrl = cleanUrlRegex.test(currentUrl);
-
-    if (!isCleanUrl) {
-      console.log(`Navigating to clean Gemini page: ${geminiUrl}`);
-      await page.goto(geminiUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
-      await sleep(2000); // รอเพิ่มอีกนิดให้หน้าแชทใหม่โหลดเสร็จ
-    } else {
-      console.log(`Already on clean Gemini page: ${currentUrl}, skipping navigation.`);
-      await sleep(200);
-    }
+    // เปิดหน้าแชทใหม่เสมอสำหรับทุกโพสต์ เพื่อไม่ให้จำประวัติหรือดึงรูปเก่าจากโพสต์ก่อนหน้า
+    console.log(`Navigating to clean Gemini page: ${geminiUrl}`);
+    await page.goto(geminiUrl, { waitUntil: 'domcontentloaded', timeout: 25000 });
+    await sleep(2000);
     const inputSelectors = [
       'div.ql-editor[role="textbox"]',
       'div.ql-editor.textarea',
@@ -926,7 +915,8 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
 
     while (!captured && retryCount <= maxRetries) {
       try {
-        const fastDl = page.locator('.fast-dl-button').first();
+        // ใช้ .last() เสมอเพื่อจับปุ่มของภาพล่าสุดที่เพิ่งสร้างเสร็จ
+        const fastDl = page.locator('.fast-dl-button').last();
         if (await fastDl.isVisible({ timeout: 12000 }).catch(() => false)) {
           console.log('[FastDL] Image ready, checking for choice buttons...');
           captured = true;
@@ -1110,13 +1100,13 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
 
         if (choiceButtons >= 2) {
           hasChoice = true;
-          console.log(`[Choice] ✅ Found ${choiceButtons} image choices. Selecting first image...`);
+          console.log(`[Choice] ✅ Found ${choiceButtons} image choices. Selecting latest first image...`);
           
-          // คลิกปุ่มแรก (Select image 1)
-          const firstChoice = page.locator('button[aria-label*="Select image 1"], button[aria-label*="เลือกภาพ 1"]').first();
+          // คลิกปุ่มแรกของข้อความล่าสุด
+          const firstChoice = page.locator('button[aria-label*="Select image 1"], button[aria-label*="เลือกภาพ 1"]').last();
           if (await firstChoice.count() > 0) {
             await firstChoice.click({ force: true });
-            console.log('[Choice] ✅ Clicked first image choice');
+            console.log('[Choice] ✅ Clicked first image choice of latest message');
             await sleep(2000); // รอให้ Gemini โหลดภาพที่เลือก
           }
         } else {
@@ -1185,9 +1175,10 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
     }
 
     const dataUrl = await page.evaluate(() => {
-      // Try parent of Fast Download button first
-      const btn = document.querySelector('.fast-dl-button');
-      if (btn) {
+      // ดึงจากปุ่ม Fast Download ล่าสุด (ปุ่มสุดท้ายในหน้า)
+      const allBtns = Array.from(document.querySelectorAll('.fast-dl-button'));
+      if (allBtns.length > 0) {
+        const btn = allBtns[allBtns.length - 1]; // ปุ่มล่าสุด
         const container = btn.parentElement;
         if (container) {
           const img = container.querySelector('img');
@@ -1202,15 +1193,17 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
           }
         }
       }
-      // Fallback: find largest image on page
-      const imgs = Array.from(document.querySelectorAll('img'));
+      // Fallback: ค้นหารูปภาพจากล่างขึ้นบน (ภาพล่าสุดที่เพิ่งถูกสร้าง)
+      const imgs = Array.from(document.querySelectorAll('img')).reverse();
       const canvas = document.createElement('canvas');
       for (const img of imgs) {
         if (img.naturalWidth > 200 && img.naturalHeight > 200 && !img.src.includes('emoji') && !img.closest('nav, [role="navigation"]')) {
-          canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
-          canvas.getContext('2d').drawImage(img, 0, 0);
-          return canvas.toDataURL('image/png');
+          try {
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            canvas.getContext('2d').drawImage(img, 0, 0);
+            return canvas.toDataURL('image/png');
+          } catch (e) {}
         }
       }
       return null;
@@ -2566,8 +2559,8 @@ async function setBrowserVisibility(show = true) {
       '  }',
       '"@',
       "Get-CimInstance Win32_Process -Filter \"Name = 'chrome.exe' or Name = 'msedge.exe' or Name = 'chromium.exe'\" | Where-Object { \$_.CommandLine -like '*Facebook_Bot*user_data*' } | ForEach-Object { Get-Process -Id \$_.ProcessId } | Where-Object { \$_.MainWindowHandle -ne 0 } | ForEach-Object {",
-      show ? '  [Win32]::ShowWindow($_.MainWindowHandle, 9) | Out-Null; [Win32]::SetWindowPos($_.MainWindowHandle, [IntPtr]::Zero, 100, 100, 1280, 800, 0x0040) | Out-Null; [Win32]::SetForegroundWindow($_.MainWindowHandle) | Out-Null'
-           : '  [Win32]::ShowWindow($_.MainWindowHandle, 4) | Out-Null; [Win32]::SetWindowPos($_.MainWindowHandle, [IntPtr]::Zero, 10000, 10000, 1280, 800, 0x0054) | Out-Null',
+      show ? '  [Win32]::ShowWindow($_.MainWindowHandle, 9) | Out-Null; [Win32]::SetWindowPos($_.MainWindowHandle, [IntPtr]::Zero, 2020, 100, 1280, 800, 0x0040) | Out-Null; [Win32]::SetForegroundWindow($_.MainWindowHandle) | Out-Null'
+           : '  [Win32]::ShowWindow($_.MainWindowHandle, 4) | Out-Null; [Win32]::SetWindowPos($_.MainWindowHandle, [IntPtr]1, 3800, 1000, 1280, 800, 0x0054) | Out-Null',
       '}',
     ];
     fs.writeFileSync(tempPs1, psLines.filter(Boolean).join('\r\n'), 'utf8');
@@ -2718,8 +2711,8 @@ async function pauseOnError(isDebugPause, message) {
   }, MAX_RUNTIME_MS);
 
   const extensionPath = path.join(__dirname, 'For Edge Addon');
-  // ถ้าเป็น silentMode (บอททำงานอัตโนมัติ) ให้เปิดพิกัดนอกจอ 10000,10000 ตั้งแต่เริ่ม เพื่อไม่ให้หน้าต่างกะพริบ
-  const defaultWinPos = silentMode ? '--window-position=10000,10000' : '--window-position=100,100';
+  // ถ้าเป็น silentMode ให้เปิดหลบมุมขวาล่างของจอ 2 (3800,1000) เพื่อให้ปุ่มอยู่ Taskbar จอ 2 และไม่บังหน้าจอ
+  const defaultWinPos = silentMode ? '--window-position=3800,1000' : '--window-position=2020,100';
   const browserArgs = [
     '--disable-blink-features=AutomationControlled',
     '--disable-dev-shm-usage',
@@ -2777,6 +2770,12 @@ async function pauseOnError(isDebugPause, message) {
     browserContext = context;
     isBrowserHidden = silentMode;
     silentModeActive = silentMode;
+
+    if (silentMode) {
+      setTimeout(() => {
+        setBrowserVisibility(false).catch(() => {});
+      }, 500);
+    }
 
     try {
       startControlServer();
@@ -3093,9 +3092,13 @@ async function pauseOnError(isDebugPause, message) {
         await hideProcessedPosts(fbPage, processedPostIds);
 
         currentPostIndex = postsProcessedCount + 1;
-        const basePct = Math.round((postsProcessedCount / AUTO_GROUPS_MAX) * 100);
+        const calcProgress = (stepRatio = 0) => {
+          const max = AUTO_GROUPS_MAX || 10;
+          return Math.min(100, Math.max(0, Math.round(((postsProcessedCount + stepRatio) / max) * 100)));
+        };
+
         console.log(`\n📋 Scanning feed... Posts processed: ${postsProcessedCount}/${AUTO_GROUPS_MAX}`);
-        await reportStatus(basePct + 2, `สแกนหาโพสต์ที่ ${currentPostIndex}/${AUTO_GROUPS_MAX}...`, 'กำลังเลื่อนหาโพสต์ถัดไปใน Feed', 'info', currentPostIndex);
+        await reportStatus(calcProgress(0.05), `สแกนหาโพสต์ที่ ${currentPostIndex}/${AUTO_GROUPS_MAX}...`, 'กำลังเลื่อนหาโพสต์ถัดไปใน Feed', 'info', currentPostIndex);
 
         await closeFacebookModal(fbPage);
 
@@ -3167,7 +3170,7 @@ async function pauseOnError(isDebugPause, message) {
           // เพิ่มเงื่อนไข: หากโพสต์ไม่มีข้อความ ให้ข้ามโพสต์นี้ไปเลย
           if (!postText || postText.trim().length === 0) {
             console.log("--> Skipped: Post has no text content.");
-            await reportStatus(basePct + 2, `กำลังข้ามโพสต์ที่ ${currentPostIndex}...`, `⚠️ โพสต์ไม่มีข้อความ -> ข้าม`, 'warn', currentPostIndex);
+            await reportStatus(calcProgress(0.05), `กำลังข้ามโพสต์ที่ ${currentPostIndex}...`, `⚠️ โพสต์ไม่มีข้อความ -> ข้าม`, 'warn', currentPostIndex);
             await article.evaluate(el => {
               el.style.display = 'none';
               el.setAttribute('data-bot-processed', 'true');
@@ -3183,7 +3186,7 @@ async function pauseOnError(isDebugPause, message) {
           const filterResult = await shouldFilterPost(article, botProfileName);
           if (filterResult.action === 'hide' || filterResult.action === 'spam') {
             console.log(`--> Skipped: caught by shouldFilterPost. Action: ${filterResult.action}. Reason: ${filterResult.reason}`);
-            await reportStatus(basePct + 2, `กำลังข้ามโพสต์ที่ ${currentPostIndex}...`, `⚠️ ${filterResult.reason} -> ข้ามไปทำอันใหม่`, 'warn', currentPostIndex);
+            await reportStatus(calcProgress(0.05), `กำลังข้ามโพสต์ที่ ${currentPostIndex}...`, `⚠️ ${filterResult.reason} -> ข้ามไปทำอันใหม่`, 'warn', currentPostIndex);
             await article.evaluate(el => {
               el.style.display = 'none';
               el.setAttribute('data-bot-processed', 'true');
@@ -3206,7 +3209,7 @@ async function pauseOnError(isDebugPause, message) {
           const imageUrls = imageUrlsForId; // already fetched above
           if (imageUrls.length === 0) {
             console.log('--> Skipped: No large images found.');
-            await reportStatus(basePct + 2, `ข้ามโพสต์ที่ ${currentPostIndex}`, '⚠️ ไม่พบรูปภาพในโพสต์ -> ข้ามไปอันใหม่', 'warn', currentPostIndex);
+            await reportStatus(calcProgress(0.05), `ข้ามโพสต์ที่ ${currentPostIndex}`, '⚠️ ไม่พบรูปภาพในโพสต์ -> ข้ามไปอันใหม่', 'warn', currentPostIndex);
             await article.evaluate(el => {
               el.style.display = 'none';
               el.setAttribute('data-bot-processed', 'true');
@@ -3218,7 +3221,7 @@ async function pauseOnError(isDebugPause, message) {
           lastPostFoundTime = Date.now();
 
           console.log(`Processing ${imageUrls.length} images...`);
-          await reportStatus(basePct + 5, `พบโพสต์ที่ ${currentPostIndex} (${imageUrls.length} ภาพ)`, 'กำลังดาวน์โหลดรูปภาพจาก Facebook...', 'info', currentPostIndex);
+          await reportStatus(calcProgress(0.15), `พบโพสต์ที่ ${currentPostIndex} (${imageUrls.length} ภาพ)`, 'กำลังดาวน์โหลดรูปภาพจาก Facebook...', 'info', currentPostIndex);
 
           // ⏸️ DEBUG PAUSE 2: ตรวจสอบโพสต์ที่จะประมวลผลก่อนส่ง Gemini
           if (isDebugPause) {
@@ -3244,7 +3247,7 @@ async function pauseOnError(isDebugPause, message) {
 
             if (tempInputPaths.length === 0) {
               console.error('❌ Failed to download any images for post.');
-              await reportStatus(basePct, `โหลดรูปไม่สำเร็จ (โพสต์ ${currentPostIndex})`, '❌ ไม่สามารถดาวน์โหลดรูปภาพจาก FB ได้', 'error', currentPostIndex);
+              await reportStatus(calcProgress(0), `โหลดรูปไม่สำเร็จ (โพสต์ ${currentPostIndex})`, '❌ ไม่สามารถดาวน์โหลดรูปภาพจาก FB ได้', 'error', currentPostIndex);
               await pauseOnError(isDebugPause, 'โหลดภาพจาก Facebook ไม่ได้');
               await article.evaluate(el => {
                 el.style.display = 'none';
@@ -3256,7 +3259,7 @@ async function pauseOnError(isDebugPause, message) {
             const geminiUrl = getNextGeminiUrl();
             if (!geminiUrl) {
               console.error('No Gemini URL available.');
-              await reportStatus(basePct, `ไม่มี Gemini URL (โพสต์ ${currentPostIndex})`, '❌ ไม่มีบัญชี Gemini ที่พร้อมใช้งาน', 'error', currentPostIndex);
+              await reportStatus(calcProgress(0), `ไม่มี Gemini URL (โพสต์ ${currentPostIndex})`, '❌ ไม่มีบัญชี Gemini ที่พร้อมใช้งาน', 'error', currentPostIndex);
               await pauseOnError(isDebugPause, 'ไม่มี Gemini URL ที่ใช้ได้');
               await article.evaluate(el => {
                 el.style.display = 'none';
@@ -3265,11 +3268,11 @@ async function pauseOnError(isDebugPause, message) {
               continue;
             }
 
-            await reportStatus(basePct + 15, `ส่งภาพให้ Gemini AI (โพสต์ ${currentPostIndex})...`, `กำลังประมวลผลสร้างรูปภาพใหม่ด้วย Gemini AI`, 'info', currentPostIndex);
+            await reportStatus(calcProgress(0.40), `ส่งภาพให้ Gemini AI (โพสต์ ${currentPostIndex})...`, `กำลังประมวลผลสร้างรูปภาพใหม่ด้วย Gemini AI`, 'info', currentPostIndex);
             geminiResult = await processWithGemini(geminiPage, tempInputPaths, postText, geminiUrl);
             if (!geminiResult) {
               console.error('Gemini processing failed or refused.');
-              await reportStatus(basePct, `Gemini ปฏิเสธ/ล้มเหลว (โพสต์ ${currentPostIndex})`, '⚠️ กด Like แล้วข้ามไปโพสต์ใหม่...', 'warn', currentPostIndex);
+              await reportStatus(calcProgress(0), `Gemini ปฏิเสธ/ล้มเหลว (โพสต์ ${currentPostIndex})`, '⚠️ กด Like แล้วข้ามไปโพสต์ใหม่...', 'warn', currentPostIndex);
               
               // ⚠️ กรณี Gemini ปฏิเสธ → กด Like แล้วข้าม
               await bringWindowToFront(fbPage).catch(() => { });
@@ -3292,11 +3295,11 @@ async function pauseOnError(isDebugPause, message) {
               await pauseForUser(`โหมด DEBUG — Gemini เสร็จแล้ว (${geminiResult})\nตรวจสอบภาพ แล้วกด Enter เพื่อให้ Python แต่งภาพต่อ`);
             }
 
-            await reportStatus(basePct + 35, `กำลังแต่งภาพด้วย Python (โพสต์ ${currentPostIndex})...`, 'ใส่โลโก้และปรับแต่งความสมบูรณ์ของภาพ', 'info', currentPostIndex);
+            await reportStatus(calcProgress(0.65), `กำลังแต่งภาพด้วย Python (โพสต์ ${currentPostIndex})...`, 'ใส่โลโก้และปรับแต่งความสมบูรณ์ของภาพ', 'info', currentPostIndex);
             pythonResult = await runPythonImageEditor(geminiResult, postText);
             if (!pythonResult) {
               console.error('Python image editing failed.');
-              await reportStatus(basePct, `Python แต่งภาพล้มเหลว (โพสต์ ${currentPostIndex})`, '⚠️ ข้ามไปโพสต์ใหม่...', 'warn', currentPostIndex);
+              await reportStatus(calcProgress(0), `Python แต่งภาพล้มเหลว (โพสต์ ${currentPostIndex})`, '⚠️ ข้ามไปโพสต์ใหม่...', 'warn', currentPostIndex);
               await pauseOnError(isDebugPause, 'Python แต่งภาพล้มเหลว');
               await article.evaluate(el => {
                 el.style.display = 'none';
@@ -3310,7 +3313,7 @@ async function pauseOnError(isDebugPause, message) {
               await pauseForUser(`โหมด DEBUG — Python แต่งภาพเสร็จแล้ว (${pythonResult})\nตรวจสอบภาพ แล้วกด Enter เพื่อโพสต์ comment บน Facebook`);
             }
 
-            await reportStatus(basePct + 55, `กำลังโพสต์คอมเมนต์ (โพสต์ ${currentPostIndex})...`, 'อัปโหลดภาพลงช่องแสดงความคิดเห็นบน Facebook', 'info', currentPostIndex);
+            await reportStatus(calcProgress(0.85), `กำลังโพสต์คอมเมนต์ (โพสต์ ${currentPostIndex})...`, 'อัปโหลดภาพลงช่องแสดงความคิดเห็นบน Facebook', 'info', currentPostIndex);
             await bringWindowToFront(fbPage).catch(() => { });
             // Extract post permalink ก่อนส่งให้ postComment (ใช้อ้างอิง comment URL)
             let postUrl = await getPostUrl(article).catch(() => null);
@@ -3335,7 +3338,7 @@ async function pauseOnError(isDebugPause, message) {
               await sleep(2000);
 
               // --- Share ผ่านโพสต์ในหน้าตัวเอง ---
-              await reportStatus(basePct + 75, `กำลังแชร์โพสต์ (โพสต์ ${currentPostIndex})...`, 'แชร์ผลงานไปยังหน้าโปรไฟล์หลัก', 'info', currentPostIndex);
+              await reportStatus(calcProgress(0.95), `กำลังแชร์โพสต์ (โพสต์ ${currentPostIndex})...`, 'แชร์ผลงานไปยังหน้าโปรไฟล์หลัก', 'info', currentPostIndex);
               await bringWindowToFront(fbPage).catch(() => { });
 
               // 🔒 Safety check: ห้ามแชร์ URL หน้าโปรไฟล์ตัวเองเด็ดขาด
@@ -3378,7 +3381,7 @@ async function pauseOnError(isDebugPause, message) {
               console.log(`Post #${postsProcessedCount} processed successfully!`);
             } else {
               console.log('Comment failed, marking as processed.');
-              await reportStatus(basePct, `โพสต์คอมเมนต์ไม่สำเร็จ (โพสต์ ${currentPostIndex})`, '❌ เกิดข้อผิดพลาดในการลงคอมเมนต์', 'error', currentPostIndex);
+              await reportStatus(calcProgress(0), `โพสต์คอมเมนต์ไม่สำเร็จ (โพสต์ ${currentPostIndex})`, '❌ เกิดข้อผิดพลาดในการลงคอมเมนต์', 'error', currentPostIndex);
               await pauseOnError(isDebugPause, 'Comment โพสต์ล้มเหลว');
             }
             await article.evaluate(el => {
@@ -3411,7 +3414,7 @@ async function pauseOnError(isDebugPause, message) {
       console.log(`Successfully completed ${postsProcessedCount} posts.`);
       console.log('============================================');
       
-      showWindowsNotification('Facebook Bot', `ทำรายการครบ ${postsProcessedCount}/10 สำเร็จ!`);
+      showWindowsNotification('Facebook Bot', `ทำรายการครบ ${postsProcessedCount}/${AUTO_GROUPS_MAX} สำเร็จ!`);
       
       console.log('Closing browser and process...');
       
@@ -3430,7 +3433,7 @@ async function pauseOnError(isDebugPause, message) {
         try { await execPromise('taskkill /F /IM chrome.exe', { timeout: 3000 }).catch(() => {}); } catch (e) {}
       }
       
-      reportStatus(100, '✅ บอททำงานครบ 10 โพสต์แล้ว', 'ปิดระบบเรียบร้อย', 'success', AUTO_GROUPS_MAX, 'exit');
+      reportStatus(100, `✅ บอททำงานครบ ${AUTO_GROUPS_MAX} โพสต์แล้ว`, 'ปิดระบบเรียบร้อย', 'success', AUTO_GROUPS_MAX, 'exit');
       console.log('✅ Bot finished. Exiting now.');
       process.exit(0);
     } else {
