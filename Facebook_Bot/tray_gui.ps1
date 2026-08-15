@@ -99,7 +99,7 @@ if ($hIcon -ne [IntPtr]::Zero) {
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "Facebook Bot Status"
 $form.Icon = $fbIcon
-$form.Size = New-Object System.Drawing.Size(390, 140)
+$form.Size = New-Object System.Drawing.Size(380, 78)
 $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::None
 $form.TopMost = $true
 $form.ShowInTaskbar = $false
@@ -111,8 +111,8 @@ $null = $form.Handle
 $screens = [System.Windows.Forms.Screen]::AllScreens
 $targetScreen = if ($screens.Count -gt 1) { $screens[1] } else { $screens[0] }
 $wa = $targetScreen.WorkingArea
-$posX = $wa.Right - 390 - 20
-$posY = $wa.Bottom - 140 - 20
+$posX = $wa.Right - 380 - 15
+$posY = $wa.Bottom - 78 - 15
 $form.StartPosition = [System.Windows.Forms.FormStartPosition]::Manual
 $form.Location = New-Object System.Drawing.Point($posX, $posY)
 
@@ -124,7 +124,7 @@ $form.Controls.Add($panelBorder)
 
 # Header Panel
 $panelHeader = New-Object System.Windows.Forms.Panel
-$panelHeader.Height = 32
+$panelHeader.Height = 22
 $panelHeader.Dock = [System.Windows.Forms.DockStyle]::Top
 $panelHeader.BackColor = [System.Drawing.Color]::FromArgb(24, 24, 37)
 
@@ -137,17 +137,17 @@ $panelHeader.add_MouseDown({
 
 $lblTitle = New-Object System.Windows.Forms.Label
 $lblTitle.Text = "ⓕ Facebook Bot Status"
-$lblTitle.Font = New-Object System.Drawing.Font("Segoe UI", 9.5, [System.Drawing.FontStyle]::Bold)
+$lblTitle.Font = New-Object System.Drawing.Font("Segoe UI", 8.5, [System.Drawing.FontStyle]::Bold)
 $lblTitle.ForeColor = [System.Drawing.Color]::White
 $lblTitle.AutoSize = $true
-$lblTitle.Location = New-Object System.Drawing.Point(10, 6)
+$lblTitle.Location = New-Object System.Drawing.Point(8, 3)
 $panelHeader.Controls.Add($lblTitle)
 
 # Toggle Browser View Button on Widget (👁 Show / Hide Offscreen Browser)
 $btnToggleBrowser = New-Object System.Windows.Forms.Button
 $btnToggleBrowser.Text = "👁"
-$btnToggleBrowser.Size = New-Object System.Drawing.Size(26, 22)
-$btnToggleBrowser.Location = New-Object System.Drawing.Point(326, 4)
+$btnToggleBrowser.Size = New-Object System.Drawing.Size(22, 18)
+$btnToggleBrowser.Location = New-Object System.Drawing.Point(326, 2)
 $btnToggleBrowser.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnToggleBrowser.FlatAppearance.BorderSize = 0
 $btnToggleBrowser.ForeColor = [System.Drawing.Color]::FromArgb(180, 180, 180)
@@ -162,8 +162,8 @@ $panelHeader.Controls.Add($btnToggleBrowser)
 # Close Button on Widget (Exits entire bot process)
 $btnCloseWidget = New-Object System.Windows.Forms.Button
 $btnCloseWidget.Text = "✕"
-$btnCloseWidget.Size = New-Object System.Drawing.Size(26, 22)
-$btnCloseWidget.Location = New-Object System.Drawing.Point(356, 4)
+$btnCloseWidget.Size = New-Object System.Drawing.Size(22, 18)
+$btnCloseWidget.Location = New-Object System.Drawing.Point(352, 2)
 $btnCloseWidget.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
 $btnCloseWidget.FlatAppearance.BorderSize = 0
 $btnCloseWidget.ForeColor = [System.Drawing.Color]::FromArgb(180, 180, 180)
@@ -177,16 +177,17 @@ $panelBorder.Controls.Add($panelHeader)
 # Status Text Label
 $lblStatus = New-Object System.Windows.Forms.Label
 $lblStatus.Text = "กำลังเริ่มต้นระบบ..."
-$lblStatus.Font = New-Object System.Drawing.Font("Segoe UI", 9.5, [System.Drawing.FontStyle]::Bold)
+$lblStatus.Font = New-Object System.Drawing.Font("Segoe UI", 8.5, [System.Drawing.FontStyle]::Bold)
 $lblStatus.ForeColor = [System.Drawing.Color]::FromArgb(79, 195, 247)
-$lblStatus.Location = New-Object System.Drawing.Point(12, 40)
-$lblStatus.Size = New-Object System.Drawing.Size(360, 22)
+$lblStatus.Location = New-Object System.Drawing.Point(8, 25)
+$lblStatus.Size = New-Object System.Drawing.Size(364, 16)
+$lblStatus.AutoEllipsis = $true
 $panelBorder.Controls.Add($lblStatus)
 
 # Progress Bar
 $progressBar = New-Object System.Windows.Forms.ProgressBar
-$progressBar.Location = New-Object System.Drawing.Point(12, 64)
-$progressBar.Size = New-Object System.Drawing.Size(315, 18)
+$progressBar.Location = New-Object System.Drawing.Point(8, 43)
+$progressBar.Size = New-Object System.Drawing.Size(318, 11)
 $progressBar.Minimum = 0
 $progressBar.Maximum = 100
 $progressBar.Value = 0
@@ -195,20 +196,21 @@ $panelBorder.Controls.Add($progressBar)
 # Percent Label
 $lblPercent = New-Object System.Windows.Forms.Label
 $lblPercent.Text = "0%"
-$lblPercent.Font = New-Object System.Drawing.Font("Segoe UI", 9, [System.Drawing.FontStyle]::Bold)
+$lblPercent.Font = New-Object System.Drawing.Font("Segoe UI", 8.0, [System.Drawing.FontStyle]::Bold)
 $lblPercent.ForeColor = [System.Drawing.Color]::White
-$lblPercent.Location = New-Object System.Drawing.Point(332, 64)
-$lblPercent.Size = New-Object System.Drawing.Size(45, 18)
+$lblPercent.Location = New-Object System.Drawing.Point(330, 41)
+$lblPercent.Size = New-Object System.Drawing.Size(44, 14)
 $lblPercent.TextAlign = [System.Drawing.ContentAlignment]::MiddleRight
 $panelBorder.Controls.Add($lblPercent)
 
 # Detail Label
 $lblDetail = New-Object System.Windows.Forms.Label
 $lblDetail.Text = "รอการเชื่อมต่อจาก Facebook Bot..."
-$lblDetail.Font = New-Object System.Drawing.Font("Segoe UI", 8.5)
+$lblDetail.Font = New-Object System.Drawing.Font("Segoe UI", 8.0)
 $lblDetail.ForeColor = [System.Drawing.Color]::FromArgb(186, 194, 222)
-$lblDetail.Location = New-Object System.Drawing.Point(12, 88)
-$lblDetail.Size = New-Object System.Drawing.Size(365, 45)
+$lblDetail.Location = New-Object System.Drawing.Point(8, 57)
+$lblDetail.Size = New-Object System.Drawing.Size(364, 16)
+$lblDetail.AutoEllipsis = $true
 $panelBorder.Controls.Add($lblDetail)
 
 function Stop-FacebookBotProcess {
@@ -284,11 +286,11 @@ $timer.add_Tick({
             if ([Win32Gui]::GetWindowRect($hwnds[0], [ref]$rect)) {
                 $isChromeVisibleOnScreen = ($rect.Left -ge -100 -and $rect.Left -lt 5000 -and $rect.Top -ge -100 -and $rect.Top -lt 5000 -and ($rect.Right - $rect.Left) -gt 100)
                 if ($isChromeVisibleOnScreen) {
-                    $dockX = $rect.Right - 390
+                    $dockX = $rect.Right - 380
                     $dockY = $rect.Bottom + 2
                     $screen = [System.Windows.Forms.Screen]::FromHandle($hwnds[0])
-                    if ($dockY + 140 -gt $screen.WorkingArea.Bottom) {
-                        $dockY = $screen.WorkingArea.Bottom - 140
+                    if ($dockY + 78 -gt $screen.WorkingArea.Bottom) {
+                        $dockY = $screen.WorkingArea.Bottom - 78
                     }
                     $newLoc = New-Object System.Drawing.Point($dockX, $dockY)
                     if ($form.Location -ne $newLoc) { $form.Location = $newLoc }
@@ -297,8 +299,8 @@ $timer.add_Tick({
                     $screens = [System.Windows.Forms.Screen]::AllScreens
                     $targetScreen = if ($screens.Count -gt 1) { $screens[1] } else { $screens[0] }
                     $wa = $targetScreen.WorkingArea
-                    $defX = $wa.Right - 390 - 20
-                    $defY = $wa.Bottom - 140 - 20
+                    $defX = $wa.Right - 380 - 15
+                    $defY = $wa.Bottom - 78 - 15
                     $defLoc = New-Object System.Drawing.Point($defX, $defY)
                     if ($form.Location -ne $defLoc) { $form.Location = $defLoc }
                 }
