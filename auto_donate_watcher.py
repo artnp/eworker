@@ -26,6 +26,8 @@ current_mode = 'hub'
 # คอนดิชั่นสำหรับแจ้งเตือน Frontend
 export_event = threading.Event()
 last_exported_path = ""
+ps_trigger_event = threading.Event()
+ps_trigger_data = {}
 
 # --- FILE HANDLER ---
 class DownloadHandler(FileSystemEventHandler):
@@ -87,7 +89,6 @@ class DownloadHandler(FileSystemEventHandler):
                 print(f"[Watcher] Done. Result: {target_path}")
                 # แจ้งเตือน Frontend ว่างานเสร็จแล้ว
                 export_event.set()
-                export_event.clear()
                 
                 # ★ ลบ complete.* ใน Downloads หลัง process เสร็จ
                 # เพื่อป้องกัน watcher หยิบภาพเก่าที่มีกรอบเขียวจาก Desktop/Downloads ย้อนกลับมาใช้
@@ -126,7 +127,6 @@ class DesktopHandler(FileSystemEventHandler):
             global last_exported_path
             last_exported_path = event.src_path
             export_event.set()
-            export_event.clear()
 
     def on_created(self, event):
         self._handle(event)
@@ -152,9 +152,25 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
             # จอดรอตรงนี้จนกว่าจะมีสัญญาณ (Timeout 60s เพื่อความปลอดภัย)
             was_set = export_event.wait(timeout=60)
             if was_set:
+                export_event.clear()
                 self.wfile.write(json.dumps({"status": "updated", "path": last_exported_path}).encode())
             else:
                 self.wfile.write(json.dumps({"status": "timeout", "path": last_exported_path}).encode())
+            return
+
+        if parsed_url.path == '/wait-for-ps-trigger':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            was_set = ps_trigger_event.wait(timeout=60)
+            if was_set:
+                ps_trigger_event.clear()
+                resp = {"status": "triggered"}
+                resp.update(ps_trigger_data)
+                self.wfile.write(json.dumps(resp).encode())
+            else:
+                self.wfile.write(json.dumps({"status": "timeout"}).encode())
             return
 
         if parsed_url.path == '/list-downloads':
@@ -193,6 +209,19 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
         if parsed_url.path == '/get-img':
             query = parse_qs(parsed_url.query)
             file_path = query.get('path', [None])[0]
+            if file_path:
+                file_path = file_path.replace('/', os.sep).replace('\\', os.sep)
+                if not os.path.exists(file_path):
+                    base = os.path.basename(file_path)
+                    candidates = [
+                        os.path.join(DOWNLOADS_PATH, base),
+                        os.path.join(DESKTOP_PATH, base),
+                        os.path.join(os.path.dirname(os.path.abspath(__file__)), base)
+                    ]
+                    for c in candidates:
+                        if os.path.exists(c):
+                            file_path = c
+                            break
             if file_path and os.path.exists(file_path):
                 self.send_response(200)
                 ext = file_path.lower().split('.')[-1]
@@ -204,6 +233,7 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                     self.wfile.write(f.read())
             else:
                 self.send_response(404)
+                self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
             return
 
@@ -245,6 +275,27 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_POST(self):
         parsed_url = urlparse(self.path)
+        if parsed_url.path == '/trigger-ps':
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            try:
+                data = json.loads(post_data)
+                global ps_trigger_data
+                ps_trigger_data = data
+                ps_trigger_event.set()
+                print(f"[Watcher] 📥 Received Photoshop Trigger: {data.get('prompt', '')[:40]}")
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": True}).encode())
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode())
+            return
+
         if parsed_url.path == '/save-image':
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
@@ -258,6 +309,18 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                     binary_data = base64.b64decode(encoded)
                     with open(target, 'wb') as f:
                         f.write(binary_data)
+
+                    if data.get('openPhotoshop'):
+                        import subprocess
+                        ps_path = r"C:\Program Files\Adobe\Adobe Photoshop 2023\Photoshop.exe"
+                        if os.path.exists(ps_path):
+                            subprocess.Popen([ps_path, target])
+                        else:
+                            try:
+                                os.startfile(target)
+                            except:
+                                pass
+
                     self.send_response(200)
                     self.send_header('Content-type', 'application/json')
                     self.send_header('Access-Control-Allow-Origin', '*')
