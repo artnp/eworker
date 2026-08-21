@@ -824,6 +824,11 @@
             box-shadow: 0 2px 10px rgba(26, 115, 232, 0.35);
         }
 
+        .mode-tab-btn.active.faceswap-active {
+            background: linear-gradient(135deg, #e84118, #ff4757);
+            box-shadow: 0 2px 12px rgba(255, 71, 87, 0.45);
+        }
+
         .mode-tab-btn.active.photopea-active {
             background: linear-gradient(135deg, #0984e3, #00cec9);
             box-shadow: 0 2px 12px rgba(0, 206, 201, 0.4);
@@ -1127,6 +1132,75 @@
             color: #ffffff;
             border-color: transparent;
         }
+
+        /* --- Face Swap Mode Styles --- */
+        .fs-tool-btn {
+            padding: 5px 12px;
+            border-radius: 8px;
+            border: 1px solid #dfe4ea;
+            background: #f1f2f6;
+            color: #2f3542;
+            font-size: 0.74rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .fs-tool-btn:hover {
+            background: #e4e7eb;
+            border-color: #ced6e0;
+            transform: translateY(-1px);
+        }
+
+        .fs-tool-btn.primary {
+            background: linear-gradient(135deg, #ff4757, #e84118);
+            color: #ffffff;
+            border: none;
+            box-shadow: 0 2px 8px rgba(255, 71, 87, 0.35);
+        }
+
+        .fs-tool-btn.primary:hover {
+            filter: brightness(1.1);
+        }
+
+        .fs-tool-btn.danger {
+            color: #ff4757;
+            border-color: rgba(255, 71, 87, 0.3);
+            background: rgba(255, 71, 87, 0.06);
+        }
+
+        .fs-tool-btn.danger:hover {
+            background: #ff4757;
+            color: #ffffff;
+            border-color: transparent;
+        }
+
+        .faceswap-quick-tools {
+            display: none;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 100%;
+        }
+
+        .faceswap-quick-tools .tag-item {
+            border-color: #ff4757;
+            color: #ff4757;
+            background: rgba(255, 71, 87, 0.08);
+            font-size: 0.8rem;
+            padding: 6px 14px;
+        }
+
+        .faceswap-quick-tools .tag-item:hover {
+            background: linear-gradient(135deg, #ff4757, #e84118);
+            color: #ffffff;
+            border-color: transparent;
+        }
     </style>
 </head>
 
@@ -1148,6 +1222,15 @@
                         <path d="M1 6.13L16 6a2 2 0 0 1 2 2v15" />
                     </svg>
                     <span>โหมดปกติ</span>
+                </button>
+                <button id="btn-mode-faceswap" type="button" class="mode-tab-btn"
+                    onclick="switchStudioMode('faceswap')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    <span>👤 เปลี่ยนหน้า</span>
                 </button>
                 <button id="btn-mode-photopea" type="button" class="mode-tab-btn"
                     onclick="switchStudioMode('photopea')">
@@ -1197,12 +1280,12 @@
                 <span>GROK</span>
             </label>
             <label class="model-checkbox">
-                <input type="checkbox" name="model" value="COPILOT">
-                <span>COPILOT</span>
-            </label>
-            <label class="model-checkbox">
                 <input type="checkbox" name="model" value="META">
                 <span>META</span>
+            </label>
+            <label class="model-checkbox">
+                <input type="checkbox" name="model" value="COPILOT">
+                <span>COPILOT</span>
             </label>
             |
             <button id="btn-all-ai" type="button" class="all-ai-btn" onclick="submitAllAI(event)">
@@ -1360,6 +1443,66 @@
             </div>
         </div>
 
+        <!-- Face Swap Studio Section (ระบบเปลี่ยนหน้า) -->
+        <div id="faceswap-studio-container"
+            style="display: none; width: 100%; max-width: 980px; margin: 10px auto; padding: 14px; background: #ffffff; border: 2px solid #ff4757; border-radius: 16px; box-shadow: 0 6px 20px rgba(255, 71, 87, 0.12); flex-direction: column; gap: 12px;">
+            
+            <!-- Workspace: Target Image with Red Mask (Left/Center) + Reference Face Dropzone (Right) -->
+            <div style="display: flex; gap: 16px; align-items: stretch; justify-content: center; flex-wrap: wrap;">
+                
+                <!-- Target Image Interactive Canvas (Main Panel) -->
+                <div style="flex: 2; min-width: 320px; display: flex; flex-direction: column; align-items: center; background: #fafafa; border: 1px solid #dfe4ea; border-radius: 12px; padding: 10px; position: relative;">
+                    <div id="faceswap-canvas-wrapper" style="position: relative; width: 100%; max-height: 480px; min-height: 280px; display: flex; align-items: center; justify-content: center; background: #2f3542; border-radius: 8px; overflow: hidden;">
+                        <canvas id="faceswap-canvas" style="max-width: 100%; max-height: 480px; object-fit: contain; cursor: crosshair; display: block;"></canvas>
+                        <div id="faceswap-placeholder" style="color: #a4b0be; font-size: 0.85rem; text-align: center; padding: 20px; display: none;">
+                            📸 กรุณาเลือกรูปภาพจากรายการด้านบน หรือวางภาพ (Ctrl+V)
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reference Face Card (Slot for Target Face to Swap into Image) -->
+                <div style="flex: 1; min-width: 250px; max-width: 320px; display: flex; flex-direction: column; background: #fafafa; border: 1px solid #dfe4ea; border-radius: 12px; padding: 10px;">
+                    <!-- Dropzone: Face Frame Design & Click to Paste -->
+                    <div id="fs-ref-dropzone" onclick="triggerReferenceFacePaste()"
+                        style="flex: 1; min-height: 240px; border: 2px dashed rgba(255, 71, 87, 0.45); border-radius: 18px; background: linear-gradient(180deg, #ffffff 0%, #fff6f6 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); position: relative; text-align: center; box-shadow: inset 0 0 16px rgba(255, 71, 87, 0.04);">
+                        
+                        <!-- Decorative Face Scan Frame Guides -->
+                        <div style="position: absolute; top: 12px; left: 12px; width: 14px; height: 14px; border-top: 2.5px solid #ff4757; border-left: 2.5px solid #ff4757; border-top-left-radius: 5px; pointer-events: none;"></div>
+                        <div style="position: absolute; top: 12px; right: 12px; width: 14px; height: 14px; border-top: 2.5px solid #ff4757; border-right: 2.5px solid #ff4757; border-top-right-radius: 5px; pointer-events: none;"></div>
+                        <div style="position: absolute; bottom: 12px; left: 12px; width: 14px; height: 14px; border-bottom: 2.5px solid #ff4757; border-left: 2.5px solid #ff4757; border-bottom-left-radius: 5px; pointer-events: none;"></div>
+                        <div style="position: absolute; bottom: 12px; right: 12px; width: 14px; height: 14px; border-bottom: 2.5px solid #ff4757; border-right: 2.5px solid #ff4757; border-bottom-right-radius: 5px; pointer-events: none;"></div>
+
+                        <div id="fs-ref-empty-state" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                            <!-- Stylized Face Contour Silhouette Frame -->
+                            <div style="width: 70px; height: 88px; border: 2.5px dashed #ff4757; border-radius: 50% 50% 46% 46% / 45% 45% 55% 55%; display: flex; align-items: center; justify-content: center; background: rgba(255, 71, 87, 0.05); position: relative; margin-bottom: 4px; box-shadow: 0 4px 12px rgba(255, 71, 87, 0.1);">
+                                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#ff4757" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                <span style="position: absolute; bottom: -7px; font-size: 0.58rem; background: #ff4757; color: white; padding: 1px 5px; border-radius: 6px; font-weight: 700; letter-spacing: 0.5px;">FACE</span>
+                            </div>
+
+                            <span style="font-size: 0.84rem; font-weight: 700; color: #2f3542; margin-top: 4px;">📋 คลิกเพื่อวางภาพหน้าใหม่ (Ctrl+V)</span>
+                            <span style="font-size: 0.70rem; color: #747d8c;">คัดลอกรูปหน้าแล้วคลิกวางได้ทันที</span>
+                            <span style="font-size: 0.67rem; color: #2ed573; font-weight: 600; background: rgba(46, 213, 115, 0.12); padding: 3px 8px; border-radius: 6px; margin-top: 2px;">
+                                🚀 วางปุ๊บ ส่ง AI ทันทีอัตโนมัติ
+                            </span>
+                        </div>
+
+                        <div id="fs-ref-preview-state" style="display: none; width: 100%; height: 100%; position: relative; align-items: center; justify-content: center;">
+                            <img id="fs-ref-img" style="max-width: 100%; max-height: 240px; border-radius: 12px; object-fit: contain; box-shadow: 0 4px 14px rgba(0,0,0,0.18);">
+                            <button type="button" onclick="clearReferenceFace(event)"
+                                style="position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; background: #ff4757; color: white; border: 2px solid #ffffff; border-radius: 50%; cursor: pointer; font-size: 0.80rem; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
         <!-- Photopea Studio Section (Photoshop Mode) -->
         <div id="photopea-studio-container">
             <div class="photopea-toolbar">
@@ -1466,25 +1609,428 @@
             }
         }, true);
 
+        // ==========================================
+        // --- Face Swap Studio Engine (ระบบเปลี่ยนหน้า) ---
+        // ==========================================
+        let faceSwapTargetImg = null;
+        let faceSwapTargetImgUrl = null;
+        let faceSwapMask = { cx: 0, cy: 0, rx: 0, ry: 0, shape: 'oval' };
+        let faceSwapRefDataUrl = null;
+        let isDraggingFaceMask = false;
+        let isResizingFaceMask = false;
+        let faceDragStartX = 0;
+        let faceDragStartY = 0;
+        let faceMaskStartBounds = null;
+
+        const DEFAULT_FACESWAP_PROMPT = "จงเปลี่ยนใบหน้าให้สมจริงที่สุดในตำแหน่งที่มาร์คสีแดง ตามมุมและแสงของฉากในภาพ";
+
+        function getFaceSwapCanvas() {
+            return document.getElementById('faceswap-canvas');
+        }
+
+        function clearFaceMask() {
+            faceSwapMask = { cx: 0, cy: 0, rx: 0, ry: 0, shape: 'oval' };
+            const hint = document.getElementById('fs-canvas-hint');
+            if (hint) hint.textContent = '👆 คลิกที่ใบหน้าเพื่อมาร์ก';
+            renderFaceSwapCanvas();
+            showToast('ลบมาร์กหน้าเรียบร้อย');
+        }
+
+        function loadTargetImageToFaceSwap(forceUrl = null) {
+            let targetPath = forceUrl;
+            if (!targetPath) {
+                if (selectedFilesList.length > 0) {
+                    targetPath = `/get-img?path=${encodeURIComponent(selectedFilesList[0])}`;
+                } else if (currentWatermarkPath) {
+                    targetPath = `/get-img?path=${encodeURIComponent(currentWatermarkPath)}`;
+                } else if (currentWatermarkImg && currentWatermarkImg.src) {
+                    targetPath = currentWatermarkImg.src;
+                }
+            }
+
+            const canvas = getFaceSwapCanvas();
+            const placeholder = document.getElementById('faceswap-placeholder');
+
+            if (!targetPath) {
+                if (canvas) canvas.style.display = 'none';
+                if (placeholder) placeholder.style.display = 'block';
+                return;
+            }
+
+            if (canvas) canvas.style.display = 'block';
+            if (placeholder) placeholder.style.display = 'none';
+
+            faceSwapTargetImgUrl = targetPath;
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.onload = () => {
+                faceSwapTargetImg = img;
+                // Start clean: wait for user to click on face
+                faceSwapMask = { cx: 0, cy: 0, rx: 0, ry: 0, shape: 'oval' };
+                const hint = document.getElementById('fs-canvas-hint');
+                if (hint) hint.textContent = '👆 คลิกที่ใบหน้าเพื่อมาร์ก';
+                renderFaceSwapCanvas();
+                setupFaceSwapCanvasEvents();
+            };
+            img.src = targetPath;
+        }
+
+        function renderFaceSwapCanvas() {
+            const canvas = getFaceSwapCanvas();
+            if (!canvas || !faceSwapTargetImg) return;
+
+            const nw = faceSwapTargetImg.naturalWidth;
+            const nh = faceSwapTargetImg.naturalHeight;
+            canvas.width = nw;
+            canvas.height = nh;
+
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, nw, nh);
+
+            // 1. Draw Target Original Image
+            ctx.drawImage(faceSwapTargetImg, 0, 0, nw, nh);
+
+            if (!faceSwapMask.rx || !faceSwapMask.ry) return;
+
+            // 2. Draw 100% SOLID OPAQUE RED Face Mask (#ff0000)
+            ctx.save();
+            ctx.fillStyle = '#ff0000'; // 100% Solid Opaque Red
+            ctx.beginPath();
+            ctx.ellipse(faceSwapMask.cx, faceSwapMask.cy, faceSwapMask.rx, faceSwapMask.ry, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
+            // 3. Draw UI Overlay Controls (Dashed border + cardinal resize handles for screen editing)
+            ctx.save();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = Math.max(2, Math.round(nw / 450));
+            ctx.setLineDash([6, 4]);
+            ctx.beginPath();
+            ctx.ellipse(faceSwapMask.cx, faceSwapMask.cy, faceSwapMask.rx, faceSwapMask.ry, 0, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Draw cardinal handles (Top, Bottom, Left, Right)
+            const handleSize = Math.max(8, Math.round(nw / 90));
+            ctx.fillStyle = '#ffffff';
+            ctx.setLineDash([]);
+            [
+                [faceSwapMask.cx, faceSwapMask.cy - faceSwapMask.ry],
+                [faceSwapMask.cx, faceSwapMask.cy + faceSwapMask.ry],
+                [faceSwapMask.cx - faceSwapMask.rx, faceSwapMask.cy],
+                [faceSwapMask.cx + faceSwapMask.rx, faceSwapMask.cy]
+            ].forEach(([hx, hy]) => {
+                ctx.fillRect(hx - handleSize / 2, hy - handleSize / 2, handleSize, handleSize);
+                ctx.strokeRect(hx - handleSize / 2, hy - handleSize / 2, handleSize, handleSize);
+            });
+
+            ctx.restore();
+        }
+
+        // Export clean image with 100% solid red mask (NO UI handles/dashed lines)
+        function exportFaceSwapCompositeDataUrl() {
+            if (!faceSwapTargetImg) return null;
+            const nw = faceSwapTargetImg.naturalWidth;
+            const nh = faceSwapTargetImg.naturalHeight;
+            const offCanvas = document.createElement('canvas');
+            offCanvas.width = nw;
+            offCanvas.height = nh;
+            const ctx = offCanvas.getContext('2d');
+
+            // Draw original image
+            ctx.drawImage(faceSwapTargetImg, 0, 0, nw, nh);
+
+            if (faceSwapMask.rx && faceSwapMask.ry) {
+                // Draw 100% SOLID OPAQUE RED Face Mask
+                ctx.fillStyle = '#ff0000';
+                ctx.beginPath();
+                ctx.ellipse(faceSwapMask.cx, faceSwapMask.cy, faceSwapMask.rx, faceSwapMask.ry, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            return offCanvas.toDataURL('image/png');
+        }
+
+        let faceSwapEventsBound = false;
+        function setupFaceSwapCanvasEvents() {
+            const canvas = getFaceSwapCanvas();
+            if (!canvas || faceSwapEventsBound) return;
+            faceSwapEventsBound = true;
+
+            function getCanvasPos(e) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                return {
+                    x: (e.clientX - rect.left) * scaleX,
+                    y: (e.clientY - rect.top) * scaleY
+                };
+            }
+
+            function isInsideOval(px, py) {
+                if (!faceSwapMask.rx || !faceSwapMask.ry) return false;
+                const dx = px - faceSwapMask.cx;
+                const dy = py - faceSwapMask.cy;
+                return ((dx * dx) / (faceSwapMask.rx * faceSwapMask.rx) + (dy * dy) / (faceSwapMask.ry * faceSwapMask.ry)) <= 1.0;
+            }
+
+            canvas.addEventListener('mousedown', (e) => {
+                const pos = getCanvasPos(e);
+                faceDragStartX = pos.x;
+                faceDragStartY = pos.y;
+                const distToCenter = Math.hypot(pos.x - faceSwapMask.cx, pos.y - faceSwapMask.cy);
+
+                if (faceSwapMask.rx > 0 && (isInsideOval(pos.x, pos.y) || distToCenter < faceSwapMask.rx)) {
+                    // Drag existing oval
+                    faceMaskStartBounds = { ...faceSwapMask };
+                    isDraggingFaceMask = true;
+                } else {
+                    // Clicked anywhere on a face: place oval centered at click position
+                    const nw = faceSwapTargetImg?.naturalWidth || 800;
+                    const defaultRx = Math.max(16, Math.round(nw * 0.035));
+                    const defaultRy = Math.round(defaultRx * 1.35);
+                    faceSwapMask.cx = Math.round(pos.x);
+                    faceSwapMask.cy = Math.round(pos.y);
+                    faceSwapMask.rx = defaultRx;
+                    faceSwapMask.ry = defaultRy;
+                    faceMaskStartBounds = { ...faceSwapMask };
+                    isResizingFaceMask = true;
+
+                    const hint = document.getElementById('fs-canvas-hint');
+                    if (hint) hint.textContent = '🔴 มาร์กตำแหน่งใบหน้าเรียบร้อย';
+
+                    renderFaceSwapCanvas();
+                }
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDraggingFaceMask && !isResizingFaceMask) return;
+                const pos = getCanvasPos(e);
+                const dx = pos.x - faceDragStartX;
+                const dy = pos.y - faceDragStartY;
+
+                if (isDraggingFaceMask && faceMaskStartBounds) {
+                    const maxW = faceSwapTargetImg.naturalWidth;
+                    const maxH = faceSwapTargetImg.naturalHeight;
+                    faceSwapMask.cx = Math.max(faceSwapMask.rx, Math.min(maxW - faceSwapMask.rx, Math.round(faceMaskStartBounds.cx + dx)));
+                    faceSwapMask.cy = Math.max(faceSwapMask.ry, Math.min(maxH - faceSwapMask.ry, Math.round(faceMaskStartBounds.cy + dy)));
+                    renderFaceSwapCanvas();
+                } else if (isResizingFaceMask && faceMaskStartBounds) {
+                    const radius = Math.hypot(pos.x - faceSwapMask.cx, pos.y - faceSwapMask.cy);
+                    const newRx = Math.max(12, Math.round(radius));
+                    const newRy = Math.max(16, Math.round(newRx * 1.35));
+                    faceSwapMask.rx = newRx;
+                    faceSwapMask.ry = newRy;
+                    renderFaceSwapCanvas();
+                }
+            });
+
+            window.addEventListener('mouseup', () => {
+                isDraggingFaceMask = false;
+                isResizingFaceMask = false;
+            });
+
+            // Smooth mouse wheel zoom for face oval
+            canvas.addEventListener('wheel', (e) => {
+                if (!faceSwapMask.rx || !faceSwapMask.ry) return;
+                e.preventDefault();
+                const step = (e.deltaY < 0) ? 3 : -3;
+                const newRx = Math.max(8, faceSwapMask.rx + step);
+                const newRy = Math.max(10, Math.round(newRx * 1.35));
+                faceSwapMask.rx = newRx;
+                faceSwapMask.ry = newRy;
+                renderFaceSwapCanvas();
+            }, { passive: false });
+        }
+
+        // --- Reference Face Helpers ---
+        async function triggerReferenceFacePaste() {
+            try {
+                if (navigator.clipboard && navigator.clipboard.read) {
+                    const clipboardItems = await navigator.clipboard.read();
+                    for (const item of clipboardItems) {
+                        for (const type of item.types) {
+                            if (type.startsWith('image/') || type.includes('webp')) {
+                                const blob = await item.getType(type);
+                                setReferenceFace(blob, true); // Auto-send to AI!
+                                return;
+                            }
+                        }
+                    }
+                }
+                showToast('ℹ️ ไม่พบภาพในคลิปบอร์ด (กรุณาคัดลอกรูปภาพก่อนคลิก หรือกด Ctrl+V)');
+            } catch (err) {
+                console.log('Clipboard read error:', err);
+                showToast('📋 กรุณากด Ctrl+V บนคีย์บอร์ดเพื่อวางรูปภาพใบหน้าใหม่');
+            }
+        }
+
+        function setReferenceFace(fileOrUrl, autoSubmit = false) {
+            if (typeof fileOrUrl === 'string') {
+                faceSwapRefDataUrl = fileOrUrl;
+                updateReferenceFaceUI();
+                if (autoSubmit) {
+                    showToast('⚡ วางภาพหน้าใหม่แล้ว -> กำลังส่ง AI เปลี่ยนหน้าทันที...');
+                    setTimeout(() => submitFaceSwapHubData(), 100);
+                }
+            } else if (fileOrUrl instanceof Blob || fileOrUrl instanceof File) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    faceSwapRefDataUrl = reader.result;
+                    updateReferenceFaceUI();
+                    if (autoSubmit) {
+                        showToast('⚡ วางภาพหน้าใหม่แล้ว -> กำลังส่ง AI เปลี่ยนหน้าทันที...');
+                        setTimeout(() => submitFaceSwapHubData(), 100);
+                    }
+                };
+                reader.readAsDataURL(fileOrUrl);
+            }
+        }
+
+        function updateReferenceFaceUI() {
+            const emptyState = document.getElementById('fs-ref-empty-state');
+            const previewState = document.getElementById('fs-ref-preview-state');
+            const img = document.getElementById('fs-ref-img');
+
+            if (faceSwapRefDataUrl) {
+                if (emptyState) emptyState.style.display = 'none';
+                if (previewState) previewState.style.display = 'flex';
+                if (img) img.src = faceSwapRefDataUrl;
+                showToast('👤 เพิ่มรูปใบหน้าใหม่ (รูปที่ 2) สำเร็จ');
+            } else {
+                if (emptyState) emptyState.style.display = 'flex';
+                if (previewState) previewState.style.display = 'none';
+                if (img) img.src = '';
+            }
+        }
+
+        function clearReferenceFace(e) {
+            if (e) e.stopPropagation();
+            faceSwapRefDataUrl = null;
+            updateReferenceFaceUI();
+            showToast('ลบรูปใบหน้าใหม่เรียบร้อย');
+        }
+
+        async function submitFaceSwapHubData() {
+            if (!faceSwapTargetImg) {
+                showToast('⚠️ กรุณาเลือกภาพหลักก่อนสั่ง AI');
+                return;
+            }
+
+            showToast('🚀 กำลังเตรียมภาพมาร์กหน้าสีแดงทึบส่งเข้า AI...');
+            const targetWithRedMask = exportFaceSwapCompositeDataUrl();
+            if (!targetWithRedMask) {
+                showToast('⚠️ ไม่สามารถสร้างภาพมาร์กหน้าสีแดงได้');
+                return;
+            }
+
+            const imagesToSend = [targetWithRedMask];
+            if (faceSwapRefDataUrl) {
+                imagesToSend.push(faceSwapRefDataUrl);
+            }
+
+            // Check selected models
+            const selectedModels = Array.from(document.querySelectorAll('input[name="model"]:checked')).map(el => el.value);
+            const modelsToSend = selectedModels.length ? selectedModels : ['Gemini'];
+
+            let prompt = promptInput.value.trim() || DEFAULT_FACESWAP_PROMPT;
+            if (!prompt.startsWith('[แก้ไขรูป]') && !prompt.startsWith('[สร้างภาพ')) {
+                prompt = `[แก้ไขรูป] ${prompt}`;
+            }
+
+            try {
+                showToast(`🚀 ส่งภาพเปลี่ยนหน้าเข้า ${modelsToSend.join(', ')}...`);
+                const res = await callExtension('SUBMIT_HUB_DATA', {
+                    prompt: prompt,
+                    images: imagesToSend,
+                    imagePaths: [],
+                    models: modelsToSend,
+                    origin: window.location.origin
+                });
+
+                if (res && res.success) {
+                    showToast('✅ ส่งคำขอเปลี่ยนหน้าเข้าสู่ AI สำเร็จ!');
+                } else {
+                    showToast(`⚠️ AI: ${res?.error || 'ไม่สามารถส่งข้อมูลได้'}`);
+                }
+            } catch (err) {
+                console.error("submitFaceSwapHubData error:", err);
+                showToast(`⚠️ เกิดข้อผิดพลาด: ${err.message || err}`);
+            }
+        }
+
+        async function submitFaceSwapHubData() {
+            if (!faceSwapTargetImg) {
+                showToast('⚠️ กรุณาเลือกภาพหลักก่อนสั่ง AI');
+                return;
+            }
+
+            showToast('🚀 กำลังเตรียมภาพมาร์กหน้าสีแดงทึบส่งเข้า AI...');
+            const targetWithRedMask = exportFaceSwapCompositeDataUrl();
+            if (!targetWithRedMask) {
+                showToast('⚠️ ไม่สามารถสร้างภาพมาร์กหน้าสีแดงได้');
+                return;
+            }
+
+            const imagesToSend = [targetWithRedMask];
+            if (faceSwapRefDataUrl) {
+                imagesToSend.push(faceSwapRefDataUrl);
+            }
+
+            // Check selected models
+            const selectedModels = Array.from(document.querySelectorAll('input[name="model"]:checked')).map(el => el.value);
+            const modelsToSend = selectedModels.length ? selectedModels : ['Gemini'];
+
+            let prompt = promptInput.value.trim() || DEFAULT_FACESWAP_PROMPT;
+            if (!prompt.startsWith('[แก้ไขรูป]') && !prompt.startsWith('[สร้างภาพ')) {
+                prompt = `[แก้ไขรูป] ${prompt}`;
+            }
+
+            try {
+                showToast(`🚀 ส่งภาพเปลี่ยนหน้าเข้า ${modelsToSend.join(', ')}...`);
+                const res = await callExtension('SUBMIT_HUB_DATA', {
+                    prompt: prompt,
+                    images: imagesToSend,
+                    imagePaths: [],
+                    models: modelsToSend,
+                    origin: window.location.origin
+                });
+
+                if (res && res.success) {
+                    showToast('✅ ส่งคำขอเปลี่ยนหน้าเข้าสู่ AI สำเร็จ!');
+                } else {
+                    showToast(`⚠️ AI: ${res?.error || 'ไม่สามารถส่งข้อมูลได้'}`);
+                }
+            } catch (err) {
+                console.error("submitFaceSwapHubData error:", err);
+                showToast(`⚠️ เกิดข้อผิดพลาด: ${err.message || err}`);
+            }
+        }
+
         function switchStudioMode(mode) {
             currentStudioMode = mode;
             localStorage.setItem('activeStudioMode', mode);
 
             const btnCrop = document.getElementById('btn-mode-crop');
+            const btnFaceswap = document.getElementById('btn-mode-faceswap');
             const btnPhotopea = document.getElementById('btn-mode-photopea');
             const cropSection = document.getElementById('watermark-check-container');
+            const faceswapSection = document.getElementById('faceswap-studio-container');
             const photopeaSection = document.getElementById('photopea-studio-container');
             const defaultQuickTags = document.getElementById('default-quick-tags');
 
+            if (btnCrop) btnCrop.classList.remove('active');
+            if (btnFaceswap) btnFaceswap.classList.remove('active', 'faceswap-active');
+            if (btnPhotopea) btnPhotopea.classList.remove('active', 'photopea-active');
+
             if (mode === 'photopea') {
                 document.body.classList.add('photopea-mode-active');
-                if (btnCrop) btnCrop.classList.remove('active');
                 if (btnPhotopea) {
                     btnPhotopea.classList.add('active', 'photopea-active');
                     btnPhotopea.blur(); // Remove button focus so shortcuts go straight to Photopea
                 }
 
                 if (cropSection) cropSection.style.display = 'none';
+                if (faceswapSection) faceswapSection.style.display = 'none';
                 if (photopeaSection) {
                     photopeaSection.style.display = 'flex';
 
@@ -1518,13 +2064,35 @@
                     }
                     setTimeout(focusPhotopea, 300);
                 }, 350);
+            } else if (mode === 'faceswap') {
+                if (typeof stopPhotopeaSelectionPoller === 'function') stopPhotopeaSelectionPoller();
+                document.body.classList.remove('photopea-mode-active');
+                if (btnFaceswap) btnFaceswap.classList.add('active', 'faceswap-active');
+
+                if (cropSection) cropSection.style.display = 'none';
+                if (photopeaSection) photopeaSection.style.display = 'none';
+                if (faceswapSection) faceswapSection.style.display = 'flex';
+
+                if (defaultQuickTags) defaultQuickTags.style.display = 'none';
+
+                // Set automatic prompt
+                if (!promptInput.value.trim() || promptInput.value.includes('จงเปลี่ยน') || promptInput.value.includes('[แก้ไขรูป]')) {
+                    promptInput.value = DEFAULT_FACESWAP_PROMPT;
+                    promptInput.style.height = 'auto';
+                    promptInput.style.height = promptInput.scrollHeight + 'px';
+                }
+
+                // Auto-load current image into face swap studio
+                setTimeout(() => {
+                    loadTargetImageToFaceSwap();
+                }, 100);
             } else {
-                stopPhotopeaSelectionPoller();
+                if (typeof stopPhotopeaSelectionPoller === 'function') stopPhotopeaSelectionPoller();
                 document.body.classList.remove('photopea-mode-active');
                 if (btnCrop) btnCrop.classList.add('active');
-                if (btnPhotopea) btnPhotopea.classList.remove('active', 'photopea-active');
 
                 if (cropSection) cropSection.style.display = 'flex';
+                if (faceswapSection) faceswapSection.style.display = 'none';
                 if (photopeaSection) photopeaSection.style.display = 'none';
 
                 if (defaultQuickTags) defaultQuickTags.style.display = 'flex';
@@ -1534,6 +2102,8 @@
         // Restore active mode on load
         if (currentStudioMode === 'photopea') {
             setTimeout(() => switchStudioMode('photopea'), 100);
+        } else if (currentStudioMode === 'faceswap') {
+            setTimeout(() => switchStudioMode('faceswap'), 100);
         }
 
         // --- Photopea Bridge & Inpaint Toolbox Logic ---
@@ -2604,6 +3174,12 @@
                             // ถ้าเปิดโหมด Photopea ให้โหลดภาพเข้า Photopea ทันที
                             if (currentStudioMode === 'photopea') {
                                 loadCurrentSelectedToPhotopea(`/get-img?path=${encodeURIComponent(item.filename)}`);
+                            } else if (currentStudioMode === 'faceswap') {
+                                if (e.altKey) {
+                                    setReferenceFace(`/get-img?path=${encodeURIComponent(item.filename)}`);
+                                } else {
+                                    loadTargetImageToFaceSwap(`/get-img?path=${encodeURIComponent(item.filename)}`);
+                                }
                             }
 
                             // ถ้าเป็น complete.* กดแล้วให้โหลดตัวอย่างด้วย
@@ -2874,12 +3450,23 @@
         };
 
         document.addEventListener('paste', (e) => {
+            if (currentStudioMode === 'photopea') return; // Handled in photopea paste handler
+
             const items = e.clipboardData.items;
             let imageFound = false;
             for (let i = 0; i < items.length; i++) {
                 const file = items[i].getAsFile();
                 if (items[i].type.indexOf('image') !== -1 || (file && file.name && file.name.toLowerCase().endsWith('.webp'))) {
-                    addPreview(file);
+                    if (currentStudioMode === 'faceswap') {
+                        if (faceSwapTargetImg) {
+                            setReferenceFace(file, true); // Auto-send to AI!
+                        } else {
+                            const blobUrl = URL.createObjectURL(file);
+                            loadTargetImageToFaceSwap(blobUrl);
+                        }
+                    } else {
+                        addPreview(file);
+                    }
                     imageFound = true;
                 }
             }
@@ -2908,6 +3495,11 @@
 
         async function submitHubData() {
             try {
+                if (currentStudioMode === 'faceswap') {
+                    await submitFaceSwapHubData();
+                    return;
+                }
+
                 const prompt = promptInput.value.trim();
 
                 // If in Photopea mode and no images are staged, automatically grab the current active document from Photopea
@@ -3379,12 +3971,10 @@
         loadDownloads();
         window.onfocus = loadDownloads;
 
-        // Show Desktop complete image in watermark preview on initial load (.png, .jpg, .jpeg, .webp)
-        ['complete.png', 'complete.jpg', 'complete.jpeg', 'complete.webp'].forEach(fn => {
-            fetch('/get-img?path=' + encodeURIComponent('C:\\Users\\artwh\\Desktop\\' + fn))
-                .then(r => { if (r.ok) showWatermarkCheck('/get-img?path=' + encodeURIComponent('C:\\Users\\artwh\\Desktop\\' + fn) + '&v=' + Date.now()); })
-                .catch(() => { });
-        });
+        // Show Desktop complete image in watermark preview on initial load (.png)
+        fetch('/get-img?path=' + encodeURIComponent('C:\\Users\\artwh\\Desktop\\complete.png'))
+            .then(r => { if (r.ok) showWatermarkCheck('/get-img?path=' + encodeURIComponent('C:\\Users\\artwh\\Desktop\\complete.png') + '&v=' + Date.now()); })
+            .catch(() => { });
 
         let currentWatermarkImg = null;
         let currentWatermarkPath = null;
@@ -3430,6 +4020,11 @@
 
                 document.getElementById('watermark-check-content').style.display = 'block';
                 document.getElementById('watermark-check-placeholder').style.display = 'none';
+
+                // Sync image to Face Swap Studio
+                if (currentStudioMode === 'faceswap' || !faceSwapTargetImg) {
+                    loadTargetImageToFaceSwap(source);
+                }
             };
             img.src = source;
         }
