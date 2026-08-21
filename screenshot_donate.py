@@ -177,7 +177,7 @@ def auto_paste():
         print(f"[AutoPaste] Error: {e}")
 
 def crop_watermark(source_path):
-    """Crop white/dark blank padding from the bottom of Gemini-generated images."""
+    """Crop white/dark blank padding from the top (Copilot) or bottom (Gemini) of AI-generated images."""
     if not os.path.exists(source_path):
         print(f"ไม่พบไฟล์: {source_path}")
         return None
@@ -185,14 +185,42 @@ def crop_watermark(source_path):
         img_rgb = img.convert('RGB')
         orig_w, orig_h = img_rgb.size
 
-        CHUNK_H     = 20    # scan in chunks of 20px
-        BRIGHT_T    = 230   # pixel is "white" if r,g,b all >= this
-        DARK_T      = 25    # pixel is "dark" if r,g,b all <= this
-        SOLID_RATIO = 0.78  # chunk is solid color padding if 78%+ pixels match
-        MAX_SCAN    = 0.55  # scan only bottom 55% of image
+        CHUNK_H     = 15    # scan in chunks of 15px
+        BRIGHT_T    = 225   # pixel is "white" if r,g,b all >= this
+        DARK_T      = 30    # pixel is "dark" if r,g,b all <= this
+        SOLID_RATIO = 0.72  # chunk is solid color padding if 72%+ pixels match
+        MAX_SCAN    = 0.50  # scan up to 50% from top / bottom
 
+        # 1. Scan Top Padding (for Copilot Top-Right watermark protection)
+        first_content_y = 0
+        for chunk_y in range(0, int(orig_h * MAX_SCAN), CHUNK_H):
+            bright = 0
+            dark = 0
+            total = 0
+            for y in range(chunk_y, min(chunk_y + CHUNK_H, orig_h)):
+                for x in range(0, orig_w, max(1, orig_w // 60)):
+                    r, g, b = img_rgb.getpixel((x, y))
+                    if r >= BRIGHT_T and g >= BRIGHT_T and b >= BRIGHT_T:
+                        bright += 1
+                    elif r <= DARK_T and g <= DARK_T and b <= DARK_T:
+                        dark += 1
+                    total += 1
+
+            bright_ratio = bright / max(1, total)
+            dark_ratio = dark / max(1, total)
+
+            # If chunk is NOT solid white or solid dark padding, we reached image content
+            if bright_ratio < SOLID_RATIO and dark_ratio < SOLID_RATIO:
+                first_content_y = chunk_y
+                break
+
+        crop_top = 0
+        if first_content_y > CHUNK_H:
+            crop_top = min(first_content_y + 10, int(orig_h * MAX_SCAN))
+            print(f"[Crop] Top padding band (Copilot) detected, crop_top={crop_top}px")
+
+        # 2. Scan Bottom Padding (for Gemini Bottom watermark protection)
         last_content_y = orig_h  # assume full image has content
-
         for chunk_y in range(orig_h - CHUNK_H, int(orig_h * (1 - MAX_SCAN)), -CHUNK_H):
             bright = 0
             dark = 0
@@ -217,10 +245,16 @@ def crop_watermark(source_path):
         crop_bottom = orig_h - last_content_y
         if crop_bottom > CHUNK_H:
             crop_bottom = min(crop_bottom + 15, int(orig_h * MAX_SCAN))  # buffer + cap
-            print(f"[Crop] Padding band detected, crop_bottom={crop_bottom}px, original_h={orig_h}px")
-            return img_rgb.crop((0, 0, orig_w, orig_h - crop_bottom))
+            print(f"[Crop] Bottom padding band (Gemini) detected, crop_bottom={crop_bottom}px")
 
-        print(f"[Crop] No padding band, crop_bottom=0, original_h={orig_h}px")
+        final_y1 = crop_top
+        final_y2 = orig_h - crop_bottom
+        if final_y2 > final_y1 + 50:
+            if crop_top > 0 or crop_bottom > 0:
+                print(f"[Crop] Cropping image from [{final_y1}:{final_y2}], original_h={orig_h}px")
+                return img_rgb.crop((0, final_y1, orig_w, final_y2))
+
+        print(f"[Crop] No padding bands detected, keeping original {orig_w}x{orig_h}")
         return img_rgb
 
 
