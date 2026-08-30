@@ -475,11 +475,14 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                     target_path = os.path.join(DESKTOP_PATH, 'complete.png')
 
                 scale = int(data.get('scale', 2))
-                model_name = data.get('model', 'cloudinary_enhancer')
+                model_name = data.get('model', 'cloudinary_upscale_enhancer')
+                mode = data.get('mode')
                 
-                print(f"[Watcher] 🔍 AI Upscale / Enhancer request received for {target_path} (scale={scale}x)")
+                print(f"[Watcher] 🔍 AI Upscale / Enhancer request received for {target_path} (model={model_name}, mode={mode}, scale={scale}x)")
                 import cloudinary_upscaler
-                result = cloudinary_upscaler.upscale_image(image_path=target_path, scale=scale, model_name=model_name)
+                import importlib
+                importlib.reload(cloudinary_upscaler)
+                result = cloudinary_upscaler.upscale_image(image_path=target_path, scale=scale, model_name=model_name, mode=mode)
                 
                 # Signal frontend that export updated
                 global last_exported_path
