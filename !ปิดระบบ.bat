@@ -1,23 +1,16 @@
 @echo off
-title Kill AI Hub Server
+title Kill AI Hub Watcher
 echo ========================================
-echo Stopping AI Hub Watcher...
+echo Stopping AI Hub Watcher and Server...
 echo ========================================
 
-:: 1. Kill python processes running auto_donate_watcher.py
-:: Using 'name like %%python%%' catches python.exe, pythonw.exe, python3.10.exe, pythonw3.10.exe, etc.
-wmic process where "name like '%%python%%' and commandline like '%%auto_donate_watcher.py%%'" call terminate >nul 2>&1
+python "%~dp0kill_system.py"
 
-:: 2. Kill the ports explicitly
-if exist "kill_ports.py" (
-    python kill_ports.py
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5000') do (
+    taskkill /F /PID %%a >nul 2>&1
 )
 
 echo.
 echo SUCCESS: Server has been terminated!
 echo.
-echo NOTE: If the tray icons are still visible, 
-echo simply hover your mouse over them and they will disappear.
-echo.
-timeout /t 5 >nul
-
+ping 127.0.0.1 -n 3 >nul
