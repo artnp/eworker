@@ -1546,7 +1546,7 @@
                 </div>
             </div>
             <div id="watermark-check-placeholder">
-                <p style="color: var(--text-sub); font-size: 0.85rem; margin: 0;">📸 ภาพตัวอย่างจาก Desktop
+                <p style="color: var(--text-sub); font-size: 0.85rem; margin: 0;">📸 ภาพตัวอย่างจาก Desktop (complete.png)
                     จะปรากฏที่นี่อัตโนมัติ (ครอปได้ 4 ทิศทาง)</p>
             </div>
         </div>
@@ -2863,8 +2863,13 @@
                 const examplePath = "C:\\Users\\artwh\\Desktop\\example.png";
                 const res = await fetch('/get-img?path=' + encodeURIComponent(examplePath));
                 if (res.ok) {
-                    showWatermarkCheck('/get-img?path=' + encodeURIComponent(examplePath) + '&v=' + Date.now());
-                    showToast('🔒 โหลดภาพตัวอย่างติดลายน้ำ (Desktop/example.png)');
+                    if (currentStudioMode === 'photopea') {
+                        loadCurrentSelectedToPhotopea(`/get-img?path=${encodeURIComponent(examplePath)}&v=${Date.now()}`);
+                        showToast('🔒 โหลดภาพตัวอย่างติดลายน้ำเข้า Photopea (Desktop/example.png)');
+                    } else {
+                        window.open('/get-img?path=' + encodeURIComponent(examplePath), '_blank');
+                        showToast('🔒 เปิดดูภาพตัวอย่างติดลายน้ำ (Desktop/example.png)');
+                    }
                 } else {
                     showToast('⚠️ ยังไม่พบไฟล์ Desktop/example.png');
                 }
@@ -3307,9 +3312,8 @@
                         if (item.mtime && (now - item.mtime) <= 60 && !selectedFilesList.includes(item.filename)) {
                             selectedFilesList.push(item.filename);
                             div.classList.add('selected');
-                            const fname = item.filename.toLowerCase();
                             const incomingImgUrl = `/get-img?path=${encodeURIComponent(item.filename)}&v=${Date.now()}`;
-                            if (fname.includes('complete.') || fname.includes('complete_bot.')) {
+                            if (isDesktopCompletePng(item.filename)) {
                                 showWatermarkCheck(incomingImgUrl);
                             }
                             if (currentStudioMode === 'photopea') {
@@ -3338,9 +3342,8 @@
                                 }
                             }
 
-                            // ถ้าเป็น complete.* กดแล้วให้โหลดตัวอย่างด้วย
-                            const fname = item.filename.toLowerCase();
-                            if (fname.includes('complete.') || fname.includes('complete_bot.')) {
+                            // ส่วนตรวจสอบลายน้ำ: แสดงเฉพาะไฟล์ Desktop/complete.png เท่านั้น
+                            if (isDesktopCompletePng(item.filename)) {
                                 showWatermarkCheck(`/get-img?path=${encodeURIComponent(item.filename)}&v=${Date.now()}`);
                             }
                         };
@@ -3383,7 +3386,9 @@
                     loadDownloads();
 
                     const newImgUrl = `/get-img?path=${encodeURIComponent(data.path)}&v=${Date.now()}`;
-                    showWatermarkCheck(newImgUrl);
+                    if (isDesktopCompletePng(data.path)) {
+                        showWatermarkCheck(newImgUrl);
+                    }
 
                     if (currentStudioMode === 'photopea') {
                         if (Date.now() > ignorePhotopeaAutoInjectUntil) {
@@ -4149,36 +4154,71 @@
         loadDownloads();
         window.onfocus = loadDownloads;
 
-        // Show Desktop complete image in watermark preview on initial load (.png)
-        fetch('/get-img?path=' + encodeURIComponent('C:\\Users\\artwh\\Desktop\\complete.png'))
-            .then(r => { if (r.ok) showWatermarkCheck('/get-img?path=' + encodeURIComponent('C:\\Users\\artwh\\Desktop\\complete.png') + '&v=' + Date.now()); })
-            .catch(() => { });
+        function isDesktopCompletePng(pathStr) {
+            if (!pathStr) return false;
+            const clean = pathStr.replace(/\\/g, '/').toLowerCase();
+            if (clean.includes('bot') || !clean.endsWith('complete.png')) return false;
+            return clean.includes('/desktop/') || clean.includes('desktop/complete.png') || clean === 'complete.png' || clean.endsWith('desktop/complete.png');
+        }
+
+        // Show Desktop complete image in watermark preview on initial load (.png only)
+        function refreshDesktopWatermark() {
+            const desktopCompletePath = 'C:\\Users\\artwh\\Desktop\\complete.png';
+            fetch('/get-img?path=' + encodeURIComponent(desktopCompletePath))
+                .then(r => {
+                    if (r.ok) {
+                        showWatermarkCheck('/get-img?path=' + encodeURIComponent(desktopCompletePath) + '&v=' + Date.now());
+                    } else {
+                        const contentEl = document.getElementById('watermark-check-content');
+                        const placeholderEl = document.getElementById('watermark-check-placeholder');
+                        if (contentEl) contentEl.style.display = 'none';
+                        if (placeholderEl) placeholderEl.style.display = 'block';
+                    }
+                })
+                .catch(() => {
+                    const contentEl = document.getElementById('watermark-check-content');
+                    const placeholderEl = document.getElementById('watermark-check-placeholder');
+                    if (contentEl) contentEl.style.display = 'none';
+                    if (placeholderEl) placeholderEl.style.display = 'block';
+                });
+        }
+        refreshDesktopWatermark();
 
         let currentWatermarkImg = null;
-        let currentWatermarkPath = null;
+        let currentWatermarkPath = 'C:\\Users\\artwh\\Desktop\\complete.png';
         let currentCropHeight = 0;
         let currentCropWidth = 0;
 
-        async function showWatermarkCheck(source) {
-            const canvasTop = document.getElementById('crop-canvas-top');
-            const canvasBottom = document.getElementById('crop-canvas-bottom');
-            const canvasLeft = document.getElementById('crop-canvas-left');
-            const canvasRight = document.getElementById('crop-canvas-right');
+        async function showWatermarkCheck(source = null) {
+            const desktopPath = 'C:\\Users\\artwh\\Desktop\\complete.png';
+            let targetPath = desktopPath;
 
-            try {
-                const base = window.location.origin === "null" ? "http://127.0.0.1:5000" : window.location.origin;
-                const urlObj = new URL(source, base);
-                const pathParam = urlObj.searchParams.get('path');
-                if (pathParam) {
-                    currentWatermarkPath = pathParam;
-                    lastCheckedCompletePath = pathParam;
-                } else {
-                    currentWatermarkPath = lastCheckedCompletePath;
+            if (source) {
+                try {
+                    const base = window.location.origin === "null" ? "http://127.0.0.1:5000" : window.location.origin;
+                    const urlObj = new URL(source, base);
+                    const pathParam = urlObj.searchParams.get('path');
+                    if (pathParam) {
+                        if (!isDesktopCompletePng(pathParam)) {
+                            console.log('[WatermarkCheck] Ignored non-desktop-complete image:', pathParam);
+                            return;
+                        }
+                        targetPath = pathParam;
+                    }
+                } catch (e) {
+                    if (typeof source === 'string' && source.includes('path=')) {
+                        const match = source.match(/path=([^&]+)/);
+                        if (match) {
+                            const decoded = decodeURIComponent(match[1]);
+                            if (!isDesktopCompletePng(decoded)) return;
+                            targetPath = decoded;
+                        }
+                    }
                 }
-            } catch (e) {
-                currentWatermarkPath = lastCheckedCompletePath;
             }
-            if (!currentWatermarkPath && lastCheckedCompletePath) currentWatermarkPath = lastCheckedCompletePath;
+
+            currentWatermarkPath = targetPath;
+            lastCheckedCompletePath = targetPath;
 
             const img = new Image();
             img.crossOrigin = "Anonymous";
@@ -4196,31 +4236,40 @@
                 // Draw all four crop canvas panels from mainImageCanvas
                 redrawAllCropCanvases();
 
-                document.getElementById('watermark-check-content').style.display = 'block';
-                document.getElementById('watermark-check-placeholder').style.display = 'none';
+                const contentEl = document.getElementById('watermark-check-content');
+                const placeholderEl = document.getElementById('watermark-check-placeholder');
+                if (contentEl) contentEl.style.display = 'block';
+                if (placeholderEl) placeholderEl.style.display = 'none';
 
                 // Sync image to Face Swap Studio
                 if (currentStudioMode === 'faceswap' || !faceSwapTargetImg) {
-                    loadTargetImageToFaceSwap(source);
+                    loadTargetImageToFaceSwap(`/get-img?path=${encodeURIComponent(currentWatermarkPath)}&v=${Date.now()}`);
                 }
             };
-            img.src = source;
+            img.onerror = () => {
+                const contentEl = document.getElementById('watermark-check-content');
+                const placeholderEl = document.getElementById('watermark-check-placeholder');
+                if (contentEl) contentEl.style.display = 'none';
+                if (placeholderEl) placeholderEl.style.display = 'block';
+            };
+            img.src = `/get-img?path=${encodeURIComponent(targetPath)}&v=${Date.now()}`;
         }
 
         async function saveCroppedImage(newDataUrl) {
             try {
+                const targetPath = 'C:\\Users\\artwh\\Desktop\\complete.png';
                 const response = await fetch('/save-image', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        path: currentWatermarkPath,
+                        path: targetPath,
                         dataUrl: newDataUrl
                     })
                 });
 
                 if (response.ok) {
-                    showToast('✅ ครอปและบันทึกทับสำเร็จ');
-                    showWatermarkCheck(`/get-img?path=${encodeURIComponent(currentWatermarkPath)}&v=${Date.now()}`);
+                    showToast('✅ ครอปและบันทึกทับ Desktop/complete.png สำเร็จ');
+                    showWatermarkCheck(`/get-img?path=${encodeURIComponent(targetPath)}&v=${Date.now()}`);
                     if (typeof loadDownloads === 'function') loadDownloads();
                 } else {
                     showToast('❌ ไม่สามารถบันทึกได้');
