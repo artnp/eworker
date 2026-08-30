@@ -30,48 +30,14 @@ import pyautogui
 pyautogui.PAUSE = 0
 pyautogui.FAILSAFE = False
 
-def scrub_and_poison(file_path):
-    ext = os.path.splitext(file_path)[1].lower()
-    temp_dir = tempfile.gettempdir()
-    random_name = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
-    temp_path = os.path.join(temp_dir, f"donate_{random_name}{ext}")
-    try:
-        with Image.open(file_path) as img:
-            if ext in ['.jpg', '.jpeg'] and img.mode != 'RGB':
-                img = img.convert('RGB')
-            if ext in ['.jpg', '.jpeg']:
-                img.save(temp_path, quality=95, subsampling=0)
-            else:
-                img.save(temp_path)
-        with open(temp_path, 'ab') as f:
-            random_junk = ''.join(random.choices(string.ascii_letters + string.digits, k=32))
-            f.write(f"\n#DN_{random_junk}".encode())
-        return temp_path
-    except Exception:
-        return file_path
+from watermark_engine import (
+    create_anti_ai_watermark,
+    render_luxury_qr_slip,
+    draw_vector_scan_icon,
+    draw_luxury_lock,
+    draw_vector_lock
+)
 
-def upload_litterbox_24h(file_path):
-    url = 'https://litterbox.catbox.moe/resources/internals/api.php'
-    filename = os.path.basename(file_path)
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
-    }
-    for attempt in range(1, 4):
-        try:
-            with open(file_path, 'rb') as f:
-                files = {'fileToUpload': (filename, f)}
-                data = {'reqtype': 'fileupload', 'time': '24h'}
-                response = requests.post(url, data=data, files=files, headers=headers, timeout=60)
-                res_text = response.text.strip()
-                if response.status_code == 200 and res_text.startswith('http'):
-                    return res_text
-                else:
-                    print(f"[Litterbox 24h] Attempt {attempt} failed ({response.status_code}): {res_text[:200]}")
-        except Exception as e:
-            print(f"[Litterbox 24h] Attempt {attempt} error: {e}")
-        if attempt < 3:
-            time.sleep(1)
-    return None
 
 def generate_qr_image(data, size=120):
     qr = qrcode.QRCode(version=1, box_size=6, border=2)
@@ -185,15 +151,16 @@ def crop_watermark(source_path):
         img_rgb = img.convert('RGB')
         orig_w, orig_h = img_rgb.size
 
-        CHUNK_H     = 15    # scan in chunks of 15px
-        BRIGHT_T    = 225   # pixel is "white" if r,g,b all >= this
-        DARK_T      = 30    # pixel is "dark" if r,g,b all <= this
-        SOLID_RATIO = 0.72  # chunk is solid color padding if 72%+ pixels match
-        MAX_SCAN    = 0.50  # scan up to 50% from top / bottom
+        CHUNK_H         = 5     # scan in chunks of 5px for high precision
+        BRIGHT_T        = 235   # pixel is "white/near white" if r,g,b all >= this
+        DARK_T          = 18    # pixel is "dark/near dark" if r,g,b all <= this
+        SOLID_RATIO     = 0.88  # chunk is solid color padding only if 88%+ pixels match
+        MAX_SCAN_TOP    = 0.35  # scan max 35% from top (Copilot)
+        MAX_SCAN_BOTTOM = 0.45  # scan max 45% from bottom (Gemini)
 
         # 1. Scan Top Padding (for Copilot Top-Right watermark protection)
         first_content_y = 0
-        for chunk_y in range(0, int(orig_h * MAX_SCAN), CHUNK_H):
+        for chunk_y in range(0, int(orig_h * MAX_SCAN_TOP), CHUNK_H):
             bright = 0
             dark = 0
             total = 0
@@ -215,13 +182,14 @@ def crop_watermark(source_path):
                 break
 
         crop_top = 0
-        if first_content_y > CHUNK_H:
-            crop_top = min(first_content_y + 10, int(orig_h * MAX_SCAN))
+        if first_content_y > CHUNK_H * 2:
+            crop_top = min(first_content_y, int(orig_h * MAX_SCAN_TOP))
             print(f"[Crop] Top padding band (Copilot) detected, crop_top={crop_top}px")
 
         # 2. Scan Bottom Padding (for Gemini Bottom watermark protection)
         last_content_y = orig_h  # assume full image has content
-        for chunk_y in range(orig_h - CHUNK_H, int(orig_h * (1 - MAX_SCAN)), -CHUNK_H):
+        min_bottom_y = int(orig_h * (1 - MAX_SCAN_BOTTOM))
+        for chunk_y in range(orig_h - CHUNK_H, min_bottom_y, -CHUNK_H):
             bright = 0
             dark = 0
             total = 0
@@ -242,16 +210,16 @@ def crop_watermark(source_path):
                 last_content_y = chunk_y + CHUNK_H
                 break
 
-        crop_bottom = orig_h - last_content_y
-        if crop_bottom > CHUNK_H:
-            crop_bottom = min(crop_bottom + 15, int(orig_h * MAX_SCAN))  # buffer + cap
+        crop_bottom = 0
+        if last_content_y < orig_h - (CHUNK_H * 2):
+            crop_bottom = min(orig_h - last_content_y, int(orig_h * MAX_SCAN_BOTTOM))
             print(f"[Crop] Bottom padding band (Gemini) detected, crop_bottom={crop_bottom}px")
 
         final_y1 = crop_top
         final_y2 = orig_h - crop_bottom
         if final_y2 > final_y1 + 50:
             if crop_top > 0 or crop_bottom > 0:
-                print(f"[Crop] Cropping image from [{final_y1}:{final_y2}], original_h={orig_h}px")
+                print(f"[Crop] Cropping image from [{final_y1}:{final_y2}], original_h={orig_h}px -> {final_y2 - final_y1}px")
                 return img_rgb.crop((0, final_y1, orig_w, final_y2))
 
         print(f"[Crop] No padding bands detected, keeping original {orig_w}x{orig_h}")
@@ -259,7 +227,7 @@ def crop_watermark(source_path):
 
 
 def process_clean_only(full_path=None):
-    is_bot = '--bot' in sys.argv
+    is_bot = ('--bot' in sys.argv) or ('bot' in (os.path.basename(full_path).lower() if full_path else ''))
     target_name = 'complete_bot.png' if is_bot else 'complete.png'
     print(f"[CleanOnly] เริ่มต้น... (target: {target_name})")
     source = full_path if full_path else os.path.join(os.environ['USERPROFILE'], 'Downloads', 'complete.png')
@@ -268,37 +236,26 @@ def process_clean_only(full_path=None):
     if img:
         img.save(target, format='PNG')
         print(f"[Done] {target}")
+        
+        # บันทึกไฟล์ตัวอย่างติดลายน้ำ Anti-AI ลงบน Desktop/example.png (เฉพาะ complete.png เท่านั้น ห้ามสร้างถ้าเป็น Facebook_Bot / complete_bot.png)
+        if not is_bot and target_name == 'complete.png':
+            try:
+                example_target = os.path.join(os.environ['USERPROFILE'], 'Desktop', 'example.png')
+                example_img = create_anti_ai_watermark(img)
+                example_img.save(example_target, format='PNG')
+                print(f"[Watermark] Saved: {example_target}")
+            except Exception as we:
+                print(f"[Watermark] Error generating example.png: {we}")
+        else:
+            print(f"[Watermark] Skip example.png generation for bot mode ({target_name})")
     else:
         print("[Error] Failed")
         sys.exit(1)
 
 
-def _upload_with_timeout(file_path, timeout_sec=30):
-    """Upload ไปที่ Litterbox โดยมี timeout ที่แน่นอน ผ่าน threading"""
-    import threading
-    result = [None]
-    
-    def _do_upload():
-        result[0] = upload_litterbox_24h(file_path)
-    
-    t = threading.Thread(target=_do_upload, daemon=True)
-    start = time.time()
-    t.start()
-    t.join(timeout=timeout_sec)
-    elapsed = time.time() - start
-    
-    if t.is_alive():
-        print(f"[Donate] Upload timeout! ({elapsed:.1f}s > {timeout_sec}s) → fallback to no-upload mode")
-        return None
-    
-    if result[0]:
-        print(f"[Donate] Upload สำเร็จใน {elapsed:.1f}s")
-    else:
-        print(f"[Donate] Upload ล้มเหลวใน {elapsed:.1f}s → fallback to no-upload mode")
-    return result[0]
 
 def process_donate(full_path=None):
-    is_bot = '--bot' in sys.argv
+    is_bot = ('--bot' in sys.argv) or ('bot' in (os.path.basename(full_path).lower() if full_path else ''))
     target_name = 'complete_bot.png' if is_bot else 'complete.png'
     print(f"[Donate] เริ่มต้น... (target: {target_name})")
     source = full_path if full_path else os.path.join(os.environ['USERPROFILE'], 'Downloads', 'complete.png')
@@ -680,10 +637,32 @@ def process_donate(full_path=None):
         
         print(f"[Done] Overwritten: {target}")
         
+        # บันทึกไฟล์ตัวอย่างติดลายน้ำ Anti-AI ลงบน Desktop/example.png
+        # ⚠️ เฉพาะ complete.png เท่านั้น — ห้ามสร้างถ้าเป็น Facebook_Bot (complete_bot.png)
+        if not is_bot and target_name == 'complete.png':
+            try:
+                example_target = os.path.join(os.environ['USERPROFILE'], 'Desktop', 'example.png')
+                example_img = create_anti_ai_watermark(original_img)
+                example_img.save(example_target, format='PNG')
+                print(f"[Watermark] Saved example.png: {example_target}")
+            except Exception as we:
+                print(f"[Watermark] Error generating example.png: {we}")
+        else:
+            print(f"[Watermark] Skipped example.png — bot mode or not complete.png ({target_name})")
+        
     except Exception as e:
         print(f"Error overwriting file: {e}")
         # fallback ไปวิธีเดิม
         final_export.save(target, format='PNG')
+        # ⚠️ เฉพาะ complete.png เท่านั้น — ห้ามสร้างถ้าเป็น Facebook_Bot (complete_bot.png)
+        if not is_bot and target_name == 'complete.png':
+            try:
+                example_target = os.path.join(os.environ['USERPROFILE'], 'Desktop', 'example.png')
+                example_img = create_anti_ai_watermark(original_img)
+                example_img.save(example_target, format='PNG')
+                print(f"[Watermark] Saved example.png (fallback): {example_target}")
+            except Exception:
+                pass
     
     copy_image_to_clipboard(target)
     
