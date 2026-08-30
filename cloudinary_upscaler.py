@@ -142,7 +142,7 @@ def generate_signature(params_dict, api_secret):
     to_sign += api_secret
     return hashlib.sha1(to_sign.encode('utf-8')).hexdigest()
 
-def upscale_with_account(account, image_path, scale=2):
+def upscale_with_account(account, image_path, scale=2, mode="upscale_enhancer"):
     cloud_name = account.get("cloud_name", "").strip()
     api_key = account.get("api_key", "").strip()
     api_secret = account.get("api_secret", "").strip()
@@ -172,8 +172,12 @@ def upscale_with_account(account, image_path, scale=2):
         version = res_json.get("version")
         format_ext = res_json.get("format", "png")
         
-        # Pure AI Generative Restore (Enhancer) without extra scaling to save quota & bandwidth
-        transformed_url = f"https://res.cloudinary.com/{cloud_name}/image/upload/e_gen_restore/v{version}/{public_id}.{format_ext}"
+        if mode == "enhancer":
+            # Pure AI Generative Restore (Enhancer deblur & clarity, preserving dimensions)
+            transformed_url = f"https://res.cloudinary.com/{cloud_name}/image/upload/e_gen_restore/v{version}/{public_id}.{format_ext}"
+        else:
+            # AI Upscale + Generative Restore (Super-Resolution upscale + deblur clarity restore)
+            transformed_url = f"https://res.cloudinary.com/{cloud_name}/image/upload/e_gen_restore/e_upscale/v{version}/{public_id}.{format_ext}"
         return transformed_url
     else:
         error_msg = response.text
@@ -184,11 +188,13 @@ def upscale_with_account(account, image_path, scale=2):
             pass
         raise RuntimeError(f"Cloudinary error ({response.status_code}): {error_msg}")
 
-def upscale_image(image_path=None, scale=2, model_name="cloudinary_enhancer"):
+def upscale_image(image_path=None, scale=2, model_name="cloudinary_upscale_enhancer", mode=None):
     """
     ทำ AI Enhancer & Upscale ภาพผ่าน Cloudinary Multi-Account Rotation
     เขียนทับลงที่ image_path (complete.png) โดยตรง (ไม่ลบไฟล์)
     และสร้างลายน้ำ example.png ใหม่
+    - model_name="cloudinary_upscale_enhancer" หรือ mode="upscale_enhancer": ขยายภาพ + ปรับความชัดสมจริง
+    - model_name="cloudinary_enhancer" หรือ mode="enhancer": ปรับความชัดสมจริง (ขนาดเดิม)
     """
     if not image_path:
         image_path = os.path.join(DESKTOP_PATH, "complete.png")
@@ -207,10 +213,15 @@ def upscale_image(image_path=None, scale=2, model_name="cloudinary_enhancer"):
         _set_progress("error", 0, 1, "❌ ไม่พบไฟล์เป้าหมาย", str(image_path))
         raise FileNotFoundError(f"ไม่พบไฟล์: {image_path}")
 
+    # Determine execution mode
+    effective_mode = mode or ("enhancer" if model_name == "cloudinary_enhancer" else "upscale_enhancer")
+    is_upscale_enhancer = (effective_mode == "upscale_enhancer")
+    mode_title = "AI Upscale + Enhancer" if is_upscale_enhancer else "AI Enhancer"
+
     accounts = load_accounts()
     total_acc = len(accounts)
     
-    _set_progress("running", 15, 1, "ขั้นตอนที่ 1/3: กำลังเชื่อมต่อ Cloudinary AI Cloud...", "เตรียมส่งภาพขึ้นคลาวด์...")
+    _set_progress("running", 15, 1, f"ขั้นตอนที่ 1/3: กำลังเชื่อมต่อ Cloudinary AI Cloud...", f"เตรียมส่งภาพขึ้นคลาวด์สำหรับ {mode_title}...")
 
     upscaled_image_bytes = None
     success_account_idx = -1
@@ -224,27 +235,47 @@ def upscale_image(image_path=None, scale=2, model_name="cloudinary_enhancer"):
             continue
 
         try:
-            print(f"[Cloudinary] Trying Account {idx+1}/{total_acc} (Cloud: {cloud_name}, Key: {api_key_short})...")
+            print(f"[Cloudinary] Trying Account {idx+1}/{total_acc} (Cloud: {cloud_name}, Key: {api_key_short}, Mode: {effective_mode})...")
+            step2_detail = (
+                "ขยายภาพความละเอียดสูง x2 พร้อมกู้คืนรายละเอียดและลดความเบลอ..." if is_upscale_enhancer
+                else "กู้คืนรายละเอียดและเพิ่มความคมชัดสมจริง..."
+            )
             _set_progress(
                 "running",
                 int(20 + (idx / total_acc) * 35),
                 2,
-                f"ขั้นตอนที่ 2/3: กำลังประมวลผล AI Enhancer บนคลาวด์ (บัญชี {idx+1}/{total_acc})...",
-                f"กู้คืนรายละเอียดและเพิ่มความคมชัดสมจริง..."
+                f"ขั้นตอนที่ 2/3: กำลังประมวลผล {mode_title} บนคลาวด์ (บัญชี {idx+1}/{total_acc})...",
+                step2_detail
             )
             
-            result_url = upscale_with_account(acc, image_path, scale=scale)
+            result_url = upscale_with_account(acc, image_path, scale=scale, mode=effective_mode)
             print(f"[Cloudinary] ✅ Transformed URL generated via Account {idx+1}: {result_url}")
             
-            _set_progress("running", 75, 2, f"ขั้นตอนที่ 2/3: กำลังประมวลผลและดาวน์โหลดภาพคมชัดระดับสูง ({idx+1}/{total_acc})...", "สตรีมภาพผลลัพธ์...")
+            _set_progress("running", 75, 2, f"ขั้นตอนที่ 2/3: กำลังประมวลผลและดาวน์โหลดภาพคมชัดระดับสูง ({idx+1}/{total_acc})...", "สตรีมภาพผลลัพธ์จากคลาวด์...")
             
-            dl_resp = requests.get(result_url, timeout=60)
-            if dl_resp.status_code == 200 and len(dl_resp.content) > 1000:
-                upscaled_image_bytes = dl_resp.content
-                success_account_idx = idx
+            # Retry loop for AI CDN generation (handles 420/423 processing responses)
+            max_retries = 15
+            for attempt in range(max_retries):
+                try:
+                    dl_resp = requests.get(result_url, timeout=50)
+                    if dl_resp.status_code == 200 and len(dl_resp.content) > 500:
+                        upscaled_image_bytes = dl_resp.content
+                        success_account_idx = idx
+                        break
+                    elif dl_resp.status_code in (420, 423, 202):
+                        print(f"[Cloudinary] Waiting for AI generation (attempt {attempt+1}/{max_retries}, status {dl_resp.status_code})...")
+                        time.sleep(2)
+                    else:
+                        print(f"[Cloudinary] Download attempt {attempt+1} got status {dl_resp.status_code}")
+                        time.sleep(1.5)
+                except Exception as de:
+                    print(f"[Cloudinary] Download attempt {attempt+1} exception: {de}")
+                    time.sleep(1.5)
+
+            if upscaled_image_bytes:
                 break
             else:
-                raise RuntimeError(f"Download failed with status {dl_resp.status_code}")
+                raise RuntimeError(f"Download failed after retries for {result_url}")
         except Exception as e:
             print(f"[Cloudinary] ⚠️ Account {idx+1} ({cloud_name}) error: {e}")
             last_error_msg = str(e)
@@ -277,7 +308,7 @@ def upscale_image(image_path=None, scale=2, model_name="cloudinary_enhancer"):
         "completed",
         100,
         3,
-        f"✨ เสร็จสิ้น! AI Enhancer & Restore สำเร็จ (บัญชี {success_account_idx+1}/{total_acc}) 100%",
+        f"✨ เสร็จสิ้น! {mode_title} สำเร็จ (บัญชี {success_account_idx+1}/{total_acc}) 100%",
         "บันทึกทับ Desktop/complete.png และ example.png เรียบร้อย"
     )
 
@@ -287,6 +318,7 @@ def upscale_image(image_path=None, scale=2, model_name="cloudinary_enhancer"):
         "success": True,
         "path": image_path,
         "example_path": example_path,
+        "mode": effective_mode,
         "provider": f"Cloudinary ({accounts[success_account_idx].get('cloud_name')})",
         "account_index": success_account_idx + 1,
         "total_accounts": total_acc
