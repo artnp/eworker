@@ -79,6 +79,10 @@ class DownloadHandler(FileSystemEventHandler):
                     [sys.executable, script_path, mode_flag, target_file],
                     capture_output=True, text=True, timeout=60
                 )
+                if result.stdout:
+                    print(f"[Watcher] Output:\n{result.stdout.strip()}")
+                if result.returncode != 0:
+                    print(f"[Watcher] ❌ Error in screenshot_donate.py (code {result.returncode}):\n{result.stderr.strip()}")
                 
                 # ไฟล์ผลลัพธ์อยู่ที่ Desktop เสมอ
                 output_name = "complete_bot.png" if "complete_bot" in filename.lower() else "complete.png"
@@ -271,6 +275,33 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({"status": "alive"}).encode())
             return
 
+        if parsed_url.path == '/upscale-progress':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            try:
+                import cloudinary_upscaler
+                self.wfile.write(json.dumps(cloudinary_upscaler.get_upscale_progress()).encode())
+            except Exception:
+                import upscale_engine
+                self.wfile.write(json.dumps(upscale_engine.get_upscale_progress()).encode())
+            return
+
+        if parsed_url.path == '/upscale-quota':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            try:
+                import cloudinary_upscaler
+                query_params = parse_qs(parsed_url.query)
+                force_refresh = 'refresh' in query_params
+                self.wfile.write(json.dumps(cloudinary_upscaler.get_accounts_quota(force_refresh=force_refresh)).encode())
+            except Exception as e:
+                self.wfile.write(json.dumps({"error": str(e)}).encode())
+            return
+
         return super().do_GET()
 
     def do_POST(self):
@@ -320,6 +351,21 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                                 os.startfile(target)
                             except:
                                 pass
+
+                    # ถ้าบันทึก complete.png (ไม่ใช่ complete_bot.png) ให้สร้าง example.png บน Desktop ด้วย
+                    is_complete_png = (os.path.basename(target).lower() == 'complete.png') and ('bot' not in target.lower())
+                    if is_complete_png:
+                        try:
+                            from watermark_engine import create_anti_ai_watermark
+                            from PIL import Image
+                            import io
+                            raw_img = Image.open(io.BytesIO(binary_data))
+                            example_img = create_anti_ai_watermark(raw_img)
+                            example_path = os.path.join(DESKTOP_PATH, 'example.png')
+                            example_img.save(example_path, format='PNG')
+                            print(f"[Watcher] Auto-generated example.png on Desktop")
+                        except Exception as we:
+                            print(f"[Watcher] Watermark generation error: {we}")
 
                     self.send_response(200)
                     self.send_header('Content-type', 'application/json')
@@ -399,6 +445,54 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(json.dumps({"success": False, "error": "Failed to obtain image."}).encode())
             except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode())
+            return
+
+        if parsed_url.path == '/upscale':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
+            try:
+                data = json.loads(post_data.decode('utf-8')) if post_data else {}
+                target_path = data.get('path')
+
+                # 🚫 ป้องกันเด็ดขาด: ห้ามยุ่งกับไฟล์ complete_bot.png หรือระบบ Facebook_Bot
+                if target_path and ('complete_bot' in os.path.basename(target_path).lower() or 'bot' in os.path.basename(target_path).lower()):
+                    self.send_response(400)
+                    self.send_header('Content-type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "success": False,
+                        "error": "ไม่อนุญาตให้ Upscale ไฟล์ complete_bot.png (Facebook_Bot ไม่ใช้ระบบ Upscale)"
+                    }).encode())
+                    return
+
+                if not target_path or not os.path.exists(target_path) or 'complete_bot' in os.path.basename(target_path).lower():
+                    target_path = os.path.join(DESKTOP_PATH, 'complete.png')
+
+                scale = int(data.get('scale', 2))
+                model_name = data.get('model', 'cloudinary_enhancer')
+                
+                print(f"[Watcher] 🔍 AI Upscale / Enhancer request received for {target_path} (scale={scale}x)")
+                import cloudinary_upscaler
+                result = cloudinary_upscaler.upscale_image(image_path=target_path, scale=scale, model_name=model_name)
+                
+                # Signal frontend that export updated
+                global last_exported_path
+                last_exported_path = target_path
+                export_event.set()
+
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps(result).encode())
+            except Exception as e:
+                print(f"[Watcher] ❌ Upscale error: {e}")
                 self.send_response(500)
                 self.send_header('Content-type', 'application/json')
                 self.send_header('Access-Control-Allow-Origin', '*')
