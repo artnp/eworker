@@ -197,6 +197,12 @@ def upscale_image(image_path=None, scale=2, model_name="realesrgan-x4plus", tile
     _set_progress("running", 90, 3, "ขั้นตอนที่ 3/3: กำลังบันทึก complete.png และสร้างลายน้ำ example.png...", "เขียนไฟล์ทับลง Desktop...")
 
     # แทนที่ไฟล์เป้าหมาย (เช่น complete.png)
+    try:
+        from auto_donate_watcher import backup_desktop_files
+        if backup_desktop_files:
+            backup_desktop_files()
+    except Exception:
+        pass
     if os.path.exists(image_path):
         try:
             os.remove(image_path)
