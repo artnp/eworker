@@ -18,7 +18,11 @@ function setProgress(v, t) {
 
 var doc = app.activeDocument;
 
-setProgress(10, 'กำลังส่งออก PNG...');
+setProgress(5, 'กำลังสำรองไฟล์เดิม...');
+var scriptDir = decodeURI($.fileName).replace(/\/[^\/]+$/, '');
+app.system('python "' + scriptDir + '/clean_metadata.py" --backup');
+
+setProgress(15, 'กำลังส่งออก PNG...');
 
 var opts = new ExportOptionsSaveForWeb();
 opts.format = SaveDocumentType.PNG;
