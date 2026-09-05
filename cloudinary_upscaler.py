@@ -17,7 +17,7 @@ DEFAULT_ACCOUNTS = [
     {"cloud_name": "qtwdpw8x", "api_key": "182649854232788", "api_secret": "Vg2LCCHJ-4DUivlhNVh_50tyAVU", "active": True},
     {"cloud_name": "tocchodh", "api_key": "732576314649364", "api_secret": "z-NNa8o9cZxRL97djoRRpJSf8tI", "active": True},
     {"cloud_name": "y5bb3tak", "api_key": "915546952421175", "api_secret": "1z57lAUiKLoegQFrmbol8-XyLcU", "active": True},
-    {"cloud_name": "dpbt2gb1h", "api_key": "331776356594442", "api_secret": "4sQ4tZb5mAU2OARoI9OFivbajtQ", "active": True}
+    {"cloud_name": "dpbt2gb1h", "api_key": "331776356594442", "api_secret": "4sQ4tZb5mAU2OARoI9OFivbajtQ", "active": False}
 ]
 
 def load_accounts():
@@ -142,7 +142,9 @@ def generate_signature(params_dict, api_secret):
     to_sign += api_secret
     return hashlib.sha1(to_sign.encode('utf-8')).hexdigest()
 
-def upscale_with_account(account, image_path, scale=2, mode="upscale_enhancer"):
+def upscale_with_account(account, image_path, scale=2, mode="upscale_enhancer", options=None):
+    if options is None:
+        options = {}
     cloud_name = account.get("cloud_name", "").strip()
     api_key = account.get("api_key", "").strip()
     api_secret = account.get("api_secret", "").strip()
@@ -174,10 +176,54 @@ def upscale_with_account(account, image_path, scale=2, mode="upscale_enhancer"):
         
         if mode == "enhancer":
             # Pure AI Generative Restore (Enhancer deblur & clarity, preserving dimensions)
-            transformed_url = f"https://res.cloudinary.com/{cloud_name}/image/upload/e_gen_restore/v{version}/{public_id}.{format_ext}"
+            transformed_url = f"https://res.cloudinary.com/{cloud_name}/image/upload/c_limit,w_2500,h_2500/e_gen_restore/v{version}/{public_id}.{format_ext}"
+        elif mode == "extender":
+            # Cloudinary AI Image Extender (Generative Fill Outpainting)
+            aspect_ratio = options.get("aspect_ratio")
+            direction = options.get("direction")
+            prompt = options.get("prompt", "").strip()
+            prompt_part = f":prompt_{requests.utils.quote(prompt)}" if prompt else ""
+
+            if aspect_ratio:
+                ext_part = f"b_gen_fill{prompt_part},c_pad,ar_{aspect_ratio}"
+            elif direction == "top":
+                ext_part = f"b_gen_fill{prompt_part},c_pad,h_1.3,g_south"
+            elif direction == "bottom":
+                ext_part = f"b_gen_fill{prompt_part},c_pad,h_1.3,g_north"
+            elif direction == "sides":
+                ext_part = f"b_gen_fill{prompt_part},c_pad,w_1.3"
+            else:
+                pct = float(options.get("pad_percent", 20))
+                factor = round(1.0 + (pct / 100.0), 2)
+                ext_part = f"b_gen_fill{prompt_part},c_pad,w_{factor},h_{factor}"
+
+            transformed_url = f"https://res.cloudinary.com/{cloud_name}/image/upload/c_limit,w_2000,h_2000/{ext_part}/v{version}/{public_id}.png"
+        elif mode == "remove_bg":
+            # Cloudinary Remove White Background / Transparent Background
+            method = options.get("method", "ai")
+            if method == "white":
+                # Remove white background specifically
+                bg_part = "e_make_transparent:20"
+            else:
+                # AI Smart Background Removal (foreground isolation)
+                bg_part = "e_background_removal"
+            transformed_url = f"https://res.cloudinary.com/{cloud_name}/image/upload/c_limit,w_2500,h_2500/{bg_part}/v{version}/{public_id}.png"
+        elif mode in ("remove_watermark", "remove_wm"):
+            # Cloudinary Generative Remove (AI Inpainting Watermark / Text removal)
+            region = options.get("region")
+            prompt = options.get("prompt", "watermark").strip()
+            if region:
+                rm_part = f"e_gen_remove:region_({region})"
+            else:
+                prompt_q = requests.utils.quote(prompt)
+                rm_part = f"e_gen_remove:prompt_{prompt_q}"
+            transformed_url = f"https://res.cloudinary.com/{cloud_name}/image/upload/c_limit,w_2500,h_2500/{rm_part}/v{version}/{public_id}.png"
         else:
             # AI Upscale + Generative Restore (Super-Resolution upscale + deblur clarity restore)
-            transformed_url = f"https://res.cloudinary.com/{cloud_name}/image/upload/e_gen_restore/e_upscale/v{version}/{public_id}.{format_ext}"
+            # Cloudinary e_upscale requires input image <= 4.2 megapixels.
+            # Using c_limit,w_2000,h_2000 prevents HTTP 400 "Image is too large for e_upscale"
+            # while leaving smaller images (e.g. 720x960) unscaled before super-resolution.
+            transformed_url = f"https://res.cloudinary.com/{cloud_name}/image/upload/c_limit,w_2000,h_2000/e_gen_restore/e_upscale/v{version}/{public_id}.{format_ext}"
         return transformed_url
     else:
         error_msg = response.text
@@ -188,21 +234,26 @@ def upscale_with_account(account, image_path, scale=2, mode="upscale_enhancer"):
             pass
         raise RuntimeError(f"Cloudinary error ({response.status_code}): {error_msg}")
 
-def upscale_image(image_path=None, scale=2, model_name="cloudinary_upscale_enhancer", mode=None):
+def upscale_image(image_path=None, scale=2, model_name="cloudinary_upscale_enhancer", mode=None, options=None):
     """
-    ทำ AI Enhancer & Upscale ภาพผ่าน Cloudinary Multi-Account Rotation
-    เขียนทับลงที่ image_path (complete.png) โดยตรง (ไม่ลบไฟล์)
-    และสร้างลายน้ำ example.png ใหม่
-    - model_name="cloudinary_upscale_enhancer" หรือ mode="upscale_enhancer": ขยายภาพ + ปรับความชัดสมจริง
-    - model_name="cloudinary_enhancer" หรือ mode="enhancer": ปรับความชัดสมจริง (ขนาดเดิม)
+    ทำ AI Enhancer / Upscale / Image Extender / Remove Background ผ่าน Cloudinary Multi-Account Rotation
+    เขียนทับลงที่ Desktop/complete.png โดยตรง (ไม่ตัดส่วนขาวใดๆ)
+    และสร้างลายน้ำ Desktop/example.png ใหม่
+    - mode="extender": ขยายตำแหน่งภาพ / ขยายขอบภาพด้วย AI Generative Fill
+    - mode="remove_bg": ลบฉากหลัง / ลบฉากหลังสีขาวให้เป็นภาพโปร่งใส PNG
+    - mode="upscale_enhancer": ขยายภาพ x2 + ปรับความชัดสมจริง
+    - mode="enhancer": ปรับความชัดสมจริง (ขนาดเดิม)
     """
+    if options is None:
+        options = {}
+
     if not image_path:
         image_path = os.path.join(DESKTOP_PATH, "complete.png")
 
     fname_lower = os.path.basename(image_path).lower()
     if "complete_bot" in fname_lower or "bot" in fname_lower:
         print(f"[Cloudinary] 🚫 Blocked: {image_path} is complete_bot.png.")
-        _set_progress("error", 0, 1, "🚫 ไม่อนุญาตให้ Upscale ไฟล์ complete_bot.png", "Facebook_Bot ไม่ใช้ระบบนี้")
+        _set_progress("error", 0, 1, "🚫 ไม่อนุญาตให้ประมวลผลไฟล์ complete_bot.png", "Facebook_Bot ไม่ใช้ระบบนี้")
         return {
             "success": False,
             "error": "Forbidden: complete_bot.png is reserved for Facebook_Bot.",
@@ -214,9 +265,22 @@ def upscale_image(image_path=None, scale=2, model_name="cloudinary_upscale_enhan
         raise FileNotFoundError(f"ไม่พบไฟล์: {image_path}")
 
     # Determine execution mode
-    effective_mode = mode or ("enhancer" if model_name == "cloudinary_enhancer" else "upscale_enhancer")
+    effective_mode = mode or ("enhancer" if model_name == "cloudinary_enhancer" else ("extender" if model_name in ("cloudinary_extender", "extender") else ("remove_bg" if model_name in ("cloudinary_remove_bg", "remove_bg") else ("remove_watermark" if model_name in ("cloudinary_remove_watermark", "remove_watermark", "remove_wm") else "upscale_enhancer"))))
     is_upscale_enhancer = (effective_mode == "upscale_enhancer")
-    mode_title = "AI Upscale + Enhancer" if is_upscale_enhancer else "AI Enhancer"
+    is_extender = (effective_mode == "extender")
+    is_remove_bg = (effective_mode == "remove_bg")
+    is_remove_wm = (effective_mode == "remove_watermark")
+
+    if is_extender:
+        mode_title = "AI Image Extender (เพิ่มตำแหน่งภาพ)"
+    elif is_remove_bg:
+        mode_title = "AI Remove Background (ลบฉากหลัง)"
+    elif is_remove_wm:
+        mode_title = "AI Remove Watermark (ลบลายน้ำ)"
+    elif is_upscale_enhancer:
+        mode_title = "AI Upscale + Enhancer"
+    else:
+        mode_title = "AI Enhancer"
 
     accounts = load_accounts()
     total_acc = len(accounts)
@@ -231,15 +295,22 @@ def upscale_image(image_path=None, scale=2, model_name="cloudinary_upscale_enhan
         cloud_name = acc.get('cloud_name', '').strip()
         api_key_short = acc.get('api_key', '')[:6] + '...'
         
-        if not cloud_name:
+        if not cloud_name or not acc.get('active', True):
             continue
 
         try:
             print(f"[Cloudinary] Trying Account {idx+1}/{total_acc} (Cloud: {cloud_name}, Key: {api_key_short}, Mode: {effective_mode})...")
-            step2_detail = (
-                "ขยายภาพความละเอียดสูง x2 พร้อมกู้คืนรายละเอียดและลดความเบลอ..." if is_upscale_enhancer
-                else "กู้คืนรายละเอียดและเพิ่มความคมชัดสมจริง..."
-            )
+            if is_extender:
+                step2_detail = "กำลังขยายขอบภาพและสร้างเนื้อหาภาพใหม่ด้วย Generative Fill..."
+            elif is_remove_bg:
+                step2_detail = "กำลังตัดแยกวัตถุและลบฉากหลังให้เป็นพื้นโปร่งใส..."
+            elif is_remove_wm:
+                step2_detail = "กำลังตรวจจับและลบลายน้ำด้วย AI Generative Inpainting..."
+            elif is_upscale_enhancer:
+                step2_detail = "ขยายภาพความละเอียดสูง x2 พร้อมกู้คืนรายละเอียดและลดความเบลอ..."
+            else:
+                step2_detail = "กู้คืนรายละเอียดและเพิ่มความคมชัดสมจริง..."
+
             _set_progress(
                 "running",
                 int(20 + (idx / total_acc) * 35),
@@ -248,13 +319,13 @@ def upscale_image(image_path=None, scale=2, model_name="cloudinary_upscale_enhan
                 step2_detail
             )
             
-            result_url = upscale_with_account(acc, image_path, scale=scale, mode=effective_mode)
+            result_url = upscale_with_account(acc, image_path, scale=scale, mode=effective_mode, options=options)
             print(f"[Cloudinary] ✅ Transformed URL generated via Account {idx+1}: {result_url}")
             
-            _set_progress("running", 75, 2, f"ขั้นตอนที่ 2/3: กำลังประมวลผลและดาวน์โหลดภาพคมชัดระดับสูง ({idx+1}/{total_acc})...", "สตรีมภาพผลลัพธ์จากคลาวด์...")
+            _set_progress("running", 75, 2, f"ขั้นตอนที่ 2/3: กำลังประมวลผลและดาวน์โหลดภาพ ({idx+1}/{total_acc})...", "สตรีมภาพผลลัพธ์จากคลาวด์...")
             
             # Retry loop for AI CDN generation (handles 420/423 processing responses)
-            max_retries = 15
+            max_retries = 25
             for attempt in range(max_retries):
                 try:
                     dl_resp = requests.get(result_url, timeout=50)
@@ -265,10 +336,15 @@ def upscale_image(image_path=None, scale=2, model_name="cloudinary_upscale_enhan
                     elif dl_resp.status_code in (420, 423, 202):
                         print(f"[Cloudinary] Waiting for AI generation (attempt {attempt+1}/{max_retries}, status {dl_resp.status_code})...")
                         time.sleep(2)
+                    elif dl_resp.status_code == 400:
+                        cld_err = dl_resp.headers.get("x-cld-error", dl_resp.text[:200])
+                        print(f"[Cloudinary] Client error 400 ({cld_err}) on account {idx+1}")
+                        raise RuntimeError(f"Cloudinary 400: {cld_err}")
                     else:
-                        print(f"[Cloudinary] Download attempt {attempt+1} got status {dl_resp.status_code}")
+                        cld_err = dl_resp.headers.get("x-cld-error", "")
+                        print(f"[Cloudinary] Download attempt {attempt+1} got status {dl_resp.status_code} {cld_err}")
                         time.sleep(1.5)
-                except Exception as de:
+                except requests.RequestException as de:
                     print(f"[Cloudinary] Download attempt {attempt+1} exception: {de}")
                     time.sleep(1.5)
 
@@ -282,12 +358,42 @@ def upscale_image(image_path=None, scale=2, model_name="cloudinary_upscale_enhan
             acc["last_error"] = str(e)
             continue
 
+    # Fallback to AI Enhancer if Upscale + Enhancer failed on all accounts
+    if not upscaled_image_bytes and is_upscale_enhancer:
+        print("[Cloudinary] ⚠️ Upscale failed across accounts. Attempting fallback to AI Enhancer...")
+        _set_progress("running", 60, 2, "กำลังกู้คืนรายละเอียดด้วย AI Enhancer...", "เปลี่ยนเป็นระบบ Enhancer อัตโนมัติ...")
+        for idx, acc in enumerate(accounts):
+            cloud_name = acc.get('cloud_name', '').strip()
+            if not cloud_name or not acc.get('active', True):
+                continue
+            try:
+                enh_url = upscale_with_account(acc, image_path, scale=1, mode="enhancer")
+                for attempt in range(15):
+                    dl_resp = requests.get(enh_url, timeout=40)
+                    if dl_resp.status_code == 200 and len(dl_resp.content) > 500:
+                        upscaled_image_bytes = dl_resp.content
+                        success_account_idx = idx
+                        effective_mode = "enhancer"
+                        break
+                    time.sleep(1.5)
+                if upscaled_image_bytes:
+                    break
+            except Exception as fe:
+                print(f"[Cloudinary] Enhancer fallback error on account {idx+1}: {fe}")
+                continue
+
     if not upscaled_image_bytes:
         _set_progress("error", 0, 2, f"❌ ทุกบัญชีติดขัด: {last_error_msg}", "กรุณาตรวจเช็ค Cloudinary Dashboard")
         raise RuntimeError(f"ทุกบัญชี Cloudinary หมดโควต้าหรือติดขัด: {last_error_msg}")
 
     # 💾 บันทึกทับ Desktop/complete.png โดยตรงเสมอ (ไม่สั่งลบไฟล์)
     desktop_complete = os.path.join(DESKTOP_PATH, "complete.png")
+    try:
+        from auto_donate_watcher import backup_desktop_files
+        if backup_desktop_files:
+            backup_desktop_files(incoming_data=upscaled_image_bytes)
+    except Exception:
+        pass
     with open(desktop_complete, 'wb') as f:
         f.write(upscaled_image_bytes)
     print(f"[Cloudinary] ✅ Overwritten Desktop complete.png: {desktop_complete}")
