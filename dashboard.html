@@ -195,8 +195,16 @@
             width: 80px;
             height: 80px;
             border-radius: 8px;
-            border: 1px solid var(--border);
+            border: 2px solid var(--border);
             position: relative;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+
+        .preview-thumb:hover {
+            transform: scale(1.05);
+            border-color: #ff4757;
+            box-shadow: 0 4px 12px rgba(255, 71, 87, 0.25);
         }
 
         .preview-thumb img {
@@ -800,6 +808,86 @@
             transform: translateY(0);
         }
 
+        /* AI Model Injection Status Badges & Fallback Banner */
+        .model-status-badge {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            margin-left: 2px;
+            border-radius: 6px;
+            padding: 2px 5px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .status-badge-pending {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+            animation: pulse 1.5s infinite;
+        }
+        .status-badge-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status-badge-failed {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            cursor: pointer;
+        }
+        .ai-fallback-panel {
+            width: 100%;
+            max-width: 1000px;
+            margin-top: 8px;
+            margin-bottom: 6px;
+            padding: 10px 14px;
+            background: #fff8f0;
+            border: 1px solid #fed7aa;
+            border-radius: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: #9a3412;
+            box-shadow: 0 2px 8px rgba(249, 115, 22, 0.15);
+        }
+        .fallback-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .fallback-btn {
+            padding: 5px 12px;
+            background: #ea580c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 6px rgba(234, 88, 12, 0.3);
+        }
+        .fallback-btn:hover {
+            background: #c2410c;
+            transform: translateY(-1px);
+        }
+        .fallback-btn-secondary {
+            background: #4b5563;
+            box-shadow: 0 2px 6px rgba(75, 85, 99, 0.3);
+        }
+        .fallback-btn-secondary:hover {
+            background: #374151;
+        }
+
         /* --- Mode Switcher Styles --- */
         .mode-switcher-wrapper {
             display: flex;
@@ -1288,27 +1376,33 @@
                 <input type="checkbox" name="model" value="GPT">
                 <span>GPT</span>
             </label>
+            <span id="badge-GPT" class="model-status-badge"></span>
             <label class="model-checkbox">
                 <input type="checkbox" name="model" value="Gemini">
                 <span>Gemini</span>
             </label>
+            <span id="badge-Gemini" class="model-status-badge"></span>
             <label class="model-checkbox">
                 <input type="checkbox" name="model" value="QWEN">
                 <span>QWEN</span>
             </label>
+            <span id="badge-QWEN" class="model-status-badge"></span>
             |
             <label class="model-checkbox">
                 <input type="checkbox" name="model" value="GROK">
                 <span>GROK</span>
             </label>
+            <span id="badge-GROK" class="model-status-badge"></span>
             <label class="model-checkbox">
                 <input type="checkbox" name="model" value="META">
                 <span>META</span>
             </label>
+            <span id="badge-META" class="model-status-badge"></span>
             <label class="model-checkbox">
                 <input type="checkbox" name="model" value="COPILOT">
                 <span>COPILOT</span>
             </label>
+            <span id="badge-COPILOT" class="model-status-badge"></span>
             |
             <button id="btn-all-ai" type="button" class="all-ai-btn" onclick="submitAllAI(event)">
                 ✨ All AI
@@ -1323,6 +1417,12 @@
                 title="Upscale + Enhancer AI: ขยายภาพ x2 พร้อมกู้คืนความคมชัดระดับสูงด้วย Cloudinary AI (บันทึกลง Desktop/complete.png และ example.png)">
                 🚀 Upscale + Enhancer
             </button>
+        </div>
+
+        <!-- Fallback notification panel when image injection fails on any model -->
+        <div id="ai-fallback-panel" class="ai-fallback-panel" style="display: none;">
+            <div id="ai-fallback-msg" style="display:flex;align-items:center;gap:6px;"></div>
+            <div id="ai-fallback-actions" class="fallback-actions"></div>
         </div>
 
         <!-- Default Mode Quick Tags -->
@@ -1488,59 +1588,98 @@
                         </div>
                     </div>
 
-                    <!-- Tools / Clone Stamp / Upscale Column -->
+                    <!-- Tools / Clone Stamp / Upscale / Extender / Remove BG Column (Single Vertical Column) -->
                     <div
-                        style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 1px solid #eee; border-radius: 10px; padding: 10px 8px; background: #fafafa; min-width: 90px;">
+                        style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 6px; border: 1px solid #eee; border-radius: 12px; padding: 8px 6px; background: #fafafa; width: 92px; min-width: 90px;">
                         <span
-                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 2px;">เครื่องมือ</span>
+                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 1px;">เครื่องมือ</span>
 
-                        <!-- Enhancer / Upscale AI Button with Integrated Quota Details -->
-                        <button id="btn-upscale" onclick="triggerUpscale(null, 2, 'cloudinary_upscale_enhancer')"
-                            style="width: 74px; height: 72px; border-radius: 14px; border: 1px solid #c7d2fe; background: linear-gradient(135deg, #f0f3ff 0%, #ffffff 100%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(99, 102, 241, 0.12); transition: all 0.2s ease-in-out; padding: 4px 2px;"
-                            title="Upscale + Enhancer AI: ขยายภาพ x2 พร้อมกู้คืนความคมชัดและลบความเบลอด้วย Cloudinary AI (ทับ complete.png และสร้าง example.png)">
-                            <!-- SVG Magic Wand / Enhancer Sparkles Icon -->
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4f46e5"
-                                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-                                style="margin-bottom: 1px; transition: transform 0.2s ease;">
-                                <path
-                                    d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1 1.275-1.275L12 3Z" />
-                                <path d="M5 3v4" />
-                                <path d="M19 17v4" />
-                                <path d="M3 5h4" />
-                                <path d="M17 19h4" />
-                            </svg>
-                            <span id="btn-enhancer-text"
-                                style="font-size: 0.60rem; font-weight: 700; color: #4338ca; white-space: nowrap; line-height: 1.1;">Upscale+AI</span>
-                            <!-- Compact Quota Details Inside Button -->
-                            <div id="btn-quota-details"
-                                style="display: flex; flex-direction: column; align-items: center; margin-top: 2px; line-height: 1.05;">
-                                <span id="quota-acc-name"
-                                    style="font-size: 0.52rem; font-weight: 600; color: #6366f1; white-space: nowrap;">
-                                    1/7
-                                </span>
-                                <span id="quota-acc-credits"
-                                    style="font-size: 0.50rem; font-weight: 700; color: #059669; white-space: nowrap;">
-                                    เหลือ 98%
-                                </span>
+                        <!-- แถบโควต้า Cloudinary รวม (แยกไว้ข้างนอกปุ่ม) -->
+                        <div id="btn-quota-details" onclick="loadCloudinaryQuota(true)"
+                            style="width: 78px; padding: 3px 2px; border-radius: 8px; background: linear-gradient(135deg, #f0f3ff 0%, #e0e7ff 100%); border: 1px solid #c7d2fe; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; line-height: 1.15; box-shadow: 0 1px 3px rgba(99, 102, 241, 0.08); transition: all 0.2s ease; margin-bottom: 2px;"
+                            title="โควต้า Cloudinary รวม (คลิกเพื่อดูสรุปทุกบัญชี)">
+                            <div style="display: flex; align-items: center; gap: 2px;">
+                                <span style="font-size: 0.52rem; color: #4338ca; font-weight: 700;">☁️ บัญชี</span>
+                                <span id="quota-acc-name" style="font-size: 0.54rem; font-weight: 700; color: #4338ca; white-space: nowrap;">1/7</span>
                             </div>
-                        </button>
+                            <span id="quota-acc-credits" style="font-size: 0.52rem; font-weight: 700; color: #059669; white-space: nowrap;">เหลือ 71.1%</span>
+                        </div>
 
-                        <!-- Clone Stamp Button -->
-                        <button id="btn-clone-stamp" onclick="toggleCloneStampMode()"
-                            style="width: 72px; height: 72px; border-radius: 14px; border: 1px solid #dadce0; background: #ffffff; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.2s ease-in-out; padding: 6px;"
-                            title="เครื่องมือลบลายน้ำ Clone Stamp: กดใช้แล้วเมาส์จะเป็นวงกลม คลิกที่ลายน้ำเพื่อลบได้เลย (คัดลอกจากพิกเซลใกล้เคียง) หรือกด Alt+คลิก เพื่อเลือกพิกเซลต้นฉบับได้เอง">
-                            <!-- SVG Stamp Icon -->
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-                                style="color: #4285f4; margin-bottom: 4px; transition: transform 0.2s ease;">
-                                <path d="M12 2a3 3 0 0 0-3 3v3h6V5a3 3 0 0 0-3-3z" />
-                                <path d="M6 12a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3H6v-3z" />
-                                <path d="M4 18h16" />
-                                <path d="M4 21h16" />
-                            </svg>
-                            <span
-                                style="font-size: 0.68rem; font-weight: 600; color: #3c4043; white-space: nowrap;">ลบลายน้ำ</span>
-                        </button>
+                        <div style="display: flex; flex-direction: column; gap: 6px; align-items: center; width: 100%;">
+                            <!-- 1. Enhancer AI Button -->
+                            <button id="btn-upscale" onclick="triggerUpscale(null, 1, 'cloudinary_enhancer')"
+                                style="width: 78px; height: 68px; border-radius: 12px; border: 1px solid #c7d2fe; background: linear-gradient(135deg, #f0f3ff 0%, #ffffff 100%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(99, 102, 241, 0.12); transition: all 0.2s ease-in-out; padding: 5px 2px;"
+                                title="AI Enhancer: ปรับความคมชัด กู้คืนรายละเอียด และลดความเบลอด้วย Cloudinary AI (ทับ complete.png และสร้าง example.png)">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4f46e5"
+                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+                                    style="margin-bottom: 2px; transition: transform 0.2s ease;">
+                                    <path
+                                        d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1 1.275-1.275L12 3Z" />
+                                    <path d="M5 3v4" />
+                                    <path d="M19 17v4" />
+                                    <path d="M3 5h4" />
+                                    <path d="M17 19h4" />
+                                </svg>
+                                <span id="btn-enhancer-text"
+                                    style="font-size: 0.62rem; font-weight: 700; color: #4338ca; white-space: nowrap; line-height: 1.1;">Enhance AI</span>
+                                <span style="font-size: 0.50rem; color: #6366f1; font-weight: 600;">ปรับชัดกู้เบลอ</span>
+                            </button>
+
+                            <!-- 2. Remove Watermark Button (Cloudinary AI Inpaint) -->
+                            <button id="btn-clone-stamp" onclick="toggleCloneStampMode()"
+                                style="width: 78px; height: 68px; border-radius: 12px; border: 1px solid #bfdbfe; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(59, 130, 246, 0.12); transition: all 0.2s ease-in-out; padding: 5px 2px;"
+                                title="ลบลายน้ำ AI (วงตำแหน่งเฉพาะจุด): กดปุ่มนี้แล้วคลิกวงตำแหน่งลายน้ำบนภาพ หรือลากกรอบ Marquee ใน Photopea แล้วกดปุ่มนี้">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb"
+                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+                                    style="margin-bottom: 2px; transition: transform 0.2s ease;">
+                                    <circle cx="12" cy="12" r="8" stroke-dasharray="3 3" />
+                                    <path d="M12 2v4" />
+                                    <path d="M12 18v4" />
+                                    <path d="M2 12h4" />
+                                    <path d="M18 12h4" />
+                                    <circle cx="12" cy="12" r="2" fill="#2563eb" />
+                                </svg>
+                                <span
+                                    style="font-size: 0.62rem; font-weight: 700; color: #1d4ed8; white-space: nowrap; line-height: 1.1;">ลบลายน้ำ</span>
+                                <span style="font-size: 0.50rem; color: #2563eb; font-weight: 600;">วงตำแหน่ง AI</span>
+                            </button>
+
+                            <!-- 3. AI Extender (เพิ่มตำแหน่งภาพ) Button -->
+                            <button id="btn-ai-extender" onclick="triggerDirectAIExtender(event)"
+                                style="width: 78px; height: 68px; border-radius: 12px; border: 1px solid #bae6fd; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(2, 132, 199, 0.12); transition: all 0.2s ease-in-out; padding: 5px 2px;"
+                                title="ขยายภาพ AI (Cloudinary AI Image Extender): ขยายขอบภาพ 20% ทุกทิศทางอัตโนมัติทันทีด้วย AI Generative Fill (บันทึกทับ complete.png และสร้าง example.png)">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0284c7"
+                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+                                    style="margin-bottom: 2px; transition: transform 0.2s ease;">
+                                    <path d="M15 3h6v6" />
+                                    <path d="M9 21H3v-6" />
+                                    <path d="M21 3l-7 7" />
+                                    <path d="M3 21l7-7" />
+                                    <rect width="8" height="8" x="8" y="8" rx="2" stroke-dasharray="2 2" />
+                                </svg>
+                                <span
+                                    style="font-size: 0.62rem; font-weight: 700; color: #0369a1; white-space: nowrap; line-height: 1.1;">ขยายภาพ AI</span>
+                                <span style="font-size: 0.50rem; color: #0284c7; font-weight: 600;">+20% ทุกทิศ</span>
+                            </button>
+
+                            <!-- 4. Remove Background (ลบฉากหลัง) Button -->
+                            <button id="btn-remove-bg" onclick="triggerDirectAIRemoveBg(event)"
+                                style="width: 78px; height: 68px; border-radius: 12px; border: 1px solid #fecdd3; background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(225, 29, 72, 0.12); transition: all 0.2s ease-in-out; padding: 5px 2px;"
+                                title="ลบฉากหลัง (Cloudinary AI Smart Cutout): ลบฉากหลังทุกชนิดอัตโนมัติด้วย AI ให้เป็นภาพโปร่งใส PNG (บันทึกทับ complete.png และสร้าง example.png)">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e11d48"
+                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+                                    style="margin-bottom: 2px; transition: transform 0.2s ease;">
+                                    <path d="M6 3v12" />
+                                    <circle cx="6" cy="18" r="3" />
+                                    <circle cx="18" cy="6" r="3" />
+                                    <path d="m18 9-9 9" />
+                                    <path d="M18 15v6" />
+                                </svg>
+                                <span
+                                    style="font-size: 0.62rem; font-weight: 700; color: #be123c; white-space: nowrap; line-height: 1.1;">ลบฉากหลัง</span>
+                                <span style="font-size: 0.50rem; color: #e11d48; font-weight: 600;">AI Cutout</span>
+                            </button>
+                        </div>
                     </div>
 
                 </div>
@@ -1559,15 +1698,15 @@
             <div style="display: flex; gap: 16px; align-items: stretch; justify-content: center; flex-wrap: wrap;">
 
                 <!-- Target Image Interactive Canvas (Main Panel) -->
-                <div
-                    style="flex: 2; min-width: 320px; display: flex; flex-direction: column; align-items: center; background: #fafafa; border: 1px solid #dfe4ea; border-radius: 12px; padding: 10px; position: relative;">
+                <div id="faceswap-main-panel"
+                    style="flex: 2; min-width: 320px; display: flex; flex-direction: column; align-items: center; background: #fafafa; border: 2px dashed #dfe4ea; border-radius: 12px; padding: 10px; position: relative; transition: all 0.2s ease;">
                     <div id="faceswap-canvas-wrapper"
-                        style="position: relative; width: 100%; max-height: 480px; min-height: 280px; display: flex; align-items: center; justify-content: center; background: #2f3542; border-radius: 8px; overflow: hidden;">
+                        style="position: relative; width: 100%; max-height: 480px; min-height: 280px; display: flex; align-items: center; justify-content: center; background: #2f3542; border-radius: 8px; overflow: hidden; transition: all 0.2s ease;">
                         <canvas id="faceswap-canvas"
                             style="max-width: 100%; max-height: 480px; object-fit: contain; cursor: crosshair; display: block;"></canvas>
                         <div id="faceswap-placeholder"
                             style="color: #a4b0be; font-size: 0.85rem; text-align: center; padding: 20px; display: none;">
-                            📸 กรุณาเลือกรูปภาพจากรายการด้านบน หรือวางภาพ (Ctrl+V)
+                            📸 ลากภาพจากกล่องด้านบนมาวางที่นี่ หรือวางภาพ (Ctrl+V) เพื่อตั้งเป็นภาพหลัก
                         </div>
                     </div>
                 </div>
@@ -1776,7 +1915,14 @@
         function loadTargetImageToFaceSwap(forceUrl = null) {
             let targetPath = forceUrl;
             if (!targetPath) {
-                if (selectedFilesList.length > 0) {
+                if (pastedFiles.length > 0) {
+                    const lastPasted = pastedFiles[pastedFiles.length - 1];
+                    if (lastPasted.url) {
+                        targetPath = lastPasted.url;
+                    } else if (lastPasted.blob) {
+                        targetPath = URL.createObjectURL(lastPasted.blob);
+                    }
+                } else if (selectedFilesList.length > 0) {
                     targetPath = `/get-img?path=${encodeURIComponent(selectedFilesList[0])}`;
                 } else if (currentWatermarkPath) {
                     targetPath = `/get-img?path=${encodeURIComponent(currentWatermarkPath)}`;
@@ -2004,6 +2150,100 @@
         }
 
         // Bind reference face file input change
+        function bindFaceSwapDropTargets() {
+            const targetDropElements = [
+                document.getElementById('faceswap-main-panel'),
+                document.getElementById('faceswap-canvas-wrapper'),
+                document.getElementById('faceswap-canvas')
+            ].filter(Boolean);
+
+            targetDropElements.forEach(el => {
+                if (el.dataset.dropBound) return;
+                el.dataset.dropBound = 'true';
+
+                el.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.dataTransfer.dropEffect = 'copy';
+                    const mainPanel = document.getElementById('faceswap-main-panel');
+                    const wrapper = document.getElementById('faceswap-canvas-wrapper');
+                    if (mainPanel) {
+                        mainPanel.style.borderColor = '#ff4757';
+                        mainPanel.style.background = '#fff5f5';
+                    }
+                    if (wrapper) {
+                        wrapper.style.outline = '3px dashed #ff4757';
+                        wrapper.style.outlineOffset = '-3px';
+                    }
+                });
+
+                el.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const mainPanel = document.getElementById('faceswap-main-panel');
+                    const wrapper = document.getElementById('faceswap-canvas-wrapper');
+                    if (mainPanel) {
+                        mainPanel.style.borderColor = '#dfe4ea';
+                        mainPanel.style.background = '#fafafa';
+                    }
+                    if (wrapper) {
+                        wrapper.style.outline = 'none';
+                    }
+                });
+
+                el.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const mainPanel = document.getElementById('faceswap-main-panel');
+                    const wrapper = document.getElementById('faceswap-canvas-wrapper');
+                    if (mainPanel) {
+                        mainPanel.style.borderColor = '#dfe4ea';
+                        mainPanel.style.background = '#fafafa';
+                    }
+                    if (wrapper) {
+                        wrapper.style.outline = 'none';
+                    }
+
+                    // 1. Check if dropped from #previews (preview-thumb)
+                    const previewId = e.dataTransfer.getData('application/x-preview-id') || dragSource?.dataset?.id;
+                    const textUrl = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('text/uri-list') || dragSource?.dataset?.url || dragSource?.querySelector('img')?.src;
+
+                    if (previewId) {
+                        const found = pastedFiles.find(f => f.id === previewId);
+                        if (found) {
+                            const url = found.url || URL.createObjectURL(found.blob);
+                            loadTargetImageToFaceSwap(url);
+                            showToast('🎯 ดึงภาพนี้มาเป็นภาพหลักสำหรับมาร์กเปลี่ยนหน้าแล้ว');
+                            return;
+                        }
+                    }
+
+                    if (textUrl && (textUrl.startsWith('blob:') || textUrl.startsWith('data:') || textUrl.startsWith('http') || textUrl.startsWith('/'))) {
+                        loadTargetImageToFaceSwap(textUrl);
+                        showToast('🎯 ดึงภาพนี้มาเป็นภาพหลักสำหรับมาร์กเปลี่ยนหน้าแล้ว');
+                        return;
+                    }
+
+                    // 2. Check if dropped files from Desktop / Explorer
+                    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                        for (let i = 0; i < e.dataTransfer.files.length; i++) {
+                            const f = e.dataTransfer.files[i];
+                            if (f.type.startsWith('image/') || f.name.toLowerCase().endsWith('.webp')) {
+                                addPreview(f);
+                                const blobUrl = URL.createObjectURL(f);
+                                loadTargetImageToFaceSwap(blobUrl);
+                                showToast('🎯 ดึงภาพมาเป็นภาพหลักสำหรับมาร์กเปลี่ยนหน้าแล้ว');
+                                break;
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        setTimeout(bindFaceSwapDropTargets, 200);
+        setTimeout(bindFaceSwapDropTargets, 800);
+
         setTimeout(() => {
             const refFileInput = document.getElementById('fs-ref-file-input');
             if (refFileInput) {
@@ -2014,38 +2254,7 @@
                     refFileInput.value = '';
                 });
             }
-
-            const dropzone = document.getElementById('fs-ref-dropzone');
-            if (dropzone) {
-                dropzone.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    dropzone.style.borderColor = '#ff4757';
-                    dropzone.style.background = '#ffebee';
-                });
-                dropzone.addEventListener('dragleave', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    dropzone.style.borderColor = 'rgba(255, 71, 87, 0.45)';
-                    dropzone.style.background = 'linear-gradient(180deg, #ffffff 0%, #fff6f6 100%)';
-                });
-                dropzone.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    dropzone.style.borderColor = 'rgba(255, 71, 87, 0.45)';
-                    dropzone.style.background = 'linear-gradient(180deg, #ffffff 0%, #fff6f6 100%)';
-                    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                        for (let i = 0; i < e.dataTransfer.files.length; i++) {
-                            const f = e.dataTransfer.files[i];
-                            if (f.type.startsWith('image/') || f.name.toLowerCase().endsWith('.webp')) {
-                                setReferenceFace(f, true);
-                                break;
-                            }
-                        }
-                    }
-                });
-            }
-        }, 500);
+        }, 300);
 
         function setReferenceFace(fileOrUrl, autoSubmit = false) {
             if (typeof fileOrUrl === 'string') {
@@ -2132,6 +2341,9 @@
 
                 if (res && res.success) {
                     showToast('✅ ส่งคำขอเปลี่ยนหน้าเข้าสู่ AI สำเร็จ!');
+                    if (typeof trackInjectionStatuses === 'function') {
+                        trackInjectionStatuses(modelsToSend, imagesToSend, prompt);
+                    }
                     if (modelsToSend.includes('Gemini')) {
                         const radios = getAccountRadios();
                         if (radios.length > 0) {
@@ -2235,6 +2447,7 @@
 
                 // Auto-load current image into face swap studio
                 setTimeout(() => {
+                    bindFaceSwapDropTargets();
                     loadTargetImageToFaceSwap();
                 }, 100);
             } else {
@@ -2530,6 +2743,9 @@
 
                 if (res && res.success) {
                     showToast('✅ ส่งภาพ Crop เข้า AI สำเร็จ! เมื่อเสร็จแล้วจะดึงภาพมาวางทับตำแหน่งเดิมอัตโนมัติ');
+                    if (typeof trackInjectionStatuses === 'function') {
+                        trackInjectionStatuses(modelsToSend, pastedImageDataUrls, finalPrompt);
+                    }
                     if (promptEl) promptEl.value = '';
                     ppInpaintPastedFiles = [];
                     renderInpaintPreviews();
@@ -3064,37 +3280,63 @@
             }, 400);
         });
 
-        // --- Clone Stamp Tool Variables & Functions ---
+        // --- AI Watermark Removal / Circle Target Inpaint ---
         let cloneStampActive = false;
-        let cloneSourceX = null;
-        let cloneSourceY = null;
-        const brushRadius = 15;
+        const brushRadius = 35; // รัศมีวงกลมขนาด 70px เหมาะสำหรับคลุมลายน้ำ
         let mainImageCanvas = document.createElement('canvas');
 
         function toggleCloneStampMode() {
-            cloneStampActive = !cloneStampActive;
-            const btn = document.getElementById('btn-clone-stamp');
-            if (cloneStampActive) {
-                btn.style.borderColor = 'var(--primary)';
-                btn.style.background = '#e8f0fe';
-                showToast('🩹 เปิดโหมดลบลายน้ำ');
-
-                document.getElementById('crop-canvas-top').style.cursor = 'crosshair';
-                document.getElementById('crop-canvas-bottom').style.cursor = 'crosshair';
-                document.getElementById('crop-canvas-left').style.cursor = 'crosshair';
-                document.getElementById('crop-canvas-right').style.cursor = 'crosshair';
-            } else {
-                btn.style.borderColor = '#ccc';
-                btn.style.background = 'white';
-                showToast('🩹 ปิดโหมดลบลายน้ำ');
-
-                document.getElementById('crop-canvas-top').style.cursor = 'n-resize';
-                document.getElementById('crop-canvas-bottom').style.cursor = 's-resize';
-                document.getElementById('crop-canvas-left').style.cursor = 'w-resize';
-                document.getElementById('crop-canvas-right').style.cursor = 'e-resize';
-
-                redrawAllCropCanvases();
+            // ถ้ามีเลือกกรอบ Marquee ใน Photopea อยู่ ให้ส่ง AI ลบตำแหน่งนั้นได้ทันที
+            if (typeof currentPhotopeaSelection !== 'undefined' && currentPhotopeaSelection && !cloneStampActive) {
+                const sel = currentPhotopeaSelection;
+                const regionStr = `x_${Math.round(sel.x)};y_${Math.round(sel.y)};w_${Math.round(sel.w)};h_${Math.round(sel.h)}`;
+                showToast(`🩹 ใช้กรอบที่เลือกใน Photopea (${Math.round(sel.w)}×${Math.round(sel.h)}px) -> ส่ง AI ลบลายน้ำ...`);
+                let selectedPath = currentWatermarkPath || 'C:\\Users\\artwh\\Desktop\\complete.png';
+                triggerUpscale(selectedPath, 1, 'cloudinary_remove_watermark', { region: regionStr, prompt: 'watermark' });
+                return;
             }
+
+            if (cloneStampActive) {
+                // หากกดปุ่มซ้ำขณะโหมดเปิดอยู่ -> ทำการลบลายน้ำอัตโนมัติทั้งภาพ
+                toggleOffStampMode();
+                showToast('🪄 ส่งคำสั่ง Cloudinary AI ตรวจจับและลบลายน้ำอัตโนมัติทั้งภาพ...');
+                let selectedPath = currentWatermarkPath || 'C:\\Users\\artwh\\Desktop\\complete.png';
+                triggerUpscale(selectedPath, 1, 'cloudinary_remove_watermark', { prompt: 'watermark' });
+                return;
+            }
+
+            cloneStampActive = true;
+            const btn = document.getElementById('btn-clone-stamp');
+            if (btn) {
+                btn.style.borderColor = '#2563eb';
+                btn.style.background = '#dbeafe';
+                btn.style.boxShadow = '0 0 0 2px rgba(37, 99, 235, 0.4)';
+            }
+            showToast('🩹 เปิดโหมดวงตำแหน่ง: คลิกวงกลมบนลายน้ำในภาพเพื่อสั่ง AI ลบจุดนั้นได้ทันที (หรือกดปุ่มซ้ำเพื่อลบอัตโนมัติ)');
+
+            document.getElementById('crop-canvas-top').style.cursor = 'crosshair';
+            document.getElementById('crop-canvas-bottom').style.cursor = 'crosshair';
+            document.getElementById('crop-canvas-left').style.cursor = 'crosshair';
+            document.getElementById('crop-canvas-right').style.cursor = 'crosshair';
+
+            const watermarkPanel = document.getElementById('watermark-check-container');
+            if (watermarkPanel) watermarkPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function toggleOffStampMode() {
+            cloneStampActive = false;
+            const btn = document.getElementById('btn-clone-stamp');
+            if (btn) {
+                btn.style.borderColor = '#bfdbfe';
+                btn.style.background = 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)';
+                btn.style.boxShadow = '0 2px 5px rgba(59, 130, 246, 0.12)';
+            }
+            document.getElementById('crop-canvas-top').style.cursor = 'n-resize';
+            document.getElementById('crop-canvas-bottom').style.cursor = 's-resize';
+            document.getElementById('crop-canvas-left').style.cursor = 'w-resize';
+            document.getElementById('crop-canvas-right').style.cursor = 'e-resize';
+
+            redrawAllCropCanvases();
         }
 
         function redrawAllCropCanvases() {
@@ -3154,25 +3396,28 @@
                 ctx.drawImage(mainImageCanvas, startX, 0, currentCropWidth, mainImageCanvas.height, 0, 0, currentCropWidth, mainImageCanvas.height);
             }
 
-            // Draw circle with 50% opacity (red for stamp, blue for alt-select source)
+            // วาดวงกลมตำแหน่งลบลายน้ำสีแดงโปร่งแสงพร้อมเส้นเล็ง
+            ctx.save();
             ctx.beginPath();
             ctx.arc(localX, localY, brushRadius, 0, Math.PI * 2);
-            ctx.fillStyle = isAltPressed ? 'rgba(0, 136, 255, 0.5)' : 'rgba(255, 0, 0, 0.5)';
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.22)';
             ctx.fill();
-            ctx.strokeStyle = isAltPressed ? '#0088ff' : '#ff0000';
-            ctx.lineWidth = 1;
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 4]);
             ctx.stroke();
 
-            if (isAltPressed) {
-                ctx.beginPath();
-                ctx.moveTo(localX - 5, localY);
-                ctx.lineTo(localX + 5, localY);
-                ctx.moveTo(localX, localY - 5);
-                ctx.lineTo(localX, localY + 5);
-                ctx.strokeStyle = '#0088ff';
-                ctx.lineWidth = 1.5;
-                ctx.stroke();
-            }
+            // เส้นเล็งกลางวงกลม
+            ctx.beginPath();
+            ctx.moveTo(localX - 6, localY);
+            ctx.lineTo(localX + 6, localY);
+            ctx.moveTo(localX, localY - 6);
+            ctx.lineTo(localX, localY + 6);
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([]);
+            ctx.stroke();
+            ctx.restore();
         }
 
         async function handleCanvasStamp(canvas, e) {
@@ -3196,48 +3441,24 @@
                 globalX = localX;
             }
 
-            if (e.altKey) {
-                cloneSourceX = globalX;
-                cloneSourceY = globalY;
-                showToast(`📍 กำหนดจุดต้นทางคัดลอกที่: X=${Math.round(globalX)}, Y=${Math.round(globalY)}`);
-                drawStampCursor(canvas, localX, localY, true);
-                return;
-            }
+            // คำนวณกรอบสี่เหลี่ยมรอบจุดที่วง (รัศมี brushRadius)
+            const rx = Math.max(0, Math.round(globalX - brushRadius));
+            const ry = Math.max(0, Math.round(globalY - brushRadius));
+            const rw = Math.min(mainImageCanvas.width - rx, brushRadius * 2);
+            const rh = Math.min(mainImageCanvas.height - ry, brushRadius * 2);
+            const regionStr = `x_${rx};y_${ry};w_${rw};h_${rh}`;
 
-            let srcX = cloneSourceX;
-            let srcY = cloneSourceY;
+            showToast(`🩹 วงตำแหน่งลายน้ำ (X=${rx}, Y=${ry}, ขนาด ${rw}×${rh}px) -> ส่ง Cloudinary AI ลบออก...`);
 
-            if (srcX === null || srcY === null) {
-                srcX = Math.max(0, globalX - 50);
-                srcY = globalY;
-            }
+            toggleOffStampMode();
 
-            const mainCtx = mainImageCanvas.getContext('2d');
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = brushRadius * 2;
-            tempCanvas.height = brushRadius * 2;
-            const tempCtx = tempCanvas.getContext('2d');
+            let selectedPath = currentWatermarkPath || 'C:\\Users\\artwh\\Desktop\\complete.png';
+            const options = {
+                region: regionStr,
+                prompt: 'watermark'
+            };
 
-            tempCtx.beginPath();
-            tempCtx.arc(brushRadius, brushRadius, brushRadius, 0, Math.PI * 2);
-            tempCtx.clip();
-
-            tempCtx.drawImage(mainImageCanvas,
-                srcX - brushRadius, srcY - brushRadius, brushRadius * 2, brushRadius * 2,
-                0, 0, brushRadius * 2, brushRadius * 2
-            );
-
-            mainCtx.save();
-            mainCtx.beginPath();
-            mainCtx.arc(globalX, globalY, brushRadius, 0, Math.PI * 2);
-            mainCtx.clip();
-            mainCtx.drawImage(tempCanvas, globalX - brushRadius, globalY - brushRadius);
-            mainCtx.restore();
-
-            redrawAllCropCanvases();
-            drawStampCursor(canvas, localX, localY, false);
-
-            await saveCroppedImage(mainImageCanvas.toDataURL('image/png', 1.0));
+            await triggerUpscale(selectedPath, 1, 'cloudinary_remove_watermark', options);
         }
 
         const pendingRequests = new Map();
@@ -3478,12 +3699,22 @@
             thumb.className = 'preview-thumb';
             thumb.draggable = true;
             thumb.dataset.id = id;
-            thumb.innerHTML = `<img src="${url}"><button class="remove">×</button>`;
+            thumb.dataset.url = url;
+            thumb.title = "คลิกเพื่อนำภาพเข้าสู่ระบบมาร์กเปลี่ยนหน้า / ลากวางเพื่อจัดลำดับ";
+            thumb.innerHTML = `<img src="${url}"><button class="remove" title="ลบภาพ">×</button>`;
 
             thumb.querySelector('.remove').onclick = (e) => {
                 e.stopPropagation();
                 thumb.remove();
                 pastedFiles = pastedFiles.filter(f => f.id !== id);
+            };
+
+            // Click thumbnail to load directly into Face Swap canvas if in Face Swap mode
+            thumb.onclick = (e) => {
+                if (currentStudioMode === 'faceswap') {
+                    loadTargetImageToFaceSwap(url);
+                    showToast('🎯 ดึงภาพเข้าสู่ระบบมาร์กเปลี่ยนหน้าแล้ว (คลิกบนใบหน้าเพื่อมาร์ก)');
+                }
             };
 
             // Drag and drop reordering
@@ -3494,7 +3725,12 @@
             thumb.addEventListener('dragend', handleDragEnd);
 
             previews.appendChild(thumb);
-            pastedFiles.push({ id, blob });
+            pastedFiles.push({ id, blob, url });
+
+            // If currently in Face Swap mode, auto-load this new image into face swap canvas
+            if (currentStudioMode === 'faceswap') {
+                loadTargetImageToFaceSwap(url);
+            }
         }
 
         // --- Drag & Drop Reordering Logic ---
@@ -3504,7 +3740,13 @@
             const target = e.currentTarget;
             dragSource = target;
             target.classList.add('dragging');
-            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.effectAllowed = 'copyMove';
+            const url = target.dataset.url || target.querySelector('img')?.src || '';
+            e.dataTransfer.setData('text/plain', url);
+            e.dataTransfer.setData('application/x-preview-id', target.dataset.id || '');
+            if (url) {
+                e.dataTransfer.setData('text/uri-list', url);
+            }
         }
 
         function handleDragOverItem(e) {
@@ -3590,14 +3832,9 @@
                     for (const type of item.types) {
                         if (type.startsWith('image/') || type.includes('webp')) {
                             const blob = await item.getType(type);
+                            addPreview(blob);
                             if (currentStudioMode === 'faceswap') {
-                                if (faceSwapTargetImg) {
-                                    setReferenceFace(blob, true);
-                                } else {
-                                    loadTargetImageToFaceSwap(URL.createObjectURL(blob));
-                                }
-                            } else {
-                                addPreview(blob);
+                                loadTargetImageToFaceSwap(URL.createObjectURL(blob));
                             }
                             found = true;
                         }
@@ -3613,15 +3850,9 @@
         fileInput.onchange = (e) => {
             const files = e.target.files;
             for (let i = 0; i < files.length; i++) {
+                addPreview(files[i]);
                 if (currentStudioMode === 'faceswap') {
-                    if (faceSwapTargetImg) {
-                        setReferenceFace(files[i], true);
-                    } else {
-                        loadTargetImageToFaceSwap(URL.createObjectURL(files[i]));
-                    }
-                    break;
-                } else {
-                    addPreview(files[i]);
+                    loadTargetImageToFaceSwap(URL.createObjectURL(files[i]));
                 }
             }
             fileInput.value = ''; // Reset for next use
@@ -3635,15 +3866,10 @@
             for (let i = 0; i < items.length; i++) {
                 const file = items[i].getAsFile();
                 if (items[i].type.indexOf('image') !== -1 || (file && file.name && file.name.toLowerCase().endsWith('.webp'))) {
+                    addPreview(file);
                     if (currentStudioMode === 'faceswap') {
-                        if (faceSwapTargetImg) {
-                            setReferenceFace(file, true); // Auto-send to AI!
-                        } else {
-                            const blobUrl = URL.createObjectURL(file);
-                            loadTargetImageToFaceSwap(blobUrl);
-                        }
-                    } else {
-                        addPreview(file);
+                        const blobUrl = URL.createObjectURL(file);
+                        loadTargetImageToFaceSwap(blobUrl);
                     }
                     imageFound = true;
                 }
@@ -3669,6 +3895,155 @@
             if (event) { event.preventDefault(); event.stopPropagation(); }
             document.querySelectorAll('input[name="model"]').forEach(cb => cb.checked = true);
             await submitHubData();
+        }
+
+        // --- AI Injection Status Tracking & Manual Fallback System ---
+        let activeStatusPollingTimer = null;
+        let lastSubmittedImagesForFallback = [];
+        let lastSubmittedImagePathsForFallback = [];
+        let lastSubmittedPromptForFallback = '';
+
+        function setModelBadge(model, state, text) {
+            const el = document.getElementById(`badge-${model}`);
+            if (!el) return;
+            el.className = 'model-status-badge';
+            if (state === 'pending') {
+                el.classList.add('status-badge-pending');
+                el.innerHTML = text || '⏳ ส่ง...';
+                el.style.display = 'inline-flex';
+            } else if (state === 'success') {
+                el.classList.add('status-badge-success');
+                el.innerHTML = text || '✅ สำเร็จ';
+                el.style.display = 'inline-flex';
+                setTimeout(() => { if (el.classList.contains('status-badge-success')) el.style.display = 'none'; }, 8000);
+            } else if (state === 'failed') {
+                el.classList.add('status-badge-failed');
+                el.innerHTML = text || '❌ ภาพไม่เข้า';
+                el.style.display = 'inline-flex';
+            } else {
+                el.style.display = 'none';
+            }
+        }
+
+        function showAIFallbackPanel(failedModel, images, prompt) {
+            const panel = document.getElementById('ai-fallback-panel');
+            const msgEl = document.getElementById('ai-fallback-msg');
+            const actionsEl = document.getElementById('ai-fallback-actions');
+            if (!panel || !msgEl || !actionsEl) return;
+
+            panel.style.display = 'flex';
+            msgEl.innerHTML = `⚠️ <b>${failedModel}</b>: ตรวจพบว่าภาพอาจไม่เข้าพร้อมพ์อัตโนมัติ`;
+            actionsEl.innerHTML = '';
+
+            const displayImages = (images && images.length > 0) ? images : (lastSubmittedImagesForFallback || []);
+
+            // Buttons to copy images to clipboard
+            if (displayImages && displayImages.length > 0) {
+                displayImages.forEach((imgUrl, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'fallback-btn';
+                    btn.innerHTML = `📋 Copy รูป ${idx + 1}`;
+                    btn.title = 'คัดลอกรูปนี้ลง Clipboard แล้วสลับไปหน้า AI เพื่อกด Ctrl+V เอง';
+                    btn.onclick = async () => {
+                        try {
+                            const resp = await fetch(imgUrl);
+                            const blob = await resp.blob();
+                            await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+                            btn.innerHTML = `✅ คัดลอกรูป ${idx + 1} แล้ว! กด Ctrl+V ได้เลย`;
+                            btn.style.background = '#10b981';
+                            setTimeout(() => { btn.innerHTML = `📋 Copy รูป ${idx + 1}`; btn.style.background = '#ea580c'; }, 3000);
+                        } catch (err) {
+                            console.error('Clipboard copy error:', err);
+                            alert('ไม่สามารถ copy ลง clipboard ได้ กรุณาลองอีกครั้ง');
+                        }
+                    };
+                    actionsEl.appendChild(btn);
+                });
+            }
+
+            // Button to Retry
+            const retryBtn = document.createElement('button');
+            retryBtn.className = 'fallback-btn fallback-btn-secondary';
+            retryBtn.innerHTML = `🔄 ลองส่ง ${failedModel} อีกรอบ`;
+            retryBtn.onclick = () => {
+                panel.style.display = 'none';
+                callExtension('SUBMIT_HUB_DATA', {
+                    prompt: prompt,
+                    images: displayImages,
+                    imagePaths: lastSubmittedImagePathsForFallback || [],
+                    models: [failedModel],
+                    origin: window.location.origin
+                });
+                trackInjectionStatuses([failedModel], displayImages, prompt, lastSubmittedImagePathsForFallback || []);
+            };
+            actionsEl.appendChild(retryBtn);
+
+            // Close button
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'fallback-btn fallback-btn-secondary';
+            closeBtn.style.padding = '4px 8px';
+            closeBtn.innerHTML = '✕';
+            closeBtn.onclick = () => { panel.style.display = 'none'; };
+            actionsEl.appendChild(closeBtn);
+        }
+
+        function trackInjectionStatuses(models, imagesToSend, promptText, imagePathsToSend = []) {
+            lastSubmittedImagesForFallback = imagesToSend || [];
+            lastSubmittedImagePathsForFallback = imagePathsToSend || [];
+            lastSubmittedPromptForFallback = promptText || '';
+
+            models.forEach(m => setModelBadge(m, 'pending'));
+
+            if (activeStatusPollingTimer) clearInterval(activeStatusPollingTimer);
+
+            let pollCount = 0;
+            const maxPolls = 18; // 18 * 1.5s = ~27s
+            activeStatusPollingTimer = setInterval(async () => {
+                pollCount++;
+                try {
+                    const res = await callExtension('GET_INJECTION_STATUS', { models: models });
+                    if (res && res.success && res.statuses) {
+                        if (res.statuses.fallbackImages && Array.isArray(res.statuses.fallbackImages) && res.statuses.fallbackImages.length > 0) {
+                            lastSubmittedImagesForFallback = res.statuses.fallbackImages;
+                        }
+                        let allDone = true;
+                        for (const m of models) {
+                            const st = res.statuses[`injectionStatus_${m}`];
+                            if (st) {
+                                if (st.success === true) {
+                                    setModelBadge(m, 'success');
+                                    const fallbackPanel = document.getElementById('ai-fallback-panel');
+                                    const fallbackMsg = document.getElementById('ai-fallback-msg');
+                                    if (fallbackPanel && fallbackMsg && fallbackMsg.innerHTML.includes(m)) {
+                                        fallbackPanel.style.display = 'none';
+                                    }
+                                } else if (st.success === false || (st.imageOk === false)) {
+                                    setModelBadge(m, 'failed');
+                                    showAIFallbackPanel(m, lastSubmittedImagesForFallback, lastSubmittedPromptForFallback);
+                                } else {
+                                    allDone = false;
+                                }
+                            } else {
+                                allDone = false;
+                            }
+                        }
+                        if (allDone || pollCount >= maxPolls) {
+                            clearInterval(activeStatusPollingTimer);
+                            activeStatusPollingTimer = null;
+                            if (pollCount >= maxPolls) {
+                                models.forEach(m => {
+                                    const el = document.getElementById(`badge-${m}`);
+                                    if (el && el.classList.contains('status-badge-pending')) {
+                                        el.style.display = 'none';
+                                    }
+                                });
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.log('Poll injection status error:', e);
+                }
+            }, 1500);
         }
 
         let isSubmittingHubData = false;
@@ -3751,6 +4126,9 @@
                     document.getElementById('btn-undo').classList.add('visible');
 
                     showToast('✅ ส่งแล้ว!');
+                    if (typeof trackInjectionStatuses === 'function') {
+                        trackInjectionStatuses(modelsToSend, pastedImageDataUrls, finalPrompt, imagePaths);
+                    }
                     promptInput.value = '';
                     promptInput.style.height = 'auto';
                     previews.innerHTML = '';
@@ -4539,8 +4917,18 @@
         // --- Real-ESRGAN / Cloudinary AI Enhancer Tool with Real-Time Progress Bar ---
         let upscalePollInterval = null;
 
-        async function triggerUpscale(customPath = null, scale = 2, modelName = 'cloudinary_upscale_enhancer') {
-            const btn = document.getElementById('btn-upscale');
+        async function triggerUpscale(customPath = null, scale = 2, modelName = 'cloudinary_upscale_enhancer', options = {}) {
+            const isRemoveWatermark = (modelName === 'cloudinary_remove_watermark' || modelName === 'remove_watermark' || modelName === 'remove_wm');
+            const isUpscaleEnhancer = (modelName === 'cloudinary_upscale_enhancer' || modelName === 'upscale_enhancer');
+            const isExtender = (modelName === 'cloudinary_extender' || modelName === 'extender');
+            const isRemoveBg = (modelName === 'cloudinary_remove_bg' || modelName === 'remove_bg');
+
+            let activeBtnId = 'btn-upscale';
+            if (isRemoveWatermark) activeBtnId = 'btn-clone-stamp';
+            else if (isExtender) activeBtnId = 'btn-ai-extender';
+            else if (isRemoveBg) activeBtnId = 'btn-remove-bg';
+
+            const btn = document.getElementById(activeBtnId);
             const originalContent = btn ? btn.innerHTML : '';
             const progressPanel = document.getElementById('upscale-progress-panel');
             const progressFill = document.getElementById('upscale-progress-fill');
@@ -4553,12 +4941,15 @@
 
             let targetPath = customPath || currentWatermarkPath || 'C:\\Users\\artwh\\Desktop\\complete.png';
             if (targetPath.toLowerCase().includes('complete_bot') || targetPath.toLowerCase().includes('bot')) {
-                showToast('⚠️ ไม่อนุญาตให้ Upscale ไฟล์ complete_bot.png (Facebook_Bot ไม่ใช้ระบบนี้)');
+                showToast('⚠️ ไม่อนุญาตให้ประมวลผลไฟล์ complete_bot.png (Facebook_Bot ไม่ใช้ระบบนี้)');
                 return;
             }
 
-            const isUpscaleEnhancer = (modelName === 'cloudinary_upscale_enhancer' || modelName === 'upscale_enhancer');
-            const modeLabel = isUpscaleEnhancer ? 'Upscale + Enhancer' : 'Enhancer';
+            let modeLabel = 'Enhancer';
+            if (isRemoveWatermark) modeLabel = 'ลบลายน้ำ AI (Generative Inpaint)';
+            else if (isUpscaleEnhancer) modeLabel = 'Upscale + Enhancer';
+            else if (isExtender) modeLabel = 'ขยายภาพ AI (Extender)';
+            else if (isRemoveBg) modeLabel = 'ลบฉากหลัง (Remove BG)';
 
             // Show and reset Progress Panel
             if (progressPanel) progressPanel.style.display = 'block';
@@ -4570,7 +4961,11 @@
             if (step2) { 
                 step2.style.color = '#9ca3af'; 
                 step2.style.fontWeight = 'normal';
-                step2.innerText = isUpscaleEnhancer ? '🚀 2. Cloud AI Upscale+Enhance' : '🤖 2. Cloud AI Enhancer';
+                if (isRemoveWatermark) step2.innerText = '🩹 2. Cloud AI Inpaint Remove Watermark';
+                else if (isUpscaleEnhancer) step2.innerText = '🚀 2. Cloud AI Upscale+Enhance';
+                else if (isExtender) step2.innerText = '🖼️ 2. Cloud AI Image Extender';
+                else if (isRemoveBg) step2.innerText = '✂️ 2. Cloud AI Remove Background';
+                else step2.innerText = '🤖 2. Cloud AI Enhancer';
             }
             if (step3) { step3.style.color = '#9ca3af'; step3.style.fontWeight = 'normal'; }
 
@@ -4580,10 +4975,13 @@
                 btn.innerHTML = `<span style="font-size: 1.1rem; display: inline-block; animation: spin 1s linear infinite;">⏳</span><span id="btn-upscale-pct" style="font-size: 0.62rem; color: #4f46e5; margin-top: 2px; font-weight: 700;">6%</span>`;
             }
             
-            showToast(isUpscaleEnhancer 
-                ? '🚀 กำลังขยายภาพ x2 พร้อมปรับความคมชัดด้วย Cloudinary AI (Upscale + Enhancer)...'
-                : '🪄 กำลังปรับเพิ่มความคมชัดด้วย Cloudinary AI (Enhancer)...'
-            );
+            let toastMsg = '🪄 กำลังปรับเพิ่มความคมชัดด้วย Cloudinary AI (Enhancer)...';
+            if (isRemoveWatermark) toastMsg = '🩹 กำลังลบลายน้ำด้วย Cloudinary AI (Generative Remove)...';
+            else if (isUpscaleEnhancer) toastMsg = '🚀 กำลังขยายภาพ x2 พร้อมปรับความคมชัดด้วย Cloudinary AI (Upscale + Enhancer)...';
+            else if (isExtender) toastMsg = '🖼️ กำลังขยายตำแหน่งภาพด้วย Cloudinary AI (Generative Fill)...';
+            else if (isRemoveBg) toastMsg = '✂️ กำลังลบฉากหลังด้วย Cloudinary AI (โปร่งใส PNG)...';
+
+            showToast(toastMsg);
 
             // Start polling progress every 350ms
             if (upscalePollInterval) clearInterval(upscalePollInterval);
@@ -4621,13 +5019,16 @@
             }, 350);
 
             try {
+                const reqMode = isRemoveWatermark ? 'remove_watermark' : (isExtender ? 'extender' : (isRemoveBg ? 'remove_bg' : (isUpscaleEnhancer ? 'upscale_enhancer' : 'enhancer')));
                 const res = await fetch(getHubApiUrl('/upscale'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         path: targetPath,
                         scale: scale,
-                        model: modelName
+                        model: modelName,
+                        mode: reqMode,
+                        options: options
                     })
                 });
 
@@ -4711,17 +5112,13 @@
                             accCreditsEl.style.color = remPct > 35 ? '#059669' : (remPct > 10 ? '#d97706' : '#dc2626');
                         }
 
+                        const quotaBox = document.getElementById('btn-quota-details');
+                        if (quotaBox) {
+                            quotaBox.title = `โควต้า Cloudinary รวม (Pool 7 บัญชี)\nบัญชีปัจจุบัน: ${cur.cloud_name} (ลำดับที่ ${cur.index}/${cur.total})\nโควต้าที่เหลือ: ${remPct}% (${(cur.limit_credits - cur.used_credits).toFixed(1)}/${cur.limit_credits} Cr)\nคลิกเพื่อดูสรุปทุกบัญชี`;
+                        }
+
                         if (btnEl) {
-                            btnEl.title = `Upscale + Enhancer AI (Cloudinary)\nบัญชีปัจจุบัน: ${cur.cloud_name} (ลำดับที่ ${cur.index}/${cur.total})\nโควต้าที่เหลือ: ${remPct}% (${(cur.limit_credits - cur.used_credits).toFixed(1)}/${cur.limit_credits} Cr)\nคลิกเพื่อเริ่มทำ Upscale + Enhance หรือคลิกขวาเพื่อดูสรุปทั้ง 7 บัญชี`;
-                            btnEl.oncontextmenu = (e) => {
-                                e.preventDefault();
-                                if (data.accounts) {
-                                    const summaryLines = data.accounts.map(a =>
-                                        `บัญชี ${a.index} (${a.cloud_name}): ${a.remaining_percent}% (ใช้ไป ${a.used_credits}/${a.limit_credits} Cr)`
-                                    ).join('\n');
-                                    showToast(`📊 Cloudinary Pool (7 บัญชี):\n${summaryLines}`, 6000);
-                                }
-                            };
+                            btnEl.title = `AI Enhancer: ปรับความคมชัด กู้คืนรายละเอียด และลดความเบลอด้วย Cloudinary AI (ทับ complete.png และสร้าง example.png)`;
                         }
 
                         if (isUserClick && data.accounts) {
@@ -4753,8 +5150,11 @@
             }
 
             if (!selectedPath) {
-                showToast('⚠️ กรุณาคลิกเลือกรูปภาพในรายการดาวน์โหลดด้านบนก่อน (ให้ขึ้นวงกลมหมายเลขสีน้ำเงิน)');
-                return;
+                if (currentWatermarkPath) {
+                    selectedPath = currentWatermarkPath;
+                } else {
+                    selectedPath = 'C:\\Users\\artwh\\Desktop\\complete.png';
+                }
             }
 
             const btnTop = document.getElementById('btn-top-enhancer');
@@ -4796,8 +5196,11 @@
             }
 
             if (!selectedPath) {
-                showToast('⚠️ กรุณาคลิกเลือกรูปภาพในรายการดาวน์โหลดด้านบนก่อน (ให้ขึ้นวงกลมหมายเลขสีน้ำเงิน)');
-                return;
+                if (currentWatermarkPath) {
+                    selectedPath = currentWatermarkPath;
+                } else {
+                    selectedPath = 'C:\\Users\\artwh\\Desktop\\complete.png';
+                }
             }
 
             const btnTop = document.getElementById('btn-top-upscale-enhancer');
@@ -4819,6 +5222,120 @@
                     btnTop.disabled = false;
                     btnTop.style.opacity = '1';
                     btnTop.innerHTML = originalTopText;
+                }
+            }
+        }
+
+        // --- AI Extender (Direct 20% all directions) ---
+        async function triggerDirectAIExtender(event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            let selectedPath = null;
+            if (selectedFilesList && selectedFilesList.length > 0) {
+                selectedPath = selectedFilesList[selectedFilesList.length - 1];
+            } else {
+                const selectedEl = document.querySelector('.dl-item.selected, .dl-item[data-selected="true"]');
+                if (selectedEl && selectedEl.dataset && selectedEl.dataset.path) {
+                    selectedPath = selectedEl.dataset.path;
+                }
+            }
+            if (!selectedPath) {
+                selectedPath = currentWatermarkPath || 'C:\\Users\\artwh\\Desktop\\complete.png';
+            }
+
+            // Default: ขยายรอบด้าน 20% ทุกทิศทางอัตโนมัติ โดยไม่ต้องขึ้น popup
+            const options = { pad_percent: 20 };
+
+            const btnExt = document.getElementById('btn-ai-extender');
+            if (btnExt) {
+                btnExt.style.opacity = '0.6';
+                btnExt.disabled = true;
+            }
+
+            // Scroll to watermark check panel so user can see real-time progress
+            const watermarkPanel = document.getElementById('watermark-check-container');
+            if (watermarkPanel) watermarkPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            try {
+                await triggerUpscale(selectedPath, 1, 'cloudinary_extender', options);
+            } finally {
+                if (btnExt) {
+                    btnExt.style.opacity = '1';
+                    btnExt.disabled = false;
+                }
+            }
+        }
+
+        // --- AI Watermark Removal (Direct Cloudinary Generative Inpaint) ---
+        async function triggerDirectAIRemoveWatermark(event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            let selectedPath = null;
+            if (selectedFilesList && selectedFilesList.length > 0) {
+                selectedPath = selectedFilesList[selectedFilesList.length - 1];
+            } else {
+                const selectedEl = document.querySelector('.dl-item.selected, .dl-item[data-selected="true"]');
+                if (selectedEl && selectedEl.dataset && selectedEl.dataset.path) {
+                    selectedPath = selectedEl.dataset.path;
+                }
+            }
+            if (!selectedPath) {
+                selectedPath = currentWatermarkPath || 'C:\\Users\\artwh\\Desktop\\complete.png';
+            }
+
+            const options = { prompt: 'watermark' };
+
+            const btnWm = document.getElementById('btn-clone-stamp');
+            if (btnWm) {
+                btnWm.style.opacity = '0.6';
+                btnWm.disabled = true;
+            }
+
+            const watermarkPanel = document.getElementById('watermark-check-container');
+            if (watermarkPanel) watermarkPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            try {
+                await triggerUpscale(selectedPath, 1, 'cloudinary_remove_watermark', options);
+            } finally {
+                if (btnWm) {
+                    btnWm.style.opacity = '1';
+                    btnWm.disabled = false;
+                }
+            }
+        }
+
+        // --- AI Remove Background (Direct AI Smart Cutout, No Popup) ---
+        async function triggerDirectAIRemoveBg(event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            let selectedPath = null;
+            if (selectedFilesList && selectedFilesList.length > 0) {
+                selectedPath = selectedFilesList[selectedFilesList.length - 1];
+            } else {
+                const selectedEl = document.querySelector('.dl-item.selected, .dl-item[data-selected="true"]');
+                if (selectedEl && selectedEl.dataset && selectedEl.dataset.path) {
+                    selectedPath = selectedEl.dataset.path;
+                }
+            }
+            if (!selectedPath) {
+                selectedPath = currentWatermarkPath || 'C:\\Users\\artwh\\Desktop\\complete.png';
+            }
+
+            // Default: AI Smart Cutout (ฉากหลังทุกชนิด) อัตโนมัติ โดยไม่ต้องมี popup
+            const options = { method: 'ai' };
+
+            const btnBg = document.getElementById('btn-remove-bg');
+            if (btnBg) {
+                btnBg.style.opacity = '0.6';
+                btnBg.disabled = true;
+            }
+
+            const watermarkPanel = document.getElementById('watermark-check-container');
+            if (watermarkPanel) watermarkPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            try {
+                await triggerUpscale(selectedPath, 1, 'cloudinary_remove_bg', options);
+            } finally {
+                if (btnBg) {
+                    btnBg.style.opacity = '1';
+                    btnBg.disabled = false;
                 }
             }
         }
