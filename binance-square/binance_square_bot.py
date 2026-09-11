@@ -22,6 +22,7 @@ BASE_URL_V1 = "https://www.binance.com/bapi/composite/v1/public/pgc/openApi"
 BASE_URL_V2 = "https://www.binance.com/bapi/composite/v2/public/pgc/openApi"
 POLL_INTERVAL_SEC = 2
 MAX_POLL_RETRIES = 25
+MAX_CLIP_DURATION_SEC = 300  # จำกัดความยาวคลิป Binance Square สูงสุดไม่เกิน 5 นาที (300 วินาที)
 
 # รายชื่อเหรียญคริปโตยอดนิยมบน Binance
 CRYPTO_COINS = [
@@ -96,11 +97,16 @@ def get_video_info(video_url):
         }
 
 def download_and_cut_clip(video_url, start_sec, end_sec, output_file, progress_callback=None):
-    """ดาวน์โหลดเฉพาะช่วงเวลาที่ต้องการ (start_sec ถึง end_sec) ด้วย yt-dlp และ ffmpeg ความละเอียด 480p พร้อม faststart"""
-    print(f"[BinanceSquareBot] ✂️ Downloading clip 480p from {start_sec}s to {end_sec}s...")
-    
+    """ดาวน์โหลดเฉพาะช่วงเวลาที่ต้องการ (start_sec ถึง end_sec) ด้วย yt-dlp และ ffmpeg ความละเอียด 480p พร้อม faststart (จำกัดสูงสุด 5 นาที)"""
     if end_sec <= start_sec:
         end_sec = start_sec + 60
+
+    # ป้องกันไม่ให้ช่วงเวลาตัดเกิน 5 นาที (300 วินาที) ตามข้อกำหนด Binance Square
+    if (end_sec - start_sec) > MAX_CLIP_DURATION_SEC:
+        print(f"[BinanceSquareBot] ⚠️ ช่วงเวลาที่ระบุ ({end_sec - start_sec}s) เกิน 5 นาที! ปรับลดเหลือ {MAX_CLIP_DURATION_SEC}s")
+        end_sec = start_sec + MAX_CLIP_DURATION_SEC
+
+    print(f"[BinanceSquareBot] ✂️ Downloading clip 480p from {start_sec}s to {end_sec}s (length: {end_sec - start_sec}s)...")
 
     def ydl_hook(d):
         if progress_callback and d.get('status') == 'downloading':
@@ -141,6 +147,32 @@ def download_and_cut_clip(video_url, start_sec, end_sec, output_file, progress_c
 
     if progress_callback:
         progress_callback(58, "ตัดต่อ & จัด Faststart...")
+
+    # ตรวจสอบความยาวไฟล์วิดีโอที่ได้ หากเกิน 300 วินาที (เช่น คลาดเคลื่อนจาก Keyframe) ให้ตัดส่วนเกินออก
+    try:
+        cur_dur = get_video_duration(actual_path, fallback_duration=end_sec - start_sec)
+        if cur_dur > MAX_CLIP_DURATION_SEC:
+            print(f"[BinanceSquareBot] ⚠️ ไฟล์วิดีโอที่โหลดมามีความยาว {cur_dur}s (> {MAX_CLIP_DURATION_SEC}s) กำลังตัดส่วนเกินออก...")
+            trimmed_path = os.path.splitext(actual_path)[0] + "_trimmed.mp4"
+            cmd_trim = [
+                "ffmpeg", "-y", "-loglevel", "error",
+                "-ss", "0", "-t", str(MAX_CLIP_DURATION_SEC),
+                "-i", actual_path,
+                "-c", "copy",
+                trimmed_path
+            ]
+            subprocess.run(
+                cmd_trim, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+            )
+            if os.path.exists(trimmed_path) and os.path.getsize(trimmed_path) > 0:
+                try:
+                    os.remove(actual_path)
+                except:
+                    pass
+                actual_path = trimmed_path
+    except Exception as e_trim:
+        print(f"[BinanceSquareBot] trim check notice: {e_trim}")
 
     # Faststart remux (ย้าย moov atom ไว้ข้างหน้าเพื่อให้ Binance Square transcode & stream ได้ทันที)
     fast_path = os.path.splitext(actual_path)[0] + "_fast.mp4"
@@ -292,11 +324,13 @@ def publish_post(api_key, file_ticket, cover_url, duration, post_text, progress_
     """โพสต์วิดีโอลง Binance Square ผ่าน API"""
     if progress_callback:
         progress_callback(94, "กำลังเผยแพร่ลง Binance Square...")
+    # ตรวจสอบให้แน่ใจว่า duration ไม่เกิน 300 วินาที (5 นาที)
+    duration_sec = min(int(duration), MAX_CLIP_DURATION_SEC)
     body = {
         "contentType": 3,
         "fileTicket": file_ticket,
         "cover": cover_url,
-        "videoTimeSeconds": int(duration),
+        "videoTimeSeconds": duration_sec,
         "isPublish": True,
         "bodyTextOnly": post_text
     }
@@ -307,7 +341,7 @@ def process_clip_and_post(data, progress_callback=None):
     ประมวลผลขั้นตอนทั้งหมด:
     1. รับพารามิเตอร์ videoUrl, startSeconds, endSeconds, rawText, apiKey
     2. จัดรูปแบบข้อความพร้อมให้เครดิตช่อง
-    3. ตัดต่อคลิป YouTube 480p
+    3. ตัดต่อคลิป YouTube 480p (จำกัดไม่เกิน 5 นาที)
     4. ดึงภาพปก
     5. อัปโหลดและโพสต์ขึ้น Binance Square
     6. ลบไฟล์ชั่วคราวทิ้งอัตโนมัติ
@@ -325,6 +359,12 @@ def process_clip_and_post(data, progress_callback=None):
 
     start_sec = int(data.get("startSeconds", 0))
     end_sec = int(data.get("endSeconds", start_sec + 60))
+    if end_sec <= start_sec:
+        end_sec = start_sec + 60
+    # ป้องกันไม่ให้คลิปยาวเกิน 5 นาที (300 วินาที)
+    if (end_sec - start_sec) > MAX_CLIP_DURATION_SEC:
+        print(f"[BinanceSquareBot] ⚠️ ความยาวคลิป ({end_sec - start_sec}s) เกิน 5 นาที! จำกัดไว้ที่ {MAX_CLIP_DURATION_SEC} วินาที")
+        end_sec = start_sec + MAX_CLIP_DURATION_SEC
     raw_text = data.get("rawText", "")
 
     # 1. ทำความสะอาดข้อความ และดึงเครดิตช่อง
@@ -351,7 +391,10 @@ def process_clip_and_post(data, progress_callback=None):
         # 3. ตรวจสอบความยาว
         if progress_callback:
             progress_callback(62, "ตรวจสอบความยาวคลิป...")
-        duration = get_video_duration(video_clip_path, fallback_duration=max(1, end_sec - start_sec))
+        duration = get_video_duration(video_clip_path, fallback_duration=min(MAX_CLIP_DURATION_SEC, max(1, end_sec - start_sec)))
+        if duration > MAX_CLIP_DURATION_SEC:
+            print(f"[BinanceSquareBot] ⚠️ ความยาววิดีโอ ({duration}s) เกิน 5 นาที! จำกัดค่าส่ง Binance API เป็น {MAX_CLIP_DURATION_SEC}s")
+            duration = MAX_CLIP_DURATION_SEC
 
         # 4. ดึงภาพปก
         if progress_callback:
