@@ -11,6 +11,7 @@ import webbrowser
 from urllib.parse import urlparse, parse_qs
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+import subprocess
 
 # --- CONFIG ---
 PORT = 5000
@@ -704,6 +705,48 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
                 self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode())
+            return
+
+        if parsed_url.path == '/binance-square-post':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
+            try:
+                import sys
+                import importlib
+                bs_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "binance-square")
+                if bs_folder not in sys.path:
+                    sys.path.insert(0, bs_folder)
+                import binance_square_bot
+                importlib.reload(binance_square_bot)
+                data = json.loads(post_data.decode('utf-8')) if post_data else {}
+                print(f"[Watcher] 🔶 Binance Square post request received: {data.get('videoUrl')}")
+
+                self.send_response(200)
+                self.send_header('Content-type', 'application/x-ndjson')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.send_header('Cache-Control', 'no-cache')
+                self.end_headers()
+
+                def progress_cb(pct, stage):
+                    try:
+                        line = json.dumps({"type": "progress", "percent": pct, "stage": stage}) + "\n"
+                        self.wfile.write(line.encode('utf-8'))
+                        self.wfile.flush()
+                    except:
+                        pass
+
+                result = binance_square_bot.process_clip_and_post(data, progress_callback=progress_cb)
+                final_line = json.dumps({"type": "complete", "success": True, **result}) + "\n"
+                self.wfile.write(final_line.encode('utf-8'))
+                self.wfile.flush()
+            except Exception as e:
+                print(f"[Watcher] ❌ Binance Square error: {e}")
+                err_line = json.dumps({"type": "error", "success": False, "error": str(e)}) + "\n"
+                try:
+                    self.wfile.write(err_line.encode('utf-8'))
+                    self.wfile.flush()
+                except:
+                    pass
             return
 
         self.send_response(404)
