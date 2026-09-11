@@ -3,6 +3,7 @@ import time
 import hashlib
 import json
 import requests
+import io
 from PIL import Image
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -158,15 +159,44 @@ def upscale_with_account(account, image_path, scale=2, mode="upscale_enhancer", 
     params = {"timestamp": timestamp}
     signature = generate_signature(params, api_secret)
 
-    with open(image_path, 'rb') as img_file:
-        files = {'file': img_file}
+    file_obj = None
+    upload_files = None
+    try:
+        # Prevent Cloudinary HTTP 400 "File size too large. Got ... Maximum is 10485760" (Free tier 10MB limit)
+        if os.path.exists(image_path) and os.path.getsize(image_path) > 9.8 * 1024 * 1024:
+            try:
+                with Image.open(image_path) as im:
+                    buf = io.BytesIO()
+                    im.save(buf, format="JPEG", quality=90, optimize=True)
+                    if buf.tell() > 9.8 * 1024 * 1024:
+                        buf = io.BytesIO()
+                        ratio = (9.2 * 1024 * 1024 / os.path.getsize(image_path)) ** 0.5
+                        new_w = max(100, int(im.width * ratio))
+                        new_h = max(100, int(im.height * ratio))
+                        resized = im.resize((new_w, new_h), Image.Resampling.LANCZOS)
+                        resized.save(buf, format="JPEG", quality=88, optimize=True)
+                    buf.seek(0)
+                    upload_files = {'file': ('upload.jpg', buf, 'image/jpeg')}
+            except Exception as ce:
+                print(f"[Cloudinary] Compress large image warning: {ce}")
+
+        if not upload_files:
+            file_obj = open(image_path, 'rb')
+            upload_files = {'file': file_obj}
+
         data = {
             'api_key': api_key,
             'timestamp': timestamp,
             'signature': signature
         }
         
-        response = requests.post(upload_url, files=files, data=data, timeout=40)
+        response = requests.post(upload_url, files=upload_files, data=data, timeout=40)
+    finally:
+        if file_obj:
+            try:
+                file_obj.close()
+            except Exception:
+                pass
         
     if response.status_code == 200:
         res_json = response.json()
@@ -179,25 +209,28 @@ def upscale_with_account(account, image_path, scale=2, mode="upscale_enhancer", 
             transformed_url = f"https://res.cloudinary.com/{cloud_name}/image/upload/c_limit,w_2500,h_2500/e_gen_restore/v{version}/{public_id}.{format_ext}"
         elif mode == "extender":
             # Cloudinary AI Image Extender (Generative Fill Outpainting)
+            # IMPORTANT: Must use c_mpad (minimum pad) instead of c_pad.
+            # c_pad scales up the image when aspect ratio matches, leaving 0 padding for b_gen_fill.
+            # c_mpad preserves original image scale 1:1 in the center and pads the outer boundaries with AI fill!
             aspect_ratio = options.get("aspect_ratio")
             direction = options.get("direction")
             prompt = options.get("prompt", "").strip()
             prompt_part = f":prompt_{requests.utils.quote(prompt)}" if prompt else ""
+            pct = float(options.get("pad_percent", 20))
+            factor = round(1.0 + (pct / 100.0), 2)
 
             if aspect_ratio:
-                ext_part = f"b_gen_fill{prompt_part},c_pad,ar_{aspect_ratio}"
+                ext_part = f"b_gen_fill{prompt_part},c_mpad,ar_{aspect_ratio}"
             elif direction == "top":
-                ext_part = f"b_gen_fill{prompt_part},c_pad,h_1.3,g_south"
+                ext_part = f"b_gen_fill{prompt_part},c_mpad,h_{factor},g_south"
             elif direction == "bottom":
-                ext_part = f"b_gen_fill{prompt_part},c_pad,h_1.3,g_north"
+                ext_part = f"b_gen_fill{prompt_part},c_mpad,h_{factor},g_north"
             elif direction == "sides":
-                ext_part = f"b_gen_fill{prompt_part},c_pad,w_1.3"
+                ext_part = f"b_gen_fill{prompt_part},c_mpad,w_{factor}"
             else:
-                pct = float(options.get("pad_percent", 20))
-                factor = round(1.0 + (pct / 100.0), 2)
-                ext_part = f"b_gen_fill{prompt_part},c_pad,w_{factor},h_{factor}"
+                ext_part = f"b_gen_fill{prompt_part},c_mpad,w_{factor},h_{factor}"
 
-            transformed_url = f"https://res.cloudinary.com/{cloud_name}/image/upload/c_limit,w_2000,h_2000/{ext_part}/v{version}/{public_id}.png"
+            transformed_url = f"https://res.cloudinary.com/{cloud_name}/image/upload/c_limit,w_2500,h_2500/{ext_part}/v{version}/{public_id}.png"
         elif mode == "remove_bg":
             # Cloudinary Remove White Background / Transparent Background
             method = options.get("method", "ai")
