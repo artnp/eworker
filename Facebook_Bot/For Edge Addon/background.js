@@ -378,7 +378,7 @@ async function handleOpenGemini(message, sender) {
             width: Math.floor(workArea.width * 0.3),
             height: workArea.height,
             left: workArea.left + Math.floor(workArea.width * 0.7),
-            top: workArea.top, focused: true
+            top: workArea.top, focused: false
         });
         await chrome.storage.local.set({ 'geminiWindowId': win.id });
     } catch (err) { console.error(err); }
