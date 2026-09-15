@@ -12,6 +12,10 @@ from urllib.parse import urlparse, parse_qs
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import subprocess
+import asyncio
+import base64
+import re
+import sys
 
 # --- CONFIG ---
 PORT = 5000
@@ -499,6 +503,81 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_POST(self):
         parsed_url = urlparse(self.path)
+        if parsed_url.path == '/edge-tts':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
+            try:
+                data = json.loads(post_data.decode('utf-8'))
+                text = re.sub(r'[\u200b\ufeff\u00ad]', '', str(data.get('text', '')))
+                text = re.sub(r'\s+', ' ', text).strip()
+                if not text:
+                    raise ValueError('Missing text')
+                # Keep requests bounded: this endpoint is for one Gemini <li>.
+                if len(text) > 5000:
+                    raise ValueError('Text is too long for live TTS')
+
+                async def synthesize(part, voice):
+                    import edge_tts
+                    # One multilingual stream is deliberately kept intact. A
+                    # modest faster rate reduces built-in code-switch pauses
+                    # without stitching Thai and English audio files together.
+                    communicate = edge_tts.Communicate(part, voice, rate='+12%')
+                    audio_parts, boundaries = [], []
+                    async for chunk in communicate.stream():
+                        if chunk['type'] == 'audio':
+                            audio_parts.append(chunk['data'])
+                        elif chunk['type'] == 'WordBoundary':
+                            start = chunk['offset'] / 10000000
+                            boundaries.append({
+                                'text': chunk['text'],
+                                'startSec': start,
+                                'endSec': start + (chunk['duration'] / 10000000)
+                            })
+                    return b''.join(audio_parts), boundaries
+
+                # A multilingual voice handles Thai and Latin terms in one
+                # request. Multiple per-language requests made selection laggy.
+                parts = [text]
+                audio_parts, boundaries = [], []
+                last_error = None
+                for part in parts:
+                    if not part.strip():
+                        continue
+                    voices = ('en-US-EmmaMultilingualNeural', 'th-TH-PremwadeeNeural', 'th-TH-NiwatNeural')
+                    part_audio = b''
+                    for voice in voices:
+                        try:
+                            part_audio, _ = asyncio.run(synthesize(part, voice))
+                            if part_audio:
+                                break
+                        except Exception as voice_error:
+                            last_error = voice_error
+                            print(f'[Watcher] Edge TTS {voice} failed: {voice_error}')
+                    if not part_audio:
+                        raise RuntimeError(f'Edge TTS returned no audio for: {part[:30]}')
+                    audio_parts.append(part_audio)
+                audio = b''.join(audio_parts)
+                if not audio:
+                    raise RuntimeError(f'Edge TTS returned no audio: {last_error or "unknown error"}')
+                payload = {
+                    'success': True,
+                    'audioBase64': base64.b64encode(audio).decode('ascii'),
+                    'wordBoundaries': boundaries
+                }
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps(payload).encode('utf-8'))
+            except Exception as e:
+                print(f'[Watcher] Edge TTS error: {e}')
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': False, 'error': str(e)}).encode('utf-8'))
+            return
+
         if parsed_url.path == '/trigger-ps':
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
@@ -529,7 +608,6 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                 target = data.get('path')
                 if img_data and ',' in img_data and target:
                     header, encoded = img_data.split(',', 1)
-                    import base64
                     binary_data = base64.b64decode(encoded)
 
                     # ถ้าบันทึก complete.png (ไม่ใช่ complete_bot.png) ให้ backup ไฟล์เดิมก่อนเขียนทับ
@@ -581,6 +659,37 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
             return
 
+        if parsed_url.path == '/update-example-qr':
+            content_length = int(self.headers.get('Content-Length', 0))
+            try:
+                data = json.loads(self.rfile.read(content_length) or b'{}')
+                from watermark_engine import save_qr_amount, create_anti_ai_watermark
+
+                amount = save_qr_amount(data.get('amount'))
+                complete_path = os.path.join(DESKTOP_PATH, 'complete.png')
+                example_path = os.path.join(DESKTOP_PATH, 'example.png')
+                if not os.path.exists(complete_path):
+                    raise FileNotFoundError('ยังไม่พบ Desktop/complete.png')
+
+                from PIL import Image
+                with Image.open(complete_path) as complete_img:
+                    example_img = create_anti_ai_watermark(complete_img, qr_amount=amount)
+                    example_img.save(example_path, format='PNG')
+
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': True, 'amount': amount, 'path': example_path}).encode())
+            except Exception as e:
+                print(f'[Watcher] QR amount update error: {e}')
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': False, 'error': str(e)}).encode())
+            return
+
         if parsed_url.path == '/mark-points':
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
@@ -617,7 +726,6 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                 if not download_success and img_data and ',' in img_data:
                     try:
                         header, encoded = img_data.split(',', 1)
-                        import base64
                         binary_data = base64.b64decode(encoded)
                         with open(temp_path, 'wb') as f:
                             f.write(binary_data)
@@ -781,13 +889,30 @@ if __name__ == "__main__":
     desktop_observer.schedule(desktop_handler, DESKTOP_PATH, recursive=False)
     desktop_observer.start()
 
-    from PIL import Image, ImageDraw
-    import pystray
-
     httpd = ThreadingHTTPServer(("", PORT), HubHandler)
     server_thread = threading.Thread(target=httpd.serve_forever, daemon=True)
     server_thread.start()
     print(f"[Server] Serving in Threaded mode at port {PORT}")
+
+    # Used by the Chrome add-on.  Running without a tray is more reliable
+    # when the process was launched from a hidden/background session.
+    if '--headless' in sys.argv:
+        try:
+            while server_thread.is_alive():
+                time.sleep(1)
+        except KeyboardInterrupt:
+            pass
+        finally:
+            observer.stop()
+            observer.join()
+            desktop_observer.stop()
+            desktop_observer.join()
+            httpd.shutdown()
+            httpd.server_close()
+        raise SystemExit(0)
+
+    from PIL import Image, ImageDraw
+    import pystray
 
     def create_image():
         image = Image.new('RGB', (64, 64), color=(66, 133, 244))
@@ -808,6 +933,13 @@ if __name__ == "__main__":
     
     try:
         icon.run()
+        # Some Windows sessions cannot keep a system-tray icon alive.  In that
+        # case pystray returns immediately, but the local HTTP API must remain
+        # available for the Chrome extension (Edge TTS/Binance Square).
+        # on_quit() explicitly shuts the server down, so this loop still exits
+        # normally when the user chooses Quit from the tray menu.
+        while server_thread.is_alive():
+            time.sleep(1)
     except KeyboardInterrupt:
         pass
     finally:
