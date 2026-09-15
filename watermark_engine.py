@@ -1,6 +1,48 @@
 import os
 import math
+import json
+import io
+import urllib.request
+from decimal import Decimal, InvalidOperation
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
+
+PROMPTPAY_ID = "0988573074"
+DEFAULT_QR_AMOUNT = "60.00"
+QR_AMOUNT_SETTINGS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "qr_amount_settings.json")
+
+
+def normalize_qr_amount(value):
+    """Return a PromptPay-safe amount with two decimal places."""
+    try:
+        amount = Decimal(str(value)).quantize(Decimal("0.01"))
+    except (InvalidOperation, ValueError):
+        raise ValueError("จำนวนเงินไม่ถูกต้อง")
+    if amount <= 0 or amount > Decimal("999999.99"):
+        raise ValueError("จำนวนเงินต้องอยู่ระหว่าง 0.01 ถึง 999,999.99 บาท")
+    return format(amount, ".2f")
+
+
+def get_saved_qr_amount():
+    try:
+        with open(QR_AMOUNT_SETTINGS, "r", encoding="utf-8") as settings_file:
+            return normalize_qr_amount(json.load(settings_file).get("amount", DEFAULT_QR_AMOUNT))
+    except (OSError, ValueError, json.JSONDecodeError):
+        return DEFAULT_QR_AMOUNT
+
+
+def save_qr_amount(value):
+    amount = normalize_qr_amount(value)
+    with open(QR_AMOUNT_SETTINGS, "w", encoding="utf-8") as settings_file:
+        json.dump({"amount": amount}, settings_file)
+    return amount
+
+
+def load_promptpay_qr(amount):
+    """Fetch the official QR image used by the existing billing scripts."""
+    url = f"https://promptpay.io/{PROMPTPAY_ID}/{amount}.png"
+    request = urllib.request.Request(url, headers={"User-Agent": "eWorker QR generator"})
+    with urllib.request.urlopen(request, timeout=12) as response:
+        return Image.open(io.BytesIO(response.read())).convert("RGBA")
 
 def get_thai_font(size_pt, is_bold=False):
     font_paths = [
@@ -67,7 +109,7 @@ def draw_luxury_lock(draw, x, y, size, color=(255, 255, 255, 255)):
 
 draw_vector_lock = draw_luxury_lock
 
-def render_luxury_qr_slip(card_w=235):
+def render_luxury_qr_slip(card_w=235, amount=DEFAULT_QR_AMOUNT):
     """
     สร้างสลิปใบเสร็จ QR PromptPay สไตล์ Receipt กะทัดรัด พอดีข้อความ:
     - พื้นขาวสะอาด ไร้ขอบสีดำ (Zero dark border)
@@ -83,12 +125,16 @@ def render_luxury_qr_slip(card_w=235):
     desktop = os.path.join(os.environ['USERPROFILE'], 'Desktop')
 
     # --- Load assets ---
+    # Keep the original local 60-baht image as an offline fallback. Other amounts
+    # are generated from the same PromptPay endpoint used by GenBill(Offline).ps1.
     qr_p = os.path.join(script_dir, "qr_code_clean.png")
-    if not os.path.exists(qr_p):
-        src_60 = os.path.join(desktop, "60.- .jpg")
-        if os.path.exists(src_60):
-            Image.open(src_60).crop((96, 162, 324, 388)).save(qr_p)
-    qr_img = Image.open(qr_p).convert("RGBA") if os.path.exists(qr_p) else Image.new("RGBA", (200, 200), (200, 200, 200))
+    try:
+        qr_img = load_promptpay_qr(amount)
+    except Exception:
+        if amount == DEFAULT_QR_AMOUNT and os.path.exists(qr_p):
+            qr_img = Image.open(qr_p).convert("RGBA")
+        else:
+            raise
 
     logos_p = os.path.join(script_dir, "bank_logos.png")
     if not os.path.exists(logos_p):
@@ -115,8 +161,8 @@ def render_luxury_qr_slip(card_w=235):
     # --- Pre-calculate dynamic heights for pixel-perfect receipt layout ---
     hdr_txt = "สแกนจ่ายได้ทุกธนาคาร!!"
     lbl = "ยอดชำระค่าบริการ"
-    amt_txt = "฿ 60.00"
-    bht = "( หกสิบบาทถ้วน )"
+    amt_txt = f"฿ {amount}"
+    bht = "( ยอดตาม QR Code )"
     cta_txt = "จ่ายแล้วไม่ต้องส่งสลิป"
 
     _dummy = Image.new("RGBA", (1, 1))
@@ -255,7 +301,7 @@ def render_luxury_qr_slip(card_w=235):
     return card, shadow_img, shadow_pad
 
 
-def create_anti_ai_watermark(img_path_or_img, text="โปรดชำระค่าบริการเพื่อรับไฟล์เต็ม"):
+def create_anti_ai_watermark(img_path_or_img, text="โปรดชำระค่าบริการเพื่อรับไฟล์เต็ม", qr_amount=None):
 
     if isinstance(img_path_or_img, str):
         base_img = Image.open(img_path_or_img).convert("RGBA")
@@ -375,7 +421,8 @@ def create_anti_ai_watermark(img_path_or_img, text="โปรดชำระค�
         max_w_by_height = int((h * 0.40) / 1.5)
         target_card_w = max(180, min(max_w_by_width, max_w_by_height, 240))
 
-        bill_card, bill_shadow, shadow_pad = render_luxury_qr_slip(card_w=target_card_w)
+        amount = normalize_qr_amount(qr_amount) if qr_amount is not None else get_saved_qr_amount()
+        bill_card, bill_shadow, shadow_pad = render_luxury_qr_slip(card_w=target_card_w, amount=amount)
         bw, bh = bill_card.size
 
         # Ensure card fits horizontally — clamp if needed
