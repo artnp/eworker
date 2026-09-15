@@ -1569,6 +1569,13 @@
                         </button>
                     </div>
                 </div>
+                <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center; margin:0 0 12px; padding:9px 10px; border:1px solid #bbf7d0; border-radius:10px; background:#f0fdf4;">
+                    <span style="font-size:.75rem; font-weight:700; color:#166534;">💳 ยอดใน QR ของ example.png</span>
+                    <label style="font-size:.74rem; color:#166534; cursor:pointer;"><input type="radio" name="qr-amount-option" value="60" checked onchange="selectQrAmountOption(this)"> 60 บาท</label>
+                    <label style="font-size:.74rem; color:#166534; cursor:pointer;"><input type="radio" name="qr-amount-option" value="100" onchange="selectQrAmountOption(this)"> 100 บาท</label>
+                    <input id="custom-qr-amount" type="number" min="0.01" max="999999.99" step="0.01" inputmode="decimal" placeholder="กำหนดยอดเอง" oninput="selectCustomQrAmount()" style="width:118px; padding:4px 7px; border:1px solid #86efac; border-radius:7px; font:inherit; font-size:.74rem;">
+                    <button id="update-example-qr-btn" type="button" onclick="updateExampleQr()" style="padding:5px 10px; border:0; border-radius:7px; color:#fff; background:#16a34a; font:inherit; font-size:.74rem; font-weight:700; cursor:pointer;">อัปเดต QR</button>
+                </div>
                 <div style="display: flex; gap: 12px; align-items: stretch; justify-content: center; width: 100%;">
 
                     <!-- Left Crop Column -->
@@ -3149,6 +3156,54 @@
                 }
             } catch (e) {
                 showToast('⚠️ ไม่สามารถเปิด Desktop/example.png ได้');
+            }
+        }
+
+        function selectQrAmountOption(option) {
+            if (!option.checked) return;
+            const customInput = document.getElementById('custom-qr-amount');
+            if (customInput) customInput.value = '';
+            updateExampleQr(option.value);
+        }
+
+        function selectCustomQrAmount() {
+            const customInput = document.getElementById('custom-qr-amount');
+            if (customInput && customInput.value.trim()) {
+                const selected = document.querySelector('input[name="qr-amount-option"]:checked');
+                if (selected) selected.checked = false;
+            }
+        }
+
+        async function updateExampleQr(presetAmount = null) {
+            const customInput = document.getElementById('custom-qr-amount');
+            const selected = document.querySelector('input[name="qr-amount-option"]:checked');
+            const amount = presetAmount || (customInput && customInput.value.trim() ? customInput.value.trim() : (selected ? selected.value : '60'));
+            const button = document.getElementById('update-example-qr-btn');
+
+            if (!/^\d+(\.\d{1,2})?$/.test(amount) || Number(amount) <= 0) {
+                showToast('⚠️ กรุณาระบุยอดเงินที่มากกว่า 0 และมีทศนิยมได้ไม่เกิน 2 ตำแหน่ง');
+                return;
+            }
+
+            const originalText = button.textContent;
+            button.disabled = true;
+            button.textContent = 'กำลังสร้าง QR...';
+            try {
+                const response = await fetch('/update-example-qr', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount })
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.error || 'สร้าง QR ไม่สำเร็จ');
+                showToast(`✅ อัปเดต QR ใน example.png เป็น ${result.amount} บาทแล้ว`);
+                if (typeof loadDownloads === 'function') loadDownloads();
+            } catch (error) {
+                console.error('QR update error:', error);
+                showToast(`❌ อัปเดต QR ไม่สำเร็จ: ${error.message}`);
+            } finally {
+                button.disabled = false;
+                button.textContent = originalText;
             }
         }
 
