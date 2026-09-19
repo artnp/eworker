@@ -11,15 +11,35 @@
     <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
     <style>
         :root {
-            --bg: #f8f9fa;
-            --surface: #ffffff;
-            --input-bg: #ffffff;
-            --primary: #4285f4;
-            --text: #202124;
-            --text-sub: #5f6368;
-            --border: #dadce0;
-            --green: #06C755;
-            --shadow: 0 1px 3px rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
+            --bg: #0f141c;
+            --surface: #18202c;
+            --surface-hover: #222c3d;
+            --input-bg: #151b26;
+            --primary: #3b82f6;
+            --primary-hover: #60a5fa;
+            --text: #e2e8f0;
+            --text-sub: #94a3b8;
+            --text-muted: #64748b;
+            --border: #263346;
+            --border-subtle: #1e293b;
+            --green: #10b981;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+        }
+
+        /* Eye-Care Dark Mode Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f141c;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a374d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3b4b66;
         }
 
         @keyframes spin {
@@ -63,6 +83,7 @@
             overflow-y: auto;
             padding: 20px;
             transition: background-color 0.3s;
+            scrollbar-color: #2a374d #0f141c;
         }
 
         .downloads-container {
@@ -103,7 +124,7 @@
             transition: all 0.3s;
             position: relative;
             opacity: 0.9;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
         }
 
         .dl-item:hover,
@@ -111,7 +132,7 @@
             opacity: 1;
             transform: scale(1.05);
             border-color: var(--primary);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
         }
 
         .dl-item.selected::after {
@@ -144,8 +165,8 @@
             right: 0;
             font-size: 8px;
             padding: 2px;
-            background: rgba(255, 255, 255, 0.85);
-            color: #000;
+            background: rgba(15, 20, 28, 0.88);
+            color: #cbd5e1;
             text-align: center;
             white-space: nowrap;
             overflow: hidden;
@@ -198,6 +219,7 @@
             border: 2px solid var(--border);
             position: relative;
             cursor: pointer;
+            background: var(--surface);
             transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
         }
 
@@ -239,12 +261,12 @@
             padding: 10px 15px;
             border: 1px solid var(--border);
             transition: border-color 0.3s, box-shadow 0.3s;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
         }
 
         .input-bar:focus-within {
             border-color: var(--primary);
-            box-shadow: 0 1px 6px rgba(32, 33, 36, 0.28);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25), 0 4px 20px rgba(0, 0, 0, 0.35);
         }
 
         .action-btn {
@@ -264,7 +286,7 @@
         }
 
         .action-btn:hover {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.08);
             color: #fff;
         }
 
@@ -282,6 +304,10 @@
             resize: none;
             overflow-y: hidden;
             scrollbar-width: none;
+        }
+
+        #prompt-input::placeholder {
+            color: var(--text-muted);
         }
 
         .quick-tags {
@@ -356,7 +382,7 @@
             gap: 15px;
             margin-top: 20px;
             padding: 10px;
-            background: rgba(255, 255, 255, 0.5);
+            background: var(--surface);
             border-radius: 15px;
             border: 1px solid var(--border);
             justify-content: center;
@@ -376,7 +402,7 @@
         }
 
         .account-selector label:hover {
-            background: rgba(66, 133, 244, 0.1);
+            background: rgba(66, 133, 244, 0.15);
         }
 
         .account-selector input[type="radio"] {
@@ -409,7 +435,8 @@
             padding: 3px 8px;
             border-radius: 20px;
             border: 1px solid var(--border);
-            background: #fff;
+            background: #1a2230;
+            color: var(--text);
             cursor: pointer;
             transition: all 0.2s;
             user-select: none;
@@ -417,8 +444,8 @@
         }
 
         .account-item-container label:hover {
-            background: #f1f3f4;
-            border-color: #ccc;
+            background: #253142;
+            border-color: #3b4d68;
         }
 
         .account-item-container input[type="radio"] {
@@ -427,9 +454,9 @@
         }
 
         .account-item-container label.selected {
-            background: rgba(66, 133, 244, 0.08);
+            background: rgba(59, 130, 246, 0.2);
             border-color: var(--primary);
-            color: var(--primary);
+            color: #93c5fd;
             font-weight: 600;
         }
 
@@ -527,7 +554,7 @@
 
         /* Drag and Drop Styles */
         body.drag-over {
-            background-color: #e8f0fe;
+            background-color: #162032;
         }
 
         .preview-thumb {
@@ -553,7 +580,7 @@
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 14px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
         }
 
         .quota-panel-header {
@@ -607,13 +634,13 @@
         }
 
         .quota-item.available {
-            background: rgba(15, 157, 88, 0.08);
-            border-color: rgba(15, 157, 88, 0.2);
+            background: rgba(16, 185, 129, 0.12);
+            border-color: rgba(16, 185, 129, 0.25);
         }
 
         .quota-item.exhausted {
-            background: rgba(219, 68, 55, 0.08);
-            border-color: rgba(219, 68, 55, 0.2);
+            background: rgba(239, 68, 68, 0.12);
+            border-color: rgba(239, 68, 68, 0.25);
         }
 
         .quota-item-info {
@@ -630,11 +657,11 @@
         }
 
         .quota-item.available .quota-item-name {
-            color: #0f9d58;
+            color: #34d399;
         }
 
         .quota-item.exhausted .quota-item-name {
-            color: #db4437;
+            color: #f87171;
         }
 
         .quota-item-time {
@@ -654,22 +681,22 @@
         }
 
         .quota-action-btn.unlock {
-            background: #0f9d58;
+            background: #10b981;
             color: #fff;
         }
 
         .quota-action-btn.unlock:hover {
-            background: #0b8043;
+            background: #059669;
             transform: scale(1.05);
         }
 
         .quota-action-btn.block {
-            background: #db4437;
+            background: #ef4444;
             color: #fff;
         }
 
         .quota-action-btn.block:hover {
-            background: #c62828;
+            background: #dc2626;
             transform: scale(1.05);
         }
 
@@ -709,7 +736,7 @@
         }
 
         .undo-btn:hover {
-            background: rgba(66, 133, 244, 0.12);
+            background: rgba(66, 133, 244, 0.15);
             color: var(--primary);
             transform: scale(1.15);
         }
@@ -759,7 +786,7 @@
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background: #ccc;
+            background: #475569;
             transition: all 0.2s;
         }
 
@@ -767,7 +794,7 @@
             background: var(--primary);
             color: #fff;
             border-color: var(--primary);
-            box-shadow: 0 2px 8px rgba(66, 133, 244, 0.4);
+            box-shadow: 0 2px 10px rgba(59, 130, 246, 0.45);
             transform: translateY(-1px);
         }
 
@@ -778,12 +805,12 @@
 
         .model-checkbox:hover span {
             border-color: var(--primary);
-            background: rgba(66, 133, 244, 0.05);
+            background: rgba(59, 130, 246, 0.1);
         }
 
         .all-ai-btn {
             padding: 4px 12px;
-            background: linear-gradient(135deg, #4285f4, #ab47bc);
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
             color: white;
             border: none;
             border-radius: 10px;
@@ -794,13 +821,13 @@
             align-items: center;
             gap: 5px;
             transition: all 0.2s;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
             height: 23px;
         }
 
         .all-ai-btn:hover {
             transform: translateY(-1px);
-            box-shadow: 0 4px 10px rgba(171, 71, 188, 0.4);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.45);
             filter: brightness(1.1);
         }
 
@@ -822,22 +849,22 @@
         }
 
         .status-badge-pending {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeeba;
+            background: rgba(245, 158, 11, 0.18);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.35);
             animation: pulse 1.5s infinite;
         }
 
         .status-badge-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background: rgba(16, 185, 129, 0.18);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.35);
         }
 
         .status-badge-failed {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background: rgba(239, 68, 68, 0.18);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.35);
             cursor: pointer;
         }
 
@@ -847,8 +874,8 @@
             margin-top: 8px;
             margin-bottom: 6px;
             padding: 10px 14px;
-            background: #fff8f0;
-            border: 1px solid #fed7aa;
+            background: rgba(154, 52, 18, 0.2);
+            border: 1px solid rgba(249, 115, 22, 0.35);
             border-radius: 12px;
             display: flex;
             flex-wrap: wrap;
@@ -856,8 +883,8 @@
             justify-content: space-between;
             gap: 8px;
             font-size: 0.8rem;
-            color: #9a3412;
-            box-shadow: 0 2px 8px rgba(249, 115, 22, 0.15);
+            color: #fed7aa;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
         }
 
         .fallback-actions {
@@ -1116,22 +1143,22 @@
 
         #pp-inpaint-prompt {
             width: 100%;
-            background: #ffffff;
+            background: #151b26;
             border: 1px solid rgba(0, 206, 201, 0.4);
             border-radius: 7px;
             outline: none;
-            color: #1a1e24;
+            color: var(--text);
             font-size: 0.82rem;
             font-weight: 500;
             font-family: inherit;
             padding: 6px 12px;
             transition: all 0.2s ease;
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
         }
 
         #pp-inpaint-prompt:focus {
             border-color: #00cec9;
-            background: #ffffff;
+            background: #1a2230;
             box-shadow: 0 0 0 3px rgba(0, 206, 201, 0.25);
         }
 
@@ -1144,7 +1171,7 @@
         }
 
         #pp-inpaint-prompt::placeholder {
-            color: #636e72;
+            color: #64748b;
             font-size: 0.78rem;
         }
 
@@ -1256,9 +1283,9 @@
         .fs-tool-btn {
             padding: 5px 12px;
             border-radius: 8px;
-            border: 1px solid #dfe4ea;
-            background: #f1f2f6;
-            color: #2f3542;
+            border: 1px solid var(--border);
+            background: #1e293b;
+            color: var(--text);
             font-size: 0.74rem;
             font-weight: 600;
             cursor: pointer;
@@ -1270,8 +1297,8 @@
         }
 
         .fs-tool-btn:hover {
-            background: #e4e7eb;
-            border-color: #ced6e0;
+            background: #273549;
+            border-color: #3b4d68;
             transform: translateY(-1px);
         }
 
@@ -1287,9 +1314,9 @@
         }
 
         .fs-tool-btn.danger {
-            color: #ff4757;
-            border-color: rgba(255, 71, 87, 0.3);
-            background: rgba(255, 71, 87, 0.06);
+            color: #ff6b81;
+            border-color: rgba(255, 107, 129, 0.3);
+            background: rgba(255, 71, 87, 0.12);
         }
 
         .fs-tool-btn.danger:hover {
@@ -1309,8 +1336,8 @@
 
         .faceswap-quick-tools .tag-item {
             border-color: #ff4757;
-            color: #ff4757;
-            background: rgba(255, 71, 87, 0.08);
+            color: #ff6b81;
+            background: rgba(255, 71, 87, 0.12);
             font-size: 0.8rem;
             padding: 6px 14px;
         }
@@ -1461,7 +1488,7 @@
                     onclick="const g = document.getElementById('quota-grid'); const isOpen = g.style.display !== 'none'; g.style.display = isOpen ? 'none' : 'grid'; if (!isOpen) loadQuotaStatus();">
                     <span>🔑 Gemini:</span>
                     <small
-                        style="font-weight: normal; font-size: 0.65rem; color: #999; border: 1px solid #ddd; padding: 1px 4px; border-radius: 4px; margin-left: 2px;">ตั้งค่า</small>
+                        style="font-weight: normal; font-size: 0.65rem; color: var(--text-sub); border: 1px solid var(--border); padding: 1px 5px; border-radius: 4px; margin-left: 2px; background: rgba(255,255,255,0.05);">ตั้งค่า</small>
                 </h3>
 
                 <!-- Gemini Account Selector with Status Dots -->
@@ -1473,10 +1500,10 @@
                 <div
                     style="display: inline-flex; align-items: center; gap: 4px; border-left: 1px solid var(--border); padding-left: 10px; margin-left: 5px;">
                     <button onclick="changeGeminiAccountCount(-1)"
-                        style="font-size: 0.7rem; padding: 2px 6px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; color: var(--text-sub);"
+                        style="font-size: 0.7rem; padding: 2px 7px; border: 1px solid var(--border); border-radius: 4px; background: #1a2230; cursor: pointer; color: var(--text-sub);"
                         title="ลดบัญชี">- บัญชี</button>
                     <button onclick="changeGeminiAccountCount(1)"
-                        style="font-size: 0.7rem; padding: 2px 6px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; color: var(--text-sub);"
+                        style="font-size: 0.7rem; padding: 2px 7px; border: 1px solid var(--border); border-radius: 4px; background: #1a2230; cursor: pointer; color: var(--text-sub);"
                         title="เพิ่มบัญชี">+ บัญชี</button>
                 </div>
 
@@ -1488,6 +1515,9 @@
             <button class="refresh-btn" onclick="loadQuotaStatus()"
                 style="padding: 2px 6px; font-size: 0.75rem; background: none; border: none; cursor: pointer;"
                 title="รีเฟรชโควต้า">🔄</button>
+            <button onclick="clearStuckPrompts()"
+                style="padding: 2px 8px; font-size: 0.72rem; border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 6px; background: rgba(239, 68, 68, 0.15); color: #fca5a5; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"
+                title="ล้างคิวคำสั่งและรูปภาพที่ค้างส่งซ้ำในระบบ">🧹 ล้างค้าง</button>
 
             <!-- Grid (Hidden by default, click Gemini icon to show) -->
             <div class="quota-grid" id="quota-grid"
@@ -1500,14 +1530,14 @@
 
         <!-- Watermark Check Section (ส่วนตรวจสอบลายน้ำ - Clean & Compact พร้อม Drag & Drop) -->
         <div id="watermark-check-container"
-            style="width: 100%; max-width: 950px; margin: 10px auto; padding: 15px; background: #fff; border: 2px dashed #dadce0; border-radius: 16px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); min-height: 50px; display: flex; flex-direction: column; justify-content: center; position: relative; transition: all 0.25s ease;">
+            style="width: 100%; max-width: 950px; margin: 10px auto; padding: 15px; background: var(--surface); border: 2px dashed var(--border); border-radius: 16px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.3); min-height: 50px; display: flex; flex-direction: column; justify-content: center; position: relative; transition: all 0.25s ease;">
             
             <!-- Drag & Drop Visual Overlay -->
             <div id="watermark-drop-overlay"
-                style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(240, 244, 255, 0.94); border: 2.5px dashed #4f46e5; border-radius: 16px; z-index: 50; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(3px); pointer-events: none; transition: all 0.2s ease;">
+                style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 20, 32, 0.95); border: 2.5px dashed #6366f1; border-radius: 16px; z-index: 50; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(4px); pointer-events: none; transition: all 0.2s ease;">
                 <span style="font-size: 2.4rem; margin-bottom: 8px;">📥</span>
-                <span style="font-size: 1.05rem; font-weight: 700; color: #3730a3;">วางไฟล์ภาพที่นี่เพื่อจัดการทันที</span>
-                <span style="font-size: 0.78rem; color: #6366f1; margin-top: 4px;">ครอป 4 ทิศทาง • AI Enhancer • ลบลายน้ำ • ขยายภาพ AI • ลบฉากหลัง</span>
+                <span style="font-size: 1.05rem; font-weight: 700; color: #a5b4fc;">วางไฟล์ภาพที่นี่เพื่อจัดการทันที</span>
+                <span style="font-size: 0.78rem; color: #818cf8; margin-top: 4px;">ครอป 4 ทิศทาง • AI Enhancer • ลบลายน้ำ • ขยายภาพ AI • ลบฉากหลัง</span>
             </div>
 
             <!-- Hidden File Input for Direct Upload -->
@@ -1517,75 +1547,74 @@
 
                 <!-- AI Upscale Progress Bar Panel -->
                 <div id="upscale-progress-panel"
-                    style="display: none; margin-bottom: 14px; padding: 12px 16px; background: linear-gradient(135deg, #f8faff 0%, #f0f4ff 100%); border: 1.5px solid #c7d2fe; border-radius: 12px; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08); text-align: left; transition: all 0.3s ease;">
+                    style="display: none; margin-bottom: 14px; padding: 12px 16px; background: linear-gradient(135deg, #171d2b 0%, #1e1b4b 100%); border: 1.5px solid #3730a3; border-radius: 12px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); text-align: left; transition: all 0.3s ease;">
 
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <span
                                 style="font-size: 1.1rem; display: inline-block; animation: spin 1.2s linear infinite;">⚡</span>
-                            <span id="upscale-step-title" style="font-size: 0.85rem; font-weight: 700; color: #3730a3;">
+                            <span id="upscale-step-title" style="font-size: 0.85rem; font-weight: 700; color: #c7d2fe;">
                                 ขั้นตอนที่ 1/3: กำลังเชื่อมต่อ Cloudinary AI Cloud...
                             </span>
                         </div>
                         <span id="upscale-pct-badge"
-                            style="font-size: 0.85rem; font-weight: 800; color: #4338ca; background: #e0e7ff; padding: 2px 8px; border-radius: 20px;">
+                            style="font-size: 0.85rem; font-weight: 800; color: #818cf8; background: rgba(99, 102, 241, 0.2); padding: 2px 8px; border-radius: 20px;">
                             0%
                         </span>
                     </div>
 
                     <!-- Progress Bar Track -->
                     <div
-                        style="width: 100%; height: 9px; background: #e0e7ff; border-radius: 10px; overflow: hidden; position: relative; margin-bottom: 6px;">
+                        style="width: 100%; height: 9px; background: #232d42; border-radius: 10px; overflow: hidden; position: relative; margin-bottom: 6px;">
                         <div id="upscale-progress-fill"
-                            style="width: 0%; height: 100%; background: linear-gradient(90deg, #4f46e5 0%, #06C755 100%); border-radius: 10px; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 8px rgba(79, 70, 229, 0.4);">
+                            style="width: 0%; height: 100%; background: linear-gradient(90deg, #4f46e5 0%, #10b981 100%); border-radius: 10px; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 8px rgba(79, 70, 229, 0.4);">
                         </div>
                     </div>
 
                     <!-- Steps Timeline & Details -->
                     <div
-                        style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: #6366f1;">
+                        style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: #818cf8;">
                         <div style="display: flex; gap: 12px;">
-                            <span id="upscale-step-1" style="font-weight: 600; color: #3730a3;">📁 1.
+                            <span id="upscale-step-1" style="font-weight: 600; color: #a5b4fc;">📁 1.
                                 เชื่อมต่อคลาวด์</span>
-                            <span id="upscale-step-2" style="font-weight: 600; color: #9ca3af;">🤖 2. Cloud AI
+                            <span id="upscale-step-2" style="font-weight: 600; color: #64748b;">🤖 2. Cloud AI
                                 Enhancer</span>
-                            <span id="upscale-step-3" style="font-weight: 600; color: #9ca3af;">🔒 3. สร้างลายน้ำ</span>
+                            <span id="upscale-step-3" style="font-weight: 600; color: #64748b;">🔒 3. สร้างลายน้ำ</span>
                         </div>
                         <span id="upscale-detail-text"
-                            style="color: #6b7280; font-size: 0.70rem;">เริ่มต้นคำนวณ...</span>
+                            style="color: #94a3b8; font-size: 0.70rem;">เริ่มต้นคำนวณ...</span>
                     </div>
                 </div>
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <p style="font-size: 0.85rem; color: #ff4d4d; margin: 0; font-weight: 600; cursor: default;">
+                    <p style="font-size: 0.85rem; color: #f87171; margin: 0; font-weight: 600; cursor: default;">
                         ตรวจเช็คและครอปภาพ 4 ทิศทาง (คลิกตำแหน่งที่ต้องการตัด)</p>
                     <div style="display: flex; gap: 8px; align-items: center;">
                         <button type="button" onclick="document.getElementById('watermark-file-input').click()"
-                            style="padding: 4px 10px; font-size: 0.72rem; font-weight: 600; color: #4338ca; background: #e0e7ff; border: 1px solid #c7d2fe; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s ease;"
+                            style="padding: 4px 10px; font-size: 0.72rem; font-weight: 600; color: #a5b4fc; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s ease;"
                             title="คลิกเพื่อเลือกไฟล์ภาพใหม่ หรือลากไฟล์ภาพมาปล่อยที่นี่ได้ตลอดเวลา">
                             <span>📥 นำเข้าภาพใหม่</span>
-                            <span style="font-size: 0.65rem; color: #6366f1;">(หรือลากมาวาง)</span>
+                            <span style="font-size: 0.65rem; color: #818cf8;">(หรือลากมาวาง)</span>
                         </button>
                     </div>
                 </div>
-                <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center; margin:0 0 12px; padding:9px 10px; border:1px solid #bbf7d0; border-radius:10px; background:#f0fdf4;">
-                    <span style="font-size:.75rem; font-weight:700; color:#166534;">💳 ยอดใน QR ของ example.png</span>
-                    <label style="font-size:.74rem; color:#166534; cursor:pointer;"><input type="radio" name="qr-amount-option" value="60" checked onchange="selectQrAmountOption(this)"> 60 บาท</label>
-                    <label style="font-size:.74rem; color:#166534; cursor:pointer;"><input type="radio" name="qr-amount-option" value="100" onchange="selectQrAmountOption(this)"> 100 บาท</label>
-                    <input id="custom-qr-amount" type="number" min="0.01" max="999999.99" step="0.01" inputmode="decimal" placeholder="กำหนดยอดเอง" oninput="selectCustomQrAmount()" style="width:118px; padding:4px 7px; border:1px solid #86efac; border-radius:7px; font:inherit; font-size:.74rem;">
+                <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center; margin:0 0 12px; padding:9px 10px; border:1px solid rgba(34, 197, 94, 0.3); border-radius:10px; background:rgba(16, 185, 129, 0.1);">
+                    <span style="font-size:.75rem; font-weight:700; color:#4ade80;">💳 ยอดใน QR ของ example.png</span>
+                    <label style="font-size:.74rem; color:#86efac; cursor:pointer;"><input type="radio" name="qr-amount-option" value="60" checked onchange="selectQrAmountOption(this)"> 60 บาท</label>
+                    <label style="font-size:.74rem; color:#86efac; cursor:pointer;"><input type="radio" name="qr-amount-option" value="100" onchange="selectQrAmountOption(this)"> 100 บาท</label>
+                    <input id="custom-qr-amount" type="number" min="0.01" max="999999.99" step="0.01" inputmode="decimal" placeholder="กำหนดยอดเอง" oninput="selectCustomQrAmount()" style="width:118px; padding:4px 7px; border:1px solid rgba(34, 197, 94, 0.4); background:#151b26; color:#e2e8f0; border-radius:7px; font:inherit; font-size:.74rem;">
                     <button id="update-example-qr-btn" type="button" onclick="updateExampleQr()" style="padding:5px 10px; border:0; border-radius:7px; color:#fff; background:#16a34a; font:inherit; font-size:.74rem; font-weight:700; cursor:pointer;">อัปเดต QR</button>
                 </div>
                 <div style="display: flex; gap: 12px; align-items: stretch; justify-content: center; width: 100%;">
 
                     <!-- Left Crop Column -->
                     <div
-                        style="flex: 1; min-width: 120px; max-width: 180px; display: flex; flex-direction: column; align-items: center; border: 1px solid #eee; border-radius: 10px; padding: 8px; background: #fafafa;">
+                        style="flex: 1; min-width: 120px; max-width: 180px; display: flex; flex-direction: column; align-items: center; border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #131922;">
                         <span
-                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬅️
-                            ซ้าย</span>
+                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬅️ ซ้าย</span>
                         <div
-                            style="width: 100%; height: 260px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #ddd; border-radius: 6px;">
+                            style="width: 100%; height: 260px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #0b0f15; border: 1px solid var(--border); border-radius: 6px;">
                             <canvas id="crop-canvas-left"
                                 style="max-width: 100%; max-height: 100%; object-fit: contain; cursor: w-resize; display: block;"></canvas>
                         </div>
@@ -1596,24 +1625,22 @@
                         style="flex: 2; display: flex; flex-direction: column; gap: 12px; justify-content: space-between;">
                         <!-- Top Crop Panel -->
                         <div
-                            style="display: flex; flex-direction: column; align-items: center; border: 1px solid #eee; border-radius: 10px; padding: 8px; background: #fafafa; flex: 1;">
+                            style="display: flex; flex-direction: column; align-items: center; border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #131922; flex: 1;">
                             <span
-                                style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬆️
-                                บน</span>
+                                style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬆️ บน</span>
                             <div
-                                style="width: 100%; height: 110px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #ddd; border-radius: 6px;">
+                                style="width: 100%; height: 110px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #0b0f15; border: 1px solid var(--border); border-radius: 6px;">
                                 <canvas id="crop-canvas-top"
                                     style="width: 100%; height: auto; max-height: 100%; object-fit: contain; cursor: n-resize; display: block;"></canvas>
                             </div>
                         </div>
                         <!-- Bottom Crop Panel -->
                         <div
-                            style="display: flex; flex-direction: column; align-items: center; border: 1px solid #eee; border-radius: 10px; padding: 8px; background: #fafafa; flex: 1;">
+                            style="display: flex; flex-direction: column; align-items: center; border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #131922; flex: 1;">
                             <span
-                                style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬇️
-                                ล่าง</span>
+                                style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬇️ ล่าง</span>
                             <div
-                                style="width: 100%; height: 110px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #ddd; border-radius: 6px;">
+                                style="width: 100%; height: 110px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #0b0f15; border: 1px solid var(--border); border-radius: 6px;">
                                 <canvas id="crop-canvas-bottom"
                                     style="width: 100%; height: auto; max-height: 100%; object-fit: contain; cursor: s-resize; display: block;"></canvas>
                             </div>
@@ -1622,12 +1649,11 @@
 
                     <!-- Right Crop Column -->
                     <div
-                        style="flex: 1; min-width: 120px; max-width: 180px; display: flex; flex-direction: column; align-items: center; border: 1px solid #eee; border-radius: 10px; padding: 8px; background: #fafafa;">
+                        style="flex: 1; min-width: 120px; max-width: 180px; display: flex; flex-direction: column; align-items: center; border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #131922;">
                         <span
-                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">➡️
-                            ขวา</span>
+                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">➡️ ขวา</span>
                         <div
-                            style="width: 100%; height: 260px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #fff; border: 1px solid #ddd; border-radius: 6px;">
+                            style="width: 100%; height: 260px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #0b0f15; border: 1px solid var(--border); border-radius: 6px;">
                             <canvas id="crop-canvas-right"
                                 style="max-width: 100%; max-height: 100%; object-fit: contain; cursor: e-resize; display: block;"></canvas>
                         </div>
@@ -1635,120 +1661,114 @@
 
                     <!-- Tools / Clone Stamp / Upscale / Extender / Remove BG Column (Single Vertical Column) -->
                     <div
-                        style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 6px; border: 1px solid #eee; border-radius: 12px; padding: 8px 6px; background: #fafafa; width: 92px; min-width: 90px;">
+                        style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 6px; border: 1px solid var(--border); border-radius: 12px; padding: 8px 6px; background: #131922; width: 92px; min-width: 90px;">
                         <span
                             style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 1px;">เครื่องมือ</span>
 
                         <!-- แถบโควต้า Cloudinary รวม (แยกไว้ข้างนอกปุ่ม) -->
                         <div id="btn-quota-details" onclick="loadCloudinaryQuota(true)"
-                            style="width: 78px; padding: 3px 2px; border-radius: 8px; background: linear-gradient(135deg, #f0f3ff 0%, #e0e7ff 100%); border: 1px solid #c7d2fe; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; line-height: 1.15; box-shadow: 0 1px 3px rgba(99, 102, 241, 0.08); transition: all 0.2s ease; margin-bottom: 2px;"
+                            style="width: 78px; padding: 3px 2px; border-radius: 8px; background: linear-gradient(135deg, #1e2538 0%, #171d2b 100%); border: 1px solid #334155; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; line-height: 1.15; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); transition: all 0.2s ease; margin-bottom: 2px;"
                             title="โควต้า Cloudinary รวม (คลิกเพื่อดูสรุปทุกบัญชี)">
                             <div style="display: flex; align-items: center; gap: 2px;">
-                                <span style="font-size: 0.52rem; color: #4338ca; font-weight: 700;">☁️ บัญชี</span>
+                                <span style="font-size: 0.52rem; color: #a5b4fc; font-weight: 700;">☁️ บัญชี</span>
                                 <span id="quota-acc-name"
-                                    style="font-size: 0.54rem; font-weight: 700; color: #4338ca; white-space: nowrap;">1/7</span>
+                                    style="font-size: 0.54rem; font-weight: 700; color: #a5b4fc; white-space: nowrap;">1/7</span>
                             </div>
                             <span id="quota-acc-credits"
-                                style="font-size: 0.52rem; font-weight: 700; color: #059669; white-space: nowrap;">เหลือ
-                                71.1%</span>
+                                style="font-size: 0.52rem; font-weight: 700; color: #34d399; white-space: nowrap;">เหลือ 71.1%</span>
                         </div>
 
-                        <div style="display: flex; flex-direction: column; gap: 6px; align-items: center; width: 100%;">
-                            <!-- 1. Enhancer AI Button -->
-                            <button id="btn-upscale" onclick="triggerUpscale(null, 1, 'cloudinary_enhancer')"
-                                style="width: 78px; height: 68px; border-radius: 12px; border: 1px solid #c7d2fe; background: linear-gradient(135deg, #f0f3ff 0%, #ffffff 100%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(99, 102, 241, 0.12); transition: all 0.2s ease-in-out; padding: 5px 2px;"
-                                title="AI Enhancer: ปรับความคมชัด กู้คืนรายละเอียด และลดความเบลอด้วย Cloudinary AI (ทับ complete.png และสร้าง example.png)">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4f46e5"
-                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-                                    style="margin-bottom: 2px; transition: transform 0.2s ease;">
-                                    <path
-                                        d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1 1.275-1.275L12 3Z" />
-                                    <path d="M5 3v4" />
-                                    <path d="M19 17v4" />
-                                    <path d="M3 5h4" />
-                                    <path d="M17 19h4" />
-                                </svg>
-                                <span id="btn-enhancer-text"
-                                    style="font-size: 0.62rem; font-weight: 700; color: #4338ca; white-space: nowrap; line-height: 1.1;">Enhance
-                                    AI</span>
-                                <span
-                                    style="font-size: 0.50rem; color: #6366f1; font-weight: 600;">ปรับชัดกู้เบลอ</span>
-                            </button>
+                        <!-- 1. Enhancer AI Button -->
+                        <button id="btn-upscale" onclick="triggerUpscale(null, 1, 'cloudinary_enhancer')"
+                            style="width: 78px; height: 68px; border-radius: 12px; border: 1px solid #4338ca; background: linear-gradient(135deg, #1e1b4b 0%, #18202c 100%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); transition: all 0.2s ease-in-out; padding: 5px 2px;"
+                            title="AI Enhancer: ปรับความคมชัด กู้คืนรายละเอียด และลดความเบลอด้วย Cloudinary AI (ทับ complete.png และสร้าง example.png)">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#818cf8"
+                                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+                                style="margin-bottom: 2px; transition: transform 0.2s ease;">
+                                <path
+                                    d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1 1.275-1.275L12 3Z" />
+                                <path d="M5 3v4" />
+                                <path d="M19 17v4" />
+                                <path d="M3 5h4" />
+                                <path d="M17 19h4" />
+                            </svg>
+                            <span id="btn-enhancer-text"
+                                style="font-size: 0.62rem; font-weight: 700; color: #c7d2fe; white-space: nowrap; line-height: 1.1;">Enhance AI</span>
+                            <span
+                                style="font-size: 0.50rem; color: #a5b4fc; font-weight: 600;">ปรับชัดกู้เบลอ</span>
+                        </button>
 
-                            <!-- 2. Remove Watermark Button (Cloudinary AI Inpaint) -->
-                            <button id="btn-clone-stamp" onclick="toggleCloneStampMode()"
-                                style="width: 78px; height: 68px; border-radius: 12px; border: 1px solid #bfdbfe; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(59, 130, 246, 0.12); transition: all 0.2s ease-in-out; padding: 5px 2px;"
-                                title="ลบลายน้ำ AI (วงตำแหน่งเฉพาะจุด): กดปุ่มนี้แล้วคลิกวงตำแหน่งลายน้ำบนภาพ หรือลากกรอบ Marquee ใน Photopea แล้วกดปุ่มนี้">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb"
-                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-                                    style="margin-bottom: 2px; transition: transform 0.2s ease;">
-                                    <circle cx="12" cy="12" r="8" stroke-dasharray="3 3" />
-                                    <path d="M12 2v4" />
-                                    <path d="M12 18v4" />
-                                    <path d="M2 12h4" />
-                                    <path d="M18 12h4" />
-                                    <circle cx="12" cy="12" r="2" fill="#2563eb" />
-                                </svg>
-                                <span
-                                    style="font-size: 0.62rem; font-weight: 700; color: #1d4ed8; white-space: nowrap; line-height: 1.1;">ลบลายน้ำ</span>
-                                <span style="font-size: 0.50rem; color: #2563eb; font-weight: 600;">วงตำแหน่ง AI</span>
-                            </button>
+                        <!-- 2. Remove Watermark Button (Cloudinary AI Inpaint) -->
+                        <button id="btn-clone-stamp" onclick="toggleCloneStampMode()"
+                            style="width: 78px; height: 68px; border-radius: 12px; border: 1px solid #1e40af; background: linear-gradient(135deg, #172554 0%, #18202c 100%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); transition: all 0.2s ease-in-out; padding: 5px 2px;"
+                            title="ลบลายน้ำ AI (วงตำแหน่งเฉพาะจุด): กดปุ่มนี้แล้วคลิกวงตำแหน่งลายน้ำบนภาพ หรือลากกรอบ Marquee ใน Photopea แล้วกดปุ่มนี้">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60a5fa"
+                                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+                                style="margin-bottom: 2px; transition: transform 0.2s ease;">
+                                <circle cx="12" cy="12" r="8" stroke-dasharray="3 3" />
+                                <path d="M12 2v4" />
+                                <path d="M12 18v4" />
+                                <path d="M2 12h4" />
+                                <path d="M18 12h4" />
+                                <circle cx="12" cy="12" r="2" fill="#60a5fa" />
+                            </svg>
+                            <span
+                                style="font-size: 0.62rem; font-weight: 700; color: #93c5fd; white-space: nowrap; line-height: 1.1;">ลบลายน้ำ</span>
+                            <span style="font-size: 0.50rem; color: #60a5fa; font-weight: 600;">วงตำแหน่ง AI</span>
+                        </button>
 
-                            <!-- 3. AI Extender (เพิ่มตำแหน่งภาพ) Button -->
-                            <button id="btn-ai-extender" onclick="triggerDirectAIExtender(event)"
-                                style="width: 78px; height: 68px; border-radius: 12px; border: 1px solid #bae6fd; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(2, 132, 199, 0.12); transition: all 0.2s ease-in-out; padding: 5px 2px;"
-                                title="ขยายภาพ AI (Cloudinary AI Image Extender): ขยายขอบภาพ 20% ทุกทิศทางอัตโนมัติทันทีด้วย AI Generative Fill (บันทึกทับ complete.png และสร้าง example.png)">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0284c7"
-                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-                                    style="margin-bottom: 2px; transition: transform 0.2s ease;">
-                                    <path d="M15 3h6v6" />
-                                    <path d="M9 21H3v-6" />
-                                    <path d="M21 3l-7 7" />
-                                    <path d="M3 21l7-7" />
-                                    <rect width="8" height="8" x="8" y="8" rx="2" stroke-dasharray="2 2" />
-                                </svg>
-                                <span
-                                    style="font-size: 0.62rem; font-weight: 700; color: #0369a1; white-space: nowrap; line-height: 1.1;">ขยายภาพ
-                                    AI</span>
-                                <span style="font-size: 0.50rem; color: #0284c7; font-weight: 600;">+20% ทุกทิศ</span>
-                            </button>
+                        <!-- 3. AI Extender (เพิ่มตำแหน่งภาพ) Button -->
+                        <button id="btn-ai-extender" onclick="triggerDirectAIExtender(event)"
+                            style="width: 78px; height: 68px; border-radius: 12px; border: 1px solid #0369a1; background: linear-gradient(135deg, #082f49 0%, #18202c 100%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); transition: all 0.2s ease-in-out; padding: 5px 2px;"
+                            title="ขยายภาพ AI (Cloudinary AI Image Extender): ขยายขอบภาพ 20% ทุกทิศทางอัตโนมัติทันทีด้วย AI Generative Fill (บันทึกทับ complete.png และสร้าง example.png)">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8"
+                                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+                                style="margin-bottom: 2px; transition: transform 0.2s ease;">
+                                <path d="M15 3h6v6" />
+                                <path d="M9 21H3v-6" />
+                                <path d="M21 3l-7 7" />
+                                <path d="M3 21l7-7" />
+                                <rect width="8" height="8" x="8" y="8" rx="2" stroke-dasharray="2 2" />
+                            </svg>
+                            <span
+                                style="font-size: 0.62rem; font-weight: 700; color: #7dd3fc; white-space: nowrap; line-height: 1.1;">ขยายภาพ AI</span>
+                            <span style="font-size: 0.50rem; color: #38bdf8; font-weight: 600;">+20% ทุกทิศ</span>
+                        </button>
 
-                            <!-- 4. Remove Background (ลบฉากหลัง) Button -->
-                            <button id="btn-remove-bg" onclick="triggerDirectAIRemoveBg(event)"
-                                style="width: 78px; height: 68px; border-radius: 12px; border: 1px solid #fecdd3; background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(225, 29, 72, 0.12); transition: all 0.2s ease-in-out; padding: 5px 2px;"
-                                title="ลบฉากหลัง (Cloudinary AI Smart Cutout): ลบฉากหลังทุกชนิดอัตโนมัติด้วย AI ให้เป็นภาพโปร่งใส PNG (บันทึกทับ complete.png และสร้าง example.png)">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e11d48"
-                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-                                    style="margin-bottom: 2px; transition: transform 0.2s ease;">
-                                    <path d="M6 3v12" />
-                                    <circle cx="6" cy="18" r="3" />
-                                    <circle cx="18" cy="6" r="3" />
-                                    <path d="m18 9-9 9" />
-                                    <path d="M18 15v6" />
-                                </svg>
-                                <span
-                                    style="font-size: 0.62rem; font-weight: 700; color: #be123c; white-space: nowrap; line-height: 1.1;">ลบฉากหลัง</span>
-                                <span style="font-size: 0.50rem; color: #e11d48; font-weight: 600;">AI Cutout</span>
-                            </button>
-                        </div>
+                        <!-- 4. Remove Background (ลบฉากหลัง) Button -->
+                        <button id="btn-remove-bg" onclick="triggerDirectAIRemoveBg(event)"
+                            style="width: 78px; height: 68px; border-radius: 12px; border: 1px solid #9f1239; background: linear-gradient(135deg, #4c0519 0%, #18202c 100%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); transition: all 0.2s ease-in-out; padding: 5px 2px;"
+                            title="ลบฉากหลัง (Cloudinary AI Smart Cutout): ลบฉากหลังทุกชนิดอัตโนมัติด้วย AI ให้เป็นภาพโปร่งใส PNG (บันทึกทับ complete.png และสร้าง example.png)">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fb7185"
+                                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+                                style="margin-bottom: 2px; transition: transform 0.2s ease;">
+                                <path d="M6 3v12" />
+                                <circle cx="6" cy="18" r="3" />
+                                <circle cx="18" cy="6" r="3" />
+                                <path d="m18 9-9 9" />
+                                <path d="M18 15v6" />
+                            </svg>
+                            <span
+                                style="font-size: 0.62rem; font-weight: 700; color: #fecdd3; white-space: nowrap; line-height: 1.1;">ลบฉากหลัง</span>
+                            <span style="font-size: 0.50rem; color: #fb7185; font-weight: 600;">AI Cutout</span>
+                        </button>
                     </div>
-
                 </div>
             </div>
             <div id="watermark-check-placeholder" onclick="document.getElementById('watermark-file-input').click()"
                 style="cursor: pointer; padding: 28px 16px; border-radius: 12px; transition: all 0.2s ease;"
                 title="คลิกเพื่อเลือกไฟล์ หรือลากไฟล์ภาพมาปล่อยที่นี่">
                 <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                    <div style="width: 52px; height: 52px; border-radius: 50%; background: #eef2ff; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #4f46e5; margin-bottom: 2px;">
+                    <div style="width: 52px; height: 52px; border-radius: 50%; background: rgba(99, 102, 241, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #818cf8; margin-bottom: 2px;">
                         📥
                     </div>
-                    <p style="color: #3730a3; font-size: 0.95rem; font-weight: 700; margin: 0;">
+                    <p style="color: #c7d2fe; font-size: 0.95rem; font-weight: 700; margin: 0;">
                         ลากไฟล์ภาพมาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์
                     </p>
                     <p style="color: var(--text-sub); font-size: 0.78rem; margin: 0;">
                         จัดการได้โดยตรง: ครอป 4 ทิศทาง • AI Enhancer • ลบลายน้ำ • ขยายภาพ AI • ลบฉากหลัง
                     </p>
-                    <span style="font-size: 0.70rem; color: #9ca3af; background: #f3f4f6; padding: 3px 10px; border-radius: 12px; margin-top: 4px;">
+                    <span style="font-size: 0.70rem; color: var(--text-sub); background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); padding: 3px 10px; border-radius: 12px; margin-top: 4px;">
                         (หรือภาพตัวอย่างจาก Desktop complete.png จะปรากฏที่นี่อัตโนมัติ)
                     </span>
                 </div>
@@ -1757,20 +1777,20 @@
 
         <!-- Face Swap Studio Section (ระบบเปลี่ยนหน้า) -->
         <div id="faceswap-studio-container"
-            style="display: none; width: 100%; max-width: 980px; margin: 10px auto; padding: 14px; background: #ffffff; border: 2px solid #ff4757; border-radius: 16px; box-shadow: 0 6px 20px rgba(255, 71, 87, 0.12); flex-direction: column; gap: 12px;">
+            style="display: none; width: 100%; max-width: 980px; margin: 10px auto; padding: 14px; background: var(--surface); border: 2px solid rgba(255, 71, 87, 0.45); border-radius: 16px; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4); flex-direction: column; gap: 12px;">
 
             <!-- Workspace: Target Image with Red Mask (Left/Center) + Reference Face Dropzone (Right) -->
             <div style="display: flex; gap: 16px; align-items: stretch; justify-content: center; flex-wrap: wrap;">
 
                 <!-- Target Image Interactive Canvas (Main Panel) -->
                 <div id="faceswap-main-panel"
-                    style="flex: 2; min-width: 320px; display: flex; flex-direction: column; align-items: center; background: #fafafa; border: 2px dashed #dfe4ea; border-radius: 12px; padding: 10px; position: relative; transition: all 0.2s ease;">
+                    style="flex: 2; min-width: 320px; display: flex; flex-direction: column; align-items: center; background: #131922; border: 1.5px dashed var(--border); border-radius: 12px; padding: 10px; position: relative; transition: all 0.2s ease;">
                     <div id="faceswap-canvas-wrapper"
-                        style="position: relative; width: 100%; max-height: 480px; min-height: 280px; display: flex; align-items: center; justify-content: center; background: #2f3542; border-radius: 8px; overflow: hidden; transition: all 0.2s ease;">
+                        style="position: relative; width: 100%; max-height: 480px; min-height: 280px; display: flex; align-items: center; justify-content: center; background: #0f141c; border-radius: 8px; overflow: hidden; transition: all 0.2s ease;">
                         <canvas id="faceswap-canvas"
                             style="max-width: 100%; max-height: 480px; object-fit: contain; cursor: crosshair; display: block;"></canvas>
                         <div id="faceswap-placeholder"
-                            style="color: #a4b0be; font-size: 0.85rem; text-align: center; padding: 20px; display: none;">
+                            style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 20px; display: none;">
                             📸 ลากภาพจากกล่องด้านบนมาวางที่นี่ หรือวางภาพ (Ctrl+V) เพื่อตั้งเป็นภาพหลัก
                         </div>
                     </div>
@@ -1778,11 +1798,11 @@
 
                 <!-- Reference Face Card (Slot for Target Face to Swap into Image) -->
                 <div
-                    style="flex: 1; min-width: 250px; max-width: 320px; display: flex; flex-direction: column; background: #fafafa; border: 1px solid #dfe4ea; border-radius: 12px; padding: 10px;">
+                    style="flex: 1; min-width: 250px; max-width: 320px; display: flex; flex-direction: column; background: #131922; border: 1px solid var(--border); border-radius: 12px; padding: 10px;">
                     <input type="file" id="fs-ref-file-input" accept="image/*, .webp" style="display: none;">
                     <!-- Dropzone: Face Frame Design & Click to Paste -->
                     <div id="fs-ref-dropzone" onclick="triggerReferenceFacePaste()"
-                        style="flex: 1; min-height: 240px; border: 2px dashed rgba(255, 71, 87, 0.45); border-radius: 18px; background: linear-gradient(180deg, #ffffff 0%, #fff6f6 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); position: relative; text-align: center; box-shadow: inset 0 0 16px rgba(255, 71, 87, 0.04);">
+                        style="flex: 1; min-height: 240px; border: 2px dashed rgba(255, 71, 87, 0.45); border-radius: 18px; background: linear-gradient(180deg, #18202c 0%, #1e1b24 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); position: relative; text-align: center; box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.3);">
 
                         <!-- Decorative Face Scan Frame Guides -->
                         <div
@@ -1802,7 +1822,7 @@
                             style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
                             <!-- Stylized Face Contour Silhouette Frame -->
                             <div
-                                style="width: 70px; height: 88px; border: 2.5px dashed #ff4757; border-radius: 50% 50% 46% 46% / 45% 45% 55% 55%; display: flex; align-items: center; justify-content: center; background: rgba(255, 71, 87, 0.05); position: relative; margin-bottom: 4px; box-shadow: 0 4px 12px rgba(255, 71, 87, 0.1);">
+                                style="width: 70px; height: 88px; border: 2.5px dashed #ff4757; border-radius: 50% 50% 46% 46% / 45% 45% 55% 55%; display: flex; align-items: center; justify-content: center; background: rgba(255, 71, 87, 0.08); position: relative; margin-bottom: 4px; box-shadow: 0 4px 12px rgba(255, 71, 87, 0.2);">
                                 <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#ff4757"
                                     stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -1812,12 +1832,12 @@
                                     style="position: absolute; bottom: -7px; font-size: 0.58rem; background: #ff4757; color: white; padding: 1px 5px; border-radius: 6px; font-weight: 700; letter-spacing: 0.5px;">FACE</span>
                             </div>
 
-                            <span style="font-size: 0.84rem; font-weight: 700; color: #2f3542; margin-top: 4px;">📋
+                            <span style="font-size: 0.84rem; font-weight: 700; color: var(--text); margin-top: 4px;">📋
                                 คลิกเพื่อวางภาพหน้าใหม่ (Ctrl+V)</span>
-                            <span style="font-size: 0.70rem; color: #747d8c;">คัดลอกรูปหน้าแล้วคลิกวาง
+                            <span style="font-size: 0.70rem; color: var(--text-sub);">คัดลอกรูปหน้าแล้วคลิกวาง
                                 หรือลากไฟล์มาวางได้เลย</span>
                             <span
-                                style="font-size: 0.67rem; color: #2ed573; font-weight: 600; background: rgba(46, 213, 115, 0.12); padding: 3px 8px; border-radius: 6px; margin-top: 2px;">
+                                style="font-size: 0.67rem; color: #34d399; font-weight: 600; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); padding: 3px 8px; border-radius: 6px; margin-top: 2px;">
                                 🚀 รองรับ Ctrl+V / คลิกเลือกไฟล์ / ลากวาง
                             </span>
                         </div>
@@ -1825,9 +1845,9 @@
                         <div id="fs-ref-preview-state"
                             style="display: none; width: 100%; height: 100%; position: relative; align-items: center; justify-content: center;">
                             <img id="fs-ref-img"
-                                style="max-width: 100%; max-height: 240px; border-radius: 12px; object-fit: contain; box-shadow: 0 4px 14px rgba(0,0,0,0.18);">
+                                style="max-width: 100%; max-height: 240px; border-radius: 12px; object-fit: contain; box-shadow: 0 4px 14px rgba(0,0,0,0.35);">
                             <button type="button" onclick="clearReferenceFace(event)"
-                                style="position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; background: #ff4757; color: white; border: 2px solid #ffffff; border-radius: 50%; cursor: pointer; font-size: 0.80rem; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
+                                style="position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; background: #ff4757; color: white; border: 2px solid var(--surface); border-radius: 50%; cursor: pointer; font-size: 0.80rem; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.4);">
                                 ✕
                             </button>
                         </div>
@@ -4495,6 +4515,20 @@
             }
         }
         setTimeout(syncAccountSelection, 600);
+
+        // --- Clear Stuck / Repeating Prompts Logic ---
+        async function clearStuckPrompts() {
+            try {
+                const res = await callExtension('CLEAR_STUCK_PROMPTS');
+                if (res && res.success) {
+                    showToast('🧹 ล้างคิวคำสั่งและรูปภาพที่ค้างในระบบทั้งหมดเรียบร้อยแล้ว');
+                } else {
+                    showToast('⚠️ ไม่สามารถล้างคิวได้');
+                }
+            } catch (e) {
+                showToast('⚠️ เกิดข้อผิดพลาดในการล้างคิว');
+            }
+        }
 
         // --- Quota Status Panel Logic ---
         async function loadQuotaStatus() {
