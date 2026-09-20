@@ -156,33 +156,39 @@ export function getAvailableRedPacketCodes(maxLimit = 15) {
 /**
  * สร้างข้อความแคปชั่นสำหรับโพสต์หลัก
  */
-export function buildPostCaption(codesList, setNumber = 1) {
+export function buildPostCaption(codesList, setNumber = 1, refLink = null) {
   const now = new Date();
   const d = String(now.getDate()).padStart(2, '0');
   const m = String(now.getMonth() + 1).padStart(2, '0');
   const y = now.getFullYear();
   const dateStr = `${d}/${m}/${y}`;
 
+  const link = refLink || getNextReferralLink();
   const codesText = codesList.join('\n');
 
-  return `🎁 คืนกำไรให้สังคม แจกเหรียญคริปโตฟรี 🎁
+  return `🎁 คืนกำไรให้สังคม แจกเหรียญคริปโตฟรี ให้ลูกค้าที่ติดตามเพจ🎁
 📅 วันที่: ${dateStr} --[ชุด (${setNumber})]
 ⚡ เคลมได้ที่หมวด Binance Red packet ⚡
-📌 ลิ้งค์สมัคร: ดูที่คอมเมนต์แรกใต้โพสต์ได้เลยขอรับ 👇
 
 👇 กรอกโค้ดล่าสุด:
 ${codesText}
 
 🔥 โค้ดหมดอายุวันต่อวัน! รีบกรอกทันทีที่เห็นโค้ดนี้
 
-📌 อยากได้อีกไหม?
-👉 โปรดติดตามเพจนี้! มีแจกโค้ดใหม่ ๆ เรื่อย ๆ แน่นอน 🔔
+---------
+📍 👇สมัครเพื่อกรอกโค้ดทางนี้เลยขอรับ:
+${link}
+---------
+
+
+- อยากได้อีกไหมท่าน ?
+👉 โปรดติดตามเพจนี้! มีแจกโค้ดใหม่ ๆ เรื่อย ๆ อีกแน่นอน 🔔
 ---
-#redpacket #binancefreecodes #claim`;
+#RedPacket #Binance #โค้ดเคลมเหรียญคริปโต #แจกคริปโตฟรี`;
 }
 
 /**
- * สร้างข้อความสำหรับคอมเมนต์แรก (First Comment)
+ * สร้างข้อความสำหรับคอมเมนต์แรก (First Comment) - ไม่ได้ใช้งานแล้ว
  */
 export function buildFirstCommentText(refLink) {
   return `🎁⚡ สมัครเพื่อกรอกโค้ดทางนี้เลยขอรับ:
@@ -207,8 +213,7 @@ export async function publishGiveawayPost(fbPage, reportStatusFn = null) {
 
   const setNumber = getDailySetNumber();
   const refLink = getNextReferralLink();
-  const caption = buildPostCaption(codes, setNumber);
-  const commentText = buildFirstCommentText(refLink);
+  const caption = buildPostCaption(codes, setNumber, refLink);
 
   console.log(`[BinanceGiveaway] Preparing Set (${setNumber}) with ${codes.length} newest codes.`);
   console.log(`[BinanceGiveaway] Referral Link: ${refLink}`);
@@ -385,88 +390,6 @@ export async function publishGiveawayPost(fbPage, reportStatusFn = null) {
     console.log('[BinanceGiveaway] Waiting for post publication and dialog to close...');
     await sleep(6000);
 
-    // -------------------------------------------------------------
-    // 8. คอมเมนต์แรกใต้โพสต์ (First Comment)
-    // -------------------------------------------------------------
-    console.log('[BinanceGiveaway] 💬 Adding First Comment with Referral Link...');
-    if (reportStatusFn) {
-      await reportStatusFn(99, `กำลังใส่ลิ้งค์ในคอมเมนต์แรก...`, 'First Comment with Referral Link', 'info');
-    }
-
-    let commentPosted = false;
-    try {
-      // เลื่อนหน้าต่างขึ้นบนสุด
-      await fbPage.evaluate(() => window.scrollTo(0, 0));
-      await sleep(2000);
-
-      // หาโพสต์แรกสุด
-      const topArticle = fbPage.locator('div[role="article"]').first();
-      if ((await topArticle.count()) > 0) {
-        // คลิกปุ่มแสดงความคิดเห็น (ไอคอนรูปกล่องข้อความ / แสดงความคิดเห็น)
-        const commentBtn = topArticle.locator('div[role="button"][aria-label*="แสดงความคิดเห็น"], div[role="button"]:has-text("แสดงความคิดเห็น")').first();
-        if ((await commentBtn.count()) > 0) {
-          await commentBtn.click({ force: true });
-          await sleep(2000);
-        }
-
-        // ค้นหาช่องพิมพ์คอมเมนต์ (ทั้งใน Modal หรือ Inline)
-        const commentComposer = fbPage.locator('div[role="textbox"][contenteditable="true"]').last();
-        if ((await commentComposer.count()) > 0) {
-          await commentComposer.focus();
-          await commentComposer.fill(commentText);
-          await sleep(1500);
-
-          // หาปุ่มส่ง (Send / เครื่องบินกระดาษ) จากรอบ composer แบบเดียวกับ bot.js
-          commentPosted = await fbPage.evaluate(() => {
-            const composer = document.activeElement || document.querySelector('div[role="textbox"][contenteditable="true"]');
-            if (!composer) return false;
-            let container = composer;
-            let depth = 0;
-            while (container && container.tagName !== 'BODY' && depth < 6) {
-              depth++;
-              const buttons = Array.from(container.querySelectorAll('div[role="button"], button'));
-              const submitBtn = buttons.find(btn => {
-                const label = (btn.getAttribute('aria-label') || '').trim();
-                const txt = (btn.innerText || '').trim();
-                const disabled = btn.getAttribute('aria-disabled') === 'true' || btn.disabled;
-                if (disabled) return false;
-                return (
-                  label === 'ส่ง' ||
-                  label === 'Send' ||
-                  label === 'โพสต์' ||
-                  label === 'Post' ||
-                  label === 'แสดงความคิดเห็น' ||
-                  label === 'Comment' ||
-                  label.includes('ส่ง') ||
-                  txt === 'ส่ง' ||
-                  txt === 'Send' ||
-                  txt === 'โพสต์'
-                );
-              });
-              if (submitBtn) {
-                submitBtn.click();
-                return true;
-              }
-              container = container.parentElement;
-            }
-            return false;
-          }).catch(() => false);
-
-          if (!commentPosted) {
-            // Fallback: กด Enter
-            await fbPage.keyboard.press('Enter');
-          }
-
-          await sleep(3000);
-          console.log('[BinanceGiveaway] ✅ First Comment submitted successfully!');
-        } else {
-          console.warn('[BinanceGiveaway] Comment composer not found.');
-        }
-      }
-    } catch (cErr) {
-      console.warn('[BinanceGiveaway] Error posting first comment:', cErr.message);
-    }
-
     if (reportStatusFn) {
       await reportStatusFn(100, `✅ โพสต์แจกโค้ด ชุด (${setNumber}) สำเร็จ!`, `จำนวน ${codes.length} โค้ด`, 'success');
     }
@@ -480,7 +403,6 @@ export async function publishGiveawayPost(fbPage, reportStatusFn = null) {
       setNumber,
       codesCount: codes.length,
       refLink,
-      commentPosted,
     };
   } catch (err) {
     console.error('[BinanceGiveaway] ❌ Error in publishGiveawayPost:', err.message || err);
