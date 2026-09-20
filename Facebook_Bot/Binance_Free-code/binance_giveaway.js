@@ -154,6 +154,23 @@ export function getAvailableRedPacketCodes(maxLimit = 15) {
 }
 
 /**
+ * ดึง Mapping ของรหัสโค้ดคู่กับชื่อเหรียญ เช่น { 'AY1CGKMB': 'ETH' }
+ */
+export function getClaimedCoinMap() {
+  if (fs.existsSync(CLAIMED_SUCCESS_FILE)) {
+    try {
+      const raw = JSON.parse(fs.readFileSync(CLAIMED_SUCCESS_FILE, 'utf8'));
+      if (raw && typeof raw.coin_map === 'object' && raw.coin_map !== null) {
+        return raw.coin_map;
+      }
+    } catch (e) {
+      console.error('[BinanceGiveaway] Error reading coin_map:', e.message);
+    }
+  }
+  return {};
+}
+
+/**
  * สร้างข้อความแคปชั่นสำหรับโพสต์หลัก
  */
 export function buildPostCaption(codesList, setNumber = 1, refLink = null) {
@@ -164,7 +181,13 @@ export function buildPostCaption(codesList, setNumber = 1, refLink = null) {
   const dateStr = `${d}/${m}/${y}`;
 
   const link = refLink || getNextReferralLink();
-  const codesText = codesList.join('\n');
+  const coinMap = getClaimedCoinMap();
+  const formattedCodes = codesList.map((c) => {
+    const clean = String(c).trim().toUpperCase();
+    const coin = coinMap[clean];
+    return coin ? `[ ${coin} ] ➨ ${clean}` : `[ 🎲 ] ➨ ${clean}`;
+  });
+  const codesText = formattedCodes.join('\n');
 
   return `🎁 คืนกำไรให้สังคม แจกเหรียญคริปโตฟรี ให้ลูกค้าที่ติดตามเพจ🎁
 📅 วันที่: ${dateStr} --[ชุด (${setNumber})]
