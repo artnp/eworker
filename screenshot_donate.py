@@ -204,23 +204,11 @@ def crop_watermark(source_path):
 
 def process_clean_only(full_path=None):
     is_bot = ('--bot' in sys.argv) or ('bot' in (os.path.basename(full_path).lower() if full_path else ''))
-    no_crop = ('--no-crop' in sys.argv) or ('nocrop' in (os.path.basename(full_path).lower() if full_path else ''))
     target_name = 'complete_bot.png' if is_bot else 'complete.png'
-    print(f"[CleanOnly] เริ่มต้น... (target: {target_name}, no_crop={no_crop})")
+    print(f"[CleanOnly] เริ่มต้น... (target: {target_name})")
     source = full_path if full_path else os.path.join(os.environ['USERPROFILE'], 'Downloads', 'complete.png')
     target = os.path.join(os.environ['USERPROFILE'], 'Desktop', target_name)
-    
-    if no_crop:
-        print("[CleanOnly] ⚡ AI source is NOT Gemini (e.g. GPT, Grok, Meta) -> Skipping crop, keeping original image.")
-        if not os.path.exists(source):
-            print(f"ไม่พบไฟล์: {source}")
-            sys.exit(1)
-        with Image.open(source) as src_img:
-            img = src_img.convert('RGB')
-    else:
-        print("[CleanOnly] 🔍 AI source is Gemini -> Running bottom padding crop...")
-        img = crop_watermark(source)
-
+    img = crop_watermark(source)
     if img:
         if not is_bot and target_name == 'complete.png' and backup_desktop_files:
             try:
@@ -252,23 +240,12 @@ def process_clean_only(full_path=None):
 
 def process_donate(full_path=None):
     is_bot = ('--bot' in sys.argv) or ('bot' in (os.path.basename(full_path).lower() if full_path else ''))
-    no_crop = ('--no-crop' in sys.argv) or ('nocrop' in (os.path.basename(full_path).lower() if full_path else ''))
     target_name = 'complete_bot.png' if is_bot else 'complete.png'
-    print(f"[Donate] เริ่มต้น... (target: {target_name}, no_crop={no_crop})")
+    print(f"[Donate] เริ่มต้น... (target: {target_name})")
     source = full_path if full_path else os.path.join(os.environ['USERPROFILE'], 'Downloads', 'complete.png')
     target = os.path.join(os.environ['USERPROFILE'], 'Desktop', target_name)
     
-    if no_crop:
-        print("[Donate] ⚡ AI source is NOT Gemini (e.g. GPT, Grok, Meta) -> Skipping crop, keeping original image.")
-        if not os.path.exists(source):
-            print(f"ไม่พบไฟล์: {source}")
-            sys.exit(1)
-        with Image.open(source) as src_img:
-            original_img = src_img.convert('RGB')
-    else:
-        print("[Donate] 🔍 AI source is Gemini -> Running bottom padding crop...")
-        original_img = crop_watermark(source)
-
+    original_img = crop_watermark(source)
     if not original_img:
         sys.exit(1)
 
@@ -684,17 +661,12 @@ def process_donate(full_path=None):
         auto_paste()
 
 if __name__ == "__main__":
-    mode_flag = "--clean"
-    target_path = None
-    for arg in sys.argv[1:]:
-        if arg in ["--clean", "--donate", "--donate-no-paste"]:
-            mode_flag = arg
-        elif not arg.startswith("--"):
-            target_path = arg
+    mode_flag = sys.argv[1] if len(sys.argv) > 1 else ""
+    target_path = sys.argv[2] if len(sys.argv) > 2 else None
     
     if mode_flag == "--clean":
         process_clean_only(target_path)
     elif mode_flag in ["--donate", "--donate-no-paste"]:
         process_donate(target_path)
     else:
-        process_clean_only(target_path)
+        process_donate()
