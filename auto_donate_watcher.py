@@ -171,6 +171,7 @@ def backup_desktop_files(incoming_data=None, incoming_path=None):
 # 'hub' = crop อย่างเดียว ส่ง Desktop (ไม่มี QR)
 # 'fb'  = crop + ฝัง QR + auto paste + auto post
 current_mode = 'hub'
+current_ai_source = 'gemini'  # 'gemini' = crop แถบล่าง, 'gpt'/'grok'/'meta'/'other' = ไม่ crop
 
 # คอนดิชั่นสำหรับแจ้งเตือน Frontend
 export_event = threading.Event()
@@ -217,19 +218,32 @@ class DownloadHandler(FileSystemEventHandler):
                 if "complete_bot" not in filename.lower():
                     backup_desktop_files(incoming_path=target_file)
                 
+                # ตรวจสอบว่าเป็นไฟล์จาก Gemini หรือไม่ (ถ้าไม่ใช่ Gemini เช่น GPT, Grok, Meta จะไม่ Crop)
+                fname_lower = filename.lower()
+                is_gemini = (current_ai_source == 'gemini')
+                if any(k in fname_lower for k in ['gemini']):
+                    is_gemini = True
+                elif any(k in fname_lower for k in ['gpt', 'grok', 'meta', 'qwen', 'copilot', 'nocrop', 'other']):
+                    is_gemini = False
+
                 # เลือกโหมดตาม current_mode
                 if current_mode == 'chrome_hub':
                     mode_flag = "--clean"
                     skip_delete = False
-                    print(f"[Watcher] Detected Export (Chrome hub) -> Running {mode_flag}")
+                    print(f"[Watcher] Detected Export (Chrome hub, AI: {current_ai_source}, crop={'YES' if is_gemini else 'NO'}) -> Running {mode_flag}")
                 else:
                     mode_flag = "--donate" if current_mode == 'fb' else "--clean"
                     skip_delete = False
-                    print(f"[Watcher] Detected Export -> Running {mode_flag}")
+                    print(f"[Watcher] Detected Export (AI: {current_ai_source}, crop={'YES' if is_gemini else 'NO'}) -> Running {mode_flag}")
                 
+                cmd = [sys.executable, script_path, mode_flag]
+                if not is_gemini:
+                    cmd.append("--no-crop")
+                cmd.append(target_file)
+
                 import subprocess, sys
                 result = subprocess.run(
-                    [sys.executable, script_path, mode_flag, target_file],
+                    cmd,
                     capture_output=True, text=True, timeout=60
                 )
                 if result.stdout:
@@ -453,15 +467,19 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         if parsed_url.path == '/set-mode':
-            global current_mode
+            global current_mode, current_ai_source
             query = parse_qs(parsed_url.query)
             mode = query.get('mode', ['hub'])[0]
             current_mode = mode
+            ai_source = query.get('ai_source', [''])[0]
+            if ai_source:
+                current_ai_source = ai_source.lower()
+                print(f"[Watcher] Mode set: {current_mode}, AI Source: {current_ai_source}")
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps({"mode": current_mode}).encode())
+            self.wfile.write(json.dumps({"mode": current_mode, "ai_source": current_ai_source}).encode())
             return
 
         if parsed_url.path == '/heartbeat':
