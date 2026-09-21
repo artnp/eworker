@@ -148,7 +148,7 @@ def auto_paste():
         print(f"[AutoPaste] Error: {e}")
 
 def crop_watermark(source_path):
-    """Crop white/dark blank padding from the top (Copilot) or bottom (Gemini) of AI-generated images."""
+    """Crop white/dark blank padding only from the bottom (Gemini) of AI-generated images."""
     if not os.path.exists(source_path):
         print(f"ไม่พบไฟล์: {source_path}")
         return None
@@ -160,38 +160,9 @@ def crop_watermark(source_path):
         BRIGHT_T        = 235   # pixel is "white/near white" if r,g,b all >= this
         DARK_T          = 18    # pixel is "dark/near dark" if r,g,b all <= this
         SOLID_RATIO     = 0.88  # chunk is solid color padding only if 88%+ pixels match
-        MAX_SCAN_TOP    = 0.35  # scan max 35% from top (Copilot)
         MAX_SCAN_BOTTOM = 0.45  # scan max 45% from bottom (Gemini)
 
-        # 1. Scan Top Padding (for Copilot Top-Right watermark protection)
-        first_content_y = 0
-        for chunk_y in range(0, int(orig_h * MAX_SCAN_TOP), CHUNK_H):
-            bright = 0
-            dark = 0
-            total = 0
-            for y in range(chunk_y, min(chunk_y + CHUNK_H, orig_h)):
-                for x in range(0, orig_w, max(1, orig_w // 60)):
-                    r, g, b = img_rgb.getpixel((x, y))
-                    if r >= BRIGHT_T and g >= BRIGHT_T and b >= BRIGHT_T:
-                        bright += 1
-                    elif r <= DARK_T and g <= DARK_T and b <= DARK_T:
-                        dark += 1
-                    total += 1
-
-            bright_ratio = bright / max(1, total)
-            dark_ratio = dark / max(1, total)
-
-            # If chunk is NOT solid white or solid dark padding, we reached image content
-            if bright_ratio < SOLID_RATIO and dark_ratio < SOLID_RATIO:
-                first_content_y = chunk_y
-                break
-
-        crop_top = 0
-        if first_content_y > CHUNK_H * 2:
-            crop_top = min(first_content_y, int(orig_h * MAX_SCAN_TOP))
-            print(f"[Crop] Top padding band (Copilot) detected, crop_top={crop_top}px")
-
-        # 2. Scan Bottom Padding (for Gemini Bottom watermark protection)
+        # Scan Bottom Padding only (Gemini watermark / blank padding)
         last_content_y = orig_h  # assume full image has content
         min_bottom_y = int(orig_h * (1 - MAX_SCAN_BOTTOM))
         for chunk_y in range(orig_h - CHUNK_H, min_bottom_y, -CHUNK_H):
@@ -218,26 +189,38 @@ def crop_watermark(source_path):
         crop_bottom = 0
         if last_content_y < orig_h - (CHUNK_H * 2):
             crop_bottom = min(orig_h - last_content_y, int(orig_h * MAX_SCAN_BOTTOM))
-            print(f"[Crop] Bottom padding band (Gemini) detected, crop_bottom={crop_bottom}px")
+            print(f"[Crop] Bottom padding band detected, crop_bottom={crop_bottom}px")
 
-        final_y1 = crop_top
+        final_y1 = 0
         final_y2 = orig_h - crop_bottom
         if final_y2 > final_y1 + 50:
-            if crop_top > 0 or crop_bottom > 0:
-                print(f"[Crop] Cropping image from [{final_y1}:{final_y2}], original_h={orig_h}px -> {final_y2 - final_y1}px")
+            if crop_bottom > 0:
+                print(f"[Crop] Cropping bottom padding [0:{final_y2}], original_h={orig_h}px -> {final_y2}px")
                 return img_rgb.crop((0, final_y1, orig_w, final_y2))
 
-        print(f"[Crop] No padding bands detected, keeping original {orig_w}x{orig_h}")
+        print(f"[Crop] No bottom padding detected, keeping original {orig_w}x{orig_h}")
         return img_rgb
 
 
 def process_clean_only(full_path=None):
     is_bot = ('--bot' in sys.argv) or ('bot' in (os.path.basename(full_path).lower() if full_path else ''))
+    no_crop = ('--no-crop' in sys.argv) or ('nocrop' in (os.path.basename(full_path).lower() if full_path else ''))
     target_name = 'complete_bot.png' if is_bot else 'complete.png'
-    print(f"[CleanOnly] เริ่มต้น... (target: {target_name})")
+    print(f"[CleanOnly] เริ่มต้น... (target: {target_name}, no_crop={no_crop})")
     source = full_path if full_path else os.path.join(os.environ['USERPROFILE'], 'Downloads', 'complete.png')
     target = os.path.join(os.environ['USERPROFILE'], 'Desktop', target_name)
-    img = crop_watermark(source)
+    
+    if no_crop:
+        print("[CleanOnly] ⚡ AI source is NOT Gemini (e.g. GPT, Grok, Meta) -> Skipping crop, keeping original image.")
+        if not os.path.exists(source):
+            print(f"ไม่พบไฟล์: {source}")
+            sys.exit(1)
+        with Image.open(source) as src_img:
+            img = src_img.convert('RGB')
+    else:
+        print("[CleanOnly] 🔍 AI source is Gemini -> Running bottom padding crop...")
+        img = crop_watermark(source)
+
     if img:
         if not is_bot and target_name == 'complete.png' and backup_desktop_files:
             try:
@@ -269,12 +252,23 @@ def process_clean_only(full_path=None):
 
 def process_donate(full_path=None):
     is_bot = ('--bot' in sys.argv) or ('bot' in (os.path.basename(full_path).lower() if full_path else ''))
+    no_crop = ('--no-crop' in sys.argv) or ('nocrop' in (os.path.basename(full_path).lower() if full_path else ''))
     target_name = 'complete_bot.png' if is_bot else 'complete.png'
-    print(f"[Donate] เริ่มต้น... (target: {target_name})")
+    print(f"[Donate] เริ่มต้น... (target: {target_name}, no_crop={no_crop})")
     source = full_path if full_path else os.path.join(os.environ['USERPROFILE'], 'Downloads', 'complete.png')
     target = os.path.join(os.environ['USERPROFILE'], 'Desktop', target_name)
     
-    original_img = crop_watermark(source)
+    if no_crop:
+        print("[Donate] ⚡ AI source is NOT Gemini (e.g. GPT, Grok, Meta) -> Skipping crop, keeping original image.")
+        if not os.path.exists(source):
+            print(f"ไม่พบไฟล์: {source}")
+            sys.exit(1)
+        with Image.open(source) as src_img:
+            original_img = src_img.convert('RGB')
+    else:
+        print("[Donate] 🔍 AI source is Gemini -> Running bottom padding crop...")
+        original_img = crop_watermark(source)
+
     if not original_img:
         sys.exit(1)
 
@@ -690,12 +684,17 @@ def process_donate(full_path=None):
         auto_paste()
 
 if __name__ == "__main__":
-    mode_flag = sys.argv[1] if len(sys.argv) > 1 else ""
-    target_path = sys.argv[2] if len(sys.argv) > 2 else None
+    mode_flag = "--clean"
+    target_path = None
+    for arg in sys.argv[1:]:
+        if arg in ["--clean", "--donate", "--donate-no-paste"]:
+            mode_flag = arg
+        elif not arg.startswith("--"):
+            target_path = arg
     
     if mode_flag == "--clean":
         process_clean_only(target_path)
     elif mode_flag in ["--donate", "--donate-no-paste"]:
         process_donate(target_path)
     else:
-        process_donate()
+        process_clean_only(target_path)
