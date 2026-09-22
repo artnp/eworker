@@ -458,6 +458,8 @@ def process_clip_and_post(data, progress_callback=None):
             "success": True,
             "id": post_id,
             "shareLink": share_link,
+            "videoTitle": video_info.get("title") or "",
+            "channel": channel_name,
             "message": "โพสต์ลง Binance Square สำเร็จเรียบร้อยแล้ว!"
         }
 
