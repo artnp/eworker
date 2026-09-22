@@ -349,10 +349,10 @@ async function ensurePageProfile(page) {
 
 async function getPostText(article) {
   try {
-    const seeMoreBtn = article.locator('div[role="button"]:has-text("ดูเพิ่มเติม"), div[role="button"]:has-text("See more")');
-    if (await seeMoreBtn.count() > 0 && await seeMoreBtn.isVisible()) {
-      await seeMoreBtn.first().click({ timeout: 2000 }).catch(() => {});
-      await sleep(500);
+    const seeMoreBtn = article.locator('div[role="button"]:has-text("ดูเพิ่มเติม"), div[role="button"]:has-text("See more")').first();
+    if (await seeMoreBtn.count() > 0 && await seeMoreBtn.isVisible().catch(() => false)) {
+      await seeMoreBtn.click({ timeout: 1500 }).catch(() => {});
+      await sleep(300);
     }
   } catch (e) { }
 
@@ -572,7 +572,7 @@ async function shouldFilterPost(article, botProfileName) {
         }
       }
       return { action: 'none', reason: '' };
-    });
+    }, botProfileName);
   } catch (e) {
     return { action: 'error', reason: e.message };
   }
@@ -3131,6 +3131,81 @@ async function pauseOnError(isDebugPause, message) {
 
         postsEvaluatedCount++;
 
+        // 1. ตรวจสอบเบื้องต้น: เป็นคอมเมนต์ย่อยในโพสต์ หรือเป็นโพสต์ที่ปิดคอมเมนต์หรือไม่ ทันที ก่อนเริ่มตีกรอบเหลือง
+        const preCheck = await article.evaluate((node) => {
+          if (node.parentElement && node.parentElement.closest('div[role="article"]')) {
+            return { isSubComment: true };
+          }
+          const ariaLabel = (node.getAttribute('aria-label') || '').toLowerCase();
+          if (ariaLabel.startsWith('ความคิดเห็นโดย') || ariaLabel.startsWith('comment by')) {
+            return { isSubComment: true };
+          }
+
+          const rawText = node.textContent || '';
+          const cleanText = rawText.replace(/[\u200B-\u200D\uFEFF\u00AD]/g, '').replace(/[\s\u00A0]+/g, ' ');
+          const disabledKeywords = [
+            'ปิดการแสดงความคิดเห็น',
+            'ปิดการแสดงความคิดเห็นไว้ชั่วคราว',
+            'ผู้ดูแลได้ปิด',
+            'ผู้ดูแลปิด',
+            'ปิดคอมเมนต์',
+            'ปิดรับความคิดเห็น',
+            'ปิดการตอบกลับ',
+            'จำกัดผู้ที่สามารถแสดงความคิดเห็น',
+            'ไม่สามารถแสดงความคิดเห็น',
+            'ไม่อนุญาตให้แสดงความคิดเห็น',
+            'Comments are turned off',
+            'Comments on this post have been limited',
+            'Comments have been disabled',
+            'turned off commenting',
+            'turned off comments'
+          ];
+          for (const kw of disabledKeywords) {
+            if (cleanText.includes(kw) || rawText.includes(kw)) {
+              return { commentsDisabled: true, reason: `ปิดคอมเมนต์ (${kw})` };
+            }
+          }
+          if (
+            /ปิด.*ความคิดเห็น/i.test(cleanText) ||
+            /ปิด.*คอมเมนต์/i.test(cleanText) ||
+            /จำกัด.*ความคิดเห็น/i.test(cleanText) ||
+            /turned off.*comment/i.test(cleanText)
+          ) {
+            return { commentsDisabled: true, reason: 'ปิดคอมเมนต์ (regex)' };
+          }
+
+          return { ok: true };
+        }).catch(() => ({ ok: true }));
+
+        if (preCheck.isSubComment) {
+          await article.evaluate(el => {
+            el.setAttribute('data-bot-processed', 'true');
+          }).catch(() => {});
+          continue;
+        }
+
+        if (preCheck.commentsDisabled) {
+          console.log(`--> Skipped (Fast Pre-filter): ${preCheck.reason}`);
+          await reportStatus(calcProgress(0.05), `กำลังข้ามโพสต์ที่ ${currentPostIndex}...`, `⚠️ ${preCheck.reason} -> ข้ามไปทำอันใหม่`, 'warn', currentPostIndex);
+          await article.evaluate(el => {
+            el.style.outline = '';
+            el.style.display = 'none';
+            el.setAttribute('data-bot-processed', 'true');
+          }).catch(() => {});
+          await fbPage.evaluate(() => window.scrollBy(0, 700)).catch(() => {});
+          await sleep(600);
+          consecutiveFilteredPosts++;
+          if (consecutiveFilteredPosts >= MAX_FILTERED_POSTS) {
+            console.warn(`Reached ${MAX_FILTERED_POSTS} consecutive filtered posts. Reloading Facebook...`);
+            await fbPage.goto(FB_URL, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => { });
+            await sleep(3000);
+            await hideProcessedPosts(fbPage, processedPostIds);
+            consecutiveFilteredPosts = 0;
+            consecutiveEmptyScrolls = 0;
+          }
+          continue;
+        }
+
         { // outer block
           await article.evaluate(el => {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -3150,9 +3225,12 @@ async function pauseOnError(isDebugPause, message) {
             const textHash = hashString((postText || '').substring(0, 200));
             processedPostIds.add(textHash);
             await article.evaluate(el => {
+              el.style.outline = '';
               el.style.display = 'none';
               el.setAttribute('data-bot-processed', 'true');
             }).catch(() => { });
+            await fbPage.evaluate(() => window.scrollBy(0, 600)).catch(() => {});
+            await sleep(500);
             continue;
           }
 
@@ -3173,9 +3251,12 @@ async function pauseOnError(isDebugPause, message) {
             console.log("--> Skipped: Post has no text content.");
             await reportStatus(calcProgress(0.05), `กำลังข้ามโพสต์ที่ ${currentPostIndex}...`, `⚠️ โพสต์ไม่มีข้อความ -> ข้าม`, 'warn', currentPostIndex);
             await article.evaluate(el => {
+              el.style.outline = '';
               el.style.display = 'none';
               el.setAttribute('data-bot-processed', 'true');
             }).catch(() => { });
+            await fbPage.evaluate(() => window.scrollBy(0, 600)).catch(() => {});
+            await sleep(500);
             continue;
           }
 
@@ -3189,9 +3270,12 @@ async function pauseOnError(isDebugPause, message) {
             console.log(`--> Skipped: caught by shouldFilterPost. Action: ${filterResult.action}. Reason: ${filterResult.reason}`);
             await reportStatus(calcProgress(0.05), `กำลังข้ามโพสต์ที่ ${currentPostIndex}...`, `⚠️ ${filterResult.reason} -> ข้ามไปทำอันใหม่`, 'warn', currentPostIndex);
             await article.evaluate(el => {
+              el.style.outline = '';
               el.style.display = 'none';
               el.setAttribute('data-bot-processed', 'true');
             }).catch(() => { });
+            await fbPage.evaluate(() => window.scrollBy(0, 600)).catch(() => {});
+            await sleep(500);
             consecutiveFilteredPosts++;
             if (consecutiveFilteredPosts >= MAX_FILTERED_POSTS) {
               console.warn(`Reached ${MAX_FILTERED_POSTS} consecutive filtered posts. Reloading Facebook...`);
@@ -3212,9 +3296,12 @@ async function pauseOnError(isDebugPause, message) {
             console.log('--> Skipped: No large images found.');
             await reportStatus(calcProgress(0.05), `ข้ามโพสต์ที่ ${currentPostIndex}`, '⚠️ ไม่พบรูปภาพในโพสต์ -> ข้ามไปอันใหม่', 'warn', currentPostIndex);
             await article.evaluate(el => {
+              el.style.outline = '';
               el.style.display = 'none';
               el.setAttribute('data-bot-processed', 'true');
             }).catch(() => { });
+            await fbPage.evaluate(() => window.scrollBy(0, 600)).catch(() => {});
+            await sleep(500);
             continue;
           }
 
