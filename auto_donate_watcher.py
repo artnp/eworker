@@ -5,6 +5,7 @@ import os
 import shutil
 import time
 import threading
+import queue
 import urllib.request
 import urllib.error
 import webbrowser
@@ -16,6 +17,8 @@ import asyncio
 import base64
 import re
 import sys
+import tempfile
+import requests
 
 # --- CONFIG ---
 PORT = 5000
@@ -321,6 +324,693 @@ class DesktopHandler(FileSystemEventHandler):
     def on_modified(self, event):
         self._handle(event)
 
+# --- BIGDATA VIDEO PROCESSING & PROGRESS ---
+bigdata_job_progress = {
+    "percent": 0,
+    "phase": "idle",
+    "message": "พร้อมทำงาน",
+    "result": None
+}
+last_bigdata_result = None
+bigdata_task_queue = queue.Queue()
+
+def set_bigdata_progress(percent, phase, message, result=None):
+    global bigdata_job_progress, last_bigdata_result
+    if result is not None:
+        last_bigdata_result = result
+    bigdata_job_progress = {
+        "percent": int(percent),
+        "phase": phase,
+        "message": message,
+        "result": last_bigdata_result
+    }
+    print(f"[Bigdata Progress] {percent}% ({phase}): {message}")
+
+def update_github_reel(clean_text, catbox_url, github_config):
+    """
+    Appends a new video clip entry to the active bigdata*.json file on GitHub.
+    Handles file discovery, 2000-item rollover, UTF-8 base64 encoding, and retry on conflict.
+    """
+    username = github_config.get('username')
+    repository = github_config.get('repository')
+    branch = github_config.get('branch', 'main')
+    token = github_config.get('token')
+
+    if not (username and repository and token):
+        print("[Bigdata GitHub] Skipping GitHub update: missing credentials in github_config")
+        return None
+
+    clean_url = re.sub(r'^https?://', '', catbox_url).strip()
+    headers = {
+        'Authorization': f'token {token}',
+        'User-Agent': 'JavaScript',
+        'Cache-Control': 'no-cache'
+    }
+
+    api_contents = f"https://api.github.com/repos/{username}/{repository}/contents"
+    highest_index = 1
+    active_filename = "bigdata1.json"
+
+    try:
+        list_resp = requests.get(f"{api_contents}?ref={branch}", headers=headers, timeout=20)
+        if list_resp.status_code == 200:
+            files = list_resp.json()
+            bigdata_files = []
+            if isinstance(files, list):
+                for f in files:
+                    m = re.match(r'^bigdata(\d+)\.json$', f.get('name', ''))
+                    if m:
+                        bigdata_files.append((int(m.group(1)), f.get('name')))
+                if bigdata_files:
+                    bigdata_files.sort(key=lambda x: x[0])
+                    highest_index, active_filename = bigdata_files[-1]
+    except Exception as e:
+        print(f"[Bigdata GitHub] Error discovering active bigdata file: {e}")
+
+    for attempt in range(1, 4):
+        try:
+            file_url = f"{api_contents}/{active_filename}?ref={branch}"
+            get_resp = requests.get(file_url, headers=headers, timeout=20)
+
+            existing_arr = []
+            current_sha = None
+
+            if get_resp.status_code == 200:
+                file_data = get_resp.json()
+                current_sha = file_data.get('sha')
+                content_b64 = file_data.get('content', '')
+                if content_b64:
+                    try:
+                        content_str = base64.b64decode(content_b64).decode('utf-8').strip()
+                        existing_arr = json.loads(content_str)
+                    except Exception:
+                        repaired = re.sub(r'^\ufeff', '', content_str)
+                        repaired = re.sub(r',\s*([}\]])', r'\1', repaired)
+                        existing_arr = json.loads(repaired)
+
+                if not isinstance(existing_arr, list):
+                    raise RuntimeError(f"{active_filename} is not a JSON array")
+
+                if len(existing_arr) >= 2000:
+                    highest_index += 1
+                    active_filename = f"bigdata{highest_index}.json"
+                    print(f"[Bigdata GitHub] Reached 2000 items limit, rolling over to {active_filename}")
+                    existing_arr = []
+                    current_sha = None
+            elif get_resp.status_code == 404:
+                existing_arr = []
+                current_sha = None
+            else:
+                raise RuntimeError(f"GET {active_filename} failed: {get_resp.status_code} - {get_resp.text[:200]}")
+
+            new_entry = {
+                "data": clean_text,
+                "url": clean_url
+            }
+            existing_arr.append(new_entry)
+
+            formatted_lines = ["  " + json.dumps(item, ensure_ascii=False) for item in existing_arr]
+            new_json_str = "[\n" + ",\n".join(formatted_lines) + "\n]"
+            b64_content = base64.b64encode(new_json_str.encode('utf-8')).decode('utf-8')
+
+            put_body = {
+                "message": f"Append video summary to {active_filename} via Watcher",
+                "content": b64_content,
+                "branch": branch
+            }
+            if current_sha:
+                put_body["sha"] = current_sha
+
+            put_resp = requests.put(
+                f"{api_contents}/{active_filename}",
+                headers={'Authorization': f'token {token}', 'User-Agent': 'JavaScript', 'Content-Type': 'application/json'},
+                json=put_body,
+                timeout=30
+            )
+
+            if put_resp.status_code in (200, 201):
+                print(f"[Bigdata GitHub] ✅ Successfully appended item to {active_filename} (Total items: {len(existing_arr)})")
+                return {
+                    "success": True,
+                    "fileName": active_filename,
+                    "lineCount": len(existing_arr)
+                }
+            else:
+                print(f"[Bigdata GitHub] PUT attempt {attempt} failed ({put_resp.status_code}): {put_resp.text[:200]}")
+                time.sleep(0.5)
+        except Exception as ex:
+            print(f"[Bigdata GitHub] Attempt {attempt} error: {ex}")
+            if attempt == 3:
+                raise
+            time.sleep(0.5)
+
+    return {"success": False, "error": "All 3 attempts failed"}
+
+def bigdata_queue_worker():
+    while True:
+        task = bigdata_task_queue.get()
+        if task is None:
+            break
+        video_url, start_sec, end_sec, text, copy_to_desktop, github_config = task
+        try:
+            process_bigdata_video_task(
+                video_url=video_url,
+                start_sec=start_sec,
+                end_sec=end_sec,
+                text=text,
+                copy_to_desktop=copy_to_desktop,
+                github_config=github_config
+            )
+        except Exception as err:
+            print(f"[Bigdata Queue Worker] Error in task: {err}")
+            set_bigdata_progress(0, "error", f"เกิดข้อผิดพลาด: {err}")
+        finally:
+            bigdata_task_queue.task_done()
+
+# Start background queue worker daemon
+threading.Thread(target=bigdata_queue_worker, daemon=True).start()
+
+def generate_pill_vector(cx, cy, width, height, radius):
+    r = min(radius, height // 2, width // 2)
+    x1 = int(cx - width / 2)
+    x2 = int(cx + width / 2)
+    y1 = int(cy - height / 2)
+    y2 = int(cy + height / 2)
+    return (
+        f"m {x1 + r} {y1} l {x2 - r} {y1} b {x2} {y1} {x2} {y1 + r} {x2} {y1 + r} "
+        f"l {x2} {y2 - r} b {x2} {y2} {x2 - r} {y2} {x2 - r} {y2} "
+        f"l {x1 + r} {y2} b {x1} {y2} {x1} {y2 - r} {x1} {y2 - r} "
+        f"l {x1} {y1 + r} b {x1} {y1} {x1 + r} {y1} {x1 + r} {y1}"
+    )
+
+def detect_audio_speech_bounds(audio_file):
+    startupinfo = None
+    creationflags = 0
+    if os.name == 'nt':
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        creationflags = getattr(subprocess, 'CREATE_NO_WINDOW', 0x08000000)
+
+    dur = 5.0
+    try:
+        probe = subprocess.run([
+            'ffprobe', '-v', 'error', '-show_entries', 'format=duration',
+            '-of', 'default=noprint_wrappers=1:nokey=1', audio_file
+        ], capture_output=True, text=True, timeout=10, startupinfo=startupinfo, creationflags=creationflags)
+        dur = float(probe.stdout.strip())
+    except Exception:
+        pass
+
+    try:
+        cmd = ['ffmpeg', '-i', audio_file, '-af', 'silencedetect=noise=-30dB:d=0.08', '-f', 'null', '-']
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=10, startupinfo=startupinfo, creationflags=creationflags)
+        starts = [float(m.group(1)) for m in re.finditer(r'silence_start:\s*([\d\.]+)', res.stderr)]
+        ends = [float(m.group(1)) for m in re.finditer(r'silence_end:\s*([\d\.]+)', res.stderr)]
+
+        speech_start = ends[0] if ends else 0.22
+        speech_end = starts[-1] if (starts and starts[-1] > speech_start) else (dur - 0.25)
+        speech_start = max(0.05, min(speech_start, 0.45))
+        speech_dur = max(0.8, speech_end - speech_start)
+        return speech_start, speech_dur, dur
+    except Exception as e:
+        print(f"[Bigdata Video] Speech bounds detection fallback: {e}")
+        return 0.22, max(1.0, dur - 0.75), dur
+
+def calculate_visual_text_width(text, font_size=34):
+    if not text:
+        return 0
+    thai_marks = re.sub(r'[\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]', '', text)
+    visual_units = 0.0
+    for ch in thai_marks:
+        if ch == ' ':
+            visual_units += 0.28
+        elif re.match(r'[a-zA-Z0-9]', ch):
+            visual_units += 0.55
+        elif '\u0E01' <= ch <= '\u0E2E':
+            visual_units += 0.58
+        elif '\u0E40' <= ch <= '\u0E44':
+            visual_units += 0.48
+        else:
+            visual_units += 0.52
+    return visual_units * font_size
+
+def format_ass_time(sec):
+    if sec is None or sec < 0:
+        sec = 0.0
+    h = int(sec // 3600)
+    m = int((sec % 3600) // 60)
+    s = sec % 60
+    return f"{h}:{m:02d}:{s:05.2f}"
+
+def build_caption_chunks(words, is_vertical=False):
+    if not words:
+        return []
+    chunks = []
+    i = 0
+    max_chunk_chars = 14 if is_vertical else 20
+    max_chunk_words = 3 if is_vertical else 5
+    min_chunk_words = 2 if is_vertical else 3
+
+    while i < len(words):
+        remaining = len(words) - i
+        chunk_size = min_chunk_words
+        if remaining <= max_chunk_words:
+            total_chars = sum(len(words[i + k].get('word', '')) for k in range(remaining))
+            if total_chars <= max_chunk_chars or remaining <= min_chunk_words:
+                chunk_size = remaining
+            else:
+                chunk_size = max(1, (remaining + 1) // 2)
+        else:
+            char_len = 0
+            count = 0
+            for k in range(min(max_chunk_words, remaining)):
+                char_len += len(words[i + k].get('word', ''))
+                count = k + 1
+                if char_len >= (max_chunk_chars - 2) and count >= min_chunk_words:
+                    break
+            chunk_size = max(min_chunk_words, min(max_chunk_words, count))
+
+        chunk_words = words[i:i + chunk_size]
+        chunks.append({
+            'words': chunk_words,
+            'startSec': chunk_words[0]['startSec'],
+            'endSec': chunk_words[-1]['endSec']
+        })
+        i += chunk_size
+    return chunks
+
+def build_ass_center_live_tts(clean_text, start_offset=0.22, speech_duration=8.0, target_w=640, target_h=360, is_vertical=False):
+    try:
+        from pythainlp import word_tokenize
+        raw_tokens = word_tokenize(clean_text)
+    except Exception:
+        raw_tokens = re.findall(r'\S+', clean_text)
+
+    # Filter out empty tokens and standalone punctuation
+    raw_words = [w.strip() for w in raw_tokens if w.strip() and not re.match(r'^[\s\.,;:\-–—\(\)\[\]"\'«»]+$', w)]
+    if not raw_words:
+        return ''
+
+    def word_phonetic_weight(w):
+        # Tone marks and floating vowels don't add full syllable length
+        base_chars = re.sub(r'[\u0E31\u0E34-\u0E3A\u0E47-\u0E4E]', '', w)
+        return max(2, len(base_chars))
+
+    total_weight = sum(word_phonetic_weight(w) for w in raw_words)
+    accum = 0.0
+    words = []
+    dur = max(0.8, float(speech_duration))
+    offset = max(0.0, float(start_offset))
+
+    for idx, w in enumerate(raw_words):
+        wt = word_phonetic_weight(w)
+        s_sec = offset + (accum / total_weight) * dur
+        accum += wt
+        e_sec = offset + (accum / total_weight) * dur
+        words.append({'word': w, 'startSec': s_sec, 'endSec': e_sec})
+
+    chunks = build_caption_chunks(words, is_vertical=is_vertical)
+    if not chunks:
+        return ''
+
+    cx = target_w / 2
+    cy = int(target_h * 0.55) if is_vertical else (target_h / 2)
+    base_font_size = 32 if is_vertical else 34
+    orange_ass = r"{\c&H003C92FB&\b1}"
+    white_ass = r"{\c&H00FFFFFF&\b1}"
+
+    events = []
+    for c_idx, chunk in enumerate(chunks):
+        next_chunk = chunks[c_idx + 1] if c_idx + 1 < len(chunks) else None
+        # Switch seamlessly to next chunk, or close 0.35s after the last spoken word
+        chunk_limit_end = next_chunk['startSec'] if next_chunk else (chunk['endSec'] + 0.35)
+
+        chunk_full_text = ''.join(w['word'] for w in chunk['words'])
+        chunk_font_size = base_font_size
+        max_chars = 14 if is_vertical else 20
+        if len(chunk_full_text) > max_chars:
+            chunk_font_size = max(24, int(base_font_size - (len(chunk_full_text) - max_chars) * 0.8))
+
+        text_width = calculate_visual_text_width(chunk_full_text, chunk_font_size)
+        pill_width = max(110, min(target_w - 24, int(text_width + 56)))
+        pill_height = int(chunk_font_size * 1.8)
+        pill_radius = int(pill_height / 2)
+        pill_vector = generate_pill_vector(cx, cy, pill_width, pill_height, pill_radius)
+
+        # Layer 0: Frosted cyan-bordered pill badge (vdoAI signature design)
+        events.append(f"Dialogue: 0,{format_ass_time(chunk['startSec'])},{format_ass_time(chunk_limit_end)},PillBox,,0,0,0,,{{\\an7\\pos(0,0)\\p1}}{pill_vector}{{\\p0}}")
+
+        # Layer 1: Word-by-word karaoke text with orange active highlight matching spoken speech
+        for w_idx, current_word in enumerate(chunk['words']):
+            next_word = chunk['words'][w_idx + 1] if w_idx + 1 < len(chunk['words']) else None
+            w_start = current_word['startSec']
+            w_end = next_word['startSec'] if next_word else current_word['endSec']
+            if w_end <= w_start:
+                continue
+
+            rendered_words_list = []
+            for idx, item in enumerate(chunk['words']):
+                word = item['word']
+                prefix_space = ''
+                if idx > 0:
+                    prev = chunk['words'][idx - 1]['word']
+                    if re.search(r'[a-zA-Z0-9]$', prev) or re.search(r'^[a-zA-Z0-9]', word):
+                        prefix_space = ' '
+                if idx == w_idx:
+                    rendered_words_list.append(f"{prefix_space}{orange_ass}{word}{white_ass}")
+                else:
+                    rendered_words_list.append(f"{prefix_space}{word}")
+            rendered_words = ''.join(rendered_words_list)
+            events.append(f"Dialogue: 1,{format_ass_time(w_start)},{format_ass_time(w_end)},LiveTts,,0,0,0,,{{\\an5\\pos({cx},{cy})}}{{\\fs{chunk_font_size}}}{{\\c&H00FFFFFF&\\b1}}{rendered_words}")
+
+        # If there's a hold after the last word until chunk_limit_end, show full white text without lingering orange
+        last_word_end = chunk['words'][-1]['endSec']
+        if chunk_limit_end > last_word_end + 0.04:
+            all_white_text = ''.join(
+                (' ' if idx > 0 and (re.search(r'[a-zA-Z0-9]$', chunk['words'][idx - 1]['word']) or re.search(r'^[a-zA-Z0-9]', item['word'])) else '') + item['word']
+                for idx, item in enumerate(chunk['words'])
+            )
+            events.append(f"Dialogue: 1,{format_ass_time(last_word_end)},{format_ass_time(chunk_limit_end)},LiveTts,,0,0,0,,{{\\an5\\pos({cx},{cy})}}{{\\fs{chunk_font_size}}}{{\\c&H00FFFFFF&\\b1}}{all_white_text}")
+
+    events_str = '\n'.join(events)
+    ass_template = f"""[Script Info]
+ScriptType: v4.00+
+PlayResX: {target_w}
+PlayResY: {target_h}
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: PillBox,Prompt,10,&H75181008,&H75181008,&H30E8B208,&H80000000,0,0,0,0,100,100,0,0,1,2,0,7,0,0,0,222
+Style: LiveTts,Prompt,{base_font_size},&H00FFFFFF,&H00FFFFFF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,1.4,0,5,0,0,0,222
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+{events_str}
+"""
+    return ass_template
+
+def process_bigdata_video_task(video_url, start_sec, end_sec, text, copy_to_desktop, github_config=None):
+    import math
+    temp_dir = tempfile.mkdtemp(prefix="bigdata_clip_")
+    raw_video = os.path.join(temp_dir, "raw_clip.mp4")
+    tts_audio = os.path.join(temp_dir, "tts.mp3")
+    final_video = os.path.join(temp_dir, "final_clip.mp4")
+    ass_file = os.path.join(temp_dir, "subtitles.ass")
+
+    hide_startupinfo = None
+    creation_flags = 0
+    if sys.platform == 'win32':
+        hide_startupinfo = subprocess.STARTUPINFO()
+        hide_startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        hide_startupinfo.wShowWindow = subprocess.SW_HIDE
+        creation_flags = getattr(subprocess, 'CREATE_NO_WINDOW', 0x08000000)
+
+    if video_url and not video_url.startswith("http://") and not video_url.startswith("https://"):
+        video_url = f"https://www.youtube.com/watch?v={video_url}"
+
+    try:
+        set_bigdata_progress(5, "starting", "เตรียมความพร้อม...")
+        start_val = int(start_sec) if start_sec is not None else 0
+        end_val = int(end_sec) if end_sec is not None and int(end_sec) > start_val else (start_val + 60)
+
+        # 1. Clean Text: separate text for GitHub saving vs TTS speaking
+        save_text = re.sub(r'\[\s*\d+(?::\d{2}){1,2}\s*\]|\b\d{1,2}:\d{2}(?::\d{2})?\b', '', text).strip()
+        save_text = re.sub(r'[\u200b\ufeff\u00ad]', '', save_text)
+        save_text = re.sub(r'\s+', ' ', save_text).strip()
+
+        speech_text = re.sub(r'\[[^\]]*\]|\([^)]*\)|（[^）]*）', '', save_text)
+        speech_text = re.sub(r'[\U00010000-\U0010ffff]', '', speech_text)
+        speech_text = re.sub(r'\s+', ' ', speech_text).strip()
+        if not speech_text:
+            speech_text = save_text
+
+        # 2. Generate Thai TTS (vdoAI voiceover process: edge_tts th-TH-PremwadeeNeural with sentence boundaries)
+        has_tts = False
+        tts_start_offset = 0.1
+        tts_speech_duration = 0.0
+        total_audio_duration = 0.0
+
+        if speech_text:
+            set_bigdata_progress(15, "tts", "สร้างเสียงพากย์ TTS ภาษาไทย (vdoAI)...")
+            print(f"[Bigdata Video] 🎙️ Generating TTS for: {speech_text[:50]}...")
+
+            def _synthesize_edge_tts(target_text, out_mp3):
+                import edge_tts
+                target_text = re.sub(r'ยักษ์', 'ยัก', str(target_text or ''))
+                async def _synth():
+                    for voice in ('th-TH-PremwadeeNeural', 'th-TH-NiwatNeural'):
+                        try:
+                            comm = edge_tts.Communicate(target_text, voice)
+                            audio_bytes = bytearray()
+                            boundaries = []
+                            async for ch in comm.stream():
+                                if ch['type'] == 'audio':
+                                    audio_bytes.extend(ch['data'])
+                                elif ch['type'] == 'SentenceBoundary':
+                                    boundaries.append(ch)
+
+                            if audio_bytes:
+                                with open(out_mp3, 'wb') as f:
+                                    f.write(audio_bytes)
+                                print(f"[Bigdata Video] 🎙️ TTS generated via voice {voice} ({len(audio_bytes)} bytes, {len(boundaries)} boundaries)")
+                                return True, boundaries
+                        except Exception as e:
+                            print(f"[Bigdata Video] TTS {voice} attempt failed: {e}")
+                    return False, []
+
+                try:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    res, bounds = loop.run_until_complete(_synth())
+                    loop.close()
+                    return res, bounds
+                except Exception as loop_err:
+                    print(f"[Bigdata Video] TTS loop execution failed: {loop_err}")
+                    return False, []
+
+            has_tts, _ = _synthesize_edge_tts(speech_text, tts_audio)
+
+        # Detect exact speech bounds (onset, real speech duration without trailing silence, total audio)
+        if has_tts and os.path.exists(tts_audio):
+            tts_start_offset, tts_speech_duration, total_audio_duration = detect_audio_speech_bounds(tts_audio)
+        else:
+            total_audio_duration = 6.0
+            tts_start_offset = 0.20
+            tts_speech_duration = 5.0
+
+        print(f"[Bigdata Video] ⏱️ Accurate Timing: start_offset={tts_start_offset:.2f}s, speech_duration={tts_speech_duration:.2f}s, total_audio={total_audio_duration:.2f}s")
+
+        # Ensure video duration covers both clip cut AND TTS audio
+        req_span = end_val - start_val
+        actual_span = max(15, req_span, int(math.ceil(total_audio_duration)) + 2)
+        actual_end_val = start_val + actual_span
+        section_arg = f"*{start_val}-{actual_end_val}"
+
+        # 3. Download YouTube section fast without re-encoding (direct slice stream copy)
+        set_bigdata_progress(35, "downloading", f"กำลังโหลดคลิปช่วง [{start_val}s-{actual_end_val}s]...")
+        print(f"[Bigdata Video] 🎬 Downloading YouTube section {section_arg} from: {video_url}")
+
+        cookies_arg = []
+        cookies_candidate = r"D:\Github\Youtube_Playlists_DL\cookies.txt"
+        if os.path.exists(cookies_candidate):
+            cookies_arg = ["--cookies", cookies_candidate]
+
+        ytdl_cmd = [
+            sys.executable, "-m", "yt_dlp",
+            "--download-sections", section_arg,
+            "-f", "bv*[height<=720]+ba/b[height<=720]/b",
+            "--merge-output-format", "mp4",
+            *cookies_arg,
+            "-o", raw_video,
+            video_url
+        ]
+
+        proc = subprocess.run(ytdl_cmd, capture_output=True, text=True, timeout=120, startupinfo=hide_startupinfo, creationflags=creation_flags)
+        if not os.path.exists(raw_video):
+            candidates = [os.path.join(temp_dir, f) for f in os.listdir(temp_dir) if f.endswith('.mp4')]
+            if candidates:
+                raw_video = candidates[0]
+            else:
+                err_detail = proc.stderr.strip()[-300:] if proc.stderr else (proc.stdout.strip()[-300:] if proc.stdout else 'Unknown yt-dlp error')
+                raise RuntimeError(f"yt-dlp download failed: {err_detail}")
+
+        # 4. Detect Video Orientation & Dimensions (16:9 Landscape vs 9:16 Vertical Shorts)
+        orig_w, orig_h = 640, 360
+        try:
+            probe_cmd = [
+                "ffprobe", "-v", "error",
+                "-select_streams", "v:0",
+                "-show_entries", "stream=width,height",
+                "-of", "csv=s=x:p=0",
+                raw_video
+            ]
+            p_dim = subprocess.run(probe_cmd, capture_output=True, text=True, timeout=10, startupinfo=hide_startupinfo, creationflags=creation_flags)
+            out_dim = p_dim.stdout.strip()
+            if 'x' in out_dim:
+                pw, ph = out_dim.split('x')[:2]
+                orig_w, orig_h = int(pw), int(ph)
+        except Exception as e_dim:
+            print(f"[Bigdata Video] Dimension probe failed: {e_dim}")
+
+        is_vertical = orig_h > orig_w
+        if is_vertical:
+            target_w, target_h = 360, 640
+        else:
+            target_w, target_h = 640, 360
+
+        print(f"[Bigdata Video] 📐 Detected format: {'Vertical (Shorts 9:16)' if is_vertical else 'Horizontal (16:9)'} ({orig_w}x{orig_h} -> {target_w}x{target_h})")
+
+        # Generate Subtitles (vdoAI center pill badge style, synchronized to exact speech duration)
+        set_bigdata_progress(60, "subtitles", "คำนวณซับไตเติลคาราโอเกะ (vdoAI Pill)...")
+        ass_content = build_ass_center_live_tts(
+            speech_text,
+            start_offset=tts_start_offset,
+            speech_duration=tts_speech_duration,
+            target_w=target_w,
+            target_h=target_h,
+            is_vertical=is_vertical
+        )
+        with open(ass_file, 'w', encoding='utf-8') as f:
+            f.write(ass_content)
+
+        # 5. FFmpeg Cutting, Subtitle Burning, and Audio Ducking
+        set_bigdata_progress(75, "rendering", "ตัดต่อ & ฝังซับไตเติลและผสมเสียง...")
+        escaped_ass = os.path.abspath(ass_file).replace('\\', '/').replace(':', r'\\:')
+        vdoai_fonts = r"D:\Github\vdoAI\fonts".replace('\\', '/')
+        escaped_fonts = vdoai_fonts.replace(':', r'\:')
+        fonts_dir_param = f":fontsdir='{escaped_fonts}'" if os.path.exists(r"D:\Github\vdoAI\fonts") else ""
+        subtitles_filter = f"subtitles='{escaped_ass}'{fonts_dir_param}"
+
+        scale_param = f"scale={target_w}:{target_h}"
+        target_video = raw_video
+
+        if has_tts and os.path.exists(tts_audio):
+            duck_expr = f"volume='if(lt(t,{total_audio_duration + 0.3}),0.15,1.0)':eval=frame"
+            filter_complex = (
+                f"[0:v]{scale_param},{subtitles_filter}[vsub];"
+                f"[0:a]{duck_expr}[ducked];"
+                f"[1:a]volume=2.2[tts];"
+                f"[ducked][tts]amix=inputs=2:duration=first:dropout_transition=0.1:normalize=0[aout]"
+            )
+            merge_cmd = [
+                "ffmpeg", "-y",
+                "-i", raw_video,
+                "-i", tts_audio,
+                "-filter_complex", filter_complex,
+                "-map", "[vsub]",
+                "-map", "[aout]",
+                "-c:v", "libx264",
+                "-preset", "ultrafast",
+                "-tune", "fastdecode",
+                "-crf", "26",
+                "-c:a", "aac",
+                "-b:a", "128k",
+                "-movflags", "+faststart",
+                final_video
+            ]
+            res_merge = subprocess.run(merge_cmd, capture_output=True, text=True, timeout=90, startupinfo=hide_startupinfo, creationflags=creation_flags)
+            if res_merge.returncode == 0 and os.path.exists(final_video) and os.path.getsize(final_video) > 100:
+                target_video = final_video
+            else:
+                filter_complex_no_a = f"[0:v]{scale_param},{subtitles_filter}[vsub]"
+                merge_cmd2 = [
+                    "ffmpeg", "-y",
+                    "-i", raw_video,
+                    "-i", tts_audio,
+                    "-filter_complex", filter_complex_no_a,
+                    "-map", "[vsub]",
+                    "-map", "1:a:0",
+                    "-c:v", "libx264",
+                    "-preset", "ultrafast",
+                    "-tune", "fastdecode",
+                    "-crf", "26",
+                    "-c:a", "aac",
+                    "-b:a", "128k",
+                    "-shortest",
+                    "-movflags", "+faststart",
+                    final_video
+                ]
+                res_merge2 = subprocess.run(merge_cmd2, capture_output=True, text=True, timeout=90, startupinfo=hide_startupinfo, creationflags=creation_flags)
+                if res_merge2.returncode == 0 and os.path.exists(final_video) and os.path.getsize(final_video) > 100:
+                    target_video = final_video
+        else:
+            filter_complex_sub = f"[0:v]{scale_param},{subtitles_filter}[vsub]"
+            merge_cmd3 = [
+                "ffmpeg", "-y",
+                "-i", raw_video,
+                "-filter_complex", filter_complex_sub,
+                "-map", "[vsub]",
+                "-map", "0:a?",
+                "-c:v", "libx264",
+                "-preset", "ultrafast",
+                "-tune", "fastdecode",
+                "-crf", "26",
+                "-c:a", "aac",
+                "-b:a", "128k",
+                "-movflags", "+faststart",
+                final_video
+            ]
+            res_merge3 = subprocess.run(merge_cmd3, capture_output=True, text=True, timeout=90, startupinfo=hide_startupinfo, creationflags=creation_flags)
+            if res_merge3.returncode == 0 and os.path.exists(final_video) and os.path.getsize(final_video) > 100:
+                target_video = final_video
+
+        # 6. Copy to Desktop if requested
+        desktop_dest = None
+        if copy_to_desktop:
+            set_bigdata_progress(88, "desktop", "บันทึกไฟล์วิดีโอลง Desktop...")
+            safe_text = re.sub(r'[\\/*?:"<>|]', '', save_text[:25]).strip()
+            dest_name = f"clip_{safe_text}_{int(time.time())}.mp4" if safe_text else f"clip_{start_val}_{actual_end_val}_{int(time.time())}.mp4"
+            desktop_dest = os.path.join(DESKTOP_PATH, dest_name)
+            shutil.copy2(target_video, desktop_dest)
+            print(f"[Bigdata Video] 🖥️ Successfully saved video to Desktop: {desktop_dest}")
+
+        # 7. Upload to Catbox
+        set_bigdata_progress(92, "uploading", "อัปโหลดขึ้น Catbox.moe...")
+        catbox_api = "https://catbox.moe/user/api.php"
+        userhash = "6d72cf40b5ef56e27239aed64"
+        upload_name = f"clip_{int(time.time())}.mp4"
+        with open(target_video, "rb") as vf:
+            resp = requests.post(
+                catbox_api,
+                data={"reqtype": "fileupload", "userhash": userhash},
+                files={"fileToUpload": (upload_name, vf)},
+                timeout=60
+            )
+        raw_res = resp.text.strip()
+        if resp.status_code == 200 and "catbox.moe" in raw_res:
+            catbox_url = raw_res
+            clean_catbox_url = re.sub(r'^https?://', '', catbox_url).strip()
+
+            # 8. Direct GitHub update (guaranteed to complete even if Gemini tab is closed!)
+            github_res = None
+            if github_config and isinstance(github_config, dict) and github_config.get('token'):
+                set_bigdata_progress(96, "github", "กำลังบันทึกลง GitHub (bigdata)...")
+                try:
+                    github_res = update_github_reel(save_text, clean_catbox_url, github_config)
+                    print(f"[Bigdata Video] 🐙 GitHub updated successfully: {github_res}")
+                except Exception as ge:
+                    print(f"[Bigdata Video] ⚠️ GitHub update error: {ge}")
+
+            result_data = {
+                "success": True,
+                "url": clean_catbox_url,
+                "fullUrl": catbox_url,
+                "desktopPath": desktop_dest,
+                "hasTts": has_tts,
+                "github": github_res
+            }
+            set_bigdata_progress(100, "done", "ประมวลผลและบันทึกเสร็จสมบูรณ์ 100%!", result=result_data)
+            print(f"[Bigdata Video] ✅ Catbox upload and processing success: {catbox_url}")
+            return result_data
+        else:
+            raise RuntimeError(f"Catbox upload failed ({resp.status_code}): {raw_res[:200]}")
+
+    finally:
+        try:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+        except Exception:
+            pass
 # --- SERVER LOGIC ---
 class HubHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
@@ -329,6 +1019,14 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
         if self.path == '/favicon.ico':
             self.send_response(404)
             self.end_headers()
+            return
+
+        if parsed_url.path == '/bigdata-progress':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps(bigdata_job_progress).encode('utf-8'))
             return
 
         if parsed_url.path == '/wait-for-export':
@@ -509,6 +1207,7 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
             try:
                 data = json.loads(post_data.decode('utf-8'))
                 text = re.sub(r'[\u200b\ufeff\u00ad]', '', str(data.get('text', '')))
+                text = text.replace('ยักษ์', 'ยัก')
                 text = re.sub(r'\s+', ' ', text).strip()
                 if not text:
                     raise ValueError('Missing text')
@@ -518,51 +1217,46 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
 
                 async def synthesize(part, voice):
                     import edge_tts
-                    # One multilingual stream is deliberately kept intact. A
-                    # modest faster rate reduces built-in code-switch pauses
-                    # without stitching Thai and English audio files together.
-                    communicate = edge_tts.Communicate(part, voice, rate='+12%')
-                    audio_parts, boundaries = [], []
+                    communicate = edge_tts.Communicate(part, voice, rate='+0%')
+                    audio_parts, raw_bounds = [], []
                     async for chunk in communicate.stream():
                         if chunk['type'] == 'audio':
                             audio_parts.append(chunk['data'])
-                        elif chunk['type'] == 'WordBoundary':
-                            start = chunk['offset'] / 10000000
-                            boundaries.append({
-                                'text': chunk['text'],
+                        elif chunk['type'] in ('WordBoundary', 'SentenceBoundary'):
+                            start = chunk['offset'] / 10000000.0
+                            dur = chunk.get('duration', 0) / 10000000.0
+                            raw_bounds.append({
+                                'text': chunk.get('text', ''),
                                 'startSec': start,
-                                'endSec': start + (chunk['duration'] / 10000000)
+                                'endSec': start + dur
                             })
-                    return b''.join(audio_parts), boundaries
+                    return b''.join(audio_parts), raw_bounds
 
-                # A multilingual voice handles Thai and Latin terms in one
-                # request. Multiple per-language requests made selection laggy.
-                parts = [text]
-                audio_parts, boundaries = [], []
+                voices = ('th-TH-PremwadeeNeural', 'th-TH-NiwatNeural')
+                audio = b''
+                raw_boundaries = []
                 last_error = None
-                for part in parts:
-                    if not part.strip():
-                        continue
-                    voices = ('en-US-EmmaMultilingualNeural', 'th-TH-PremwadeeNeural', 'th-TH-NiwatNeural')
-                    part_audio = b''
-                    for voice in voices:
+                for voice in voices:
+                    try:
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
                         try:
-                            part_audio, _ = asyncio.run(synthesize(part, voice))
-                            if part_audio:
+                            audio, raw_boundaries = loop.run_until_complete(synthesize(text, voice))
+                            if audio:
                                 break
-                        except Exception as voice_error:
-                            last_error = voice_error
-                            print(f'[Watcher] Edge TTS {voice} failed: {voice_error}')
-                    if not part_audio:
-                        raise RuntimeError(f'Edge TTS returned no audio for: {part[:30]}')
-                    audio_parts.append(part_audio)
-                audio = b''.join(audio_parts)
+                        finally:
+                            loop.close()
+                    except Exception as voice_error:
+                        last_error = voice_error
+                        print(f'[Watcher] Edge TTS {voice} failed: {voice_error}')
+
                 if not audio:
                     raise RuntimeError(f'Edge TTS returned no audio: {last_error or "unknown error"}')
+
                 payload = {
                     'success': True,
                     'audioBase64': base64.b64encode(audio).decode('ascii'),
-                    'wordBoundaries': boundaries
+                    'wordBoundaries': []
                 }
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
@@ -657,6 +1351,39 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_response(500)
                 self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
+            return
+
+        if parsed_url.path == '/process-bigdata-video':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
+            try:
+                data = json.loads(post_data.decode('utf-8'))
+                video_url = data.get('videoUrl', '').strip()
+                start_sec = data.get('start', 0)
+                end_sec = data.get('end', None)
+                text = data.get('text', '').strip()
+                copy_to_desktop = bool(data.get('copyToDesktop', False))
+                github_config = data.get('github')
+
+                if not video_url:
+                    raise ValueError('Missing videoUrl')
+
+                # Queue task immediately for background processing
+                bigdata_task_queue.put((video_url, start_sec, end_sec, text, copy_to_desktop, github_config))
+                set_bigdata_progress(10, "queued", "คิวงานตัดต่อวิดีโอเรียบร้อย เริ่มทำงานพื้นหลัง...")
+
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': True, 'status': 'started'}).encode('utf-8'))
+            except Exception as e:
+                print(f"[Watcher] /process-bigdata-video error: {e}")
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': False, 'error': str(e)}).encode('utf-8'))
             return
 
         if parsed_url.path == '/update-example-qr':
