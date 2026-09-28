@@ -819,7 +819,7 @@ def process_bigdata_video_task(video_url, start_sec, end_sec, text, copy_to_desk
         ytdl_cmd = [
             sys.executable, "-m", "yt_dlp",
             "--download-sections", section_arg,
-            "-f", "bv*[height<=720]+ba/b[height<=720]/b",
+            "-f", "b[height<=480]/bv*[height<=480]+ba/b[height<=360]/b",
             "--merge-output-format", "mp4",
             *cookies_arg,
             "-o", raw_video,
@@ -876,11 +876,11 @@ def process_bigdata_video_task(video_url, start_sec, end_sec, text, copy_to_desk
 
         # 5. FFmpeg Cutting, Subtitle Burning, and Audio Ducking
         set_bigdata_progress(75, "rendering", "ตัดต่อ & ฝังซับไตเติลและผสมเสียง...")
-        escaped_ass = os.path.abspath(ass_file).replace('\\', '/').replace(':', r'\\:')
-        vdoai_fonts = r"D:\Github\vdoAI\fonts".replace('\\', '/')
-        escaped_fonts = vdoai_fonts.replace(':', r'\:')
-        fonts_dir_param = f":fontsdir='{escaped_fonts}'" if os.path.exists(r"D:\Github\vdoAI\fonts") else ""
-        subtitles_filter = f"subtitles='{escaped_ass}'{fonts_dir_param}"
+        esc_colon = r"\:"
+        escaped_ass = os.path.abspath(ass_file).replace('\\', '/').replace(':', esc_colon)
+        vdoai_fonts = r"D:\Github\vdoAI\fonts".replace('\\', '/').replace(':', esc_colon)
+        fonts_dir_param = f":fontsdir='{vdoai_fonts}'" if os.path.exists(r"D:\Github\vdoAI\fonts") else ""
+        subtitles_filter = f"subtitles=filename='{escaped_ass}'{fonts_dir_param}"
 
         scale_param = f"scale={target_w}:{target_h}"
         target_video = raw_video
@@ -889,8 +889,8 @@ def process_bigdata_video_task(video_url, start_sec, end_sec, text, copy_to_desk
             duck_expr = f"volume='if(lt(t,{total_audio_duration + 0.3}),0.15,1.0)':eval=frame"
             filter_complex = (
                 f"[0:v]{scale_param},{subtitles_filter}[vsub];"
-                f"[0:a]{duck_expr}[ducked];"
-                f"[1:a]volume=2.2[tts];"
+                f"[0:a]{duck_expr},aresample=async=1000[ducked];"
+                f"[1:a]volume=2.2,aresample=async=1000[tts];"
                 f"[ducked][tts]amix=inputs=2:duration=first:dropout_transition=0.1:normalize=0[aout]"
             )
             merge_cmd = [
