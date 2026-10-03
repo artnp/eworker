@@ -1,22 +1,23 @@
 import os
+import sys
 import re
 import time
 import json
+import shutil
 import tempfile
 import subprocess
 import urllib.request
 import urllib.error
-import yt_dlp
 
-# ป้องกันหน้าต่าง CMD สีดำสำหรับ yt-dlp บน Windows (ทำเพียงครั้งเดียว ป้องกัน Recursion)
-if os.name == 'nt' and hasattr(yt_dlp, 'utils') and hasattr(yt_dlp.utils, 'Popen'):
-    if not getattr(yt_dlp.utils.Popen, '_silent_patched', False):
-        _orig_yt_popen = yt_dlp.utils.Popen.__init__
-        def _silent_yt_popen(self, *args, **kwargs):
-            kwargs['creationflags'] = kwargs.get('creationflags', 0) | subprocess.CREATE_NO_WINDOW
-            return _orig_yt_popen(self, *args, **kwargs)
-        yt_dlp.utils.Popen.__init__ = _silent_yt_popen
-        yt_dlp.utils.Popen._silent_patched = True
+def get_subprocess_kwargs():
+    kwargs = {}
+    if sys.platform == 'win32':
+        si = subprocess.STARTUPINFO()
+        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        si.wShowWindow = subprocess.SW_HIDE
+        kwargs['startupinfo'] = si
+        kwargs['creationflags'] = getattr(subprocess, 'CREATE_NO_WINDOW', 0x08000000)
+    return kwargs
 
 BASE_URL_V1 = "https://www.binance.com/bapi/composite/v1/public/pgc/openApi"
 BASE_URL_V2 = "https://www.binance.com/bapi/composite/v2/public/pgc/openApi"
@@ -50,37 +51,37 @@ CRYPTO_COINS = [
     'SWELL', 'ACX', 'ORCA', 'VIRTUAL', 'AIXBT', 'PENGU'
 ]
 _COINS_PATTERN = '|'.join(re.escape(c) for c in sorted(CRYPTO_COINS, key=len, reverse=True))
-# ตรวจจับเฉพาะเมื่อมีเว้นวรรค/เครื่องหมายวรรคตอนคั่น และไม่มี $ นำหน้าอยู่แล้ว
 CRYPTO_REGEX = re.compile(rf'(?<![a-zA-Z0-9_\$])({_COINS_PATTERN})(?![a-zA-Z0-9_])', re.IGNORECASE)
 
 def add_crypto_cashtags(text):
-    """ตรวจจับชื่อเหรียญคริปโต เช่น BTC -> $BTC, xlm -> $xlm โดยไม่ใส่ซ้ำหากมี $ อยู่แล้ว"""
     if not text:
         return ""
     return CRYPTO_REGEX.sub(r'$\1', text)
 
 def clean_text(raw_text):
-    """ทำความสะอาดข้อความ ตัด timestamp, เครื่องหมาย =>Bigdata หรือ tag แปลกปลอมออก และแปลงชื่อเหรียญเป็น cashtag $"""
     if not raw_text:
         return ""
-    # ตัด timecode เช่น [01:23] หรือ [1:23:45]
     text = re.sub(r'\[\d{1,2}:\d{2}(?::\d{2})?\]', '', raw_text)
-    # ตัดเครื่องหมายที่ไม่ต้องการ
     text = text.replace('=>Bigdata', '').replace('=>LINE', '').strip()
-    # เติม $ นำหน้าชื่อเหรียญคริปโตตามเงื่อนไข
     text = add_crypto_cashtags(text)
     return text
 
 def get_video_info(video_url):
     """ดึงข้อมูลหัวข้อคลิปและชื่อช่องจาก YouTube"""
-    ydl_opts = {
-        'extract_flat': True,
-        'quiet': True,
-        'no_warnings': True
-    }
+    cookies_candidate = r"D:\Github\Youtube_Playlists_DL\cookies.txt"
+    cookies_arg = ["--cookies", cookies_candidate] if os.path.exists(cookies_candidate) else []
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(video_url, download=False)
+        cmd = [
+            sys.executable, "-m", "yt_dlp",
+            "--dump-json",
+            "--no-playlist",
+            *cookies_arg,
+            str(video_url).strip()
+        ]
+        sub_kwargs = get_subprocess_kwargs()
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=20, stdin=subprocess.DEVNULL, **sub_kwargs)
+        if res.returncode == 0 and res.stdout.strip():
+            info = json.loads(res.stdout.splitlines()[0])
             channel = info.get('channel') or info.get('uploader') or info.get('uploader_id') or 'YouTube'
             title = info.get('title') or ''
             webpage_url = info.get('webpage_url') or video_url
@@ -90,54 +91,115 @@ def get_video_info(video_url):
                 'url': webpage_url
             }
     except Exception as e:
-        print(f"[BinanceSquareBot] Error extracting info: {e}")
-        return {
-            'channel': 'YouTube',
-            'title': '',
-            'url': video_url
-        }
+        print(f"[BinanceSquareBot] get_video_info error: {e}")
+    return {
+        'channel': 'YouTube',
+        'title': '',
+        'url': video_url
+    }
 
 def download_and_cut_clip(video_url, start_sec, end_sec, output_file, progress_callback=None):
-    """ดาวน์โหลดเฉพาะช่วงเวลาที่ต้องการ (start_sec ถึง end_sec) ด้วย yt-dlp และ ffmpeg ความละเอียด 480p พร้อม faststart (ขั้นต่ำ 15 วินาที, จำกัดสูงสุด 5 นาที)"""
+    """ดาวน์โหลดเฉพาะช่วงเวลาที่ต้องการ (start_sec ถึง end_sec) ด้วย yt-dlp และ ffmpeg ความละเอียด 480p"""
     if end_sec <= start_sec:
         end_sec = start_sec + 60
 
-    # ปรับความยาวคลิปขั้นต่ำให้ไม่น้อยกว่า 15 วินาที ตามข้อกำหนด Binance Square
     if (end_sec - start_sec) < MIN_CLIP_DURATION_SEC:
-        print(f"[BinanceSquareBot] ⚠️ ช่วงเวลาที่ระบุ ({end_sec - start_sec}s) สั้นกว่าขั้นต่ำ {MIN_CLIP_DURATION_SEC} วินาที! ปรับเพิ่มเป็น {MIN_CLIP_DURATION_SEC}s")
         end_sec = start_sec + MIN_CLIP_DURATION_SEC
 
-    # ป้องกันไม่ให้ช่วงเวลาตัดเกิน 5 นาที (300 วินาที) ตามข้อกำหนด Binance Square
     if (end_sec - start_sec) > MAX_CLIP_DURATION_SEC:
-        print(f"[BinanceSquareBot] ⚠️ ช่วงเวลาที่ระบุ ({end_sec - start_sec}s) เกิน 5 นาที! ปรับลดเหลือ {MAX_CLIP_DURATION_SEC}s")
         end_sec = start_sec + MAX_CLIP_DURATION_SEC
 
-    print(f"[BinanceSquareBot] ✂️ Downloading clip 480p from {start_sec}s to {end_sec}s (length: {end_sec - start_sec}s)...")
+    sub_kwargs = get_subprocess_kwargs()
 
-    def ydl_hook(d):
-        if progress_callback and d.get('status') == 'downloading':
-            total = d.get('total_bytes') or d.get('total_bytes_estimate') or 0
-            downloaded = d.get('downloaded_bytes', 0)
-            if total > 0:
-                pct = min(100, int(downloaded / total * 100))
-                mapped = 20 + int(pct * 0.35)  # ช่วง 20% ถึง 55%
-                progress_callback(mapped, f"โหลดคลิป 480p ({pct}%)")
+    # ⚡ Smart Cache Check: Check if full video is already cached in d:\Github\eworker\cache\videos\{video_id}.mp4
+    v_id = None
+    m_yt = re.search(r'(?:v=|\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]{11})', video_url)
+    if m_yt:
+        v_id = m_yt.group(1)
 
-    # ความละเอียด 480p ดาวน์โหลดเร็วมาก ไฟล์เบา และ Binance Square ประมวลผลได้ไวที่สุด
-    ydl_opts = {
-        'format': 'bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480][ext=mp4]/best[height<=720]/best',
-        'outtmpl': output_file,
-        'download_ranges': yt_dlp.utils.download_range_func(None, [(start_sec, end_sec)]),
-        'force_keyframes_at_cuts': True,
-        'progress_hooks': [ydl_hook],
-        'quiet': True,
-        'no_warnings': True
-    }
+    cache_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "cache", "videos")
+    os.makedirs(cache_dir, exist_ok=True)
+    cached_video_file = os.path.join(cache_dir, f"{v_id}.mp4") if v_id else None
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([video_url])
+    # If not cached, download to cache first
+    has_cached = bool(cached_video_file and os.path.exists(cached_video_file) and os.path.getsize(cached_video_file) > 100000)
+    if not has_cached and v_id:
+        if progress_callback:
+            progress_callback(20, "กำลังโหลดคลิปต้นฉบับ 480p เข้าแคช...")
+        cookies_candidate = r"D:\Github\Youtube_Playlists_DL\cookies.txt"
+        cookies_arg = ["--cookies", cookies_candidate] if os.path.exists(cookies_candidate) else []
+        temp_cache_download = os.path.join(cache_dir, f"temp_sq_{v_id}_{int(time.time())}.mp4")
 
-    # ตรวจสอบไฟล์ผลลัพธ์
+        clean_video_url = f"https://www.youtube.com/watch?v={v_id}" if v_id and len(v_id) == 11 else video_url
+        ytdl_cmd = [
+            sys.executable, "-m", "yt_dlp",
+            "--extractor-args", "youtube:player_client=android,ios,web",
+            "-f", "b[height<=480]/bv*[height<=480]+ba/b[height<=360]/b",
+            "--merge-output-format", "mp4",
+            *cookies_arg,
+            "-o", temp_cache_download,
+            clean_video_url
+        ]
+        proc = subprocess.run(ytdl_cmd, capture_output=True, text=True, timeout=180, stdin=subprocess.DEVNULL, **sub_kwargs)
+        if os.path.exists(temp_cache_download) and os.path.getsize(temp_cache_download) > 100000:
+            try:
+                if cached_video_file and os.path.exists(cached_video_file):
+                    os.remove(cached_video_file)
+                shutil.move(temp_cache_download, cached_video_file)
+                has_cached = True
+                print(f"[BinanceSquareBot] ✅ Cached video successfully: {cached_video_file}")
+            except Exception as me:
+                print(f"[BinanceSquareBot] Cache move error: {me}")
+
+    # If cached video is ready: slice with ffmpeg in 0.5s!
+    if has_cached and cached_video_file and os.path.exists(cached_video_file):
+        if progress_callback:
+            progress_callback(40, "กำลังตัดต่อคลิปจากแคช (0.5s ⚡)...")
+        slice_cmd = [
+            "ffmpeg", "-y",
+            "-ss", str(start_sec),
+            "-to", str(end_sec),
+            "-i", cached_video_file,
+            "-c:v", "libx264", "-preset", "ultrafast", "-crf", "24",
+            "-c:a", "aac", "-b:a", "128k",
+            "-avoid_negative_ts", "make_zero",
+            "-movflags", "+faststart",
+            output_file
+        ]
+        subprocess.run(slice_cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60, **sub_kwargs)
+
+        if not os.path.exists(output_file) or os.path.getsize(output_file) < 1000:
+            slice_copy_cmd = [
+                "ffmpeg", "-y",
+                "-ss", str(start_sec),
+                "-to", str(end_sec),
+                "-i", cached_video_file,
+                "-c", "copy",
+                "-movflags", "+faststart",
+                output_file
+            ]
+            subprocess.run(slice_copy_cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30, **sub_kwargs)
+    else:
+        # Fallback to direct section download
+        if progress_callback:
+            progress_callback(25, "ดาวน์โหลดช่วงเวลาที่ระบุ (Direct Download)...")
+        section_arg = f"*{start_sec}-{end_sec}"
+        cookies_candidate = r"D:\Github\Youtube_Playlists_DL\cookies.txt"
+        cookies_arg = ["--cookies", cookies_candidate] if os.path.exists(cookies_candidate) else []
+        clean_video_url = f"https://www.youtube.com/watch?v={v_id}" if v_id and len(v_id) == 11 else video_url
+        fb_cmd = [
+            sys.executable, "-m", "yt_dlp",
+            "--extractor-args", "youtube:player_client=android,ios,web",
+            "--download-sections", section_arg,
+            "-f", "b[height<=480]/bv*[height<=480]+ba/b[height<=360]/b",
+            "--merge-output-format", "mp4",
+            *cookies_arg,
+            "-o", output_file,
+            clean_video_url
+        ]
+        subprocess.run(fb_cmd, capture_output=True, text=True, timeout=120, stdin=subprocess.DEVNULL, **sub_kwargs)
+
+    # Check output file
     actual_path = output_file
     if not os.path.exists(actual_path):
         if os.path.exists(output_file + ".mp4"):
@@ -149,66 +211,18 @@ def download_and_cut_clip(video_url, start_sec, end_sec, output_file, progress_c
             if candidates:
                 actual_path = candidates[0]
             else:
-                raise Exception("Clip download failed, file not found")
+                raise Exception("Clip download/slice failed, output video file not found")
 
     if progress_callback:
         progress_callback(58, "ตัดต่อ & จัด Faststart...")
 
-    # ตรวจสอบความยาวไฟล์วิดีโอที่ได้ หากเกิน 300 วินาทีให้ตัดส่วนเกินออก หรือถ้าน้อยกว่า 15 วินาทีให้ขยายความยาว
-    try:
-        cur_dur = get_video_duration(actual_path, fallback_duration=end_sec - start_sec)
-        if cur_dur > MAX_CLIP_DURATION_SEC:
-            print(f"[BinanceSquareBot] ⚠️ ไฟล์วิดีโอที่โหลดมามีความยาว {cur_dur}s (> {MAX_CLIP_DURATION_SEC}s) กำลังตัดส่วนเกินออก...")
-            trimmed_path = os.path.splitext(actual_path)[0] + "_trimmed.mp4"
-            cmd_trim = [
-                "ffmpeg", "-y", "-loglevel", "error",
-                "-ss", "0", "-t", str(MAX_CLIP_DURATION_SEC),
-                "-i", actual_path,
-                "-c", "copy",
-                trimmed_path
-            ]
-            subprocess.run(
-                cmd_trim, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
-            )
-            if os.path.exists(trimmed_path) and os.path.getsize(trimmed_path) > 0:
-                try:
-                    os.remove(actual_path)
-                except:
-                    pass
-                actual_path = trimmed_path
-        elif cur_dur < MIN_CLIP_DURATION_SEC:
-            print(f"[BinanceSquareBot] ⚠️ ไฟล์วิดีโอที่ได้มีความยาว {cur_dur}s (< {MIN_CLIP_DURATION_SEC}s) กำลังขยายให้ครบ {MIN_CLIP_DURATION_SEC}s...")
-            extended_path = os.path.splitext(actual_path)[0] + "_ext15.mp4"
-            loops_needed = int((MIN_CLIP_DURATION_SEC // max(1, cur_dur)) + 1)
-            cmd_ext = [
-                "ffmpeg", "-y", "-loglevel", "error",
-                "-stream_loop", str(loops_needed),
-                "-i", actual_path,
-                "-t", str(MIN_CLIP_DURATION_SEC),
-                "-c", "copy",
-                extended_path
-            ]
-            subprocess.run(
-                cmd_ext, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
-            )
-            if os.path.exists(extended_path) and os.path.getsize(extended_path) > 0:
-                try:
-                    os.remove(actual_path)
-                except:
-                    pass
-                actual_path = extended_path
-    except Exception as e_trim:
-        print(f"[BinanceSquareBot] trim/duration check notice: {e_trim}")
-
-    # Faststart remux (ย้าย moov atom ไว้ข้างหน้าเพื่อให้ Binance Square transcode & stream ได้ทันที)
+    # Faststart remux
     fast_path = os.path.splitext(actual_path)[0] + "_fast.mp4"
     try:
         cmd = ["ffmpeg", "-y", "-loglevel", "error", "-i", actual_path, "-c", "copy", "-movflags", "+faststart", fast_path]
         subprocess.run(
-            cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+            cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            timeout=30, **sub_kwargs
         )
         if os.path.exists(fast_path) and os.path.getsize(fast_path) > 0:
             try:
@@ -224,6 +238,7 @@ def download_and_cut_clip(video_url, start_sec, end_sec, output_file, progress_c
 def get_video_duration(video_path, fallback_duration=30):
     """หาความยาววิดีโอ (วินาที) ด้วย ffprobe"""
     try:
+        sub_kwargs = get_subprocess_kwargs()
         cmd = [
             "ffprobe", "-v", "error",
             "-show_entries", "format=duration",
@@ -232,7 +247,7 @@ def get_video_duration(video_path, fallback_duration=30):
         ]
         result = subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True,
-            creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+            stdin=subprocess.DEVNULL, **sub_kwargs
         )
         duration = float(result.stdout.strip())
         return max(1, int(round(duration)))
@@ -242,6 +257,7 @@ def get_video_duration(video_path, fallback_duration=30):
 
 def extract_cover_image(video_path, cover_path):
     """ดึงภาพปก (1 frame) จากวิดีโอโดยใช้ ffmpeg ตามสเปก Binance Square"""
+    sub_kwargs = get_subprocess_kwargs()
     cmd = [
         "ffmpeg", "-y", "-loglevel", "error",
         "-i", video_path,
@@ -250,8 +266,8 @@ def extract_cover_image(video_path, cover_path):
         cover_path
     ]
     subprocess.run(
-        cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+        cmd, check=True, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        **sub_kwargs
     )
     if not os.path.exists(cover_path) or os.path.getsize(cover_path) == 0:
         cmd_fallback = [
@@ -263,8 +279,8 @@ def extract_cover_image(video_path, cover_path):
             cover_path
         ]
         subprocess.run(
-            cmd_fallback, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+            cmd_fallback, check=True, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            **sub_kwargs
         )
 
 def api_call(endpoint, api_key, body, base_url=BASE_URL_V2):
