@@ -324,7 +324,195 @@ class DesktopHandler(FileSystemEventHandler):
     def on_modified(self, event):
         self._handle(event)
 
-# --- BIGDATA VIDEO PROCESSING & PROGRESS ---
+# --- BIGDATA VIDEO PROCESSING, TRAY & CACHE ---
+tray_icon_instance = None
+VIDEO_CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cache", "videos")
+os.makedirs(VIDEO_CACHE_DIR, exist_ok=True)
+
+# Tracking cached videos and cleanup requests
+cached_video_ref_counts = {}  # video_id -> count of active/pending tasks
+pending_cleanup_videos = set() # video_ids requested to clean up when Gemini tab closes
+video_lock = threading.Lock()
+cached_github_config = {}
+
+def extract_video_id(url):
+    if not url:
+        return None
+    m = re.search(r'(?:v=|\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]{11})', str(url))
+    return m.group(1) if m else None
+
+def make_tray_icon(percent=None, q_len=0, phase='idle'):
+    from PIL import Image, ImageDraw, ImageFont
+    img = Image.new('RGBA', (64, 64), (15, 23, 42, 255))
+    draw = ImageDraw.Draw(img)
+
+    if percent is None or (phase in ('idle', 'done') and q_len == 0 and (percent == 0 or percent == 100)):
+        # Default AI Hub icon (Blue rounded rectangle with bold AI)
+        draw.rounded_rectangle([2, 2, 61, 61], radius=14, fill=(37, 99, 235), outline=(96, 165, 250), width=2)
+        try:
+            font = ImageFont.truetype('arialbd.ttf', 28)
+        except Exception:
+            font = ImageFont.load_default()
+        bbox = draw.textbbox((0, 0), "AI", font=font)
+        tw = bbox[2] - bbox[0]
+        th = bbox[3] - bbox[1]
+        draw.text(((64 - tw) // 2, (64 - th) // 2 - 2), "AI", fill=(255, 255, 255), font=font)
+        return img
+
+    pct = max(0, min(100, int(percent or 0)))
+    # Active Progress Icon
+    draw.rounded_rectangle([2, 2, 61, 61], radius=12, fill=(15, 23, 42), outline=(56, 189, 248), width=2)
+
+    # Progress bar at bottom
+    bar_w = int((pct / 100.0) * 52)
+    draw.rectangle([6, 50, 58, 56], fill=(30, 41, 59))
+    if bar_w > 0:
+        bar_color = (34, 197, 94) if pct >= 90 else (6, 182, 212)
+        draw.rectangle([6, 50, 6 + bar_w, 56], fill=bar_color)
+
+    # Draw percentage text in center
+    try:
+        font = ImageFont.truetype('arialbd.ttf', 22 if pct < 100 else 18)
+    except Exception:
+        font = ImageFont.load_default()
+    txt = f"{pct}%"
+    bbox = draw.textbbox((0, 0), txt, font=font)
+    tw = bbox[2] - bbox[0]
+    th = bbox[3] - bbox[1]
+    draw.text(((64 - tw) // 2, 13), txt, fill=(255, 255, 255), font=font)
+
+    # Queue badge indicator at top right if queue > 0
+    if q_len > 0:
+        badge_txt = f"+{q_len}" if q_len < 10 else "9+"
+        try:
+            badge_font = ImageFont.truetype('arialbd.ttf', 11)
+        except Exception:
+            badge_font = ImageFont.load_default()
+        draw.rounded_rectangle([38, 2, 62, 16], radius=4, fill=(234, 88, 12))
+        draw.text((42, 2), badge_txt, fill=(255, 255, 255), font=badge_font)
+
+    return img
+
+def show_tray_notification(title, message):
+    global tray_icon_instance
+    if not tray_icon_instance:
+        return
+    try:
+        tray_icon_instance.notify(str(message)[:250], str(title)[:60])
+        print(f"[Tray Banner] 🔔 {title}: {message}")
+    except Exception as e:
+        print(f"[Tray Notify Error]: {e}")
+
+last_notified_phase = None
+
+def update_tray_status(percent=None, phase=None, message=None, force_notify=False):
+    global tray_icon_instance, bigdata_task_queue, last_notified_phase
+    if not tray_icon_instance:
+        return
+    try:
+        q_size = bigdata_task_queue.qsize()
+        if (percent is None or phase in ('idle',)) and q_size == 0:
+            tray_icon_instance.title = f"AI Hub Central (Port {PORT}) - พร้อมทำงาน"[:120]
+            tray_icon_instance.icon = make_tray_icon(percent=None, q_len=0, phase='idle')
+            last_notified_phase = None
+        elif phase == 'done' and q_size == 0:
+            tray_icon_instance.title = f"[100%] สำเร็จ | บันทึก bigdata เรียบร้อย"[:120]
+            tray_icon_instance.icon = make_tray_icon(percent=100, q_len=0, phase='done')
+            show_tray_notification("✅ AI Hub Bigdata สำเร็จ 100%", message or "บันทึกลง bigdata.json เรียบร้อย!")
+            last_notified_phase = 'done'
+        else:
+            pct = int(max(0, min(100, percent if percent is not None else 0)))
+            phase_map = {
+                'queued': 'เข้าคิว',
+                'starting': 'เริ่ม',
+                'tts': 'TTS',
+                'downloading': 'โหลดคลิป',
+                'subtitles': 'ซับไตเติล',
+                'rendering': 'ตัดต่อ/FX',
+                'desktop': 'บันทึกPC',
+                'uploading': 'อัปโหลด',
+                'github': 'GitHub',
+                'done': 'เสร็จ',
+                'error': 'ข้อผิดพลาด'
+            }
+            phase_th = phase_map.get(phase, phase or '')
+            title = f"[{pct}%] {phase_th} (คิวรอ: {q_size}) | AI Hub (Port {PORT})"
+            tray_icon_instance.title = title[:120]
+            tray_icon_instance.icon = make_tray_icon(percent=pct, q_len=q_size, phase=phase)
+
+            # Trigger Windows Notification Banner on key milestones
+            milestones = ('queued', 'tts', 'downloading', 'rendering', 'uploading', 'error')
+            if force_notify or (phase in milestones and phase != last_notified_phase):
+                last_notified_phase = phase
+                banner_title = f"[{pct}%] AI Hub Bigdata ({phase_th})"
+                banner_msg = f"{message or phase_th} (คิวรอ: {q_size})"
+                show_tray_notification(banner_title, banner_msg)
+    except Exception as e:
+        print(f"[Tray Status Error]: {e}")
+
+def cleanup_video_cache(video_id=None, clean_all=False):
+    global cached_video_ref_counts, pending_cleanup_videos
+    with video_lock:
+        if not os.path.exists(VIDEO_CACHE_DIR):
+            return
+
+        # Current video IDs being processed by active/running tasks
+        active_ids = {vid for vid, count in cached_video_ref_counts.items() if count > 0}
+
+        if clean_all or video_id == "all":
+            # Safely sweep all files in VIDEO_CACHE_DIR that are NOT in active use
+            deleted_count = 0
+            try:
+                for f in os.listdir(VIDEO_CACHE_DIR):
+                    f_path = os.path.join(VIDEO_CACHE_DIR, f)
+                    if not os.path.isfile(f_path):
+                        continue
+                    # Protect files that belong to currently active video tasks
+                    is_active = any(act in f for act in active_ids)
+                    if not is_active:
+                        try:
+                            os.remove(f_path)
+                            deleted_count += 1
+                        except Exception as e:
+                            print(f"[Bigdata Cache] ⚠️ Could not remove {f}: {e}")
+            except Exception as le:
+                print(f"[Bigdata Cache] Sweep error: {le}")
+
+            if not active_ids:
+                pending_cleanup_videos.clear()
+            if deleted_count > 0:
+                print(f"[Bigdata Cache] 🧹 Swept & deleted {deleted_count} file(s) from cache\\videos")
+            return
+
+        if video_id:
+            if cached_video_ref_counts.get(video_id, 0) <= 0:
+                cached_video_file = os.path.join(VIDEO_CACHE_DIR, f"{video_id}.mp4")
+                if os.path.exists(cached_video_file):
+                    try:
+                        os.remove(cached_video_file)
+                        print(f"[Bigdata Cache] 🧹 Cleaned up cached video {video_id} immediately (Gemini tab closed)")
+                    except Exception as ce:
+                        print(f"[Bigdata Cache] ⚠️ Could not remove {cached_video_file}: {ce}")
+
+                # Clean any lingering temporary yt-dlp files for this video
+                try:
+                    for f in os.listdir(VIDEO_CACHE_DIR):
+                        if video_id in f and (f.startswith("temp_") or f.endswith(".part") or f.endswith(".ytdl")):
+                            try:
+                                os.remove(os.path.join(VIDEO_CACHE_DIR, f))
+                            except Exception:
+                                pass
+                except Exception:
+                    pass
+
+                pending_cleanup_videos.discard(video_id)
+            else:
+                pending_cleanup_videos.add(video_id)
+                print(f"[Bigdata Cache] ⏳ Marked {video_id} for cleanup after {cached_video_ref_counts[video_id]} pending task(s) finish")
+
+def mark_video_for_cleanup(video_id):
+    cleanup_video_cache(video_id=video_id, clean_all=False)
+
 bigdata_job_progress = {
     "percent": 0,
     "phase": "idle",
@@ -333,31 +521,99 @@ bigdata_job_progress = {
 }
 last_bigdata_result = None
 bigdata_task_queue = queue.Queue()
+video_pipeline_lock = threading.Lock()
+binance_count_lock = threading.Lock()
+binance_queue_count = 0
+
+STATUS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "status.json")
+
+def write_status_file(percent, phase, message, task_type="bigdata", queue_size=0, detail=""):
+    try:
+        data = {
+            "percent": int(percent) if percent is not None else 0,
+            "phase": phase,
+            "status": message,
+            "detail": detail or f"[{task_type.capitalize()}] {message}",
+            "taskType": task_type,
+            "queueSize": queue_size,
+            "timestamp": int(time.time() * 1000)
+        }
+        tmp_path = STATUS_FILE + ".tmp"
+        with open(tmp_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False)
+        os.replace(tmp_path, STATUS_FILE)
+        if phase != "idle" and task_type in ("bigdata", "binance"):
+            ensure_watcher_gui_running()
+    except Exception:
+        pass
+
+def ensure_watcher_gui_running():
+    try:
+        import psutil
+        for proc in psutil.process_iter(['name', 'cmdline']):
+            try:
+                cmd = ' '.join(proc.info.get('cmdline') or [])
+                if 'watcher_gui.ps1' in cmd:
+                    return
+            except Exception:
+                pass
+        gui_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "watcher_gui.ps1")
+        if os.path.exists(gui_path):
+            subprocess.Popen([
+                "powershell.exe", "-WindowStyle", "Hidden", "-NoProfile", "-ExecutionPolicy", "Bypass",
+                "-File", gui_path, str(os.getpid())
+            ])
+            print("[Watcher] 🚀 Launched floating Status & Process Bar Widget (watcher_gui.ps1)")
+    except Exception as e:
+        print(f"[Watcher] Error launching watcher_gui.ps1: {e}")
 
 def set_bigdata_progress(percent, phase, message, result=None):
     global bigdata_job_progress, last_bigdata_result
     if result is not None:
         last_bigdata_result = result
+    pct = int(percent)
+    q_len = bigdata_task_queue.qsize()
     bigdata_job_progress = {
-        "percent": int(percent),
+        "percent": pct,
         "phase": phase,
         "message": message,
-        "result": last_bigdata_result
+        "result": last_bigdata_result,
+        "queue_size": q_len
     }
-    print(f"[Bigdata Progress] {percent}% ({phase}): {message}")
+    print(f"[Bigdata Progress] {pct}% ({phase}) [Queue: {q_len}]: {message}")
+    update_tray_status(pct, phase, message)
+    write_status_file(pct, phase, message, task_type="bigdata", queue_size=q_len)
+
+def load_github_token_from_ps1():
+    try:
+        ps1_path = r"D:\Github\token.ps1"
+        if os.path.exists(ps1_path):
+            with open(ps1_path, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+            m = re.search(r"\$token\s*=\s*'([^']+)'", content)
+            if m:
+                return m.group(1).strip()
+    except Exception as e:
+        print(f"[Watcher] Token load error from ps1: {e}")
+    return ''
 
 def update_github_reel(clean_text, catbox_url, github_config):
     """
     Appends a new video clip entry to the active bigdata*.json file on GitHub.
     Handles file discovery, 2000-item rollover, UTF-8 base64 encoding, and retry on conflict.
     """
-    username = github_config.get('username')
-    repository = github_config.get('repository')
-    branch = github_config.get('branch', 'main')
-    token = github_config.get('token')
+    global cached_github_config
+    cfg = dict(cached_github_config or {})
+    if github_config and isinstance(github_config, dict):
+        cfg.update({k: v for k, v in github_config.items() if v})
+
+    username = cfg.get('username') or 'artnp'
+    repository = cfg.get('repository') or 'bigdata'
+    branch = cfg.get('branch', 'main') or 'main'
+    token = cfg.get('token') or load_github_token_from_ps1()
 
     if not (username and repository and token):
-        print("[Bigdata GitHub] Skipping GitHub update: missing credentials in github_config")
+        print(f"[Bigdata GitHub] Skipping GitHub update: missing credentials in github_config (username={username}, repo={repository}, token={'yes' if token else 'no'})")
         return None
 
     clean_url = re.sub(r'^https?://', '', catbox_url).strip()
@@ -471,21 +727,37 @@ def bigdata_queue_worker():
         task = bigdata_task_queue.get()
         if task is None:
             break
-        video_url, start_sec, end_sec, text, copy_to_desktop, github_config = task
+        if len(task) == 7:
+            video_url, start_sec, end_sec, text, copy_to_desktop, github_config, final_id_string = task
+        else:
+            video_url, start_sec, end_sec, text, copy_to_desktop, github_config = task
+            final_id_string = ""
         try:
-            process_bigdata_video_task(
-                video_url=video_url,
-                start_sec=start_sec,
-                end_sec=end_sec,
-                text=text,
-                copy_to_desktop=copy_to_desktop,
-                github_config=github_config
-            )
-        except Exception as err:
-            print(f"[Bigdata Queue Worker] Error in task: {err}")
-            set_bigdata_progress(0, "error", f"เกิดข้อผิดพลาด: {err}")
+            with video_pipeline_lock:
+                try:
+                    process_bigdata_video_task(
+                        video_url=video_url,
+                        start_sec=start_sec,
+                        end_sec=end_sec,
+                        text=text,
+                        copy_to_desktop=copy_to_desktop,
+                        github_config=github_config,
+                        final_id_string=final_id_string
+                    )
+                except Exception as err:
+                    print(f"[Bigdata Queue Worker] Error in task: {err}")
+                    set_bigdata_progress(0, "error", f"เกิดข้อผิดพลาด: {err}")
         finally:
             bigdata_task_queue.task_done()
+            if bigdata_task_queue.qsize() == 0 and binance_queue_count == 0:
+                def reset_idle_later():
+                    time.sleep(6)
+                    if bigdata_task_queue.qsize() == 0 and binance_queue_count == 0:
+                        update_tray_status(None, 'idle', 'พร้อมทำงาน')
+                        write_status_file(0, 'idle', 'พร้อมทำงาน', task_type="idle")
+                        # Sweep any leftover cache files when system is completely idle
+                        cleanup_video_cache(clean_all=True)
+                threading.Thread(target=reset_idle_later, daemon=True).start()
 
 # Start background queue worker daemon
 threading.Thread(target=bigdata_queue_worker, daemon=True).start()
@@ -710,7 +982,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
     return ass_template
 
-def process_bigdata_video_task(video_url, start_sec, end_sec, text, copy_to_desktop, github_config=None):
+def process_bigdata_video_task(video_url, start_sec, end_sec, text, copy_to_desktop, github_config=None, final_id_string=""):
     import math
     temp_dir = tempfile.mkdtemp(prefix="bigdata_clip_")
     raw_video = os.path.join(temp_dir, "raw_clip.mp4")
@@ -726,6 +998,7 @@ def process_bigdata_video_task(video_url, start_sec, end_sec, text, copy_to_desk
         hide_startupinfo.wShowWindow = subprocess.SW_HIDE
         creation_flags = getattr(subprocess, 'CREATE_NO_WINDOW', 0x08000000)
 
+    orig_video_input = video_url
     if video_url and not video_url.startswith("http://") and not video_url.startswith("https://"):
         video_url = f"https://www.youtube.com/watch?v={video_url}"
 
@@ -733,6 +1006,13 @@ def process_bigdata_video_task(video_url, start_sec, end_sec, text, copy_to_desk
         set_bigdata_progress(5, "starting", "เตรียมความพร้อม...")
         start_val = int(start_sec) if start_sec is not None else 0
         end_val = int(end_sec) if end_sec is not None and int(end_sec) > start_val else (start_val + 60)
+
+        # Build fallback YouTube URL format (ระบบสอง)
+        v_id_fallback = extract_video_id(video_url)
+        youtube_clean_url = final_id_string.strip() if final_id_string and final_id_string.strip() else (
+            f"{v_id_fallback}?start={start_val}&end={end_val}" if v_id_fallback else re.sub(r'^https?://', '', orig_video_input).strip()
+        )
+        youtube_clean_url = re.sub(r'^https?://', '', youtube_clean_url).strip()
 
         # 1. Clean Text: separate text for GitHub saving vs TTS speaking
         save_text = re.sub(r'\[\s*\d+(?::\d{2}){1,2}\s*\]|\b\d{1,2}:\d{2}(?::\d{2})?\b', '', text).strip()
@@ -807,33 +1087,90 @@ def process_bigdata_video_task(video_url, start_sec, end_sec, text, copy_to_desk
         actual_end_val = start_val + actual_span
         section_arg = f"*{start_val}-{actual_end_val}"
 
-        # 3. Download YouTube section fast without re-encoding (direct slice stream copy)
-        set_bigdata_progress(35, "downloading", f"กำลังโหลดคลิปช่วง [{start_val}s-{actual_end_val}s]...")
-        print(f"[Bigdata Video] 🎬 Downloading YouTube section {section_arg} from: {video_url}")
+        # 3. Use Cached Video or Download YouTube Video to cache
+        v_id = extract_video_id(video_url) or f"clip_{int(time.time())}"
+        clean_video_url = f"https://www.youtube.com/watch?v={v_id}" if (v_id and len(v_id) == 11) else video_url
+        cached_video_file = os.path.join(VIDEO_CACHE_DIR, f"{v_id}.mp4")
 
         cookies_arg = []
         cookies_candidate = r"D:\Github\Youtube_Playlists_DL\cookies.txt"
         if os.path.exists(cookies_candidate):
             cookies_arg = ["--cookies", cookies_candidate]
 
-        ytdl_cmd = [
-            sys.executable, "-m", "yt_dlp",
-            "--download-sections", section_arg,
-            "-f", "b[height<=480]/bv*[height<=480]+ba/b[height<=360]/b",
-            "--merge-output-format", "mp4",
-            *cookies_arg,
-            "-o", raw_video,
-            video_url
-        ]
+        # Check if full video is already cached and valid (>100KB)
+        has_cached_video = os.path.exists(cached_video_file) and os.path.getsize(cached_video_file) > 102400
 
-        proc = subprocess.run(ytdl_cmd, capture_output=True, text=True, timeout=120, startupinfo=hide_startupinfo, creationflags=creation_flags)
+        if not has_cached_video:
+            set_bigdata_progress(25, "downloading", f"กำลังดาวน์โหลดวิดีโอจาก YouTube (เก็บแคชไว้ตัดต่อ <li> อื่นๆ)...")
+            print(f"[Bigdata Video] 🎬 Downloading YouTube video to cache: {cached_video_file}")
+
+            temp_cache_download = os.path.join(VIDEO_CACHE_DIR, f"temp_{v_id}_{int(time.time())}.mp4")
+            ytdl_cmd = [
+                sys.executable, "-m", "yt_dlp",
+                "--extractor-args", "youtube:player_client=android,ios,web",
+                "-f", "b[height<=480]/bv*[height<=480]+ba/b[height<=360]/b",
+                "--merge-output-format", "mp4",
+                *cookies_arg,
+                "-o", temp_cache_download,
+                clean_video_url
+            ]
+            proc = subprocess.run(ytdl_cmd, capture_output=True, text=True, timeout=180, startupinfo=hide_startupinfo, creationflags=creation_flags)
+            if os.path.exists(temp_cache_download) and os.path.getsize(temp_cache_download) > 102400:
+                try:
+                    if os.path.exists(cached_video_file):
+                        os.remove(cached_video_file)
+                    shutil.move(temp_cache_download, cached_video_file)
+                    has_cached_video = True
+                    print(f"[Bigdata Video] ✅ Video cached successfully: {cached_video_file}")
+                except Exception as me:
+                    print(f"[Bigdata Video] Cache move error: {me}")
+            else:
+                # If full download timed out or failed, fallback to section download directly to raw_video
+                print(f"[Bigdata Video] Fallback to section download for {section_arg}")
+                fallback_cmd = [
+                    sys.executable, "-m", "yt_dlp",
+                    "--extractor-args", "youtube:player_client=android,ios,web",
+                    "--download-sections", section_arg,
+                    "-f", "b[height<=480]/bv*[height<=480]+ba/b[height<=360]/b",
+                    "--merge-output-format", "mp4",
+                    *cookies_arg,
+                    "-o", raw_video,
+                    clean_video_url
+                ]
+                proc_fallback = subprocess.run(fallback_cmd, capture_output=True, text=True, timeout=120, startupinfo=hide_startupinfo, creationflags=creation_flags)
+
+        if has_cached_video:
+            set_bigdata_progress(35, "downloading", f"ดึงวิดีโอจากแคชช่วง [{start_val}s-{actual_end_val}s] (ไม่ต้องโหลดใหม่ ⚡)...")
+            print(f"[Bigdata Video] ⚡ Slicing directly from cached video ({start_val}s to {actual_end_val}s)...")
+            slice_cmd = [
+                "ffmpeg", "-y",
+                "-ss", str(start_val),
+                "-to", str(actual_end_val),
+                "-i", cached_video_file,
+                "-c:v", "libx264", "-preset", "ultrafast", "-crf", "24",
+                "-c:a", "aac", "-b:a", "128k",
+                "-avoid_negative_ts", "make_zero",
+                raw_video
+            ]
+            proc_slice = subprocess.run(slice_cmd, capture_output=True, text=True, timeout=60, startupinfo=hide_startupinfo, creationflags=creation_flags)
+            if not os.path.exists(raw_video) or os.path.getsize(raw_video) < 1000:
+                print(f"[Bigdata Video] Slicing fallback to copy")
+                slice_copy_cmd = [
+                    "ffmpeg", "-y",
+                    "-ss", str(start_val),
+                    "-to", str(actual_end_val),
+                    "-i", cached_video_file,
+                    "-c", "copy",
+                    raw_video
+                ]
+                subprocess.run(slice_copy_cmd, capture_output=True, text=True, timeout=30, startupinfo=hide_startupinfo, creationflags=creation_flags)
+
         if not os.path.exists(raw_video):
             candidates = [os.path.join(temp_dir, f) for f in os.listdir(temp_dir) if f.endswith('.mp4')]
             if candidates:
                 raw_video = candidates[0]
             else:
-                err_detail = proc.stderr.strip()[-300:] if proc.stderr else (proc.stdout.strip()[-300:] if proc.stdout else 'Unknown yt-dlp error')
-                raise RuntimeError(f"yt-dlp download failed: {err_detail}")
+                raise RuntimeError(f"Could not produce raw clip from video ({video_url})")
 
         # 4. Detect Video Orientation & Dimensions (16:9 Landscape vs 9:16 Vertical Shorts)
         orig_w, orig_h = 640, 360
@@ -965,52 +1302,125 @@ def process_bigdata_video_task(video_url, start_sec, end_sec, text, copy_to_desk
             shutil.copy2(target_video, desktop_dest)
             print(f"[Bigdata Video] 🖥️ Successfully saved video to Desktop: {desktop_dest}")
 
-        # 7. Upload to Catbox
-        set_bigdata_progress(92, "uploading", "อัปโหลดขึ้น Catbox.moe...")
-        catbox_api = "https://catbox.moe/user/api.php"
-        userhash = "6d72cf40b5ef56e27239aed64"
-        upload_name = f"clip_{int(time.time())}.mp4"
-        with open(target_video, "rb") as vf:
-            resp = requests.post(
-                catbox_api,
-                data={"reqtype": "fileupload", "userhash": userhash},
-                files={"fileToUpload": (upload_name, vf)},
-                timeout=60
-            )
-        raw_res = resp.text.strip()
-        if resp.status_code == 200 and "catbox.moe" in raw_res:
-            catbox_url = raw_res
-            clean_catbox_url = re.sub(r'^https?://', '', catbox_url).strip()
+        # 7. Upload to Catbox with userhash API key (Primary: ระบบหนึ่ง)
+        set_bigdata_progress(92, "uploading", "อัปโหลดขึ้น Catbox.moe (API key)...")
+        catbox_userhash = "6d72cf40b5ef56e27239aed64"
+        raw_res = ""
+        catbox_url = None
 
-            # 8. Direct GitHub update (guaranteed to complete even if Gemini tab is closed!)
-            github_res = None
-            if github_config and isinstance(github_config, dict) and github_config.get('token'):
-                set_bigdata_progress(96, "github", "กำลังบันทึกลง GitHub (bigdata)...")
-                try:
-                    github_res = update_github_reel(save_text, clean_catbox_url, github_config)
-                    print(f"[Bigdata Video] 🐙 GitHub updated successfully: {github_res}")
-                except Exception as ge:
-                    print(f"[Bigdata Video] ⚠️ GitHub update error: {ge}")
+        def verify_catbox_upload(test_url):
+            if not test_url or "catbox.moe" not in test_url:
+                return False
+            try:
+                check_cmd = ["curl.exe", "-sI", "--max-time", "15", "-L", test_url]
+                c_res = subprocess.run(check_cmd, capture_output=True, text=True, timeout=20, startupinfo=hide_startupinfo, creationflags=creation_flags)
+                header_out = c_res.stdout
+                status_m = re.search(r'HTTP/[\d\.]+\s+(\d+)', header_out)
+                if status_m and int(status_m.group(1)) not in (200, 301, 302):
+                    print(f"[Bigdata Catbox] ⚠️ HTTP status error: {status_m.group(1)}")
+                    return False
+                cl_m = re.search(r'Content-Length:\s*(\d+)', header_out, re.IGNORECASE)
+                if cl_m:
+                    clen = int(cl_m.group(1))
+                    if clen < 10000:
+                        print(f"[Bigdata Catbox] ⚠️ Catbox returned empty/corrupt 0-byte file (Content-Length: {clen} bytes)")
+                        return False
+                    print(f"[Bigdata Catbox] ✅ Verified Catbox video size: {clen} bytes")
+                    return True
+                # If Content-Length header is missing, attempt 1KB probe download
+                probe_cmd = ["curl.exe", "-s", "--max-time", "10", "-r", "0-1024", test_url]
+                probe_res = subprocess.run(probe_cmd, capture_output=True, timeout=15, startupinfo=hide_startupinfo, creationflags=creation_flags)
+                if len(probe_res.stdout) > 500:
+                    return True
+                return False
+            except Exception as e:
+                print(f"[Bigdata Catbox] Verification exception: {e}")
+                return False
 
-            result_data = {
-                "success": True,
-                "url": clean_catbox_url,
-                "fullUrl": catbox_url,
-                "desktopPath": desktop_dest,
-                "hasTts": has_tts,
-                "github": github_res
-            }
-            set_bigdata_progress(100, "done", "ประมวลผลและบันทึกเสร็จสมบูรณ์ 100%!", result=result_data)
-            print(f"[Bigdata Video] ✅ Catbox upload and processing success: {catbox_url}")
-            return result_data
+        for attempt in range(1, 4):
+            try:
+                cmd = [
+                    "curl.exe", "--max-time", "90", "-s",
+                    "-F", "reqtype=fileupload",
+                    "-F", f"userhash={catbox_userhash}",
+                    "-F", f"fileToUpload=@{target_video}",
+                    "https://catbox.moe/user/api.php"
+                ]
+                proc = subprocess.run(cmd, capture_output=True, text=True, timeout=100, startupinfo=hide_startupinfo, creationflags=creation_flags)
+                raw_res = proc.stdout.strip()
+                if "catbox.moe" in raw_res:
+                    if verify_catbox_upload(raw_res):
+                        catbox_url = raw_res
+                        print(f"[Bigdata Video] ☁️ Uploaded and verified Catbox: {catbox_url}")
+                        break
+                    else:
+                        print(f"[Bigdata Video] Catbox gave URL {raw_res} but verification failed (corrupt/empty 0-byte file)")
+                else:
+                    print(f"[Bigdata Video] Catbox attempt {attempt} failed: {raw_res[:100]} | stderr: {proc.stderr[:100]}")
+                time.sleep(1)
+            except Exception as up_err:
+                print(f"[Bigdata Video] Catbox upload error attempt {attempt}: {up_err}")
+                time.sleep(1)
+
+        target_save_url = None
+        is_fallback_youtube = False
+
+        if catbox_url:
+            target_save_url = re.sub(r'^https?://', '', catbox_url).strip()
+            print(f"[Bigdata Video] 🎯 Primary System: Catbox video uploaded & verified: {target_save_url}")
         else:
-            raise RuntimeError(f"Catbox upload failed ({resp.status_code}): {raw_res[:200]}")
+            is_fallback_youtube = True
+            target_save_url = youtube_clean_url
+            print(f"[Bigdata Video] ⚠️ Catbox ขัดข้อง/ไฟล์ว่าง 0-byte → สลับใช้ระบบสอง บันทึก YouTube URL สำรอง: {target_save_url}")
+            show_tray_notification("Bigdata: ระบบสอง YouTube URL", f"Catbox ขัดข้อง → บันทึก YouTube URL สำรองลง GitHub เรียบร้อย 🐙")
+
+        # 8. Direct GitHub update (guaranteed to complete even if Gemini tab is closed!)
+        github_res = None
+        set_bigdata_progress(96, "github", "กำลังบันทึกลง GitHub (bigdata)...")
+        try:
+            github_res = update_github_reel(save_text, target_save_url, github_config)
+            print(f"[Bigdata Video] 🐙 GitHub updated successfully: {github_res}")
+        except Exception as ge:
+            print(f"[Bigdata Video] ⚠️ GitHub update error: {ge}")
+
+        result_data = {
+            "success": True,
+            "url": target_save_url,
+            "fullUrl": catbox_url if catbox_url else (f"https://www.youtube.com/watch?v={target_save_url}" if not target_save_url.startswith('http') else target_save_url),
+            "desktopPath": desktop_dest,
+            "hasTts": has_tts,
+            "isFallback": is_fallback_youtube,
+            "github": github_res
+        }
+        msg_done = "เสร็จสมบูรณ์! (ระบบสอง: YouTube URL)" if is_fallback_youtube else "ประมวลผลและบันทึกเสร็จสมบูรณ์ 100%!"
+        set_bigdata_progress(100, "done", msg_done, result=result_data)
+        print(f"[Bigdata Video] ✅ Processing success: {target_save_url}")
+        return result_data
 
     finally:
         try:
             shutil.rmtree(temp_dir, ignore_errors=True)
         except Exception:
             pass
+
+        # Cleanup cached video only if Gemini tab was closed AND no more tasks are waiting
+        try:
+            if v_id:
+                with video_lock:
+                    if v_id in cached_video_ref_counts:
+                        cached_video_ref_counts[v_id] -= 1
+                    ref_count = cached_video_ref_counts.get(v_id, 0)
+                    if v_id in pending_cleanup_videos and ref_count <= 0:
+                        c_file = os.path.join(VIDEO_CACHE_DIR, f"{v_id}.mp4")
+                        if os.path.exists(c_file):
+                            try:
+                                os.remove(c_file)
+                                print(f"[Bigdata Cache] 🧹 Deleted cached video {v_id} (Gemini tab was closed and all tasks completed)")
+                            except Exception as ce:
+                                print(f"[Bigdata Cache] Error removing {c_file}: {ce}")
+                        pending_cleanup_videos.discard(v_id)
+        except Exception as cle:
+            print(f"[Bigdata Cache] Refcount cleanup error: {cle}")
 # --- SERVER LOGIC ---
 class HubHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
@@ -1364,21 +1774,59 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                 text = data.get('text', '').strip()
                 copy_to_desktop = bool(data.get('copyToDesktop', False))
                 github_config = data.get('github')
+                final_id_string = data.get('finalIdString', '').strip()
 
                 if not video_url:
                     raise ValueError('Missing videoUrl')
 
+                v_id = extract_video_id(video_url)
+                if v_id:
+                    with video_lock:
+                        cached_video_ref_counts[v_id] = cached_video_ref_counts.get(v_id, 0) + 1
+                        pending_cleanup_videos.discard(v_id)
+
+                if github_config and isinstance(github_config, dict) and github_config.get('token'):
+                    cached_github_config.update(github_config)
+
                 # Queue task immediately for background processing
-                bigdata_task_queue.put((video_url, start_sec, end_sec, text, copy_to_desktop, github_config))
-                set_bigdata_progress(10, "queued", "คิวงานตัดต่อวิดีโอเรียบร้อย เริ่มทำงานพื้นหลัง...")
+                bigdata_task_queue.put((video_url, start_sec, end_sec, text, copy_to_desktop, github_config, final_id_string))
+                q_len = bigdata_task_queue.qsize()
+                set_bigdata_progress(10, "queued", f"คิวงานตัดต่อวิดีโอเรียบร้อย (คิวที่ {q_len}) เริ่มทำงานพื้นหลัง...")
 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
-                self.wfile.write(json.dumps({'success': True, 'status': 'started'}).encode('utf-8'))
+                self.wfile.write(json.dumps({'success': True, 'status': 'started', 'queue_size': q_len}).encode('utf-8'))
             except Exception as e:
                 print(f"[Watcher] /process-bigdata-video error: {e}")
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': False, 'error': str(e)}).encode('utf-8'))
+            return
+
+        if parsed_url.path == '/cleanup-bigdata-cache':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
+            try:
+                data = json.loads(post_data.decode('utf-8'))
+                clean_all = bool(data.get('cleanAll', False))
+                video_url = data.get('videoUrl', '')
+                video_id = data.get('videoId') or extract_video_id(video_url)
+                if clean_all:
+                    cleanup_video_cache(clean_all=True)
+                elif video_id:
+                    cleanup_video_cache(video_id=video_id)
+                else:
+                    cleanup_video_cache(clean_all=True)
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': True}).encode('utf-8'))
+            except Exception as e:
                 self.send_response(500)
                 self.send_header('Content-type', 'application/json')
                 self.send_header('Access-Control-Allow-Origin', '*')
@@ -1545,6 +1993,7 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
         if parsed_url.path == '/binance-square-post':
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
+            v_id = None
             try:
                 import sys
                 import importlib
@@ -1554,7 +2003,13 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                 import binance_square_bot
                 importlib.reload(binance_square_bot)
                 data = json.loads(post_data.decode('utf-8')) if post_data else {}
-                print(f"[Watcher] 🔶 Binance Square post request received: {data.get('videoUrl')}")
+                video_url = data.get('videoUrl', '')
+                v_id = extract_video_id(video_url)
+
+                if v_id:
+                    with video_lock:
+                        cached_video_ref_counts[v_id] = cached_video_ref_counts.get(v_id, 0) + 1
+                        pending_cleanup_videos.discard(v_id)
 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/x-ndjson')
@@ -1562,26 +2017,75 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_header('Cache-Control', 'no-cache')
                 self.end_headers()
 
-                def progress_cb(pct, stage):
+                def send_line(obj):
                     try:
-                        line = json.dumps({"type": "progress", "percent": pct, "stage": stage}) + "\n"
+                        line = json.dumps(obj) + "\n"
                         self.wfile.write(line.encode('utf-8'))
                         self.wfile.flush()
-                    except:
+                    except Exception:
                         pass
 
-                result = binance_square_bot.process_clip_and_post(data, progress_callback=progress_cb)
-                final_line = json.dumps({"type": "complete", "success": True, **result}) + "\n"
-                self.wfile.write(final_line.encode('utf-8'))
-                self.wfile.flush()
+                # Sequential FIFO Queue registration
+                global binance_queue_count
+                with binance_count_lock:
+                    binance_queue_count += 1
+                    current_q_pos = binance_queue_count
+
+                if current_q_pos > 1:
+                    wait_msg = f"รอคิวงานที่ {current_q_pos} (กำลังรอคิวก่อนหน้าเสร็จ)..."
+                    send_line({"type": "progress", "percent": 5, "stage": wait_msg})
+                    write_status_file(5, "queued", f"🔶 Binance Square: รอคิวที่ {current_q_pos}", task_type="binance", queue_size=binance_queue_count)
+                    update_tray_status(5, "queued", f"Binance Square คิวที่ {current_q_pos}")
+                    print(f"[Watcher] ⏳ Binance Square job queued at position {current_q_pos}")
+
+                # Sequential Execution: Only ONE video processing/downloading job runs across the entire system!
+                with video_pipeline_lock:
+                    with binance_count_lock:
+                        binance_queue_count = max(0, binance_queue_count - 1)
+                        remaining_q = binance_queue_count
+
+                    write_status_file(10, "starting", "🔶 เริ่มประมวลผลคลิป Binance Square...", task_type="binance", queue_size=remaining_q)
+
+                    def progress_cb(pct, stage):
+                        send_line({"type": "progress", "percent": pct, "stage": stage})
+                        write_status_file(pct, "working", f"🔶 Binance Square: {stage}", task_type="binance", queue_size=remaining_q)
+                        update_tray_status(pct, "rendering", f"Binance Square: {stage}")
+
+                    result = binance_square_bot.process_clip_and_post(data, progress_callback=progress_cb)
+                    write_status_file(100, "done", "🔶 โพสต์ Binance Square สำเร็จ 100%!", task_type="binance", queue_size=remaining_q)
+                    send_line({"type": "complete", "success": True, **result})
+                    show_tray_notification("Binance Square สำเร็จ!", "โพสต์คลิปขึ้น Binance Square เรียบร้อย 🔶")
             except Exception as e:
-                print(f"[Watcher] ❌ Binance Square error: {e}")
-                err_line = json.dumps({"type": "error", "success": False, "error": str(e)}) + "\n"
+                import traceback
+                tb = traceback.format_exc()
+                print(f"[Watcher] ❌ Binance Square error: {e}\n{tb}")
                 try:
-                    self.wfile.write(err_line.encode('utf-8'))
+                    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "binance_err.log"), "w", encoding="utf-8") as ef:
+                        ef.write(tb)
+                except:
+                    pass
+                err_line = {"type": "error", "success": False, "error": str(e)}
+                write_status_file(0, "error", f"❌ เกิดข้อผิดพลาด Binance Square: {str(e)[:60]}", task_type="binance")
+                try:
+                    self.wfile.write((json.dumps(err_line) + "\n").encode('utf-8'))
                     self.wfile.flush()
                 except:
                     pass
+            finally:
+                if v_id:
+                    with video_lock:
+                        if v_id in cached_video_ref_counts:
+                            cached_video_ref_counts[v_id] -= 1
+                        ref_count = cached_video_ref_counts.get(v_id, 0)
+                        if v_id in pending_cleanup_videos and ref_count <= 0:
+                            c_file = os.path.join(VIDEO_CACHE_DIR, f"{v_id}.mp4")
+                            if os.path.exists(c_file):
+                                try:
+                                    os.remove(c_file)
+                                    print(f"[Bigdata Cache] 🧹 Deleted cached video {v_id} (Binance Square finished and Gemini closed)")
+                                except Exception as ce:
+                                    pass
+                            pending_cleanup_videos.discard(v_id)
             return
 
         self.send_response(404)
@@ -1621,6 +2125,13 @@ if __name__ == "__main__":
     server_thread.start()
     print(f"[Server] Serving in Threaded mode at port {PORT}")
 
+    # Launch floating status and loading progress bar widget (same as Facebook_Bot)
+    write_status_file(0, 'idle', 'พร้อมทำงาน', task_type="idle")
+    ensure_watcher_gui_running()
+
+    # Clean up any leftover cache files from previous sessions immediately on startup
+    cleanup_video_cache(clean_all=True)
+
     # Used by the Chrome add-on.  Running without a tray is more reliable
     # when the process was launched from a hidden/background session.
     if '--headless' in sys.argv:
@@ -1641,12 +2152,6 @@ if __name__ == "__main__":
     from PIL import Image, ImageDraw
     import pystray
 
-    def create_image():
-        image = Image.new('RGB', (64, 64), color=(66, 133, 244))
-        draw = ImageDraw.Draw(image)
-        draw.text((10, 20), "AI", fill=(255, 255, 255))
-        return image
-
     def on_quit(icon, item):
         observer.stop()
         desktop_observer.stop()
@@ -1654,10 +2159,11 @@ if __name__ == "__main__":
         httpd.server_close()
         icon.stop()
 
-    icon = pystray.Icon("AI_Hub_Watcher", create_image(), f"AI Hub Central (Port {PORT})", menu=pystray.Menu(
+    tray_icon_instance = pystray.Icon("AI_Hub_Watcher", make_tray_icon(), f"AI Hub Central (Port {PORT})", menu=pystray.Menu(
         pystray.MenuItem("Quit", on_quit)
     ))
-    
+    icon = tray_icon_instance
+
     try:
         icon.run()
         # Some Windows sessions cannot keep a system-tray icon alive.  In that
