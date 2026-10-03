@@ -12,7 +12,7 @@ killed_count = 0
 for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
     try:
         cmdline = ' '.join(proc.info.get('cmdline') or [])
-        if 'auto_donate_watcher.py' in cmdline and proc.pid != os.getpid():
+        if ('auto_donate_watcher.py' in cmdline or 'watcher_gui.ps1' in cmdline) and proc.pid != os.getpid():
             print(f"[KILL] สั่งปิดโปรเซส PID {proc.pid} ({proc.info.get('name')})")
             proc.kill()
             killed_count += 1
