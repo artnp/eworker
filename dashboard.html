@@ -4021,6 +4021,7 @@
 
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.repeat) return; // Prevent key repeat while holding Enter
                 // Ignore if user is typing in another input element
                 if (document.activeElement && document.activeElement !== promptInput &&
                     (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.isContentEditable)) {
@@ -4187,9 +4188,16 @@
         }
 
         let isSubmittingHubData = false;
+        let lastSubmitHubTime = 0;
         async function submitHubData() {
+            const now = Date.now();
+            if (now - lastSubmitHubTime < 1200) {
+                console.log('[Dashboard] Submission throttled');
+                return;
+            }
             if (isSubmittingHubData) return;
             isSubmittingHubData = true;
+            lastSubmitHubTime = now;
             try {
                 if (currentStudioMode === 'faceswap') {
                     await submitFaceSwapHubData();
@@ -4268,13 +4276,10 @@
                     if (typeof trackInjectionStatuses === 'function') {
                         trackInjectionStatuses(modelsToSend, pastedImageDataUrls, finalPrompt, imagePaths);
                     }
-                    promptInput.value = '';
-                    promptInput.style.height = 'auto';
-                    previews.innerHTML = '';
-                    pastedFiles = [];
-                    selectedFilesList = [];
-                    updateSelectionIndicators();
-                    document.querySelectorAll('input[name="model"]').forEach(cb => cb.checked = false);
+
+                    // Keep prompt text selected and retain all images without wiping
+                    promptInput.focus();
+                    promptInput.select();
 
                     if (modelsToSend.includes('Gemini')) {
                         // Auto-rotate to the next Gemini Account
