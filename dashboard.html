@@ -2415,6 +2415,8 @@
             // Check selected models
             const selectedModels = Array.from(document.querySelectorAll('input[name="model"]:checked')).map(el => el.value);
             const modelsToSend = selectedModels.length ? selectedModels : ['Gemini'];
+            // Reset AI model checkboxes to default (unchecked) so they do not stay stuck
+            document.querySelectorAll('input[name="model"]').forEach(cb => cb.checked = false);
 
             let prompt = promptInput.value.trim() || DEFAULT_FACESWAP_PROMPT;
             if (!prompt.startsWith('[แก้ไขรูป]') && !prompt.startsWith('[สร้างภาพ')) {
@@ -4228,6 +4230,8 @@
 
                 const selectedModels = Array.from(document.querySelectorAll('input[name="model"]:checked')).map(el => el.value);
                 const modelsToSend = selectedModels.length ? selectedModels : ['Gemini'];
+                // Reset AI model checkboxes to default (unchecked) so they do not stay stuck
+                document.querySelectorAll('input[name="model"]').forEach(cb => cb.checked = false);
 
                 // Prepare images
                 const imagePaths = [...selectedFilesList];
