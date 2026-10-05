@@ -394,14 +394,9 @@ def make_tray_icon(percent=None, q_len=0, phase='idle'):
     return img
 
 def show_tray_notification(title, message):
-    global tray_icon_instance
-    if not tray_icon_instance:
-        return
-    try:
-        tray_icon_instance.notify(str(message)[:250], str(title)[:60])
-        print(f"[Tray Banner] 🔔 {title}: {message}")
-    except Exception as e:
-        print(f"[Tray Notify Error]: {e}")
+    # ปิดการแจ้งเตือน Windows Notification Popup ตามที่ผู้ใช้ต้องการเพื่อไม่ให้เด้งรบกวนหน้าจอ
+    print(f"[Tray Banner - Silenced] 🔔 {title}: {message}")
+    return
 
 last_notified_phase = None
 
@@ -1312,26 +1307,54 @@ def process_bigdata_video_task(video_url, start_sec, end_sec, text, copy_to_desk
             if not test_url or "catbox.moe" not in test_url:
                 return False
             try:
-                check_cmd = ["curl.exe", "-sI", "--max-time", "15", "-L", test_url]
-                c_res = subprocess.run(check_cmd, capture_output=True, text=True, timeout=20, startupinfo=hide_startupinfo, creationflags=creation_flags)
-                header_out = c_res.stdout
-                status_m = re.search(r'HTTP/[\d\.]+\s+(\d+)', header_out)
-                if status_m and int(status_m.group(1)) not in (200, 301, 302):
-                    print(f"[Bigdata Catbox] ⚠️ HTTP status error: {status_m.group(1)}")
+                # Use GET with byte-range 0-2048 to probe file headers and data.
+                # Note: Catbox Nginx returns "Content-Length: 0" on HEAD requests (-sI),
+                # so we must use a GET range request (-r 0-2048) to accurately verify.
+                probe_cmd = ["curl.exe", "-s", "-i", "--max-time", "15", "-r", "0-2048", "-L", test_url]
+                c_res = subprocess.run(probe_cmd, capture_output=True, timeout=20, startupinfo=hide_startupinfo, creationflags=creation_flags)
+                raw_out = c_res.stdout
+                if not raw_out:
+                    print(f"[Bigdata Catbox] ⚠️ Empty response from curl probe")
                     return False
-                cl_m = re.search(r'Content-Length:\s*(\d+)', header_out, re.IGNORECASE)
-                if cl_m:
-                    clen = int(cl_m.group(1))
-                    if clen < 10000:
-                        print(f"[Bigdata Catbox] ⚠️ Catbox returned empty/corrupt 0-byte file (Content-Length: {clen} bytes)")
+
+                header_sep = b"\r\n\r\n" if b"\r\n\r\n" in raw_out else (b"\n\n" if b"\n\n" in raw_out else None)
+                if header_sep:
+                    parts = raw_out.split(header_sep)
+                    header_out = parts[-2].decode("utf-8", errors="ignore")
+                    body_bytes = parts[-1]
+                else:
+                    header_out = raw_out.decode("utf-8", errors="ignore")
+                    body_bytes = b""
+
+                # Check HTTP status code
+                status_matches = re.findall(r'HTTP/[\d\.]+\s+(\d+)', header_out)
+                last_status = int(status_matches[-1]) if status_matches else 0
+                if last_status not in (200, 206):
+                    print(f"[Bigdata Catbox] ⚠️ HTTP status error: {last_status}")
+                    return False
+
+                # Catbox returns "Content-Range: bytes 0-2048/<total_bytes>" on 206 responses
+                cr_m = re.search(r'Content-Range:\s*bytes\s+\d+-\d+/(\d+)', header_out, re.IGNORECASE)
+                if cr_m:
+                    total_bytes = int(cr_m.group(1))
+                    if total_bytes < 1000:
+                        print(f"[Bigdata Catbox] ⚠️ Catbox file suspiciously small: {total_bytes} bytes")
                         return False
-                    print(f"[Bigdata Catbox] ✅ Verified Catbox video size: {clen} bytes")
+                    print(f"[Bigdata Catbox] ✅ Verified Catbox video size: {total_bytes} bytes (HTTP {last_status})")
                     return True
-                # If Content-Length header is missing, attempt 1KB probe download
-                probe_cmd = ["curl.exe", "-s", "--max-time", "10", "-r", "0-1024", test_url]
-                probe_res = subprocess.run(probe_cmd, capture_output=True, timeout=15, startupinfo=hide_startupinfo, creationflags=creation_flags)
-                if len(probe_res.stdout) > 500:
+
+                # If server returned 200/206 with actual payload data (> 500 bytes for video)
+                if len(body_bytes) > 500:
+                    print(f"[Bigdata Catbox] ✅ Verified Catbox body payload: {len(body_bytes)} bytes received (HTTP {last_status})")
                     return True
+
+                # If Content-Length header is provided in GET response
+                cl_m = re.search(r'Content-Length:\s*(\d+)', header_out, re.IGNORECASE)
+                if cl_m and int(cl_m.group(1)) > 1000:
+                    print(f"[Bigdata Catbox] ✅ Verified Catbox Content-Length: {cl_m.group(1)} bytes")
+                    return True
+
+                print(f"[Bigdata Catbox] ⚠️ Catbox verification failed (received only {len(body_bytes)} bytes, status {last_status})")
                 return False
             except Exception as e:
                 print(f"[Bigdata Catbox] Verification exception: {e}")
@@ -2054,7 +2077,7 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                     result = binance_square_bot.process_clip_and_post(data, progress_callback=progress_cb)
                     write_status_file(100, "done", "🔶 โพสต์ Binance Square สำเร็จ 100%!", task_type="binance", queue_size=remaining_q)
                     send_line({"type": "complete", "success": True, **result})
-                    show_tray_notification("Binance Square สำเร็จ!", "โพสต์คลิปขึ้น Binance Square เรียบร้อย 🔶")
+                    # show_tray_notification("Binance Square สำเร็จ!", "โพสต์คลิปขึ้น Binance Square เรียบร้อย 🔶")
             except Exception as e:
                 import traceback
                 tb = traceback.format_exc()
