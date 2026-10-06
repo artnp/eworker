@@ -20,17 +20,31 @@ if ($status -ne [Windows.UI.Notifications.Management.UserNotificationListenerAcc
     exit 1
 }
 
+$logPath = Join-Path $PSScriptRoot "kbank_listener.log"
+function Log-Msg($msg) {
+    $time = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    Add-Content -Path $logPath -Value "[$time] $msg" -Encoding UTF8 -ErrorAction SilentlyContinue
+}
+
+Log-Msg "=== KBank Notification Listener Started ==="
 Write-Output "READY: Listening for KBank notifications..."
 
 $seenIds = New-Object System.Collections.Generic.HashSet[uint32]
 
-# Initial fetch to populate seenIds so past notifications are ignored
+# Initial fetch: ละเว้นเฉพาะแจ้งเตือนที่เก่าเกิน 3 นาที แต่ถ้าเป็นแจ้งเตือนที่เพิ่งเข้ามาใหม่ให้ตรวจจับทันที
+$now = [DateTimeOffset]::Now
 try {
     $asyncOp = $listener.GetNotificationsAsync([Windows.UI.Notifications.NotificationKinds]::Toast)
     $listType = [System.Collections.Generic.IReadOnlyList[Windows.UI.Notifications.UserNotification]]
     $initialNotifications = Await-AsyncOp $asyncOp $listType
     foreach ($n in $initialNotifications) {
-        $seenIds.Add($n.Id) | Out-Null
+        $ageSeconds = ($now - $n.CreationTime).TotalSeconds
+        if ($ageSeconds -gt 180) {
+            # เก่าเกิน 3 นาทีแล้ว ให้ถือว่าเห็นแล้ว
+            $seenIds.Add($n.Id) | Out-Null
+        } else {
+            Log-Msg "Recent notification found on startup (Age: $([math]::Round($ageSeconds))s, ID: $($n.Id))"
+        }
     }
 } catch { }
 
@@ -56,12 +70,18 @@ function Check-NotificationItem($n) {
     } catch { }
 
     $fullText = $textElements -join " "
-    
+    if (-not $fullText) { return }
+
+    # บันทึก log เฉพาะถ้าเป็นแจ้งเตือนจาก LINE หรือธนาคาร
+    if ($app -like "*LINE*" -or $fullText -like "*KBank*" -or $fullText -like "*กสิกร*" -or $fullText -like "*เงินเข้า*") {
+        Log-Msg "Candidate Toast: App='$app', ID=$id, Text='$fullText'"
+    }
+
     # เงื่อนไขคัดกรอง 3 ชั้น (Strict Triple-Check):
-    # 1. ผู้ส่งต้องเป็น KBank Live หรือ K PLUS เท่านั้น (ตัดแชทเพื่อนและแชทกลุ่มทิ้ง 100%)
+    # 1. ผู้ส่งต้องเป็น KBank Live หรือ K PLUS หรือมีคำว่า KBank
     $isKBank = ($fullText -like "*KBank Live*" -or $fullText -like "*K PLUS*" -or ($textElements.Count -gt 0 -and $textElements[0] -like "*KBank*") -or ($app -like "*LINE*" -and $fullText -like "*KBank*"))
-    # 2. ต้องมีคำว่า รายการเงินเข้า หรือ เงินเข้า หรือ แจ้งเตือนเงินเข้า
-    $isDeposit = ($fullText -like "*รายการเงินเข้า*" -or $fullText -like "*เงินเข้า*" -or $fullText -like "*แจ้งเตือนเงินเข้า*")
+    # 2. ต้องมีคำว่า รายการเงินเข้า หรือ เงินเข้า หรือ แจ้งเตือนเงินเข้า หรือ แจ้งเตือนรายการเงินเข้า
+    $isDeposit = ($fullText -like "*รายการเงินเข้า*" -or $fullText -like "*เงินเข้า*" -or $fullText -like "*แจ้งเตือนเงินเข้า*" -or $fullText -like "*แจ้งเตือนรายการเงินเข้า*")
 
     if ($isKBank -and $isDeposit) {
         # 3. ดึงยอดเงินออกมาถ้ามี เช่น "จำนวนเงิน: 60.00 บาท" (ถ้าเป็น LINE Flex Message จะไม่มีตัวเลข ให้ส่ง amount เป็น null)
@@ -85,6 +105,7 @@ function Check-NotificationItem($n) {
         }
         $json = $obj | ConvertTo-Json -Compress
         [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+        Log-Msg ">>> MATCH SUCCESS! Emitted EVENT for amount: $amount, Text='$fullText'"
         Write-Output "EVENT:$json"
     }
 }
