@@ -2334,6 +2334,21 @@ def start_payment_requests_watcher():
                                     open_admin_payment_in_chrome()
                             elif isinstance(v, dict) and v.get('status') != 'pending':
                                 _opened_payment_keys.discard(k)
+                        
+                        # ระบบล้างขยะอัตโนมัติ: ลบเฉพาะรายการที่เก่าเกิน 24 ชั่วโมง (86,400,000 ms)
+                        now_ms = int(time.time() * 1000)
+                        for k, v in list(data.items()):
+                            if isinstance(v, dict):
+                                record_time = v.get('approvedAt') or v.get('createdAt') or 0
+                                if record_time > 0 and (now_ms - record_time > 86400000):
+                                    try:
+                                        del_req = urllib.request.Request(
+                                            f"https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests/{k}.json",
+                                            method='DELETE'
+                                        )
+                                        urllib.request.urlopen(del_req, timeout=3)
+                                    except Exception:
+                                        pass
             except Exception:
                 pass
             time.sleep(2)
