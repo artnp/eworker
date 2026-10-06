@@ -801,6 +801,22 @@
             renderGrid(pendingList);
         }
 
+        function closeCurrentTab() {
+            try {
+                window.open('', '_self', '');
+                window.close();
+            } catch (e) {}
+            try {
+                window.close();
+            } catch (e) {}
+            try {
+                window.top.close();
+            } catch (e) {}
+            try {
+                window.self.close();
+            } catch (e) {}
+        }
+
         function renderGrid(list) {
             const grid = document.getElementById('requests-grid');
 
@@ -812,9 +828,15 @@
                     <div class="empty-state">
                         <div class="empty-icon">✨</div>
                         <h3>ไม่มีรายการรอดำเนินการในขณะนี้</h3>
-                        <p>เมื่อลูกค้ากดปุ่ม "ฉันโอนเงินเรียบร้อยแล้ว" รายการจะปรากฏที่นี่ทันที</p>
+                        <p style="color: #38bdf8; font-weight: 600; margin-top: 10px;">🚀 กำลังปิดหน้าต่างอัตโนมัติ...</p>
+                        <button onclick="closeCurrentTab()" class="btn-action" style="margin-top: 14px; background: #ef4444; color: #fff; padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer; font-size: 1rem; font-weight: 600;">
+                            ✖️ ปิดหน้าต่างนี้ทันที
+                        </button>
                     </div>
                 `;
+                // เมื่อไม่มีรายการรอดำเนินการในขณะนี้ ให้ทำการปิดหน้าเว็บอัตโนมัติทันที
+                closeCurrentTab();
+                setTimeout(closeCurrentTab, 200);
                 return;
             }
 
