@@ -723,6 +723,19 @@
                     const data = await res.json();
                     paymentRequests = data || {};
                     processPaymentData();
+
+                    // ระบบล้างขยะอัตโนมัติ: ลบเฉพาะรายการที่เก่าเกิน 24 ชั่วโมง (86,400,000 ms)
+                    const now = Date.now();
+                    Object.keys(paymentRequests).forEach(k => {
+                        const item = paymentRequests[k];
+                        if (item) {
+                            const t = item.approvedAt || item.createdAt || 0;
+                            if (t > 0 && (now - t > 86400000)) {
+                                fetch(`${FIREBASE_ENDPOINT}/${k}.json`, { method: 'DELETE' }).catch(() => {});
+                            }
+                        }
+                    });
+
                     if (isManual) showToast('🔄 อัปเดตข้อมูลล่าสุดเรียบร้อย', 'success');
                 }
             } catch (err) {
