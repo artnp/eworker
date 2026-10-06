@@ -20,7 +20,7 @@ $fileTypeParam = "file"
 if ($isImage) { $fileTypeParam = "img" }
 elseif ($isPdf) { $fileTypeParam = "pdf" }
 
-# 2. ขอราคางาน (ข้ามหากเป็น -noPrice)
+# 2. ขอราคางาน (ข้ามหากเป็น -noPrice) บังคับให้กรอกเฉพาะตัวเลขเท่านั้น
 $price = "0"
 if (-not $noPrice) {
     Write-Host "💰 ยอดเรียกเก็บ (บาท) [รอ 6 วิ หรือพิมพ์ราคา]: " -NoNewline
@@ -28,20 +28,62 @@ if (-not $noPrice) {
     $timeout = 6
     $inputStarted = $false
 
-    while (((Get-Date) - $startTime).TotalSeconds -lt $timeout) {
-        if ([Console]::KeyAvailable) {
-            $price = Read-Host
-            $inputStarted = $true
-            break
+    try {
+        # รอตรวจจับการกดปุ่มภายใน 6 วินาที
+        while (((Get-Date) - $startTime).TotalSeconds -lt $timeout) {
+            if ([Console]::KeyAvailable) {
+                $inputStarted = $true
+                break
+            }
+            Start-Sleep -Milliseconds 100
         }
-        Start-Sleep -Milliseconds 100
-    }
 
-    if (-not $inputStarted) {
-        Write-Host "0 (อัตโนมัติ)"
+        if (-not $inputStarted) {
+            Write-Host "0 (อัตโนมัติ)"
+            $price = "0"
+        }
+        else {
+            # บังคับรับเฉพาะตัวเลข 0-9 และจุดทศนิยมเท่านั้น
+            $buffer = ""
+            while ($true) {
+                $keyInfo = [Console]::ReadKey($true)
+                if ($keyInfo.Key -eq [ConsoleKey]::Enter) {
+                    Write-Host ""
+                    break
+                }
+                elseif ($keyInfo.Key -eq [ConsoleKey]::Backspace) {
+                    if ($buffer.Length -gt 0) {
+                        $buffer = $buffer.Substring(0, $buffer.Length - 1)
+                        Write-Host -NoNewline "`b `b"
+                    }
+                }
+                elseif ($keyInfo.KeyChar -match '^[0-9]$') {
+                    $buffer += $keyInfo.KeyChar
+                    Write-Host -NoNewline $keyInfo.KeyChar
+                }
+                elseif ($keyInfo.KeyChar -eq '.' -and -not $buffer.Contains('.')) {
+                    if ($buffer.Length -eq 0) {
+                        $buffer = "0."
+                        Write-Host -NoNewline "0."
+                    } else {
+                        $buffer += "."
+                        Write-Host -NoNewline "."
+                    }
+                }
+                # ตัวอักษรและสัญลักษณ์อื่นๆ จะถูกตัดทิ้ง ไม่แสดงบนหน้าจอ
+            }
+
+            $price = ($buffer -replace '[^\d.]', '')
+            if ([string]::IsNullOrWhiteSpace($price)) {
+                $price = "0"
+            }
+        }
     }
-    elseif ([string]::IsNullOrWhiteSpace($price)) {
-        $price = "0"
+    catch {
+        # กรณีรันในสภาพแวดล้อมที่ไม่รองรับ Console Key (Fallback)
+        $raw = Read-Host
+        $price = ($raw -replace '[^\d.]', '')
+        if ([string]::IsNullOrWhiteSpace($price)) { $price = "0" }
     }
 }
 
