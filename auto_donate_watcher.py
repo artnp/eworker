@@ -2160,6 +2160,22 @@ def open_admin_payment_in_chrome():
     except Exception:
         pass
 
+_last_deposit_event = {
+    "time": 0,
+    "amount": None,
+    "consumed": True
+}
+
+def log_kbank(msg):
+    log_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "kbank_autopay.log")
+    t_str = time.strftime('%Y-%m-%d %H:%M:%S')
+    try:
+        with open(log_file, "a", encoding="utf-8") as f:
+            f.write(f"[{t_str}] {msg}\n")
+    except Exception:
+        pass
+    print(msg)
+
 def handle_kbank_deposit_received(amount=None):
     """
     เมื่อได้รับแจ้งเตือนเงินเข้าจาก KBank Live (LINE PC หรือ K PLUS):
@@ -2167,8 +2183,13 @@ def handle_kbank_deposit_received(amount=None):
     - แบบไม่ระบุยอดเงิน (LINE "แจ้งเตือนเงินเข้า" - Option B):
         - ถ้ามีคิวรอ (pending) แค่ 1 รายการ -> อนุมัติคิวนั้นทันที!
         - ถ้ามีคิวรอมากกว่า 1 รายการ -> ป้องกันความผิดพลาด โดยเปิด admin-payment.html ให้แอดมินตรวจและกดเอง
-        - ถ้าไม่มีคิวรอเลย -> ข้าม (อาจเป็นเงินส่วนตัวโอนเข้า)
+        - ถ้ายังไม่มีคิวรอ (ลูกค้ายังไม่ทันกดปุ่ม) -> บันทึกเงินเข้าจำไว้ 3 นาที รอให้ลูกค้ากดปุ่มตามมา
     """
+    global _last_deposit_event
+    _last_deposit_event["time"] = time.time()
+    _last_deposit_event["amount"] = amount
+    _last_deposit_event["consumed"] = False
+
     firebase_url = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests.json"
     try:
         req = urllib.request.Request(f"{firebase_url}?t={int(time.time()*1000)}", headers={"User-Agent": "PaymentWatcher/1.0"})
@@ -2176,10 +2197,7 @@ def handle_kbank_deposit_received(amount=None):
             data = json.loads(res.read().decode('utf-8'))
         
         if not data or not isinstance(data, dict):
-            if amount is not None:
-                print(f"[KBank AutoPay] ℹ️ Received deposit of {amount:.2f} THB, but no payment requests found in Firebase.")
-            else:
-                print(f"[KBank AutoPay] ℹ️ Received 'แจ้งเตือนเงินเข้า', but no payment requests found in Firebase.")
+            log_kbank(f"[KBank AutoPay] ⏳ Bank deposit received at {time.strftime('%H:%M:%S')}, but customer hasn't clicked 'ฉันโอนเงินแล้ว' yet. Holding in memory for 3 minutes...")
             return
 
         # กรองรายการที่สถานะเป็น pending ทั้งหมด
@@ -2211,9 +2229,9 @@ def handle_kbank_deposit_received(amount=None):
                     matched_price = float(pending_items[0][1].get('price', 0))
                 except Exception:
                     matched_price = 0.0
-                print(f"[KBank AutoPay] 🎯 Single pending queue detected ({matched_key}, {matched_price:.2f} THB). Auto-approving upon LINE 'แจ้งเตือนเงินเข้า' alert!")
+                log_kbank(f"[KBank AutoPay] 🎯 Single pending queue detected ({matched_key}, {matched_price:.2f} THB). Auto-approving upon LINE 'แจ้งเตือนเงินเข้า' alert!")
             elif len(pending_items) > 1:
-                print(f"[KBank AutoPay] ⚠️ Alert 'แจ้งเตือนเงินเข้า' received but {len(pending_items)} orders are pending simultaneously. Opening admin dashboard for manual safety confirmation.")
+                log_kbank(f"[KBank AutoPay] ⚠️ Alert 'แจ้งเตือนเงินเข้า' received but {len(pending_items)} orders are pending simultaneously. Opening admin dashboard for manual safety confirmation.")
                 open_admin_payment_in_chrome()
                 try:
                     import winsound
@@ -2222,11 +2240,12 @@ def handle_kbank_deposit_received(amount=None):
                     pass
                 return
             else:
-                print(f"[KBank AutoPay] ℹ️ Alert 'แจ้งเตือนเงินเข้า' received, but 0 pending orders found in Firebase.")
+                log_kbank(f"[KBank AutoPay] ⏳ Bank deposit received at {time.strftime('%H:%M:%S')}, but customer hasn't clicked 'ฉันโอนเงินแล้ว' yet. Holding in memory for 3 minutes...")
                 return
 
         if matched_key:
-            print(f"[KBank AutoPay] 🎯 MATCH FOUND! Order {matched_key} (Amount: {matched_price:.2f} THB). Approving now...")
+            _last_deposit_event["consumed"] = True
+            log_kbank(f"[KBank AutoPay] 🎯 MATCH FOUND! Order {matched_key} (Amount: {matched_price:.2f} THB). Approving now...")
             
             # 1. ส่ง PATCH ปรับสถานะเป็น approved ทันที
             final_paid_amount = amount if (amount is not None and amount > 0) else matched_price
@@ -2242,7 +2261,7 @@ def handle_kbank_deposit_received(amount=None):
             with urllib.request.urlopen(patch_req, timeout=5) as patch_res:
                 pass
             
-            print(f"[KBank AutoPay] 🚀 AUTO-APPROVED successfully for Order {matched_key}! Client download is now unlocked.")
+            log_kbank(f"[KBank AutoPay] 🚀 AUTO-APPROVED successfully for Order {matched_key}! Client download is now unlocked.")
             
             # ส่งเสียงแจ้งเตือนสั้นๆ บน Windows
             try:
@@ -2254,17 +2273,17 @@ def handle_kbank_deposit_received(amount=None):
             # บันทึกสถานะ approved ค้างไว้ใน Firebase เพื่อให้ลูกค้าสามารถเปิดลิงก์ดาวน์โหลดได้ตลอดอายุลิงก์
         else:
             if amount is not None:
-                print(f"[KBank AutoPay] ℹ️ Received deposit of {amount:.2f} THB, but no matching pending request found.")
+                log_kbank(f"[KBank AutoPay] ℹ️ Received deposit of {amount:.2f} THB, but no matching pending request found.")
 
     except Exception as e:
-        print(f"[KBank AutoPay] ⚠️ Error handling deposit: {e}")
+        log_kbank(f"[KBank AutoPay] ⚠️ Error handling deposit: {e}")
 
 def start_kbank_notification_listener():
     """เฝ้าตรวจจับ Notification จาก KBank Live (LINE PC / K PLUS) แบบ Realtime ตลอดเวลา"""
     def listener_thread():
         ps_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "kbank_listener.ps1")
         if not os.path.exists(ps_script):
-            print(f"[KBank AutoPay] ⚠️ kbank_listener.ps1 not found at {ps_script}")
+            log_kbank(f"[KBank AutoPay] ⚠️ kbank_listener.ps1 not found at {ps_script}")
             return
 
         cmd = ["powershell", "-WindowStyle", "Hidden", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", ps_script]
@@ -2286,7 +2305,7 @@ def start_kbank_notification_listener():
                     startupinfo=startupinfo
                 )
                 
-                print("[KBank AutoPay] 🛡️ KBank Live Notification Listener started successfully.")
+                log_kbank("[KBank AutoPay] 🛡️ KBank Live Notification Listener started successfully.")
                 
                 for line in iter(proc.stdout.readline, ''):
                     line = line.strip()
@@ -2297,16 +2316,16 @@ def start_kbank_notification_listener():
                                 amt_raw = data.get('amount')
                                 amt = float(amt_raw) if amt_raw is not None else None
                                 if amt is not None:
-                                    print(f"[KBank AutoPay] 💸 Bank deposit alert detected: {amt:.2f} THB from {data.get('app', 'LINE')}")
+                                    log_kbank(f"[KBank AutoPay] 💸 Bank deposit alert detected: {amt:.2f} THB from {data.get('app', 'LINE')}")
                                 else:
-                                    print(f"[KBank AutoPay] 🔔 Bank deposit alert detected (No amount in notification) from {data.get('app', 'LINE')}")
+                                    log_kbank(f"[KBank AutoPay] 🔔 Bank deposit alert detected (No amount in notification) from {data.get('app', 'LINE')}")
                                 threading.Thread(target=handle_kbank_deposit_received, args=(amt,), daemon=True).start()
                         except Exception as err:
-                            print(f"[KBank AutoPay] Error parsing notification event: {err}")
+                            log_kbank(f"[KBank AutoPay] Error parsing notification event: {err}")
                 
                 proc.wait()
             except Exception as e:
-                print(f"[KBank AutoPay] Listener process error: {e}")
+                log_kbank(f"[KBank AutoPay] Listener process error: {e}")
             time.sleep(3)
 
     t = threading.Thread(target=listener_thread, daemon=True)
@@ -2315,9 +2334,9 @@ def start_kbank_notification_listener():
 _opened_payment_keys = set()
 
 def start_payment_requests_watcher():
-    """Monitor Firebase RTDB for pending customer payment triggers and auto-open Chrome"""
+    """Monitor Firebase RTDB for pending customer payment triggers and auto-open Chrome or auto-approve if deposit already arrived"""
     def watcher_loop():
-        global _opened_payment_keys
+        global _opened_payment_keys, _last_deposit_event
         firebase_url = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests.json"
         
         while True:
@@ -2325,30 +2344,55 @@ def start_payment_requests_watcher():
                 req = urllib.request.Request(f"{firebase_url}?t={int(time.time()*1000)}", headers={"User-Agent": "PaymentWatcher/1.0"})
                 with urllib.request.urlopen(req, timeout=5) as res:
                     data = json.loads(res.read().decode('utf-8'))
-                    if data and isinstance(data, dict):
-                        for k, v in data.items():
-                            if isinstance(v, dict) and v.get('status') == 'pending':
-                                if k not in _opened_payment_keys:
-                                    _opened_payment_keys.add(k)
-                                    print(f"[Payment Watcher] 🔔 Customer confirmed payment: {k} (Amount: {v.get('price')} THB). Auto-opening Chrome...")
-                                    open_admin_payment_in_chrome()
-                            elif isinstance(v, dict) and v.get('status') != 'pending':
-                                _opened_payment_keys.discard(k)
-                        
-                        # ระบบล้างขยะอัตโนมัติ: ลบเฉพาะรายการที่เก่าเกิน 24 ชั่วโมง (86,400,000 ms)
-                        now_ms = int(time.time() * 1000)
-                        for k, v in list(data.items()):
-                            if isinstance(v, dict):
-                                record_time = v.get('approvedAt') or v.get('createdAt') or 0
-                                if record_time > 0 and (now_ms - record_time > 86400000):
-                                    try:
-                                        del_req = urllib.request.Request(
-                                            f"https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests/{k}.json",
-                                            method='DELETE'
-                                        )
-                                        urllib.request.urlopen(del_req, timeout=3)
-                                    except Exception:
-                                        pass
+                
+                if data and isinstance(data, dict):
+                    pending_items = [(k, v) for k, v in data.items() if isinstance(v, dict) and v.get('status') == 'pending']
+                    
+                    # 1. ตรวจจับเงินเข้าที่มาก่อนหน้า (เงินเข้าก่อน -> ลูกค้ากดปุ่มตามมา):
+                    if len(pending_items) == 1 and not _last_deposit_event.get("consumed", True):
+                        deposit_age = time.time() - _last_deposit_event.get("time", 0)
+                        if deposit_age < 180: # ภายใน 3 นาที
+                            k, v = pending_items[0]
+                            price_val = v.get('price', 0)
+                            log_kbank(f"[Payment Watcher] 🎯 Bank deposit arrived {int(deposit_age)}s BEFORE customer clicked! Auto-approving Order {k} ({price_val} THB) immediately!")
+                            _last_deposit_event["consumed"] = True
+                            threading.Thread(target=handle_kbank_deposit_received, args=(_last_deposit_event.get("amount"),), daemon=True).start()
+
+                    # 2. กรณีที่ไม่มีเงินเข้ามาก่อนหน้า หากลูกค้ารอเกิน 5 วินาที จึงค่อยเปิดหน้าจอแอดมิน
+                    for k, v in pending_items:
+                        if k not in _opened_payment_keys:
+                            _opened_payment_keys.add(k)
+                            def delayed_open(order_key):
+                                time.sleep(5)
+                                try:
+                                    chk_req = urllib.request.Request(f"https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests/{order_key}.json")
+                                    with urllib.request.urlopen(chk_req, timeout=3) as chk_res:
+                                        d = json.loads(chk_res.read().decode('utf-8'))
+                                        if d and d.get('status') == 'pending':
+                                            log_kbank(f"[Payment Watcher] 🔔 Customer waiting for approval: {order_key}. Opening Admin Chrome...")
+                                            open_admin_payment_in_chrome()
+                                except Exception:
+                                    pass
+                            threading.Thread(target=delayed_open, args=(k,), daemon=True).start()
+
+                    for k, v in data.items():
+                        if isinstance(v, dict) and v.get('status') != 'pending':
+                            _opened_payment_keys.discard(k)
+                    
+                    # ระบบล้างขยะอัตโนมัติ: ลบเฉพาะรายการที่เก่าเกิน 24 ชั่วโมง (86,400,000 ms)
+                    now_ms = int(time.time() * 1000)
+                    for k, v in list(data.items()):
+                        if isinstance(v, dict):
+                            record_time = v.get('approvedAt') or v.get('createdAt') or 0
+                            if record_time > 0 and (now_ms - record_time > 86400000):
+                                try:
+                                    del_req = urllib.request.Request(
+                                        f"https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests/{k}.json",
+                                        method='DELETE'
+                                    )
+                                    urllib.request.urlopen(del_req, timeout=3)
+                                except Exception:
+                                    pass
             except Exception:
                 pass
             time.sleep(2)
