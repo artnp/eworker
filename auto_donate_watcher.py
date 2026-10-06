@@ -2160,6 +2160,158 @@ def open_admin_payment_in_chrome():
     except Exception:
         pass
 
+def handle_kbank_deposit_received(amount=None):
+    """
+    เมื่อได้รับแจ้งเตือนเงินเข้าจาก KBank Live (LINE PC หรือ K PLUS):
+    - แบบระบุยอดเงิน (amount is not None): ตรวจสอบยอดตรงกับ pending request -> อนุมัติทันที
+    - แบบไม่ระบุยอดเงิน (LINE "แจ้งเตือนเงินเข้า" - Option B):
+        - ถ้ามีคิวรอ (pending) แค่ 1 รายการ -> อนุมัติคิวนั้นทันที!
+        - ถ้ามีคิวรอมากกว่า 1 รายการ -> ป้องกันความผิดพลาด โดยเปิด admin-payment.html ให้แอดมินตรวจและกดเอง
+        - ถ้าไม่มีคิวรอเลย -> ข้าม (อาจเป็นเงินส่วนตัวโอนเข้า)
+    """
+    firebase_url = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests.json"
+    try:
+        req = urllib.request.Request(f"{firebase_url}?t={int(time.time()*1000)}", headers={"User-Agent": "PaymentWatcher/1.0"})
+        with urllib.request.urlopen(req, timeout=5) as res:
+            data = json.loads(res.read().decode('utf-8'))
+        
+        if not data or not isinstance(data, dict):
+            if amount is not None:
+                print(f"[KBank AutoPay] ℹ️ Received deposit of {amount:.2f} THB, but no payment requests found in Firebase.")
+            else:
+                print(f"[KBank AutoPay] ℹ️ Received 'แจ้งเตือนเงินเข้า', but no payment requests found in Firebase.")
+            return
+
+        # กรองรายการที่สถานะเป็น pending ทั้งหมด
+        pending_items = []
+        for k, v in data.items():
+            if isinstance(v, dict) and v.get('status') == 'pending':
+                pending_items.append((k, v))
+
+        matched_key = None
+        matched_price = 0.0
+
+        if amount is not None and amount > 0:
+            # กรณีที่ 1: รู้ยอดเงินชัดเจน (เช่น K PLUS / Phone Link) -> ค้นหาคำขอที่ยอดตรงกัน
+            for k, v in pending_items:
+                try:
+                    req_price = float(v.get('price', 0))
+                    if abs(req_price - amount) < 0.05:
+                        matched_key = k
+                        matched_price = req_price
+                        break
+                except Exception:
+                    continue
+        else:
+            # กรณีที่ 2 (Option B): LINE ส่งมาแค่ "แจ้งเตือนเงินเข้า" ไม่มียอดเงิน
+            if len(pending_items) == 1:
+                # มีคิวเดียวที่กำลังรออยู่ อนุมัติให้อัตโนมัติทันที
+                matched_key = pending_items[0][0]
+                try:
+                    matched_price = float(pending_items[0][1].get('price', 0))
+                except Exception:
+                    matched_price = 0.0
+                print(f"[KBank AutoPay] 🎯 Single pending queue detected ({matched_key}, {matched_price:.2f} THB). Auto-approving upon LINE 'แจ้งเตือนเงินเข้า' alert!")
+            elif len(pending_items) > 1:
+                print(f"[KBank AutoPay] ⚠️ Alert 'แจ้งเตือนเงินเข้า' received but {len(pending_items)} orders are pending simultaneously. Opening admin dashboard for manual safety confirmation.")
+                open_admin_payment_in_chrome()
+                try:
+                    import winsound
+                    winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+                except Exception:
+                    pass
+                return
+            else:
+                print(f"[KBank AutoPay] ℹ️ Alert 'แจ้งเตือนเงินเข้า' received, but 0 pending orders found in Firebase.")
+                return
+
+        if matched_key:
+            print(f"[KBank AutoPay] 🎯 MATCH FOUND! Order {matched_key} (Amount: {matched_price:.2f} THB). Approving now...")
+            
+            # 1. ส่ง PATCH ปรับสถานะเป็น approved ทันที
+            final_paid_amount = amount if (amount is not None and amount > 0) else matched_price
+            patch_url = f"https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests/{matched_key}.json"
+            patch_data = json.dumps({
+                "status": "approved",
+                "approvedAt": int(time.time() * 1000),
+                "autoApproved": True,
+                "paidAmount": final_paid_amount
+            }).encode('utf-8')
+            
+            patch_req = urllib.request.Request(patch_url, data=patch_data, method='PATCH', headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(patch_req, timeout=5) as patch_res:
+                pass
+            
+            print(f"[KBank AutoPay] 🚀 AUTO-APPROVED successfully for Order {matched_key}! Client download is now unlocked.")
+            
+            # ส่งเสียงแจ้งเตือนสั้นๆ บน Windows
+            try:
+                import winsound
+                winsound.MessageBeep(winsound.MB_ICONASTERISK)
+            except Exception:
+                pass
+
+            # บันทึกสถานะ approved ค้างไว้ใน Firebase เพื่อให้ลูกค้าสามารถเปิดลิงก์ดาวน์โหลดได้ตลอดอายุลิงก์
+        else:
+            if amount is not None:
+                print(f"[KBank AutoPay] ℹ️ Received deposit of {amount:.2f} THB, but no matching pending request found.")
+
+    except Exception as e:
+        print(f"[KBank AutoPay] ⚠️ Error handling deposit: {e}")
+
+def start_kbank_notification_listener():
+    """เฝ้าตรวจจับ Notification จาก KBank Live (LINE PC / K PLUS) แบบ Realtime ตลอดเวลา"""
+    def listener_thread():
+        ps_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "kbank_listener.ps1")
+        if not os.path.exists(ps_script):
+            print(f"[KBank AutoPay] ⚠️ kbank_listener.ps1 not found at {ps_script}")
+            return
+
+        cmd = ["powershell", "-WindowStyle", "Hidden", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", ps_script]
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        startupinfo.wShowWindow = 0  # SW_HIDE
+        creationflags = subprocess.CREATE_NO_WINDOW if hasattr(subprocess, 'CREATE_NO_WINDOW') else 0x08000000
+        
+        while True:
+            try:
+                proc = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.DEVNULL,
+                    text=True,
+                    encoding='utf-8',
+                    bufsize=1,
+                    creationflags=creationflags,
+                    startupinfo=startupinfo
+                )
+                
+                print("[KBank AutoPay] 🛡️ KBank Live Notification Listener started successfully.")
+                
+                for line in iter(proc.stdout.readline, ''):
+                    line = line.strip()
+                    if line.startswith("EVENT:"):
+                        try:
+                            data = json.loads(line[6:])
+                            if data.get('event') == 'kbank_deposit':
+                                amt_raw = data.get('amount')
+                                amt = float(amt_raw) if amt_raw is not None else None
+                                if amt is not None:
+                                    print(f"[KBank AutoPay] 💸 Bank deposit alert detected: {amt:.2f} THB from {data.get('app', 'LINE')}")
+                                else:
+                                    print(f"[KBank AutoPay] 🔔 Bank deposit alert detected (No amount in notification) from {data.get('app', 'LINE')}")
+                                threading.Thread(target=handle_kbank_deposit_received, args=(amt,), daemon=True).start()
+                        except Exception as err:
+                            print(f"[KBank AutoPay] Error parsing notification event: {err}")
+                
+                proc.wait()
+            except Exception as e:
+                print(f"[KBank AutoPay] Listener process error: {e}")
+            time.sleep(3)
+
+    t = threading.Thread(target=listener_thread, daemon=True)
+    t.start()
+
 _opened_payment_keys = set()
 
 def start_payment_requests_watcher():
@@ -2211,6 +2363,9 @@ if __name__ == "__main__":
 
     # Start Firebase Payment Watcher (Auto-opens Chrome on customer confirmation)
     start_payment_requests_watcher()
+
+    # Start KBank Live Notification Auto-Pay Listener (Auto-approves on deposit)
+    start_kbank_notification_listener()
 
     # Launch floating status and loading progress bar widget (same as Facebook_Bot)
     write_status_file(0, 'idle', 'พร้อมทำงาน', task_type="idle")
