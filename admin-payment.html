@@ -920,8 +920,6 @@
 
         async function rejectPayment(id) {
             const req = paymentRequests[id];
-            if (!confirm('⚠️ ยืนยันปฏิเสธคำขอนี้ และทำลายไฟล์ทิ้งทันทีหรือไม่?\n(ไฟล์และลิงก์ของลูกค้าจะถูกทำลายทิ้งทันที)')) return;
-
             const linkKey = (req && req.linkKey) || id;
             const fileUrl = (req && req.fileUrl) || '';
 
