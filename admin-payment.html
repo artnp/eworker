@@ -874,14 +874,9 @@
                 playSuccessChime();
                 showToast(`🎉 อนุมัติยอด ฿${Number(price || 0).toFixed(2)} สำเร็จ! หน้าเว็บลูกค้าปลดล็อคแล้ว`, 'success');
 
-                // 2. นำออกจากหน้าระบบทันที ไม่ต้องจำค่าเก่า
+                // 2. นำออกจากหน้าระบบทันที ไม่ต้องจำค่าเก่า (ระบบกรองเฉพาะ pending อยู่แล้ว)
                 delete paymentRequests[id];
                 processPaymentData();
-
-                // 3. กำหนดให้ลบออกจาก Firebase หลังจากลูกค้าโหลดเสร็จ (15 วินาที) ไม่ให้เป็นขยะ
-                setTimeout(() => {
-                    fetch(`${FIREBASE_ENDPOINT}/${id}.json`, { method: 'DELETE' }).catch(() => {});
-                }, 15000);
             } catch (err) {
                 console.error('Approve error:', err);
                 showToast('❌ เกิดข้อผิดพลาดในการอนุมัติ', 'warning');
