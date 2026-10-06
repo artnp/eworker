@@ -1603,6 +1603,15 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({"status": "alive"}).encode())
             return
 
+        if parsed_url.path == '/trigger-admin-payment':
+            open_admin_payment_in_chrome()
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"success": True}).encode())
+            return
+
         if parsed_url.path == '/upscale-progress':
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
@@ -1724,6 +1733,13 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
                 self.wfile.write(json.dumps({"error": str(e)}).encode())
+        if parsed_url.path == '/trigger-admin-payment':
+            open_admin_payment_in_chrome()
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"success": True}).encode())
             return
 
         if parsed_url.path == '/save-image':
@@ -2124,13 +2140,58 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
         pass
 
+# --- AUTO OPEN ADMIN PAYMENT IN CHROME ---
+def open_admin_payment_in_chrome():
+    chrome_paths = [
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+        os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe")
+    ]
+    admin_html = os.path.join(os.path.dirname(os.path.abspath(__file__)), "admin-payment.html")
+    for cp in chrome_paths:
+        if os.path.exists(cp):
+            try:
+                subprocess.Popen([cp, admin_html])
+                return
+            except Exception:
+                pass
+    try:
+        os.system(f'start chrome "{admin_html}"')
+    except Exception:
+        pass
+
+_opened_payment_keys = set()
+
+def start_payment_requests_watcher():
+    """Monitor Firebase RTDB for pending customer payment triggers and auto-open Chrome"""
+    def watcher_loop():
+        global _opened_payment_keys
+        firebase_url = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests.json"
+        
+        while True:
+            try:
+                req = urllib.request.Request(f"{firebase_url}?t={int(time.time()*1000)}", headers={"User-Agent": "PaymentWatcher/1.0"})
+                with urllib.request.urlopen(req, timeout=5) as res:
+                    data = json.loads(res.read().decode('utf-8'))
+                    if data and isinstance(data, dict):
+                        for k, v in data.items():
+                            if isinstance(v, dict) and v.get('status') == 'pending':
+                                if k not in _opened_payment_keys:
+                                    _opened_payment_keys.add(k)
+                                    print(f"[Payment Watcher] 🔔 Customer confirmed payment: {k} (Amount: {v.get('price')} THB). Auto-opening Chrome...")
+                                    open_admin_payment_in_chrome()
+                            elif isinstance(v, dict) and v.get('status') != 'pending':
+                                _opened_payment_keys.discard(k)
+            except Exception:
+                pass
+            time.sleep(2)
+
+    t = threading.Thread(target=watcher_loop, daemon=True)
+    t.start()
+
 # --- MAIN ---
 class ThreadingHTTPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True
-
-
-
-
 
 if __name__ == "__main__":
     event_handler = DownloadHandler()
@@ -2147,6 +2208,9 @@ if __name__ == "__main__":
     server_thread = threading.Thread(target=httpd.serve_forever, daemon=True)
     server_thread.start()
     print(f"[Server] Serving in Threaded mode at port {PORT}")
+
+    # Start Firebase Payment Watcher (Auto-opens Chrome on customer confirmation)
+    start_payment_requests_watcher()
 
     # Launch floating status and loading progress bar widget (same as Facebook_Bot)
     write_status_file(0, 'idle', 'พร้อมทำงาน', task_type="idle")
