@@ -1139,14 +1139,11 @@
                         <div class="waiting-pulse-dot"></div>
                         <div class="waiting-text">
                             <h4>⚡ ระบบรอตรวจจับยอดเงินเข้าอัตโนมัติ</h4>
-                            <p>สแกน QR แล้วโอนเงินได้เลย <strong>ระบบจะปลดล็อคให้เองทันที</strong> (<strong id="waiting-price-display">0.00</strong> บาท)</p>
-                            <p class="waiting-hint">💡 ไม่ต้องส่งสลิป / ไม่ต้องกดปุ่ม เมื่อเงินเข้าระบบจะดาวน์โหลดให้อัตโนมัติ!</p>
+                            <p>สแกน QR แล้ว <strong>ระบบจะปลดล็อคทันที</strong> (<strong
+                                    id="waiting-price-display">0.00</strong> บาท)</p>
+                            <p class="waiting-hint">💡 ไม่ต้องส่งสลิป! เมื่อเงินเข้าจะส่งงานให้อัตโนมัติ!</p>
                         </div>
                     </div>
-
-                    <button class="btn btn-secondary" id="confirm-payment-btn" onclick="confirmPayment(true)" style="margin-top: 12px; font-size: 0.88rem; opacity: 0.85;">
-                        🔄 ระบบกำลังรอรับยอดเงินอัตโนมัติ... (หรือคลิกเพื่อตรวจสอบซ้ำ)
-                    </button>
 
 
                 </div>
@@ -1803,7 +1800,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ linkKey: linkKey, price: price })
-                }).catch(() => {});
+                }).catch(() => { });
             } catch (err) {
                 console.warn('Manual payment notification error:', err);
             }
