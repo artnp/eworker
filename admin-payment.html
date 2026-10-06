@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛡️ PrivateSend | ระบบหลังบ้านอนุมัติการชำระเงิน</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --success: #10b981;
+            --success-hover: #059669;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --bg: #0b1120;
+            --card-bg: rgba(30, 41, 59, 0.85);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Prompt', sans-serif;
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(at 15% 15%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 85% 85%, rgba(16, 185, 129, 0.12) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(245, 158, 11, 0.05) 0px, transparent 60%);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Top Header */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .brand-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-title h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #818cf8, #38bdf8, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .live-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+            color: #34d399;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 5px 12px;
+            border-radius: 50px;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulseDot 1.5s infinite;
+        }
+
+        @keyframes pulseDot {
+            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1.15); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-top {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: inherit;
+        }
+
+        .btn-top:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .btn-top.active {
+            background: rgba(99, 102, 241, 0.25);
+            border-color: rgba(99, 102, 241, 0.6);
+            color: #818cf8;
+        }
+
+        /* Section Header */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--card-border);
+            padding-bottom: 12px;
+        }
+
+        .section-header h2 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge-count {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 50px;
+            font-weight: 700;
+        }
+
+        .badge-count.glow-pending {
+            background: #f59e0b;
+            color: #000;
+            animation: pulseGlow 1.5s infinite;
+        }
+
+        /* Requests Horizontal List */
+        .requests-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            width: 100%;
+        }
+
+        .request-row {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 16px 24px;
+            backdrop-filter: blur(12px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+            transition: all 0.25s ease;
+            width: 100%;
+        }
+
+        .request-row:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .request-row.pending-row {
+            border-color: rgba(245, 158, 11, 0.45);
+            background: linear-gradient(90deg, rgba(245, 158, 11, 0.12) 0%, rgba(30, 41, 59, 0.95) 28%);
+            box-shadow: 0 0 24px rgba(245, 158, 11, 0.12);
+        }
+
+        .request-row.approved-row {
+            border-color: rgba(16, 185, 129, 0.35);
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, rgba(30, 41, 59, 0.95) 28%);
+            opacity: 0.92;
+        }
+
+        /* Row Left: Thumbnail & Info */
+        .row-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            min-width: 340px;
+        }
+
+        .thumb-box {
+            width: 72px;
+            height: 72px;
+            border-radius: 12px;
+            background: #0f172a;
+            border: 1px solid var(--card-border);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            flex-shrink: 0;
+            transition: transform 0.2s;
+        }
+
+        .thumb-box:hover {
+            transform: scale(1.05);
+        }
+
+        .thumb-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .thumb-box .zoom-icon {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        .thumb-box:hover .zoom-icon {
+            opacity: 1;
+        }
+
+        .row-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .row-meta-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 50px;
+        }
+
+        .status-pill.pending {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+
+        .status-pill.approved {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+
+        .time-ago {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .order-id-label {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .copy-key-btn {
+            background: transparent;
+            border: none;
+            color: #818cf8;
+            cursor: pointer;
+            font-size: 0.75rem;
+            text-decoration: underline;
+        }
+
+        .timestamp-info {
+            font-size: 0.78rem;
+            color: #64748b;
+        }
+
+        /* Row Center: Big Price */
+        .row-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-price-display {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fb923c, #fbbf24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+
+        .card-price-display .currency {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            -webkit-text-fill-color: var(--text-muted);
+        }
+
+        /* Row Right: Buttons */
+        .row-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .btn-action {
+            padding: 11px 22px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-approve {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+        }
+
+        .btn-approve:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(16, 185, 129, 0.5);
+        }
+
+        .btn-reject {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.35);
+        }
+
+        .btn-reject:hover {
+            background: rgba(239, 68, 68, 0.3);
+            color: white;
+            border-color: rgba(239, 68, 68, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .approved-pill {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 9px 18px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.92rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        @media (max-width: 900px) {
+            .request-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+            .row-left {
+                min-width: unset;
+                width: 100%;
+            }
+            .row-center {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            .row-right {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+
+        .btn-delete-req:hover {
+            color: #f87171;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+            grid-column: 1 / -1;
+            background: var(--card-bg);
+            border-radius: 20px;
+            border: 1px dashed var(--card-border);
+        }
+
+        .empty-icon {
+            font-size: 3.5rem;
+            margin-bottom: 12px;
+            opacity: 0.6;
+        }
+
+        /* Lightbox Modal */
+        .lightbox-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            backdrop-filter: blur(8px);
+        }
+
+        .lightbox-modal.active {
+            display: flex;
+        }
+
+        .lightbox-modal img {
+            max-width: 90vw;
+            max-height: 85vh;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #1e293b;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 14px;
+            padding: 14px 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 9999;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-left: 4px solid #10b981;
+        }
+
+        .toast.warning {
+            border-left: 4px solid #f59e0b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="brand-title">
+                <h1>🛡️ PrivateSend - ระบบหลังบ้าน</h1>
+                <div class="live-status">
+                    <span class="pulse-dot"></span>
+                    <span>ตรวจจับยอดเงิน Realtime</span>
+                </div>
+            </div>
+
+            <div class="top-actions">
+                <button class="btn-top" id="btn-sound-toggle" onclick="toggleSound()">
+                    🔊 เสียงเตือน: เปิด
+                </button>
+                <button class="btn-top" id="btn-notify-req" onclick="requestNotificationPermission()">
+                    🔔 เปิดแจ้งเตือน Chrome
+                </button>
+                <button class="btn-top" onclick="fetchPaymentRequests(true)">
+                    🔄 รีเฟรชทันที
+                </button>
+                <button class="btn-top" style="color: #f87171;" onclick="cleanOldRequests()">
+                    🧹 ล้างข้อมูลเก่า
+                </button>
+            </div>
+        </div>
+
+        <!-- Section Header (รายการที่รอตรวจสอบเท่านั้น) -->
+        <div class="section-header">
+            <h2>
+                ⏳ รายการรอตรวจสอบยอดเงินเข้า
+                <span class="badge-count glow-pending" id="pending-counter">0</span>
+            </h2>
+        </div>
+
+        <!-- Requests Horizontal List -->
+        <div class="requests-list" id="requests-grid">
+            <div class="empty-state">
+                <div class="empty-icon">⏳</div>
+                <h3>กำลังเชื่อมต่อฐานข้อมูล...</h3>
+                <p>ระบบกำลังดึงข้อมูลคำขอชำระเงินจาก Firebase</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lightbox Modal -->
+    <div class="lightbox-modal" id="lightbox-modal" onclick="closeLightbox()">
+        <div class="lightbox-close">×</div>
+        <img id="lightbox-modal-img" src="" alt="Full Preview">
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast-el">
+        <span id="toast-icon">✨</span>
+        <span id="toast-msg">ข้อความ</span>
+    </div>
+
+    <script>
+        const FIREBASE_ENDPOINT = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests";
+        
+        let paymentRequests = {};
+        let isSoundEnabled = true;
+        let knownPendingKeys = new Set();
+        let isInitialLoad = true;
+        let originalPageTitle = document.title;
+        let titleFlashTimer = null;
+
+        // --- Sound Engine (Web Audio API Synthesizer) ---
+        function playChimeAlert() {
+            if (!isSoundEnabled) return;
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+
+                // Two-tone pleasant notification chime
+                const playTone = (freq, time, duration) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, ctx.currentTime + time);
+                    gain.gain.setValueAtTime(0.3, ctx.currentTime + time);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + time + duration);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(ctx.currentTime + time);
+                    osc.stop(ctx.currentTime + time + duration);
+                };
+
+                playTone(587.33, 0.0, 0.35); // D5
+                playTone(880.00, 0.15, 0.55); // A5
+            } catch (e) {
+                console.warn('Audio play error:', e);
+            }
+        }
+
+        function playSuccessChime() {
+            if (!isSoundEnabled) return;
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                
+                const playTone = (freq, time, duration) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, ctx.currentTime + time);
+                    gain.gain.setValueAtTime(0.25, ctx.currentTime + time);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + time + duration);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(ctx.currentTime + time);
+                    osc.stop(ctx.currentTime + time + duration);
+                };
+
+                playTone(523.25, 0.0, 0.2); // C5
+                playTone(659.25, 0.1, 0.2); // E5
+                playTone(783.99, 0.2, 0.4); // G5
+                playTone(1046.50, 0.3, 0.5); // C6
+            } catch (e) {
+                console.warn('Audio play error:', e);
+            }
+        }
+
+        function toggleSound() {
+            isSoundEnabled = !isSoundEnabled;
+            const btn = document.getElementById('btn-sound-toggle');
+            if (isSoundEnabled) {
+                btn.innerHTML = '🔊 เสียงเตือน: เปิด';
+                btn.classList.add('active');
+                playSuccessChime();
+                showToast('🔊 เปิดเสียงแจ้งเตือนแล้ว', 'success');
+            } else {
+                btn.innerHTML = '🔇 เสียงเตือน: ปิด';
+                btn.classList.remove('active');
+                showToast('🔇 ปิดเสียงแจ้งเตือนแล้ว', 'warning');
+            }
+        }
+
+        // --- Chrome Desktop Notifications ---
+        function requestNotificationPermission() {
+            if (!("Notification" in window)) {
+                alert("เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน Desktop");
+                return;
+            }
+            Notification.requestPermission().then(permission => {
+                const btn = document.getElementById('btn-notify-req');
+                if (permission === 'granted') {
+                    btn.innerHTML = '🔔 เปิดแจ้งเตือนแล้ว';
+                    btn.classList.add('active');
+                    showToast('🔔 เปิดการแจ้งเตือนบนหน้าจอเรียบร้อยแล้ว', 'success');
+                    new Notification("PrivateSend Admin", {
+                        body: "ระบบพร้อมแจ้งเตือนยอดเงินเข้าแบบ Realtime แล้ว!",
+                        icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/120px-PromptPay-logo.png"
+                    });
+                } else {
+                    btn.innerHTML = '🔕 ไม่อนุญาตแจ้งเตือน';
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        function triggerDesktopNotification(req) {
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification(`🔔 มีลูกค้าแจ้งโอนเงินใหม่! ฿${Number(req.price || 0).toFixed(2)}`, {
+                    body: `กดเปิดหน้าหลังบ้านเพื่อยืนยันยอดเงิน (${req.timeStr || 'เมื่อสักครู่'})`,
+                    icon: req.previewUrl || "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/120px-PromptPay-logo.png"
+                });
+            }
+        }
+
+        // --- Tab Title Flasher ---
+        function startTitleFlash(count) {
+            if (titleFlashTimer) clearInterval(titleFlashTimer);
+            let state = false;
+            titleFlashTimer = setInterval(() => {
+                document.title = state ? `(${count}) 🔔 มีลูกค้ารออนุมัติ!` : originalPageTitle;
+                state = !state;
+            }, 1000);
+        }
+
+        function stopTitleFlash() {
+            if (titleFlashTimer) {
+                clearInterval(titleFlashTimer);
+                titleFlashTimer = null;
+            }
+            document.title = originalPageTitle;
+        }
+
+        window.addEventListener('focus', () => {
+            const pendingCount = Object.values(paymentRequests).filter(r => r.status === 'pending').length;
+            if (pendingCount === 0) stopTitleFlash();
+        });
+
+        // --- Fetch & Real-time Loop ---
+        async function fetchPaymentRequests(isManual = false) {
+            try {
+                const res = await fetch(`${FIREBASE_ENDPOINT}.json?t=${Date.now()}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    paymentRequests = data || {};
+                    processPaymentData();
+                    if (isManual) showToast('🔄 อัปเดตข้อมูลล่าสุดเรียบร้อย', 'success');
+                }
+            } catch (err) {
+                console.error('Fetch payment requests error:', err);
+            }
+        }
+
+        function processPaymentData() {
+            const list = Object.entries(paymentRequests).map(([key, val]) => ({
+                id: key,
+                ...val
+            }));
+
+            // ล้างข้อมูลเก่าทันที: ลบรายการที่ rejected หรือ approved นานเกิน 15 วินาทีออกจาก Firebase ไม่ให้ค้างเป็นขยะ
+            const now = Date.now();
+            list.forEach(req => {
+                if (req.status === 'rejected' || (req.status === 'approved' && req.approvedAt && (now - req.approvedAt > 15000))) {
+                    fetch(`${FIREBASE_ENDPOINT}/${req.id}.json`, { method: 'DELETE' }).catch(() => {});
+                    delete paymentRequests[req.id];
+                }
+            });
+
+            // กรองเฉพาะรายการที่รออนุมัติ (pending) เท่านั้น ไม่แสดงและไม่จำค่าเก่า
+            const pendingList = list.filter(r => r.status === 'pending');
+
+            // ตรวจสอบหารายการ pending ใหม่ เพื่อส่งเสียงเตือน
+            let newlyArrivedPending = 0;
+            const currentPendingKeys = new Set();
+
+            pendingList.forEach(req => {
+                currentPendingKeys.add(req.id);
+                if (!isInitialLoad && !knownPendingKeys.has(req.id)) {
+                    newlyArrivedPending++;
+                    triggerDesktopNotification(req);
+                }
+            });
+
+            if (newlyArrivedPending > 0) {
+                playChimeAlert();
+                startTitleFlash(currentPendingKeys.size);
+                showToast(`🔔 มีรายการแจ้งโอนใหม่ ${newlyArrivedPending} รายการ!`, 'warning');
+            }
+
+            knownPendingKeys = currentPendingKeys;
+            isInitialLoad = false;
+
+            if (currentPendingKeys.size === 0) {
+                stopTitleFlash();
+            } else if (!document.hasFocus()) {
+                startTitleFlash(currentPendingKeys.size);
+            }
+
+            const counterEl = document.getElementById('pending-counter');
+            if (counterEl) {
+                counterEl.textContent = pendingList.length;
+                if (pendingList.length > 0) {
+                    counterEl.classList.add('glow-pending');
+                } else {
+                    counterEl.classList.remove('glow-pending');
+                }
+            }
+
+            renderGrid(pendingList);
+        }
+
+        function renderGrid(list) {
+            const grid = document.getElementById('requests-grid');
+
+            // เรียงลำดับเอาอันใหม่ล่าสุดขึ้นก่อน
+            list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+            if (list.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">✨</div>
+                        <h3>ไม่มีรายการรอดำเนินการในขณะนี้</h3>
+                        <p>เมื่อลูกค้ากดปุ่ม "ฉันโอนเงินเรียบร้อยแล้ว" รายการจะปรากฏที่นี่ทันที</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = list.map(req => {
+                const priceFormatted = Number(req.price || 0).toFixed(2);
+                const timeAgo = formatTimeAgo(req.createdAt);
+                
+                // รูป Thumbnail
+                let thumbSrc = req.previewUrl || req.fileUrl || '';
+                if (thumbSrc.startsWith('fb_')) {
+                    thumbSrc = 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/120px-PromptPay-logo.png';
+                }
+
+                return `
+                    <div class="request-row pending-row" id="card-${req.id}">
+                        <div class="row-left">
+                            <div class="thumb-box" onclick="openLightbox('${thumbSrc}')">
+                                <img src="${thumbSrc}" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/120px-PromptPay-logo.png'" alt="Thumb">
+                                <div class="zoom-icon">🔍</div>
+                            </div>
+                            <div class="row-meta">
+                                <div class="row-meta-top">
+                                    <span class="status-pill pending">
+                                        ⏳ รอตรวจสอบยอด
+                                    </span>
+                                    <span class="time-ago">${timeAgo}</span>
+                                </div>
+                                <div class="order-id-label">
+                                    <span>ID: ${req.linkKey || req.id}</span>
+                                    <button class="copy-key-btn" onclick="copyText('${req.linkKey || req.id}')">คัดลอก</button>
+                                </div>
+                                <div class="timestamp-info">
+                                    🕒 แจ้งเมื่อ: ${req.timeStr || ''} (${req.dateStr || ''})
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row-center">
+                            <div class="card-price-display">
+                                ฿ ${priceFormatted} <span class="currency">THB</span>
+                            </div>
+                        </div>
+
+                        <div class="row-right">
+                            <button class="btn-action btn-approve" onclick="approvePayment('${req.id}', ${req.price})">
+                                ✅ อนุมัติยอดเงิน
+                            </button>
+                            <button class="btn-action btn-reject" title="ปฏิเสธคำขอและทำลายไฟล์ทิ้งทันที" onclick="rejectPayment('${req.id}')">
+                                💣 ปฏิเสธ & ทำลายทิ้ง
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // --- Actions ---
+        async function approvePayment(id, price) {
+            try {
+                // 1. ส่งสถานะ approved ให้ Firebase เพื่อให้หน้าดาวน์โหลดของลูกค้าปลดล็อคทันที
+                await fetch(`${FIREBASE_ENDPOINT}/${id}.json`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 'approved',
+                        approvedAt: Date.now()
+                    })
+                });
+
+                playSuccessChime();
+                showToast(`🎉 อนุมัติยอด ฿${Number(price || 0).toFixed(2)} สำเร็จ! หน้าเว็บลูกค้าปลดล็อคแล้ว`, 'success');
+
+                // 2. นำออกจากหน้าระบบทันที ไม่ต้องจำค่าเก่า
+                delete paymentRequests[id];
+                processPaymentData();
+
+                // 3. กำหนดให้ลบออกจาก Firebase หลังจากลูกค้าโหลดเสร็จ (15 วินาที) ไม่ให้เป็นขยะ
+                setTimeout(() => {
+                    fetch(`${FIREBASE_ENDPOINT}/${id}.json`, { method: 'DELETE' }).catch(() => {});
+                }, 15000);
+            } catch (err) {
+                console.error('Approve error:', err);
+                showToast('❌ เกิดข้อผิดพลาดในการอนุมัติ', 'warning');
+            }
+        }
+
+        async function rejectPayment(id) {
+            const req = paymentRequests[id];
+            if (!confirm('⚠️ ยืนยันปฏิเสธคำขอนี้ และทำลายไฟล์ทิ้งทันทีหรือไม่?\n(ไฟล์และลิงก์ของลูกค้าจะถูกทำลายทิ้งทันที)')) return;
+
+            const linkKey = (req && req.linkKey) || id;
+            const fileUrl = (req && req.fileUrl) || '';
+
+            try {
+                // 1. บันทึกสถานะทำลายไฟล์ลง Firebase ทันที เพื่อให้หน้าเว็บลูกค้าแจ้ง 404
+                await fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/destroyed_${linkKey}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ d: true, t: Date.now() })
+                });
+
+                // 2. ถ้าเป็นไฟล์ Firebase Payload ให้ลบ Payload หลักทิ้งด้วย
+                if (fileUrl && fileUrl.startsWith('fb_')) {
+                    const fileId = fileUrl.substring(3);
+                    fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/${fileId}.json`, {
+                        method: 'DELETE'
+                    }).catch(e => console.error('Delete payload error:', e));
+                }
+
+                // 3. ลบคำขอออกจาก payment_requests ทันทีเพื่อไม่ให้ค้างเป็นขยะ
+                await fetch(`${FIREBASE_ENDPOINT}/${id}.json`, {
+                    method: 'DELETE'
+                });
+
+                delete paymentRequests[id];
+                showToast('💣 ปฏิเสธคำขอและทำลายไฟล์ทิ้งเรียบร้อยแล้ว', 'warning');
+                fetchPaymentRequests();
+            } catch (err) {
+                console.error('Reject & Destroy error:', err);
+                showToast('❌ เกิดข้อผิดพลาดในการทำลายไฟล์', 'warning');
+            }
+        }
+
+        async function cleanOldRequests() {
+            if (!confirm('ต้องการล้างรายการที่อนุมัติแล้ว/รายการเก่าทั้งหมดหรือไม่?')) return;
+            const now = Date.now();
+            let count = 0;
+            for (const [id, req] of Object.entries(paymentRequests)) {
+                if (req.status === 'approved' || (req.createdAt && (now - req.createdAt > 3600000))) {
+                    fetch(`${FIREBASE_ENDPOINT}/${id}.json`, { method: 'DELETE' }).catch(e => {});
+                    count++;
+                }
+            }
+            showToast(`🧹 ล้างรายการเรียบร้อยแล้ว (${count} รายการ)`, 'success');
+            setTimeout(fetchPaymentRequests, 1000);
+        }
+
+        // --- Helpers ---
+        function formatTimeAgo(timestamp) {
+            if (!timestamp) return 'เมื่อสักครู่';
+            const diff = Math.floor((Date.now() - timestamp) / 1000);
+            if (diff < 15) return 'เมื่อสักครู่';
+            if (diff < 60) return `${diff} วินาทีที่แล้ว`;
+            if (diff < 3600) return `${Math.floor(diff / 60)} นาทีที่แล้ว`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)} ชั่วโมงที่แล้ว`;
+            return `${Math.floor(diff / 86400)} วันที่แล้ว`;
+        }
+
+        function copyText(txt) {
+            navigator.clipboard.writeText(txt).then(() => {
+                showToast(`📋 คัดลอก ID: ${txt} แล้ว`, 'success');
+            });
+        }
+
+        function openLightbox(src) {
+            if (!src) return;
+            document.getElementById('lightbox-modal-img').src = src;
+            document.getElementById('lightbox-modal').classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox-modal').classList.remove('active');
+        }
+
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast-el');
+            const msgEl = document.getElementById('toast-msg');
+            const iconEl = document.getElementById('toast-icon');
+
+            msgEl.textContent = msg;
+            iconEl.textContent = type === 'success' ? '✅' : '⚠️';
+            toast.className = `toast ${type} show`;
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // --- Auto Loop Start ---
+        fetchPaymentRequests();
+        setInterval(fetchPaymentRequests, 2500);
+
+        // Check Notification Permission on load
+        if ("Notification" in window && Notification.permission === "granted") {
+            const btn = document.getElementById('btn-notify-req');
+            btn.innerHTML = '🔔 เปิดแจ้งเตือนแล้ว';
+            btn.classList.add('active');
+        }
+    </script>
+</body>
+</html>
