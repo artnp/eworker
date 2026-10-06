@@ -1283,28 +1283,32 @@
                 generateQRCode();
 
                 const linkKey = getLinkKey();
-                const isLocalPaid = localStorage.getItem('paid_' + linkKey) === '1' || localStorage.getItem('paid_' + fileUrl) === '1';
+                const isLocalPaid = localStorage.getItem('paid_' + linkKey) === '1' || (fileUrl && localStorage.getItem('paid_' + fileUrl) === '1');
 
                 if (isLocalPaid) {
                     __isPaid = true;
                     paymentSection.classList.add('hidden');
                     successSection.classList.remove('hidden');
+                    removeProtection();
                     setTimeout(() => showDownloadTutorial(), 100);
                 } else {
-                    // ตรวจสอบสถานะจาก Firebase (เผื่อแอดมินอนุมัติแล้ว หรือลูกค้าแจ้งโอนค้างไว้ก่อนรีเฟรชหน้า)
-                    fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests/${linkKey}.json`)
-                        .then(r => r.json())
-                        .then(data => {
+                    // ตรวจสอบสถานะจาก Firebase แบบ await (ถ้าแอดมินอนุมัติแล้ว ให้เปิดหน้าดาวน์โหลดทันที 100%)
+                    try {
+                        const pRes = await fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests/${linkKey}.json`);
+                        if (pRes.ok) {
+                            const data = await pRes.json();
                             if (data) {
                                 if (data.status === 'approved') {
-                                    unlockPaidStatus();
+                                    unlockPaidStatus(true);
                                 } else if (data.status === 'pending') {
                                     setPaymentWaitingUI();
                                     startPaymentPolling();
                                 }
                             }
-                        })
-                        .catch(e => console.warn('Check init payment status error:', e));
+                        }
+                    } catch (e) {
+                        console.warn('Check init payment status error:', e);
+                    }
                 }
             } else {
                 // Free mode
@@ -1812,14 +1816,24 @@
             }, 2000);
         }
 
-        function unlockPaidStatus() {
+        function unlockPaidStatus(immediate = false) {
             const linkKey = getLinkKey();
             __isPaid = true;
-            localStorage.setItem('paid_' + linkKey, '1');
-            localStorage.setItem('paid_' + fileUrl, '1');
+            try {
+                localStorage.setItem('paid_' + linkKey, '1');
+                if (fileUrl) localStorage.setItem('paid_' + fileUrl, '1');
+            } catch (e) { }
 
             const btn = document.getElementById('confirm-payment-btn');
             const waitingBox = document.getElementById('payment-waiting-box');
+
+            if (immediate) {
+                paymentSection.classList.add('hidden');
+                successSection.classList.remove('hidden');
+                removeProtection();
+                setTimeout(() => showDownloadTutorial(), 100);
+                return;
+            }
 
             if (btn) {
                 btn.classList.remove('btn-loading');
