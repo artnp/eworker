@@ -2358,33 +2358,27 @@ def start_payment_requests_watcher():
                             _last_deposit_event["consumed"] = True
                             threading.Thread(target=handle_kbank_deposit_received, args=(_last_deposit_event.get("amount"),), daemon=True).start()
 
-                    # 2. กรณีที่ไม่มีเงินเข้ามาก่อนหน้า หากลูกค้ารอเกิน 5 วินาที จึงค่อยเปิดหน้าจอแอดมิน
+                    # 2. กรณีลูกค้ากดยืนยันด้วยตนเอง (manualConfirmed) -> เปิดหน้าจอแอดมินทันที
                     for k, v in pending_items:
-                        if k not in _opened_payment_keys:
+                        is_manual = v.get('manualConfirmed', False)
+                        if is_manual and k not in _opened_payment_keys:
                             _opened_payment_keys.add(k)
-                            def delayed_open(order_key):
-                                time.sleep(5)
-                                try:
-                                    chk_req = urllib.request.Request(f"https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests/{order_key}.json")
-                                    with urllib.request.urlopen(chk_req, timeout=3) as chk_res:
-                                        d = json.loads(chk_res.read().decode('utf-8'))
-                                        if d and d.get('status') == 'pending':
-                                            log_kbank(f"[Payment Watcher] 🔔 Customer waiting for approval: {order_key}. Opening Admin Chrome...")
-                                            open_admin_payment_in_chrome()
-                                except Exception:
-                                    pass
-                            threading.Thread(target=delayed_open, args=(k,), daemon=True).start()
+                            log_kbank(f"[Payment Watcher] 🔔 Customer manually confirmed payment: {k}. Opening Admin Chrome...")
+                            open_admin_payment_in_chrome()
 
                     for k, v in data.items():
                         if isinstance(v, dict) and v.get('status') != 'pending':
                             _opened_payment_keys.discard(k)
                     
-                    # ระบบล้างขยะอัตโนมัติ: ลบเฉพาะรายการที่เก่าเกิน 24 ชั่วโมง (86,400,000 ms)
+                    # ระบบล้างขยะอัตโนมัติ: ลบรายการ approved เก่าเกิน 24 ชั่วโมง และ pending ที่ทิ้งร้างเกิน 30 นาที
                     now_ms = int(time.time() * 1000)
                     for k, v in list(data.items()):
                         if isinstance(v, dict):
                             record_time = v.get('approvedAt') or v.get('createdAt') or 0
-                            if record_time > 0 and (now_ms - record_time > 86400000):
+                            status_val = v.get('status')
+                            is_expired_pending = (status_val == 'pending' and record_time > 0 and (now_ms - record_time > 1800000))
+                            is_expired_approved = (status_val == 'approved' and record_time > 0 and (now_ms - record_time > 86400000))
+                            if is_expired_pending or is_expired_approved:
                                 try:
                                     del_req = urllib.request.Request(
                                         f"https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests/{k}.json",
