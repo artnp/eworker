@@ -160,11 +160,13 @@ def crop_watermark(source_path):
         BRIGHT_T        = 235   # pixel is "white/near white" if r,g,b all >= this
         DARK_T          = 18    # pixel is "dark/near dark" if r,g,b all <= this
         SOLID_RATIO     = 0.88  # chunk is solid color padding only if 88%+ pixels match
-        MAX_SCAN_BOTTOM = 0.45  # scan max 45% from bottom (Gemini)
+        MAX_SCAN_BOTTOM = 0.88  # scan up to 88% from bottom (Gemini canvas padding)
 
         # Scan Bottom Padding only (Gemini watermark / blank padding)
-        last_content_y = orig_h  # assume full image has content
         min_bottom_y = int(orig_h * (1 - MAX_SCAN_BOTTOM))
+        last_content_y = min_bottom_y  # if all scanned chunks are solid padding, content is above min_bottom_y
+        hit_content = False
+
         for chunk_y in range(orig_h - CHUNK_H, min_bottom_y, -CHUNK_H):
             bright = 0
             dark = 0
@@ -184,19 +186,24 @@ def crop_watermark(source_path):
             # If chunk is NOT solid white or solid dark padding, we reached image content
             if bright_ratio < SOLID_RATIO and dark_ratio < SOLID_RATIO:
                 last_content_y = chunk_y + CHUNK_H
+                hit_content = True
                 break
 
         crop_bottom = 0
-        if last_content_y < orig_h - (CHUNK_H * 2):
-            crop_bottom = min(orig_h - last_content_y, int(orig_h * MAX_SCAN_BOTTOM))
-            print(f"[Crop] Bottom padding band detected, crop_bottom={crop_bottom}px")
+        if hit_content:
+            if last_content_y < orig_h - (CHUNK_H * 2):
+                crop_bottom = min(orig_h - last_content_y, int(orig_h * MAX_SCAN_BOTTOM))
+                print(f"[Crop] Bottom padding band detected, crop_bottom={crop_bottom}px")
+        else:
+            # Entire scanned region (up to 88%) was solid padding
+            crop_bottom = int(orig_h * MAX_SCAN_BOTTOM)
+            print(f"[Crop] Full bottom padding detected, crop_bottom={crop_bottom}px")
 
         final_y1 = 0
         final_y2 = orig_h - crop_bottom
-        if final_y2 > final_y1 + 50:
-            if crop_bottom > 0:
-                print(f"[Crop] Cropping bottom padding [0:{final_y2}], original_h={orig_h}px -> {final_y2}px")
-                return img_rgb.crop((0, final_y1, orig_w, final_y2))
+        if final_y2 > final_y1 + 50 and crop_bottom > 0:
+            print(f"[Crop] Cropping bottom padding [0:{final_y2}], original_h={orig_h}px -> {final_y2}px")
+            return img_rgb.crop((0, final_y1, orig_w, final_y2))
 
         print(f"[Crop] No bottom padding detected, keeping original {orig_w}x{orig_h}")
         return img_rgb
