@@ -299,14 +299,14 @@
 
         .payment-waiting-box {
             margin-top: 15px;
-            padding: 14px 18px;
+            padding: 14px 16px;
             background: rgba(245, 158, 11, 0.12);
             border: 1px solid rgba(245, 158, 11, 0.4);
             border-radius: 14px;
-            text-align: left;
+            text-align: center;
             display: none;
-            align-items: flex-start;
-            gap: 12px;
+            align-items: center;
+            justify-content: center;
             animation: fadeIn 0.3s ease;
         }
 
@@ -314,33 +314,150 @@
             display: flex;
         }
 
+        .payment-waiting-box .waiting-text {
+            width: 100%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .waiting-header {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
         .waiting-pulse-dot {
-            width: 12px;
-            height: 12px;
-            margin-top: 4px;
-            background-color: #f59e0b;
+            width: 15px;
+            height: 15px;
+            border: 2px solid rgba(245, 158, 11, 0.25);
+            border-top: 2px solid #fbbf24;
+            border-right: 2px solid #f59e0b;
             border-radius: 50%;
-            animation: pulseGlow 1.5s infinite;
+            animation: spin 0.85s linear infinite;
             flex-shrink: 0;
+            display: inline-block;
         }
 
         .payment-waiting-box h4 {
             font-size: 0.95rem;
             color: #fbbf24;
-            margin-bottom: 4px;
+            margin: 0;
+            text-align: center;
         }
 
         .payment-waiting-box p {
             font-size: 0.85rem;
             color: #e2e8f0;
             line-height: 1.4;
-            margin-bottom: 4px;
+            margin: 0;
+            text-align: center;
         }
 
         .payment-waiting-box .waiting-hint {
             font-size: 0.78rem;
             color: #94a3b8;
             margin-top: 4px;
+        }
+
+        @keyframes stepBlinkGreen {
+            0% {
+                opacity: 0.45;
+                color: #94a3b8;
+                background: rgba(255, 255, 255, 0.03);
+                border-color: rgba(255, 255, 255, 0.08);
+                box-shadow: none;
+                transform: scale(0.98);
+            }
+
+            18% {
+                opacity: 1;
+                color: #4ade80;
+                background: rgba(16, 185, 129, 0.12);
+                border-color: rgba(74, 222, 128, 0.65);
+                box-shadow: 0 0 10px rgba(74, 222, 128, 0.35);
+                transform: scale(1.02);
+            }
+
+            36%,
+            100% {
+                opacity: 0.45;
+                color: #94a3b8;
+                background: rgba(255, 255, 255, 0.03);
+                border-color: rgba(255, 255, 255, 0.08);
+                box-shadow: none;
+                transform: scale(0.98);
+            }
+        }
+
+        .waiting-steps {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: nowrap;
+            gap: 5px;
+            margin-top: 9px;
+            padding-top: 9px;
+            border-top: 1px dashed rgba(245, 158, 11, 0.22);
+            width: 100%;
+        }
+
+        .waiting-step-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #94a3b8;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 3px 7px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            white-space: nowrap;
+            flex-shrink: 0;
+            opacity: 0.45;
+            transform: scale(0.98);
+        }
+
+        .waiting-step-item.step-1 {
+            animation: stepBlinkGreen 3.6s infinite ease-in-out;
+            animation-delay: 0s;
+        }
+
+        .waiting-step-item.step-2 {
+            animation: stepBlinkGreen 3.6s infinite ease-in-out;
+            animation-delay: 1.2s;
+        }
+
+        .waiting-step-item.step-3 {
+            animation: stepBlinkGreen 3.6s infinite ease-in-out;
+            animation-delay: 2.4s;
+        }
+
+        .waiting-step-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 15px;
+            height: 15px;
+            background: rgba(255, 255, 255, 0.08);
+            color: inherit;
+            border-radius: 50%;
+            font-size: 0.65rem;
+            font-weight: 700;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .waiting-step-arrow {
+            color: #64748b;
+            opacity: 0.45;
+            font-size: 0.7rem;
+            user-select: none;
+            flex-shrink: 0;
         }
 
         @keyframes pulseGlow {
@@ -1095,7 +1212,7 @@
                     <!-- Protection Overlay -->
                     <div class="protection-overlay" id="protection-overlay">
                         <div class="protection-message">
-                            🔒 กรุณาชำระเงินก่อนดาวน์โหลด
+                            🔒 โปรดชำระเงินเพื่อรับงาน
                         </div>
                     </div>
                 </div>
@@ -1136,12 +1253,28 @@
 
                     <!-- กล่องสถานะรอระบบเช็คยอดเงินเข้าอัตโนมัติ -->
                     <div class="payment-waiting-box active" id="payment-waiting-box">
-                        <div class="waiting-pulse-dot"></div>
                         <div class="waiting-text">
-                            <h4>⚡ ระบบรอตรวจจับยอดเงินเข้าอัตโนมัติ</h4>
-                            <p>สแกน QR แล้ว <strong>ระบบจะปลดล็อคทันที</strong> (<strong
-                                    id="waiting-price-display">0.00</strong> บาท)</p>
-                            <p class="waiting-hint">💡 ไม่ต้องส่งสลิป! เมื่อเงินเข้าจะส่งงานให้อัตโนมัติ!</p>
+                            <div class="waiting-header">
+                                <span class="waiting-pulse-dot"></span>
+                                <h4>กำลังรอตรวจจับยอดเงินเข้า...</h4>
+                            </div>
+                            <p>จ่ายแล้ว <strong>ระบบจะส่งไฟล์จริงให้ทันที</strong></p>
+                            <div class="waiting-steps">
+                                <span class="waiting-step-item step-1">
+                                    <span class="waiting-step-num">1</span>
+                                    <span>สแกนจ่าย</span>
+                                </span>
+                                <span class="waiting-step-arrow">→</span>
+                                <span class="waiting-step-item step-2">
+                                    <span class="waiting-step-num">2</span>
+                                    <span>ไม่ต้องส่งสลิป</span>
+                                </span>
+                                <span class="waiting-step-arrow">→</span>
+                                <span class="waiting-step-item step-3">
+                                    <span class="waiting-step-num">3</span>
+                                    <span>รับไฟล์ทันที</span>
+                                </span>
+                            </div>
                         </div>
                     </div>
 
@@ -1944,10 +2077,12 @@
             if (waitingBox) {
                 waitingBox.classList.remove('active');
                 waitingBox.innerHTML = `
-                    <div class="waiting-pulse-dot"></div>
                     <div class="waiting-text">
-                        <h4>⏳ ระบบกำลังรอตรวจสอบยอดเงินเข้า</h4>
-                        <p>ให้เปิดหน้าเว็บค้างไว้ / ไม่ต้องส่งสลิป (<strong id="waiting-price-display">${price.toFixed(2)}</strong> บาท)</p>
+                        <div class="waiting-header">
+                            <span class="waiting-pulse-dot"></span>
+                            <h4>⏳ ระบบกำลังรอตรวจสอบยอดเงินเข้า</h4>
+                        </div>
+                        <p>ให้เปิดหน้าเว็บค้างไว้ / ไม่ต้องส่งสลิป</p>
                         <p class="waiting-hint">💡 อนุมัติแล้ว จะโหลดไฟล์ได้ทันที!</p>
                     </div>
                 `;
