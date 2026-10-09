@@ -2638,15 +2638,28 @@ def start_payment_requests_watcher():
                         if isinstance(v, dict) and v.get('status') != 'pending':
                             _opened_payment_keys.discard(k)
                     
-                    # ระบบล้างขยะอัตโนมัติ: ลบรายการ approved เก่าเกิน 24 ชั่วโมง และ pending ที่ทิ้งร้างเกิน 30 นาที
+                    # ระบบล้างขยะอัตโนมัติ: ลบรายการ approved เก่าเกิน 24 ชั่วโมง และ auto-reject รายการ pending ที่หมดเวลา 10 นาที
                     now_ms = int(time.time() * 1000)
                     for k, v in list(data.items()):
                         if isinstance(v, dict):
                             record_time = v.get('approvedAt') or v.get('createdAt') or 0
+                            expires_at = v.get('expiresAt') or (record_time + 600000 if record_time else 0)
                             status_val = v.get('status')
-                            is_expired_pending = (status_val == 'pending' and record_time > 0 and (now_ms - record_time > 1800000))
+                            is_expired_pending = (status_val == 'pending' and expires_at > 0 and now_ms >= expires_at)
                             is_expired_approved = (status_val == 'approved' and record_time > 0 and (now_ms - record_time > 86400000))
-                            if is_expired_pending or is_expired_approved:
+                            if is_expired_pending:
+                                try:
+                                    patch_data = json.dumps({"status": "rejected", "rejectReason": "หมดเวลาทำรายการ (10 นาที)", "rejectedAt": now_ms}).encode('utf-8')
+                                    patch_req = urllib.request.Request(
+                                        f"https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests/{k}.json",
+                                        data=patch_data,
+                                        headers={"Content-Type": "application/json"},
+                                        method='PATCH'
+                                    )
+                                    urllib.request.urlopen(patch_req, timeout=3)
+                                except Exception:
+                                    pass
+                            elif is_expired_approved:
                                 try:
                                     del_req = urllib.request.Request(
                                         f"https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests/{k}.json",
