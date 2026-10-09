@@ -32,10 +32,6 @@
         body {
             font-family: 'Inter', 'Prompt', sans-serif;
             background-color: var(--bg);
-            background-image: 
-                radial-gradient(at 15% 15%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-                radial-gradient(at 85% 85%, rgba(16, 185, 129, 0.12) 0px, transparent 50%),
-                radial-gradient(at 50% 50%, rgba(245, 158, 11, 0.05) 0px, transparent 60%);
             color: var(--text-main);
             min-height: 100vh;
             padding: 24px;
@@ -175,36 +171,63 @@
         }
 
         .request-row {
-            background: var(--card-bg);
+            background: #1e293b;
             border: 1px solid var(--card-border);
             border-radius: 16px;
             padding: 16px 24px;
-            backdrop-filter: blur(12px);
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-            transition: all 0.25s ease;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease, border-color 0.2s ease;
             width: 100%;
         }
 
         .request-row:hover {
             border-color: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
             transform: translateY(-2px);
         }
 
         .request-row.pending-row {
             border-color: rgba(245, 158, 11, 0.45);
-            background: linear-gradient(90deg, rgba(245, 158, 11, 0.12) 0%, rgba(30, 41, 59, 0.95) 28%);
-            box-shadow: 0 0 24px rgba(245, 158, 11, 0.12);
+            background: linear-gradient(90deg, rgba(245, 158, 11, 0.14) 0%, #1e293b 25%);
+            box-shadow: 0 0 16px rgba(245, 158, 11, 0.1);
         }
 
         .request-row.approved-row {
             border-color: rgba(16, 185, 129, 0.35);
-            background: linear-gradient(90deg, rgba(16, 185, 129, 0.08) 0%, rgba(30, 41, 59, 0.95) 28%);
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, #1e293b 25%);
             opacity: 0.92;
+        }
+
+        .expiry-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            margin-top: 4px;
+            width: fit-content;
+        }
+
+        .expiry-badge.warning {
+            background: rgba(245, 158, 11, 0.18);
+            color: #fbbf24;
+            border-color: rgba(245, 158, 11, 0.5);
+        }
+
+        .expiry-badge.urgent {
+            background: rgba(239, 68, 68, 0.25);
+            color: #fca5a5;
+            border-color: rgba(239, 68, 68, 0.6);
+            animation: pulseGlow 1s infinite alternate;
         }
 
         /* Row Left: Thumbnail & Info */
@@ -449,13 +472,12 @@
         .lightbox-modal {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.94);
             z-index: 2000;
             display: none;
             align-items: center;
             justify-content: center;
             padding: 20px;
-            backdrop-filter: blur(8px);
         }
 
         .lightbox-modal.active {
@@ -743,14 +765,17 @@
             }
         }
 
+        let lastRenderedSignature = '';
+
         function processPaymentData() {
             const list = Object.entries(paymentRequests).map(([key, val]) => ({
                 id: key,
                 ...val
             }));
 
-            // ล้างข้อมูลเก่าทันที: ลบรายการที่ rejected หรือ approved นานเกิน 15 วินาทีออกจาก Firebase ไม่ให้ค้างเป็นขยะ
             const now = Date.now();
+
+            // ล้างข้อมูลเก่า: ลบรายการที่ rejected หรือ approved นานเกิน 15 วินาทีออกจาก Firebase ไม่ให้ค้างเป็นขยะ
             list.forEach(req => {
                 if (req.status === 'rejected' || (req.status === 'approved' && req.approvedAt && (now - req.approvedAt > 15000))) {
                     fetch(`${FIREBASE_ENDPOINT}/${req.id}.json`, { method: 'DELETE' }).catch(() => {});
@@ -758,14 +783,25 @@
                 }
             });
 
-            // กรองเฉพาะรายการที่รออนุมัติ (pending) เท่านั้น ไม่แสดงและไม่จำค่าเก่า
-            const pendingList = list.filter(r => r.status === 'pending');
+            // ตรวจสอบรายการ pending ที่หมดเวลา 10 นาที (600,000 ms) -> ปฏิเสธอัตโนมัติทันที
+            const activePending = [];
+            list.forEach(req => {
+                if (req.status === 'pending') {
+                    const expiresAt = req.expiresAt || (req.createdAt ? (req.createdAt + 600000) : 0);
+                    const isExpired = expiresAt > 0 && now >= expiresAt;
+                    if (isExpired) {
+                        rejectPayment(req.id, true);
+                    } else {
+                        activePending.push(req);
+                    }
+                }
+            });
 
             // ตรวจสอบหารายการ pending ใหม่ เพื่อส่งเสียงเตือน
             let newlyArrivedPending = 0;
             const currentPendingKeys = new Set();
 
-            pendingList.forEach(req => {
+            activePending.forEach(req => {
                 currentPendingKeys.add(req.id);
                 if (!isInitialLoad && !knownPendingKeys.has(req.id)) {
                     newlyArrivedPending++;
@@ -790,15 +826,15 @@
 
             const counterEl = document.getElementById('pending-counter');
             if (counterEl) {
-                counterEl.textContent = pendingList.length;
-                if (pendingList.length > 0) {
+                counterEl.textContent = activePending.length;
+                if (activePending.length > 0) {
                     counterEl.classList.add('glow-pending');
                 } else {
                     counterEl.classList.remove('glow-pending');
                 }
             }
 
-            renderGrid(pendingList);
+            renderGrid(activePending);
         }
 
         function closeCurrentTab() {
@@ -820,29 +856,39 @@
         function renderGrid(list) {
             const grid = document.getElementById('requests-grid');
 
-            // เรียงลำดับเอาอันใหม่ล่าสุดขึ้นก่อน
-            list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
             if (list.length === 0) {
+                lastRenderedSignature = '';
                 grid.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-icon">✨</div>
                         <h3>ไม่มีรายการรอดำเนินการในขณะนี้</h3>
-                        <p style="color: #38bdf8; font-weight: 600; margin-top: 10px;">🚀 กำลังปิดหน้าต่างอัตโนมัติ...</p>
+                        <p style="color: #38bdf8; font-weight: 600; margin-top: 10px;">🚀 รายการทั้งหมดเสร็จสิ้นแล้ว กำลังปิดหน้าต่างอัตโนมัติ...</p>
                         <button onclick="closeCurrentTab()" class="btn-action" style="margin-top: 14px; background: #ef4444; color: #fff; padding: 10px 24px; border-radius: 8px; border: none; cursor: pointer; font-size: 1rem; font-weight: 600;">
                             ✖️ ปิดหน้าต่างนี้ทันที
                         </button>
                     </div>
                 `;
-                // เมื่อไม่มีรายการรอดำเนินการในขณะนี้ ให้ทำการปิดหน้าเว็บอัตโนมัติทันที
+                // เมื่อไม่มีรายการรอดำเนินการในขณะนี้ ปิดหน้าต่างทันที
                 closeCurrentTab();
                 setTimeout(closeCurrentTab, 200);
+                setTimeout(closeCurrentTab, 600);
                 return;
             }
+
+            // เรียงลำดับเอาอันใหม่ล่าสุดขึ้นก่อน
+            list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+            // ป้องกันการ Re-render ทั้งหมดถ้าข้อมูลยังไม่เปลี่ยน เพื่อประหยัด CPU/GPU
+            const currentSignature = list.map(r => `${r.id}_${r.price}_${r.status}`).join('|');
+            if (currentSignature === lastRenderedSignature) {
+                return;
+            }
+            lastRenderedSignature = currentSignature;
 
             grid.innerHTML = list.map(req => {
                 const priceFormatted = Number(req.price || 0).toFixed(2);
                 const timeAgo = formatTimeAgo(req.createdAt);
+                const expiresAt = req.expiresAt || (req.createdAt ? (req.createdAt + 600000) : (Date.now() + 600000));
                 
                 // รูป Thumbnail
                 let thumbSrc = req.previewUrl || req.fileUrl || '';
@@ -869,6 +915,9 @@
                                     <button class="copy-key-btn" onclick="copyText('${req.linkKey || req.id}')">คัดลอก</button>
                                 </div>
                                 ${req.productTitle ? `<div style="font-size:0.95rem;font-weight:700;color:#38bdf8;margin:4px 0 2px 0;line-height:1.3;">📦 ${req.productTitle}</div>` : ''}
+                                <div class="expiry-badge" id="expiry-badge-${req.id}" data-expires="${expiresAt}" data-order-id="${req.id}">
+                                    ⏳ หมดเวลาใน: <span class="countdown-val">10:00</span>
+                                </div>
                                 <div class="timestamp-info">
                                     🕒 แจ้งเมื่อ: ${req.timeStr || ''} (${req.dateStr || ''})
                                 </div>
@@ -885,14 +934,54 @@
                             <button class="btn-action btn-approve" onclick="approvePayment('${req.id}', ${req.price})">
                                 ✅ อนุมัติยอดเงิน
                             </button>
-                            <button class="btn-action btn-reject" title="ปฏิเสธคำขอและทำลายไฟล์ทิ้งทันที" onclick="rejectPayment('${req.id}')">
+                            <button class="btn-action btn-reject" title="ปฏิเสธคำขอและทำลายไฟล์ทิ้งทันที" onclick="rejectPayment('${req.id}', false)">
                                 💣 ปฏิเสธ & ทำลายทิ้ง
                             </button>
                         </div>
                     </div>
                 `;
             }).join('');
+
+            updateCountdowns();
         }
+
+        // --- Live 1s Countdown Timer Engine ---
+        function updateCountdowns() {
+            const now = Date.now();
+            let hasExpiredTrigger = false;
+
+            document.querySelectorAll('.expiry-badge[data-expires]').forEach(badge => {
+                const expiresAt = parseInt(badge.getAttribute('data-expires'), 10);
+                const orderId = badge.getAttribute('data-order-id');
+                if (!expiresAt) return;
+
+                const diffSec = Math.max(0, Math.floor((expiresAt - now) / 1000));
+                const m = String(Math.floor(diffSec / 60)).padStart(2, '0');
+                const s = String(diffSec % 60).padStart(2, '0');
+
+                const valEl = badge.querySelector('.countdown-val');
+                if (valEl) valEl.textContent = `${m}:${s}`;
+
+                if (diffSec <= 60) {
+                    badge.className = 'expiry-badge urgent';
+                } else if (diffSec <= 180) {
+                    badge.className = 'expiry-badge warning';
+                } else {
+                    badge.className = 'expiry-badge';
+                }
+
+                if (diffSec <= 0 && orderId) {
+                    badge.removeAttribute('data-order-id');
+                    hasExpiredTrigger = true;
+                    rejectPayment(orderId, true);
+                }
+            });
+
+            if (hasExpiredTrigger) {
+                processPaymentData();
+            }
+        }
+        setInterval(updateCountdowns, 1000);
 
         // --- Actions ---
         async function approvePayment(id, price) {
@@ -910,7 +999,7 @@
                 playSuccessChime();
                 showToast(`🎉 อนุมัติยอด ฿${Number(price || 0).toFixed(2)} สำเร็จ! หน้าเว็บลูกค้าปลดล็อคแล้ว`, 'success');
 
-                // 2. นำออกจากหน้าระบบทันที ไม่ต้องจำค่าเก่า (ระบบกรองเฉพาะ pending อยู่แล้ว)
+                // 2. นำออกจากหน้าระบบทันที
                 delete paymentRequests[id];
                 processPaymentData();
             } catch (err) {
@@ -919,10 +1008,11 @@
             }
         }
 
-        async function rejectPayment(id) {
+        async function rejectPayment(id, isAutoExpired = false) {
             const req = paymentRequests[id];
             const linkKey = (req && req.linkKey) || id;
             const fileUrl = (req && req.fileUrl) || '';
+            const reason = isAutoExpired ? 'หมดเวลาทำรายการ (10 นาที)' : 'ผู้ดูแลระบบปฏิเสธคำขอ';
 
             try {
                 // 1. บันทึกสถานะทำลายไฟล์ลง Firebase ทันที เพื่อให้หน้าเว็บลูกค้าแจ้ง 404
@@ -940,14 +1030,26 @@
                     }).catch(e => console.error('Delete payload error:', e));
                 }
 
-                // 3. ลบคำขอออกจาก payment_requests ทันทีเพื่อไม่ให้ค้างเป็นขยะ
+                // 3. ปรับสถานะเป็น rejected เพื่อให้ฝั่งลูกค้าทราบเหตุผลทันที
                 await fetch(`${FIREBASE_ENDPOINT}/${id}.json`, {
-                    method: 'DELETE'
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 'rejected',
+                        rejectReason: reason,
+                        rejectedAt: Date.now()
+                    })
                 });
 
                 delete paymentRequests[id];
-                showToast('💣 ปฏิเสธคำขอและทำลายไฟล์ทิ้งเรียบร้อยแล้ว', 'warning');
-                fetchPaymentRequests();
+
+                if (isAutoExpired) {
+                    showToast(`⏰ รายการ ${linkKey} หมดเวลา 10 นาทีแล้ว ปฏิเสธคำขออัตโนมัติ`, 'warning');
+                } else {
+                    showToast('💣 ปฏิเสธคำขอและทำลายไฟล์ทิ้งเรียบร้อยแล้ว', 'warning');
+                }
+
+                processPaymentData();
             } catch (err) {
                 console.error('Reject & Destroy error:', err);
                 showToast('❌ เกิดข้อผิดพลาดในการทำลายไฟล์', 'warning');
