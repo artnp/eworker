@@ -440,8 +440,16 @@
 
         /* ===== MAIN CONTENT LAYOUT ===== */
         .main-layout {
-            display: block;
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 20px;
             margin-bottom: 40px;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
         }
 
         /* Sidebar */
@@ -1340,7 +1348,7 @@
         <div class="container top-notice-inner">
             <div class="notice-left">
                 <span class="notice-badge-safe">🛡️ พัฒนามาเพื่อคุณ 100%</span>
-                <span>• ระบบทุกอย่างในเว็บนี้ทำงานอัตโนมัติ..</span>
+                <span>• ระบบทุกอย่างในเว็บนี้ทำงานอัตโนมัติทั้งหมด..</span>
             </div>
             <div>
                 <!-- Presence Indicator -->
@@ -1412,26 +1420,44 @@
             </div>
         </section>
 
-        <!-- MAIN CATALOG SECTION -->
-        <section class="content-area" style="margin-bottom: 40px;">
-            <div class="content-header-bar">
-                <div class="content-header-title" id="content-header-title">รายการโปรแกรมและแอปพลิเคชันทั้งหมด</div>
-                <div class="sort-control">
-                    <span>เรียงตาม:</span>
-                    <select class="sort-select-fh" id="sort-select" onchange="handleSortChange(this.value)">
-                        <option value="newest">🕒 ล่าสุด</option>
-                        <option value="recommended">⭐ ยอดนิยม / แนะนำ</option>
-                        <option value="price-asc">💵 ราคา: ต่ำ ➔ สูง</option>
-                        <option value="price-desc">💎 ราคา: สูง ➔ ต่ำ</option>
-                    </select>
+        <!-- TWO-COLUMN LAYOUT -->
+        <div class="main-layout">
+            <!-- Left Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-card">
+                    <div class="sidebar-title">📁 หมวดหมู่</div>
+                    <ul class="sidebar-menu" id="sidebar-categories">
+                        <li>
+                            <a class="active" onclick="filterCategory('all')">
+                                <span>ทั้งหมด</span>
+                                <span class="sidebar-count" id="count-all">0</span>
+                            </a>
+                        </li>
+                    </ul>
                 </div>
-            </div>
+            </aside>
 
-            <!-- Program List Container -->
-            <div class="program-list" id="program-list-container">
-                <!-- Dynamic Program Cards Rendered Here -->
-            </div>
-        </section>
+            <!-- Main Content Area -->
+            <section class="content-area">
+                <div class="content-header-bar">
+                    <div class="content-header-title" id="content-header-title">รายการทั้งหมด</div>
+                    <div class="sort-control">
+                        <span>เรียงตาม:</span>
+                        <select class="sort-select-fh" id="sort-select" onchange="handleSortChange(this.value)">
+                            <option value="newest">🕒 ล่าสุด</option>
+                            <option value="recommended">⭐ ยอดนิยม / แนะนำ</option>
+                            <option value="price-asc">💵 ราคา: ต่ำ ➔ สูง</option>
+                            <option value="price-desc">💎 ราคา: สูง ➔ ต่ำ</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Program List Container -->
+                <div class="program-list" id="program-list-container">
+                    <!-- Dynamic Program Cards Rendered Here -->
+                </div>
+            </section>
+        </div>
     </main>
 
     <!-- ===== PROGRAM DETAIL MODAL ( Technical Style) ===== -->
@@ -1649,8 +1675,14 @@
                     </div>
 
                     <div class="form-row">
-                        <div class="form-group-clean" style="flex: 1;">
-                            <label class="form-label-clean">ภาษาที่ใช้พัฒนา / ประเภทไฟล์ (Language / Tech) *</label>
+                        <div class="form-group-clean">
+                            <label class="form-label-clean">หมวดหมู่สินค้า (Category)</label>
+                            <input type="text" id="admin-category-input" class="form-control-clean"
+                                placeholder="เช่น เครื่องมือ, บอท, โปรแกรม (เว้นว่างได้)">
+                        </div>
+
+                        <div class="form-group-clean">
+                            <label class="form-label-clean">ภาษาที่ใช้พัฒนา (Programming Language) *</label>
                             <select id="admin-language-select" class="form-control-clean"
                                 onchange="handleAdminLanguageChange(this.value)" required>
                                 <option value="php">🐘 PHP (.php)</option>
@@ -1939,7 +1971,46 @@
             return LANG_MAP[lk] || { name: langKey, icon: '💻', ext: '', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' };
         }
 
-        function updateCategoryCounts() {}
+        function updateCategoryCounts() {
+            renderSidebarCategories();
+        }
+
+        function renderSidebarCategories() {
+            const sidebarList = document.getElementById('sidebar-categories');
+            if (!sidebarList) return;
+
+            // Group products by category
+            const catMap = {};
+            products.forEach(p => {
+                const c = (p.category || '').trim();
+                if (c) {
+                    catMap[c] = (catMap[c] || 0) + 1;
+                }
+            });
+
+            let html = `
+                <li>
+                    <a class="${activeCategory === 'all' ? 'active' : ''}" onclick="filterCategory('all')">
+                        <span>ทั้งหมด</span>
+                        <span class="sidebar-count" id="count-all">${products.length}</span>
+                    </a>
+                </li>
+            `;
+
+            Object.keys(catMap).forEach(cat => {
+                const isActive = (activeCategory === cat);
+                html += `
+                    <li>
+                        <a class="${isActive ? 'active' : ''}" onclick="filterCategory('${escapeHtml(cat)}')">
+                            <span>${escapeHtml(cat)}</span>
+                            <span class="sidebar-count">${catMap[cat]}</span>
+                        </a>
+                    </li>
+                `;
+            });
+
+            sidebarList.innerHTML = html;
+        }
 
         // --- Render Clean Program List ( Style) ---
         function renderCatalog() {
@@ -1947,11 +2018,15 @@
             if (!container) return;
 
             let filtered = products.filter(p => {
+                const pCat = (p.category || '').toLowerCase().trim();
+                const matchCategory = (activeCategory === 'all' || pCat === activeCategory.toLowerCase().trim());
                 const query = searchQuery.toLowerCase().trim();
-                return !query ||
+                const matchSearch = !query ||
                     (p.title && p.title.toLowerCase().includes(query)) ||
                     (p.description && p.description.toLowerCase().includes(query)) ||
-                    (p.language && p.language.toLowerCase().includes(query));
+                    (p.language && p.language.toLowerCase().includes(query)) ||
+                    (p.category && p.category.toLowerCase().includes(query));
+                return matchCategory && matchSearch;
             });
 
             // Sorting
@@ -1997,6 +2072,7 @@
                                 <div class="program-excerpt">${escapeHtml(p.description || '')}</div>
                                 <div class="program-meta-chips">
                                     ${langMeta ? `<span style="background:${langMeta.bg}; color:${langMeta.color}; border:1px solid ${langMeta.border}; font-weight:700;">💻 เขียนด้วย: ${langMeta.icon} ${escapeHtml(langMeta.name)}</span>` : ''}
+                                    ${p.category ? `<span>📁 ${escapeHtml(p.category)}</span>` : ''}
                                     ${p.hasInstallGuide ? '<span>🛠️ มีคู่มือติดตั้ง</span>' : ''}
                                 </div>
                             </div>
@@ -2023,6 +2099,12 @@
 
         // --- Category & Search Handlers ---
         function filterCategory(cat) {
+            activeCategory = cat || 'all';
+            const titleEl = document.getElementById('content-header-title');
+            if (titleEl) {
+                titleEl.textContent = (activeCategory === 'all') ? 'รายการทั้งหมด' : `หมวดหมู่: ${activeCategory}`;
+            }
+            renderSidebarCategories();
             renderCatalog();
         }
 
@@ -2042,9 +2124,13 @@
         }
 
         function resetToHome() {
+            activeCategory = 'all';
             searchQuery = '';
             const searchInput = document.getElementById('main-search-input');
             if (searchInput) searchInput.value = '';
+            const titleEl = document.getElementById('content-header-title');
+            if (titleEl) titleEl.textContent = 'รายการทั้งหมด';
+            renderSidebarCategories();
             renderCatalog();
             window.history.pushState({}, '', window.location.pathname);
             updatePageSEO(null);
@@ -2870,6 +2956,7 @@
             document.getElementById('admin-title').value = p.title || '';
             document.getElementById('admin-price').value = p.price || 0;
             document.getElementById('admin-cover-image').value = p.coverImage || '';
+            document.getElementById('admin-category-input').value = p.category || '';
             document.getElementById('admin-description').value = p.description || '';
 
             if (p.coverImage) {
@@ -2976,6 +3063,7 @@
             const price = parseFloat(document.getElementById('admin-price').value) || 0;
             const coverImage = document.getElementById('admin-cover-image').value.trim();
             const dropboxUrl = document.getElementById('admin-dropbox-url').value.trim();
+            const category = document.getElementById('admin-category-input').value.trim();
 
             const langSelect = document.getElementById('admin-language-select').value;
             const language = langSelect === '__custom__' ? (document.getElementById('admin-language-custom').value.trim() || 'other') : langSelect;
@@ -2999,6 +3087,7 @@
                 title: title,
                 slug: slug,
                 price: price,
+                category: category,
                 language: language,
                 coverImage: coverImage,
                 description: description,
@@ -3011,30 +3100,30 @@
             };
 
             const vaultData = {
-            productId: id,
-            downloadUrl: dropboxUrl,
-            updatedAt: Date.now()
-        };
+                productId: id,
+                downloadUrl: dropboxUrl,
+                updatedAt: Date.now()
+            };
 
-        try {
-            await fetch(`${PRODUCTS_ENDPOINT}/${id}.json`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(publicProductData)
-            });
+            try {
+                await fetch(`${PRODUCTS_ENDPOINT}/${id}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(publicProductData)
+                });
 
-            await fetch(`${VAULT_ENDPOINT}/${id}.json`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(vaultData)
-            });
+                await fetch(`${VAULT_ENDPOINT}/${id}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(vaultData)
+                });
 
-            showToast('🎉 บันทึกสินค้าขึ้นโฮสต์เรียบร้อยแล้ว!', 'success');
-            closeAdminModal();
-            await loadProducts();
-        } catch (err) {
-            showToast('❌ ไม่สามารถบันทึกข้อมูลได้', 'warning');
-        }
+                showToast('🎉 บันทึกสินค้าขึ้นโฮสต์เรียบร้อยแล้ว!', 'success');
+                closeAdminModal();
+                await loadProducts();
+            } catch (err) {
+                showToast('❌ ไม่สามารถบันทึกข้อมูลได้', 'warning');
+            }
         }
 
         async function handleAdminDeleteProduct() {
