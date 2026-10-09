@@ -1573,17 +1573,21 @@
 
             <!-- Unlocked Success View -->
             <div class="checkout-box-clean" id="checkout-view-success" style="display: none;">
-                <div style="font-size: 3rem; margin-bottom: 10px;">🎉</div>
-                <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--fh-green);">ยืนยันยอดเงินสำเร็จ!</h3>
-                <p style="font-size: 0.85rem; color: var(--fh-muted); margin-top: 4px;">ระบบตรวจจับยอดเงินเข้าเรียบร้อย ไฟล์ของคุณพร้อมให้ดาวน์โหลด</p>
+                <div style="font-size: 3rem; margin-bottom: 8px;">🎉</div>
+                <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--fh-green);">ยืนยันยอดเงินสำเร็จแล้ว!</h3>
+                <p style="font-size: 0.88rem; color: var(--fh-muted); margin-top: 4px;">ระบบตรวจจับยอดเงินเข้าเรียบร้อย ลิงก์ดาวน์โหลดของคุณพร้อมใช้งานทันที</p>
 
-                <div style="background: var(--fh-green-light); border: 1px solid rgba(22, 163, 74, 0.3); border-radius: var(--radius-sm); padding: 18px; margin: 20px 0;">
-                    <a id="btn-unlocked-download-link" href="#" target="_blank" class="btn-download-fh" style="font-size: 1.05rem; padding: 12px 28px; width: 100%; justify-content: center; text-decoration: none;">
-                        🚀 ดาวน์โหลดไฟล์ทันที (Direct Download)
+                <div style="background: var(--fh-green-light); border: 1px solid rgba(22, 163, 74, 0.35); border-radius: var(--radius-md); padding: 18px; margin: 18px 0;">
+                    <a id="btn-unlocked-download-link" href="#" target="_blank" class="btn-download-fh" style="font-size: 1.1rem; font-weight: 700; padding: 14px 28px; width: 100%; justify-content: center; text-decoration: none; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);">
+                        🚀 คลิกดาวน์โหลดไฟล์ทันที (Direct Download)
                     </a>
+                    <div id="unlocked-direct-link-box" style="margin-top: 12px; font-size: 0.82rem; background: #ffffff; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                        <span id="unlocked-direct-link-url" style="color: var(--fh-slate); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: monospace;">--</span>
+                        <button type="button" class="btn-tool-sm" onclick="copyUnlockedLink()" style="flex-shrink: 0; padding: 4px 10px; cursor: pointer;">📋 คัดลอกลิงก์</button>
+                    </div>
                 </div>
 
-                <p style="font-size: 0.78rem; color: var(--fh-muted);">บันทึกในคลังดาวน์โหลดของคุณแล้ว สามารถกลับมาดาวน์โหลดซ้ำได้ตลอดเวลา</p>
+                <p style="font-size: 0.8rem; color: var(--fh-muted);">💾 บันทึกลง "คลังดาวน์โหลดของฉัน" เรียบร้อยแล้ว สามารถกลับมาดาวน์โหลดซ้ำได้ตลอดเวลา</p>
             </div>
         </div>
     </div>
@@ -1801,6 +1805,7 @@
                 price: 190.00,
                 category: "software",
                 coverImage: "https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png",
+                downloadUrl: "https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png",
                 description: "ชุดเครื่องมือและสคริปต์ปรับแต่ง Windows 11/10 เพิ่มความเร็วสูงสุด ปิด Services ขยะเบื้องหลัง ลดความหน่วงเวลาเล่นเกม ปลอดภัย 100%",
                 hasInstallGuide: true,
                 installSteps: [
@@ -1820,6 +1825,7 @@
                 price: 150.00,
                 category: "preset",
                 coverImage: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600&q=80",
+                downloadUrl: "https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png",
                 description: "ชุดพรีเซ็ตแต่งภาพโทนดาร์กซินีมาติกสำหรับ Adobe Lightroom และไฟล์ 3D LUT (.cube) สำหรับโปรแกรมตัดต่อวิดีโอ Premiere Pro และ DaVinci",
                 hasInstallGuide: true,
                 installSteps: [
@@ -1838,6 +1844,7 @@
                 price: 250.00,
                 category: "graphic",
                 coverImage: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&q=80",
+                downloadUrl: "https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png",
                 description: "แอคชั่นรีทัชผิวเนียนอัตโนมัติ Frequency Separation 1-Click ไม่เสียรูขุมขน ปรับผิวขาวใส ลบรอยสิว เพิ่มมิติแสงเงา Dodge & Burn",
                 hasInstallGuide: true,
                 installSteps: [
@@ -1926,15 +1933,17 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                await fetch(`${VAULT_ENDPOINT}/prod_win_optimizer_2026.json`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        productId: 'prod_win_optimizer_2026',
-                        downloadUrl: 'https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png',
-                        updatedAt: Date.now()
-                    })
-                });
+                for (const p of SAMPLE_PRODUCTS) {
+                    await fetch(`${VAULT_ENDPOINT}/${p.id}.json`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            productId: p.id,
+                            downloadUrl: p.downloadUrl || 'https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png',
+                            updatedAt: Date.now()
+                        })
+                    }).catch(() => {});
+                }
             } catch (e) { }
         }
 
@@ -2360,7 +2369,7 @@
                             }
                             clearInterval(checkoutPollingTimer);
                             checkoutPollingTimer = null;
-                            handlePaymentApprovedSuccess(orderId, product);
+                            handlePaymentApprovedSuccess(orderId, product, data);
                         } else if (data && data.status === 'rejected') {
                             if (checkoutCountdownTimer) {
                                 clearInterval(checkoutCountdownTimer);
@@ -2406,20 +2415,44 @@
             }, 3000);
         }
 
-        async function handlePaymentApprovedSuccess(orderId, product) {
+        async function handlePaymentApprovedSuccess(orderId, product, paymentData = null) {
             triggerConfettiEffect();
             playSuccessChimeSound();
 
             let downloadUrl = "";
-            try {
-                const vaultRes = await fetch(`${VAULT_ENDPOINT}/${product.id}.json`);
-                if (vaultRes.ok) {
-                    const vaultData = await vaultRes.json();
-                    if (vaultData && vaultData.downloadUrl) {
-                        downloadUrl = vaultData.downloadUrl;
+
+            // 1. ตรวจสอบจาก paymentData / order payload (ถ้ามี)
+            if (paymentData && (paymentData.downloadUrl || paymentData.fileUrl)) {
+                downloadUrl = paymentData.downloadUrl || paymentData.fileUrl;
+            }
+
+            // 2. ตรวจสอบจาก product.downloadUrl
+            if (!downloadUrl && product && product.downloadUrl) {
+                downloadUrl = product.downloadUrl;
+            }
+
+            // 3. ตรวจสอบจาก Firebase VAULT_ENDPOINT
+            if (!downloadUrl && product && product.id) {
+                try {
+                    const vaultRes = await fetch(`${VAULT_ENDPOINT}/${product.id}.json`);
+                    if (vaultRes.ok) {
+                        const vaultData = await vaultRes.json();
+                        if (vaultData && vaultData.downloadUrl) {
+                            downloadUrl = vaultData.downloadUrl;
+                        }
                     }
-                }
-            } catch (e) { }
+                } catch (e) { }
+            }
+
+            // 4. Fallback สำหรับ Sample Products ให้ลูกค้ากดโหลดได้จริงเสมอ
+            if (!downloadUrl) {
+                const sampleFallbacks = {
+                    'prod_win_optimizer_2026': 'https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png',
+                    'prod_cinematic_luts_pack': 'https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png',
+                    'prod_photoshop_retouch_actions': 'https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png'
+                };
+                downloadUrl = sampleFallbacks[product?.id] || (product?.coverImage || 'https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png');
+            }
 
             let directDropboxUrl = downloadUrl;
             if (directDropboxUrl.includes('dropbox.com')) {
@@ -2439,14 +2472,36 @@
                 purchasedAt: Date.now()
             });
 
+            // สลับเปิดหน้าจอแสดงปุ่มดาวน์โหลดทันที
             document.getElementById('checkout-view-pending').style.display = 'none';
             document.getElementById('checkout-view-success').style.display = 'block';
 
             const dlBtn = document.getElementById('btn-unlocked-download-link');
-            dlBtn.href = directDropboxUrl || '#';
+            if (dlBtn) {
+                dlBtn.href = directDropboxUrl;
+                dlBtn.setAttribute('target', '_blank');
+                dlBtn.onclick = () => {
+                    window.open(directDropboxUrl, '_blank');
+                };
+            }
+
+            const urlTextEl = document.getElementById('unlocked-direct-link-url');
+            if (urlTextEl) {
+                urlTextEl.textContent = directDropboxUrl;
+            }
 
             updateDetailCTAState();
             renderCatalog();
+        }
+
+        function copyUnlockedLink() {
+            const dlBtn = document.getElementById('btn-unlocked-download-link');
+            const url = dlBtn ? dlBtn.href : '';
+            if (url && url !== '#') {
+                navigator.clipboard.writeText(url).then(() => {
+                    showToast('📋 คัดลอกลิงก์ดาวน์โหลดแล้ว', 'success');
+                });
+            }
         }
 
         function closeCheckoutModal() {
