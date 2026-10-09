@@ -16,5 +16,5 @@ WScript.Sleep 400
 
 ' 2. รัน AI Hub Central Watcher Daemon (Python)
 WshShell.CurrentDirectory = botDir
-WshShell.Run "pythonw """ & pyScript & """", 0, False
+WshShell.Run "cmd /c pythonw """ & pyScript & """", 0, False
 
