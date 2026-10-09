@@ -1405,13 +1405,9 @@
             <div class="container">
                 <ul class="sub-nav-list" id="sub-nav-categories">
                     <li class="sub-nav-item"><button class="active"
-                            onclick="filterCategory('all')">ซอฟต์แวร์ทั้งหมด</button></li>
+                            onclick="filterCategory('all')">รายการทั้งหมด</button></li>
                     <li class="sub-nav-item"><button onclick="filterCategory('software')">โปรแกรม &
                             สคริปต์วินโดวส์</button></li>
-                    <li class="sub-nav-item"><button onclick="filterCategory('preset')">พรีเซ็ตแต่งรูป</button></li>
-                    <li class="sub-nav-item"><button onclick="filterCategory('template')">เทมเพลต</button></li>
-                    <li class="sub-nav-item"><button onclick="filterCategory('graphic')">กราฟิก & แอคชั่น</button></li>
-                    <li class="sub-nav-item"><button onclick="filterCategory('course')">คู่มือ & คอร์ส</button></li>
                 </ul>
             </div>
         </nav>
@@ -1446,14 +1442,6 @@
                                     class="sidebar-count" id="count-all">0</span></a></li>
                         <li><a onclick="filterCategory('software')"><span>โปรแกรม & สคริปต์</span> <span
                                     class="sidebar-count" id="count-software">0</span></a></li>
-                        <li><a onclick="filterCategory('preset')"><span>พรีเซ็ตแต่งรูป</span> <span
-                                    class="sidebar-count" id="count-preset">0</span></a></li>
-                        <li><a onclick="filterCategory('template')"><span>เทมเพลต</span> <span class="sidebar-count"
-                                    id="count-template">0</span></a></li>
-                        <li><a onclick="filterCategory('graphic')"><span>กราฟิก & ฟอนต์</span> <span
-                                    class="sidebar-count" id="count-graphic">0</span></a></li>
-                        <li><a onclick="filterCategory('course')"><span>คู่มือ & คอร์ส</span> <span
-                                    class="sidebar-count" id="count-course">0</span></a></li>
                     </ul>
                 </div>
 
@@ -1463,7 +1451,7 @@
             <!-- Main Content Area -->
             <section class="content-area">
                 <div class="content-header-bar">
-                    <div class="content-header-title" id="content-header-title">รายการซอฟต์แวร์ทั้งหมด</div>
+                    <div class="content-header-title" id="content-header-title">รายการทั้งหมด</div>
                     <div class="sort-control">
                         <span>เรียงตาม:</span>
                         <select class="sort-select-fh" id="sort-select" onchange="handleSortChange(this.value)">
@@ -1707,10 +1695,6 @@
                         <select id="admin-category-select" class="form-control-clean"
                             onchange="handleAdminCategoryChange(this.value)">
                             <option value="software">โปรแกรม & สคริปต์ (software)</option>
-                            <option value="preset">พรีเซ็ตแต่งรูป (preset)</option>
-                            <option value="template">เทมเพลต (template)</option>
-                            <option value="graphic">กราฟิก & แอคชั่น (graphic)</option>
-                            <option value="course">คู่มือ & คอร์ส (course)</option>
                             <option value="__new__">+ เพิ่มหมวดหมู่ใหม่...</option>
                         </select>
                         <input type="text" id="admin-category-custom" class="form-control-clean"
@@ -1875,7 +1859,7 @@
             <p>© eworker — แหล่งพัฒนาแอพพลิเคชั่นช่วยให้ชีวิตในการทำงานง่ายขึ้น</p>
             <p
                 style="margin-top: 8px; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
-                <span style="color: var(--fh-slate); font-weight: 500;">ติดต่อแจ้งปัญหาระบบ:</span>
+                <span style="color: var(--fh-slate); font-weight: 500;">ติดต่อแจ้งปัญหา:</span>
                 <a href="https://line.me/ti/p/gqIluRmdJ_" target="_blank" rel="noopener noreferrer"
                     style="color: #06c755; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: #f0fdf4; border: 1px solid rgba(6, 199, 85, 0.35); padding: 3px 12px; border-radius: 20px; transition: var(--transition);">
                     💬 LINE
@@ -1909,68 +1893,6 @@
         let activeDetailProduct = null;
         let currentCheckoutOrder = null;
         let checkoutPollingTimer = null;
-
-        // Clean Sample Products (FileHippo Style)
-        const SAMPLE_PRODUCTS = [
-            {
-                id: "prod_win_optimizer_2026",
-                title: "Windows 11 Extreme Optimizer Suite",
-                slug: "windows-11-optimizer-suite",
-                price: 190.00,
-                category: "software",
-                coverImage: "https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png",
-                downloadUrl: "https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png",
-                description: "ชุดเครื่องมือและสคริปต์ปรับแต่ง Windows 11/10 เพิ่มความเร็วสูงสุด ปิด Services ขยะเบื้องหลัง ลดความหน่วงเวลาเล่นเกม ปลอดภัย 100%",
-                hasInstallGuide: true,
-                installSteps: [
-                    "แตกไฟล์ zip ที่ดาวน์โหลดมาไว้ที่ Desktop",
-                    "คลิกขวาที่ Run_Optimizer.bat แล้วเลือก 'Run as Administrator'",
-                    "เลือกโหมด 1 (Gaming Boost) หรือโหมด 2 (General Tuning)",
-                    "รีสตาร์ทคอมพิวเตอร์ 1 ครั้งเพื่อใช้งาน"
-                ],
-                isRecommended: true,
-                isBestSeller: true,
-                createdAt: Date.now() - 86400000
-            },
-            {
-                id: "prod_cinematic_luts_pack",
-                title: "Cinematic Dark Tone Lightroom & Video LUTs",
-                slug: "cinematic-dark-tone-lightroom-luts",
-                price: 150.00,
-                category: "preset",
-                coverImage: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600&q=80",
-                downloadUrl: "https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png",
-                description: "ชุดพรีเซ็ตแต่งภาพโทนดาร์กซินีมาติกสำหรับ Adobe Lightroom และไฟล์ 3D LUT (.cube) สำหรับโปรแกรมตัดต่อวิดีโอ Premiere Pro และ DaVinci",
-                hasInstallGuide: true,
-                installSteps: [
-                    "นำเข้าไฟล์ .xmp เข้า Adobe Lightroom ผ่านเมนู Presets -> Import",
-                    "สำหรับวิดีโอ ให้นำเข้าไฟล์ .cube ใน Lumetri Color",
-                    "ปรับแก้ Exposure ตามความสว่างของภาพ"
-                ],
-                isRecommended: true,
-                isBestSeller: false,
-                createdAt: Date.now() - 172800000
-            },
-            {
-                id: "prod_photoshop_retouch_actions",
-                title: "Photoshop AI Smart Retouch Pro Actions",
-                slug: "photoshop-ai-retouch-actions",
-                price: 250.00,
-                category: "graphic",
-                coverImage: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&q=80",
-                downloadUrl: "https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png",
-                description: "แอคชั่นรีทัชผิวเนียนอัตโนมัติ Frequency Separation 1-Click ไม่เสียรูขุมขน ปรับผิวขาวใส ลบรอยสิว เพิ่มมิติแสงเงา Dodge & Burn",
-                hasInstallGuide: true,
-                installSteps: [
-                    "ดับเบิลคลิกไฟล์ .atn เพื่อนำเข้าสู่ Photoshop",
-                    "เปิดหน้าต่าง Window -> Actions",
-                    "เลือกแอคชั่นที่ต้องการแล้วกด Play"
-                ],
-                isRecommended: false,
-                isBestSeller: true,
-                createdAt: Date.now() - 250000000
-            }
-        ];
 
         async function initStore() {
             if (isLocalAdmin) {
@@ -2018,57 +1940,29 @@
                     const data = await res.json();
                     if (data && typeof data === 'object') {
                         const validProds = Object.values(data).filter(p => p && typeof p === 'object' && p.id && p.title);
-                        if (validProds.length > 0) {
-                            products = validProds;
-                        } else {
-                            products = [...SAMPLE_PRODUCTS];
-                            if (isLocalAdmin) seedSampleProducts();
-                        }
+                        products = validProds;
                     } else {
-                        products = [...SAMPLE_PRODUCTS];
-                        if (isLocalAdmin) seedSampleProducts();
+                        products = [];
                     }
                 } else {
-                    products = [...SAMPLE_PRODUCTS];
+                    products = [];
                 }
             } catch (e) {
-                products = [...SAMPLE_PRODUCTS];
+                products = [];
             }
             updateCategoryCounts();
             renderCatalog();
         }
 
-        async function seedSampleProducts() {
-            try {
-                const payload = {};
-                SAMPLE_PRODUCTS.forEach(p => { payload[p.id] = p; });
-                await fetch(`${PRODUCTS_ENDPOINT}.json`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                for (const p of SAMPLE_PRODUCTS) {
-                    await fetch(`${VAULT_ENDPOINT}/${p.id}.json`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            productId: p.id,
-                            downloadUrl: p.downloadUrl || 'https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png',
-                            updatedAt: Date.now()
-                        })
-                    }).catch(() => { });
-                }
-            } catch (e) { }
-        }
-
         function updateCategoryCounts() {
-            const counts = { all: products.length, software: 0, preset: 0, template: 0, graphic: 0, course: 0 };
+            const counts = { all: products.length, software: 0 };
             products.forEach(p => {
-                if (counts[p.category] !== undefined) counts[p.category]++;
+                const c = p.category || 'software';
+                counts[c] = (counts[c] || 0) + 1;
             });
             Object.keys(counts).forEach(k => {
                 const el = document.getElementById(`count-${k}`);
-                if (el) el.textContent = counts[k];
+                if (el) el.textContent = counts[k] || 0;
             });
         }
 
@@ -2101,9 +1995,9 @@
             if (filtered.length === 0) {
                 container.innerHTML = `
                     <div class="empty-box-fh">
-                        <div class="icon">🔍</div>
-                        <h4 style="font-size: 1.1rem; color: var(--fh-dark);">ไม่พบโปรแกรมในหมวดหมู่นี้</h4>
-                        <p style="font-size: 0.85rem; margin-top: 4px;">ลองค้นหาด้วยคำอื่น หรือคลิกดูซอฟต์แวร์ทั้งหมด</p>
+                        <div class="icon">📦</div>
+                        <h4 style="font-size: 1.1rem; color: var(--fh-dark);">${products.length === 0 ? 'ยังไม่มีรายการสินค้าในระบบ' : 'ไม่พบรายการสินค้าในหมวดหมู่นี้'}</h4>
+                        <p style="font-size: 0.85rem; margin-top: 4px;">${products.length === 0 ? (isLocalAdmin ? 'คลิกปุ่ม "⚙️ จัดการสินค้า" ด้านบน เพื่อเพิ่มสินค้าของคุณ' : 'โปรดติดตามรายการสินค้าใหม่เร็วๆ นี้') : 'ลองค้นหาด้วยคำอื่น หรือเลือกดูหมวดหมู่อื่น'}</p>
                     </div>
                 `;
                 return;
@@ -2168,12 +2062,8 @@
             });
 
             const catTitleMap = {
-                all: 'รายการซอฟต์แวร์ทั้งหมด',
-                software: 'โปรแกรม & สคริปต์วินโดวส์',
-                preset: 'พรีเซ็ตแต่งรูป',
-                template: 'เทมเพลตงานออกแบบ',
-                graphic: 'กราฟิก & ฟอนต์',
-                course: 'คู่มือ & คอร์ส'
+                all: 'รายการทั้งหมด',
+                software: 'โปรแกรม & สคริปต์วินโดวส์'
             };
             const titleEl = document.getElementById('content-header-title');
             if (titleEl) titleEl.textContent = catTitleMap[cat] || `หมวดหมู่: ${cat}`;
