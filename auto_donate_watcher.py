@@ -2587,11 +2587,12 @@ def start_kbank_notification_listener():
     t.start()
 
 _opened_payment_keys = set()
+_last_alert_time = {}
 
 def start_payment_requests_watcher():
     """Monitor Firebase RTDB for pending customer payment triggers and auto-open Chrome or auto-approve if deposit already arrived"""
     def watcher_loop():
-        global _opened_payment_keys, _last_deposit_event
+        global _opened_payment_keys, _last_alert_time, _last_deposit_event
         firebase_url = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests.json"
         
         _last_heartbeat_time = 0
@@ -2626,17 +2627,31 @@ def start_payment_requests_watcher():
                             _last_deposit_event["consumed"] = True
                             threading.Thread(target=handle_kbank_deposit_received, args=(_last_deposit_event.get("amount"),), daemon=True).start()
 
-                    # 2. กรณีลูกค้ากดยืนยันด้วยตนเอง (manualConfirmed) -> เปิดหน้าจอแอดมินทันที
+                    # 2. กรณีลูกค้ากดยืนยันด้วยตนเอง (manualConfirmed) หรือแจ้งเตือนซ้ำ -> เปิดหน้าจอแอดมินทันที + ส่งเสียงเตือน
                     for k, v in pending_items:
                         is_manual = v.get('manualConfirmed', False)
+                        last_confirmed = v.get('lastConfirmedAt') or v.get('reAlertAt') or 0
+                        should_alert = False
                         if is_manual and k not in _opened_payment_keys:
+                            should_alert = True
                             _opened_payment_keys.add(k)
-                            log_kbank(f"[Payment Watcher] 🔔 Customer manually confirmed payment: {k}. Opening Admin Chrome...")
+                        elif is_manual and last_confirmed and last_confirmed > _last_alert_time.get(k, 0):
+                            should_alert = True
+
+                        if should_alert:
+                            _last_alert_time[k] = last_confirmed if last_confirmed else int(time.time() * 1000)
+                            log_kbank(f"[Payment Watcher] 🔔 Customer manually confirmed / re-alerted payment: {k}. Opening Admin Chrome...")
                             open_admin_payment_in_chrome()
+                            try:
+                                import winsound
+                                winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+                            except Exception:
+                                pass
 
                     for k, v in data.items():
                         if isinstance(v, dict) and v.get('status') != 'pending':
                             _opened_payment_keys.discard(k)
+                            _last_alert_time.pop(k, None)
                     
                     # ระบบล้างขยะอัตโนมัติ: ลบรายการ approved เก่าเกิน 24 ชั่วโมง และ auto-reject รายการ pending ที่หมดเวลา 10 นาที
                     now_ms = int(time.time() * 1000)
