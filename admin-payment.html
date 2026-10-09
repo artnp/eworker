@@ -1013,22 +1013,6 @@
         fetchPaymentRequests();
         setInterval(fetchPaymentRequests, 2500);
 
-        // --- Store Presence Heartbeat ---
-        async function sendHeartbeat() {
-            try {
-                await fetch('https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/store_status.json', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        online: true,
-                        lastSeen: Date.now(),
-                        source: 'admin_payment_dashboard'
-                    })
-                });
-            } catch (e) {}
-        }
-        sendHeartbeat();
-        setInterval(sendHeartbeat, 8000);
 
         // Check Notification Permission on load
         if ("Notification" in window && Notification.permission === "granted") {
