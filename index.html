@@ -731,32 +731,44 @@
 
         /* Admin Quick Edit Bar on Card */
         .card-admin-tools {
-            position: absolute;
-            top: 10px;
-            right: 10px;
             display: flex;
-            gap: 4px;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
         }
 
         .btn-tool-sm {
             background: #ffffff;
             border: 1px solid var(--fh-border);
             color: var(--fh-slate);
-            width: 26px;
-            height: 26px;
+            padding: 4px 10px;
             border-radius: 4px;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem;
+            font-size: 0.78rem;
+            font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
+            text-decoration: none;
         }
 
         .btn-tool-sm:hover {
-            border-color: var(--fh-blue);
+            background: #f1f5f9;
+            border-color: #cbd5e1;
             color: var(--fh-blue);
         }
+
+        .btn-tool-sm.delete-btn {
+            color: var(--fh-danger);
+        }
+
+        .btn-tool-sm.delete-btn:hover {
+            background: #fee2e2;
+            border-color: #fca5a5;
+            color: #b91c1c;
+        }
+
 
         /* Empty State */
         .empty-box-fh {
@@ -1685,7 +1697,7 @@
                     </div>
 
                     <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--fh-border); padding-top: 16px;">
-                        <button type="button" class="btn-header-clean" style="color: var(--fh-danger);" id="btn-admin-delete" onclick="handleAdminDeleteProduct()" style="display: none;">
+                        <button type="button" class="btn-header-clean" style="color: var(--fh-danger); display: none;" id="btn-admin-delete" onclick="handleAdminDeleteProduct()">
                             🗑️ ลบสินค้านี้
                         </button>
                         <div style="display: flex; gap: 10px; margin-left: auto;">
@@ -1842,7 +1854,13 @@
                 if (res.ok) {
                     const data = await res.json();
                     if (data && typeof data === 'object') {
-                        products = Object.values(data);
+                        const validProds = Object.values(data).filter(p => p && typeof p === 'object' && p.id && p.title);
+                        if (validProds.length > 0) {
+                            products = validProds;
+                        } else {
+                            products = [...SAMPLE_PRODUCTS];
+                            if (isLocalAdmin) seedSampleProducts();
+                        }
                     } else {
                         products = [...SAMPLE_PRODUCTS];
                         if (isLocalAdmin) seedSampleProducts();
@@ -1865,6 +1883,15 @@
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
+                });
+                await fetch(`${VAULT_ENDPOINT}/prod_win_optimizer_2026.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        productId: 'prod_win_optimizer_2026',
+                        downloadUrl: 'https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png',
+                        updatedAt: Date.now()
+                    })
                 });
             } catch (e) { }
         }
@@ -1950,14 +1977,13 @@
                             <button class="btn-download-fh ${isUserPurchased ? 'purchased' : ''}" onclick="openProductDetail('${p.id}')">
                                 ${isUserPurchased ? '📥 รับไฟล์ของคุณ' : '⚡ ดาวน์โหลด'}
                             </button>
+                            ${isLocalAdmin ? `
+                                <div class="card-admin-tools">
+                                    <button class="btn-tool-sm" title="แก้ไขสินค้า" onclick="openAdminEditProduct('${p.id}', event)">✏️ แก้ไข</button>
+                                    <button class="btn-tool-sm delete-btn" title="ลบสินค้า" onclick="handleQuickDeleteProduct('${p.id}', event)">🗑️ ลบ</button>
+                                </div>
+                            ` : ''}
                         </div>
-
-                        ${isLocalAdmin ? `
-                            <div class="card-admin-tools">
-                                <button class="btn-tool-sm" title="แก้ไข" onclick="openAdminEditProduct('${p.id}', event)">✏️</button>
-                                <button class="btn-tool-sm" style="color: var(--fh-danger);" title="ลบ" onclick="handleQuickDeleteProduct('${p.id}', event)">🗑️</button>
-                            </div>
-                        ` : ''}
                     </div>
                 `;
             }).join('');
@@ -2636,9 +2662,15 @@
         }
 
         async function openAdminEditProduct(productId, event) {
-            if (event) event.stopPropagation();
-            const p = products.find(x => x.id === productId);
-            if (!p) return;
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            const p = products.find(x => String(x.id) === String(productId));
+            if (!p) {
+                showToast('⚠️ ไม่พบข้อมูลสินค้า (รหัสไม่ถูกต้อง)', 'warning');
+                return;
+            }
 
             document.getElementById('admin-form-header-text').textContent = 'แก้ไขสินค้า: ' + p.title;
             document.getElementById('admin-edit-product-id').value = p.id;
@@ -2822,15 +2854,24 @@
         }
 
         async function handleQuickDeleteProduct(productId, event) {
-            if (event) event.stopPropagation();
-            if (!confirm('ยืนยันลบสินค้านี้หรือไม่?')) return;
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            if (!productId || productId === 'undefined') {
+                showToast('⚠️ ไม่พบรหัสสินค้าที่ต้องการลบ', 'warning');
+                return;
+            }
+            if (!confirm('ยืนยันลบสินค้านี้ออกจากร้านค้าหรือไม่?')) return;
 
             try {
                 await fetch(`${PRODUCTS_ENDPOINT}/${productId}.json`, { method: 'DELETE' });
                 await fetch(`${VAULT_ENDPOINT}/${productId}.json`, { method: 'DELETE' });
                 showToast('🗑️ ลบสินค้าเรียบร้อยแล้ว', 'success');
                 await loadProducts();
-            } catch (e) { }
+            } catch (e) {
+                showToast('❌ ไม่สามารถลบสินค้าได้', 'warning');
+            }
         }
 
         // --- Sound & Effects ---
