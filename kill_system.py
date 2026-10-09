@@ -2,9 +2,22 @@ import os
 import sys
 import psutil
 
+import urllib.request
+import json
+
 print("=" * 45)
 print("  กำลังปิดระบบ AI Hub Watcher & Server...")
 print("=" * 45)
+
+# 0. แจ้ง Firebase ทันทีว่าร้านค้า Offline แล้ว
+try:
+    hb_url = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/store_status.json"
+    hb_data = json.dumps({"online": False, "lastSeen": 0, "source": "system_closed"}).encode('utf-8')
+    req = urllib.request.Request(hb_url, data=hb_data, method='PUT', headers={"Content-Type": "application/json"})
+    urllib.request.urlopen(req, timeout=3)
+    print("📡 ส่งสัญญาณแจ้ง Firebase: ปิดสถานะร้านค้า (Offline) เรียบร้อย")
+except Exception:
+    pass
 
 killed_count = 0
 
