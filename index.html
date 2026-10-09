@@ -792,8 +792,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(15, 23, 42, 0.65);
-            backdrop-filter: blur(4px);
+            background: rgba(15, 23, 42, 0.72);
             z-index: 1000;
             display: flex;
             align-items: center;
@@ -802,6 +801,43 @@
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.2s ease;
+        }
+
+        /* 10-Minute Countdown Badge */
+        .checkout-countdown-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #15803d;
+            font-size: 0.86rem;
+            font-weight: 600;
+            padding: 7px 16px;
+            border-radius: var(--radius-sm);
+            margin: 6px auto 10px auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .checkout-countdown-box.warning {
+            background: #fff7ed;
+            border-color: #fed7aa;
+            color: #c2410c;
+        }
+
+        .checkout-countdown-box.urgent {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #b91c1c;
+            animation: pulseWarn 1s infinite;
+        }
+
+        .countdown-digits {
+            font-family: monospace;
+            font-size: 1.08rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
         }
 
         .modal-overlay.active {
@@ -1504,6 +1540,12 @@
                 <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--fh-dark);">สแกนชำระเงินผ่าน PromptPay</h3>
                 <p style="font-size: 0.85rem; color: var(--fh-muted); margin-top: 4px;" id="checkout-product-title">กำลังจัดเตรียมคำสั่งซื้อ...</p>
 
+                <div class="checkout-countdown-box" id="checkout-countdown-box">
+                    <span>⏱️ กรุณาชำระเงินภายใน:</span>
+                    <strong class="countdown-digits" id="checkout-countdown-timer">10:00</strong>
+                    <span>นาที</span>
+                </div>
+
                 <div class="qr-clean-card">
                     <div id="qr-code-target"></div>
                     <div style="font-size: 0.8rem; font-weight: 700; color: #0b1120; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 6px;">
@@ -2163,12 +2205,15 @@
             const orderId = `ORD-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 899 + 100)}`;
             const secretToken = `sec_${Math.random().toString(36).substring(2)}_${Date.now()}`;
 
+            const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+
             currentCheckoutOrder = {
                 orderId: orderId,
                 productId: product.id,
                 productTitle: product.title,
                 price: product.price,
-                secretToken: secretToken
+                secretToken: secretToken,
+                expiresAt: expiresAt
             };
 
             document.getElementById('checkout-view-pending').style.display = 'block';
@@ -2190,6 +2235,7 @@
                     status: 'pending',
                     secretToken: secretToken,
                     createdAt: Date.now(),
+                    expiresAt: expiresAt,
                     timeStr: new Date().toLocaleTimeString('th-TH'),
                     dateStr: new Date().toLocaleDateString('th-TH'),
                     manualConfirmed: true
@@ -2204,6 +2250,55 @@
 
             document.getElementById('checkout-modal').classList.add('active');
             startCheckoutPolling(orderId, product);
+            startCheckoutCountdown(orderId, expiresAt);
+        }
+
+        let checkoutCountdownTimer = null;
+
+        function startCheckoutCountdown(orderId, expiresAt) {
+            if (checkoutCountdownTimer) {
+                clearInterval(checkoutCountdownTimer);
+                checkoutCountdownTimer = null;
+            }
+
+            const box = document.getElementById('checkout-countdown-box');
+            const timerEl = document.getElementById('checkout-countdown-timer');
+
+            const tick = () => {
+                const diffSec = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+                const m = String(Math.floor(diffSec / 60)).padStart(2, '0');
+                const s = String(diffSec % 60).padStart(2, '0');
+
+                if (timerEl) timerEl.textContent = `${m}:${s}`;
+
+                if (box) {
+                    if (diffSec <= 60) {
+                        box.className = 'checkout-countdown-box urgent';
+                    } else if (diffSec <= 180) {
+                        box.className = 'checkout-countdown-box warning';
+                    } else {
+                        box.className = 'checkout-countdown-box';
+                    }
+                }
+
+                if (diffSec <= 0) {
+                    clearInterval(checkoutCountdownTimer);
+                    checkoutCountdownTimer = null;
+
+                    // แจ้ง Firebase ปฏิเสธคำสั่งซื้อเนื่องจากหมดเวลา 10 นาที
+                    fetch(`${PAYMENT_ENDPOINT}/${orderId}.json`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: 'rejected', rejectReason: 'หมดเวลาทำรายการ (10 นาที)' })
+                    }).catch(() => {});
+
+                    showToast('⏰ หมดเวลาทำรายการชำระเงิน (10 นาที) คำสั่งซื้อถูกยกเลิกแล้ว', 'warning');
+                    closeCheckoutModal();
+                }
+            };
+
+            tick();
+            checkoutCountdownTimer = setInterval(tick, 1000);
         }
 
         function generatePromptPayQR(id, amount) {
@@ -2259,13 +2354,30 @@
                     if (res.ok) {
                         const data = await res.json();
                         if (data && data.status === 'approved') {
+                            if (checkoutCountdownTimer) {
+                                clearInterval(checkoutCountdownTimer);
+                                checkoutCountdownTimer = null;
+                            }
                             clearInterval(checkoutPollingTimer);
                             checkoutPollingTimer = null;
                             handlePaymentApprovedSuccess(orderId, product);
                         } else if (data && data.status === 'rejected') {
+                            if (checkoutCountdownTimer) {
+                                clearInterval(checkoutCountdownTimer);
+                                checkoutCountdownTimer = null;
+                            }
                             clearInterval(checkoutPollingTimer);
                             checkoutPollingTimer = null;
-                            showToast('❌ คำสั่งซื้อถูกปฏิเสธ', 'warning');
+                            showToast(`❌ ${data.rejectReason || 'คำสั่งซื้อถูกปฏิเสธหรือหมดเวลา'}`, 'warning');
+                            closeCheckoutModal();
+                        } else if (data === null) {
+                            if (checkoutCountdownTimer) {
+                                clearInterval(checkoutCountdownTimer);
+                                checkoutCountdownTimer = null;
+                            }
+                            clearInterval(checkoutPollingTimer);
+                            checkoutPollingTimer = null;
+                            showToast('❌ คำสั่งซื้อนี้ถูกยกเลิกแล้ว', 'warning');
                             closeCheckoutModal();
                         }
                     }
@@ -2341,6 +2453,10 @@
             if (checkoutPollingTimer) {
                 clearInterval(checkoutPollingTimer);
                 checkoutPollingTimer = null;
+            }
+            if (checkoutCountdownTimer) {
+                clearInterval(checkoutCountdownTimer);
+                checkoutCountdownTimer = null;
             }
             document.getElementById('checkout-modal').classList.remove('active');
             currentCheckoutOrder = null;
