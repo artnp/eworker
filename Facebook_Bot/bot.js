@@ -21,7 +21,7 @@ const originalError = console.error;
 const originalWarn = console.warn;
 
 // Delete old bot.log to save disk space
-try { if (fs.existsSync(LOG_FILE)) fs.unlinkSync(LOG_FILE); } catch (e) {}
+try { if (fs.existsSync(LOG_FILE)) fs.unlinkSync(LOG_FILE); } catch (e) { }
 
 function logToFile(level, ...args) {
   // Disabled to save disk space
@@ -64,7 +64,7 @@ function reportStatus(percent, status, detail = '', logType = 'info', postIdx = 
       timestamp: Date.now()
     }, null, 2);
     fs.writeFileSync(statusFile, payload, 'utf8');
-  } catch (e) {}
+  } catch (e) { }
 }
 
 function ensureDownloadsDir() {
@@ -193,7 +193,7 @@ async function hideProcessedPosts(page, processedPostIds) {
         art.setAttribute('data-bot-processed', 'true');
       }
     }
-  }, idsArray).catch(() => {});
+  }, idsArray).catch(() => { });
 }
 
 async function sleep(ms) {
@@ -209,9 +209,9 @@ async function checkIsGeminiLoggedOut(page) {
         const text = (el.textContent || '').trim();
         const href = (el.getAttribute('href') || '').toLowerCase();
         if (
-          text === 'ลงชื่อเข้าใช้' || 
-          text === 'Sign in' || 
-          href.includes('accounts.google.com/servicelogin') || 
+          text === 'ลงชื่อเข้าใช้' ||
+          text === 'Sign in' ||
+          href.includes('accounts.google.com/servicelogin') ||
           href.includes('accounts.google.com/interactive-login')
         ) {
           return true;
@@ -351,7 +351,7 @@ async function getPostText(article) {
   try {
     const seeMoreBtn = article.locator('div[role="button"]:has-text("ดูเพิ่มเติม"), div[role="button"]:has-text("See more")').first();
     if (await seeMoreBtn.count() > 0 && await seeMoreBtn.isVisible().catch(() => false)) {
-      await seeMoreBtn.click({ timeout: 1500 }).catch(() => {});
+      await seeMoreBtn.click({ timeout: 1500 }).catch(() => { });
       await sleep(300);
     }
   } catch (e) { }
@@ -440,7 +440,7 @@ async function shouldFilterPost(article, botProfileName) {
 
       const spamKeywords = [
         'คิวว่าง', 'รับตัดต่อ', 'ราคาเพียง', 'สอบถามได้', 'เริ่มต้นแค่', 'โป๊', 'เย็ด', 'นม', 'หี', 'หน้าอก', 'หรรม', '18+', 'เสียว', 'เงี่ยน', 'หนังผู้ใหญ่',
-        'ฝากร้าน', 'เปิดรับ', 'สนใจสอบถาม', 'รับประกัน', 'สร้างรายได้',
+        'ฝากร้าน', 'เปิดรับ', 'สนใจสอบถาม', 'รับประกัน', 'สร้างรายได้', 'มิจฉาชีพ', 'โจร', 'โกง',
         'สอบถามเพิ่มเติม', 'รับทำ', 'รีวิว', 'บริการ', 'เน็ตบ้าน', 'ด่วน',
         'อินเตอร์เน็ตบ้าน', 'สนใจทักแชท', 'ว่างทำให้', 'ว่างแล้ว', 'ขอส่ง', 'ให้ฟรี',
         'ภาพเคลื่อนไหว', 'vdo', 'video', 'วิดีโอ', 'วีดีโอ', 'clip', 'คลิป', '#'
@@ -655,7 +655,7 @@ async function runPythonImageEditor(imagePath, postText = '') {
 
   try {
     const pythonScript = 'D:\\Github\\eworker\\screenshot_donate.py';
-    
+
     // ใช้ execFile แทน exec เพื่อป้องกันการปนเปื้อนของ parameter/character escaping
     const args = ['--donate-no-paste', imagePath];
     if (postText) {
@@ -665,12 +665,12 @@ async function runPythonImageEditor(imagePath, postText = '') {
 
     console.log('Running python script via execFile:', pythonScript, args);
     const { stdout, stderr } = await execFilePromise('python', [pythonScript, ...args]);
-    
+
     if (stderr && !stderr.includes('DeprecationWarning') && !stderr.includes('UserWarning')) {
       console.warn('Python stderr:', stderr);
     }
     console.log('Python stdout:', stdout);
-    
+
     if (fs.existsSync(desktopOutputPath)) {
       const botImagePath = path.join(DOWNLOADS_DIR, `final_post_${Date.now()}.png`);
       fs.copyFileSync(desktopOutputPath, botImagePath);
@@ -940,14 +940,14 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
           retryClicked = await page.evaluate(() => {
             // Collect all clickable elements
             const allBtns = Array.from(document.querySelectorAll('button, div[role="button"], span[role="button"], a, span'));
-            
+
             // Helper: check visible and clickable
             function isClickable(el) {
               const rect = el.getBoundingClientRect();
               const style = window.getComputedStyle(el);
               return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
             }
-            
+
             // Priority 1: "ลองอีกครั้ง" / "Try again" exact match first
             for (const btn of allBtns) {
               const text = (btn.innerText || btn.textContent || '').trim();
@@ -956,7 +956,7 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
                 if (isClickable(btn)) { btn.click(); return true; }
               }
             }
-            
+
             // Priority 2: includes "ลองอีกครั้ง" or "try again"
             for (const btn of allBtns) {
               const text = (btn.innerText || btn.textContent || '').trim().toLowerCase();
@@ -965,7 +965,7 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
                 if (isClickable(btn)) { btn.click(); return true; }
               }
             }
-            
+
             // Priority 3: other retry patterns
             const patterns = [
               'สร้างภาพ', 'สร้างใหม่', 'retry', 'regenerate',
@@ -981,7 +981,7 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
                 }
               }
             }
-            
+
             // Fallback: last mat-icon refresh (latest response is at the bottom of the page)
             const refreshIcons = Array.from(document.querySelectorAll('mat-icon[data-mat-icon-name="refresh"], mat-icon[fonticon="refresh"]'));
             if (refreshIcons.length > 0) {
@@ -991,7 +991,7 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
               lastRefreshIcon.click();
               return true;
             }
-            
+
             return false;
           }).catch(() => false);
 
@@ -1092,7 +1092,7 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
     if (captured) {
       try {
         console.log('[Choice] Checking for image selection buttons...');
-        
+
         // หาปุ่มเลือกภาพทั้งหมด (Gemini ใช้ aria-label "Select image 1", "Select image 2" ฯลฯ)
         const choiceButtons = await page.evaluate(() => {
           const btns = Array.from(document.querySelectorAll('button[aria-label*="Select image"], button[aria-label*="เลือกภาพ"]'));
@@ -1102,7 +1102,7 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
         if (choiceButtons >= 2) {
           hasChoice = true;
           console.log(`[Choice] ✅ Found ${choiceButtons} image choices. Selecting latest first image...`);
-          
+
           // คลิกปุ่มแรกของข้อความล่าสุด
           const firstChoice = page.locator('button[aria-label*="Select image 1"], button[aria-label*="เลือกภาพ 1"]').last();
           if (await firstChoice.count() > 0) {
@@ -1134,7 +1134,7 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
         "I can't create",
         "I'm not able to generate",
         "cannot fulfill this request",
-        
+
         // Thai
         "ฉันไม่สามารถช่วยเหลือ",
         "ฉันไม่สามารถทำ",
@@ -1204,19 +1204,19 @@ async function processWithGemini(page, imagePaths, postText, geminiUrl) {
             canvas.height = img.naturalHeight;
             canvas.getContext('2d').drawImage(img, 0, 0);
             return canvas.toDataURL('image/png');
-          } catch (e) {}
+          } catch (e) { }
         }
       }
       return null;
     }).catch(() => null);
-    
+
     if (dataUrl && dataUrl.startsWith('data:image/png;base64,')) {
       const destPath = path.join(DOWNLOADS_DIR, `gemini_result_${Date.now()}.png`);
       fs.writeFileSync(destPath, Buffer.from(dataUrl.replace(/^data:image\/png;base64,/, ''), 'base64'));
       console.log(`[FastDL] Captured result: ${destPath}`);
       return destPath;
     }
-    
+
     console.error('[FastDL] Could not capture Gemini result.');
     return null;
   } catch (e) {
@@ -1393,7 +1393,7 @@ async function postComment(article, imagePath, postUrl) {
     if (!composer) {
       const clicked = await page.evaluate((articleEl) => {
         if (!articleEl) return null;
-        
+
         const clickBtn = (root) => {
           const candidates = root.querySelectorAll('[role="button"], button, div[aria-label], span[aria-label]');
           for (const el of candidates) {
@@ -1546,7 +1546,7 @@ async function postComment(article, imagePath, postUrl) {
             if (isPermalink) {
               clickBtn(document);
             }
-          }, await article.elementHandle().catch(() => null)).catch(() => {});
+          }, await article.elementHandle().catch(() => null)).catch(() => { });
           await sleep(1000);
         }
 
@@ -1630,9 +1630,9 @@ async function postComment(article, imagePath, postUrl) {
       console.log('Image copied to clipboard (CF_PNG + CF_DIB).');
 
       // 2. focus composer ด้วย DOM และ Playwright แล้วกด Ctrl+V
-      await composer.evaluate((el) => { el.focus(); el.click(); }).catch(() => {});
-      await composer.focus().catch(() => {});
-      await composer.click({ force: true }).catch(() => {});
+      await composer.evaluate((el) => { el.focus(); el.click(); }).catch(() => { });
+      await composer.focus().catch(() => { });
+      await composer.click({ force: true }).catch(() => { });
       await sleep(500);
       await page.keyboard.press('Control+v');
       await sleep(4000); // รอให้ Facebook โหลดภาพ
@@ -1643,7 +1643,7 @@ async function postComment(article, imagePath, postUrl) {
           if (!compEl) return false;
           let container = compEl;
           while (container && container.tagName !== 'BODY') {
-            const attachment = 
+            const attachment =
               container.querySelector('div[role="progressbar"]') ||
               container.querySelector('img[src*="blob:"]') ||
               container.querySelector('div[data-type="image"]') ||
@@ -1652,7 +1652,7 @@ async function postComment(article, imagePath, postUrl) {
               container.querySelector('div[class*="UFIImageAttach"]') ||
               container.querySelector('div[class*="commentContent"] img');
             if (attachment) return true;
-            
+
             const imgs = Array.from(container.querySelectorAll('img'));
             for (const img of imgs) {
               if (img.src && img.src.startsWith('blob:')) return true;
@@ -1674,33 +1674,33 @@ async function postComment(article, imagePath, postUrl) {
         console.warn('Ctrl+V paste failed or preview not ready. Trying JS DOM paste fallback...');
         const base64Str = fs.readFileSync(imagePath).toString('base64');
         const mimeType = 'image/png';
-        
+
         const domPasteSuccess = await page.evaluate(async ({ base64, mimeType, compEl }) => {
           if (!compEl) return false;
           compEl.focus();
           compEl.click();
-          
+
           try {
             const resp = await fetch(`data:${mimeType};base64,${base64}`);
             const blob = await resp.blob();
             const file = new File([blob], `comment_image_${Date.now()}.png`, { type: mimeType });
-            
+
             const dt = new DataTransfer();
             dt.items.add(file);
-            
+
             const pasteEvent = new ClipboardEvent('paste', {
               bubbles: true,
               cancelable: true,
               composed: true
             });
-            
+
             Object.defineProperty(pasteEvent, 'clipboardData', {
               value: dt,
               configurable: true,
               enumerable: true,
               writable: false
             });
-            
+
             compEl.dispatchEvent(pasteEvent);
             return true;
           } catch (err) {
@@ -1749,7 +1749,7 @@ async function postComment(article, imagePath, postUrl) {
     ];
     const promoText = promoMessages[Math.floor(Math.random() * promoMessages.length)];
     // ใช้ insertText แทน fill() เพื่อไม่ลบภาพที่ paste ไปแล้ว
-    await composer.evaluate((el) => { el.focus(); }).catch(() => {});
+    await composer.evaluate((el) => { el.focus(); }).catch(() => { });
     await sleep(300);
     await page.keyboard.press('End'); // ไปท้ายสุดก่อน
     await sleep(200);
@@ -1776,134 +1776,134 @@ async function postComment(article, imagePath, postUrl) {
       submitAttempts++;
       await closeFacebookModal(page);
 
-    // *** Submit: หาปุ่ม submit จาก DOM รอบ composer (ไม่ใช้ Enter ซึ่งทำให้ขึ้นบรรทัดใหม่) ***
+      // *** Submit: หาปุ่ม submit จาก DOM รอบ composer (ไม่ใช้ Enter ซึ่งทำให้ขึ้นบรรทัดใหม่) ***
 
-    // Strategy 1: evaluate DOM หาปุ่ม submit ของ comment เท่านั้น โดยขยายกรอบหาในช่องพิมพ์ขึ้นไปเรื่อยๆ
-    commentPosted = await page.evaluate((compEl) => {
-      const composer =
-        compEl ||
-        document.activeElement ||
-        document.querySelector('div[role="textbox"][contenteditable="true"][aria-label*="ความคิดเห็น"]') ||
-        document.querySelector('div[role="textbox"][contenteditable="true"]');
-      if (!composer) return false;
+      // Strategy 1: evaluate DOM หาปุ่ม submit ของ comment เท่านั้น โดยขยายกรอบหาในช่องพิมพ์ขึ้นไปเรื่อยๆ
+      commentPosted = await page.evaluate((compEl) => {
+        const composer =
+          compEl ||
+          document.activeElement ||
+          document.querySelector('div[role="textbox"][contenteditable="true"][aria-label*="ความคิดเห็น"]') ||
+          document.querySelector('div[role="textbox"][contenteditable="true"]');
+        if (!composer) return false;
 
-      // เดินขึ้นหา parent container (เช่น form หรือ div ที่หุ้มช่องพิมพ์ทั้งหมด) เพื่อหาปุ่มส่ง (จำกัดระดับขึ้นไม่เกิน 4 ชั้นเพื่อไม่ให้ลามไปที่ปุ่มแสดงความคิดเห็นด้านนอก)
-      let container = composer;
-      let depth = 0;
-      while (container && container.tagName !== 'BODY' && depth < 5) {
-        depth++;
-        const buttons = Array.from(container.querySelectorAll('div[role="button"], button'));
-        const submitBtn = buttons.find(btn => {
-          const label = (btn.getAttribute('aria-label') || '').trim();
-          const txt = (btn.innerText || '').trim();
-          const disabled = btn.getAttribute('aria-disabled') === 'true' || btn.disabled;
-          if (disabled) return false;
+        // เดินขึ้นหา parent container (เช่น form หรือ div ที่หุ้มช่องพิมพ์ทั้งหมด) เพื่อหาปุ่มส่ง (จำกัดระดับขึ้นไม่เกิน 4 ชั้นเพื่อไม่ให้ลามไปที่ปุ่มแสดงความคิดเห็นด้านนอก)
+        let container = composer;
+        let depth = 0;
+        while (container && container.tagName !== 'BODY' && depth < 5) {
+          depth++;
+          const buttons = Array.from(container.querySelectorAll('div[role="button"], button'));
+          const submitBtn = buttons.find(btn => {
+            const label = (btn.getAttribute('aria-label') || '').trim();
+            const txt = (btn.innerText || '').trim();
+            const disabled = btn.getAttribute('aria-disabled') === 'true' || btn.disabled;
+            if (disabled) return false;
 
-          return (
-            label === 'ส่ง' ||
-            label === 'Send' ||
-            label === 'โพสต์' ||
-            label === 'Post' ||
-            label === 'โพสต์ความคิดเห็น' ||
-            label === 'Post comment' ||
-            (label === 'Comment' && txt.length < 5) ||
-            (label === 'แสดงความคิดเห็น' && txt.length < 5) ||
-            txt === 'ส่ง' ||
-            txt === 'Send' ||
-            txt === 'โพสต์' ||
-            txt === 'Post' ||
-            txt === 'โพสต์ความคิดเห็น' ||
-            txt === 'Post comment'
-          );
-        });
-        
-        if (submitBtn) {
-          submitBtn.click();
-          return true;
-        }
-        container = container.parentElement;
-      }
-      return false;
-    }, composer).catch(() => false);
+            return (
+              label === 'ส่ง' ||
+              label === 'Send' ||
+              label === 'โพสต์' ||
+              label === 'Post' ||
+              label === 'โพสต์ความคิดเห็น' ||
+              label === 'Post comment' ||
+              (label === 'Comment' && txt.length < 5) ||
+              (label === 'แสดงความคิดเห็น' && txt.length < 5) ||
+              txt === 'ส่ง' ||
+              txt === 'Send' ||
+              txt === 'โพสต์' ||
+              txt === 'Post' ||
+              txt === 'โพสต์ความคิดเห็น' ||
+              txt === 'Post comment'
+            );
+          });
 
-    if (commentPosted) {
-      console.log('[Submit] ✅ Clicked submit button via DOM traversal.');
-      await sleep(3000);
-    }
-
-    // Strategy 2: Playwright locator หาปุ่ม submit เฉพาะ exact match (ลบแสดงความคิดเห็นออก ป้องกันกดปุ่มบนโพสต์)
-    if (!commentPosted) {
-      const submitSelectors = [
-        'div[aria-label="โพสต์ความคิดเห็น"]',
-        'div[aria-label="Post comment"]',
-        'div[aria-label="Comment"]',
-        'div[aria-label="โพสต์"]',
-        'div[aria-label="Post"]',
-        'div[aria-label="ส่ง"]',
-        'div[aria-label="Send"]',
-      ];
-      
-      const hasActiveDialog = await page.evaluate(() => {
-        const dialogs = Array.from(document.querySelectorAll('div[role="dialog"], div[role="alertdialog"]'));
-        return dialogs.some(d => { const r = d.getBoundingClientRect(); return r.width > 0 && r.height > 0; });
-      }).catch(() => false);
-      const locatorRoot = hasActiveDialog ? page.locator('div[role="dialog"], div[role="alertdialog"]').last() : article;
-
-      for (const sel of submitSelectors) {
-        try {
-          const btns = locatorRoot.locator(sel);
-          const count = await btns.count();
-          for (let i = 0; i < count; i++) {
-            const btn = btns.nth(i);
-            if (!await btn.isVisible({ timeout: 500 }).catch(() => false)) continue;
-            if (await btn.getAttribute('aria-disabled').catch(() => 'false') === 'true') continue;
-            await btn.click({ force: true });
-            console.log('[Submit] ✅ Playwright clicked: ' + sel);
-            commentPosted = true;
-            await sleep(3000);
-            break;
+          if (submitBtn) {
+            submitBtn.click();
+            return true;
           }
-          if (commentPosted) break;
-        } catch (e) { }
+          container = container.parentElement;
+        }
+        return false;
+      }, composer).catch(() => false);
+
+      if (commentPosted) {
+        console.log('[Submit] ✅ Clicked submit button via DOM traversal.');
+        await sleep(3000);
       }
-    }
-    
-    // Strategy 3: Tab ออกจาก textbox ไปที่ปุ่ม submit แล้วกด Space
-    if (!commentPosted) {
-      try {
-        console.log('[Submit] Strategy 3: Tab to submit button...');
-        await composer.focus();
-        await sleep(200);
-        await page.keyboard.press('Tab');
-        await sleep(300);
-        const focusedIsBtn = await page.evaluate(() => {
-          const el = document.activeElement;
-          return el && (el.getAttribute('role') === 'button' || el.tagName === 'BUTTON');
-        });
-        if (focusedIsBtn) {
-          await page.keyboard.press('Space');
-          console.log('[Submit] \u2705 Space pressed on focused button.');
-        } else {
-          await page.keyboard.press('Tab');
+
+      // Strategy 2: Playwright locator หาปุ่ม submit เฉพาะ exact match (ลบแสดงความคิดเห็นออก ป้องกันกดปุ่มบนโพสต์)
+      if (!commentPosted) {
+        const submitSelectors = [
+          'div[aria-label="โพสต์ความคิดเห็น"]',
+          'div[aria-label="Post comment"]',
+          'div[aria-label="Comment"]',
+          'div[aria-label="โพสต์"]',
+          'div[aria-label="Post"]',
+          'div[aria-label="ส่ง"]',
+          'div[aria-label="Send"]',
+        ];
+
+        const hasActiveDialog = await page.evaluate(() => {
+          const dialogs = Array.from(document.querySelectorAll('div[role="dialog"], div[role="alertdialog"]'));
+          return dialogs.some(d => { const r = d.getBoundingClientRect(); return r.width > 0 && r.height > 0; });
+        }).catch(() => false);
+        const locatorRoot = hasActiveDialog ? page.locator('div[role="dialog"], div[role="alertdialog"]').last() : article;
+
+        for (const sel of submitSelectors) {
+          try {
+            const btns = locatorRoot.locator(sel);
+            const count = await btns.count();
+            for (let i = 0; i < count; i++) {
+              const btn = btns.nth(i);
+              if (!await btn.isVisible({ timeout: 500 }).catch(() => false)) continue;
+              if (await btn.getAttribute('aria-disabled').catch(() => 'false') === 'true') continue;
+              await btn.click({ force: true });
+              console.log('[Submit] ✅ Playwright clicked: ' + sel);
+              commentPosted = true;
+              await sleep(3000);
+              break;
+            }
+            if (commentPosted) break;
+          } catch (e) { }
+        }
+      }
+
+      // Strategy 3: Tab ออกจาก textbox ไปที่ปุ่ม submit แล้วกด Space
+      if (!commentPosted) {
+        try {
+          console.log('[Submit] Strategy 3: Tab to submit button...');
+          await composer.focus();
           await sleep(200);
-          await page.keyboard.press('Space');
-          console.log('[Submit] \u2705 Tab+Tab+Space fallback.');
+          await page.keyboard.press('Tab');
+          await sleep(300);
+          const focusedIsBtn = await page.evaluate(() => {
+            const el = document.activeElement;
+            return el && (el.getAttribute('role') === 'button' || el.tagName === 'BUTTON');
+          });
+          if (focusedIsBtn) {
+            await page.keyboard.press('Space');
+            console.log('[Submit] \u2705 Space pressed on focused button.');
+          } else {
+            await page.keyboard.press('Tab');
+            await sleep(200);
+            await page.keyboard.press('Space');
+            console.log('[Submit] \u2705 Tab+Tab+Space fallback.');
+          }
+          await sleep(2000);
+          // ตรวจสอบว่าหลังจากกดแล้วตัวข้อความยังค้างอยู่ไหม (ถ้าส่งผ่าน ข้อความจะถูกเคลียร์เป็นว่างเปล่า)
+          const isStillDrafting = await page.evaluate((el) => {
+            return el && (el.textContent || '').trim().length > 0;
+          }, composer).catch(() => false);
+          commentPosted = !isStillDrafting;
+          if (commentPosted) {
+            console.log('[Submit] \u2705 Composer cleared, submit confirmed.');
+          } else {
+            console.warn('[Submit] ⚠️ Composer still has text after Tab+Space.');
+          }
+        } catch (e) {
+          console.warn('[Submit] Tab+Space failed:', e.message);
         }
-        await sleep(2000);
-        // ตรวจสอบว่าหลังจากกดแล้วตัวข้อความยังค้างอยู่ไหม (ถ้าส่งผ่าน ข้อความจะถูกเคลียร์เป็นว่างเปล่า)
-        const isStillDrafting = await page.evaluate((el) => {
-          return el && (el.textContent || '').trim().length > 0;
-        }, composer).catch(() => false);
-        commentPosted = !isStillDrafting;
-        if (commentPosted) {
-          console.log('[Submit] \u2705 Composer cleared, submit confirmed.');
-        } else {
-          console.warn('[Submit] ⚠️ Composer still has text after Tab+Space.');
-        }
-      } catch (e) {
-        console.warn('[Submit] Tab+Space failed:', e.message);
       }
-    }
 
       // เช็กว่าเป็น modal กฎกลุ่มของ Facebook จริงๆ หรือไม่ (ไม่เอาป๊อปอัป Chromium)
       const hasRulesDialog = await page.evaluate(() => {
@@ -2002,7 +2002,7 @@ async function postComment(article, imagePath, postUrl) {
                 }
                 parent = parent.parentElement;
               }
-              
+
               if (hasAuthor) {
                 commentUrl = a.href;
                 break;
@@ -2153,17 +2153,17 @@ async function closeFacebookModal(page) {
     const closed = await page.evaluate(() => {
       const dialogs = Array.from(document.querySelectorAll('div[role="dialog"], div[role="alertdialog"]'));
       if (dialogs.length === 0) return false;
-      
+
       let anyClosed = false;
       for (const dialog of dialogs) {
         // Skip post overlay/modal (post modals have role="article" or article element inside them)
         if (dialog.querySelector('[role="article"], article')) {
           continue;
         }
-        
+
         const safeKeywords = ['เข้าใจแล้ว', 'เข้าใจ', 'got it', 'dismiss', 'ยอมรับ', 'ตกลง', 'ok'];
         const closeKeywords = ['close', 'ปิด'];
-        
+
         const textContent = (dialog.textContent || '').toLowerCase();
         // Check if it is a rules, guidelines, warning, standards, or agreement popup
         const isRulesOrWarning = ['กฎ', 'กติกา', 'rules', 'มาตรฐานชุมชน', 'standards', 'policy', 'นโยบาย', 'ข้อตกลง'].some(kw => textContent.includes(kw));
@@ -2172,10 +2172,10 @@ async function closeFacebookModal(page) {
         for (const el of clickables) {
           const text = (el.innerText || el.textContent || '').trim().toLowerCase();
           const ariaLabel = (el.getAttribute('aria-label') || '').trim().toLowerCase();
-          
+
           const matchesSafe = safeKeywords.some(kw => text === kw || ariaLabel === kw || (text.includes(kw) && text.length < 25) || (ariaLabel.includes(kw) && ariaLabel.length < 25));
           const matchesClose = isRulesOrWarning && closeKeywords.some(kw => text === kw || ariaLabel === kw || (text.includes(kw) && text.length < 25) || (ariaLabel.includes(kw) && ariaLabel.length < 25));
-          
+
           if (matchesSafe || matchesClose) {
             el.click();
             anyClosed = true;
@@ -2198,7 +2198,7 @@ async function dismissGeminiPopups(page) {
   try {
     const dialogs = page.locator('mat-dialog-container, div[role="dialog"], div[role="alertdialog"], .update-popup, .modal');
     const dialogCount = await dialogs.count();
-    
+
     if (dialogCount > 0) {
       console.log(`[Gemini Popup] Found ${dialogCount} potential popups/dialogs.`);
       for (let i = 0; i < dialogCount; i++) {
@@ -2222,7 +2222,7 @@ async function dismissGeminiPopups(page) {
         }
       }
     }
-    
+
     // Standalone buttons fallback
     const consentButtons = page.locator('button, [role="button"]');
     const cCount = await consentButtons.count();
@@ -2252,7 +2252,7 @@ async function clickGeminiTryAgainDropdown(page) {
       'mat-icon[data-mat-icon-name="more_vert"]',
       'button:has(mat-icon[data-mat-icon-name="more_vert"])'
     ];
-    
+
     for (const sel of selectors) {
       const triggers = page.locator(sel);
       const count = await triggers.count();
@@ -2262,7 +2262,7 @@ async function clickGeminiTryAgainDropdown(page) {
           console.log(`[Gemini Dropdown] Clicking menu trigger: ${sel}`);
           await trigger.click({ force: true });
           await sleep(600);
-          
+
           const menuOptions = [
             'div[role="menuitem"]',
             '[role="option"]',
@@ -2286,7 +2286,7 @@ async function clickGeminiTryAgainDropdown(page) {
               }
             }
           }
-          await trigger.click({ force: true }).catch(() => {});
+          await trigger.click({ force: true }).catch(() => { });
           await sleep(300);
         }
       }
@@ -2537,10 +2537,10 @@ let silentModeActive = false;
 
 // bring tab to front (และ restore window เฉพาะกรณีจำเป็นต้องให้ User ดู/ล็อกอิน)
 async function bringWindowToFront(page, force = false) {
-  await page.bringToFront().catch(() => {});
+  await page.bringToFront().catch(() => { });
   if (isBrowserHidden && !force) return;
   if (!isBrowserHidden || force) {
-    await setBrowserVisibility(true).catch(() => {});
+    await setBrowserVisibility(true).catch(() => { });
     await sleep(300);
   }
 }
@@ -2561,16 +2561,16 @@ async function setBrowserVisibility(show = true) {
       '"@',
       "Get-CimInstance Win32_Process -Filter \"Name = 'chrome.exe' or Name = 'msedge.exe' or Name = 'chromium.exe'\" | Where-Object { \$_.CommandLine -like '*Facebook_Bot*user_data*' } | ForEach-Object { Get-Process -Id \$_.ProcessId } | Where-Object { \$_.MainWindowHandle -ne 0 } | ForEach-Object {",
       show ? '  [Win32]::ShowWindow($_.MainWindowHandle, 9) | Out-Null; [Win32]::SetWindowPos($_.MainWindowHandle, [IntPtr]::Zero, 2020, 100, 1280, 800, 0x0040) | Out-Null; [Win32]::SetForegroundWindow($_.MainWindowHandle) | Out-Null'
-           : '  [Win32]::ShowWindow($_.MainWindowHandle, 4) | Out-Null; [Win32]::SetWindowPos($_.MainWindowHandle, [IntPtr]1, 3800, 1000, 1280, 800, 0x0054) | Out-Null',
+        : '  [Win32]::ShowWindow($_.MainWindowHandle, 4) | Out-Null; [Win32]::SetWindowPos($_.MainWindowHandle, [IntPtr]1, 3800, 1000, 1280, 800, 0x0054) | Out-Null',
       '}',
     ];
     fs.writeFileSync(tempPs1, psLines.filter(Boolean).join('\r\n'), 'utf8');
-    await execPromise(`cmd /c powershell -NoProfile -ExecutionPolicy Bypass -File "${tempPs1}"`, { timeout: 5000 }).catch(() => {});
-    try { fs.unlinkSync(tempPs1); } catch (_) {}
+    await execPromise(`cmd /c powershell -NoProfile -ExecutionPolicy Bypass -File "${tempPs1}"`, { timeout: 5000 }).catch(() => { });
+    try { fs.unlinkSync(tempPs1); } catch (_) { }
     isBrowserHidden = !show;
     return { success: true, hidden: isBrowserHidden };
   } catch (e) {
-    try { fs.unlinkSync(tempPs1); } catch (_) {}
+    try { fs.unlinkSync(tempPs1); } catch (_) { }
     return { success: false, message: e.message };
   }
 }
@@ -2583,12 +2583,12 @@ async function minimizeBrowser(minimize = true) {
 // ฟังก์ชันควบคุมการแสดง/ซ่อนหน้าต่าง browser
 async function toggleBrowserVisibility() {
   if (!browserContext) return { success: false, message: 'Browser not running' };
-  
+
   try {
     if (isBrowserHidden) {
       await setBrowserVisibility(true); // show
       const pages = browserContext.pages();
-      if (pages.length > 0) await pages[0].bringToFront().catch(() => {});
+      if (pages.length > 0) await pages[0].bringToFront().catch(() => { });
       return { success: true, message: 'Browser shown', hidden: false };
     } else {
       await setBrowserVisibility(false); // hide offscreen
@@ -2655,17 +2655,17 @@ async function pauseOnError(isDebugPause, message) {
     // Force kill chrome ที่เชื่อมกับ user_data
     try {
       const killCmd = `cmd /c wmic process where "name='chrome.exe' and CommandLine like '%Facebook_Bot\\\\user_data%'" delete`;
-      exec(killCmd, () => {});
-    } catch (e) {}
+      exec(killCmd, () => { });
+    } catch (e) { }
     setTimeout(() => process.exit(1), 1000);
   });
-  
+
   process.on('uncaughtException', (err) => {
     console.error('Uncaught Exception:', err);
     try {
       const killCmd = `cmd /c wmic process where "name='chrome.exe' and CommandLine like '%Facebook_Bot\\\\user_data%'" delete`;
-      exec(killCmd, () => {});
-    } catch (e) {}
+      exec(killCmd, () => { });
+    } catch (e) { }
     setTimeout(() => process.exit(1), 1000);
   });
 
@@ -2674,8 +2674,8 @@ async function pauseOnError(isDebugPause, message) {
     console.log('[Cleanup] Process exiting, killing Chrome...');
     try {
       const killCmd = `cmd /c wmic process where "name='chrome.exe' and CommandLine like '%Facebook_Bot\\\\user_data%'" delete`;
-      exec(killCmd, () => {});
-    } catch (e) {}
+      exec(killCmd, () => { });
+    } catch (e) { }
   };
   process.on('SIGINT', cleanupOnExit);
   process.on('SIGTERM', cleanupOnExit);
@@ -2693,21 +2693,21 @@ async function pauseOnError(isDebugPause, message) {
     console.warn(`[Timeout] Bot execution reached hard limit of 20 minutes. Force exiting.`);
     try {
       showWindowsNotification('Facebook Bot', `หมดเวลา: ระบบปิดอัตโนมัติ (เกิน 20 นาที)`, 'Warning');
-    } catch (e) {}
+    } catch (e) { }
     try {
       reportStatus(100, '⚠️ บอททำงานเกินเวลา 20 นาที', 'ระบบปิดการทำงานอัตโนมัติ', 'error', currentPostIndex, 'exit');
-    } catch (e) {}
+    } catch (e) { }
     await new Promise(resolve => setTimeout(resolve, 1000));
     try {
       // Force kill chrome instances linked to user_data to release lock
       const killCmd = `cmd /c wmic process where "name='chrome.exe' and CommandLine like '%Facebook_Bot\\\\user_data%'" delete`;
-      exec(killCmd, () => {});
-    } catch (e) {}
+      exec(killCmd, () => { });
+    } catch (e) { }
     try {
       if (typeof context !== 'undefined' && context) {
-        await context.close({ timeout: 2000 }).catch(() => {});
+        await context.close({ timeout: 2000 }).catch(() => { });
       }
-    } catch (e) {}
+    } catch (e) { }
     process.exit(0);
   }, MAX_RUNTIME_MS);
 
@@ -2774,7 +2774,7 @@ async function pauseOnError(isDebugPause, message) {
 
     if (silentMode) {
       setTimeout(() => {
-        setBrowserVisibility(false).catch(() => {});
+        setBrowserVisibility(false).catch(() => { });
       }, 500);
     }
 
@@ -2789,15 +2789,15 @@ async function pauseOnError(isDebugPause, message) {
       console.error('[Browser] ⚠️ Browser context disconnected/crashed! Force exiting...');
       try {
         showWindowsNotification('Facebook Bot', 'เบราว์เซอร์ถูกปิด/ขัดข้อง — ปิดบอททั้งหมด', 'Error');
-      } catch (e) {}
+      } catch (e) { }
       try {
         reportStatus(100, '❌ เบราว์เซอร์ขัดข้อง', 'ระบบปิดอัตโนมัติ', 'error', currentPostIndex, 'crash');
-      } catch (e) {}
+      } catch (e) { }
       // Force kill chrome processes linked to user_data
       try {
         const killCmd = `cmd /c wmic process where "name='chrome.exe' and CommandLine like '%Facebook_Bot\\\\user_data%'" delete`;
-        exec(killCmd, () => {});
-      } catch (e) {}
+        exec(killCmd, () => { });
+      } catch (e) { }
       setTimeout(() => process.exit(1), 500);
     });
 
@@ -2808,14 +2808,14 @@ async function pauseOnError(isDebugPause, message) {
         console.error('[Browser] ⚠️ Browser process disconnected! Force exiting...');
         try {
           showWindowsNotification('Facebook Bot', 'เบราว์เซอร์ถูกปิด/ขัดข้อง — ปิดบอททั้งหมด', 'Error');
-        } catch (e) {}
+        } catch (e) { }
         try {
           reportStatus(100, '❌ เบราว์เซอร์ขัดข้อง', 'ระบบปิดอัตโนมัติ', 'error', currentPostIndex, 'crash');
-        } catch (e) {}
+        } catch (e) { }
         try {
           const killCmd = `cmd /c wmic process where "name='chrome.exe' and CommandLine like '%Facebook_Bot\\\\user_data%'" delete`;
-          exec(killCmd, () => {});
-        } catch (e) {}
+          exec(killCmd, () => { });
+        } catch (e) { }
         setTimeout(() => process.exit(1), 500);
       });
     }
@@ -2891,7 +2891,7 @@ async function pauseOnError(isDebugPause, message) {
             const url = `https://gemini.google.com/u/${index}/app`;
             console.log(`Opening login tab for index ${index}: ${url}`);
             context.newPage().then(p => {
-              p.goto(url).catch(() => {});
+              p.goto(url).catch(() => { });
             });
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: true }));
@@ -2950,8 +2950,8 @@ async function pauseOnError(isDebugPause, message) {
         console.log(`Login helper server started at: ${helperUrl}`);
         console.log(`Please log in to your accounts.`);
         console.log(`==================================================\n`);
-        
-        await fbPage.goto(helperUrl).catch(() => {});
+
+        await fbPage.goto(helperUrl).catch(() => { });
       });
 
       if (isLoginMode) {
@@ -2981,7 +2981,7 @@ async function pauseOnError(isDebugPause, message) {
     if (!isReviewMode && activeGeminiAccounts.length > 0) {
       console.log('\n🔍 กำลังตรวจสอบสถานะการ Login ของบัญชี Gemini...');
       const targetGeminiUrl = activeGeminiAccounts[0];
-      await geminiPage.goto(targetGeminiUrl, { waitUntil: 'domcontentloaded', timeout: 20000 }).catch(() => {});
+      await geminiPage.goto(targetGeminiUrl, { waitUntil: 'domcontentloaded', timeout: 20000 }).catch(() => { });
       await sleep(2000);
 
       const isLoggedOut = await checkIsGeminiLoggedOut(geminiPage);
@@ -2989,7 +2989,7 @@ async function pauseOnError(isDebugPause, message) {
         console.warn('⚠️ [Gemini Login Check] พบว่าบัญชี Gemini ไม่ได้ลงชื่อเข้าใช้ (พบปุ่ม "ลงชื่อเข้าใช้")!');
         showWindowsNotification('Facebook Bot ⚠️', 'บัญชี Gemini ไม่ได้ลงชื่อเข้าใช้! กรุณา Login ก่อน', 'Warning');
         await reportStatus(0, '⚠️ บัญชี Gemini ไม่ได้ Login', 'พบปุ่ม "ลงชื่อเข้าใช้" (Gemini ไม่ได้ login) กรุณา Login ก่อนบอททำงานต่อ', 'warn');
-        await bringWindowToFront(geminiPage, true).catch(() => {});
+        await bringWindowToFront(geminiPage, true).catch(() => { });
 
         let waitCount = 0;
         while (await checkIsGeminiLoggedOut(geminiPage)) {
@@ -3002,7 +3002,7 @@ async function pauseOnError(isDebugPause, message) {
         }
         console.log('✅ [Gemini Pre-check] ลงชื่อเข้าใช้ Gemini สำเร็จ!');
         if (silentModeActive) {
-          await setBrowserVisibility(false).catch(() => {});
+          await setBrowserVisibility(false).catch(() => { });
         }
         await reportStatus(2, '✅ ลงชื่อเข้าใช้ Gemini แล้ว', 'พร้อมเริ่มทำงานบอท Facebook', 'info');
         await sleep(1500);
@@ -3032,7 +3032,7 @@ async function pauseOnError(isDebugPause, message) {
         showWindowsNotification('Facebook Bot ⚠️', 'บัญชี Facebook ไม่ได้ลงชื่อเข้าใช้! กรุณา Login ก่อน', 'Warning');
         await reportStatus(0, '⚠️ บัญชี Facebook ไม่ได้ Login', 'พบหน้าเข้าสู่ระบบ กรุณาล็อกอิน Facebook ในเบราว์เซอร์ก่อนเริ่มงาน', 'error', 1);
         await sleep(3000);
-        await context.close().catch(() => {});
+        await context.close().catch(() => { });
         process.exit(1);
       }
 
@@ -3051,7 +3051,7 @@ async function pauseOnError(isDebugPause, message) {
       let consecutiveFilteredPosts = 0;
       const MAX_EMPTY_SCROLLS = 15;
       const MAX_FILTERED_POSTS = 60;
-      
+
       let lastPostFoundTime = Date.now();
 
       // ตรวจจับชื่อโปรไฟล์ของบอท 1 ครั้ง ใช้สำหรับกรองโพสต์ของตัวเอง
@@ -3063,13 +3063,13 @@ async function pauseOnError(isDebugPause, message) {
         if (postsProcessedCount < AUTO_GROUPS_MAX && elapsedMs >= MAX_RUNTIME_MS) {
           console.warn(`Bot runtime exceeded 20 minutes (${Math.round(elapsedMs / 1000)}s). Stopping.`);
           showWindowsNotification('Facebook Bot', `Timeout: ทำได้ ${postsProcessedCount}/${AUTO_GROUPS_MAX} โพสต์`, 'Warning');
-          
+
           // Force cleanup และปิดทันที
           try {
-            await execPromise('taskkill /F /IM chrome.exe /FI "WINDOWTITLE eq *user_data*"', { timeout: 2000 }).catch(() => {});
-            await context.close({ timeout: 2000 }).catch(() => {});
+            await execPromise('taskkill /F /IM chrome.exe /FI "WINDOWTITLE eq *user_data*"', { timeout: 2000 }).catch(() => { });
+            await context.close({ timeout: 2000 }).catch(() => { });
           } catch (e) { /* ignore */ }
-          
+
           setTimeout(() => process.exit(0), 1000);
           process.exit(0);
         }
@@ -3079,12 +3079,12 @@ async function pauseOnError(isDebugPause, message) {
         if (elapsedSinceLastFound >= 5 * 60 * 1000) {
           console.warn(`No valid posts found to process for 5 minutes. Stopping bot.`);
           showWindowsNotification('Facebook Bot', 'No posts found to process for 5 minutes. Closing.', 'Warning');
-          
+
           try {
-            await execPromise('taskkill /F /IM chrome.exe /FI "WINDOWTITLE eq *user_data*"', { timeout: 2000 }).catch(() => {});
-            await context.close({ timeout: 2000 }).catch(() => {});
+            await execPromise('taskkill /F /IM chrome.exe /FI "WINDOWTITLE eq *user_data*"', { timeout: 2000 }).catch(() => { });
+            await context.close({ timeout: 2000 }).catch(() => { });
           } catch (e) { /* ignore */ }
-          
+
           setTimeout(() => process.exit(0), 1000);
           process.exit(0);
         }
@@ -3180,7 +3180,7 @@ async function pauseOnError(isDebugPause, message) {
         if (preCheck.isSubComment) {
           await article.evaluate(el => {
             el.setAttribute('data-bot-processed', 'true');
-          }).catch(() => {});
+          }).catch(() => { });
           continue;
         }
 
@@ -3191,8 +3191,8 @@ async function pauseOnError(isDebugPause, message) {
             el.style.outline = '';
             el.style.display = 'none';
             el.setAttribute('data-bot-processed', 'true');
-          }).catch(() => {});
-          await fbPage.evaluate(() => window.scrollBy(0, 700)).catch(() => {});
+          }).catch(() => { });
+          await fbPage.evaluate(() => window.scrollBy(0, 700)).catch(() => { });
           await sleep(600);
           consecutiveFilteredPosts++;
           if (consecutiveFilteredPosts >= MAX_FILTERED_POSTS) {
@@ -3229,7 +3229,7 @@ async function pauseOnError(isDebugPause, message) {
               el.style.display = 'none';
               el.setAttribute('data-bot-processed', 'true');
             }).catch(() => { });
-            await fbPage.evaluate(() => window.scrollBy(0, 600)).catch(() => {});
+            await fbPage.evaluate(() => window.scrollBy(0, 600)).catch(() => { });
             await sleep(500);
             continue;
           }
@@ -3255,7 +3255,7 @@ async function pauseOnError(isDebugPause, message) {
               el.style.display = 'none';
               el.setAttribute('data-bot-processed', 'true');
             }).catch(() => { });
-            await fbPage.evaluate(() => window.scrollBy(0, 600)).catch(() => {});
+            await fbPage.evaluate(() => window.scrollBy(0, 600)).catch(() => { });
             await sleep(500);
             continue;
           }
@@ -3274,7 +3274,7 @@ async function pauseOnError(isDebugPause, message) {
               el.style.display = 'none';
               el.setAttribute('data-bot-processed', 'true');
             }).catch(() => { });
-            await fbPage.evaluate(() => window.scrollBy(0, 600)).catch(() => {});
+            await fbPage.evaluate(() => window.scrollBy(0, 600)).catch(() => { });
             await sleep(500);
             consecutiveFilteredPosts++;
             if (consecutiveFilteredPosts >= MAX_FILTERED_POSTS) {
@@ -3300,7 +3300,7 @@ async function pauseOnError(isDebugPause, message) {
               el.style.display = 'none';
               el.setAttribute('data-bot-processed', 'true');
             }).catch(() => { });
-            await fbPage.evaluate(() => window.scrollBy(0, 600)).catch(() => {});
+            await fbPage.evaluate(() => window.scrollBy(0, 600)).catch(() => { });
             await sleep(500);
             continue;
           }
@@ -3361,20 +3361,20 @@ async function pauseOnError(isDebugPause, message) {
             if (!geminiResult) {
               console.error('Gemini processing failed or refused.');
               await reportStatus(calcProgress(0), `Gemini ปฏิเสธ/ล้มเหลว (โพสต์ ${currentPostIndex})`, '⚠️ กด Like แล้วข้ามไปโพสต์ใหม่...', 'warn', currentPostIndex);
-              
+
               // ⚠️ กรณี Gemini ปฏิเสธ → กด Like แล้วข้าม
               await bringWindowToFront(fbPage).catch(() => { });
               await article.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center' })).catch(() => { });
               await sleep(600);
               await likePost(article);
               console.log('[Gemini Refused] ✅ Liked post and skipping to next.');
-              
+
               await pauseOnError(isDebugPause, 'Gemini ประมวลผลล้มเหลว/ปฏิเสธ → กด Like แล้วข้าม');
               await article.evaluate(el => {
                 el.style.display = 'none';
                 el.setAttribute('data-bot-processed', 'true');
               }).catch(() => { });
-              
+
               continue;
             }
 
@@ -3501,7 +3501,7 @@ async function pauseOnError(isDebugPause, message) {
       console.log('\n============================================');
       console.log(`Successfully completed ${postsProcessedCount} posts.`);
       console.log('============================================');
-      
+
       // 🎁 โพสต์สุดท้าย: แจกโค้ด Binance Cryptobox Red Packet ปิดท้ายรอบการทำงาน
       try {
         console.log('\n🎁 [Final Step] Publishing Binance Red Packet Giveaway Post...');
@@ -3513,11 +3513,11 @@ async function pauseOnError(isDebugPause, message) {
       }
 
       showWindowsNotification('Facebook Bot', `ทำรายการครบ ${postsProcessedCount}/${AUTO_GROUPS_MAX} และแจกโค้ดสำเร็จ!`);
-      
+
       console.log('Closing browser and process...');
-      
+
       // ปิด modal/notification ของ Facebook ก่อน
-      await closeFacebookModal(fbPage).catch(() => {});
+      await closeFacebookModal(fbPage).catch(() => { });
       await sleep(500);
 
       // ปิด browser context — ถ้า timeout ก็ force kill
@@ -3528,9 +3528,9 @@ async function pauseOnError(isDebugPause, message) {
         console.log('✅ Browser context closed.');
       } catch (e) {
         console.warn('Browser close timeout, force killing Chrome...');
-        try { await execPromise('taskkill /F /IM chrome.exe', { timeout: 3000 }).catch(() => {}); } catch (e) {}
+        try { await execPromise('taskkill /F /IM chrome.exe', { timeout: 3000 }).catch(() => { }); } catch (e) { }
       }
-      
+
       reportStatus(100, `✅ บอททำงานครบ ${AUTO_GROUPS_MAX} โพสต์แล้ว`, 'ปิดระบบเรียบร้อย', 'success', AUTO_GROUPS_MAX, 'exit');
       console.log('✅ Bot finished. Exiting now.');
       process.exit(0);
