@@ -1639,6 +1639,24 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps({"error": str(e)}).encode())
             return
 
+        if parsed_url.path == '/get-dropbox-token':
+            token_ps1 = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "token.ps1")
+            tok = ""
+            if os.path.exists(token_ps1):
+                try:
+                    with open(token_ps1, "r", encoding="utf-8") as tf:
+                        m = re.search(r"\$dropbox_token\s*=\s*['\"]([^'\"]+)['\"]", tf.read())
+                        if m:
+                            tok = m.group(1).strip()
+                except Exception:
+                    pass
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({"hasToken": bool(tok), "token": tok}).encode())
+            return
+
         return super().do_GET()
 
     def do_POST(self):
@@ -1739,8 +1757,245 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps({"success": True}).encode())
+        if parsed_url.path == '/upload-image-github':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            try:
+                data = json.loads(post_data)
+                img_data = data.get('dataUrl')
+                file_name = data.get('filename') or f"img_{int(time.time()*1000)}.png"
+                file_name = re.sub(r'[^a-zA-Z0-9_\-\.]', '_', file_name)
+                
+                if img_data and ',' in img_data:
+                    _, encoded = img_data.split(',', 1)
+                    binary_data = base64.b64decode(encoded)
+                    
+                    # 1. บันทึกลง local shop/images/
+                    images_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "shop", "images")
+                    os.makedirs(images_dir, exist_ok=True)
+                    local_dest = os.path.join(images_dir, file_name)
+                    with open(local_dest, 'wb') as f:
+                        f.write(binary_data)
+                        
+                    # 2. อัปโหลดขึ้น GitHub artnp/eworker (shop/images/)
+                    gh_token = None
+                    token_ps1 = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "token.ps1")
+                    if os.path.exists(token_ps1):
+                        try:
+                            with open(token_ps1, "r", encoding="utf-8") as tf:
+                                m = re.search(r"['\"](ghp_[^'\"]+)['\"]", tf.read())
+                                if m:
+                                    gh_token = m.group(1)
+                        except Exception:
+                            pass
+                    if not gh_token:
+                        gh_token = os.environ.get("GITHUB_TOKEN")
+
+                    gh_repo = "artnp/eworker"
+                    gh_path = f"shop/images/{file_name}"
+                    gh_url = f"https://api.github.com/repos/{gh_repo}/contents/{gh_path}"
+                    
+                    existing_sha = None
+                    try:
+                        req_chk = urllib.request.Request(gh_url, headers={
+                            "Authorization": f"token {gh_token}",
+                            "Accept": "application/vnd.github.v3+json",
+                            "User-Agent": "GitHubUploader"
+                        })
+                        with urllib.request.urlopen(req_chk, timeout=4) as chk_res:
+                            chk_json = json.loads(chk_res.read().decode('utf-8'))
+                            existing_sha = chk_json.get('sha')
+                    except Exception:
+                        pass
+                        
+                    put_payload = {
+                        "message": f"Upload image: {file_name}",
+                        "content": encoded,
+                        "branch": "main"
+                    }
+                    if existing_sha:
+                        put_payload["sha"] = existing_sha
+                        
+                    req_put = urllib.request.Request(gh_url, data=json.dumps(put_payload).encode('utf-8'), method='PUT', headers={
+                        "Authorization": f"token {gh_token}",
+                        "Accept": "application/vnd.github.v3+json",
+                        "Content-Type": "application/json",
+                        "User-Agent": "GitHubUploader"
+                    })
+                    with urllib.request.urlopen(req_put, timeout=10) as put_res:
+                        pass
+                        
+                    raw_github_url = f"https://raw.githubusercontent.com/{gh_repo}/main/shop/images/{file_name}"
+                    jsdelivr_url = f"https://cdn.jsdelivr.net/gh/{gh_repo}@main/shop/images/{file_name}"
+                    pages_url = f"https://artnp.github.io/eworker/shop/images/{file_name}"
+                    
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "success": True,
+                        "url": jsdelivr_url,
+                        "rawUrl": raw_github_url,
+                        "pagesUrl": pages_url,
+                        "filename": file_name
+                    }).encode())
+                    return
+                else:
+                    self.send_response(400)
+                    self.send_header('Content-type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "Invalid image data"}).encode())
+                    return
+            except Exception as gh_err:
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(gh_err)}).encode())
+                return
+
+        if parsed_url.path == '/save-dropbox-token':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            try:
+                data = json.loads(post_data.decode('utf-8'))
+                new_token = data.get('token', '').strip()
+                token_ps1 = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "token.ps1")
+                if os.path.exists(token_ps1):
+                    with open(token_ps1, "r", encoding="utf-8") as tf:
+                        c = tf.read()
+                    if re.search(r"\$dropbox_token\s*=", c):
+                        c = re.sub(r"\$dropbox_token\s*=\s*['\"][^'\"]*['\"]", f"$dropbox_token = '{new_token}'", c)
+                    else:
+                        c = c.rstrip() + f"\n$dropbox_token = '{new_token}'\n"
+                    with open(token_ps1, "w", encoding="utf-8") as tf:
+                        tf.write(c)
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": True}).encode())
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode())
             return
+
+        if parsed_url.path == '/upload-file-dropbox':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            try:
+                data = json.loads(post_data.decode('utf-8'))
+                file_b64 = data.get('dataUrl') or data.get('base64')
+                file_name = data.get('filename') or f"file_{int(time.time()*1000)}.zip"
+                token = data.get('token')
+
+                token_ps1 = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "token.ps1")
+                if not token and os.path.exists(token_ps1):
+                    with open(token_ps1, "r", encoding="utf-8") as tf:
+                        m = re.search(r"\$dropbox_token\s*=\s*['\"]([^'\"]+)['\"]", tf.read())
+                        if m:
+                            token = m.group(1).strip()
+
+                if not token:
+                    self.send_response(400)
+                    self.send_header('Content-type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "ไม่พบ Dropbox Access Token กรุณาระบุ Token ก่อนอัปโหลด"}).encode('utf-8'))
+                    return
+
+                if not file_b64:
+                    self.send_response(400)
+                    self.send_header('Content-type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"error": "ไม่พบข้อมูลไฟล์"}).encode('utf-8'))
+                    return
+
+                if ',' in file_b64:
+                    _, file_b64 = file_b64.split(',', 1)
+                file_bytes = base64.b64decode(file_b64)
+
+                # 1. Upload to Dropbox via /2/files/upload
+                dbx_upload_url = "https://content.dropboxapi.com/2/files/upload"
+                api_arg = json.dumps({
+                    "path": f"/Shop_Downloads/{file_name}",
+                    "mode": "add",
+                    "autorename": True,
+                    "mute": False
+                })
+                up_req = urllib.request.Request(dbx_upload_url, data=file_bytes, headers={
+                    "Authorization": f"Bearer {token}",
+                    "Dropbox-API-Arg": api_arg,
+                    "Content-Type": "application/octet-stream"
+                })
+                with urllib.request.urlopen(up_req, timeout=180) as up_res:
+                    up_data = json.loads(up_res.read().decode('utf-8'))
+
+                target_path = up_data.get('path_display') or f"/Shop_Downloads/{file_name}"
+
+                # 2. Create Public Shared Link
+                share_url = "https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings"
+                share_payload = json.dumps({
+                    "path": target_path,
+                    "settings": {"requested_visibility": "public"}
+                }).encode('utf-8')
+                share_req = urllib.request.Request(share_url, data=share_payload, headers={
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json"
+                })
+
+                final_link = None
+                try:
+                    with urllib.request.urlopen(share_req, timeout=15) as s_res:
+                        s_data = json.loads(s_res.read().decode('utf-8'))
+                        final_link = s_data.get('url')
+                except urllib.error.HTTPError as he:
+                    # If link exists, list it
+                    list_url = "https://api.dropboxapi.com/2/sharing/list_shared_links"
+                    l_payload = json.dumps({"path": target_path, "direct_only": True}).encode('utf-8')
+                    l_req = urllib.request.Request(list_url, data=l_payload, headers={
+                        "Authorization": f"Bearer {token}",
+                        "Content-Type": "application/json"
+                    })
+                    with urllib.request.urlopen(l_req, timeout=15) as l_res:
+                        l_data = json.loads(l_res.read().decode('utf-8'))
+                        links = l_data.get('links', [])
+                        if links:
+                            final_link = links[0].get('url')
+
+                if final_link:
+                    # Convert to Direct Download (?dl=1)
+                    if 'dl=0' in final_link:
+                        final_link = final_link.replace('dl=0', 'dl=1')
+                    elif 'dl=1' not in final_link:
+                        final_link += ('&dl=1' if '?' in final_link else '?dl=1')
+
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "success": True,
+                        "url": final_link,
+                        "filename": file_name,
+                        "size": len(file_bytes)
+                    }).encode())
+                    return
+                else:
+                    raise RuntimeError("ไม่สามารถสร้างลิงก์ดาวน์โหลด Dropbox ได้")
+            except Exception as d_err:
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(d_err)}).encode())
+                return
 
         if parsed_url.path == '/save-image':
             content_length = int(self.headers['Content-Length'])
@@ -2339,8 +2594,21 @@ def start_payment_requests_watcher():
         global _opened_payment_keys, _last_deposit_event
         firebase_url = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests.json"
         
+        _last_heartbeat_time = 0
         while True:
             try:
+                # ส่งสัญญาณ Heartbeat แจ้งว่าเครื่องคอมพิวเตอร์แอดมิน Online พร้อมรับสแกนและอนุมัติยอด
+                now_curr = time.time()
+                if now_curr - _last_heartbeat_time > 8:
+                    _last_heartbeat_time = now_curr
+                    try:
+                        hb_url = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/store_status.json"
+                        hb_data = json.dumps({"online": True, "lastSeen": int(now_curr * 1000), "source": "auto_donate_watcher"}).encode('utf-8')
+                        hb_req = urllib.request.Request(hb_url, data=hb_data, method='PUT', headers={"Content-Type": "application/json"})
+                        urllib.request.urlopen(hb_req, timeout=3)
+                    except Exception:
+                        pass
+
                 req = urllib.request.Request(f"{firebase_url}?t={int(time.time()*1000)}", headers={"User-Agent": "PaymentWatcher/1.0"})
                 with urllib.request.urlopen(req, timeout=5) as res:
                     data = json.loads(res.read().decode('utf-8'))
