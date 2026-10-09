@@ -2027,12 +2027,11 @@
                 `;
             }
 
-            setTimeout(() => {
-                paymentSection.classList.add('hidden');
-                successSection.classList.remove('hidden');
-                removeProtection();
-                showDownloadTutorial();
-            }, 1000);
+            // แสดงหน้าดาวน์โหลดทันที ไม่ต้องหน่วงเวลา
+            paymentSection.classList.add('hidden');
+            successSection.classList.remove('hidden');
+            removeProtection();
+            showDownloadTutorial();
         }
 
         function resetPaymentRejectedUI() {
