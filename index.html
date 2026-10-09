@@ -1431,7 +1431,7 @@
                 <div class="badge-pill-item"><span>✓</span> ราคาถูกมาก</div>
                 <div class="badge-pill-item"><span>✓</span> ระบบสแกนจ่ายอัตโนมัติ</div>
                 <div class="badge-pill-item"><span>✓</span> รับงาน / ไฟล์ทันที</div>
-                <div class="badge-pill-item"><span>✓</span> พัฒนาระบบตลอดเวลา</div>
+                <div class="badge-pill-item"><span>✓</span> พัฒนาระบบอยู่ตลอดเวลา</div>
             </div>
         </section>
 
@@ -1457,13 +1457,7 @@
                     </ul>
                 </div>
 
-                <div class="sidebar-card">
-                    <div class="sidebar-title">🛡️ การรับประกันความปลอดภัย</div>
-                    <p style="font-size: 0.82rem; color: var(--fh-muted); line-height: 1.6;">
-                        ไฟล์ดิจิทัลทุกชิ้นผ่านการตรวจสอบการทำงานร่วมกับระบบ Windows 11 และ Windows 10
-                        ไม่แฝงมัลแวร์หรือโปรแกรมขยะใดๆ ทั้งสิ้น
-                    </p>
-                </div>
+
             </aside>
 
             <!-- Main Content Area -->
@@ -1616,20 +1610,22 @@
                     id="btn-manual-confirm" onclick="triggerManualPaymentAlert()">
                     🔔 ฉันโอนเงินแล้ว (แจ้งเตือนซ้ำ)
                 </button>
+                <div id="admin-test-shortcut"
+                    style="display: none; margin-bottom: 10px; font-size: 0.8rem; text-align: center;"></div>
                 <p style="font-size: 0.76rem; color: var(--fh-muted); margin-bottom: 8px;">เมื่อเงินเข้า
                     บัญชีนี้จะปลดล็อคปุ่มดาวน์โหลดทันที
                     1-Click</p>
 
-                <!-- Support & Help Notice in Red -->
+                <!-- Support & Help Notice in Red (No Raw URL) -->
                 <div
-                    style="margin-top: 12px; padding: 10px 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-sm); text-align: center;">
+                    style="margin-top: 12px; padding: 12px 14px; background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-sm); text-align: center;">
                     <p
-                        style="color: #ef4444; font-size: 0.85rem; font-weight: 700; margin: 0 0 4px 0; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        style="color: #ef4444; font-size: 0.86rem; font-weight: 700; margin: 0 0 8px 0; display: flex; align-items: center; justify-content: center; gap: 6px;">
                         <span>⚠️ มีปัญหาชำระเงินไม่ได้ ให้ติดต่อ LINE</span>
                     </p>
                     <a href="https://line.me/ti/p/gqIluRmdJ_" target="_blank" rel="noopener noreferrer"
-                        style="color: #dc2626; font-size: 0.82rem; font-weight: 700; text-decoration: underline; word-break: break-all; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
-                        <span>https://line.me/ti/p/gqIluRmdJ_</span>
+                        style="background: #06c755; color: #ffffff; font-size: 0.85rem; font-weight: 700; text-decoration: none; padding: 6px 18px; border-radius: 20px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(6,199,85,0.25); transition: var(--transition);">
+                        <span>💬 ติดต่อ LINE คลิกที่นี่</span>
                     </a>
                 </div>
             </div>
@@ -1877,10 +1873,12 @@
     <footer>
         <div class="container">
             <p>© eworker — แหล่งพัฒนาแอพพลิเคชั่นช่วยให้ชีวิตในการทำงานง่ายขึ้น</p>
-            <p style="margin-top: 8px; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
-                <span style="color: var(--fh-slate); font-weight: 500;">แจ้งปัญหา ติดต่อ LINE:</span>
-                <a href="https://line.me/ti/p/gqIluRmdJ_" target="_blank" rel="noopener noreferrer" style="color: #06c755; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: #f0fdf4; border: 1px solid rgba(6, 199, 85, 0.35); padding: 3px 12px; border-radius: 20px; transition: var(--transition);">
-                    💬 https://line.me/ti/p/gqIluRmdJ_
+            <p
+                style="margin-top: 8px; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;">
+                <span style="color: var(--fh-slate); font-weight: 500;">แจ้งปัญหาระบบ</span>
+                <a href="https://line.me/ti/p/gqIluRmdJ_" target="_blank" rel="noopener noreferrer"
+                    style="color: #06c755; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: #f0fdf4; border: 1px solid rgba(6, 199, 85, 0.35); padding: 3px 12px; border-radius: 20px; transition: var(--transition);">
+                    💬 LINE
                 </a>
             </p>
         </div>
@@ -2363,7 +2361,7 @@
                     expiresAt: expiresAt,
                     timeStr: new Date().toLocaleTimeString('th-TH'),
                     dateStr: new Date().toLocaleDateString('th-TH'),
-                    manualConfirmed: true
+                    manualConfirmed: false
                 };
 
                 await fetch(`${PAYMENT_ENDPOINT}/${orderId}.json`, {
@@ -2372,6 +2370,16 @@
                     body: JSON.stringify(payload)
                 });
             } catch (err) { }
+
+            const adminShortcut = document.getElementById('admin-test-shortcut');
+            if (adminShortcut) {
+                if (isLocalAdmin) {
+                    adminShortcut.style.display = 'block';
+                    adminShortcut.innerHTML = `<div style="padding: 6px 10px; background: #eff6ff; border: 1px dashed #93c5fd; border-radius: 6px; font-size: 0.78rem;">🛠️ <strong>แอดมินทดสอบ:</strong> <a href="admin-payment.html" target="_blank" style="color: var(--fh-blue); font-weight: 700; text-decoration: underline;">เปิดหน้าจอ Admin ยืนยันยอด Order ${orderId}</a></div>`;
+                } else {
+                    adminShortcut.style.display = 'none';
+                }
+            }
 
             document.getElementById('checkout-modal').classList.add('active');
             startCheckoutPolling(orderId, product);
@@ -2513,20 +2521,55 @@
         async function triggerManualPaymentAlert() {
             if (!currentCheckoutOrder) return;
             const btn = document.getElementById('btn-manual-confirm');
-            btn.textContent = '⏳ กำลังส่งสัญญาณแจ้งเตือน...';
+            btn.innerHTML = '⏳ กำลังตรวจสอบและส่งสัญญาณแจ้งเตือน...';
             btn.disabled = true;
 
+            const orderId = currentCheckoutOrder.orderId;
+            const nowTs = Date.now();
+
             try {
-                await fetch(`${PAYMENT_ENDPOINT}/${currentCheckoutOrder.orderId}.json`, {
+                // 1. ตรวจสอบสถานะคำสั่งซื้อจาก Firebase ทันที (เผื่อได้รับการอนุมัติแล้ว)
+                const checkRes = await fetch(`${PAYMENT_ENDPOINT}/${orderId}.json?t=${nowTs}`);
+                if (checkRes.ok) {
+                    const checkData = await checkRes.json();
+                    if (checkData && checkData.status === 'approved') {
+                        if (checkoutCountdownTimer) {
+                            clearInterval(checkoutCountdownTimer);
+                            checkoutCountdownTimer = null;
+                        }
+                        if (checkoutPollingTimer) {
+                            clearInterval(checkoutPollingTimer);
+                            checkoutPollingTimer = null;
+                        }
+                        showToast('🎉 ตรวจพบยอดเงินเข้าแล้ว! ปลดล็อคดาวน์โหลดทันที', 'success');
+                        handlePaymentApprovedSuccess(orderId, currentCheckoutOrder.product, checkData);
+                        return;
+                    }
+                }
+
+                // 2. ส่งสัญญาณแจ้งเตือนไปยัง Firebase ให้ auto_donate_watcher และหน้า Admin รับรู้
+                await fetch(`${PAYMENT_ENDPOINT}/${orderId}.json`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ manualConfirmed: true, lastConfirmedAt: Date.now() })
+                    body: JSON.stringify({
+                        manualConfirmed: true,
+                        lastConfirmedAt: nowTs,
+                        reAlertAt: nowTs
+                    })
                 });
-                showToast('🔔 แจ้งเตือนแอดมินเรียบร้อยแล้ว', 'success');
-            } catch (e) { }
+
+                showToast('🔔 ส่งสัญญาณแจ้งเตือนแอดมินเรียบร้อยแล้ว กรุณารอสักครู่', 'success');
+                btn.innerHTML = '✅ ส่งสัญญาณแจ้งเตือนแล้ว (ระบบกำลังรอรับยอด)';
+                btn.style.borderColor = '#16a34a';
+                btn.style.color = '#16a34a';
+            } catch (e) {
+                showToast('⚠️ ส่งสัญญาณไม่สำเร็จ กรุณาลองใหม่อีกครั้ง', 'warning');
+            }
 
             setTimeout(() => {
-                btn.textContent = '🔄 ระบบกำลังรอรับยอดเงินอัตโนมัติ...';
+                btn.innerHTML = '🔔 ฉันโอนเงินแล้ว (แจ้งเตือนซ้ำ)';
+                btn.style.borderColor = '';
+                btn.style.color = '';
                 btn.disabled = false;
             }, 3000);
         }
