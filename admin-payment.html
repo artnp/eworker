@@ -605,6 +605,7 @@
         let paymentRequests = {};
         let isSoundEnabled = true;
         let knownPendingKeys = new Set();
+        let knownAlertTimestamps = new Map();
         let isInitialLoad = true;
         let originalPageTitle = document.title;
         let titleFlashTimer = null;
@@ -799,22 +800,37 @@
                 }
             });
 
-            // ตรวจสอบหารายการ pending ใหม่ เพื่อส่งเสียงเตือน
+            // ตรวจสอบหารายการ pending ใหม่ หรือลูกค้ากดแจ้งเตือนซ้ำ เพื่อส่งเสียงเตือน
             let newlyArrivedPending = 0;
+            let hasReAlert = false;
             const currentPendingKeys = new Set();
 
             activePending.forEach(req => {
                 currentPendingKeys.add(req.id);
-                if (!isInitialLoad && !knownPendingKeys.has(req.id)) {
+                const prevAlertTime = knownAlertTimestamps.get(req.id) || 0;
+                const currentAlertTime = req.reAlertAt || req.lastConfirmedAt || req.createdAt || 0;
+
+                const isNew = !isInitialLoad && !knownPendingKeys.has(req.id);
+                const isReAlert = !isInitialLoad && knownPendingKeys.has(req.id) && currentAlertTime > prevAlertTime && (req.reAlertAt || req.lastConfirmedAt);
+
+                if (isNew) {
                     newlyArrivedPending++;
                     triggerDesktopNotification(req);
+                } else if (isReAlert) {
+                    hasReAlert = true;
+                    triggerDesktopNotification(req);
                 }
+                knownAlertTimestamps.set(req.id, currentAlertTime);
             });
 
             if (newlyArrivedPending > 0) {
                 playChimeAlert();
                 startTitleFlash(currentPendingKeys.size);
                 showToast(`🔔 มีรายการแจ้งโอนใหม่ ${newlyArrivedPending} รายการ!`, 'warning');
+            } else if (hasReAlert) {
+                playChimeAlert();
+                startTitleFlash(currentPendingKeys.size);
+                showToast(`🔔 ลูกค้ากดแจ้งเตือนโอนเงินซ้ำ! กรุณาตรวจสอบยอด`, 'warning');
             }
 
             knownPendingKeys = currentPendingKeys;
