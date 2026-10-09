@@ -1,0 +1,2719 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake QR Slip Editor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-light: #eff6ff;
+            --primary-border: #bfdbfe;
+            --bg-page: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --success-bg: #f0fdf4;
+            --success-border: #bbf7d0;
+            --success-text: #166534;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Top Navbar */
+        .app-navbar {
+            height: 52px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 100;
+            flex-shrink: 0;
+            gap: 12px;
+        }
+
+        .brand-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            user-select: none;
+        }
+
+        .brand-logo {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+        }
+
+        .brand-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            line-height: 1;
+        }
+
+        .brand-badge {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            background: #dbeafe;
+            color: var(--primary);
+            border-radius: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-center-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-right-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Studio Workspace Layout */
+        .studio-workspace {
+            display: flex;
+            height: calc(100vh - 52px);
+            width: 100vw;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Left Sidebar Controls */
+        .sidebar-controls {
+            width: 350px;
+            min-width: 320px;
+            max-width: 380px;
+            height: 100%;
+            background: #ffffff;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex-shrink: 0;
+            padding: 14px 14px;
+            gap: 12px;
+        }
+
+        .sidebar-controls::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .sidebar-controls::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        /* Control Card */
+        .card-panel {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .card-title {
+            margin: 0;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Slider Control Item */
+        .slider-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #475569;
+        }
+
+        .slider-val-tag {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--primary);
+            background: var(--primary-light);
+            padding: 1px 6px;
+            border-radius: 4px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            background: #cbd5e1;
+            border-radius: 4px;
+            accent-color: var(--primary);
+            cursor: pointer;
+            margin: 4px 0;
+        }
+
+        /* Buttons */
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 500;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+        }
+
+        .btn-secondary {
+            background: #eff6ff;
+            color: var(--primary);
+            border: 1px solid var(--primary-border);
+        }
+
+        .btn-secondary:hover {
+            background: #dbeafe;
+            transform: translateY(-1px);
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 0.78rem;
+            border-radius: 6px;
+        }
+
+        /* File Upload Wrap */
+        .file-upload-btn-wrap {
+            position: relative;
+            display: inline-block;
+        }
+
+        .file-upload-btn-wrap input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        /* QR Selector Tabs */
+        .qr-tabs {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .qr-tab {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            padding: 5px 9px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-family: inherit;
+            color: #334155;
+            transition: all 0.15s ease;
+        }
+
+        .qr-tab:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+
+        .qr-tab.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+        }
+
+        .qr-tab-add {
+            background: var(--primary-light);
+            color: var(--primary);
+            border: 1px dashed #93c5fd;
+        }
+
+        .qr-tab-add:hover {
+            background: #dbeafe;
+        }
+
+        .qr-tab-del {
+            background: none;
+            border: none;
+            color: inherit;
+            opacity: 0.65;
+            cursor: pointer;
+            padding: 0 2px;
+            font-size: 0.95rem;
+            line-height: 1;
+        }
+
+        .qr-tab-del:hover {
+            opacity: 1;
+        }
+
+        /* Status & Badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        /* Verify Card */
+        .verify-card {
+            background: var(--success-bg);
+            border: 1px solid var(--success-border);
+            border-radius: var(--radius-md);
+            padding: 10px 12px;
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .verify-card.error {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+
+        .verify-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--success-text);
+        }
+
+        .verify-card.error .verify-card-header {
+            color: #991b1b;
+        }
+
+        .verify-desc {
+            margin: 0;
+            color: #15803d;
+            font-size: 0.74rem;
+            line-height: 1.35;
+        }
+
+        .verify-card.error .verify-desc {
+            color: #b91c1c;
+        }
+
+        /* Original QR Info Card */
+        .info-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 10px 12px;
+            font-size: 0.78rem;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .info-card h4 {
+            margin: 0 0 4px 0;
+            font-size: 0.82rem;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 600;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 6px;
+        }
+
+        .info-label {
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .info-val {
+            color: var(--text-main);
+            font-weight: 500;
+            text-align: right;
+            word-break: break-all;
+        }
+
+        /* Empty State on Sidebar */
+        .empty-sidebar-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 24px 16px;
+            background: #f8fafc;
+            border: 1.5px dashed #cbd5e1;
+            border-radius: var(--radius-md);
+            color: var(--text-muted);
+            gap: 10px;
+        }
+
+        #editorControls:not(.hidden)~.empty-sidebar-box {
+            display: none !important;
+        }
+
+        /* Right Canvas Viewport */
+        .canvas-viewport {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background-color: #f1f5f9;
+            background-image: radial-gradient(#cbd5e1 1.2px, transparent 1.2px);
+            background-size: 18px 18px;
+            overflow: hidden;
+            padding: 16px 16px 70px 16px;
+            box-sizing: border-box;
+        }
+
+        /* Drop Zone */
+        .editor-area {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .editor-area.dragover {
+            background: rgba(219, 234, 254, 0.6);
+            border-radius: var(--radius-lg);
+        }
+
+        .drop-message {
+            text-align: center;
+            color: #64748b;
+            padding: 36px 28px;
+            background: #ffffff;
+            border: 2px dashed #93c5fd;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+            max-width: 440px;
+            width: 90%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+        }
+
+        .drop-message:hover {
+            border-color: var(--primary);
+            background: #f8fafc;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.1);
+        }
+
+        .editor-area.dragover .drop-message {
+            border-color: var(--primary);
+            background: #eff6ff;
+            transform: scale(1.02);
+            box-shadow: 0 10px 28px rgba(37, 99, 235, 0.18);
+        }
+
+        /* Canvas Image Container */
+        #canvasContainer {
+            position: relative;
+            display: inline-block;
+            box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.18), 0 4px 8px -2px rgba(15, 23, 42, 0.08);
+            border-radius: 8px;
+            line-height: 0;
+            display: none;
+            max-height: 100%;
+            max-width: 100%;
+        }
+
+        #slipImage {
+            display: block;
+            max-height: calc(100vh - 160px);
+            max-width: calc(100vw - 420px);
+            width: auto;
+            height: auto;
+            border-radius: 8px;
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        /* Overlays */
+        .qr-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: move;
+            border: 1px solid transparent;
+            touch-action: none;
+            user-select: none;
+            box-sizing: border-box;
+            background: #ffffff;
+            box-shadow: 0 0 0 2px #ffffff;
+        }
+
+        .qr-overlay:hover,
+        .qr-overlay.active {
+            border: 1.5px dashed rgba(37, 99, 235, 0.8);
+        }
+
+        .qr-overlay canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            image-rendering: pixelated;
+        }
+
+        .resize-handle {
+            width: 12px;
+            height: 12px;
+            background: var(--primary);
+            position: absolute;
+            border-radius: 50%;
+            display: none;
+            box-shadow: 0 0 0 2px white;
+            z-index: 20;
+        }
+
+        .qr-overlay:hover .resize-handle,
+        .qr-overlay.active .resize-handle {
+            display: block;
+        }
+
+        .handle-br {
+            bottom: -6px;
+            right: -6px;
+            cursor: se-resize;
+        }
+
+        .overlay-badge {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            background: var(--primary);
+            color: white;
+            font-size: 0.62rem;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-weight: 600;
+            pointer-events: none;
+            opacity: 0.9;
+            z-index: 10;
+        }
+
+        /* Floating Helper Hint (Bottom Left) */
+        .floating-hint-bar {
+            position: absolute;
+            bottom: 16px;
+            left: 20px;
+            font-size: 0.74rem;
+            color: #64748b;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(8px);
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+            z-index: 50;
+        }
+
+        /* Floating Save Action (Bottom Right) */
+        .floating-save-box {
+            position: absolute;
+            bottom: 14px;
+            right: 20px;
+            z-index: 60;
+            display: flex;
+            align-items: center;
+        }
+
+        .floating-save-box .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(22, 163, 74, 0.55);
+        }
+
+        /* Responsive Studio Layout for Tablets & Mobile Screens */
+        @media (max-width: 860px) {
+            .studio-workspace {
+                flex-direction: column-reverse;
+                height: calc(100vh - 50px);
+                width: 100%;
+            }
+
+            .sidebar-controls {
+                width: 100%;
+                min-width: 100%;
+                max-width: 100%;
+                height: 38vh;
+                border-right: none;
+                border-top: 1px solid var(--border-color);
+                padding: 10px;
+            }
+
+            .canvas-viewport {
+                flex: 1;
+                min-height: 52vh;
+                padding: 10px 10px 65px 10px;
+            }
+
+            #slipImage {
+                max-height: calc(52vh - 80px) !important;
+                max-width: calc(100vw - 24px) !important;
+            }
+
+            .floating-hint-bar {
+                display: none !important;
+            }
+
+            .floating-save-box {
+                bottom: 12px;
+                right: 12px;
+            }
+
+            .floating-save-box .btn {
+                padding: 9px 18px !important;
+                font-size: 0.88rem !important;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* ===== SECURITY & WATERMARK OVERLAYS ===== */
+        .preview-watermark-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 40;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            user-select: none;
+            background-image: repeating-linear-gradient(-45deg,
+                    transparent,
+                    transparent 60px,
+                    rgba(239, 68, 68, 0.05) 60px,
+                    rgba(239, 68, 68, 0.05) 120px);
+        }
+
+        .preview-watermark-text {
+            transform: rotate(-32deg);
+            color: rgba(220, 38, 38, 0.22);
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: 3px;
+            white-space: nowrap;
+            pointer-events: none;
+            text-align: center;
+            line-height: 2.2;
+            text-shadow: 0 0 2px rgba(255, 255, 255, 0.9);
+        }
+
+        /* Full Viewport Lock Backdrop */
+        .security-backdrop-shield {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            z-index: 990;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: #ffffff;
+            padding: 24px;
+            text-align: center;
+            transition: opacity 0.25s ease;
+        }
+
+        .security-backdrop-shield.active {
+            display: flex !important;
+        }
+
+        /* Modal Overlay & Card */
+        .payment-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.78);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .payment-modal-overlay.active {
+            display: flex !important;
+        }
+
+        .payment-modal-card {
+            background: #ffffff;
+            border-radius: 16px;
+            max-width: 390px;
+            width: 95%;
+            max-height: 96vh;
+            overflow-y: auto;
+            padding: 14px 16px 12px 16px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+            position: relative;
+            animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            box-sizing: border-box;
+        }
+
+        @keyframes modalPop {
+            from {
+                transform: scale(0.92);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Countdown Box */
+        .checkout-countdown-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #15803d;
+            font-size: 0.76rem;
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 6px;
+            margin: 2px auto 4px auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .checkout-countdown-box.warning {
+            background: #fff7ed;
+            border-color: #fed7aa;
+            color: #c2410c;
+        }
+
+        .checkout-countdown-box.urgent {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #b91c1c;
+            animation: pulseWarn 1s infinite;
+        }
+
+        @keyframes pulseWarn {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.03);
+            }
+        }
+
+        .qr-clean-card {
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 10px 14px 8px 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 4px auto;
+            width: fit-content;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        #qrCodeTarget {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 210px;
+        }
+
+        #qrCodeTarget canvas {
+            display: none !important;
+            /* Hide internal canvas so only the img is displayed (prevent double QR) */
+        }
+
+        #qrCodeTarget img {
+            margin: 0 auto !important;
+            display: block !important;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .polling-status-chip {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2px 10px;
+            font-size: 0.72rem;
+            color: #475569;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin: 2px auto 4px auto;
+        }
+
+        .clean-spinner {
+            width: 11px;
+            height: 11px;
+            border: 2px solid #cbd5e1;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Anti-Tamper Fullscreen Barrier */
+        .tamper-barrier-screen {
+            position: fixed;
+            inset: 0;
+            background: #0f172a;
+            color: #ef4444;
+            z-index: 999999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .tamper-barrier-screen.active {
+            display: flex !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Top App Header -->
+    <header class="app-navbar">
+        <div class="brand-group">
+            <a href="../../../index.html" class="btn btn-secondary btn-sm"
+                style="text-decoration:none; display:inline-flex; align-items:center; gap:5px; margin-right:4px;"
+                title="กลับหน้าแรก Eworker">
+                <span>◀</span> หน้าแรก
+            </a>
+            <div class="brand-logo">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"
+                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z">
+                    </path>
+                </svg>
+            </div>
+            <div class="brand-title">
+                Fake QR <span class="brand-badge" style="background:#ede9fe; color:#7c3aed;">โหมดบริการ 20฿/ครั้ง</span>
+            </div>
+        </div>
+
+        <!-- Center Notification / Quick Status -->
+        <div class="nav-center-actions">
+            <div id="detectStatus"></div>
+        </div>
+
+        <!-- Right Quick Actions -->
+        <div class="nav-right-actions">
+            <span
+                style="font-size:0.78rem; font-weight:700; color:#1e40af; background:#eff6ff; padding:4px 10px; border-radius:20px; border:1px solid #bfdbfe;">
+                💵 ค่าบริการ 20 บาท
+            </span>
+        </div>
+    </header>
+
+    <!-- Main Workspace Studio -->
+    <div class="studio-workspace">
+
+        <!-- Left Controls Sidebar -->
+        <aside class="sidebar-controls">
+
+            <!-- Active Editor Controls -->
+            <div id="editorControls" class="hidden" style="display: flex; flex-direction: column; gap: 10px;">
+
+                <!-- 1. QR Manager & Multi-Tabs -->
+                <div class="card-panel" id="qrTabsGroup">
+                    <div class="card-title">
+                        <span>📍 จัดการจุด QR Code</span>
+                        <span id="qrCountBadge" style="color:var(--primary); font-weight:600; font-size:0.78rem;">1
+                            QR</span>
+                    </div>
+                    <div class="qr-tabs" id="qrTabsList"></div>
+                </div>
+
+                <!-- 2. Overlay Adjustments Card -->
+                <div class="card-panel">
+                    <div class="card-title">
+                        <span>⚙️ ปรับแต่งขนาด & ลาย</span>
+                    </div>
+
+                    <!-- Size Slider -->
+                    <div class="slider-item">
+                        <div class="slider-header">
+                            <span>ขนาด (Size)</span>
+                            <span class="slider-val-tag" id="sizeValue">150px</span>
+                        </div>
+                        <input type="range" id="sizeRange" min="50" max="500" value="150">
+                    </div>
+
+                    <!-- Density Slider -->
+                    <div class="slider-item">
+                        <div class="slider-header">
+                            <span>ความละเอียด (Density)</span>
+                            <span class="slider-val-tag" id="densityValue">Version 3</span>
+                        </div>
+                        <input type="range" id="densityRange" min="21" max="57" step="4" value="29">
+                    </div>
+
+                    <!-- White Bleed Slider -->
+                    <div class="slider-item">
+                        <div class="slider-header">
+                            <span>กลบขอบขาว (Bleed)</span>
+                            <span class="slider-val-tag" id="bleedValue">3px</span>
+                        </div>
+                        <input type="range" id="bleedRange" min="0" max="15" value="3">
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div style="display: flex; gap: 6px; margin-top: 2px;">
+                        <button class="btn btn-secondary btn-sm" id="randomizeBtn" type="button" style="flex: 1;">
+                            🎲 สุ่มลายใหม่
+                        </button>
+                        <button class="btn btn-secondary btn-sm" id="autoDetectBtn" type="button" style="flex: 1.2;">
+                            🔍 ลบ QR เดิมซ้ำ
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3. Fake QR Verification Card -->
+                <div id="verifyCard">
+                    <div class="verify-card" id="verifyCardBox">
+                        <div class="verify-card-header">
+                            <span>🛡️ ความปลอดภัย</span>
+                            <button id="testScanBtn" type="button" class="btn btn-secondary btn-sm"
+                                style="padding: 2px 7px; font-size: 0.72rem;">
+                                🧪 ทดสอบสแกน
+                            </button>
+                        </div>
+                        <div>
+                            <span id="verifyBadge" class="status-badge status-success">✅ สแกนไม่ติด 100%
+                                (ปลอดภัย)</span>
+                        </div>
+                        <p class="verify-desc" id="verifyDesc">
+                            ผ่านการทดสอบด้วย jsQR: ไม่สามารถถอดรหัสได้ ข้อมูลเป็นสัญญาณรบกวนสุ่ม
+                            มั่นใจได้ว่าสแกนไม่ติดแน่นอน
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 4. Original QR Details Card -->
+                <div class="hidden" id="origQrCard">
+                    <div class="info-card">
+                        <h4>
+                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            QR Code ต้นฉบับ
+                        </h4>
+                        <div class="info-row">
+                            <span class="info-label">รุ่น (Version):</span>
+                            <span class="info-val" id="detVersion">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">ขนาดตาราง:</span>
+                            <span class="info-val" id="detModules">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">ขนาดบนสลิป:</span>
+                            <span class="info-val" id="detSize">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">ประเภท:</span>
+                            <span class="info-val" id="detType">-</span>
+                        </div>
+                        <div id="detPayloadWrap"
+                            style="display:none; margin-top:3px; padding-top:3px; border-top:1px dashed #cbd5e1;">
+                            <span class="info-label" style="display:block; margin-bottom:2px;">ข้อมูลใน QR:</span>
+                            <div class="info-val" id="detPayload"
+                                style="text-align:left; font-family:monospace; font-size:0.72rem; background:#f8fafc; padding:3px 5px; border-radius:4px; border:1px solid #e2e8f0; max-height:48px; overflow-y:auto; word-break:break-all;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Empty State Prompt (Shown when no image) -->
+            <div class="empty-sidebar-box" id="emptySidebarPrompt">
+                <svg width="36" height="36" fill="none" stroke="#94a3b8" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                    </path>
+                </svg>
+                <div style="font-weight: 500; font-size: 0.88rem; color: #334155;">ยังไม่มีรูปภาพสลิป</div>
+                <div style="font-size: 0.78rem; line-height: 1.4;">
+                    ลากรูปสลิปมาวาง หรือคลิกเลือกรูปภาพในพื้นที่ทำงานเพื่อเริ่มแก้ไข
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- Right Main Canvas Studio -->
+        <main class="canvas-viewport">
+            <div class="editor-area" id="dropZone">
+                <div class="drop-message" id="dropMessage">
+                    <input type="file" id="slipInput" accept="image/*" style="display: none;">
+                    <div
+                        style="width: 56px; height: 56px; background: #eff6ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                        <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                        </svg>
+                    </div>
+                    <div style="font-weight: 700; font-size: 1.05rem; color: #1e293b;">
+                        วางไฟล์รูปสลิปที่นี่ หรือคลิกเพื่อเลือกไฟล์
+                    </div>
+                    <div style="font-size: 0.84rem; color: #64748b; line-height: 1.4;">
+                        ลากรูปสลิปมาวาง หรือคลิกเพื่อเลือกรูปภาพจากเครื่อง
+                    </div>
+                    <button class="btn btn-primary" type="button"
+                        style="margin-top: 4px; pointer-events: none; padding: 8px 22px; font-weight: 600; font-size: 0.88rem; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);">
+                        📁 คลิกเลือกรูปภาพ (Browse File)
+                    </button>
+                    <div style="font-size: 0.76rem; color: #94a3b8; margin-top: 2px;">
+                        รองรับไฟล์ภาพ JPG, PNG, WebP ทุกขนาด
+                    </div>
+                </div>
+
+                <div id="canvasContainer">
+                    <img id="slipImage" src="" alt="Slip">
+                    <div id="overlaysContainer"></div>
+                    <!-- Workspace Watermark (Active while editing to prevent screenshot theft) -->
+                    <div id="previewWatermark" class="preview-watermark-overlay" style="display: none;">
+                        <div class="preview-watermark-text">
+                            EWORKER PREVIEW • ห้ามแคป • ชำระ 20฿ เพื่อดาวน์โหลดภาพจริง<br>
+                            EWORKER PREVIEW • ห้ามแคป • ชำระ 20฿ เพื่อดาวน์โหลดภาพจริง<br>
+                            EWORKER PREVIEW • ห้ามแคป • ชำระ 20฿ เพื่อดาวน์โหลดภาพจริง<br>
+                            EWORKER PREVIEW • ห้ามแคป • ชำระ 20฿ เพื่อดาวน์โหลดภาพจริง<br>
+                            EWORKER PREVIEW • ห้ามแคป • ชำระ 20฿ เพื่อดาวน์โหลดภาพจริง
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Viewport Lock Security Shield -->
+                <div id="securityBackdrop" class="security-backdrop-shield">
+                    <div
+                        style="width:72px; height:72px; background:rgba(239,68,68,0.15); border:2px solid #ef4444; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2.2rem; margin-bottom:12px;">
+                        🔒</div>
+                    <h3 style="font-size:1.35rem; font-weight:800; margin:0 0 6px 0; color:#f8fafc;">
+                        ภาพสลิปถูกล็อคด้วยระบบความปลอดภัย (Security Vault)</h3>
+                    <p style="font-size:0.88rem; color:#94a3b8; max-width:420px; margin:0 0 16px 0; line-height:1.5;">
+                        แก้ไขสำเร็จแล้ว! กรุณาชำระเงิน 20 บาท เพื่อปลดล็อคและดาวน์โหลดรูปภาพต้นฉบับคมชัด ไร้ลายน้ำ 100%
+                    </p>
+                    <button type="button" class="btn btn-primary" onclick="reopenPaymentModal()"
+                        style="font-weight:700; padding:10px 24px; box-shadow:0 4px 14px rgba(37,99,235,0.4);">
+                        ⚡ เปิดหน้าต่างชำระเงิน (20 บาท)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bottom Floating Shortcut Helper (Bottom Left) -->
+            <div class="floating-hint-bar">
+                <span>💡 <strong>วิธีใช้:</strong> ลากเพื่อย้าย • ย่อ/ขยายที่มุมล่างขวา ↘ • กดลูกศร ◀ ▲ ▼ ▶
+                    เพื่อขยับละเอียด</span>
+            </div>
+
+            <!-- Bottom Right Floating Save Action Button -->
+            <div class="floating-save-box" id="floatingSaveBox">
+                <button class="btn btn-success" id="saveBtn" type="button"
+                    style="font-weight: 700; font-size: 0.95rem; padding: 11px 24px; border-radius: 50px; background: linear-gradient(135deg, #16a34a, #15803d); box-shadow: 0 4px 16px rgba(22, 163, 74, 0.45); display: inline-flex; align-items: center; gap: 8px; border: none; color: #ffffff; cursor: pointer;">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    แก้ไขเสร็จแล้ว (บันทึกภาพ)
+                </button>
+            </div>
+        </main>
+
+    </div>
+
+    <script>
+        // --- Multi-QR Configuration & State ---
+        const moduleSize = 10;
+        const borderSize = 0; // flush modules
+
+        // Adapt UI when opened inside an in-page popup modal
+        if (window.self !== window.top) {
+            const homeBtn = document.querySelector('.brand-group a[href*="index.html"]');
+            if (homeBtn) {
+                homeBtn.style.display = 'none';
+            }
+        }
+
+        let rawSlipImg = null;
+        let workingSlipCanvas = null;
+
+        let overlays = [];
+        let activeOverlayId = null;
+        let overlayIdCounter = 1;
+
+        // UI Element References
+        const slipInput = document.getElementById('slipInput');
+        const dropZone = document.getElementById('dropZone');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const slipImage = document.getElementById('slipImage');
+        const dropMessage = document.getElementById('dropMessage');
+        const editorControls = document.getElementById('editorControls');
+        const overlaysContainer = document.getElementById('overlaysContainer');
+
+        const qrCountBadge = document.getElementById('qrCountBadge');
+        const qrTabsList = document.getElementById('qrTabsList');
+
+        const sizeRange = document.getElementById('sizeRange');
+        const sizeValue = document.getElementById('sizeValue');
+        const densityRange = document.getElementById('densityRange');
+        const densityValue = document.getElementById('densityValue');
+        const bleedRange = document.getElementById('bleedRange');
+        const bleedValue = document.getElementById('bleedValue');
+        const randomizeBtn = document.getElementById('randomizeBtn');
+        const autoDetectBtn = document.getElementById('autoDetectBtn');
+        const detectStatus = document.getElementById('detectStatus');
+        const saveBtn = document.getElementById('saveBtn');
+
+        const origQrCard = document.getElementById('origQrCard');
+        const detVersion = document.getElementById('detVersion');
+        const detModules = document.getElementById('detModules');
+        const detSize = document.getElementById('detSize');
+        const detType = document.getElementById('detType');
+        const detPayloadWrap = document.getElementById('detPayloadWrap');
+        const detPayload = document.getElementById('detPayload');
+
+        const verifyCardBox = document.getElementById('verifyCardBox');
+        const verifyBadge = document.getElementById('verifyBadge');
+        const verifyDesc = document.getElementById('verifyDesc');
+        const testScanBtn = document.getElementById('testScanBtn');
+
+        // --- Fake QR Renderer on any Canvas ---
+        function renderFakeQROntoCanvas(canvas, currentSize, existingPattern = null) {
+            const ctx = canvas.getContext('2d');
+            const totalModules = currentSize + (borderSize * 2);
+            canvas.width = totalModules * moduleSize;
+            canvas.height = totalModules * moduleSize;
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            function drawMod(x, y, isBlack) {
+                ctx.fillStyle = isBlack ? '#000000' : '#FFFFFF';
+                ctx.fillRect((borderSize + x) * moduleSize, (borderSize + y) * moduleSize, moduleSize, moduleSize);
+            }
+
+            function drawPosMarker(x, y) {
+                for (let i = 0; i < 7; i++) {
+                    for (let j = 0; j < 7; j++) {
+                        if ((i === 0 || i === 6 || j === 0 || j === 6) ||
+                            (i >= 2 && i <= 4 && j >= 2 && j <= 4)) {
+                            drawMod(x + i, y + j, true);
+                        } else {
+                            drawMod(x + i, y + j, false);
+                        }
+                    }
+                }
+            }
+
+            let pattern = existingPattern;
+            if (!pattern) {
+                pattern = [];
+                for (let y = 0; y < currentSize; y++) {
+                    pattern[y] = [];
+                    for (let x = 0; x < currentSize; x++) {
+                        pattern[y][x] = Math.random() > 0.5;
+                    }
+                }
+            }
+
+            // Draw Position Markers
+            drawPosMarker(0, 0);
+            drawPosMarker(currentSize - 7, 0);
+            drawPosMarker(0, currentSize - 7);
+
+            // Draw Timing Patterns
+            for (let i = 8; i < currentSize - 8; i++) {
+                drawMod(i, 6, i % 2 === 0);
+                drawMod(6, i, i % 2 === 0);
+            }
+
+            // Draw alignment pattern (if size > 25)
+            if (currentSize > 25) {
+                const alignPos = currentSize - 9;
+                for (let r = -2; r <= 2; r++) {
+                    for (let c = -2; c <= 2; c++) {
+                        if (r === -2 || r === 2 || c === -2 || c === 2 || (r === 0 && c === 0)) {
+                            drawMod(alignPos + c, alignPos + r, true);
+                        } else {
+                            drawMod(alignPos + c, alignPos + r, false);
+                        }
+                    }
+                }
+            }
+
+            // Draw random data
+            for (let y = 0; y < currentSize; y++) {
+                for (let x = 0; x < currentSize; x++) {
+                    if ((x < 9 && y < 9) || (x >= currentSize - 9 && y < 9) || (x < 9 && y >= currentSize - 9) || (x === 6 || y === 6)) {
+                        continue;
+                    }
+                    if (currentSize > 25) {
+                        const alignPos = currentSize - 9;
+                        if (x >= alignPos - 2 && x <= alignPos + 2 && y >= alignPos - 2 && y <= alignPos + 2) continue;
+                    }
+                    drawMod(x, y, pattern[y][x]);
+                }
+            }
+
+            return pattern;
+        }
+
+        // --- Fake QR Scanability Verifier ---
+        function verifyFakeQRScan(targetCanvas) {
+            if (!targetCanvas) return true;
+            try {
+                const ctx = targetCanvas.getContext('2d');
+                const imgData = ctx.getImageData(0, 0, targetCanvas.width, targetCanvas.height);
+                const testResult = jsQR(imgData.data, imgData.width, imgData.height);
+
+                if (!testResult) {
+                    if (verifyCardBox) verifyCardBox.className = 'verify-card';
+                    if (verifyBadge) {
+                        verifyBadge.className = 'status-badge status-success';
+                        verifyBadge.innerHTML = '✅ สแกนไม่ติด 100% (ปลอดภัย)';
+                    }
+                    if (verifyDesc) {
+                        verifyDesc.textContent = 'ผ่านการทดสอบด้วย jsQR';
+                    }
+                    return true;
+                } else {
+                    if (verifyCardBox) verifyCardBox.className = 'verify-card error';
+                    if (verifyBadge) {
+                        verifyBadge.className = 'status-badge status-error';
+                        verifyBadge.innerHTML = '⚠️ สแกนติด กำลังสุ่มใหม่...';
+                    }
+                    if (verifyDesc) {
+                        verifyDesc.textContent = 'ตรวจพบข้อมูลที่อ่านได้: ' + testResult.data + ' กำลังสุ่มใหม่เพื่อความปลอดภัย';
+                    }
+                    const active = getActiveOverlay();
+                    if (active && active.canvas === targetCanvas) {
+                        setTimeout(() => {
+                            active.pattern = renderFakeQROntoCanvas(active.canvas, active.density);
+                            verifyFakeQRScan(active.canvas);
+                        }, 50);
+                    }
+                    return false;
+                }
+            } catch (e) {
+                console.error('Verify error:', e);
+                return true;
+            }
+        }
+
+        // --- Overlay Model & Management ---
+        function getActiveOverlay() {
+            return overlays.find(o => o.id === activeOverlayId) || overlays[0] || null;
+        }
+
+        function createOverlay(opts = {}) {
+            const id = 'qr_' + (overlayIdCounter++);
+            const version = opts.version || 3;
+            const density = opts.density || (17 + 4 * version);
+            const size = opts.size || 150;
+            const x = opts.x !== undefined ? opts.x : 50;
+            const y = opts.y !== undefined ? opts.y : 50;
+
+            const div = document.createElement('div');
+            div.className = 'qr-overlay';
+            div.id = 'overlay_' + id;
+            div.style.left = `${x}px`;
+            div.style.top = `${y}px`;
+            div.style.width = `${size}px`;
+            div.style.height = `${size}px`;
+
+            const canvas = document.createElement('canvas');
+            div.appendChild(canvas);
+
+            const handle = document.createElement('div');
+            handle.className = 'resize-handle handle-br';
+            div.appendChild(handle);
+
+            const badge = document.createElement('span');
+            badge.className = 'overlay-badge';
+            badge.textContent = '#' + (overlays.length + 1);
+            div.appendChild(badge);
+
+            overlaysContainer.appendChild(div);
+
+            const overlay = {
+                id,
+                element: div,
+                canvas,
+                size,
+                x,
+                y,
+                version,
+                density,
+                pattern: null,
+                origInfo: opts.origInfo || null
+            };
+
+            // Render fake QR
+            overlay.pattern = renderFakeQROntoCanvas(canvas, density, opts.pattern || null);
+
+            // Drag setup
+            div.addEventListener('mousedown', (e) => {
+                if (e.target.classList.contains('resize-handle')) return;
+                setActiveOverlay(id);
+
+                let isDragging = true;
+                div.classList.add('active');
+
+                const initialLeft = parseFloat(div.style.left) || 0;
+                const initialTop = parseFloat(div.style.top) || 0;
+                const startX = e.clientX;
+                const startY = e.clientY;
+
+                function onDrag(moveEvt) {
+                    if (!isDragging) return;
+                    moveEvt.preventDefault();
+                    const dx = moveEvt.clientX - startX;
+                    const dy = moveEvt.clientY - startY;
+                    overlay.x = initialLeft + dx;
+                    overlay.y = initialTop + dy;
+                    div.style.left = `${overlay.x}px`;
+                    div.style.top = `${overlay.y}px`;
+                }
+
+                function stopDrag() {
+                    isDragging = false;
+                    document.removeEventListener('mousemove', onDrag);
+                    document.removeEventListener('mouseup', stopDrag);
+                }
+
+                document.addEventListener('mousemove', onDrag);
+                document.addEventListener('mouseup', stopDrag);
+            });
+
+            // Resize setup
+            handle.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                setActiveOverlay(id);
+
+                let isResizing = true;
+                const initialWidth = div.offsetWidth;
+                const initialMouseX = e.clientX;
+
+                function onResize(moveEvt) {
+                    if (!isResizing) return;
+                    moveEvt.preventDefault();
+                    const dx = moveEvt.clientX - initialMouseX;
+                    const newSize = Math.max(30, initialWidth + dx);
+                    overlay.size = newSize;
+                    div.style.width = `${newSize}px`;
+                    div.style.height = `${newSize}px`;
+
+                    sizeRange.value = newSize;
+                    sizeValue.textContent = Math.round(newSize) + 'px';
+                }
+
+                function stopResize() {
+                    isResizing = false;
+                    document.removeEventListener('mousemove', onResize);
+                    document.removeEventListener('mouseup', stopResize);
+                }
+
+                document.addEventListener('mousemove', onResize);
+                document.addEventListener('mouseup', stopResize);
+            });
+
+            overlays.push(overlay);
+            updateTabsUI();
+            setActiveOverlay(id);
+
+            return overlay;
+        }
+
+        function removeOverlay(id) {
+            const idx = overlays.findIndex(o => o.id === id);
+            if (idx === -1) return;
+
+            const target = overlays[idx];
+            target.element.remove();
+            overlays.splice(idx, 1);
+
+            if (overlays.length === 0) {
+                // If all removed, create one fallback
+                createOverlay({ x: 50, y: 50, size: 150, version: 3 });
+            } else {
+                if (activeOverlayId === id) {
+                    setActiveOverlay(overlays[Math.max(0, idx - 1)].id);
+                } else {
+                    updateTabsUI();
+                }
+            }
+        }
+
+        function setActiveOverlay(id) {
+            const overlay = overlays.find(o => o.id === id);
+            if (!overlay) return;
+
+            activeOverlayId = id;
+
+            // Highlight in DOM
+            overlays.forEach(o => {
+                if (o.id === id) {
+                    o.element.classList.add('active');
+                    o.element.style.zIndex = '20';
+                } else {
+                    o.element.classList.remove('active');
+                    o.element.style.zIndex = '10';
+                }
+            });
+
+            // Update Tabs UI
+            const tabButtons = qrTabsList.querySelectorAll('.qr-tab-item');
+            tabButtons.forEach(btn => {
+                if (btn.dataset.id === id) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Update Controls
+            sizeRange.value = overlay.size;
+            sizeValue.textContent = Math.round(overlay.size) + 'px';
+
+            densityRange.value = overlay.density;
+            densityValue.textContent = 'Version ' + overlay.version;
+
+            // Update Original QR Details Card
+            if (overlay.origInfo) {
+                detVersion.textContent = `Version ${overlay.origInfo.version}`;
+                detModules.textContent = `${overlay.origInfo.modules} × ${overlay.origInfo.modules} โมดูล`;
+                detSize.textContent = `${Math.round(overlay.origInfo.size)} × ${Math.round(overlay.origInfo.size)} px (สลิปจริง)`;
+                detType.textContent = overlay.origInfo.type;
+
+                if (overlay.origInfo.data) {
+                    detPayload.textContent = overlay.origInfo.data;
+                    detPayloadWrap.style.display = 'block';
+                } else {
+                    detPayloadWrap.style.display = 'none';
+                }
+                origQrCard.classList.remove('hidden');
+            } else {
+                detVersion.textContent = `Version ${overlay.version} (จำลอง)`;
+                detModules.textContent = `${overlay.density} × ${overlay.density} โมดูล`;
+                detSize.textContent = `${Math.round(overlay.size)} px (บนจอ)`;
+                detType.textContent = '🛠️ กรอบสร้างด้วยตนเอง';
+                detPayloadWrap.style.display = 'none';
+                origQrCard.classList.remove('hidden');
+            }
+
+            // Verify scanability of this active overlay
+            verifyFakeQRScan(overlay.canvas);
+        }
+
+        function updateTabsUI() {
+            qrCountBadge.textContent = `${overlays.length} QR`;
+
+            // Update badges on overlays
+            overlays.forEach((o, idx) => {
+                const b = o.element.querySelector('.overlay-badge');
+                if (b) b.textContent = '#' + (idx + 1);
+            });
+
+            qrTabsList.innerHTML = '';
+
+            overlays.forEach((o, idx) => {
+                const tab = document.createElement('button');
+                tab.type = 'button';
+                tab.className = `qr-tab qr-tab-item ${o.id === activeOverlayId ? 'active' : ''}`;
+                tab.dataset.id = o.id;
+
+                const label = document.createElement('span');
+                label.textContent = `📍 QR #${idx + 1} (V${o.version})`;
+                tab.appendChild(label);
+
+                if (overlays.length > 1) {
+                    const del = document.createElement('span');
+                    del.className = 'qr-tab-del';
+                    del.innerHTML = '&times;';
+                    del.title = 'ลบกรอบ QR นี้';
+                    del.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        removeOverlay(o.id);
+                    });
+                    tab.appendChild(del);
+                }
+
+                tab.addEventListener('click', () => setActiveOverlay(o.id));
+                qrTabsList.appendChild(tab);
+            });
+
+            // Add "+ เพิ่ม QR" button
+            const addBtn = document.createElement('button');
+            addBtn.type = 'button';
+            addBtn.className = 'qr-tab qr-tab-add';
+            addBtn.innerHTML = '➕ เพิ่ม QR';
+            addBtn.title = 'เพิ่มกรอบ QR จำลองอีก 1 จุด';
+            addBtn.addEventListener('click', () => {
+                const imgW = slipImage.offsetWidth || 300;
+                const imgH = slipImage.offsetHeight || 300;
+                const newSize = 140;
+                const newX = Math.max(10, (imgW - newSize) / 2 + (overlays.length * 20));
+                const newY = Math.max(10, (imgH - newSize) / 2 + (overlays.length * 20));
+                createOverlay({ x: newX, y: newY, size: newSize, version: 3 });
+            });
+            qrTabsList.appendChild(addBtn);
+        }
+
+        // --- Multi-QR Detector Algorithm ---
+        function detectAllQRsInImage(imgElement) {
+            const rawW = imgElement.naturalWidth;
+            const rawH = imgElement.naturalHeight;
+
+            const scanCvs = document.createElement('canvas');
+            const scanCtx = scanCvs.getContext('2d');
+            scanCvs.width = rawW;
+            scanCvs.height = rawH;
+            scanCtx.drawImage(imgElement, 0, 0);
+
+            const imgData = scanCtx.getImageData(0, 0, rawW, rawH);
+            const pixels = new Uint8ClampedArray(imgData.data.buffer.slice(0));
+
+            function maskFoundQR(code) {
+                const tl = code.location.topLeftCorner;
+                const tr = code.location.topRightCorner;
+                const br = code.location.bottomRightCorner;
+                const bl = code.location.bottomLeftCorner;
+                const minX = Math.max(0, Math.floor(Math.min(tl.x, tr.x, br.x, bl.x) - 15));
+                const maxX = Math.min(rawW, Math.ceil(Math.max(tl.x, tr.x, br.x, bl.x) + 15));
+                const minY = Math.max(0, Math.floor(Math.min(tl.y, tr.y, br.y, bl.y) - 15));
+                const maxY = Math.min(rawH, Math.ceil(Math.max(tl.y, tr.y, br.y, bl.y) + 15));
+
+                for (let y = minY; y < maxY; y++) {
+                    for (let x = minX; x < maxX; x++) {
+                        const idx = (y * rawW + x) * 4;
+                        pixels[idx] = 255;
+                        pixels[idx + 1] = 255;
+                        pixels[idx + 2] = 255;
+                        pixels[idx + 3] = 255;
+                    }
+                }
+            }
+
+            function scanRegion(rx, ry, rw, rh) {
+                if (rw <= 40 || rh <= 40) return null;
+                const subPixels = new Uint8ClampedArray(rw * rh * 4);
+                for (let y = 0; y < rh; y++) {
+                    for (let x = 0; x < rw; x++) {
+                        const src = ((ry + y) * rawW + (rx + x)) * 4;
+                        const dst = (y * rw + x) * 4;
+                        subPixels[dst] = pixels[src];
+                        subPixels[dst + 1] = pixels[src + 1];
+                        subPixels[dst + 2] = pixels[src + 2];
+                        subPixels[dst + 3] = pixels[src + 3];
+                    }
+                }
+                const code = jsQR(subPixels, rw, rh, { inversionAttempts: 'attemptBoth' });
+                if (!code) return null;
+                const mapPt = (pt) => ({ x: pt.x + rx, y: pt.y + ry });
+                return {
+                    version: code.version,
+                    data: code.data,
+                    location: {
+                        topLeftCorner: mapPt(code.location.topLeftCorner),
+                        topRightCorner: mapPt(code.location.topRightCorner),
+                        bottomRightCorner: mapPt(code.location.bottomRightCorner),
+                        bottomLeftCorner: mapPt(code.location.bottomLeftCorner),
+                    }
+                };
+            }
+
+            const allQRs = [];
+            const regions = [
+                { x: 0, y: 0, w: rawW, h: rawH }, // Full image
+                { x: 0, y: 0, w: rawW, h: Math.floor(rawH * 0.52) }, // Top half
+                { x: 0, y: Math.floor(rawH * 0.48), w: rawW, h: Math.ceil(rawH * 0.52) }, // Bottom half
+                { x: 0, y: Math.floor(rawH * 0.25), w: rawW, h: Math.floor(rawH * 0.5) }, // Middle
+                { x: 0, y: 0, w: Math.floor(rawW * 0.55), h: rawH }, // Left half
+                { x: Math.floor(rawW * 0.45), y: 0, w: Math.ceil(rawW * 0.55), h: rawH }, // Right half
+                // 4 Quadrants
+                { x: 0, y: 0, w: Math.floor(rawW * 0.55), h: Math.floor(rawH * 0.55) },
+                { x: Math.floor(rawW * 0.45), y: 0, w: Math.ceil(rawW * 0.55), h: Math.floor(rawH * 0.55) },
+                { x: 0, y: Math.floor(rawH * 0.45), w: Math.floor(rawW * 0.55), h: Math.ceil(rawH * 0.55) },
+                { x: Math.floor(rawW * 0.45), y: Math.floor(rawH * 0.45), w: Math.ceil(rawW * 0.55), h: Math.ceil(rawH * 0.55) }
+            ];
+
+            let foundNew = true;
+            let passes = 0;
+            while (foundNew && passes < 10) {
+                foundNew = false;
+                passes++;
+                for (const r of regions) {
+                    const found = scanRegion(r.x, r.y, r.w, r.h);
+                    if (found) {
+                        const cx = (found.location.topLeftCorner.x + found.location.bottomRightCorner.x) / 2;
+                        const cy = (found.location.topLeftCorner.y + found.location.bottomRightCorner.y) / 2;
+                        const exists = allQRs.some(q => {
+                            const qcx = (q.location.topLeftCorner.x + q.location.bottomRightCorner.x) / 2;
+                            const qcy = (q.location.topLeftCorner.y + q.location.bottomRightCorner.y) / 2;
+                            return Math.hypot(cx - qcx, cy - qcy) < 50;
+                        });
+
+                        if (!exists) {
+                            allQRs.push(found);
+                            maskFoundQR(found);
+                            foundNew = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return allQRs;
+        }
+
+        // --- File Handling & Detection ---
+        function handleFile(file) {
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    rawSlipImg = new Image();
+                    rawSlipImg.onload = () => {
+                        workingSlipCanvas = document.createElement('canvas');
+                        workingSlipCanvas.width = rawSlipImg.naturalWidth;
+                        workingSlipCanvas.height = rawSlipImg.naturalHeight;
+                        const wsCtx = workingSlipCanvas.getContext('2d');
+                        wsCtx.drawImage(rawSlipImg, 0, 0);
+
+                        slipImage.onload = () => {
+                            slipImage.onload = null;
+                            canvasContainer.style.display = 'block';
+                            dropMessage.style.display = 'none';
+                            editorControls.classList.remove('hidden');
+
+                            // Reset payment lock state for fresh edit session
+                            isPaymentApproved = false;
+                            isLocked = false;
+                            const previewWatermark = document.getElementById('previewWatermark');
+                            if (previewWatermark) previewWatermark.style.display = 'flex';
+                            if (slipImage) slipImage.style.filter = 'none';
+                            const overlaysContainer = document.getElementById('overlaysContainer');
+                            if (overlaysContainer) overlaysContainer.style.display = 'block';
+
+                            requestAnimationFrame(() => {
+                                detectAndPlaceQR(true);
+                            });
+                        };
+                        slipImage.src = workingSlipCanvas.toDataURL('image/png');
+                    };
+                    rawSlipImg.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function detectAndPlaceQR(autoErase = true) {
+            if (!rawSlipImg) return;
+
+            const allQRs = detectAllQRsInImage(rawSlipImg);
+
+            // Clear all existing overlays
+            overlays.forEach(o => o.element.remove());
+            overlays = [];
+
+            if (allQRs.length > 0) {
+                // Sort by Y position (top to bottom)
+                allQRs.sort((a, b) => a.location.topLeftCorner.y - b.location.topLeftCorner.y);
+
+                // Reset workingSlipCanvas from raw image
+                const wsCtx = workingSlipCanvas.getContext('2d');
+                wsCtx.drawImage(rawSlipImg, 0, 0);
+
+                const displayScale = slipImage.offsetWidth / slipImage.naturalWidth;
+
+                allQRs.forEach((code, index) => {
+                    const tl = code.location.topLeftCorner;
+                    const tr = code.location.topRightCorner;
+                    const br = code.location.bottomRightCorner;
+                    const bl = code.location.bottomLeftCorner;
+
+                    const minX = Math.min(tl.x, tr.x, br.x, bl.x);
+                    const maxX = Math.max(tl.x, tr.x, br.x, bl.x);
+                    const minY = Math.min(tl.y, tr.y, br.y, bl.y);
+                    const maxY = Math.max(tl.y, tr.y, br.y, bl.y);
+                    const origW = maxX - minX;
+                    const origH = maxY - minY;
+
+                    // Erase old QR from slip canvas with safety margin
+                    if (autoErase) {
+                        const pad = Math.max(8, Math.round(origW * 0.04));
+                        wsCtx.fillStyle = '#FFFFFF';
+                        wsCtx.fillRect(
+                            Math.max(0, minX - pad),
+                            Math.max(0, minY - pad),
+                            Math.min(workingSlipCanvas.width - (minX - pad), origW + pad * 2),
+                            Math.min(workingSlipCanvas.height - (minY - pad), origH + pad * 2)
+                        );
+                    }
+
+                    // Precise dimensions & center
+                    const widthTop = Math.hypot(tr.x - tl.x, tr.y - tl.y);
+                    const widthBottom = Math.hypot(br.x - bl.x, br.y - bl.y);
+                    const heightLeft = Math.hypot(bl.x - tl.x, bl.y - tl.y);
+                    const heightRight = Math.hypot(br.x - tr.x, br.y - tr.y);
+                    const detectedSize = Math.max(widthTop, widthBottom, heightLeft, heightRight);
+
+                    const centerX = (tl.x + tr.x + br.x + bl.x) / 4;
+                    const centerY = (tl.y + tr.y + br.y + bl.y) / 4;
+
+                    const finalSize = Math.round(detectedSize * displayScale);
+                    const finalX = Math.round((centerX * displayScale) - (finalSize / 2));
+                    const finalY = Math.round((centerY * displayScale) - (finalSize / 2));
+
+                    const version = code.version || 3;
+                    const modules = 17 + 4 * version;
+
+                    let typeText = '📄 ข้อความ / รหัสทั่วไป';
+                    if (code.data) {
+                        if (code.data.startsWith('000201')) {
+                            typeText = '🇹🇭 พร้อมเพย์ / Thai QR Payment (EMVCo)';
+                        } else if (code.data.startsWith('https://app.binance.com') || code.data.toLowerCase().includes('binance')) {
+                            typeText = '🟡 Binance Pay / Crypto QR';
+                        } else if (code.data.startsWith('http://') || code.data.startsWith('https://')) {
+                            typeText = '🌐 เว็บไซต์ (URL)';
+                        }
+                    }
+
+                    // Create overlay for this detected QR
+                    createOverlay({
+                        x: finalX,
+                        y: finalY,
+                        size: finalSize,
+                        version: version,
+                        density: modules,
+                        origInfo: {
+                            version,
+                            modules,
+                            size: detectedSize,
+                            type: typeText,
+                            data: code.data
+                        }
+                    });
+                });
+
+                if (autoErase) {
+                    slipImage.src = workingSlipCanvas.toDataURL('image/png');
+                }
+
+                setActiveOverlay(overlays[0].id);
+                detectStatus.innerHTML = `<span class="status-badge status-success">🎉 ตรวจพบ ${allQRs.length} QR Code และลบภาพเดิมทั้งหมดแล้ว!</span>`;
+            } else {
+                // Fallback: create 1 overlay at center
+                const imgW = slipImage.offsetWidth || 300;
+                const imgH = slipImage.offsetHeight || 300;
+                const fallbackSize = 150;
+                createOverlay({
+                    x: Math.round((imgW - fallbackSize) / 2),
+                    y: Math.round((imgH - fallbackSize) / 2),
+                    size: fallbackSize,
+                    version: 3
+                });
+
+                origQrCard.classList.add('hidden');
+                detectStatus.innerHTML = '<span class="status-badge status-error">หา QR ไม่พบ (สร้างกรอบจำลองให้ปรับเองได้เลย)</span>';
+            }
+        }
+
+        // --- Event Listeners ---
+        if (dropMessage && slipInput) {
+            dropMessage.addEventListener('click', (e) => {
+                if (e.target !== slipInput) {
+                    slipInput.click();
+                }
+            });
+        }
+
+        const emptySidebarPrompt = document.getElementById('emptySidebarPrompt');
+        if (emptySidebarPrompt && slipInput) {
+            emptySidebarPrompt.style.cursor = 'pointer';
+            emptySidebarPrompt.addEventListener('click', () => slipInput.click());
+        }
+
+        slipInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                handleFile(e.target.files[0]);
+            }
+            e.target.value = '';
+        });
+
+        autoDetectBtn.addEventListener('click', () => {
+            if (workingSlipCanvas && rawSlipImg) {
+                const wsCtx = workingSlipCanvas.getContext('2d');
+                wsCtx.drawImage(rawSlipImg, 0, 0);
+            }
+            detectAndPlaceQR(true);
+        });
+
+        // Test scan button
+        if (testScanBtn) {
+            testScanBtn.addEventListener('click', () => {
+                const active = getActiveOverlay();
+                if (active) {
+                    const passed = verifyFakeQRScan(active.canvas);
+                    if (passed && verifyBadge) {
+                        verifyBadge.innerHTML = '✅ ทดสอบสด: สแกนไม่ติด 100%!';
+                    }
+                }
+            });
+        }
+
+        // Randomize fake QR pattern for active overlay
+        randomizeBtn.addEventListener('click', () => {
+            const active = getActiveOverlay();
+            if (active) {
+                active.pattern = renderFakeQROntoCanvas(active.canvas, active.density);
+                verifyFakeQRScan(active.canvas);
+            }
+        });
+
+        // Size slider
+        sizeRange.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            const active = getActiveOverlay();
+            if (active) {
+                active.size = val;
+                active.element.style.width = `${val}px`;
+                active.element.style.height = `${val}px`;
+            }
+            sizeValue.textContent = Math.round(val) + 'px';
+        });
+
+        // Density slider
+        densityRange.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            const active = getActiveOverlay();
+            if (active) {
+                active.density = val;
+                active.version = Math.floor((val - 17) / 4);
+                active.pattern = renderFakeQROntoCanvas(active.canvas, active.density);
+                densityValue.textContent = 'Version ' + active.version;
+                updateTabsUI();
+                verifyFakeQRScan(active.canvas);
+            }
+        });
+
+        // White bleed slider
+        bleedRange.addEventListener('input', (e) => {
+            bleedValue.textContent = e.target.value + 'px';
+        });
+
+        // Drag and Drop files
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        // Keyboard Arrow Nudging Support for Active Overlay
+        document.addEventListener('keydown', (e) => {
+            if (!slipImage.src || editorControls.classList.contains('hidden')) return;
+            const active = getActiveOverlay();
+            if (!active) return;
+
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                e.preventDefault();
+                const step = e.shiftKey ? 5 : 1;
+
+                if (e.key === 'ArrowUp') active.y -= step;
+                if (e.key === 'ArrowDown') active.y += step;
+                if (e.key === 'ArrowLeft') active.x -= step;
+                if (e.key === 'ArrowRight') active.x += step;
+
+                active.element.style.left = `${active.x}px`;
+                active.element.style.top = `${active.y}px`;
+            }
+        });
+
+        // ===== PROMPTPAY & PAYMENT CONFIGURATION =====
+        const FIREBASE_BASE = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files";
+        const PAYMENT_ENDPOINT = `${FIREBASE_BASE}/payment_requests`;
+        const PROMPTPAY_NUMBER = "0988573074";
+        const SERVICE_PRICE = 20.00;
+
+        const isLocalAdmin = (
+            window.location.hostname === '127.0.0.1' ||
+            window.location.hostname === 'localhost' ||
+            window.location.protocol === 'file:' ||
+            new URLSearchParams(window.location.search).get('admin') === 'true'
+        );
+
+        let isLocked = false;
+        let isPaymentApproved = false;
+        let currentOrderId = null;
+        let checkoutCountdownTimer = null;
+        let checkoutPollingTimer = null;
+        let antiTamperInterval = null;
+        let antiTamperObserver = null;
+
+        // Context menu & keyboard shortcut interception to prevent screen capture theft
+        const studioWorkspace = document.querySelector('.studio-workspace');
+        if (studioWorkspace) {
+            studioWorkspace.addEventListener('contextmenu', (e) => e.preventDefault());
+            studioWorkspace.addEventListener('dragstart', (e) => e.preventDefault());
+        }
+
+        document.addEventListener('keydown', (e) => {
+            // Support ESC to close popup studio
+            if (e.key === 'Escape') {
+                if (window.self !== window.top) {
+                    try {
+                        window.parent.postMessage('CLOSE_SERVICE_MODAL_ESC', '*');
+                    } catch (err) { }
+                }
+            }
+
+            // Block F12, DevTools shortcuts, Save, Print
+            if (e.key === 'F12' ||
+                (e.ctrlKey && e.shiftKey && ['I', 'i', 'C', 'c', 'J', 'j'].includes(e.key)) ||
+                (e.ctrlKey && ['u', 'U', 's', 'S', 'p', 'P'].includes(e.key))) {
+                e.preventDefault();
+                return false;
+            }
+            // Flash blackout on PrintScreen attempt during lock
+            if (e.key === 'PrintScreen' && isLocked && !isPaymentApproved) {
+                if (slipImage) slipImage.style.opacity = '0';
+                setTimeout(() => { if (slipImage) slipImage.style.opacity = '1'; }, 1200);
+            }
+        });
+
+        // Save Button Click Handler (Locks for payment if not paid)
+        saveBtn.addEventListener('click', () => {
+            if (!rawSlipImg || overlays.length === 0) {
+                alert('กรุณาเลือกรูปภาพสลิปที่ต้องการแก้ไขก่อนดำเนินการครับ');
+                return;
+            }
+
+            if (isPaymentApproved) {
+                generateAndDownloadCleanImage();
+                return;
+            }
+
+            // Trigger payment lock
+            openPaymentFlow();
+        });
+
+        // Trigger Lock and PromptPay Checkout
+        async function openPaymentFlow() {
+            isLocked = true;
+
+            // Obscure image in workspace - clean image is NEVER rendered in DOM
+            if (slipImage) {
+                slipImage.style.filter = 'blur(28px) grayscale(90%)';
+            }
+            if (overlaysContainer) {
+                overlaysContainer.style.display = 'none';
+            }
+
+            // Show full viewport shield
+            const securityBackdrop = document.getElementById('securityBackdrop');
+            if (securityBackdrop) {
+                securityBackdrop.classList.add('active');
+            }
+
+            // Generate Order ID & Security Token
+            const orderId = `ORD-QR-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 899 + 100)}`;
+            const secretToken = `sec_qr_${Math.random().toString(36).substring(2)}_${Date.now()}`;
+            const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+            currentOrderId = orderId;
+
+            // Update Modal UI
+            document.getElementById('paymentViewPending').style.display = 'block';
+            const orderIdText = document.getElementById('checkoutOrderIdText');
+            if (orderIdText) orderIdText.textContent = orderId;
+
+            // Generate PromptPay QR (20.00 THB)
+            generatePromptPayQR(PROMPTPAY_NUMBER, SERVICE_PRICE);
+
+            // Save order to Firebase for auto_donate_watcher & admin-payment approval
+            try {
+                const payload = {
+                    id: orderId,
+                    linkKey: orderId,
+                    productId: 'service-fake-qr',
+                    productTitle: 'บริการแก้ QR code ให้สแกนไม่ติด (Fake QR 1 ครั้ง)',
+                    price: SERVICE_PRICE,
+                    status: 'pending',
+                    previewUrl: 'https://cdn.jsdelivr.net/gh/artnp/eworker@main/shop/images/fakeqr_cover.svg',
+                    secretToken: secretToken,
+                    createdAt: Date.now(),
+                    expiresAt: expiresAt,
+                    timeStr: new Date().toLocaleTimeString('th-TH'),
+                    dateStr: new Date().toLocaleDateString('th-TH'),
+                    manualConfirmed: false
+                };
+
+                await fetch(`${PAYMENT_ENDPOINT}/${orderId}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } catch (err) { }
+
+            // Admin test shortcut
+            const adminShortcut = document.getElementById('adminTestShortcut');
+            if (adminShortcut) {
+                adminShortcut.style.display = isLocalAdmin ? 'block' : 'none';
+            }
+
+            // Open Modal
+            const paymentModal = document.getElementById('paymentModal');
+            if (paymentModal) {
+                paymentModal.classList.add('active');
+            }
+
+            // Start Timers and Anti-Tamper Guard
+            startCheckoutCountdown(expiresAt);
+            startCheckoutPolling(orderId);
+            startAntiTamperGuard();
+        }
+
+        function reopenPaymentModal() {
+            if (isPaymentApproved) return;
+            const paymentModal = document.getElementById('paymentModal');
+            if (paymentModal) paymentModal.classList.add('active');
+        }
+
+        // --- PromptPay QR Payload Generator (EMVCo CRC16) ---
+        let lastPromptPayPayload = '';
+
+        function generatePromptPayQR(id, amount) {
+            const targetEl = document.getElementById('qrCodeTarget');
+            targetEl.innerHTML = '';
+            const payload = generatePromptPayPayload(id, amount);
+            lastPromptPayPayload = payload;
+
+            new QRCode(targetEl, {
+                text: payload,
+                width: 210,
+                height: 210,
+                colorDark: "#0f172a",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
+
+        function generatePromptPayPayload(id, amount) {
+            const crc16 = (data) => {
+                let crc = 0xFFFF;
+                for (let i = 0; i < data.length; i++) {
+                    crc ^= data.charCodeAt(i) << 8;
+                    for (let j = 0; j < 8; j++) {
+                        crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) & 0xFFFF : (crc << 1) & 0xFFFF;
+                    }
+                }
+                return crc.toString(16).toUpperCase().padStart(4, '0');
+            };
+
+            let target = id.replace(/[^0-9]/g, '');
+            if (target.length === 10 && target.startsWith('0')) {
+                target = '0066' + target.substring(1);
+            }
+
+            let merchantInfo = '0016A000000677010111' + '01' + ('00' + target.length).slice(-2) + target;
+            let payload = '000201010211' + '29' + ('00' + merchantInfo.length).slice(-2) + merchantInfo + '5802TH5303764';
+
+            if (!isNaN(amount) && amount > 0) {
+                const amtStr = Number(amount).toFixed(2);
+                payload += '54' + ('00' + amtStr.length).slice(-2) + amtStr;
+            }
+
+            payload += '6304';
+            return payload + crc16(payload);
+        }
+
+        // --- 10-Minute Countdown Timer ---
+        function startCheckoutCountdown(expiresAt) {
+            if (checkoutCountdownTimer) clearInterval(checkoutCountdownTimer);
+
+            const box = document.getElementById('checkoutCountdownBox');
+            const timerEl = document.getElementById('checkoutCountdownTimer');
+
+            const tick = () => {
+                const diffSec = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+                const m = String(Math.floor(diffSec / 60)).padStart(2, '0');
+                const s = String(diffSec % 60).padStart(2, '0');
+
+                if (timerEl) timerEl.textContent = `${m}:${s}`;
+
+                if (box) {
+                    if (diffSec <= 60) {
+                        box.className = 'checkout-countdown-box urgent';
+                    } else if (diffSec <= 180) {
+                        box.className = 'checkout-countdown-box warning';
+                    } else {
+                        box.className = 'checkout-countdown-box';
+                    }
+                }
+
+                if (diffSec <= 0) {
+                    clearInterval(checkoutCountdownTimer);
+                    checkoutCountdownTimer = null;
+                    if (checkoutPollingTimer) clearInterval(checkoutPollingTimer);
+                    location.reload();
+                }
+            };
+
+            tick();
+            checkoutCountdownTimer = setInterval(tick, 1000);
+        }
+
+        // --- Real-time Firebase Status Polling ---
+        function startCheckoutPolling(orderId) {
+            if (checkoutPollingTimer) clearInterval(checkoutPollingTimer);
+
+            checkoutPollingTimer = setInterval(async () => {
+                try {
+                    const res = await fetch(`${PAYMENT_ENDPOINT}/${orderId}.json?t=${Date.now()}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.status === 'approved') {
+                            handlePaymentApprovedSuccess();
+                        } else if (data && data.status === 'rejected') {
+                            clearInterval(checkoutPollingTimer);
+                            checkoutPollingTimer = null;
+                            if (checkoutCountdownTimer) clearInterval(checkoutCountdownTimer);
+                            alert(`❌ คำสั่งซื้อถูกปฏิเสธ: ${data.rejectReason || 'กรุณาติดต่อแอดมินทาง LINE'}`);
+                        }
+                    }
+                } catch (e) { }
+            }, 1500);
+        }
+
+        // --- Anti-Tamper & Anti-PopupBlocker Guard ---
+        function startAntiTamperGuard() {
+            if (antiTamperObserver) antiTamperObserver.disconnect();
+            if (antiTamperInterval) clearInterval(antiTamperInterval);
+
+            const checkTamper = () => {
+                if (!isLocked || isPaymentApproved) return;
+                const modal = document.getElementById('paymentModal');
+                const backdrop = document.getElementById('securityBackdrop');
+
+                // 1. Check if elements exist in DOM
+                if (!modal || !backdrop) {
+                    triggerTamperLockout('องค์ประกอบหน้าต่างชำระเงินถูกลบออกจาก DOM');
+                    return;
+                }
+
+                if (!document.body.contains(modal) || !dropZone.contains(backdrop)) {
+                    triggerTamperLockout('ตรวจพบการ Remove Element หน้าต่างชำระเงินหรือม่านบัง');
+                    return;
+                }
+
+                // 2. Check if styles are manipulated (hidden, display: none, opacity: 0)
+                const modalStyle = window.getComputedStyle(modal);
+                const backdropStyle = window.getComputedStyle(backdrop);
+
+                if (modalStyle.display === 'none' || modalStyle.visibility === 'hidden' || parseFloat(modalStyle.opacity) < 0.2) {
+                    triggerTamperLockout('ตรวจพบการซ่อนหน้าต่างชำระเงิน (display: none / hidden / opacity)');
+                    return;
+                }
+
+                if (backdropStyle.display === 'none' || backdropStyle.visibility === 'hidden' || parseFloat(backdropStyle.opacity) < 0.2) {
+                    triggerTamperLockout('ตรวจพบการซ่อนม่านบังหน้าจอ (display: none / hidden / opacity)');
+                    return;
+                }
+
+                // 3. Check if moved out of viewport
+                const rect = modal.getBoundingClientRect();
+                if (rect.width < 50 || rect.height < 50 || rect.top < -300 || rect.left < -300) {
+                    triggerTamperLockout('ตรวจพบการย่อหรือย้ายหน้าต่างชำระเงินออกนอกหน้าจอ');
+                    return;
+                }
+            };
+
+            antiTamperObserver = new MutationObserver(() => {
+                checkTamper();
+            });
+
+            antiTamperObserver.observe(document.body, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['style', 'class', 'hidden']
+            });
+
+            antiTamperInterval = setInterval(checkTamper, 250);
+        }
+
+        // Wipe image memory and lock screen if tamper detected
+        function triggerTamperLockout(reason) {
+            if (isPaymentApproved) return;
+            console.warn('Anti-tamper lockout activated:', reason);
+
+            // Destroy all image memory instantly
+            rawSlipImg = null;
+            workingSlipCanvas = null;
+            overlays = [];
+            if (slipImage) slipImage.src = '';
+            if (overlaysContainer) overlaysContainer.innerHTML = '';
+            if (canvasContainer) canvasContainer.style.display = 'none';
+
+            // Show full-screen tamper barrier
+            const barrier = document.getElementById('tamperBarrier');
+            if (barrier) {
+                barrier.classList.add('active');
+            }
+        }
+
+        // --- Payment Approved Success Flow ---
+        function handlePaymentApprovedSuccess() {
+            isPaymentApproved = true;
+            isLocked = false;
+
+            if (checkoutCountdownTimer) clearInterval(checkoutCountdownTimer);
+            if (checkoutPollingTimer) clearInterval(checkoutPollingTimer);
+            if (antiTamperInterval) clearInterval(antiTamperInterval);
+            if (antiTamperObserver) antiTamperObserver.disconnect();
+
+            // Confetti Blast
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 120,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+
+            // Switch modal view to success
+            document.getElementById('paymentViewPending').style.display = 'none';
+            document.getElementById('paymentViewSuccess').style.display = 'block';
+
+            // Lift workspace blur & restore overlays
+            if (slipImage) slipImage.style.filter = 'none';
+            if (overlaysContainer) overlaysContainer.style.display = 'block';
+
+            // Remove preview watermark
+            const previewWatermark = document.getElementById('previewWatermark');
+            if (previewWatermark) previewWatermark.style.display = 'none';
+
+            // Hide security backdrop
+            const securityBackdrop = document.getElementById('securityBackdrop');
+            if (securityBackdrop) securityBackdrop.classList.remove('active');
+
+            // Generate clean un-watermarked high-res image and trigger download
+            generateAndDownloadCleanImage();
+
+            // Bind click to re-download button
+            const btnDownloadClean = document.getElementById('btnDownloadClean');
+            if (btnDownloadClean) {
+                btnDownloadClean.onclick = () => generateAndDownloadCleanImage();
+            }
+        }
+
+        // --- Clean High-Resolution Image Composite Generator ---
+        function buildFinalCleanComposite() {
+            if (!workingSlipCanvas) return null;
+            const saveCanvas = document.createElement('canvas');
+            const saveCtx = saveCanvas.getContext('2d');
+
+            saveCanvas.width = workingSlipCanvas.width;
+            saveCanvas.height = workingSlipCanvas.height;
+
+            // 1. Draw clean slip (all old QRs erased)
+            saveCtx.drawImage(workingSlipCanvas, 0, 0);
+
+            // 2. High-res Scale ratios
+            const displayedWidth = slipImage.offsetWidth;
+            const displayedHeight = slipImage.offsetHeight;
+            const scaleX = workingSlipCanvas.width / displayedWidth;
+            const scaleY = workingSlipCanvas.height / displayedHeight;
+
+            const imgRect = slipImage.getBoundingClientRect();
+            const bleedVal = parseInt(bleedRange.value) || 0;
+            const bleed = bleedVal * scaleX;
+
+            // 3. Draw each overlay with full resolution
+            overlays.forEach(overlay => {
+                const qrRect = overlay.element.getBoundingClientRect();
+                const relativeLeft = qrRect.left - imgRect.left;
+                const relativeTop = qrRect.top - imgRect.top;
+
+                const drawX = relativeLeft * scaleX;
+                const drawY = relativeTop * scaleY;
+                const drawW = qrRect.width * scaleX;
+                const drawH = qrRect.height * scaleY;
+
+                // White backing rectangle under this QR
+                if (bleed > 0) {
+                    saveCtx.fillStyle = '#FFFFFF';
+                    saveCtx.fillRect(drawX - bleed, drawY - bleed, drawW + bleed * 2, drawH + bleed * 2);
+                }
+
+                saveCtx.drawImage(overlay.canvas, drawX, drawY, drawW, drawH);
+            });
+
+            return saveCanvas;
+        }
+
+        function generateAndDownloadCleanImage() {
+            const saveCanvas = buildFinalCleanComposite();
+            if (!saveCanvas) return;
+
+            const fileName = 'fakeqr-slip-clean-' + Date.now() + '.png';
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = saveCanvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Admin Simulate Approve Shortcut
+        async function adminSimulateApprove() {
+            if (!currentOrderId) return;
+            try {
+                await fetch(`${PAYMENT_ENDPOINT}/${currentOrderId}.json`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'approved', approvedAt: Date.now(), simulated: true })
+                });
+            } catch (e) { }
+            handlePaymentApprovedSuccess();
+        }
+
+        // Manual Payment Alert Button
+        async function triggerManualPaymentAlert() {
+            if (!currentOrderId) return;
+            const btn = document.getElementById('btnManualConfirm');
+            if (btn) {
+                btn.innerHTML = '⏳ กำลังตรวจสอบและส่งสัญญาณแจ้งเตือน...';
+                btn.disabled = true;
+            }
+            try {
+                const res = await fetch(`${PAYMENT_ENDPOINT}/${currentOrderId}.json?t=${Date.now()}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.status === 'approved') {
+                        handlePaymentApprovedSuccess();
+                        return;
+                    }
+                }
+                await fetch(`${PAYMENT_ENDPOINT}/${currentOrderId}.json`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ manualConfirmed: true, manualAlertAt: Date.now() })
+                });
+                if (btn) btn.innerHTML = '🔔 (รอระบบตรวจสอบ)';
+            } catch (e) {
+                if (btn) {
+                    btn.innerHTML = '🔔 ฉันโอนเงินแล้ว (แจ้งเตือนซ้ำ)';
+                    btn.disabled = false;
+                }
+            }
+        }
+
+        async function downloadPaymentQR() {
+            const btn = document.getElementById('btnDownloadSlip');
+            const originalHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.innerHTML = '⏳ กำลังบันทึกรูป...';
+                btn.disabled = true;
+            }
+
+            try {
+                // Ensure high-resolution QR canvas
+                let qrSourceCanvas = null;
+                if (lastPromptPayPayload) {
+                    const tempWrap = document.createElement('div');
+                    new QRCode(tempWrap, {
+                        text: lastPromptPayPayload,
+                        width: 320,
+                        height: 320,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
+                    qrSourceCanvas = tempWrap.querySelector('canvas');
+                }
+
+                if (!qrSourceCanvas) {
+                    const targetEl = document.getElementById('qrCodeTarget');
+                    qrSourceCanvas = targetEl ? (targetEl.querySelector('canvas') || targetEl.querySelector('img')) : null;
+                }
+
+                if (!qrSourceCanvas) {
+                    throw new Error('ไม่พบข้อมูล QR Code กรุณารอสักครู่');
+                }
+
+                // Render Full Slip Image onto Offscreen Canvas (540x660 px)
+                const cvs = document.createElement('canvas');
+                cvs.width = 540;
+                cvs.height = 660;
+                const ctx = cvs.getContext('2d');
+
+                // 1. Background (White)
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+                // 2. Outer Border & Frame
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(10, 10, cvs.width - 20, cvs.height - 20);
+
+                // 3. Top PromptPay Navy Header
+                ctx.fillStyle = '#003764';
+                ctx.fillRect(10, 10, cvs.width - 20, 80);
+
+                // Header Text
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 24px "Prompt", -apple-system, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Thai QR Payment / พร้อมเพย์', cvs.width / 2, 58);
+
+                // 4. Centered QR Code
+                const qrSize = 320;
+                const qrX = (cvs.width - qrSize) / 2;
+                const qrY = 115;
+
+                // QR Quiet Zone / White Background Frame
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(qrX - 12, qrY - 12, qrSize + 24, qrSize + 24);
+                ctx.strokeStyle = '#cbd5e1';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(qrX - 12, qrY - 12, qrSize + 24, qrSize + 24);
+
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(qrSourceCanvas, qrX, qrY, qrSize, qrSize);
+
+                // 5. Amount & Instructions below QR
+                ctx.fillStyle = '#16a34a';
+                ctx.font = 'bold 36px "Prompt", -apple-system, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('฿ 20.00', cvs.width / 2, 490);
+
+                ctx.fillStyle = '#0f172a';
+                ctx.font = 'bold 18px "Prompt", -apple-system, sans-serif';
+                ctx.fillText('สแกนผ่านแอปธนาคารทุกธนาคาร', cvs.width / 2, 530);
+
+                ctx.fillStyle = '#64748b';
+                ctx.font = '15px "Prompt", -apple-system, sans-serif';
+                ctx.fillText('เปิดแอปธนาคาร > สแกน > เลือกรูปจากอัลบั้มรูปในมือถือ', cvs.width / 2, 565);
+
+                if (currentOrderId) {
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.font = '13px monospace';
+                    ctx.fillText('Order Ref: ' + currentOrderId, cvs.width / 2, 605);
+                }
+
+                const fileName = `PromptPay_QR_20baht_${Date.now()}.png`;
+
+                // Try Web Share API (Save Image to Gallery on iOS/Android mobile)
+                let shared = false;
+                if (navigator.share && navigator.canShare) {
+                    try {
+                        const blob = await new Promise(resolve => cvs.toBlob(resolve, 'image/png'));
+                        const file = new File([blob], fileName, { type: 'image/png' });
+                        if (navigator.canShare({ files: [file] })) {
+                            await navigator.share({
+                                files: [file],
+                                title: 'รูป PromptPay QR 20 บาท',
+                                text: 'รูป QR Code สำหรับสแกนชำระเงิน 20 บาท'
+                            });
+                            shared = true;
+                        }
+                    } catch (e) {
+                        // User dismissed or share cancelled, fall back to link download
+                    }
+                }
+
+                if (!shared) {
+                    const dataUrl = cvs.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.download = fileName;
+                    link.href = dataUrl;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+
+                if (btn) {
+                    btn.innerHTML = '✅ บันทึกรูปภาพเรียบร้อยแล้ว!';
+                    setTimeout(() => {
+                        btn.innerHTML = originalHtml;
+                        btn.disabled = false;
+                    }, 2500);
+                }
+            } catch (err) {
+                console.error('Save QR error:', err);
+                alert('เกิดข้อผิดพลาดในการบันทึกภาพ: ' + err.message);
+                if (btn) {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
+            }
+        }
+
+        // Auto trigger for testing via URL query: ?sample=1 or ?pay=1
+        const initParams = new URLSearchParams(window.location.search);
+        if (initParams.get('sample') === '1' || initParams.get('pay') === '1') {
+            setTimeout(() => {
+                if (typeof openPaymentFlow === 'function') openPaymentFlow();
+            }, 300);
+        }
+    </script>
+
+    <!-- ===== PAYMENT & LOCK MODAL ===== -->
+    <div id="paymentModal" class="payment-modal-overlay">
+        <div class="payment-modal-card">
+            <!-- Pending Payment View -->
+            <div id="paymentViewPending">
+                <h4 style="font-size: 1.08rem; font-weight: 800; color: #16a34a; margin: 0 0 4px 0;">🎉 แก้ไขสำเร็จแล้ว!
+                    กรุณาชำระเงิน</h4>
+
+                <!-- Countdown Box -->
+                <div class="checkout-countdown-box" id="checkoutCountdownBox">
+                    <span>⏱️ กรุณาชำระเงินภายใน:</span>
+                    <strong id="checkoutCountdownTimer"
+                        style="font-family: monospace; font-size: 0.95rem; font-weight: 800;">10:00</strong>
+                    <span>นาที</span>
+                </div>
+
+                <!-- QR Code Box -->
+                <div class="qr-clean-card">
+                    <div id="qrCodeTarget"></div>
+                    <div
+                        style="font-size: 0.75rem; font-weight: 700; color: #0b1120; margin-top: 5px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                        <img src="../../../assets/promptpay_header_full.png"
+                            onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/100px-PromptPay-logo.png'; this.onerror=function(){this.style.display='none';};"
+                            style="height: 16px; max-width: 75px; object-fit: contain;">
+                        <span>สแกนผ่านทุกแอปธนาคาร</span>
+                    </div>
+                </div>
+
+                <div
+                    style="font-size: 1.55rem; font-weight: 800; color: #16a34a; margin: 2px 0 4px 0; line-height: 1.2;">
+                    ฿ 20.00</div>
+
+                <!-- Button Download QR Code Image -->
+                <button type="button" class="btn btn-primary" id="btnDownloadSlip" onclick="downloadPaymentQR()"
+                    style="width: 100%; justify-content: center; padding: 7px 12px; font-size: 0.84rem; font-weight: 700; border-radius: 8px; margin: 2px 0 4px 0; gap: 6px; background: linear-gradient(135deg, #1d4ed8, #2563eb); border: none; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25);">
+                    <span>📥 บันทึกรูป QR Code (นำเข้าแอปธนาคาร)</span>
+                </button>
+
+                <!-- Polling Status -->
+                <div class="polling-status-chip">
+                    <div class="clean-spinner"></div>
+                    <span>ระบบ KBank กำลังรอรับยอดเงินอัตโนมัติ...</span>
+                </div>
+
+                <!-- Action row: Alert & LINE -->
+                <div style="display: flex; gap: 6px; width: 100%; margin-top: 3px;">
+                    <button type="button" class="btn btn-secondary" id="btnManualConfirm"
+                        style="flex: 1; justify-content: center; padding: 5px 6px; font-size: 0.74rem; font-weight: 600; border-radius: 6px; height: 32px;"
+                        onclick="triggerManualPaymentAlert()" title="แจ้งเตือนให้ระบบตรวจยอดซ้ำ">
+                        🔔 แจ้งโอนแล้ว
+                    </button>
+                    <a href="https://line.me/ti/p/gqIluRmdJ_" target="_blank" rel="noopener noreferrer"
+                        style="flex: 1; background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; font-size: 0.74rem; font-weight: 700; text-decoration: none; padding: 5px 6px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 32px; box-sizing: border-box;"
+                        title="มีปัญหาชำระเงิน ติดต่อทาง LINE">
+                        💬 ติดต่อ LINE
+                    </a>
+                </div>
+
+                <!-- Admin Test Shortcut -->
+                <div id="adminTestShortcut" style="display: none; margin-top: 4px; width: 100%;">
+                    <div
+                        style="padding: 3px 8px; background: #eff6ff; border: 1px dashed #93c5fd; border-radius: 6px; font-size: 0.72rem; display: flex; align-items: center; justify-content: space-between;">
+                        <span>🛠️ <strong>แอดมิน:</strong></span>
+                        <button type="button" onclick="adminSimulateApprove()"
+                            style="background: #2563eb; color: #ffffff; border: none; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; cursor: pointer;">
+                            จำลองเงินเข้า 20 บ.
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Success View (After Payment Approved) -->
+            <div id="paymentViewSuccess" style="display: none;">
+                <div style="font-size: 3.2rem; margin-bottom: 8px;">🎉</div>
+                <h3 style="font-size: 1.4rem; font-weight: 800; color: #16a34a; margin: 0;">ชำระเงิน 20 บาท สำเร็จแล้ว!
+                </h3>
+                <p style="font-size: 0.86rem; color: #64748b; margin-top: 4px;">
+                    กำลังดาวน์โหลดรูปภาพเสร็จแล้ว..
+                </p>
+
+                <div
+                    style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-md); padding: 18px; margin: 18px 0;">
+                    <button type="button" id="btnDownloadClean" class="btn btn-success"
+                        style="width: 100%; justify-content: center; font-size: 1.05rem; font-weight: 800; padding: 14px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);">
+                        📥 ดาวน์โหลดไฟล์
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TAMPER BARRIER (Anti-PopupBlocker & Anti-DevTools Lockout) ===== -->
+    <div id="tamperBarrier" class="tamper-barrier-screen">
+        <div style="font-size: 4rem; margin-bottom: 12px;">🚨</div>
+        <h2 style="font-size: 1.6rem; font-weight: 800; color: #ef4444; margin-bottom: 8px;">
+            ตรวจพบการดัดแปลงหน้าจอ (Anti-Tamper Lockout)
+        </h2>
+        <p style="color: #cbd5e1; max-width: 520px; font-size: 0.92rem; line-height: 1.6;">
+            ระบบตรวจพบว่าหน้าต่างชำระเงินหรือม่านบังหน้าจอถูกลบหรือซ่อนด้วย Popup Blocker / uBlock / DevTools<br>
+            เพื่อความปลอดภัย ระบบได้ทำการล้างข้อมูลรูปภาพออกจากหน่วยความจำถาวร
+        </p>
+        <button type="button" onclick="location.reload()"
+            style="margin-top: 20px; background: #ef4444; color: #ffffff; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">
+            🔄 รีเฟรชหน้าเว็บเพื่อเริ่มต้นใหม่
+        </button>
+    </div>
+</body>
+
+</html>
