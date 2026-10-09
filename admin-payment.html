@@ -775,9 +775,11 @@
 
             const now = Date.now();
 
-            // ล้างข้อมูลเก่า: ลบรายการที่ rejected หรือ approved นานเกิน 15 วินาทีออกจาก Firebase ไม่ให้ค้างเป็นขยะ
+            // ล้างข้อมูลเก่า: ลบรายการที่ rejected นานเกิน 60 วินาที หรือ approved นานเกิน 24 ชั่วโมง
             list.forEach(req => {
-                if (req.status === 'rejected' || (req.status === 'approved' && req.approvedAt && (now - req.approvedAt > 15000))) {
+                const isOldRejected = req.status === 'rejected' && ((req.rejectedAt && now - req.rejectedAt > 60000) || (req.createdAt && now - req.createdAt > 600000));
+                const isOldApproved = req.status === 'approved' && req.approvedAt && (now - req.approvedAt > 86400000);
+                if (isOldRejected || isOldApproved) {
                     fetch(`${FIREBASE_ENDPOINT}/${req.id}.json`, { method: 'DELETE' }).catch(() => {});
                     delete paymentRequests[req.id];
                 }
