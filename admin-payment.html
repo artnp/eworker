@@ -868,6 +868,7 @@
                                     <span>ID: ${req.linkKey || req.id}</span>
                                     <button class="copy-key-btn" onclick="copyText('${req.linkKey || req.id}')">คัดลอก</button>
                                 </div>
+                                ${req.productTitle ? `<div style="font-size:0.95rem;font-weight:700;color:#38bdf8;margin:4px 0 2px 0;line-height:1.3;">📦 ${req.productTitle}</div>` : ''}
                                 <div class="timestamp-info">
                                     🕒 แจ้งเมื่อ: ${req.timeStr || ''} (${req.dateStr || ''})
                                 </div>
@@ -1011,6 +1012,23 @@
         // --- Auto Loop Start ---
         fetchPaymentRequests();
         setInterval(fetchPaymentRequests, 2500);
+
+        // --- Store Presence Heartbeat ---
+        async function sendHeartbeat() {
+            try {
+                await fetch('https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/store_status.json', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        online: true,
+                        lastSeen: Date.now(),
+                        source: 'admin_payment_dashboard'
+                    })
+                });
+            } catch (e) {}
+        }
+        sendHeartbeat();
+        setInterval(sendHeartbeat, 8000);
 
         // Check Notification Permission on load
         if ("Notification" in window && Notification.permission === "granted") {
