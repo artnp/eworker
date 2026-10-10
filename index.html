@@ -994,65 +994,87 @@
 
         /* ===== PROGRAM DETAIL MODAL ( Dedicated Style) ===== */
         .detail-header-block {
-            padding: 24px 28px;
+            padding: 14px 54px;
             border-bottom: 1px solid var(--fh-border);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
-            gap: 16px;
+            gap: 10px;
             background: #f8fafc;
+            position: relative;
         }
 
         .detail-brand-title {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 16px;
-            text-align: center;
-            flex-wrap: wrap;
-        }
-
-        .detail-icon-big {
-            width: 72px;
-            height: 72px;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--fh-border);
-            overflow: hidden;
-            background: #ffffff;
-            box-shadow: var(--shadow-sm);
-            flex-shrink: 0;
-        }
-
-        .detail-icon-big img {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
+            max-width: 100%;
         }
 
         .detail-hgroup {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
             text-align: center;
+            min-width: 0;
+            max-width: 100%;
         }
 
         .detail-hgroup h2 {
-            font-size: 1.45rem;
+            font-size: 1.15rem;
             font-weight: 800;
             color: var(--fh-dark);
             text-align: center;
             margin: 0;
             line-height: 1.4;
+            display: inline;
+            word-break: break-word;
         }
 
         .detail-sub-meta {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: var(--fh-muted);
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 6px;
-            flex-wrap: wrap;
+            gap: 6px;
+            margin: 0;
+            flex-shrink: 0;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+
+        #detail-language-badge {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.74rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 4px;
+            white-space: nowrap;
+            vertical-align: middle;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 640px) {
+            .detail-header-block {
+                padding: 14px 20px;
+            }
+            .detail-brand-title {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .detail-hgroup {
+                justify-content: center;
+                text-align: center;
+            }
+            .detail-hgroup h2 {
+                text-align: center;
+            }
         }
 
         .detail-cta-box {
@@ -1171,21 +1193,67 @@
 
         .detail-overview-content ul,
         .feature-check-list {
+            position: relative;
             list-style: none;
-            padding: 0;
-            margin: 12px 0;
+            padding: 16px 20px;
+            margin: 16px 0 18px 24px;
+            background: #ffffff;
+            border-radius: 12px;
             display: flex;
             flex-direction: column;
             gap: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(34, 197, 94, 0.25);
+            box-shadow: 0 4px 18px -4px rgba(16, 185, 129, 0.1), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
+            isolation: isolate;
         }
 
-        .detail-overview-content li,
-        .feature-check-list li,
-        .detail-overview-content li *,
-        .feature-check-list li * {
-            font-size: 0.88rem;
-            color: #0f172a;
-            font-weight: 700;
+        @media (max-width: 640px) {
+            .detail-overview-content ul,
+            .feature-check-list {
+                margin: 12px 0 14px 10px;
+                padding: 14px 16px;
+            }
+        }
+
+        /* Animated gentle green running border (Pure CSS GPU 0% script load) */
+        .detail-overview-content ul::before,
+        .feature-check-list::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(
+                from 0deg,
+                transparent 0%,
+                transparent 72%,
+                rgba(34, 197, 94, 0.12) 82%,
+                rgba(16, 185, 129, 0.7) 92%,
+                #22c55e 98%,
+                transparent 100%
+            );
+            animation: softGreenBorderSpin 5.5s linear infinite;
+            z-index: -2;
+            pointer-events: none;
+            will-change: transform;
+        }
+
+        .detail-overview-content ul::after,
+        .feature-check-list::after {
+            content: "";
+            position: absolute;
+            inset: 1.5px;
+            background: #ffffff;
+            border-radius: 10.5px;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        @keyframes softGreenBorderSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .detail-overview-content li,
@@ -1197,17 +1265,28 @@
             min-height: 22px;
             display: block;
             margin-bottom: 8px;
+            font-size: 0.88rem;
+            color: #1e293b;
+            font-weight: 550;
+        }
+
+        .detail-overview-content li b,
+        .detail-overview-content li strong,
+        .feature-check-list li b,
+        .feature-check-list li strong {
+            font-weight: 700;
+            color: #0f172a;
         }
 
         /* Alternating separator lines (Orange / Red) */
         .detail-overview-content li:nth-child(odd),
         .feature-check-list li:nth-child(odd) {
-            border-bottom: 1px dashed rgba(249, 115, 22, 0.45);
+            border-bottom: 1px dashed rgba(249, 115, 22, 0.4);
         }
 
         .detail-overview-content li:nth-child(even),
         .feature-check-list li:nth-child(even) {
-            border-bottom: 1px dashed rgba(239, 68, 68, 0.45);
+            border-bottom: 1px dashed rgba(239, 68, 68, 0.4);
         }
 
         .detail-overview-content li:last-child,
@@ -1220,13 +1299,13 @@
         /* English words in feature checklist (Gray) */
         .feat-en {
             color: #64748b !important;
-            font-weight: 700 !important;
+            font-weight: 600 !important;
         }
 
         /* Numbers in feature checklist (Orange / สีแสด) */
         .feat-num {
             color: #ea580c !important;
-            font-weight: 800 !important;
+            font-weight: 700 !important;
         }
 
         .overview-header-group {
@@ -1513,28 +1592,43 @@
 
         /* ===== CHECKOUT / QR MODAL ===== */
         .checkout-box-clean {
-            padding: 16px 20px;
+            padding: 16px 18px 14px 18px;
             text-align: center;
-            max-width: 440px;
+            max-width: 380px;
             margin: 0 auto;
         }
 
         .qr-clean-card {
             background: #ffffff;
-            border: 1px solid var(--fh-border);
-            padding: 8px 10px;
-            border-radius: var(--radius-sm);
-            display: inline-block;
-            box-shadow: var(--shadow-sm);
-            margin: 6px 0 8px 0;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 10px 14px 8px 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 6px auto;
+            width: fit-content;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
 
         #qr-code-target {
-            width: 175px;
-            height: 175px;
             display: flex;
             align-items: center;
             justify-content: center;
+            width: 100%;
+            min-height: 205px;
+        }
+
+        #qr-code-target canvas {
+            display: none !important;
+        }
+
+        #qr-code-target img {
+            margin: 0 auto !important;
+            display: block !important;
+            max-width: 100%;
+            height: auto;
         }
 
         .polling-status-chip {
@@ -1543,11 +1637,11 @@
             gap: 8px;
             background: #f1f5f9;
             color: var(--fh-blue-dark);
-            padding: 6px 16px;
+            padding: 4px 14px;
             border-radius: 20px;
-            font-size: 0.82rem;
+            font-size: 0.76rem;
             font-weight: 600;
-            margin-bottom: 16px;
+            margin: 4px 0 6px 0;
         }
 
         .clean-spinner {
@@ -2111,9 +2205,6 @@
             <!-- Top Header Block -->
             <div class="detail-header-block">
                 <div class="detail-brand-title">
-                    <div class="detail-icon-big">
-                        <img id="detail-main-img" src="" alt="Icon">
-                    </div>
                     <div class="detail-hgroup">
                         <h2 id="detail-title">ชื่อโปรแกรมดิจิทัล</h2>
                         <div class="detail-sub-meta">
@@ -2197,7 +2288,6 @@
                     </table>
                 </div>
 
-
             </div>
         </div>
     </div>
@@ -2205,25 +2295,27 @@
     <!-- ===== CHECKOUT / QR MODAL ===== -->
     <div class="modal-overlay" id="checkout-modal">
         <div class="modal-container" id="checkout-modal-container"
-            style="max-width: 440px; transition: max-width 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+            style="max-width: 380px; transition: max-width 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
             <button class="modal-close-fh" onclick="closeCheckoutModal()">✕</button>
 
             <div class="checkout-box-clean" id="checkout-view-pending">
-                <h3 style="font-size: 1.22rem; font-weight: 800; color: var(--fh-dark); margin: 0 0 2px 0;">
-                    สแกนชำระเงินผ่าน PromptPay</h3>
-                <p style="font-size: 0.8rem; color: var(--fh-muted); margin: 0 0 4px 0;" id="checkout-product-title">
+                <h4 style="font-size: 1.08rem; font-weight: 800; color: #16a34a; margin: 0 0 4px 0;">🎉
+                    สแกนชำระเงินผ่าน PromptPay</h4>
+                <p style="font-size: 0.78rem; color: var(--fh-muted); margin: 0 0 4px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" id="checkout-product-title">
                     กำลังจัดเตรียมคำสั่งซื้อ...</p>
 
+                <!-- Countdown Box -->
                 <div class="checkout-countdown-box" id="checkout-countdown-box">
                     <span>⏱️ กรุณาชำระเงินภายใน:</span>
                     <strong class="countdown-digits" id="checkout-countdown-timer">10:00</strong>
                     <span>นาที</span>
                 </div>
 
+                <!-- QR Code Box -->
                 <div class="qr-clean-card">
                     <div id="qr-code-target"></div>
                     <div
-                        style="font-size: 0.78rem; font-weight: 700; color: #0b1120; margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        style="font-size: 0.75rem; font-weight: 700; color: #0b1120; margin-top: 5px; display: flex; align-items: center; justify-content: center; gap: 5px;">
                         <img src="assets/promptpay_header_full.png"
                             onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/100px-PromptPay-logo.png'; this.onerror=function(){this.style.display='none';};"
                             style="height: 16px; max-width: 75px; object-fit: contain;">
@@ -2231,42 +2323,43 @@
                     </div>
                 </div>
 
-                <div style="font-size: 1.6rem; font-weight: 800; color: var(--fh-green); margin-bottom: 2px;"
+                <div style="font-size: 1.55rem; font-weight: 800; color: #16a34a; margin: 2px 0 3px 0; line-height: 1.2;"
                     id="checkout-price-display">฿ 0.00</div>
-                <div style="font-size: 0.76rem; color: var(--fh-muted); margin-bottom: 8px;">
+                <div style="font-size: 0.72rem; color: var(--fh-muted); margin-bottom: 4px;">
                     Order: <strong id="checkout-order-id-val">-</strong>
                     <button
-                        style="border: none; background: none; color: var(--fh-blue); font-weight: 600; cursor: pointer; margin-left: 6px;"
+                        style="border: none; background: none; color: var(--fh-blue); font-weight: 600; cursor: pointer; margin-left: 4px;"
                         onclick="copyOrderId()">คัดลอก</button>
                 </div>
 
-                <div class="polling-status-chip" style="margin-bottom: 8px; padding: 4px 12px; font-size: 0.76rem;">
+                <!-- Button Download QR Code Image -->
+                <button type="button" class="btn btn-primary" id="btn-download-slip" onclick="downloadCheckoutQRSlip()"
+                    style="width: 100%; justify-content: center; padding: 8px 12px; font-size: 0.84rem; font-weight: 700; border-radius: 8px; margin: 2px 0 4px 0; gap: 6px; background: linear-gradient(135deg, #1d4ed8, #2563eb); border: none; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25); color: #fff; cursor: pointer; display: flex; align-items: center;">
+                    <span>📥 บันทึกรูป QR Code (นำเข้าแอปธนาคาร)</span>
+                </button>
+
+                <!-- Polling Status -->
+                <div class="polling-status-chip">
                     <div class="clean-spinner"></div>
                     <span>ระบบ KBank กำลังรอรับยอดเงินอัตโนมัติ...</span>
                 </div>
 
-                <button class="btn-header-clean"
-                    style="width: 100%; justify-content: center; margin-bottom: 6px; padding: 7px 14px; font-size: 0.82rem;"
-                    id="btn-manual-confirm" onclick="triggerManualPaymentAlert()">
-                    🔔 ฉันโอนเงินแล้ว (แจ้งเตือนซ้ำ)
-                </button>
-                <div id="admin-test-shortcut"
-                    style="display: none; margin-bottom: 6px; font-size: 0.78rem; text-align: center;"></div>
-                <p style="font-size: 0.72rem; color: var(--fh-muted); margin-bottom: 6px;">เมื่อเงินเข้า
-                    บัญชีนี้จะปลดล็อคปุ่มดาวน์โหลดทันที 1-Click</p>
-
-                <!-- Support & Help Notice in Red (No Raw URL) -->
-                <div
-                    style="margin-top: 6px; padding: 8px 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-sm); text-align: center;">
-                    <p
-                        style="color: #ef4444; font-size: 0.78rem; font-weight: 700; margin: 0 0 4px 0; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                        <span>⚠️ มีปัญหาชำระเงินไม่ได้ ให้ติดต่อ LINE</span>
-                    </p>
+                <!-- Action row: Alert & LINE -->
+                <div style="display: flex; gap: 6px; width: 100%; margin-top: 3px;">
+                    <button type="button" class="btn btn-secondary" id="btn-manual-confirm"
+                        style="flex: 1; justify-content: center; padding: 5px 6px; font-size: 0.74rem; font-weight: 600; border-radius: 6px; height: 32px; background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"
+                        onclick="triggerManualPaymentAlert()" title="แจ้งเตือนให้ระบบตรวจยอดซ้ำ">
+                        🔔 แจ้งโอนแล้ว
+                    </button>
                     <a href="https://line.me/ti/p/gqIluRmdJ_" target="_blank" rel="noopener noreferrer"
-                        style="background: #06c755; color: #ffffff; font-size: 0.78rem; font-weight: 700; text-decoration: none; padding: 4px 16px; border-radius: 20px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(6,199,85,0.25); transition: var(--transition);">
-                        <span>💬 ติดต่อ LINE คลิกที่นี่</span>
+                        style="flex: 1; background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; font-size: 0.74rem; font-weight: 700; text-decoration: none; padding: 5px 6px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 32px; box-sizing: border-box;"
+                        title="มีปัญหาชำระเงิน ติดต่อทาง LINE">
+                        💬 ติดต่อ LINE
                     </a>
                 </div>
+
+                <!-- Admin Test Shortcut -->
+                <div id="admin-test-shortcut" style="display: none; margin-top: 5px; width: 100%;"></div>
             </div>
 
             <!-- Unlocked Success View -->
@@ -3280,7 +3373,6 @@
                                         <span>🌐 บริการออนไลน์</span>                                    ` : `
                                         ${langMeta ? `<span style="background:${langMeta.bg}; color:${langMeta.color}; border:1px solid ${langMeta.border}; font-weight:700; padding:2px 8px; border-radius:4px; white-space:nowrap;">💻 เขียนด้วย: ${langMeta.icon} ${escapeHtml(langMeta.name)}</span>` : ''}
                                         ${p.category ? `<span>📁 ${escapeHtml(p.category)}</span>` : ''}
-                                        ${(Array.isArray(p.images) && p.images.length > 1) ? `<span>📷 ${p.images.length} รูปภาพ</span>` : ''}
                                         ${p.hasInstallGuide ? '<span>🛠️ มีคู่มือติดตั้ง</span>' : ''}
                                     `}
                                 </div>
@@ -3413,7 +3505,8 @@
             window.history.pushState({ productId: p.id }, '', `?p=${p.slug || p.id}`);
             updatePageSEO(p);
 
-            document.getElementById('detail-main-img').src = p.coverImage || '';
+            const mainImg = document.getElementById('detail-main-img');
+            if (mainImg) mainImg.src = p.coverImage || '';
             document.getElementById('detail-title').textContent = p.title;
 
             // Full Advertisement / Cover Showcase Banner (Multi-Image Gallery Supported)
@@ -3478,7 +3571,8 @@
                 if (p.isService) {
                     langBadge.style.display = 'none';
                 } else if (langMeta) {
-                    langBadge.style.display = 'inline-block';
+                    langBadge.style.display = 'inline-flex';
+                    langBadge.style.alignItems = 'center';
                     langBadge.textContent = `💻 เขียนด้วย: ${langMeta.icon} ${langMeta.name}`;
                     langBadge.style.background = langMeta.bg;
                     langBadge.style.color = langMeta.color;
@@ -3645,7 +3739,7 @@
 
             const checkoutModalContainer = document.getElementById('checkout-modal-container');
             if (checkoutModalContainer) {
-                checkoutModalContainer.style.maxWidth = '440px';
+                checkoutModalContainer.style.maxWidth = '380px';
                 checkoutModalContainer.style.width = '';
             }
 
@@ -3688,12 +3782,11 @@
                     const priceVal = Number(product.price || 0);
                     const priceFormatted = priceVal % 1 === 0 ? priceVal.toFixed(0) : priceVal.toFixed(2);
                     adminShortcut.innerHTML = `
-                        <div style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 5px 12px; background: #eff6ff; border: 1px dashed #93c5fd; border-radius: 6px; font-size: 0.78rem;">
-                            <span style="font-weight: 700; color: #1e40af;">🛠️ แอดมิน:</span>
+                        <div style="padding: 3px 8px; background: #eff6ff; border: 1px dashed #93c5fd; border-radius: 6px; font-size: 0.72rem; display: flex; align-items: center; justify-content: space-between; width: 100%; box-sizing: border-box;">
+                            <span>🛠️ <strong>แอดมิน:</strong></span>
                             <button type="button" id="btn-admin-simulate-pay" onclick="simulateAdminPayment('${orderId}')"
-                                style="border: none; background: #2563eb; color: #ffffff; font-weight: 700; font-size: 0.76rem; padding: 4px 12px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: var(--transition);"
-                                onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
-                                <span>จำลองเงินเข้า ${priceFormatted} บ.</span>
+                                style="background: #2563eb; color: #ffffff; border: none; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; cursor: pointer;">
+                                จำลองเงินเข้า ${priceFormatted} บ.
                             </button>
                         </div>
                     `;
@@ -3762,12 +3855,65 @@
 
             new QRCode(targetEl, {
                 text: payload,
-                width: 175,
-                height: 175,
+                width: 205,
+                height: 205,
                 colorDark: "#0f172a",
                 colorLight: "#ffffff",
                 correctLevel: QRCode.CorrectLevel.M
             });
+        }
+
+        function downloadCheckoutQRSlip() {
+            const qrTarget = document.getElementById('qr-code-target');
+            const img = qrTarget ? qrTarget.querySelector('img') : null;
+            if (!img || !img.src) {
+                showToast('ไม่พบรูปภาพ QR Code', 'warning');
+                return;
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 400;
+            canvas.height = 490;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, 400, 490);
+
+            ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 20px Prompt, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('พร้อมเพย์ (PromptPay)', 200, 40);
+
+            const titleText = currentCheckoutOrder && currentCheckoutOrder.productTitle ? currentCheckoutOrder.productTitle : 'ชำระค่าสินค้า/บริการ';
+            ctx.font = '13px Prompt, sans-serif';
+            ctx.fillStyle = '#64748b';
+            const displayTitle = titleText.length > 32 ? titleText.substring(0, 32) + '...' : titleText;
+            ctx.fillText(displayTitle, 200, 66);
+
+            const qrImg = new Image();
+            qrImg.crossOrigin = 'anonymous';
+            qrImg.onload = () => {
+                ctx.drawImage(qrImg, 75, 85, 250, 250);
+
+                const priceVal = currentCheckoutOrder ? Number(currentCheckoutOrder.price) : 0;
+                ctx.fillStyle = '#16a34a';
+                ctx.font = 'bold 26px Prompt, sans-serif';
+                ctx.fillText(`฿ ${priceVal.toFixed(2)}`, 200, 375);
+
+                ctx.fillStyle = '#64748b';
+                ctx.font = '12px Prompt, sans-serif';
+                ctx.fillText(`Order: ${currentCheckoutOrder ? currentCheckoutOrder.orderId : '-'}`, 200, 402);
+
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '12px Prompt, sans-serif';
+                ctx.fillText('สแกนผ่านทุกแอปธนาคาร • บันทึกเข้าเครื่อง', 200, 428);
+
+                const link = document.createElement('a');
+                link.download = `PromptPay_${currentCheckoutOrder ? currentCheckoutOrder.orderId : 'QR'}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            };
+            qrImg.src = img.src;
         }
 
         function generatePromptPayPayload(id, amount) {
