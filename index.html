@@ -792,6 +792,15 @@
             box-shadow: 0 4px 12px rgba(124, 58, 237, 0.38);
         }
 
+        .btn-service-fh.disabled,
+        .btn-service-fh.disabled:hover {
+            background: #94a3b8;
+            color: #f1f5f9;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
         /* Admin Quick Edit Bar on Card */
         .card-admin-tools {
             display: flex;
@@ -3071,6 +3080,7 @@
                     const text = document.getElementById('store-status-text');
                     const banner = document.getElementById('offline-banner');
 
+                    const prevOnline = storeIsOnline;
                     if (data && data.online && (Date.now() - (data.lastSeen || 0) < 40000)) {
                         storeIsOnline = true;
                         badge.className = 'store-status-pill online';
@@ -3083,6 +3093,9 @@
                         banner.classList.add('active');
                     }
                     updateDetailCTAState();
+                    if (prevOnline !== storeIsOnline && products && products.length > 0) {
+                        renderCatalog();
+                    }
                 }
             } catch (err) { }
         }
@@ -3266,7 +3279,13 @@
         function handleServiceClick(id, event) {
             if (event) event.stopPropagation();
             const p = products.find(x => x.id === id);
-            if (p && p.serviceUrl) {
+            if (!p) return;
+            const isFree = !p.price || Number(p.price) <= 0;
+            if (!storeIsOnline && !isFree) {
+                showToast('❌ ตอนนี้ร้านปิดให้บริการ เนื่องจากระบบต้องเชื่อมต่อเซิร์ฟเวอร์เพื่อตรวจสอบการโอนเงิน', 'warning');
+                return;
+            }
+            if (p.serviceUrl) {
                 openServiceModal(p);
             } else {
                 openProductDetail(id);
@@ -3274,6 +3293,12 @@
         }
 
         function openServiceModal(product) {
+            const isFree = !product.price || Number(product.price) <= 0;
+            if (!storeIsOnline && !isFree) {
+                showToast('❌ ตอนนี้ร้านปิดให้บริการ เนื่องจากระบบต้องเชื่อมต่อเซิร์ฟเวอร์เพื่อตรวจสอบการโอนเงิน', 'warning');
+                return;
+            }
+
             const modal = document.getElementById('service-popup-modal');
             const iframe = document.getElementById('service-iframe');
             const titleEl = document.getElementById('service-modal-title');
@@ -3305,7 +3330,11 @@
                 modal.classList.remove('active');
             }
             document.body.style.overflow = '';
-            window.history.pushState({}, '', window.location.pathname);
+            if (activeCategory && activeCategory !== 'all') {
+                window.history.pushState({ category: activeCategory }, '', `?c=${encodeURIComponent(activeCategory)}`);
+            } else {
+                window.history.pushState({}, '', window.location.pathname);
+            }
             updatePageSEO(null);
         }
 
@@ -3392,9 +3421,15 @@
                                 ${isService ? (isFree ? '🎁 ฟรี (Free)' : `฿ ${priceFormatted} <small style="font-size:0.75rem; color:var(--fh-muted); font-weight:500;">/ ครั้ง</small>`) : (isFree ? 'ฟรี (Free)' : `฿ ${priceFormatted}`)}
                             </div>
                             ${isService ? `
-                                <button class="btn-service-fh" onclick="handleServiceClick('${p.id}', event)">
-                                    🚀 เริ่มต้นใช้งาน
-                                </button>
+                                ${(!storeIsOnline && !isFree) ? `
+                                    <button class="btn-service-fh disabled" onclick="handleServiceClick('${p.id}', event)">
+                                        ❌ตอนนี้ร้านปิด
+                                    </button>
+                                ` : `
+                                    <button class="btn-service-fh" onclick="handleServiceClick('${p.id}', event)">
+                                        🚀 เริ่มต้นใช้งาน
+                                    </button>
+                                `}
                             ` : `
                                 <button class="btn-download-fh ${isUserPurchased ? 'purchased' : ''}" onclick="openProductDetail('${p.id}')">
                                     ${isUserPurchased ? '📥 รับไฟล์ของคุณ' : '⚡ ดาวน์โหลด'}
@@ -3413,7 +3448,7 @@
         }
 
         // --- Category & Search Handlers ---
-        function filterCategory(cat) {
+        function filterCategory(cat, updateUrl = true) {
             activeCategory = cat || 'all';
             const titleEl = document.getElementById('content-header-title');
             if (titleEl) {
@@ -3421,6 +3456,16 @@
                 if (displayCat === 'บริการ') displayCat = 'บริการออนไลน์';
                 titleEl.textContent = (activeCategory === 'all') ? 'รายการทั้งหมด' : `หมวดหมู่: ${displayCat}`;
             }
+
+            if (updateUrl) {
+                if (activeCategory === 'all') {
+                    window.history.pushState({ category: 'all' }, '', window.location.pathname);
+                } else {
+                    window.history.pushState({ category: activeCategory }, '', `?c=${encodeURIComponent(activeCategory)}`);
+                }
+            }
+
+            updatePageSEO(null);
             renderSidebarCategories();
             renderCatalog();
         }
@@ -3624,7 +3669,11 @@
         function closeDetailModal() {
             document.getElementById('detail-modal').classList.remove('active');
             activeDetailProduct = null;
-            window.history.pushState({}, '', window.location.pathname);
+            if (activeCategory && activeCategory !== 'all') {
+                window.history.pushState({ category: activeCategory }, '', `?c=${encodeURIComponent(activeCategory)}`);
+            } else {
+                window.history.pushState({}, '', window.location.pathname);
+            }
             updatePageSEO(null);
         }
 
@@ -3633,7 +3682,18 @@
             if (!btn || !activeDetailProduct) return;
 
             if (activeDetailProduct.isService) {
+                const isFree = !activeDetailProduct.price || Number(activeDetailProduct.price) <= 0;
+                if (!storeIsOnline && !isFree) {
+                    btn.className = 'btn-big-download disabled';
+                    btn.style.background = '#94a3b8';
+                    btn.innerHTML = `<span>❌ตอนนี้ร้านปิด</span>`;
+                    btn.onclick = () => {
+                        showToast('❌ ตอนนี้ร้านปิดให้บริการ เนื่องจากระบบต้องเชื่อมต่อเซิร์ฟเวอร์เพื่อตรวจสอบการโอนเงิน', 'warning');
+                    };
+                    return;
+                }
                 btn.className = 'btn-big-download btn-service-fh';
+                btn.style.background = '';
                 btn.innerHTML = `<span>🚀 เริ่มต้นใช้งาน</span>`;
                 btn.onclick = () => {
                     const svc = activeDetailProduct;
@@ -3702,7 +3762,11 @@
                 if (ogDesc) ogDesc.setAttribute('content', descStr);
                 if (ogImage) ogImage.setAttribute('content', product.coverImage || '');
             } else {
-                const def = "Eworker | ศูนย์รวมผู้ช่วยงานออนไลน์";
+                let def = "Eworker | ศูนย์รวมผู้ช่วยงานออนไลน์";
+                if (activeCategory && activeCategory !== 'all') {
+                    let catLabel = activeCategory === 'บริการ' ? 'บริการออนไลน์' : activeCategory;
+                    def = `หมวดหมู่ ${catLabel} | Eworker`;
+                }
                 document.title = def;
                 if (titleEl) titleEl.textContent = def;
             }
@@ -3711,6 +3775,65 @@
         function checkUrlRoute() {
             const params = new URLSearchParams(window.location.search);
             const pQuery = params.get('p');
+            const cQuery = params.get('c') || params.get('category');
+
+            if (cQuery) {
+                let catName = cQuery.trim();
+                if (catName === 'all' || catName === 'ทั้งหมด') {
+                    filterCategory('all', false);
+                } else {
+                    if (catName === 'บริการ') catName = 'บริการออนไลน์';
+                    filterCategory(catName, false);
+                }
+            }
+
+            if (pQuery) {
+                const matched = products.find(x => x.slug === pQuery || x.id === pQuery);
+                if (matched) {
+                    if (matched.isService || matched.category === 'บริการ' || matched.category === 'บริการออนไลน์') {
+                        const isFree = !matched.price || Number(matched.price) <= 0;
+                        if (!storeIsOnline && !isFree) {
+                            showToast('❌ ตอนนี้ร้านปิดให้บริการ เนื่องจากระบบต้องเชื่อมต่อเซิร์ฟเวอร์เพื่อตรวจสอบการโอนเงิน', 'warning');
+                            return;
+                        }
+                        openServiceModal(matched);
+                    } else {
+                        openProductDetail(matched.id);
+                    }
+                }
+            }
+        }
+
+        window.addEventListener('popstate', () => {
+            const params = new URLSearchParams(window.location.search);
+            const pQuery = params.get('p');
+            const cQuery = params.get('c') || params.get('category');
+
+            if (!pQuery) {
+                const serviceModal = document.getElementById('service-popup-modal');
+                if (serviceModal && serviceModal.classList.contains('active')) {
+                    serviceModal.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+                const detailModal = document.getElementById('detail-modal');
+                if (detailModal && detailModal.classList.contains('active')) {
+                    detailModal.classList.remove('active');
+                    activeDetailProduct = null;
+                }
+            }
+
+            if (cQuery) {
+                let catName = cQuery.trim();
+                if (catName === 'all' || catName === 'ทั้งหมด') {
+                    filterCategory('all', false);
+                } else {
+                    if (catName === 'บริการ') catName = 'บริการออนไลน์';
+                    filterCategory(catName, false);
+                }
+            } else if (!pQuery) {
+                filterCategory('all', false);
+            }
+
             if (pQuery) {
                 const matched = products.find(x => x.slug === pQuery || x.id === pQuery);
                 if (matched) {
@@ -3721,7 +3844,7 @@
                     }
                 }
             }
-        }
+        });
 
         // --- PROMPTPAY FLOW (Connected to admin-payment & kbank_listener) ---
         async function openCheckoutModal(product) {
