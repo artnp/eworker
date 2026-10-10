@@ -521,7 +521,8 @@
             cursor: pointer;
             transition: all 0.18s ease;
             position: relative;
-            user-select: all;
+            user-select: none;
+            -webkit-user-select: none;
             min-height: 38px;
         }
 
@@ -550,6 +551,8 @@
             border-radius: 4px;
             line-height: 1.2;
             pointer-events: none;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         /* Center prominent large code */
@@ -561,8 +564,14 @@
             letter-spacing: 2.5px;
             line-height: 1;
             user-select: all;
+            -webkit-user-select: all;
             text-align: center;
             transition: color 0.15s ease;
+        }
+
+        .code-main-text::selection {
+            background: #2563eb;
+            color: #ffffff;
         }
 
         /* Right corner coin badge inside the code box */
@@ -582,6 +591,8 @@
             letter-spacing: 0.3px;
             pointer-events: none;
             line-height: 1.3;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .coin-icon-img {
@@ -1077,7 +1088,7 @@
 
                 return `
                     <div class="code-card ${cardThemeClass} ${isClaimed ? 'claimed' : ''}" id="card-${code}">
-                        <div class="code-hero-box" onclick="copyCodeOnly('${code}')" title="คลิกเพื่อคัดลอกโค้ด">
+                        <div class="code-hero-box" onclick="copyCodeOnly('${code}', this)" title="คลิกเพื่อคัดลอกโค้ด">
                             <span class="card-num-badge">#${String(idx + 1).padStart(2, '0')}</span>
                             <span class="code-main-text">${code}</span>
                             ${coinBadge}
@@ -1103,8 +1114,18 @@
             }
         }
 
-        // COPY CODE TO CLIPBOARD ON CLICK
-        function copyCodeOnly(code) {
+        // COPY CODE TO CLIPBOARD ON CLICK & SELECT ONLY THE CODE TEXT
+        function copyCodeOnly(code, el) {
+            if (el) {
+                const textSpan = el.querySelector('.code-main-text');
+                if (textSpan) {
+                    const range = document.createRange();
+                    range.selectNodeContents(textSpan);
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }
+            }
             try {
                 navigator.clipboard.writeText(code).then(() => {
                     showToast(`📋 คัดลอกโค้ด ${code} สำเร็จ!`);
