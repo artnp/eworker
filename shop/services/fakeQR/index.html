@@ -5,6 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fake QR Slip Editor</title>
+    <!-- Favicon & Web App Icon -->
+    <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg">
+    <link rel="icon" type="image/png" sizes="192x192" href="../../assets/images/favicon.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="../../assets/images/favicon.png">
+    <link rel="shortcut icon" href="../../favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -689,29 +694,43 @@
             inset: 0;
             pointer-events: none;
             z-index: 40;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             overflow: hidden;
             user-select: none;
-            background-image: repeating-linear-gradient(-45deg,
-                    transparent,
-                    transparent 60px,
-                    rgba(239, 68, 68, 0.05) 60px,
-                    rgba(239, 68, 68, 0.05) 120px);
+            border-radius: 8px;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNjAnIGhlaWdodD0nMTMwJyB2aWV3Qm94PScwIDAgMjYwIDEzMCc+PGRlZnM+PHN0eWxlPi53bS1te2ZpbGw6I2RjMjYyNjtmaWxsLW9wYWNpdHk6MC40NTtmb250LWZhbWlseTonT3V0Zml0JyxzeXN0ZW0tdWksLWFwcGxlLXN5c3RlbSxzYW5zLXNlcmlmO2ZvbnQtc2l6ZToxMXB4O2ZvbnQtd2VpZ2h0OjYwMDtsZXR0ZXItc3BhY2luZzoyLjVweDt0ZXh0LWFuY2hvcjptaWRkbGU7fS53bS1ze2ZpbGw6I2RjMjYyNjtmaWxsLW9wYWNpdHk6MC4zODtmb250LWZhbWlseTonU2FyYWJ1bicsc3lzdGVtLXVpLC1hcHBsZS1zeXN0ZW0sc2Fucy1zZXJpZjtmb250LXNpemU6OXB4O2ZvbnQtd2VpZ2h0OjUwMDtsZXR0ZXItc3BhY2luZzowLjNweDt0ZXh0LWFuY2hvcjptaWRkbGU7fS53bS1se3N0cm9rZTojZGMyNjI2O3N0cm9rZS1vcGFjaXR5OjAuMTg7c3Ryb2tlLXdpZHRoOjAuNzU7c3Ryb2tlLWRhc2hhcnJheTo0IDM7fTwvc3R5bGU+PC9kZWZzPjxsaW5lIHgxPScwJyB5MT0nMCcgeDI9JzI2MCcgeTI9JzEzMCcgY2xhc3M9J3dtLWwnLz48ZyB0cmFuc2Zvcm09J3JvdGF0ZSgtMjYgMTMwIDY1KSc+PHRleHQgeD0nMTMwJyB5PSc2MCcgY2xhc3M9J3dtLW0nPkVXT1JLRVIgUFJFVklFVzwvdGV4dD48dGV4dCB4PScxMzAnIHk9Jzc0JyBjbGFzcz0nd20tcyc+8J+UkiDguIrguLPguKPguLAgMjDguL8g4LmA4Lie4Li34LmI4Lit4LiU4Liy4Lin4LiZ4LmM4LmC4Lir4Lil4LiU4Lig4Liy4Lie4LiI4Lij4Li04LiHPC90ZXh0PjwvZz48L3N2Zz4=');
+            background-repeat: repeat;
+            background-size: 260px 130px;
         }
 
-        .preview-watermark-text {
-            transform: rotate(-32deg);
-            color: rgba(220, 38, 38, 0.22);
-            font-size: 1.35rem;
-            font-weight: 800;
-            letter-spacing: 3px;
-            white-space: nowrap;
+        .watermark-badge-topright {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #1e293b;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 5px 14px;
+            border-radius: 50px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(226, 232, 240, 0.85);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             pointer-events: none;
-            text-align: center;
-            line-height: 2.2;
-            text-shadow: 0 0 2px rgba(255, 255, 255, 0.9);
+            user-select: none;
+            letter-spacing: 0.2px;
+            z-index: 45;
+        }
+
+        .watermark-badge-topright .badge-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #ef4444;
+            display: inline-block;
+            box-shadow: 0 0 6px rgba(239, 68, 68, 0.8);
         }
 
         /* Full Viewport Lock Backdrop */
@@ -904,6 +923,213 @@
 
         .tamper-barrier-screen.active {
             display: flex !important;
+        }
+
+        /* ===== POPUP ALERT MODAL ===== */
+        .popup-alert-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 16px;
+        }
+
+        .popup-alert-backdrop.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .popup-alert-card {
+            background: #ffffff;
+            width: 100%;
+            max-width: 400px;
+            border-radius: 20px;
+            padding: 26px 24px 22px 24px;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(226, 232, 240, 0.8);
+            transform: scale(0.9) translateY(16px);
+            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .popup-alert-backdrop.show .popup-alert-card {
+            transform: scale(1) translateY(0);
+        }
+
+        .popup-alert-icon-wrapper {
+            width: 62px;
+            height: 62px;
+            margin: 0 auto 16px auto;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.9rem;
+            transition: transform 0.3s ease;
+        }
+
+        .popup-alert-backdrop.show .popup-alert-icon-wrapper {
+            animation: popupIconBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popupIconBounce {
+            0% { transform: scale(0.4); opacity: 0; }
+            60% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+
+        .popup-alert-icon-wrapper.warning {
+            background: #fffbeb;
+            border: 2px solid #fde68a;
+            color: #d97706;
+        }
+
+        .popup-alert-icon-wrapper.error {
+            background: #fef2f2;
+            border: 2px solid #fecaca;
+            color: #dc2626;
+        }
+
+        .popup-alert-icon-wrapper.success {
+            background: #f0fdf4;
+            border: 2px solid #bbf7d0;
+            color: #16a34a;
+        }
+
+        .popup-alert-icon-wrapper.info {
+            background: #eff6ff;
+            border: 2px solid #bfdbfe;
+            color: #2563eb;
+        }
+
+        .popup-alert-title {
+            font-size: 1.18rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 8px 0;
+            line-height: 1.35;
+        }
+
+        .popup-alert-message {
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: #475569;
+            line-height: 1.6;
+            margin: 0 0 22px 0;
+            white-space: pre-line;
+            word-break: break-word;
+        }
+
+        .popup-alert-btn {
+            width: 100%;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.92rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+        }
+
+        .popup-alert-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.4);
+        }
+
+        .popup-alert-btn:active {
+            transform: translateY(0);
+        }
+
+        /* ===== BURN & DESTROY SLIP EFFECT ===== */
+        .burn-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 70;
+            border-radius: inherit;
+            overflow: hidden;
+            pointer-events: none;
+            opacity: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.3s ease;
+            background: radial-gradient(circle at center, rgba(239, 68, 68, 0.4) 0%, rgba(185, 28, 28, 0.7) 50%, rgba(15, 23, 42, 0.95) 100%);
+        }
+
+        .burn-overlay.burning {
+            opacity: 1;
+        }
+
+        .burn-overlay-fire {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(0deg, rgba(255, 69, 0, 0.9) 0%, rgba(255, 140, 0, 0.7) 40%, rgba(255, 215, 0, 0.4) 70%, transparent 100%);
+            animation: burnFireAnim 0.4s infinite alternate ease-in-out;
+            mix-blend-mode: screen;
+        }
+
+        @keyframes burnFireAnim {
+            0% { transform: scale(1) translateY(0); opacity: 0.85; filter: blur(2px); }
+            100% { transform: scale(1.03) translateY(-6px); opacity: 1; filter: blur(4px); }
+        }
+
+        .burn-badge {
+            position: relative;
+            z-index: 2;
+            background: rgba(15, 23, 42, 0.92);
+            border: 2px solid #ef4444;
+            color: #fef2f2;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 800;
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.7), 0 8px 20px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: burnBadgePulse 0.5s infinite alternate;
+        }
+
+        @keyframes burnBadgePulse {
+            0% { transform: scale(0.97); }
+            100% { transform: scale(1.03); }
+        }
+
+        #slipImage.charred {
+            animation: charrDisintegrate 1.2s forwards ease-in-out;
+        }
+
+        @keyframes charrDisintegrate {
+            0% {
+                filter: none;
+                transform: scale(1);
+                opacity: 1;
+            }
+            30% {
+                filter: contrast(250%) brightness(0.7) sepia(1) hue-rotate(-30deg);
+                transform: scale(0.99);
+            }
+            70% {
+                filter: contrast(300%) brightness(0.2) grayscale(1) blur(2px);
+                transform: scale(0.96);
+                opacity: 0.6;
+            }
+            100% {
+                filter: brightness(0) blur(6px);
+                transform: scale(0.92);
+                opacity: 0;
+            }
         }
     </style>
 </head>
@@ -1113,12 +1339,17 @@
                     <div id="overlaysContainer"></div>
                     <!-- Workspace Watermark (Active while editing to prevent screenshot theft) -->
                     <div id="previewWatermark" class="preview-watermark-overlay" style="display: none;">
-                        <div class="preview-watermark-text">
-                            EWORKER PREVIEW • ห้ามแคป • ชำระ 20฿ เพื่อดาวน์โหลดภาพจริง<br>
-                            EWORKER PREVIEW • ห้ามแคป • ชำระ 20฿ เพื่อดาวน์โหลดภาพจริง<br>
-                            EWORKER PREVIEW • ห้ามแคป • ชำระ 20฿ เพื่อดาวน์โหลดภาพจริง<br>
-                            EWORKER PREVIEW • ห้ามแคป • ชำระ 20฿ เพื่อดาวน์โหลดภาพจริง<br>
-                            EWORKER PREVIEW • ห้ามแคป • ชำระ 20฿ เพื่อดาวน์โหลดภาพจริง
+                        <div class="watermark-badge-topright">
+                            <span class="badge-dot"></span>
+                            <span>ภาพตัวอย่างติดลายน้ำ</span>
+                        </div>
+                    </div>
+                    <!-- Burn & Destroy Slip Overlay -->
+                    <div id="burnOverlay" class="burn-overlay">
+                        <div class="burn-overlay-fire"></div>
+                        <div class="burn-badge">
+                            <span>🔥</span>
+                            <span>กำลังเผาทำลายรูปภาพสลิป...</span>
                         </div>
                     </div>
                 </div>
@@ -1146,8 +1377,8 @@
                     เพื่อขยับละเอียด</span>
             </div>
 
-            <!-- Bottom Right Floating Save Action Button -->
-            <div class="floating-save-box" id="floatingSaveBox">
+            <!-- Bottom Right Floating Save Action Button (Hidden until image uploaded) -->
+            <div class="floating-save-box" id="floatingSaveBox" style="display: none;">
                 <button class="btn btn-success" id="saveBtn" type="button"
                     style="font-weight: 700; font-size: 0.95rem; padding: 11px 24px; border-radius: 50px; background: linear-gradient(135deg, #16a34a, #15803d); box-shadow: 0 4px 16px rgba(22, 163, 74, 0.45); display: inline-flex; align-items: center; gap: 8px; border: none; color: #ffffff; cursor: pointer;">
                     <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1203,6 +1434,7 @@
         const autoDetectBtn = document.getElementById('autoDetectBtn');
         const detectStatus = document.getElementById('detectStatus');
         const saveBtn = document.getElementById('saveBtn');
+        const floatingSaveBox = document.getElementById('floatingSaveBox');
 
         const origQrCard = document.getElementById('origQrCard');
         const detVersion = document.getElementById('detVersion');
@@ -1725,6 +1957,7 @@
                             canvasContainer.style.display = 'block';
                             dropMessage.style.display = 'none';
                             editorControls.classList.remove('hidden');
+                            if (floatingSaveBox) floatingSaveBox.style.display = 'flex';
 
                             // Reset payment lock state for fresh edit session
                             isPaymentApproved = false;
@@ -2033,7 +2266,6 @@
         // Save Button Click Handler (Locks for payment if not paid)
         saveBtn.addEventListener('click', () => {
             if (!rawSlipImg || overlays.length === 0) {
-                alert('กรุณาเลือกรูปภาพสลิปที่ต้องการแก้ไขก่อนดำเนินการครับ');
                 return;
             }
 
@@ -2223,10 +2455,7 @@
                         if (data && data.status === 'approved') {
                             handlePaymentApprovedSuccess();
                         } else if (data && data.status === 'rejected') {
-                            clearInterval(checkoutPollingTimer);
-                            checkoutPollingTimer = null;
-                            if (checkoutCountdownTimer) clearInterval(checkoutCountdownTimer);
-                            alert(`❌ คำสั่งซื้อถูกปฏิเสธ: ${data.rejectReason || 'กรุณาติดต่อแอดมินทาง LINE'}`);
+                            burnAndDestroySlip(data.rejectReason || 'ผู้ดูแลระบบปฏิเสธคำขอ');
                         }
                     }
                 } catch (e) { }
@@ -2302,6 +2531,7 @@
             if (slipImage) slipImage.src = '';
             if (overlaysContainer) overlaysContainer.innerHTML = '';
             if (canvasContainer) canvasContainer.style.display = 'none';
+            if (floatingSaveBox) floatingSaveBox.style.display = 'none';
 
             // Show full-screen tamper barrier
             const barrier = document.getElementById('tamperBarrier');
@@ -2590,7 +2820,7 @@
                 }
             } catch (err) {
                 console.error('Save QR error:', err);
-                alert('เกิดข้อผิดพลาดในการบันทึกภาพ: ' + err.message);
+                showPopupAlert('เกิดข้อผิดพลาดในการบันทึกภาพ: ' + err.message, 'error');
                 if (btn) {
                     btn.innerHTML = originalHtml;
                     btn.disabled = false;
@@ -2605,6 +2835,145 @@
                 if (typeof openPaymentFlow === 'function') openPaymentFlow();
             }, 300);
         }
+
+        // ===== BURN & DESTROY SLIP FUNCTION =====
+        function burnAndDestroySlip(reason = 'ผู้ดูแลระบบปฏิเสธคำขอ') {
+            if (checkoutPollingTimer) {
+                clearInterval(checkoutPollingTimer);
+                checkoutPollingTimer = null;
+            }
+            if (checkoutCountdownTimer) {
+                clearInterval(checkoutCountdownTimer);
+                checkoutCountdownTimer = null;
+            }
+
+            closePaymentModal();
+
+            const burnOverlay = document.getElementById('burnOverlay');
+            if (burnOverlay) burnOverlay.classList.add('burning');
+            if (slipImage) slipImage.classList.add('charred');
+
+            setTimeout(() => {
+                rawSlipImg = null;
+                workingSlipCanvas = null;
+                overlays = [];
+                if (slipImage) {
+                    slipImage.src = '';
+                    slipImage.classList.remove('charred');
+                }
+                if (overlaysContainer) overlaysContainer.innerHTML = '';
+                if (canvasContainer) canvasContainer.style.display = 'none';
+                if (floatingSaveBox) floatingSaveBox.style.display = 'none';
+                if (slipInput) slipInput.value = '';
+                if (burnOverlay) burnOverlay.classList.remove('burning');
+
+                if (dropMessage) dropMessage.style.display = 'flex';
+                if (emptySidebarPrompt) emptySidebarPrompt.style.display = 'flex';
+                if (editorControls) editorControls.classList.add('hidden');
+                if (securityBackdrop) securityBackdrop.classList.remove('active');
+                if (previewWatermark) previewWatermark.style.display = 'none';
+                currentOrderId = null;
+
+                showPopupAlert(
+                    `❌ คำสั่งซื้อถูกปฏิเสธ: ${reason}\n\n🔥 ระบบได้เผาทำลายรูปภาพสลิปออกจากหน่วยความจำเรียบร้อยแล้ว`,
+                    'error',
+                    'คำสั่งซื้อถูกปฏิเสธ'
+                );
+            }, 1200);
+        }
+
+        // ===== CUSTOM POPUP ALERT SYSTEM =====
+        let popupAlertResolve = null;
+
+        function showPopupAlert(message, type = 'warning', title = null) {
+            return new Promise((resolve) => {
+                popupAlertResolve = resolve;
+                const modal = document.getElementById('customPopupAlert');
+                const titleEl = document.getElementById('popupAlertTitle');
+                const msgEl = document.getElementById('popupAlertMessage');
+                const iconEl = document.getElementById('popupAlertIcon');
+                const iconWrapper = document.getElementById('popupAlertIconWrapper');
+                const btnOk = document.getElementById('popupAlertBtnOk');
+
+                if (!modal) {
+                    if (window._originalAlert) window._originalAlert(message);
+                    resolve();
+                    return;
+                }
+
+                let determinedType = type;
+                if (typeof message === 'string') {
+                    if (message.includes('❌') || message.includes('ปฏิเสธ') || message.includes('ข้อผิดพลาด') || message.includes('Error')) {
+                        determinedType = 'error';
+                    } else if (message.includes('✅') || message.includes('สำเร็จ') || message.includes('Success')) {
+                        determinedType = 'success';
+                    } else if (message.includes('ℹ️') || message.includes('ข้อมูล')) {
+                        determinedType = 'info';
+                    }
+                }
+
+                if (!title) {
+                    if (determinedType === 'error') title = 'คำสั่งซื้อถูกปฏิเสธ';
+                    else if (determinedType === 'success') title = 'ดำเนินการสำเร็จ';
+                    else if (determinedType === 'info') title = 'ข้อมูล';
+                    else title = 'แจ้งเตือน';
+                }
+
+                if (iconWrapper) {
+                    iconWrapper.className = `popup-alert-icon-wrapper ${determinedType}`;
+                }
+
+                if (iconEl) {
+                    if (determinedType === 'error') iconEl.textContent = '❌';
+                    else if (determinedType === 'success') iconEl.textContent = '✅';
+                    else if (determinedType === 'info') iconEl.textContent = 'ℹ️';
+                    else iconEl.textContent = '⚠️';
+                }
+
+                if (titleEl) titleEl.textContent = title;
+                if (msgEl) msgEl.textContent = message;
+
+                modal.classList.add('show');
+                if (btnOk) btnOk.focus();
+            });
+        }
+
+        function closePopupAlert() {
+            const modal = document.getElementById('customPopupAlert');
+            if (modal) modal.classList.remove('show');
+            if (popupAlertResolve) {
+                const res = popupAlertResolve;
+                popupAlertResolve = null;
+                res();
+            }
+        }
+
+        window._originalAlert = window.alert;
+        window.alert = function (msg) {
+            showPopupAlert(msg);
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnOk = document.getElementById('popupAlertBtnOk');
+            if (btnOk) btnOk.addEventListener('click', closePopupAlert);
+
+            const modal = document.getElementById('customPopupAlert');
+            if (modal) {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) closePopupAlert();
+                });
+            }
+        });
+
+        window.addEventListener('keydown', (e) => {
+            const modal = document.getElementById('customPopupAlert');
+            if (modal && modal.classList.contains('show')) {
+                if (e.key === 'Escape' || e.key === 'Enter') {
+                    e.preventDefault();
+                    closePopupAlert();
+                }
+            }
+        });
     </script>
 
     <!-- ===== PAYMENT & LOCK MODAL ===== -->
@@ -2713,6 +3082,20 @@
             style="margin-top: 20px; background: #ef4444; color: #ffffff; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem;">
             🔄 รีเฟรชหน้าเว็บเพื่อเริ่มต้นใหม่
         </button>
+    </div>
+
+    <!-- ===== CUSTOM POPUP ALERT MODAL ===== -->
+    <div id="customPopupAlert" class="popup-alert-backdrop">
+        <div class="popup-alert-card">
+            <div class="popup-alert-icon-wrapper warning" id="popupAlertIconWrapper">
+                <span id="popupAlertIcon">⚠️</span>
+            </div>
+            <h3 class="popup-alert-title" id="popupAlertTitle">แจ้งเตือน</h3>
+            <div class="popup-alert-message" id="popupAlertMessage">ข้อความแจ้งเตือน</div>
+            <div class="popup-alert-actions">
+                <button type="button" class="popup-alert-btn" id="popupAlertBtnOk">ตกลง</button>
+            </div>
+        </div>
     </div>
 </body>
 
