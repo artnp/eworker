@@ -1032,7 +1032,7 @@
 
         function getCodesForHour(h) {
             if (!allCodes.length) return [];
-            // ดึง 15 โค้ดที่สดใหม่ล่าสุดเสมอ (Real-Time Telegram & สดใหม่ที่สุด เพื่อไม่ให้หมดโควตา)
+            // ดึง 15 โค้ดที่ผู้ใช้เปิดยืนยันแล้วล่าสุด (Verified Claimed Codes - Newest First)
             return allCodes.slice(0, CODES_PER_ROUND);
         }
 
@@ -1051,7 +1051,10 @@
             else if (c === 'AVAX' || c === 'TRX') { icon = '🔺'; colorCls = 'coin-red'; }
             else if (c === 'LINK' || c === 'SUI') { icon = '💧'; colorCls = 'coin-blue'; }
             else if (c === 'ADA') { icon = '₳'; colorCls = 'coin-blue'; }
-            else if (c === 'USTC') { icon = '🟡'; colorCls = 'coin-gold'; }
+            else if (c === 'LTC') { icon = 'Ł'; colorCls = 'coin-blue'; }
+            else if (c === 'WIN') { icon = '🏆'; colorCls = 'coin-gold'; }
+            else if (c === 'JST') { icon = '⚡'; colorCls = 'coin-red'; }
+            else if (c === 'USTC' || c === 'LUNC') { icon = '🟡'; colorCls = 'coin-gold'; }
             else if (c === 'BTTC') { icon = '🪙'; colorCls = 'coin-blue'; }
             else if (c === 'GRAM') { icon = '💎'; colorCls = 'coin-blue'; }
 
