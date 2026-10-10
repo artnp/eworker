@@ -1103,7 +1103,7 @@
             <button type="button" class="btn btn-secondary" id="btnClearAllMarks" style="display: none;">
                 <span>🗑️ ล้างจุดมาร์ค</span>
             </button>
-            <button type="button" class="btn btn-primary" id="btnExportCheckout">
+            <button type="button" class="btn btn-primary" id="btnExportCheckout" style="display: none;">
                 <span id="btnExportText">⚡ ชำระเงิน & ส่งออก PDF</span>
             </button>
         </div>
@@ -1531,6 +1531,7 @@
                 navCenterControls.style.display = 'flex';
                 floatingZoomDock.style.display = 'flex';
                 btnClearAllMarks.style.display = 'inline-flex';
+                btnExportCheckout.style.display = 'inline-flex';
 
                 inputPageNum.max = totalPages;
                 lblTotalPages.textContent = totalPages;
@@ -2019,6 +2020,16 @@
             if (isPaymentApproved) {
                 triggerDirectDownload();
             } else {
+                try {
+                    const sRes = await fetch(`${FIREBASE_BASE}/store_status.json?t=${Date.now()}`);
+                    if (sRes.ok) {
+                        const sData = await sRes.json();
+                        if (!sData || !sData.online || (Date.now() - (sData.lastSeen || 0) >= 40000)) {
+                            showPopupAlert('⚠️ ขณะนี้ร้านค้าปิดทำการ (Offline)\nไม่สามารถทำรายการชำระเงินได้เนื่องจากต้องเชื่อมต่อระบบโอนเงินของเซิร์ฟเวอร์\nโปรดลองใหม่อีกครั้งในเวลาทำการครับ', 'warning');
+                            return;
+                        }
+                    }
+                } catch (e) { }
                 openPaymentFlow();
             }
         });
