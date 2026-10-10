@@ -1,0 +1,2412 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>มาร์คจุดแก้เอกสาร PDF | eWorker</title>
+
+    <!-- Favicon & Web App Icon -->
+    <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg">
+    <link rel="icon" type="image/png" sizes="192x192" href="../../assets/images/favicon.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="../../assets/images/favicon.png">
+    <link rel="shortcut icon" href="../../favicon.ico">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- CDNs: jsPDF, QRCode, html2canvas & Confetti -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-light: #eff6ff;
+            --primary-border: #bfdbfe;
+            --accent: #f59e0b;
+            --bg-page: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --border-light: #f1f5f9;
+            --success: #16a34a;
+            --success-light: #f0fdf4;
+            --success-border: #bbf7d0;
+            --danger: #ef4444;
+            --danger-light: #fef2f2;
+            --danger-border: #fecaca;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html,
+        body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            font-family: 'Prompt', 'Outfit', 'Sarabun', sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== TOP APP NAVBAR (52px, matches eWorker Suite) ===== */
+        .app-navbar {
+            height: 52px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 100;
+            flex-shrink: 0;
+            gap: 12px;
+        }
+
+        .brand-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            user-select: none;
+        }
+
+
+        .brand-logo {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.35);
+        }
+
+        .brand-title {
+            font-size: 1.02rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            line-height: 1;
+        }
+
+        .brand-badge {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            background: #fee2e2;
+            color: #dc2626;
+            border-radius: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .price-badge-pill {
+            font-size: 0.72rem;
+            padding: 2px 8px;
+            background: var(--success-light);
+            color: var(--success);
+            border: 1px solid var(--success-border);
+            border-radius: 12px;
+            font-weight: 700;
+        }
+
+        .nav-center-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .page-stepper {
+            display: inline-flex;
+            align-items: center;
+            background: #f1f5f9;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 2px 4px;
+            gap: 4px;
+        }
+
+        .stepper-btn {
+            background: none;
+            border: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: var(--text-main);
+            font-weight: 700;
+            transition: all 0.15s;
+        }
+
+        .stepper-btn:hover:not(:disabled) {
+            background: #ffffff;
+            box-shadow: var(--shadow-sm);
+            color: var(--primary);
+        }
+
+        .stepper-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        .stepper-label {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-main);
+            padding: 0 6px;
+            white-space: nowrap;
+        }
+
+        .stepper-input {
+            width: 44px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 2px 4px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            background: #ffffff;
+        }
+
+        .nav-right-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 0.84rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .btn-secondary {
+            background: #ffffff;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1d4ed8, #2563eb);
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1e40af, #1d4ed8);
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.35);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #15803d, #16a34a);
+            color: #ffffff;
+            box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #166534, #15803d);
+            box-shadow: 0 4px 10px rgba(22, 163, 74, 0.35);
+        }
+
+        .btn-danger-outline {
+            background: transparent;
+            color: #ef4444;
+            border: 1px solid #fecaca;
+        }
+
+        .btn-danger-outline:hover {
+            background: #fee2e2;
+            border-color: #ef4444;
+        }
+
+        /* ===== STUDIO WORKSPACE LAYOUT ===== */
+        .studio-workspace {
+            display: flex;
+            height: calc(100vh - 52px);
+            width: 100vw;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ===== LEFT SIDEBAR CONTROLS ===== */
+        .sidebar-controls {
+            width: 350px;
+            min-width: 320px;
+            max-width: 380px;
+            height: 100%;
+            background: #ffffff;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex-shrink: 0;
+            padding: 14px 14px;
+            gap: 12px;
+        }
+
+        .sidebar-controls::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .sidebar-controls::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .control-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .card-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .card-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .card-badge {
+            font-size: 0.7rem;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-weight: 600;
+            background: #f1f5f9;
+            color: var(--text-muted);
+        }
+
+        /* Dropzone in Sidebar */
+        .sidebar-dropzone {
+            border: 2px dashed #cbd5e1;
+            border-radius: var(--radius-sm);
+            padding: 18px 12px;
+            text-align: center;
+            background: #f8fafc;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sidebar-dropzone:hover,
+        .sidebar-dropzone.dragover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .file-info-active {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: var(--radius-sm);
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .file-info-text {
+            overflow: hidden;
+        }
+
+        .file-name {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #166534;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-meta {
+            font-size: 0.72rem;
+            color: #4ade80;
+            margin-top: 1px;
+        }
+
+        /* Color Preset Selector (Circular swatches without text) */
+        .color-chips-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+            align-items: center;
+        }
+
+        .color-chip {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 2.5px solid #ffffff;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: none;
+            user-select: none;
+        }
+
+        .color-chip:hover {
+            transform: scale(1.12);
+        }
+
+        .color-chip.c-red {
+            background: #ef4444;
+            color: #ef4444;
+        }
+
+        .color-chip.c-yellow {
+            background: #f59e0b;
+            color: #f59e0b;
+        }
+
+        .color-chip.c-blue {
+            background: #2563eb;
+            color: #2563eb;
+        }
+
+        .color-chip.c-green {
+            background: #10b981;
+            color: #10b981;
+        }
+
+        .color-chip.active {
+            transform: scale(1.18);
+            box-shadow: 0 0 0 2px #ffffff, 0 0 0 4.5px currentColor;
+        }
+
+        .color-chip.active::after {
+            content: '✓';
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 900;
+            line-height: 1;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Marker List in Sidebar */
+        .markers-list-container {
+            max-height: 220px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 6px;
+            padding-right: 2px;
+        }
+
+        .markers-list-container::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .markers-list-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .marker-item-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 8px;
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-size: 0.78rem;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .marker-item-row:hover {
+            background: #ffffff;
+            border-color: var(--primary-border);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .marker-num-badge {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ef4444;
+            color: #ffffff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .marker-item-text {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .marker-item-page {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .marker-del-btn {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 2px 4px;
+            font-size: 0.85rem;
+            border-radius: 4px;
+        }
+
+        .marker-del-btn:hover {
+            color: #ef4444;
+            background: #fee2e2;
+        }
+
+        .empty-markers-hint {
+            text-align: center;
+            padding: 16px 8px;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            line-height: 1.4;
+        }
+
+        /* Export Options */
+        .option-toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            cursor: pointer;
+        }
+
+        .option-toggle-row input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        /* ===== CENTER WORKSPACE (CANVAS VIEWER) ===== */
+        .workspace-canvas-area {
+            flex: 1;
+            height: 100%;
+            background: #0f172a;
+            position: relative;
+            overflow: auto;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 30px;
+            user-select: none;
+        }
+
+        /* Subtle grid background on dark canvas */
+        .workspace-canvas-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 24px 24px;
+            pointer-events: none;
+        }
+
+        /* Empty State Overlay */
+        .empty-state-canvas {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            max-width: 480px;
+            margin: auto;
+            padding: 40px 24px;
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(8px);
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            text-align: center;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.25s;
+            z-index: 10;
+        }
+
+        .empty-state-canvas:hover,
+        .empty-state-canvas.dragover {
+            border-color: #38bdf8;
+            background: rgba(30, 41, 59, 0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+        }
+
+        .empty-icon-box {
+            width: 72px;
+            height: 72px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #ef4444, #b91c1c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Floating Zoom Dock in Canvas */
+        .canvas-floating-dock {
+            position: fixed;
+            bottom: 24px;
+            right: 28px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 30px;
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            z-index: 50;
+        }
+
+        .dock-btn {
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .dock-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #38bdf8;
+        }
+
+        .dock-zoom-text {
+            color: #ffffff;
+            font-size: 0.78rem;
+            font-weight: 600;
+            min-width: 42px;
+            text-align: center;
+        }
+
+        /* ===== PDF PAPER CONTAINER & BOX MARKERS ===== */
+        #canvasContainer {
+            position: relative;
+            display: inline-block;
+            margin: auto;
+            border-radius: 4px;
+            overflow: visible;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+            background: #ffffff;
+            transition: transform 0.1s ease-out;
+            transform-origin: center top;
+            cursor: crosshair;
+        }
+
+        #pdfCanvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            cursor: crosshair;
+        }
+
+        /* Marker Bounding Box */
+        .marker-box {
+            position: absolute;
+            border: 3.5px solid #ef4444;
+            background: rgba(239, 68, 68, 0.12);
+            min-width: 50px;
+            min-height: 40px;
+            cursor: move;
+            user-select: none;
+            z-index: 10;
+            border-radius: 6px;
+            box-sizing: border-box;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+            transition: border-color 0.15s, background-color 0.15s;
+        }
+
+        .marker-box.color-yellow {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.12);
+        }
+
+        .marker-box.color-blue {
+            border-color: #2563eb;
+            background: rgba(37, 99, 235, 0.12);
+        }
+
+        .marker-box.color-green {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.12);
+        }
+
+        .marker-box.active {
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8), 0 4px 16px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Number Badge on Box */
+        .marker-badge {
+            position: absolute;
+            top: -12px;
+            left: -12px;
+            width: 24px;
+            height: 24px;
+            background: #ef4444;
+            color: #ffffff;
+            font-size: 0.72rem;
+            font-weight: 800;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+            border: 2px solid #ffffff;
+            z-index: 15;
+        }
+
+        .marker-box.color-yellow .marker-badge {
+            background: #f59e0b;
+        }
+
+        .marker-box.color-blue .marker-badge {
+            background: #2563eb;
+        }
+
+        .marker-box.color-green .marker-badge {
+            background: #10b981;
+        }
+
+        /* Delete Button on Box (Red background with white X) */
+        .marker-delete-btn {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            width: 24px;
+            height: 24px;
+            background: #ef4444;
+            color: #ffffff;
+            font-size: 0.85rem;
+            font-weight: 800;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.45);
+            border: 2px solid #ffffff;
+            cursor: pointer;
+            z-index: 15;
+            transition: all 0.15s;
+            line-height: 1;
+        }
+
+        .marker-delete-btn:hover {
+            background: #dc2626;
+            transform: scale(1.15);
+        }
+
+        /* Resizer Handles (4 corners) */
+        .resizer-handle {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: #ffffff;
+            border: 3px solid #ef4444;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+            z-index: 14;
+        }
+
+        .marker-box.color-yellow .resizer-handle {
+            border-color: #f59e0b;
+        }
+
+        .marker-box.color-blue .resizer-handle {
+            border-color: #2563eb;
+        }
+
+        .marker-box.color-green .resizer-handle {
+            border-color: #10b981;
+        }
+
+        .resizer-handle.tl {
+            top: -7px;
+            left: -7px;
+            cursor: nwse-resize;
+        }
+
+        .resizer-handle.tr {
+            top: -7px;
+            right: -7px;
+            cursor: nesw-resize;
+        }
+
+        .resizer-handle.bl {
+            bottom: -7px;
+            left: -7px;
+            cursor: nesw-resize;
+        }
+
+        .resizer-handle.br {
+            bottom: -7px;
+            right: -7px;
+            cursor: nwse-resize;
+        }
+
+        /* Comment Label attached under the box */
+        .marker-comment-bubble {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 100%;
+            margin-top: 8px;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 8px 12px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            border-radius: 8px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+            white-space: pre-wrap;
+            line-height: 1.4;
+            outline: none;
+            cursor: text;
+            z-index: 12;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            min-height: 28px;
+        }
+
+        .marker-comment-bubble:empty:before {
+            content: "✍️ พิมพ์สิ่งที่ต้องการแก้ไขที่นี่...";
+            color: #94a3b8;
+            font-weight: 400;
+        }
+
+        /* ===== PROMPTPAY & PAYMENT MODAL (Identical to inchConvert) ===== */
+        .payment-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.25s ease;
+            padding: 16px;
+        }
+
+        .payment-modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .payment-modal-card {
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            max-width: 390px;
+            width: 100%;
+            padding: 22px 20px;
+            text-align: center;
+            transform: scale(0.95);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            max-height: 94vh;
+            overflow-y: auto;
+        }
+
+        .payment-modal-overlay.active .payment-modal-card {
+            transform: scale(1);
+        }
+
+        .checkout-countdown-box {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: #eff6ff;
+            color: var(--primary);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin: 6px 0 10px 0;
+            border: 1px solid #bfdbfe;
+        }
+
+        .checkout-countdown-box.urgent {
+            background: #fef2f2;
+            color: #dc2626;
+            border-color: #fecaca;
+            animation: pulseUrgent 1s infinite alternate;
+        }
+
+        @keyframes pulseUrgent {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0.6;
+            }
+        }
+
+        .qr-clean-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-sm);
+            margin: 6px 0;
+        }
+
+        #qrCodeTarget img,
+        #qrCodeTarget canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 6px;
+        }
+
+        .polling-status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            margin: 6px 0;
+        }
+
+        .clean-spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid #e2e8f0;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ===== CUSTOM POPUP ALERT SYSTEM ===== */
+        .custom-popup-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 100000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.2s ease;
+            padding: 16px;
+        }
+
+        .custom-popup-modal.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .custom-popup-card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+            max-width: 360px;
+            width: 100%;
+            padding: 22px 20px;
+            text-align: center;
+            transform: scale(0.95);
+            transition: transform 0.2s ease;
+        }
+
+        .custom-popup-modal.show .custom-popup-card {
+            transform: scale(1);
+        }
+
+        .popup-alert-icon-wrapper {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+        }
+
+        .popup-alert-icon-wrapper.warning {
+            background: #fef3c7;
+        }
+
+        .popup-alert-icon-wrapper.error {
+            background: #fee2e2;
+        }
+
+        .popup-alert-icon-wrapper.success {
+            background: #dcfce7;
+        }
+
+        .popup-alert-icon-wrapper.info {
+            background: #e0f2fe;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 900px) {
+            .studio-workspace {
+                flex-direction: column;
+            }
+
+            .sidebar-controls {
+                width: 100%;
+                max-width: 100%;
+                height: 280px;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .workspace-canvas-area {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ===== TOP APP NAVBAR (52px) ===== -->
+    <header class="app-navbar">
+        <div class="brand-group">
+            <div class="brand-logo">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="9" y1="15" x2="15" y2="15"></line>
+                </svg>
+            </div>
+            <div class="brand-title">
+                <span>มาร์คจุดแก้เอกสาร PDF</span>
+                <span class="price-badge-pill">฿ 5.00 / ครั้ง</span>
+            </div>
+        </div>
+
+        <!-- Center: Page Navigation Stepper -->
+        <div class="nav-center-actions" id="navCenterControls" style="display: none;">
+            <div class="page-stepper">
+                <button type="button" class="stepper-btn" id="btnPrevPage" title="หน้าก่อนหน้า">◀</button>
+                <div class="stepper-label">
+                    <span>หน้า</span>
+                    <input type="number" id="inputPageNum" class="stepper-input" min="1" value="1">
+                    <span>/ <strong id="lblTotalPages">1</strong></span>
+                </div>
+                <button type="button" class="stepper-btn" id="btnNextPage" title="หน้าถัดไป">▶</button>
+            </div>
+        </div>
+
+        <!-- Right: Actions -->
+        <div class="nav-right-actions">
+            <button type="button" class="btn btn-secondary" id="btnClearAllMarks" style="display: none;">
+                <span>🗑️ ล้างจุดมาร์ค</span>
+            </button>
+            <button type="button" class="btn btn-primary" id="btnExportCheckout">
+                <span id="btnExportText">⚡ ชำระเงิน & ส่งออก PDF</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ===== STUDIO WORKSPACE ===== -->
+    <main class="studio-workspace">
+
+        <!-- ===== LEFT SIDEBAR CONTROLS ===== -->
+        <aside class="sidebar-controls">
+
+            <!-- Card 1: File Info (Shown only after PDF is loaded) -->
+            <div class="control-card" id="cardFileInfo" style="display: none;">
+                <div class="card-header-row">
+                    <span class="card-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        ไฟล์เอกสาร PDF
+                    </span>
+                    <span class="card-badge" id="lblFileBadge" style="color: #16a34a;">พร้อมใช้งาน</span>
+                </div>
+
+                <div id="fileInfoActive" class="file-info-active">
+                    <div class="file-info-text">
+                        <div class="file-name" id="lblFileName">document.pdf</div>
+                        <div class="file-meta" id="lblFileMeta">จำนวน 0 หน้า</div>
+                    </div>
+                    <button type="button" class="btn btn-secondary" id="btnChangePdf"
+                        style="padding: 4px 8px; font-size: 0.72rem;">
+                        เปลี่ยนไฟล์
+                    </button>
+                </div>
+            </div>
+            <input type="file" id="fileInput" accept=".pdf" style="display: none;">
+
+            <!-- Card 2: Marker Tool Actions -->
+            <div class="control-card">
+                <div class="card-header-row">
+                    <span class="card-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        เครื่องมือมาร์คจุด
+                    </span>
+                    <span class="card-badge" id="lblMarkerCount">0 จุด</span>
+                </div>
+
+                <button type="button" class="btn btn-primary" id="btnAddMarker"
+                    style="width: 100%; justify-content: center; padding: 10px; font-size: 0.88rem; font-weight: 700;">
+                    <span>+ วงชี้จุดตำแหน่งแก้ไข</span>
+                </button>
+
+                <!-- Color Style Selector (Circles without text) -->
+                <div style="margin-top: 12px;">
+                    <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">สีของกรอบระบุ:</span>
+                    <div class="color-chips-row">
+                        <div class="color-chip c-red active" data-color="red" title="สีแดง"></div>
+                        <div class="color-chip c-yellow" data-color="yellow" title="สีเหลือง/ส้ม"></div>
+                        <div class="color-chip c-blue" data-color="blue" title="สีน้ำเงิน"></div>
+                        <div class="color-chip c-green" data-color="green" title="สีเขียว"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: Marker List by Page -->
+            <div class="control-card" style="flex: 1; display: flex; flex-direction: column;">
+                <div class="card-header-row">
+                    <span class="card-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="8" y1="6" x2="21" y2="6"></line>
+                            <line x1="8" y1="12" x2="21" y2="12"></line>
+                            <line x1="8" y1="18" x2="21" y2="18"></line>
+                            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                            <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                        </svg>
+                        รายการจุดที่มาร์คไว้
+                    </span>
+                    <span class="card-badge" id="lblMarkerSummary">0 จุด</span>
+                </div>
+
+                <div id="markersListContainer" class="markers-list-container">
+                    <div class="empty-markers-hint" id="emptyMarkersHint">
+                        ยังไม่มีจุดมาร์คในเอกสาร<br>
+                        กดปุ่ม <strong>"+ วงชี้จุดตำแหน่ง"</strong> ด้านบนเพื่อเริ่มระบุจุดแก้
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 4: Export Options & Notice -->
+            <div class="control-card">
+                <div class="card-header-row">
+                    <span class="card-title">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path
+                                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                            </path>
+                        </svg>
+                        ตัวเลือกการส่งออก
+                    </span>
+                </div>
+
+                <label class="option-toggle-row">
+                    <span>ประทับตราหัวกระดาษ (ให้แก้ไขหน้าที่ X)</span>
+                    <input type="checkbox" id="chkAddWatermark" checked>
+                </label>
+
+                <div
+                    style="font-size: 0.72rem; color: var(--text-muted); background: #f8fafc; border-radius: var(--radius-sm); padding: 8px; margin-top: 6px; line-height: 1.4;">
+                    💡 <strong>คำแนะนำ:</strong> เมื่อมาร์คจุดและพิมพ์ข้อความเสร็จแล้ว ให้กดปุ่ม "ชำระเงิน & ส่งออก PDF
+                    (฿ 5)" เพื่อดาวน์โหลดไฟล์ PDF ที่นำไปส่งต่อได้ทันที
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- ===== CENTER WORKSPACE (CANVAS VIEWER) ===== -->
+        <section class="workspace-canvas-area" id="workspaceCanvasArea">
+
+            <!-- Empty State Overlay (Before PDF Loaded) -->
+            <div class="empty-state-canvas" id="canvasEmptyState">
+                <div class="empty-icon-box">📌</div>
+                <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 6px;">อัปโหลดเอกสาร PDF
+                    เพื่อเริ่มมาร์คจุด</h3>
+                <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 18px; line-height: 1.5;">
+                    คลิกที่นี่หรือลากไฟล์ PDF ที่ต้องการแก้ไขเข้ามา<br>
+                    สามารถวงกล่องชี้ตำแหน่ง พิมพ์ข้อความคำสั่ง และส่งออก PDF ได้อย่างคมชัด
+                </p>
+                <button type="button" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;">
+                    📁 เลือกไฟล์ PDF จากเครื่อง
+                </button>
+            </div>
+
+            <!-- PDF Container with Canvas and Box Annotations -->
+            <div id="canvasContainer" style="display: none;">
+                <canvas id="pdfCanvas"></canvas>
+                <div id="dragSelectionBox" style="display: none; position: absolute; pointer-events: none; border: 2.5px dashed #ef4444; background: rgba(239, 68, 68, 0.15); z-index: 90; border-radius: 6px;"></div>
+            </div>
+
+            <!-- Floating Zoom Dock -->
+            <div class="canvas-floating-dock" id="floatingZoomDock" style="display: none;">
+                <button type="button" class="dock-btn" id="btnZoomOut" title="ย่อ">-</button>
+                <span class="dock-zoom-text" id="lblZoomLevel">100%</span>
+                <button type="button" class="dock-btn" id="btnZoomIn" title="ขยาย">+</button>
+                <button type="button" class="dock-btn" id="btnZoomFit" title="พอดีหน้าจอ"
+                    style="font-size: 0.75rem;">⛶</button>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ===== PAYMENT & CHECKOUT MODAL (PromptPay 5 THB) ===== -->
+    <div id="paymentModal" class="payment-modal-overlay">
+        <div class="payment-modal-card">
+            <!-- Pending Payment View -->
+            <div id="paymentViewPending">
+                <h4 style="font-size: 1.1rem; font-weight: 800; color: #16a34a; margin: 0 0 4px 0;">🎉
+                    มาร์คจุดเรียบร้อย! กรุณาชำระเงิน</h4>
+                <p style="font-size: 0.78rem; color: #64748b; margin-bottom: 8px;">
+                    มาร์คตำแหน่งแก้ไขเอกสาร PDF คุณภาพสูง
+                </p>
+
+                <!-- Countdown Box -->
+                <div class="checkout-countdown-box" id="checkoutCountdownBox">
+                    <span>⏱️ กรุณาชำระเงินภายใน:</span>
+                    <strong id="checkoutCountdownTimer"
+                        style="font-family: monospace; font-size: 0.95rem; font-weight: 800;">10:00</strong>
+                    <span>นาที</span>
+                </div>
+
+                <!-- QR Code Box -->
+                <div class="qr-clean-card">
+                    <div id="qrCodeTarget"></div>
+                    <div
+                        style="font-size: 0.75rem; font-weight: 700; color: #0b1120; margin-top: 5px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                        <img src="../../../assets/promptpay_header_full.png"
+                            onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/100px-PromptPay-logo.png'; this.onerror=function(){this.style.display='none';};"
+                            style="height: 16px; max-width: 75px; object-fit: contain;">
+                        <span>สแกนผ่านทุกแอปธนาคาร</span>
+                    </div>
+                </div>
+
+                <div
+                    style="font-size: 1.6rem; font-weight: 800; color: #16a34a; margin: 2px 0 4px 0; line-height: 1.2;">
+                    ฿ 5.00
+                </div>
+
+                <!-- Button Download QR Code Image -->
+                <button type="button" class="btn btn-primary" id="btnDownloadSlip" onclick="downloadPaymentQR()"
+                    style="width: 100%; justify-content: center; padding: 8px 12px; font-size: 0.84rem; font-weight: 700; border-radius: 8px; margin: 4px 0 6px 0; gap: 6px; background: linear-gradient(135deg, #1d4ed8, #2563eb); border: none; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25);">
+                    <span>📥 บันทึกรูป QR Code (นำเข้าแอปธนาคาร)</span>
+                </button>
+
+                <!-- Polling Status -->
+                <div class="polling-status-chip">
+                    <div class="clean-spinner"></div>
+                    <span>ระบบ KBank กำลังรอรับยอดเงินอัตโนมัติ...</span>
+                </div>
+
+                <!-- Action row: Alert & LINE -->
+                <div style="display: flex; gap: 6px; width: 100%; margin-top: 4px;">
+                    <button type="button" class="btn btn-secondary" id="btnManualConfirm"
+                        style="flex: 1; justify-content: center; padding: 6px 8px; font-size: 0.76rem; font-weight: 600; border-radius: 6px;"
+                        onclick="triggerManualPaymentAlert()" title="แจ้งเตือนให้ระบบตรวจยอดซ้ำ">
+                        🔔 แจ้งโอนแล้ว
+                    </button>
+                    <a href="https://line.me/ti/p/gqIluRmdJ_" target="_blank" rel="noopener noreferrer"
+                        style="flex: 1; background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; font-size: 0.76rem; font-weight: 700; text-decoration: none; padding: 6px 8px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; gap: 4px;"
+                        title="มีปัญหาชำระเงิน ติดต่อทาง LINE">
+                        💬 ติดต่อ LINE
+                    </a>
+                </div>
+
+                <!-- Admin Test Shortcut (localhost only) -->
+                <div id="adminTestShortcut" style="display: none; margin-top: 8px; width: 100%;">
+                    <div
+                        style="padding: 4px 8px; background: #eff6ff; border: 1px dashed #93c5fd; border-radius: 6px; font-size: 0.72rem; display: flex; align-items: center; justify-content: space-between;">
+                        <span>🛠️ <strong>แอดมิน:</strong></span>
+                        <button type="button" onclick="adminSimulateApprove()"
+                            style="background: #2563eb; color: #ffffff; border: none; padding: 3px 10px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; cursor: pointer;">
+                            จำลองเงินเข้า 5 บ.
+                        </button>
+                    </div>
+                </div>
+
+                <div style="margin-top: 10px; display: flex; justify-content: center;">
+                    <button type="button" class="btn btn-secondary" onclick="closePaymentModal()"
+                        style="font-size: 0.76rem; padding: 5px 16px; justify-content: center; text-align: center;">
+                        ปิดหน้าต่างชั่วคราว
+                    </button>
+                </div>
+            </div>
+
+            <!-- Success View (After Payment Approved) -->
+            <div id="paymentViewSuccess" style="display: none;">
+                <div style="font-size: 3rem; margin-bottom: 6px;">🎉</div>
+                <h3 style="font-size: 1.35rem; font-weight: 800; color: #16a34a; margin: 0;">ชำระเงิน 5 บาท สำเร็จแล้ว!
+                </h3>
+                <p style="font-size: 0.84rem; color: #64748b; margin-top: 4px;">
+                    กำลังจัดเตรียมและดาวน์โหลดไฟล์ PDF ที่ระบุจุดแก้ไขของคุณ...
+                </p>
+
+                <div
+                    style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-md); padding: 14px; margin: 16px 0;">
+                    <button type="button" id="btnDownloadClean" onclick="triggerDirectDownload()"
+                        class="btn btn-success"
+                        style="width: 100%; justify-content: center; font-size: 1rem; font-weight: 800; padding: 12px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);">
+                        📥 ดาวน์โหลดไฟล์ PDF ทันที
+                    </button>
+                </div>
+                <button type="button" onclick="closePaymentModal()" class="btn btn-secondary"
+                    style="width: 100%; font-size: 0.85rem; justify-content: center; text-align: center;">
+                    ปิดหน้าต่าง
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== CUSTOM POPUP ALERT SYSTEM ===== -->
+    <div id="customPopupAlert" class="custom-popup-modal">
+        <div class="custom-popup-card">
+            <div id="popupAlertIconWrapper" class="popup-alert-icon-wrapper warning">
+                <span id="popupAlertIcon">⚠️</span>
+            </div>
+            <h4 id="popupAlertTitle"
+                style="font-size: 1.1rem; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">แจ้งเตือน</h4>
+            <p id="popupAlertMessage"
+                style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 18px; white-space: pre-line;">
+            </p>
+            <button type="button" id="popupAlertBtnOk" class="btn btn-primary"
+                style="width: 100%; justify-content: center; padding: 10px;">
+                ตกลง
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== SCRIPT: PDF.JS & STUDIO LOGIC ===== -->
+    <script type="module">
+        import * as pdfjsLib from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/build/pdf.mjs';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.394/build/pdf.worker.min.mjs';
+        window.pdfjsLib = pdfjsLib;
+
+        // Initialize application after PDF.js loaded
+        if (window.onPdfEngineReady) {
+            window.onPdfEngineReady();
+        }
+    </script>
+
+    <script>
+        const { jsPDF } = window.jspdf;
+
+        // ===== CONFIGURATION =====
+        const FIREBASE_BASE = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files";
+        const PAYMENT_ENDPOINT = `${FIREBASE_BASE}/payment_requests`;
+        const PROMPTPAY_NUMBER = "0988573074";
+        const SERVICE_PRICE = 5.00;
+        const isLocalAdmin = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+        // State Variables
+        let pdfDoc = null;
+        let totalPages = 0;
+        let currentPage = 1;
+        let originalFileName = 'document';
+        let currentZoom = 1.0;
+        let selectedColor = 'red';
+        let activeBoxElement = null;
+        let isPaymentApproved = false;
+        let currentOrderId = null;
+        let checkoutCountdownTimer = null;
+        let checkoutPollingTimer = null;
+
+        // Storage for annotations: Map<pageNum, Array<BoxData>>
+        const pageAnnotations = new Map();
+
+        // DOM Elements
+        const cardFileInfo = document.getElementById('cardFileInfo');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfoActive = document.getElementById('fileInfoActive');
+        const lblFileName = document.getElementById('lblFileName');
+        const lblFileMeta = document.getElementById('lblFileMeta');
+        const lblFileBadge = document.getElementById('lblFileBadge');
+        const btnChangePdf = document.getElementById('btnChangePdf');
+
+        const canvasEmptyState = document.getElementById('canvasEmptyState');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const pdfCanvas = document.getElementById('pdfCanvas');
+        const dragSelectionBox = document.getElementById('dragSelectionBox');
+        const navCenterControls = document.getElementById('navCenterControls');
+        const floatingZoomDock = document.getElementById('floatingZoomDock');
+
+        const btnPrevPage = document.getElementById('btnPrevPage');
+        const btnNextPage = document.getElementById('btnNextPage');
+        const inputPageNum = document.getElementById('inputPageNum');
+        const lblTotalPages = document.getElementById('lblTotalPages');
+
+        const btnAddMarker = document.getElementById('btnAddMarker');
+        const btnClearAllMarks = document.getElementById('btnClearAllMarks');
+        const btnExportCheckout = document.getElementById('btnExportCheckout');
+        const markersListContainer = document.getElementById('markersListContainer');
+        const emptyMarkersHint = document.getElementById('emptyMarkersHint');
+        const lblMarkerCount = document.getElementById('lblMarkerCount');
+        const lblMarkerSummary = document.getElementById('lblMarkerSummary');
+
+        const btnZoomIn = document.getElementById('btnZoomIn');
+        const btnZoomOut = document.getElementById('btnZoomOut');
+        const btnZoomFit = document.getElementById('btnZoomFit');
+        const lblZoomLevel = document.getElementById('lblZoomLevel');
+        const chkAddWatermark = document.getElementById('chkAddWatermark');
+
+        // Color selector chips
+        document.querySelectorAll('.color-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                document.querySelectorAll('.color-chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                selectedColor = chip.dataset.color || 'red';
+                if (activeBoxElement) {
+                    setBoxColor(activeBoxElement, selectedColor);
+                    saveAnnotations();
+                }
+            });
+        });
+
+        // Setup File Upload Listeners (Center Workspace & Change File button)
+        canvasEmptyState.addEventListener('click', () => fileInput.click());
+        btnChangePdf.addEventListener('click', () => fileInput.click());
+
+        ['dragover', 'dragenter'].forEach(evName => {
+            canvasEmptyState.addEventListener(evName, (e) => { e.preventDefault(); canvasEmptyState.classList.add('dragover'); });
+        });
+
+        ['dragleave', 'drop'].forEach(evName => {
+            canvasEmptyState.addEventListener(evName, () => canvasEmptyState.classList.remove('dragover'));
+        });
+
+        const handleDropFile = (e) => {
+            e.preventDefault();
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect();
+            }
+        };
+        canvasEmptyState.addEventListener('drop', handleDropFile);
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // Load PDF File
+        async function handleFileSelect() {
+            const file = fileInput.files[0];
+            if (!file) return;
+            if (!file.name.toLowerCase().endsWith('.pdf')) {
+                showPopupAlert('กรุณาเลือกไฟล์เอกสารนามสกุล .pdf เท่านั้น', 'warning');
+                return;
+            }
+
+            if (!window.pdfjsLib) {
+                showPopupAlert('กำลังโหลดระบบแสดงผล PDF กรุณารอสักครู่แล้วลองใหม่อีกครั้ง', 'info');
+                return;
+            }
+
+            try {
+                originalFileName = file.name.replace(/\.[^/.]+$/, "");
+                const arrayBuffer = await file.arrayBuffer();
+                pdfDoc = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                totalPages = pdfDoc.numPages;
+
+                // Update UI State
+                if (cardFileInfo) cardFileInfo.style.display = 'block';
+                if (fileInfoActive) fileInfoActive.style.display = 'flex';
+                lblFileName.textContent = file.name;
+                lblFileMeta.textContent = `จำนวน ${totalPages} หน้า • ${(file.size / 1024 / 1024).toFixed(2)} MB`;
+                lblFileBadge.textContent = 'พร้อมใช้งาน';
+                lblFileBadge.style.color = '#16a34a';
+
+                canvasEmptyState.style.display = 'none';
+                canvasContainer.style.display = 'inline-block';
+                navCenterControls.style.display = 'flex';
+                floatingZoomDock.style.display = 'flex';
+                btnClearAllMarks.style.display = 'inline-flex';
+
+                inputPageNum.max = totalPages;
+                lblTotalPages.textContent = totalPages;
+
+                currentPage = 1;
+                currentZoom = 1.0;
+                applyZoom();
+                await renderPage(1);
+                updateMarkerListUI();
+
+            } catch (err) {
+                console.error(err);
+                showPopupAlert('เกิดข้อผิดพลาดในการเปิดไฟล์ PDF: ' + (err.message || 'ไฟล์อาจเสียหาย'), 'error');
+            }
+        }
+
+        // Render PDF Page via Canvas
+        async function renderPage(pageNum) {
+            if (!pdfDoc) return;
+            currentPage = pageNum;
+            inputPageNum.value = pageNum;
+            btnPrevPage.disabled = (currentPage <= 1);
+            btnNextPage.disabled = (currentPage >= totalPages);
+
+            const page = await pdfDoc.getPage(pageNum);
+            // Crisp scale for sharp text
+            const viewport = page.getViewport({ scale: 2.0 });
+
+            pdfCanvas.height = viewport.height;
+            pdfCanvas.width = viewport.width;
+
+            const ctx = pdfCanvas.getContext('2d');
+            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+            // Remove existing DOM box elements on canvas
+            canvasContainer.querySelectorAll('.marker-box').forEach(b => b.remove());
+
+            // Recreate saved markers for current page
+            const savedBoxes = pageAnnotations.get(pageNum) || [];
+            savedBoxes.forEach((data, index) => {
+                createMarkerBox(data, index + 1);
+            });
+
+            updateMarkerListUI();
+        }
+
+        // Page Navigation Events
+        btnPrevPage.addEventListener('click', () => {
+            if (currentPage > 1) {
+                saveAnnotations();
+                renderPage(currentPage - 1);
+            }
+        });
+
+        btnNextPage.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                saveAnnotations();
+                renderPage(currentPage + 1);
+            }
+        });
+
+        inputPageNum.addEventListener('change', () => {
+            let val = parseInt(inputPageNum.value);
+            if (isNaN(val) || val < 1) val = 1;
+            if (val > totalPages) val = totalPages;
+            saveAnnotations();
+            renderPage(val);
+        });
+
+        // Zoom Controls
+        btnZoomIn.addEventListener('click', () => {
+            if (currentZoom < 2.0) {
+                currentZoom = Math.min(2.0, currentZoom + 0.15);
+                applyZoom();
+            }
+        });
+
+        btnZoomOut.addEventListener('click', () => {
+            if (currentZoom > 0.4) {
+                currentZoom = Math.max(0.4, currentZoom - 0.15);
+                applyZoom();
+            }
+        });
+
+        btnZoomFit.addEventListener('click', () => {
+            currentZoom = 1.0;
+            applyZoom();
+        });
+
+        function applyZoom() {
+            canvasContainer.style.transform = `scale(${currentZoom})`;
+            lblZoomLevel.textContent = `${Math.round(currentZoom * 100)}%`;
+        }
+
+        // ===== CREATE & MANAGE MARKER BOXES =====
+        function createMarkerBox(data, boxNumber) {
+            const box = document.createElement('div');
+            box.className = `marker-box color-${data.color || 'red'}`;
+            box.style.left = (data.x || 100) + 'px';
+            box.style.top = (data.y || 100) + 'px';
+            box.style.width = (data.w || 260) + 'px';
+            box.style.height = (data.h || 140) + 'px';
+            box.dataset.color = data.color || 'red';
+
+            // Number Badge
+            const badge = document.createElement('div');
+            badge.className = 'marker-badge';
+            badge.textContent = `#${boxNumber}`;
+            box.appendChild(badge);
+
+            // Delete Button
+            const delBtn = document.createElement('div');
+            delBtn.className = 'marker-delete-btn';
+            delBtn.innerHTML = '×';
+            delBtn.title = 'ลบจุดนี้';
+            delBtn.onclick = (e) => {
+                e.stopPropagation();
+                box.remove();
+                saveAnnotations();
+                updateMarkerListUI();
+            };
+            box.appendChild(delBtn);
+
+            // Resizers (4 corners)
+            ['tl', 'tr', 'bl', 'br'].forEach(dir => {
+                const r = document.createElement('div');
+                r.className = `resizer-handle ${dir}`;
+                box.appendChild(r);
+            });
+
+            // Editable Comment Bubble
+            const bubble = document.createElement('div');
+            bubble.className = 'marker-comment-bubble';
+            bubble.contentEditable = true;
+            bubble.textContent = data.text || '';
+            bubble.title = 'คลิกเพื่อพิมพ์ข้อความแจ้งแก้ไข';
+            bubble.onblur = () => {
+                saveAnnotations();
+                updateMarkerListUI();
+            };
+            bubble.onmousedown = (e) => e.stopPropagation();
+            box.appendChild(bubble);
+
+            canvasContainer.appendChild(box);
+            setupDraggableResizable(box);
+
+            box.addEventListener('mousedown', () => {
+                setActiveBox(box);
+            });
+
+            setActiveBox(box);
+            return box;
+        }
+
+        function setActiveBox(box) {
+            canvasContainer.querySelectorAll('.marker-box').forEach(b => b.classList.remove('active'));
+            if (box) {
+                box.classList.add('active');
+                activeBoxElement = box;
+            }
+        }
+
+        function setBoxColor(box, color) {
+            box.classList.remove('color-red', 'color-yellow', 'color-blue', 'color-green');
+            box.classList.add(`color-${color}`);
+            box.dataset.color = color;
+        }
+
+        // Add Marker Button Action
+        btnAddMarker.addEventListener('click', () => {
+            if (!pdfDoc) {
+                showPopupAlert('กรุณาอัปโหลดไฟล์ PDF ก่อนเพิ่มจุดมาร์ค', 'info');
+                return;
+            }
+
+            const containerWidth = canvasContainer.offsetWidth || 800;
+            const containerHeight = canvasContainer.offsetHeight || 1100;
+
+            const boxW = 280;
+            const boxH = 150;
+            const x = Math.max(30, Math.round((containerWidth - boxW) / 2));
+            const y = Math.max(50, Math.round((containerHeight / 3)));
+
+            const currentBoxes = pageAnnotations.get(currentPage) || [];
+            const newBoxData = {
+                x: x,
+                y: y,
+                w: boxW,
+                h: boxH,
+                text: '',
+                color: selectedColor
+            };
+
+            currentBoxes.push(newBoxData);
+            pageAnnotations.set(currentPage, currentBoxes);
+
+            const created = createMarkerBox(newBoxData, currentBoxes.length);
+            saveAnnotations();
+            updateMarkerListUI();
+
+            // Focus bubble to type
+            const bubble = created.querySelector('.marker-comment-bubble');
+            if (bubble) bubble.focus();
+        });
+
+        // ===== MOUSE DRAG TO DRAW AND CREATE MARKER BOX DIRECTLY ON CANVAS =====
+        let isDrawingNewBox = false;
+        let drawStartX = 0;
+        let drawStartY = 0;
+
+        canvasContainer.addEventListener('mousedown', (e) => {
+            if (!pdfDoc) return;
+            if (e.button !== 0) return; // Only left-click
+            // If clicking on an existing box, resizer, or comment bubble, ignore drawing
+            if (e.target.closest('.marker-box')) return;
+
+            isDrawingNewBox = true;
+            const rect = canvasContainer.getBoundingClientRect();
+            drawStartX = (e.clientX - rect.left) / currentZoom;
+            drawStartY = (e.clientY - rect.top) / currentZoom;
+
+            if (dragSelectionBox) {
+                const colorHex = getColorHex(selectedColor);
+                dragSelectionBox.style.left = `${Math.round(drawStartX)}px`;
+                dragSelectionBox.style.top = `${Math.round(drawStartY)}px`;
+                dragSelectionBox.style.width = '0px';
+                dragSelectionBox.style.height = '0px';
+                dragSelectionBox.style.borderColor = colorHex;
+                dragSelectionBox.style.backgroundColor = colorHex + '25';
+                dragSelectionBox.style.display = 'block';
+            }
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDrawingNewBox) return;
+
+            const rect = canvasContainer.getBoundingClientRect();
+            const currentX = (e.clientX - rect.left) / currentZoom;
+            const currentY = (e.clientY - rect.top) / currentZoom;
+
+            const left = Math.min(drawStartX, currentX);
+            const top = Math.min(drawStartY, currentY);
+            const width = Math.abs(currentX - drawStartX);
+            const height = Math.abs(currentY - drawStartY);
+
+            if (dragSelectionBox) {
+                dragSelectionBox.style.left = `${Math.round(left)}px`;
+                dragSelectionBox.style.top = `${Math.round(top)}px`;
+                dragSelectionBox.style.width = `${Math.round(width)}px`;
+                dragSelectionBox.style.height = `${Math.round(height)}px`;
+            }
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (!isDrawingNewBox) return;
+            isDrawingNewBox = false;
+            if (dragSelectionBox) {
+                dragSelectionBox.style.display = 'none';
+            }
+
+            const rect = canvasContainer.getBoundingClientRect();
+            const currentX = (e.clientX - rect.left) / currentZoom;
+            const currentY = (e.clientY - rect.top) / currentZoom;
+
+            const left = Math.round(Math.min(drawStartX, currentX));
+            const top = Math.round(Math.min(drawStartY, currentY));
+            const width = Math.round(Math.abs(currentX - drawStartX));
+            const height = Math.round(Math.abs(currentY - drawStartY));
+
+            // If user dragged at least 25x20 pixels, create a marker box at that location!
+            if (width >= 25 && height >= 20) {
+                const currentBoxes = pageAnnotations.get(currentPage) || [];
+                const newBoxData = {
+                    x: Math.max(0, left),
+                    y: Math.max(0, top),
+                    w: Math.max(50, width),
+                    h: Math.max(40, height),
+                    text: '',
+                    color: selectedColor
+                };
+
+                currentBoxes.push(newBoxData);
+                pageAnnotations.set(currentPage, currentBoxes);
+
+                const created = createMarkerBox(newBoxData, currentBoxes.length);
+                saveAnnotations();
+                updateMarkerListUI();
+
+                // Focus comment bubble to allow immediate typing
+                const bubble = created.querySelector('.marker-comment-bubble');
+                if (bubble) bubble.focus();
+            } else {
+                // If just clicked on canvas background without drag, deselect active box
+                setActiveBox(null);
+            }
+        });
+
+        // Clear All Marks
+        btnClearAllMarks.addEventListener('click', () => {
+            let total = 0;
+            pageAnnotations.forEach(arr => total += arr.length);
+            if (total === 0) {
+                showPopupAlert('ยังไม่มีจุดมาร์คในเอกสาร', 'info');
+                return;
+            }
+
+            if (confirm('คุณต้องการลบจุดมาร์คทั้งหมดออกจากทุกหน้าหรือไม่?')) {
+                pageAnnotations.clear();
+                canvasContainer.querySelectorAll('.marker-box').forEach(b => b.remove());
+                updateMarkerListUI();
+            }
+        });
+
+        // Save Annotations State from DOM
+        function saveAnnotations() {
+            const boxes = Array.from(canvasContainer.querySelectorAll('.marker-box')).map(b => ({
+                x: b.offsetLeft,
+                y: b.offsetTop,
+                w: b.offsetWidth,
+                h: b.offsetHeight,
+                text: b.querySelector('.marker-comment-bubble').textContent.trim(),
+                color: b.dataset.color || 'red'
+            }));
+
+            if (boxes.length > 0) {
+                pageAnnotations.set(currentPage, boxes);
+            } else {
+                pageAnnotations.delete(currentPage);
+            }
+
+            // Re-index badge numbers
+            const allDomBoxes = canvasContainer.querySelectorAll('.marker-box');
+            allDomBoxes.forEach((b, idx) => {
+                const bd = b.querySelector('.marker-badge');
+                if (bd) bd.textContent = `#${idx + 1}`;
+            });
+        }
+
+        // Draggable & Resizable Interaction
+        function setupDraggableResizable(el) {
+            let isDragging = false;
+            let isResizing = false;
+            let resizerDir = '';
+            let start = {};
+
+            el.querySelectorAll('.resizer-handle').forEach(r => {
+                r.onmousedown = (e) => {
+                    e.stopPropagation();
+                    isResizing = true;
+                    resizerDir = r.className.split(' ')[1];
+                    start = {
+                        x: e.clientX,
+                        y: e.clientY,
+                        w: el.offsetWidth,
+                        h: el.offsetHeight,
+                        l: el.offsetLeft,
+                        t: el.offsetTop
+                    };
+                };
+            });
+
+            el.onmousedown = (e) => {
+                if (e.target.closest('.marker-comment-bubble') || e.target.classList.contains('marker-delete-btn')) return;
+                isDragging = true;
+                start = {
+                    x: (e.clientX / currentZoom) - el.offsetLeft,
+                    y: (e.clientY / currentZoom) - el.offsetTop
+                };
+                e.preventDefault();
+            };
+
+            document.addEventListener('mousemove', (e) => {
+                if (isResizing) {
+                    const dx = (e.clientX - start.x) / currentZoom;
+                    const dy = (e.clientY - start.y) / currentZoom;
+                    let w = start.w;
+                    let h = start.h;
+                    let l = start.l;
+                    let t = start.t;
+
+                    if (resizerDir.includes('r')) w += dx;
+                    if (resizerDir.includes('l')) { w -= dx; l += dx; }
+                    if (resizerDir.includes('b')) h += dy;
+                    if (resizerDir.includes('t')) { h -= dy; t += dy; }
+
+                    if (w >= 50 && h >= 40) {
+                        el.style.width = Math.round(w) + 'px';
+                        el.style.height = Math.round(h) + 'px';
+                        el.style.left = Math.round(l) + 'px';
+                        el.style.top = Math.round(t) + 'px';
+                    }
+                } else if (isDragging) {
+                    const newX = (e.clientX / currentZoom) - start.x;
+                    const newY = (e.clientY / currentZoom) - start.y;
+                    el.style.left = Math.round(newX) + 'px';
+                    el.style.top = Math.round(newY) + 'px';
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging || isResizing) {
+                    isDragging = isResizing = false;
+                    saveAnnotations();
+                    updateMarkerListUI();
+                }
+            });
+        }
+
+        // Update Markers UI List in Sidebar
+        function updateMarkerListUI() {
+            let totalMarks = 0;
+            const items = [];
+
+            pageAnnotations.forEach((boxes, pageNum) => {
+                boxes.forEach((box, idx) => {
+                    totalMarks++;
+                    items.push({
+                        pageNum: pageNum,
+                        index: idx + 1,
+                        text: box.text || '(ไม่มีข้อความระบุ)',
+                        color: box.color || 'red'
+                    });
+                });
+            });
+
+            lblMarkerCount.textContent = `${totalMarks} จุด`;
+            lblMarkerSummary.textContent = `${totalMarks} จุด`;
+
+            if (items.length === 0) {
+                emptyMarkersHint.style.display = 'block';
+                markersListContainer.innerHTML = '';
+                markersListContainer.appendChild(emptyMarkersHint);
+                return;
+            }
+
+            emptyMarkersHint.style.display = 'none';
+            markersListContainer.innerHTML = items.map(item => `
+                <div class="marker-item-row" onclick="jumpToPageAndMarker(${item.pageNum}, ${item.index})">
+                    <div class="marker-num-badge" style="background:${getColorHex(item.color)};">#${item.index}</div>
+                    <div class="marker-item-text" title="${escapeHtml(item.text)}">${escapeHtml(item.text)}</div>
+                    <div class="marker-item-page">หน้า ${item.pageNum}</div>
+                </div>
+            `).join('');
+        }
+
+        window.jumpToPageAndMarker = async function (pageNum, markerIndex) {
+            if (pageNum !== currentPage) {
+                saveAnnotations();
+                await renderPage(pageNum);
+            }
+            const boxes = canvasContainer.querySelectorAll('.marker-box');
+            if (boxes[markerIndex - 1]) {
+                setActiveBox(boxes[markerIndex - 1]);
+                boxes[markerIndex - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        };
+
+        function getColorHex(c) {
+            if (c === 'yellow') return '#f59e0b';
+            if (c === 'blue') return '#2563eb';
+            if (c === 'green') return '#10b981';
+            return '#ef4444';
+        }
+
+        function escapeHtml(str) {
+            return String(str || '').replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[m]));
+        }
+
+        // ===== EXPORT & PAYMENT CHECKOUT FLOW =====
+        btnExportCheckout.addEventListener('click', async () => {
+            if (!pdfDoc) {
+                showPopupAlert('กรุณาเลือกไฟล์ PDF ก่อนทำการส่งออก', 'info');
+                return;
+            }
+
+            let totalMarks = 0;
+            pageAnnotations.forEach(arr => totalMarks += arr.length);
+            if (totalMarks === 0) {
+                showPopupAlert('ยังไม่มีการมาร์คจุดระบุตำแหน่งในเอกสาร\nกรุณากด "+ วงชี้จุดตำแหน่ง" ก่อนบันทึกไฟล์', 'warning');
+                return;
+            }
+
+            if (isPaymentApproved) {
+                triggerDirectDownload();
+            } else {
+                openPaymentFlow();
+            }
+        });
+
+        async function openPaymentFlow() {
+            const orderId = `ORD-PDF-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 899 + 100)}`;
+            currentOrderId = orderId;
+            const secretToken = `sec_${Math.random().toString(36).substring(2)}_${Date.now()}`;
+            const expiresAt = Date.now() + 10 * 60 * 1000;
+
+            generatePromptPayQR(PROMPTPAY_NUMBER, SERVICE_PRICE);
+
+            try {
+                const payload = {
+                    id: orderId,
+                    linkKey: orderId,
+                    productId: 'service-pdf-marker',
+                    productTitle: 'มาร์คจุดแก้เอกสาร PDF (5 บาท)',
+                    price: SERVICE_PRICE,
+                    status: 'pending',
+                    previewUrl: 'https://cdn.jsdelivr.net/gh/artnp/eworker@main/shop/images/pdfmarker_cover.svg',
+                    secretToken: secretToken,
+                    createdAt: Date.now(),
+                    expiresAt: expiresAt,
+                    timeStr: new Date().toLocaleTimeString('th-TH'),
+                    dateStr: new Date().toLocaleDateString('th-TH'),
+                    manualConfirmed: false
+                };
+
+                await fetch(`${PAYMENT_ENDPOINT}/${orderId}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } catch (err) { }
+
+            const adminShortcut = document.getElementById('adminTestShortcut');
+            if (adminShortcut) {
+                adminShortcut.style.display = isLocalAdmin ? 'block' : 'none';
+            }
+
+            const paymentModal = document.getElementById('paymentModal');
+            if (paymentModal) paymentModal.classList.add('active');
+
+            startCheckoutCountdown(expiresAt);
+            startCheckoutPolling(orderId);
+        }
+
+        window.closePaymentModal = function () {
+            const modal = document.getElementById('paymentModal');
+            if (modal) modal.classList.remove('active');
+        };
+
+        function generatePromptPayQR(id, amount) {
+            const targetEl = document.getElementById('qrCodeTarget');
+            targetEl.innerHTML = '';
+            const payload = generatePromptPayPayload(id, amount);
+
+            new QRCode(targetEl, {
+                text: payload,
+                width: 200,
+                height: 200,
+                colorDark: "#0f172a",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
+
+        function generatePromptPayPayload(id, amount) {
+            const crc16 = (data) => {
+                let crc = 0xFFFF;
+                for (let i = 0; i < data.length; i++) {
+                    crc ^= data.charCodeAt(i) << 8;
+                    for (let j = 0; j < 8; j++) {
+                        crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) & 0xFFFF : (crc << 1) & 0xFFFF;
+                    }
+                }
+                return crc.toString(16).toUpperCase().padStart(4, '0');
+            };
+
+            let target = id.replace(/[^0-9]/g, '');
+            if (target.length === 10 && target.startsWith('0')) {
+                target = '0066' + target.substring(1);
+            }
+
+            let merchantInfo = '0016A000000677010111' + '01' + ('00' + target.length).slice(-2) + target;
+            let payload = '000201010211' + '29' + ('00' + merchantInfo.length).slice(-2) + merchantInfo + '5802TH5303764';
+
+            if (!isNaN(amount) && amount > 0) {
+                const amtStr = Number(amount).toFixed(2);
+                payload += '54' + ('00' + amtStr.length).slice(-2) + amtStr;
+            }
+
+            payload += '6304';
+            return payload + crc16(payload);
+        }
+
+        function startCheckoutCountdown(expiresAt) {
+            if (checkoutCountdownTimer) clearInterval(checkoutCountdownTimer);
+
+            const box = document.getElementById('checkoutCountdownBox');
+            const timerEl = document.getElementById('checkoutCountdownTimer');
+
+            const tick = () => {
+                const diffSec = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+                const m = String(Math.floor(diffSec / 60)).padStart(2, '0');
+                const s = String(diffSec % 60).padStart(2, '0');
+
+                if (timerEl) timerEl.textContent = `${m}:${s}`;
+                if (box) {
+                    if (diffSec <= 60) box.className = 'checkout-countdown-box urgent';
+                    else box.className = 'checkout-countdown-box';
+                }
+
+                if (diffSec <= 0) {
+                    clearInterval(checkoutCountdownTimer);
+                    if (checkoutPollingTimer) clearInterval(checkoutPollingTimer);
+                    location.reload();
+                }
+            };
+
+            tick();
+            checkoutCountdownTimer = setInterval(tick, 1000);
+        }
+
+        function startCheckoutPolling(orderId) {
+            if (checkoutPollingTimer) clearInterval(checkoutPollingTimer);
+
+            checkoutPollingTimer = setInterval(async () => {
+                try {
+                    const res = await fetch(`${PAYMENT_ENDPOINT}/${orderId}.json?t=${Date.now()}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.status === 'approved') {
+                            handlePaymentApprovedSuccess();
+                        }
+                    }
+                } catch (e) { }
+            }, 1500);
+        }
+
+        function handlePaymentApprovedSuccess() {
+            isPaymentApproved = true;
+
+            if (checkoutCountdownTimer) clearInterval(checkoutCountdownTimer);
+            if (checkoutPollingTimer) clearInterval(checkoutPollingTimer);
+
+            // Trigger Confetti
+            try {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            } catch (e) { }
+
+            document.getElementById('paymentViewPending').style.display = 'none';
+            document.getElementById('paymentViewSuccess').style.display = 'block';
+
+            // Auto Trigger Download
+            setTimeout(() => {
+                triggerDirectDownload();
+            }, 800);
+        }
+
+        window.adminSimulateApprove = async function () {
+            if (!currentOrderId) return;
+            try {
+                await fetch(`${PAYMENT_ENDPOINT}/${currentOrderId}.json`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 'approved',
+                        approvedAt: Date.now(),
+                        approvedBy: 'admin_test_pdf_marker'
+                    })
+                });
+            } catch (e) { }
+            handlePaymentApprovedSuccess();
+        };
+
+        window.triggerManualPaymentAlert = async function () {
+            if (!currentOrderId) return;
+            const btn = document.getElementById('btnManualConfirm');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = '⏳ กำลังแจ้งเตือน...';
+            }
+            try {
+                await fetch(`${PAYMENT_ENDPOINT}/${currentOrderId}.json`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        manualConfirmed: true,
+                        manualConfirmedAt: Date.now()
+                    })
+                });
+                if (btn) {
+                    btn.textContent = '✅ แจ้งแอดมินแล้ว';
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.textContent = '🔔 แจ้งโอนแล้ว';
+                    }, 5000);
+                }
+            } catch (e) {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = '🔔 แจ้งโอนแล้ว';
+                }
+            }
+        };
+
+        window.downloadPaymentQR = function () {
+            const qrTarget = document.getElementById('qrCodeTarget');
+            const img = qrTarget ? qrTarget.querySelector('img') : null;
+            if (!img || !img.src) {
+                showPopupAlert('ไม่พบรูปภาพ QR Code', 'warning');
+                return;
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 400;
+            canvas.height = 480;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, 400, 480);
+
+            ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 20px Prompt, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('พร้อมเพย์ (PromptPay)', 200, 42);
+
+            ctx.font = '14px Prompt, sans-serif';
+            ctx.fillStyle = '#64748b';
+            ctx.fillText('มาร์คจุดแก้เอกสาร PDF (5 บาท)', 200, 68);
+
+            const qrImg = new Image();
+            qrImg.crossOrigin = 'anonymous';
+            qrImg.onload = () => {
+                ctx.drawImage(qrImg, 75, 90, 250, 250);
+
+                ctx.fillStyle = '#16a34a';
+                ctx.font = 'bold 26px Prompt, sans-serif';
+                ctx.fillText('฿ 5.00', 200, 380);
+
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '12px Prompt, sans-serif';
+                ctx.fillText('สแกนผ่านทุกแอปธนาคาร • บันทึกเข้าเครื่อง', 200, 415);
+
+                const link = document.createElement('a');
+                link.download = `PromptPay_PDF_5THB_${currentOrderId || 'QR'}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            };
+            qrImg.src = img.src;
+        };
+
+        // ===== EXPORT ANNOTATED PDF WITH HTML2CANVAS & JSPDF =====
+        window.triggerDirectDownload = async function () {
+            if (!pdfDoc) return;
+
+            saveAnnotations();
+            const markedPages = Array.from(pageAnnotations.keys()).sort((a, b) => a - b);
+            if (markedPages.length === 0) {
+                showPopupAlert('ไม่มีจุดมาร์คที่บันทึกไว้', 'warning');
+                return;
+            }
+
+            const origZoom = currentZoom;
+            currentZoom = 1.0;
+            applyZoom();
+
+            // Create jsPDF document in A4
+            const pdf = new jsPDF('p', 'pt', 'a4');
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+
+            const savedActivePage = currentPage;
+
+            for (let i = 0; i < markedPages.length; i++) {
+                const pg = markedPages[i];
+                await renderPage(pg);
+
+                let watermarkEl = null;
+                if (chkAddWatermark.checked) {
+                    watermarkEl = document.createElement('div');
+                    watermarkEl.style.cssText = `
+                        position: absolute;
+                        top: 14px;
+                        left: 18px;
+                        background: rgba(239, 68, 68, 0.95);
+                        color: #ffffff;
+                        padding: 6px 14px;
+                        border-radius: 6px;
+                        font-family: 'Prompt', sans-serif;
+                        font-size: 14px;
+                        font-weight: 700;
+                        z-index: 99;
+                        box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+                        pointer-events: none;
+                    `;
+                    watermarkEl.textContent = `📌 ระบุจุดแก้ไขหน้าที่ ${pg} (ทั้งหมด ${markedPages.length} หน้าที่มีแก้ไข)`;
+                    canvasContainer.appendChild(watermarkEl);
+                }
+
+                // Render high-res snapshot of canvasContainer
+                const canvasShot = await html2canvas(canvasContainer, {
+                    scale: 2,
+                    backgroundColor: '#ffffff',
+                    useCORS: true
+                });
+
+                if (watermarkEl) watermarkEl.remove();
+
+                const imgData = canvasShot.toDataURL('image/png');
+                const renderH = (canvasShot.height * pageWidth) / canvasShot.width;
+
+                if (i > 0) pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, Math.min(pageHeight, renderH));
+            }
+
+            // Restore preview page & zoom
+            currentZoom = origZoom;
+            applyZoom();
+            await renderPage(savedActivePage);
+
+            pdf.save(`${originalFileName}_มาร์คจุดแก้ไข.pdf`);
+        };
+
+        // ===== CUSTOM POPUP ALERT SYSTEM =====
+        let popupAlertResolve = null;
+
+        function showPopupAlert(message, type = 'warning', title = null) {
+            return new Promise((resolve) => {
+                popupAlertResolve = resolve;
+                const modal = document.getElementById('customPopupAlert');
+                const titleEl = document.getElementById('popupAlertTitle');
+                const msgEl = document.getElementById('popupAlertMessage');
+                const iconEl = document.getElementById('popupAlertIcon');
+                const iconWrapper = document.getElementById('popupAlertIconWrapper');
+                const btnOk = document.getElementById('popupAlertBtnOk');
+
+                if (!modal) {
+                    alert(message);
+                    resolve();
+                    return;
+                }
+
+                if (!title) {
+                    if (type === 'error') title = 'ข้อผิดพลาด';
+                    else if (type === 'success') title = 'ดำเนินการสำเร็จ';
+                    else if (type === 'info') title = 'ข้อมูล';
+                    else title = 'แจ้งเตือน';
+                }
+
+                if (iconWrapper) iconWrapper.className = `popup-alert-icon-wrapper ${type}`;
+                if (iconEl) {
+                    if (type === 'error') iconEl.textContent = '❌';
+                    else if (type === 'success') iconEl.textContent = '✅';
+                    else if (type === 'info') iconEl.textContent = 'ℹ️';
+                    else iconEl.textContent = '⚠️';
+                }
+
+                if (titleEl) titleEl.textContent = title;
+                if (msgEl) msgEl.textContent = message;
+
+                modal.classList.add('show');
+                if (btnOk) btnOk.focus();
+            });
+        }
+
+        function closePopupAlert() {
+            const modal = document.getElementById('customPopupAlert');
+            if (modal) modal.classList.remove('show');
+            if (popupAlertResolve) {
+                const res = popupAlertResolve;
+                popupAlertResolve = null;
+                res();
+            }
+        }
+
+        document.getElementById('popupAlertBtnOk').addEventListener('click', closePopupAlert);
+        document.getElementById('customPopupAlert').addEventListener('click', (e) => {
+            if (e.target.id === 'customPopupAlert') closePopupAlert();
+        });
+
+    </script>
+</body>
+
+</html>
