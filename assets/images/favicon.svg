@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <!-- Vibrant Blue Background Gradient -->
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2f80ed" />
+      <stop offset="100%" stop-color="#1963d2" />
+    </linearGradient>
+
+    <!-- Folder Tab (Darker Golden Honey) -->
+    <linearGradient id="folderBackGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+
+    <!-- Folder Front Body (Vibrant Warm Yellow) -->
+    <linearGradient id="folderFrontGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fed766" />
+      <stop offset="30%" stop-color="#fbc531" />
+      <stop offset="100%" stop-color="#e1a100" />
+    </linearGradient>
+
+    <!-- Soft Drop Shadow -->
+    <filter id="softShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.18" flood-color="#0b3b82" />
+    </filter>
+  </defs>
+
+  <!-- Blue Squircle Container -->
+  <rect x="10" y="10" width="108" height="108" rx="26" fill="url(#blueGrad)" filter="url(#softShadow)" />
+
+  <!-- Inner Soft Glow on Top of Squircle -->
+  <rect x="10" y="10" width="108" height="54" rx="26" fill="#ffffff" fill-opacity="0.09" />
+
+  <!-- Folder Group -->
+  <g transform="translate(0, 1)">
+    <!-- Folder Back Tab -->
+    <path d="M 33 46 
+             C 33 42, 35 40, 39 40 
+             L 53 40 
+             C 56 40, 58 41.5, 60 44 
+             L 64 48 
+             L 91 48 
+             C 94 48, 96 50, 96 53 
+             L 96 84 
+             C 96 87, 94 89, 91 89 
+             L 37 89 
+             C 34 89, 33 87, 33 84 
+             Z" 
+          fill="url(#folderBackGrad)" />
+
+    <!-- Folder Front Main Body (Flap) -->
+    <rect x="33" y="48" width="63" height="39" rx="6" fill="url(#folderFrontGrad)" />
+
+    <!-- Subtle Folder Front Highlight -->
+    <path d="M 38 49 L 91 49" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" stroke-opacity="0.4" />
+  </g>
+</svg>
