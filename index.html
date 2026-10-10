@@ -2036,6 +2036,23 @@
 
         const BUILTIN_SERVICES = [
             {
+                id: 'service-red-packet',
+                slug: 'red-packet',
+                title: 'แจกเหรียญคริปโตฟรี (Binance Red Packet)',
+                price: 0,
+                category: 'บริการออนไลน์',
+                isService: true,
+                serviceUrl: 'shop/services/redPacket/index.html',
+                payPerUse: false,
+                language: '',
+                coverImage: 'shop/images/redpacket_cover.svg',
+                description: 'แจกโค้ด Binance Red Packet / Crypto Box ฟรีทุก 1 ชั่วโมง (รอบละ 15 โค้ด) ปลดล็อกอัตโนมัติ โค้ดหมดอายุวันต่อวัน รีบเคลมรับเหรียญเข้ากระเป๋าทันที!',
+                hasInstallGuide: false,
+                installSteps: [],
+                isRecommended: true,
+                createdAt: 1710000003000
+            },
+            {
                 id: 'service-fake-qr',
                 slug: 'fake-qr',
                 title: 'แก้ QR code ให้สแกนไม่ติด',
@@ -2318,7 +2335,7 @@
 
                         <div class="card-right-action">
                             <div class="price-badge-fh ${isFree ? 'free' : ''}">
-                                ${isService ? `฿ ${priceFormatted} <small style="font-size:0.75rem; color:var(--fh-muted); font-weight:500;">/ ครั้ง</small>` : (isFree ? 'ฟรี (Free)' : `฿ ${priceFormatted}`)}
+                                ${isService ? (isFree ? '🎁 ฟรี (Free)' : `฿ ${priceFormatted} <small style="font-size:0.75rem; color:var(--fh-muted); font-weight:500;">/ ครั้ง</small>`) : (isFree ? 'ฟรี (Free)' : `฿ ${priceFormatted}`)}
                             </div>
                             ${isService ? `
                                 <button class="btn-service-fh" onclick="handleServiceClick('${p.id}', event)">
