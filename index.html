@@ -7,6 +7,12 @@
 
     <!-- Dynamic SEO Tags -->
     <title id="seo-title">Eworker | ศูนย์รวมผู้ช่วยงานออนไลน์</title>
+
+    <!-- Favicon & Web App Icon (Flaticon Style Blue Folder) -->
+    <link rel="icon" type="image/svg+xml" href="assets/images/favicon.svg">
+    <link rel="icon" type="image/png" sizes="192x192" href="assets/images/favicon.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="assets/images/favicon.png">
+    <link rel="shortcut icon" href="favicon.ico">
     <meta id="seo-description" name="description"
         content="ดาวน์โหลดซอฟต์แวร์ วินโดวส์สคริปต์ คลังความรู้ และดิจิทัลโปรดักส์แท้ 100% ลิงก์ตรงความเร็วสูง ปลอดภัยไร้มัลแวร์ รองรับชำระเงินผ่าน PromptPay สแกนปุ๊บรับไฟล์ทันที">
     <meta name="keywords"
@@ -16,7 +22,7 @@
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
-    <meta property="og:title" id="og-title" content="EWORKER | ดาวน์โหลดซอฟต์แวร์และดิจิทัลโปรดักส์ ปลอดภัย 100%">
+    <meta property="og:title" id="og-title" content="Eworker | ดาวน์โหลดแอพซอฟต์แวร์และดิจิทัลโปรดักส์ ปลอดภัย 100%">
     <meta property="og:description" id="og-description"
         content="ศูนย์รวมดิจิทัลโปรดักส์ แอพ  ซอฟต์แวร์ คลังความรู้ ดาวน์โหลดทันที 1-Click">
     <meta property="og:image" id="og-image"
@@ -25,7 +31,7 @@
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" id="twitter-title" content="EWORKER | Digital Software Hub">
+    <meta name="twitter:title" id="twitter-title" content="Eworker | Digital Software Hub">
     <meta name="twitter:description" id="twitter-description"
         content="ดาวน์โหลดซอฟต์แวร์และดิจิทัลโปรดักส์ ปลอดภัย 100%">
     <meta name="twitter:image" id="twitter-image"
@@ -36,7 +42,7 @@
     {
       "@context": "https://schema.org/",
       "@type": "WebSite",
-      "name": "EWORKER Software Hub",
+      "name": "Eworker  Hub",
       "url": "http://127.0.0.1:5000/",
       "potentialAction": {
         "@type": "SearchAction",
@@ -1422,7 +1428,9 @@
     <header class="site-header">
         <div class="container header-main">
             <div class="brand-box" onclick="resetToHome()">
-                <div class="brand-icon">📁</div>
+                <div class="brand-icon" style="padding: 0; overflow: hidden; background: transparent; box-shadow: 0 2px 8px rgba(37,99,235,0.25);">
+                    <img src="assets/images/favicon.svg" alt="Eworker" style="width: 100%; height: 100%; object-fit: contain; display: block;">
+                </div>
                 <div>
                     <div class="brand-name">E<span>WORKER</span></div>
                     <div class="brand-tag">อาณาจักรผู้ช่วยออนไลน์</div>
@@ -1837,7 +1845,7 @@
                     <!-- GITHUB IMAGE UPLOADER -->
                     <div class="github-uploader-box">
                         <label class="form-label-clean" style="display: block; margin-bottom: 2px;">
-                            🖼️ ระบบฝากภาพขึ้น GitHub (artnp/eworker/shop/images)
+                            🖼️ ระบบฝากภาพขึ้น GitHub
                         </label>
                         <p style="font-size: 0.78rem; color: var(--fh-muted); margin-bottom: 8px;">
                             เลือกรูปภาพจากเครื่องของคุณ ระบบจะบันทึกและอัปโหลดขึ้นโฟลเดอร์ <strong>shop/images/</strong>
@@ -2043,6 +2051,23 @@
                 installSteps: [],
                 isRecommended: true,
                 createdAt: 1710000000000
+            },
+            {
+                id: 'service-inch-convert',
+                slug: 'inch-convert',
+                title: 'จัดรูปติดบัตรลงกระดาษ',
+                price: 5,
+                category: 'บริการออนไลน์',
+                isService: true,
+                serviceUrl: 'shop/services/inchConvert/index.html',
+                payPerUse: true,
+                language: '',
+                coverImage: 'shop/images/inchconvert_cover.svg',
+                description: 'บริการจัดรูปถ่ายติดบัตรขนาด 1 นิ้ว, 1.5 นิ้ว, 2 นิ้ว ลงกระดาษ A4 หรือ 4x6 นิ้ว พร้อมพิมพ์และส่งออกเป็นไฟล์ PDF คมชัดสูงทันที',
+                hasInstallGuide: false,
+                installSteps: [],
+                isRecommended: true,
+                createdAt: 1710000001000
             }
         ];
 
@@ -2448,7 +2473,7 @@
 
         function handleDetailCheckoutClick() {
             if (!storeIsOnline) {
-                showToast('⚠️ ร้านค้ายังไม่เปิดทำการ (คอมพิวเตอร์แอดมิน Offline) โปรดเข้ามาใหม่รอบหน้าครับ', 'warning');
+                showToast('⚠️ ร้านค้ายังไม่เปิดทำการ (Offline) โปรดเข้ามาใหม่รอบหน้านะท่าน', 'warning');
                 return;
             }
             if (!activeDetailProduct) return;
@@ -2470,7 +2495,7 @@
             const ogImage = document.getElementById('og-image');
 
             if (product) {
-                const titleStr = `${product.title} ดาวน์โหลด | EWORKER`;
+                const titleStr = `${product.title} ดาวน์โหลด | Eworker`;
                 const descStr = product.description ? product.description.slice(0, 160) : 'ดาวน์โหลดซอฟต์แวร์ทันทีผ่าน Dropbox ปลอดภัย 100%';
                 document.title = titleStr;
                 if (titleEl) titleEl.textContent = titleStr;
@@ -2479,7 +2504,7 @@
                 if (ogDesc) ogDesc.setAttribute('content', descStr);
                 if (ogImage) ogImage.setAttribute('content', product.coverImage || '');
             } else {
-                const def = "EWORKER | ศูนย์รวมผู้ช่วยงานออนไลน์";
+                const def = "Eworker | ศูนย์รวมผู้ช่วยงานออนไลน์";
                 document.title = def;
                 if (titleEl) titleEl.textContent = def;
             }
