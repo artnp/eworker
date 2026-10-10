@@ -629,6 +629,8 @@
             display: flex;
             flex-direction: column;
             gap: 4px;
+            flex: 1;
+            min-width: 0;
         }
 
         .program-title-row {
@@ -685,13 +687,23 @@
             gap: 12px;
             font-size: 0.78rem;
             color: var(--fh-muted);
-            margin-top: 4px;
+            margin-top: 6px;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .program-meta-chips::-webkit-scrollbar {
+            display: none;
         }
 
         .program-meta-chips span {
             display: inline-flex;
             align-items: center;
             gap: 4px;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         /* Card Right Action */
@@ -859,15 +871,15 @@
             background: #f0fdf4;
             border: 1px solid #bbf7d0;
             color: #15803d;
-            font-size: 0.86rem;
+            font-size: 0.8rem;
             font-weight: 600;
-            padding: 7px 16px;
+            padding: 4px 14px;
             border-radius: var(--radius-sm);
-            margin: 6px auto 10px auto;
+            margin: 4px auto 6px auto;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
             transition: var(--transition);
         }
 
@@ -929,28 +941,55 @@
             }
         }
 
+        .modal-sticky-close-bar {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            height: 0;
+            z-index: 200;
+            display: flex;
+            justify-content: flex-end;
+            padding: 14px 14px 0 0;
+            pointer-events: none;
+            overflow: visible;
+        }
+
         .modal-close-fh {
             position: absolute;
-            top: 16px;
-            right: 16px;
-            background: #f1f5f9;
-            border: none;
-            color: var(--fh-muted);
-            width: 32px;
-            height: 32px;
+            top: 14px;
+            right: 14px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            color: #334155;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.1rem;
+            font-size: 1.15rem;
+            font-weight: 800;
             cursor: pointer;
-            z-index: 10;
-            transition: var(--transition);
+            z-index: 210;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: auto;
+        }
+
+        .modal-sticky-close-bar .modal-close-fh {
+            position: relative;
+            top: 0;
+            right: 0;
         }
 
         .modal-close-fh:hover {
-            background: #e2e8f0;
-            color: var(--fh-dark);
+            background: #ffffff;
+            color: #ef4444;
+            transform: scale(1.08);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+            border-color: rgba(239, 68, 68, 0.3);
         }
 
         /* ===== PROGRAM DETAIL MODAL ( Dedicated Style) ===== */
@@ -958,17 +997,21 @@
             padding: 24px 28px;
             border-bottom: 1px solid var(--fh-border);
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-            flex-wrap: wrap;
+            justify-content: center;
+            text-align: center;
+            gap: 16px;
             background: #f8fafc;
         }
 
         .detail-brand-title {
             display: flex;
             align-items: center;
-            gap: 18px;
+            justify-content: center;
+            gap: 16px;
+            text-align: center;
+            flex-wrap: wrap;
         }
 
         .detail-icon-big {
@@ -979,6 +1022,7 @@
             overflow: hidden;
             background: #ffffff;
             box-shadow: var(--shadow-sm);
+            flex-shrink: 0;
         }
 
         .detail-icon-big img {
@@ -987,10 +1031,17 @@
             object-fit: cover;
         }
 
+        .detail-hgroup {
+            text-align: center;
+        }
+
         .detail-hgroup h2 {
-            font-size: 1.5rem;
+            font-size: 1.45rem;
             font-weight: 800;
             color: var(--fh-dark);
+            text-align: center;
+            margin: 0;
+            line-height: 1.4;
         }
 
         .detail-sub-meta {
@@ -998,22 +1049,28 @@
             color: var(--fh-muted);
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 10px;
-            margin-top: 4px;
+            margin-top: 6px;
+            flex-wrap: wrap;
         }
 
         .detail-cta-box {
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
             gap: 6px;
+            width: 100%;
+            margin: 0 auto;
         }
 
         .btn-big-download {
             background: var(--fh-green);
             color: #ffffff;
             border: none;
-            padding: 14px 30px;
+            padding: 14px 34px;
             border-radius: var(--radius-sm);
             font-size: 1.05rem;
             font-weight: 800;
@@ -1022,8 +1079,13 @@
             transition: var(--transition);
             display: inline-flex;
             align-items: center;
+            justify-content: center;
+            text-align: center;
             gap: 10px;
             box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+            margin: 0 auto;
+            min-width: 280px;
+            max-width: 440px;
         }
 
         .btn-big-download:hover {
@@ -1100,12 +1162,149 @@
             margin-top: 1px;
         }
 
-        /* Description */
+        /* Description & Features <li> with Green Checkmark */
         .detail-overview-content {
             font-size: 0.95rem;
             color: var(--fh-slate);
             line-height: 1.7;
-            white-space: pre-line;
+        }
+
+        .detail-overview-content ul,
+        .feature-check-list {
+            list-style: none;
+            padding: 0;
+            margin: 12px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .detail-overview-content li,
+        .feature-check-list li,
+        .detail-overview-content li *,
+        .feature-check-list li * {
+            font-size: 0.88rem;
+            color: #0f172a;
+            font-weight: 700;
+        }
+
+        .detail-overview-content li,
+        .feature-check-list li {
+            position: relative;
+            padding-left: 28px;
+            padding-bottom: 8px;
+            line-height: 1.55;
+            min-height: 22px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        /* Alternating separator lines (Orange / Red) */
+        .detail-overview-content li:nth-child(odd),
+        .feature-check-list li:nth-child(odd) {
+            border-bottom: 1px dashed rgba(249, 115, 22, 0.45);
+        }
+
+        .detail-overview-content li:nth-child(even),
+        .feature-check-list li:nth-child(even) {
+            border-bottom: 1px dashed rgba(239, 68, 68, 0.45);
+        }
+
+        .detail-overview-content li:last-child,
+        .feature-check-list li:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-bottom: 0;
+        }
+
+        /* English words in feature checklist (Gray) */
+        .feat-en {
+            color: #64748b !important;
+            font-weight: 700 !important;
+        }
+
+        /* Numbers in feature checklist (Orange / สีแสด) */
+        .feat-num {
+            color: #ea580c !important;
+            font-weight: 800 !important;
+        }
+
+        .overview-header-group {
+            margin-bottom: 14px;
+        }
+
+        .overview-header-divider {
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, #0284c7 0%, #38bdf8 40%, rgba(56, 189, 248, 0.2) 75%, transparent 100%);
+            border-radius: 2px;
+            margin: 6px 0 16px 0;
+        }
+
+        .overview-divider,
+        .detail-overview-content hr {
+            border: none;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #cbd5e1 20%, #94a3b8 50%, #cbd5e1 80%, transparent);
+            margin: 22px auto;
+            width: 85%;
+        }
+
+        .overview-promo-lead,
+        .overview-promo-lead p,
+        .overview-promo-lead div,
+        .overview-promo-lead span {
+            text-align: center;
+        }
+
+        .overview-promo-lead {
+            text-align: center;
+            margin: 10px auto 20px auto;
+            font-size: 0.94rem;
+            font-weight: 400;
+            color: #334155;
+            line-height: 1.75;
+            max-width: 720px;
+        }
+
+        .overview-promo-lead p {
+            margin: 6px 0;
+            font-size: 0.94rem;
+            font-weight: 400;
+            color: #334155;
+        }
+
+        .overview-promo-lead div {
+            margin: 4px 0;
+            font-size: 0.94rem;
+            font-weight: 400;
+            color: #334155;
+        }
+
+        .overview-promo-lead b,
+        .overview-promo-lead strong {
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .detail-overview-content li::before,
+        .feature-check-list li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            top: 2px;
+            width: 19px;
+            height: 19px;
+            background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+            color: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.70rem;
+            font-weight: 800;
+            box-shadow: 0 2px 5px rgba(34, 197, 94, 0.35);
+            flex-shrink: 0;
         }
 
         /* Gallery Screenshots */
@@ -1148,27 +1347,191 @@
             width: 160px;
         }
 
+        /* ===== TRADINGVIEW GUIDE & UNLOCKED CODE BOX ===== */
+        .unlocked-code-box {
+            background: #030712;
+            border: 1px solid #1e293b;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            margin-right: 56px;
+        }
+
+        @media (max-width: 640px) {
+            .unlocked-code-box {
+                margin-right: 18px;
+            }
+        }
+
+        .code-box-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #0f172a;
+            padding: 10px 14px;
+            border-bottom: 1px solid #1e293b;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .code-box-content {
+            margin: 0;
+            padding: 18px 22px;
+            background: #020617;
+            color: #38bdf8;
+            font-family: 'JetBrains Mono', Consolas, 'Fira Code', Monaco, monospace;
+            font-size: 0.88rem;
+            line-height: 1.65;
+            min-height: 340px;
+            max-height: 520px;
+            overflow-y: auto;
+            white-space: pre;
+            tab-size: 4;
+            user-select: text;
+        }
+
+        .btn-copy-code-main {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 0.92rem;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 22px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+        }
+
+        .btn-copy-code-main:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-download-pine-file {
+            background: #1e293b;
+            color: #e2e8f0;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 8px 14px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-download-pine-file:hover {
+            background: #334155;
+            color: #ffffff;
+        }
+
+        .tv-guide-wrapper {
+            background: #ffffff;
+            border: 1px solid var(--fh-border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tv-guide-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .tv-guide-img-box {
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #0f172a;
+            margin-bottom: 14px;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
+        }
+
+        .tv-step-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .tv-step-cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .tv-step-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 12px;
+            background: #f8fafc;
+            border: 1px solid var(--fh-border);
+            border-radius: 8px;
+            transition: var(--transition);
+        }
+
+        .tv-step-card.highlight {
+            background: #f0fdf4;
+            border-color: #86efac;
+        }
+
+        .tv-step-num {
+            width: 26px;
+            height: 26px;
+            background: #0284c7;
+            color: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.82rem;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .tv-step-card.highlight .tv-step-num {
+            background: #16a34a;
+        }
+
+        .tv-step-title {
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 2px;
+        }
+
+        .tv-step-desc {
+            font-size: 0.77rem;
+            color: #475569;
+            line-height: 1.45;
+        }
+
         /* ===== CHECKOUT / QR MODAL ===== */
         .checkout-box-clean {
-            padding: 32px 24px;
+            padding: 16px 20px;
             text-align: center;
-            max-width: 480px;
+            max-width: 440px;
             margin: 0 auto;
         }
 
         .qr-clean-card {
             background: #ffffff;
             border: 1px solid var(--fh-border);
-            padding: 16px;
-            border-radius: var(--radius-md);
+            padding: 8px 10px;
+            border-radius: var(--radius-sm);
             display: inline-block;
-            box-shadow: var(--shadow-md);
-            margin: 16px 0;
+            box-shadow: var(--shadow-sm);
+            margin: 6px 0 8px 0;
         }
 
         #qr-code-target {
-            width: 220px;
-            height: 220px;
+            width: 175px;
+            height: 175px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1246,6 +1609,8 @@
         }
 
         .form-control-clean {
+            width: 100%;
+            box-sizing: border-box;
             background: #ffffff;
             border: 1px solid var(--fh-border);
             border-radius: var(--radius-sm);
@@ -1318,14 +1683,51 @@
             border-color: #93c5fd;
         }
 
+        /* Category Chips in Admin Form */
+        .btn-cat-chip {
+            font-size: 0.72rem;
+            padding: 3px 9px;
+            border-radius: 99px;
+            border: 1px solid #cbd5e1;
+            background: #f1f5f9;
+            color: #334155;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .btn-cat-chip:hover {
+            border-color: #0284c7;
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .btn-cat-chip.active {
+            background: #0284c7 !important;
+            border-color: #0284c7 !important;
+            color: #ffffff !important;
+            font-weight: 700;
+            box-shadow: 0 1px 3px rgba(2, 132, 199, 0.3);
+        }
+
         /* GitHub Image Upload Box */
         .github-uploader-box {
             background: #f8fafc;
             border: 2px dashed var(--fh-border);
             border-radius: var(--radius-md);
-            padding: 16px;
+            padding: 18px;
             text-align: center;
             margin-bottom: 14px;
+            transition: var(--transition);
+        }
+
+        .github-uploader-box.dragover {
+            border-color: #0284c7 !important;
+            background: #eff6ff !important;
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.2);
         }
 
         .btn-upload-github {
@@ -1354,6 +1756,182 @@
             margin-top: 8px;
             border: 1px solid var(--fh-border);
             display: none;
+        }
+
+        /* Admin Multi-Image Gallery */
+        .admin-images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .admin-image-card {
+            position: relative;
+            background: #ffffff;
+            border: 1px solid var(--fh-border);
+            border-radius: var(--radius-sm);
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            transition: var(--transition);
+        }
+
+        .admin-image-card.is-cover {
+            border-color: #16a34a;
+            box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.25);
+            background: #f0fdf4;
+        }
+
+        .admin-image-card img {
+            width: 100%;
+            height: 86px;
+            object-fit: cover;
+            border-radius: 4px;
+            background: #0f172a;
+            display: block;
+        }
+
+        .admin-image-card-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4px;
+        }
+
+        .btn-img-cover-badge {
+            font-size: 0.68rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        /* Detail Showcase Slider & Gallery */
+        .detail-slider-wrapper {
+            width: 100%;
+            background: #0f172a;
+            border-radius: var(--radius-md);
+            border: 1px solid #1e293b;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+        }
+
+        .detail-slider-main {
+            position: relative;
+            width: 100%;
+            min-height: 280px;
+            max-height: 520px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #090d16;
+            overflow: hidden;
+        }
+
+        #detail-cover-showcase-img {
+            max-width: 100%;
+            max-height: 520px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        .slider-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 42px;
+            height: 42px;
+            background: rgba(15, 23, 42, 0.75);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            line-height: 1;
+            cursor: pointer;
+            backdrop-filter: blur(6px);
+            transition: var(--transition);
+            z-index: 5;
+            user-select: none;
+        }
+
+        .slider-nav-btn:hover {
+            background: rgba(2, 132, 199, 0.9);
+            border-color: #38bdf8;
+            transform: translateY(-50%) scale(1.08);
+        }
+
+        .slider-nav-btn.prev {
+            left: 12px;
+        }
+
+        .slider-nav-btn.next {
+            right: 12px;
+        }
+
+        .slider-counter-badge {
+            position: absolute;
+            bottom: 12px;
+            right: 14px;
+            background: rgba(15, 23, 42, 0.82);
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.76rem;
+            font-weight: 600;
+            backdrop-filter: blur(4px);
+            z-index: 5;
+        }
+
+        .detail-thumbnails-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            background: #0f172a;
+            border-top: 1px solid #1e293b;
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+
+        .detail-thumb-item {
+            width: 76px;
+            height: 54px;
+            flex-shrink: 0;
+            border-radius: 6px;
+            border: 2px solid transparent;
+            overflow: hidden;
+            cursor: pointer;
+            opacity: 0.65;
+            transition: var(--transition);
+            background: #1e293b;
+        }
+
+        .detail-thumb-item:hover {
+            opacity: 0.95;
+            transform: translateY(-2px);
+        }
+
+        .detail-thumb-item.active {
+            border-color: #38bdf8;
+            opacity: 1;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+
+        .detail-thumb-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
 
         /* Toast Alert */
@@ -1428,8 +2006,10 @@
     <header class="site-header">
         <div class="container header-main">
             <div class="brand-box" onclick="resetToHome()">
-                <div class="brand-icon" style="padding: 0; overflow: hidden; background: transparent; box-shadow: 0 2px 8px rgba(37,99,235,0.25);">
-                    <img src="assets/images/favicon.svg" alt="Eworker" style="width: 100%; height: 100%; object-fit: contain; display: block;">
+                <div class="brand-icon"
+                    style="padding: 0; overflow: hidden; background: transparent; box-shadow: 0 2px 8px rgba(37,99,235,0.25);">
+                    <img src="assets/images/favicon.svg" alt="Eworker"
+                        style="width: 100%; height: 100%; object-fit: contain; display: block;">
                 </div>
                 <div>
                     <div class="brand-name">E<span>WORKER</span></div>
@@ -1441,7 +2021,8 @@
             <div class="search-container">
                 <div class="search-box-fh">
                     <input type="text" id="main-search-input" class="search-input-fh"
-                        placeholder="กำลังมองหาอะไรอยู่..." oninput="handleSearch(this.value)">
+                        placeholder="กำลังมองหาอะไรอยู่..." oninput="handleSearch(this.value)" autocomplete="off"
+                        autocorrect="off" autocapitalize="off" spellcheck="false">
                     <button class="search-btn-fh" onclick="triggerSearch()">🔍 ค้นหา</button>
                 </div>
             </div>
@@ -1523,7 +2104,9 @@
     <!-- ===== PROGRAM DETAIL MODAL ( Technical Style) ===== -->
     <div class="modal-overlay" id="detail-modal">
         <div class="modal-container">
-            <button class="modal-close-fh" onclick="closeDetailModal()">✕</button>
+            <div class="modal-sticky-close-bar">
+                <button class="modal-close-fh" onclick="closeDetailModal()" title="ปิดหน้าต่าง">✕</button>
+            </div>
 
             <!-- Top Header Block -->
             <div class="detail-header-block">
@@ -1534,77 +2117,101 @@
                     <div class="detail-hgroup">
                         <h2 id="detail-title">ชื่อโปรแกรมดิจิทัล</h2>
                         <div class="detail-sub-meta">
-                            <span class="badge-safe-sm">✓ ปลอดภัย 100%</span>
                             <span id="detail-language-badge" class="badge-safe-sm" style="display: none;">-</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="detail-cta-box">
-                    <div id="detail-price-tag" style="font-size: 1.25rem; font-weight: 800; color: var(--fh-green);">฿
-                        0.00</div>
+                    <div id="detail-price-tag" style="display: none;"></div>
                     <button class="btn-big-download" id="btn-detail-checkout" onclick="handleDetailCheckoutClick()">
                         <span>⚡ ดาวน์โหลดเวอร์ชันล่าสุด</span>
                     </button>
-                    <span style="font-size: 0.75rem; color: var(--fh-muted);">ดาวน์โหลดตรงความเร็วสูง</span>
+                    <span
+                        style="font-size: 0.75rem; color: var(--fh-muted); text-align: center;">ดาวน์โหลดตรงความเร็วสูง</span>
                 </div>
             </div>
 
             <!-- Body Details -->
             <div class="detail-body-container">
-                <!-- Installation Guide (1 2 3) -->
-                <div class="install-guide-fh" id="detail-install-box" style="display: none;">
-                    <div class="install-guide-title">
-                        <span>🛠️</span> วิธีการติดตั้งและขั้นตอนใช้งาน (Installation Guide)
+                <!-- Product Advertisement / Cover Showcase Banner (Supports 1 or Multiple Images) -->
+                <div id="detail-cover-showcase-box" style="display: none; margin-bottom: 22px;">
+                    <div class="detail-slider-wrapper">
+                        <div class="detail-slider-main">
+                            <img id="detail-cover-showcase-img" src="" alt="ภาพโฆษณาสินค้า">
+
+                            <!-- Prev / Next slide navigation buttons -->
+                            <button type="button" class="slider-nav-btn prev" id="detail-slider-prev-btn"
+                                onclick="navigateDetailSlider(-1)" title="รูปก่อนหน้า">‹</button>
+                            <button type="button" class="slider-nav-btn next" id="detail-slider-next-btn"
+                                onclick="navigateDetailSlider(1)" title="รูปถัดไป">›</button>
+
+                            <!-- Slide Counter Badge -->
+                            <div class="slider-counter-badge" id="detail-slider-counter" style="display: none;">
+                                📷 <span id="detail-slider-curr-idx">1</span> / <span
+                                    id="detail-slider-total-cnt">1</span>
+                            </div>
+                        </div>
+
+                        <!-- Thumbnails Row -->
+                        <div class="detail-thumbnails-row" id="detail-slider-thumbnails" style="display: none;"></div>
                     </div>
-                    <div class="install-steps-list-fh" id="detail-install-steps"></div>
                 </div>
 
                 <!-- Description / Overview -->
-                <div>
-                    <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 8px;">ภาพรวมและคุณสมบัติ (Overview)
-                    </h3>
+                <div style="margin-bottom: 20px;">
+                    <div class="overview-header-group">
+                        <h3 style="font-size: 1.12rem; font-weight: 800; color: var(--fh-dark); margin: 0 0 6px 0;">
+                            ภาพรวมและคุณสมบัติ (Overview)
+                        </h3>
+                        <div class="overview-header-divider"></div>
+                    </div>
                     <div class="detail-overview-content" id="detail-description">รายละเอียด...</div>
                 </div>
 
                 <!-- Screenshots Gallery -->
-                <div id="detail-gallery-box" style="display: none;">
+                <div id="detail-gallery-box" style="display: none; margin-bottom: 20px;">
                     <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 8px;">ภาพตัวอย่างโปรแกรม
                         (Screenshots)</h3>
                     <div class="detail-gallery-row" id="detail-gallery-row"></div>
                 </div>
 
                 <!-- Technical Specs Table -->
-                <div>
-                    <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 8px;">ข้อมูลทางเทคนิค (Technical
-                        Specs)</h3>
+                <div style="margin-top: 24px; margin-bottom: 20px;" id="detail-specs-box">
+                    <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; color: var(--fh-dark);">
+                        ข้อมูลทางเทคนิค (Technical Specs)
+                    </h3>
                     <table class="specs-table">
                         <tr>
                             <td>ภาษาที่ใช้พัฒนา:</td>
                             <td id="detail-spec-language" style="font-weight: 700; color: var(--fh-blue);">-</td>
                         </tr>
                         <tr>
-                            <td>การอนุญาต:</td>
-                            <td id="detail-license-spec">Commercial / Digital License</td>
+                            <td>หมวดหมู่:</td>
+                            <td id="detail-spec-category" style="font-weight: 600; color: #334155;">-</td>
                         </tr>
                         <tr>
                             <td>การส่งมอบ:</td>
-                            <td>รับลิงก์ดาวน์โหลดทันทีหลังชำระเงิน</td>
+                            <td id="detail-delivery-spec">รับลิงก์ดาวน์โหลดทันทีหลังชำระเงิน</td>
                         </tr>
                     </table>
                 </div>
+
+
             </div>
         </div>
     </div>
 
     <!-- ===== CHECKOUT / QR MODAL ===== -->
     <div class="modal-overlay" id="checkout-modal">
-        <div class="modal-container" style="max-width: 480px;">
+        <div class="modal-container" id="checkout-modal-container"
+            style="max-width: 440px; transition: max-width 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
             <button class="modal-close-fh" onclick="closeCheckoutModal()">✕</button>
 
             <div class="checkout-box-clean" id="checkout-view-pending">
-                <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--fh-dark);">สแกนชำระเงินผ่าน PromptPay</h3>
-                <p style="font-size: 0.85rem; color: var(--fh-muted); margin-top: 4px;" id="checkout-product-title">
+                <h3 style="font-size: 1.22rem; font-weight: 800; color: var(--fh-dark); margin: 0 0 2px 0;">
+                    สแกนชำระเงินผ่าน PromptPay</h3>
+                <p style="font-size: 0.8rem; color: var(--fh-muted); margin: 0 0 4px 0;" id="checkout-product-title">
                     กำลังจัดเตรียมคำสั่งซื้อ...</p>
 
                 <div class="checkout-countdown-box" id="checkout-countdown-box">
@@ -1616,60 +2223,63 @@
                 <div class="qr-clean-card">
                     <div id="qr-code-target"></div>
                     <div
-                        style="font-size: 0.8rem; font-weight: 700; color: #0b1120; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        style="font-size: 0.78rem; font-weight: 700; color: #0b1120; margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 6px;">
                         <img src="assets/promptpay_header_full.png"
                             onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/100px-PromptPay-logo.png'; this.onerror=function(){this.style.display='none';};"
-                            style="height: 18px; max-width: 80px; object-fit: contain;">
+                            style="height: 16px; max-width: 75px; object-fit: contain;">
                         <span>สแกนผ่านทุกแอปธนาคาร</span>
                     </div>
                 </div>
 
-                <div style="font-size: 1.8rem; font-weight: 800; color: var(--fh-green); margin-bottom: 4px;"
+                <div style="font-size: 1.6rem; font-weight: 800; color: var(--fh-green); margin-bottom: 2px;"
                     id="checkout-price-display">฿ 0.00</div>
-                <div style="font-size: 0.8rem; color: var(--fh-muted); margin-bottom: 14px;">
+                <div style="font-size: 0.76rem; color: var(--fh-muted); margin-bottom: 8px;">
                     Order: <strong id="checkout-order-id-val">-</strong>
                     <button
                         style="border: none; background: none; color: var(--fh-blue); font-weight: 600; cursor: pointer; margin-left: 6px;"
                         onclick="copyOrderId()">คัดลอก</button>
                 </div>
 
-                <div class="polling-status-chip">
+                <div class="polling-status-chip" style="margin-bottom: 8px; padding: 4px 12px; font-size: 0.76rem;">
                     <div class="clean-spinner"></div>
                     <span>ระบบ KBank กำลังรอรับยอดเงินอัตโนมัติ...</span>
                 </div>
 
-                <button class="btn-header-clean" style="width: 100%; justify-content: center; margin-bottom: 10px;"
+                <button class="btn-header-clean"
+                    style="width: 100%; justify-content: center; margin-bottom: 6px; padding: 7px 14px; font-size: 0.82rem;"
                     id="btn-manual-confirm" onclick="triggerManualPaymentAlert()">
                     🔔 ฉันโอนเงินแล้ว (แจ้งเตือนซ้ำ)
                 </button>
                 <div id="admin-test-shortcut"
-                    style="display: none; margin-bottom: 10px; font-size: 0.8rem; text-align: center;"></div>
-                <p style="font-size: 0.76rem; color: var(--fh-muted); margin-bottom: 8px;">เมื่อเงินเข้า
-                    บัญชีนี้จะปลดล็อคปุ่มดาวน์โหลดทันที
-                    1-Click</p>
+                    style="display: none; margin-bottom: 6px; font-size: 0.78rem; text-align: center;"></div>
+                <p style="font-size: 0.72rem; color: var(--fh-muted); margin-bottom: 6px;">เมื่อเงินเข้า
+                    บัญชีนี้จะปลดล็อคปุ่มดาวน์โหลดทันที 1-Click</p>
 
                 <!-- Support & Help Notice in Red (No Raw URL) -->
                 <div
-                    style="margin-top: 12px; padding: 12px 14px; background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-sm); text-align: center;">
+                    style="margin-top: 6px; padding: 8px 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-sm); text-align: center;">
                     <p
-                        style="color: #ef4444; font-size: 0.86rem; font-weight: 700; margin: 0 0 8px 0; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        style="color: #ef4444; font-size: 0.78rem; font-weight: 700; margin: 0 0 4px 0; display: flex; align-items: center; justify-content: center; gap: 6px;">
                         <span>⚠️ มีปัญหาชำระเงินไม่ได้ ให้ติดต่อ LINE</span>
                     </p>
                     <a href="https://line.me/ti/p/gqIluRmdJ_" target="_blank" rel="noopener noreferrer"
-                        style="background: #06c755; color: #ffffff; font-size: 0.85rem; font-weight: 700; text-decoration: none; padding: 6px 18px; border-radius: 20px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(6,199,85,0.25); transition: var(--transition);">
+                        style="background: #06c755; color: #ffffff; font-size: 0.78rem; font-weight: 700; text-decoration: none; padding: 4px 16px; border-radius: 20px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 4px rgba(6,199,85,0.25); transition: var(--transition);">
                         <span>💬 ติดต่อ LINE คลิกที่นี่</span>
                     </a>
                 </div>
             </div>
 
             <!-- Unlocked Success View -->
-            <div class="checkout-box-clean" id="checkout-view-success" style="display: none;">
+            <div class="checkout-box-clean" id="checkout-view-success"
+                style="display: none; width: 100%; max-width: 100%;">
                 <div style="font-size: 3rem; margin-bottom: 8px;">🎉</div>
                 <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--fh-green);">ยืนยันยอดเงินสำเร็จแล้ว!</h3>
-                <p style="font-size: 0.88rem; color: var(--fh-muted); margin-top: 4px;">ระบบตรวจจับยอดเงินเข้าเรียบร้อย
-                    ลิงก์ดาวน์โหลดของคุณพร้อมใช้งานทันที</p>
+                <p style="font-size: 0.88rem; color: var(--fh-muted); margin-top: 4px;" id="checkout-success-subtitle">
+                    ระบบตรวจจับยอดเงินเข้าเรียบร้อย
+                    รายการของคุณพร้อมใช้งานทันที</p>
 
-                <div
+                <!-- Normal Dropbox Unlocked Box -->
+                <div id="unlocked-download-section"
                     style="background: var(--fh-green-light); border: 1px solid rgba(22, 163, 74, 0.35); border-radius: var(--radius-md); padding: 18px; margin: 18px 0;">
                     <a id="btn-unlocked-download-link" href="#" target="_blank" class="btn-download-fh"
                         style="font-size: 1.1rem; font-weight: 700; padding: 14px 28px; width: 100%; justify-content: center; text-decoration: none; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);">
@@ -1684,8 +2294,97 @@
                     </div>
                 </div>
 
-                <p style="font-size: 0.8rem; color: var(--fh-muted);">💾 บันทึกลง "คลังดาวน์โหลดของฉัน" เรียบร้อยแล้ว
-                    สามารถกลับมาดาวน์โหลดซ้ำได้ตลอดเวลา</p>
+                <!-- Pine Script Unlocked Section (Shows Code + Copy Button + TV Guide) -->
+                <div id="unlocked-pinescript-section" style="display: none; text-align: left; margin: 18px 0;">
+                    <div class="unlocked-code-box">
+                        <div class="code-box-header"
+                            style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 12px; padding: 16px;">
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <span style="font-size: 1.15rem;">🌲</span>
+                                <div>
+                                    <div style="font-weight: 700; color: #f8fafc; font-size: 0.95rem;">ซอร์สโค้ด Pine
+                                        Script</div>
+                                    <div style="font-size: 0.74rem; color: #94a3b8;" id="unlocked-code-stats">
+                                        พร้อมคัดลอกไปใช้งานบน Pine Editor</div>
+                                </div>
+                            </div>
+                            <div
+                                style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <button type="button" class="btn-copy-code-main" onclick="copyUnlockedCode()"
+                                    style="padding: 9px 22px; font-size: 0.92rem;">
+                                    📋 คัดลอกโค้ดทั้งหมด
+                                </button>
+                                <button type="button" class="btn-download-pine-file"
+                                    onclick="downloadUnlockedCodeAsFile()"
+                                    style="padding: 9px 22px; font-size: 0.92rem;">
+                                    💾 บันทึกเป็นไฟล์ .pine
+                                </button>
+                            </div>
+                        </div>
+                        <pre
+                            class="code-box-content"><code id="unlocked-pinescript-code-display">// โค้ดจะแสดงที่นี่</code></pre>
+                        <div
+                            style="background: #0f172a; padding: 12px 18px; border-top: 1px solid #1e293b; text-align: center;">
+                            <span style="font-size: 0.82rem; color: #94a3b8;">💡 เคล็ดลับ:
+                                คลิกปุ่มด้านบนเพื่อคัดลอกโค้ดสคริปต์ทั้งหมดไปวางใน Pine Editor ได้ทันที</span>
+                        </div>
+                    </div>
+
+                    <!-- TradingView Installation Guide -->
+                    <div class="tv-guide-wrapper" style="margin-top: 18px;">
+                        <div class="tv-guide-header">
+                            <span style="font-size: 1.15rem;">🚀</span>
+                            <div>
+                                <h4 style="font-size: 0.96rem; font-weight: 700; color: #0f172a; margin: 0;">
+                                    ขั้นตอนการนำโค้ดไปติดตั้งบน TradingView (Pine Editor)</h4>
+                                <p style="font-size: 0.76rem; color: #64748b; margin: 2px 0 0 0;">
+                                    ทำตาม 4 ขั้นตอนนี้เพื่อรันอินดิเคเตอร์ได้ทันที</p>
+                            </div>
+                        </div>
+                        <div class="tv-step-cards-grid">
+                            <div class="tv-step-card">
+                                <div class="tv-step-num">1</div>
+                                <div class="tv-step-body">
+                                    <div class="tv-step-title">🌐 เข้าหน้ากราฟ TradingView</div>
+                                    <div class="tv-step-desc">เข้าเว็บ <a href="https://www.tradingview.com/chart/"
+                                            target="_blank" rel="noopener noreferrer"
+                                            style="color: #0284c7; font-weight: 700; text-decoration: underline;">tradingview.com
+                                            ↗</a> เปิดหน้าชาร์ตกราฟคู่เงินหรือเหรียญที่ต้องการใช้งาน</div>
+                                </div>
+                            </div>
+                            <div class="tv-step-card">
+                                <div class="tv-step-num">2</div>
+                                <div class="tv-step-body">
+                                    <div class="tv-step-title">💻 เปิดแท็บ "Pine Editor"</div>
+                                    <div class="tv-step-desc">มองหาแถบเมนูด้านล่างสุดของกราฟ คลิกแท็บ <strong>Pine
+                                            Editor</strong> (ตัวแก้ไข Pine)</div>
+                                </div>
+                            </div>
+                            <div class="tv-step-card">
+                                <div class="tv-step-num">3</div>
+                                <div class="tv-step-body">
+                                    <div class="tv-step-title">📋 ลบโค้ดเดิม &amp; วางโค้ดใหม่</div>
+                                    <div class="tv-step-desc">กด <code>Ctrl + A</code> แล้วลบโค้ดเก่าออก จากนั้นกด
+                                        <code>Ctrl + V</code> วางโค้ดที่คัดลอกมา
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tv-step-card highlight">
+                                <div class="tv-step-num">4</div>
+                                <div class="tv-step-body">
+                                    <div class="tv-step-title">📈 บันทึก &amp; เพิ่มลงในชาร์ต</div>
+                                    <div class="tv-step-desc">คลิกปุ่ม <strong>"บันทึก (Save)"</strong> แล้วคลิก
+                                        <strong>"เพิ่มลงในชาร์ต (Add to chart)"</strong> เพื่อเริ่มใช้งานทันที!
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <p style="font-size: 0.8rem; color: var(--fh-muted); text-align: center;">💾 บันทึกลง
+                    "คลังดาวน์โหลดของฉัน" เรียบร้อยแล้ว
+                    สามารถกลับมาดูโค้ดและคัดลอกซ้ำได้ตลอดเวลา</p>
             </div>
         </div>
     </div>
@@ -1704,10 +2403,107 @@
         </div>
     </div>
 
+    <!-- ===== CODE VIEWER MODAL (For Purchased Pine Scripts) ===== -->
+    <div class="modal-overlay" id="code-viewer-modal">
+        <div class="modal-container" style="max-width: 980px; width: 96vw;">
+            <div class="modal-sticky-close-bar">
+                <button class="modal-close-fh" onclick="closeCodeViewerModal()" title="ปิดหน้าต่าง">✕</button>
+            </div>
+            <div style="padding: 24px;">
+                <div style="text-align: center; margin-bottom: 14px;">
+                    <div style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                        <span style="font-size: 1.8rem;">🌲</span>
+                        <h3 id="code-viewer-title"
+                            style="font-size: 1.3rem; font-weight: 800; color: var(--fh-dark); margin: 0;">Pine
+                            Script Code</h3>
+                    </div>
+                    <div id="code-viewer-meta" style="font-size: 0.82rem; color: var(--fh-muted); margin-top: 4px;">
+                        ซอร์สโค้ดปลดล็อคพร้อมใช้งานบน TradingView</div>
+                </div>
+
+                <!-- Single Centered Button Group -->
+                <div
+                    style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;">
+                    <button type="button" class="btn-copy-code-main" onclick="copyViewerCode()"
+                        style="padding: 10px 24px; font-size: 0.95rem;">
+                        📋 คัดลอกโค้ดทั้งหมด
+                    </button>
+                    <button type="button" class="btn-download-pine-file" onclick="downloadViewerCodeAsFile()"
+                        style="padding: 10px 24px; font-size: 0.95rem;">
+                        💾 ดาวน์โหลด .pine
+                    </button>
+                </div>
+
+                <div class="unlocked-code-box">
+                    <pre class="code-box-content"><code id="code-viewer-code-display">// กำลังโหลดโค้ด...</code></pre>
+                    <div
+                        style="background: #0f172a; padding: 12px 18px; border-top: 1px solid #1e293b; text-align: center;">
+                        <span style="font-size: 0.82rem; color: #94a3b8;">💡 เคล็ดลับ:
+                            คลิกปุ่มด้านบนเพื่อคัดลอกโค้ดทั้งหมด แล้วนำไปวางใน Pine Editor บน TradingView
+                            ได้ทันที</span>
+                    </div>
+                </div>
+
+                <!-- TradingView Installation Guide -->
+                <div class="tv-guide-wrapper" style="margin-top: 18px;">
+                    <div class="tv-guide-header">
+                        <span style="font-size: 1.15rem;">🚀</span>
+                        <div>
+                            <h4 style="font-size: 0.96rem; font-weight: 700; color: #0f172a; margin: 0;">
+                                ขั้นตอนการนำโค้ดไปติดตั้งบน TradingView (Pine Editor)</h4>
+                            <p style="font-size: 0.76rem; color: #64748b; margin: 2px 0 0 0;">ทำตาม 4
+                                ขั้นตอนนี้เพื่อรันอินดิเคเตอร์ได้ทันที</p>
+                        </div>
+                    </div>
+                    <div class="tv-step-cards-grid">
+                        <div class="tv-step-card">
+                            <div class="tv-step-num">1</div>
+                            <div class="tv-step-body">
+                                <div class="tv-step-title">🌐 เข้าหน้ากราฟ TradingView</div>
+                                <div class="tv-step-desc">เข้าเว็บ <a href="https://www.tradingview.com/chart/"
+                                        target="_blank" rel="noopener noreferrer"
+                                        style="color: #0284c7; font-weight: 700; text-decoration: underline;">tradingview.com
+                                        ↗</a> เปิดหน้าชาร์ตกราฟคู่เงินหรือเหรียญที่ต้องการใช้งาน</div>
+                            </div>
+                        </div>
+                        <div class="tv-step-card">
+                            <div class="tv-step-num">2</div>
+                            <div class="tv-step-body">
+                                <div class="tv-step-title">💻 เปิดแท็บ "Pine Editor"</div>
+                                <div class="tv-step-desc">มองหาแถบเครื่องมือด้านล่างสุดของกราฟ คลิกแท็บ <strong>Pine
+                                        Editor</strong> (ตัวแก้ไข Pine)</div>
+                            </div>
+                        </div>
+                        <div class="tv-step-card">
+                            <div class="tv-step-num">3</div>
+                            <div class="tv-step-body">
+                                <div class="tv-step-title">📋 ลบโค้ดเดิม &amp; วางโค้ดใหม่</div>
+                                <div class="tv-step-desc">กด <code>Ctrl + A</code> แล้วลบโค้ดเริ่มต้นออก จากนั้นกด
+                                    <code>Ctrl + V</code> วางโค้ดที่คัดลอกมา
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tv-step-card highlight">
+                            <div class="tv-step-num">4</div>
+                            <div class="tv-step-body">
+                                <div class="tv-step-title">📈 บันทึก &amp; เพิ่มลงในชาร์ต</div>
+                                <div class="tv-step-desc">คลิกปุ่ม <strong>"บันทึก (Save)"</strong> แล้วคลิก
+                                    <strong>"เพิ่มลงในชาร์ต (Add to chart)"</strong> เพื่อแสดงผลทันที!
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ===== ADMIN PRODUCT MANAGER (127.0.0.1:5000) ===== -->
     <div class="modal-overlay" id="admin-modal">
         <div class="modal-container">
-            <button class="modal-close-fh" onclick="closeAdminModal()">✕</button>
+            <div class="modal-sticky-close-bar">
+                <button class="modal-close-fh" onclick="closeAdminModal()" title="ปิดหน้าต่าง">✕</button>
+            </div>
 
             <div class="admin-form-header">
                 <h3 id="admin-form-header-text">👑 เพิ่มสินค้าดิจิทัลใหม่ (โพสต์ขึ้นโฮสต์)</h3>
@@ -1717,34 +2513,52 @@
             </div>
 
             <div class="admin-form-body">
-                <form id="admin-product-form" onsubmit="handleAdminFormSubmit(event)">
+                <form id="admin-product-form" onsubmit="handleAdminFormSubmit(event)" autocomplete="off">
                     <input type="hidden" id="admin-edit-product-id" value="">
 
                     <div class="form-row">
                         <div class="form-group-clean">
                             <label class="form-label-clean">ชื่อโปรแกรม / Digital Product Title *</label>
                             <input type="text" id="admin-title" class="form-control-clean" required
-                                placeholder="เช่น Windows 11 Extreme Optimizer">
+                                placeholder="เช่น Windows 11 Extreme Optimizer" autocomplete="off" autocorrect="off"
+                                autocapitalize="off" spellcheck="false">
                         </div>
 
                         <div class="form-group-clean">
                             <label class="form-label-clean">ราคาสินค้า (บาท THB) * (0 = ฟรี)</label>
                             <input type="number" step="0.01" min="0" id="admin-price" class="form-control-clean"
-                                required placeholder="190.00">
+                                required placeholder="190.00" autocomplete="off">
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group-clean">
-                            <label class="form-label-clean">หมวดหมู่สินค้า (Category)</label>
-                            <input type="text" id="admin-category-input" class="form-control-clean"
-                                placeholder="เช่น เครื่องมือ, บอท, โปรแกรม (เว้นว่างได้)">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                                <label class="form-label-clean" style="margin: 0;">หมวดหมู่สินค้า (Category)</label>
+                                <span style="font-size: 0.72rem; color: var(--fh-muted);">เลือกด้านล่าง
+                                    หรือพิมพ์เองได้</span>
+                            </div>
+                            <input type="text" id="admin-category-input" list="admin-category-datalist"
+                                class="form-control-clean" placeholder="เช่น TradingView / สคริปต์, เครื่องมือ, บอท..."
+                                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                                oninput="updateAdminCategoryChipsActive(this.value)">
+                            <datalist id="admin-category-datalist"></datalist>
+                            <div id="admin-category-chips-container" style="margin-top: 6px;">
+                                <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+                                    <span style="font-size: 0.72rem; color: #64748b; font-weight: 600;">🏷️
+                                        หมวดหมู่ที่มีในระบบ (คลิกเพื่อเลือก):</span>
+                                </div>
+                                <div id="admin-category-chips-list" style="display: flex; flex-wrap: wrap; gap: 5px;">
+                                </div>
+                            </div>
                         </div>
 
                         <div class="form-group-clean">
                             <label class="form-label-clean">ภาษาที่ใช้พัฒนา (Programming Language) *</label>
                             <select id="admin-language-select" class="form-control-clean"
-                                onchange="handleAdminLanguageChange(this.value)" required>
+                                onchange="handleAdminLanguageChange(this.value)" required autocomplete="off">
+                                <option value="pinescript">🌲 Pine Script</option>
                                 <option value="php">🐘 PHP (.php)</option>
                                 <option value="exe">⚡ EXE (.exe / โปรแกรมสำเร็จรูป)</option>
                                 <option value="python">🐍 Python (.py)</option>
@@ -1756,13 +2570,58 @@
                                 <option value="__custom__">+ อื่นๆ (พิมพ์ภาษาเอง...)</option>
                             </select>
                             <input type="text" id="admin-language-custom" class="form-control-clean"
-                                placeholder="พิมพ์ชื่อภาษา เช่น C#, Java, Go, Rust..."
+                                placeholder="พิมพ์ชื่อภาษา เช่น C#, Java, Go, Rust..." autocomplete="off"
+                                autocorrect="off" autocapitalize="off" spellcheck="false"
                                 style="display: none; margin-top: 6px;">
                         </div>
                     </div>
 
+                    <!-- PINESCRIPT TRADINGVIEW CODE INPUT (ONLY FOR PINESCRIPT) -->
+                    <div id="admin-pinescript-box"
+                        style="display: none; width: 100%; box-sizing: border-box; background: #0b1329; border: 1px solid #1e3a8a; border-radius: var(--radius-sm); padding: 18px 20px; margin-bottom: 16px; text-align: left;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                            <label class="form-label-clean"
+                                style="margin: 0; color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 8px; font-size: 0.95rem;">
+                                <span>🌲 ซอร์สโค้ด Pine Script *</span>
+                                <span
+                                    style="font-size: 0.72rem; background: #0284c7; color: #ffffff; padding: 2px 8px; border-radius: 4px; font-weight: 600;">v5
+                                    / v6</span>
+                            </label>
+                            <span
+                                style="font-size: 0.74rem; color: #93c5fd; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); padding: 4px 12px; border-radius: 99px; font-weight: 600;">
+                                🔒 ซ่อนใน Vault (ไม่ต้องใส่ลิงก์ Dropbox)
+                            </span>
+                        </div>
+                        <p style="font-size: 0.8rem; color: #94a3b8; margin: 0 0 12px 0; line-height: 1.55;">
+                            วางโค้ดสคริปต์ Indicator / Strategy ของ TradingView ที่นี่ โค้ดจะถูกเก็บใน Vault ปลอดภัย
+                            และแสดงปุ่มให้ลูกค้ากด
+                            <strong>Copy โค้ด 1-Click</strong> ทันทีที่ชำระเงินสำเร็จ
+                        </p>
+                        <textarea id="admin-pinescript-code" class="form-control-clean"
+                            style="width: 100% !important; min-width: 100%; max-width: 100%; box-sizing: border-box; display: block; margin: 0; min-height: 300px; height: 350px; resize: vertical; font-family: 'JetBrains Mono', Consolas, 'Fira Code', Monaco, monospace; font-size: 0.86rem; background: #030712; color: #38bdf8; border: 1px solid #1e3a8a; line-height: 1.6; white-space: pre; padding: 14px 16px; border-radius: 8px; outline: none; tab-size: 4;"
+                            spellcheck="false" autocomplete="off" autocapitalize="off"
+                            placeholder="//@version=6&#10;indicator(&quot;Crypto Super Cycle +&quot;, overlay=true)&#10;&#10;// วางโค้ด Pine Script ของคุณที่นี่...&#10;plot(ta.sma(close, 20), color=color.yellow, title=&quot;SMA 20&quot;)"></textarea>
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; flex-wrap: wrap; gap: 8px;">
+                            <span style="font-size: 0.75rem; color: #94a3b8;">
+                                💡 ระบบจะตั้งค่าคู่มือการติดตั้ง TradingView (Pine Editor) ให้อัตโนมัติ
+                            </span>
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" class="btn-tool-sm" onclick="pasteClipboardToPineEditor()"
+                                    style="font-size: 0.76rem; color: #10b981; background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.35); cursor: pointer; padding: 5px 12px; border-radius: 5px; font-weight: 600;">
+                                    📋 วางโค้ดจากคลิปบอร์ด
+                                </button>
+                                <button type="button" class="btn-tool-sm" onclick="loadDefaultTradingViewSteps()"
+                                    style="font-size: 0.76rem; color: #38bdf8; background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.35); cursor: pointer; padding: 5px 12px; border-radius: 5px; font-weight: 600;">
+                                    🔄 โหลดคู่มือ TradingView เริ่มต้น
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- DROPBOX FILE UPLOADER & SECURE LINK -->
-                    <div class="dropbox-uploader-box">
+                    <div class="dropbox-uploader-box" id="admin-dropbox-box">
                         <div
                             style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                             <label class="form-label-clean"
@@ -1794,7 +2653,8 @@
                             <div style="display: flex; gap: 8px;">
                                 <input type="password" id="admin-dropbox-token-input" class="form-control-clean"
                                     style="font-size: 0.8rem; font-family: monospace;"
-                                    placeholder="วาง Token (เช่น sl.u.AF... หรือ Permanent Token)">
+                                    placeholder="วาง Token (เช่น sl.u.AF... หรือ Permanent Token)" autocomplete="off"
+                                    autocorrect="off" autocapitalize="off" spellcheck="false">
                                 <button type="button" class="btn-download-fh"
                                     style="padding: 6px 14px; font-size: 0.8rem; white-space: nowrap;"
                                     onclick="saveDropboxTokenAction()">💾 บันทึก Token</button>
@@ -1833,7 +2693,8 @@
                                 🔒 ลิงก์ดาวน์โหลด (Dropbox / Direct Link) *
                             </label>
                             <input type="url" id="admin-dropbox-url" class="form-control-clean" required
-                                placeholder="https://www.dropbox.com/scl/fi/..."
+                                placeholder="https://www.dropbox.com/scl/fi/..." autocomplete="off" autocorrect="off"
+                                autocapitalize="off" spellcheck="false"
                                 style="font-family: monospace; font-size: 0.82rem; background: #ffffff;">
                             <span style="font-size: 0.72rem; color: #0284c7; margin-top: 3px; display: block;">
                                 🛡️ เก็บในตู้นิรภัยความปลอดภัยสูง (Vault)
@@ -1842,37 +2703,119 @@
                         </div>
                     </div>
 
-                    <!-- GITHUB IMAGE UPLOADER -->
-                    <div class="github-uploader-box">
+                    <!-- GITHUB IMAGE UPLOADER (MULTI-IMAGE & DRAG & DROP SUPPORTED) -->
+                    <div class="github-uploader-box" id="github-uploader-dropzone">
                         <label class="form-label-clean" style="display: block; margin-bottom: 2px;">
-                            🖼️ ระบบฝากภาพขึ้น GitHub
+                            🖼️ รูปภาพโฆษณาสินค้า (เพิ่มได้หลายรูป / ลากและวางรูปภาพที่นี่ได้ทันที)
                         </label>
                         <p style="font-size: 0.78rem; color: var(--fh-muted); margin-bottom: 8px;">
-                            เลือกรูปภาพจากเครื่องของคุณ ระบบจะบันทึกและอัปโหลดขึ้นโฟลเดอร์ <strong>shop/images/</strong>
-                            ใน GitHub อัตโนมัติ
+                            ลากรูปภาพมาปล่อยที่นี่ หรือเลือกไฟล์ (เลือกได้หลายรูปพร้อมกัน)
+                            ระบบจะบันทึกและอัปโหลดขึ้นโฟลเดอร์
+                            <strong>shop/images/</strong> ใน GitHub อัตโนมัติ
                         </p>
 
-                        <input type="file" id="github-file-input" accept="image/*" style="display: none;"
+                        <input type="file" id="github-file-input" accept="image/*" multiple style="display: none;"
                             onchange="handleGithubImageUpload(this)">
                         <button type="button" class="btn-upload-github"
                             onclick="document.getElementById('github-file-input').click()">
-                            📁 เลือกไฟล์รูปภาพเพื่ออัปโหลดขึ้น GitHub
+                            📁 เลือกไฟล์รูปภาพเพื่ออัปโหลดขึ้น GitHub (เลือกได้หลายรูป)
                         </button>
 
-                        <div style="margin-top: 10px;">
-                            <label class="form-label-clean" style="font-size: 0.78rem;">หรือป้อน Image URL
-                                ตรงนี้:</label>
-                            <input type="url" id="admin-cover-image" class="form-control-clean"
-                                placeholder="https://cdn.jsdelivr.net/gh/artnp/eworker@main/shop/images/..." required
-                                style="margin-top: 4px;">
+                        <div style="margin-top: 10px; display: flex; gap: 6px;">
+                            <input type="url" id="admin-add-image-url" class="form-control-clean"
+                                placeholder="หรือวาง Image URL เช่น https://... หรือ shop/images/... แล้วกดเพิ่ม"
+                                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                                onkeydown="if(event.key==='Enter'){event.preventDefault(); addAdminImageUrlFromInput();}"
+                                style="font-size: 0.82rem; margin: 0;">
+                            <button type="button" class="btn-tool-sm" onclick="addAdminImageUrlFromInput()"
+                                style="padding: 7px 16px; font-weight: 700; background: #0284c7; color: #fff; border-color: #0284c7; white-space: nowrap; cursor: pointer; border-radius: var(--radius-sm);">
+                                ➕ เพิ่มรูป
+                            </button>
                         </div>
-                        <img id="admin-img-preview" class="img-preview-tag" src="" alt="Preview">
+                        <input type="hidden" id="admin-cover-image" value="">
+
+                        <!-- Gallery of Uploaded Images in Admin Form -->
+                        <div id="admin-images-gallery-container" style="margin-top: 14px; text-align: left;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <span style="font-size: 0.76rem; font-weight: 700; color: #334155;"
+                                    id="admin-images-count-badge">รูปภาพโฆษณาทั้งหมด (0 รูป)</span>
+                                <span style="font-size: 0.72rem; color: #64748b;">⭐
+                                    รูปแรกคือรูปปกที่ใช้แสดงในหน้าแรก</span>
+                            </div>
+                            <div id="admin-images-gallery-list" class="admin-images-grid"></div>
+                        </div>
                     </div>
 
                     <div class="form-group-clean">
-                        <label class="form-label-clean">คำอธิบายและคุณสมบัติสินค้า</label>
-                        <textarea id="admin-description" class="form-control-clean" style="min-height: 90px;"
-                            placeholder="รายละเอียด ฟีเจอร์ สิ่งที่จะได้รับ..."></textarea>
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 6px;">
+                            <label class="form-label-clean" style="margin: 0;">
+                                คำอธิบายและคุณสมบัติสินค้า
+                            </label>
+                            <div style="display: flex; gap: 6px;">
+                                <button type="button" class="btn-tool-sm" onclick="insertBoldTagIntoDescription()"
+                                    title="ทำข้อความตัวหนาทันที (คลิกหรือกด Ctrl+B)"
+                                    style="font-size: 0.76rem; font-weight: 700; color: #1e40af; background: #eff6ff; border-color: #bfdbfe; cursor: pointer;">
+                                    𝐁 ตัวหนา
+                                </button>
+                                <button type="button" class="btn-tool-sm" onclick="insertLiTagIntoDescription()"
+                                    title="แทรกคุณสมบัติสินค้าพร้อมติ๊กถูกสีเขียว (ตัวหนา)"
+                                    style="font-size: 0.76rem; color: #16a34a; background: #f0fdf4; border-color: #bbf7d0; cursor: pointer;">
+                                    ✅ + แทรกคุณสมบัติ
+                                </button>
+                                <button type="button" class="btn-tool-sm" onclick="insertDividerIntoDescription()"
+                                    title="แทรกเส้นแบ่งบรรทัด (คั่นระหว่างส่วน)"
+                                    style="font-size: 0.76rem; color: #475569; background: #f8fafc; border-color: #cbd5e1; cursor: pointer;">
+                                    ➖ + เส้นแบ่งบรรทัด
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Rich Visual Editor with Generous Height -->
+                        <div id="admin-description-editor" class="form-control-clean" contenteditable="true"
+                            spellcheck="false"
+                            style="min-height: 260px; max-height: 520px; overflow-y: auto; font-size: 0.92rem; line-height: 1.65; background: #ffffff; padding: 14px 16px; border: 1px solid var(--fh-border); border-radius: var(--radius-sm);"
+                            oninput="syncAdminEditorToHiddenField()"></div>
+                        <textarea id="admin-description" style="display: none;"></textarea>
+
+                        <div
+                            style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; flex-wrap: wrap; gap: 6px;">
+                            <span style="font-size: 0.73rem; color: #64748b;">
+                                💡 คลุมดำข้อความแล้วกด <strong>"𝐁 ตัวหนา"</strong> หรือกด <code>Ctrl + B</code>
+                                ข้อความจะหนาทันที • เส้นแบ่งจะไม่แสดงในการ์ดหน้าแรก
+                            </span>
+                            <button type="button" class="btn-tool-sm" id="btn-toggle-feature-builder"
+                                onclick="toggleFeatureBuilder()"
+                                style="font-size: 0.74rem; color: var(--fh-blue); cursor: pointer;">
+                                ➕ กรอกแยกเป็นช่องข้อๆ
+                            </button>
+                        </div>
+
+                        <!-- Feature Builder (List of <li> with green checkmarks) -->
+                        <div id="admin-feature-builder-box"
+                            style="display: none; margin-top: 10px; background: #f0fdf4; border: 1px dashed #86efac; border-radius: var(--radius-sm); padding: 12px;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span
+                                    style="font-size: 0.8rem; font-weight: 700; color: #166534; display: flex; align-items: center; gap: 6px;">
+                                    <span
+                                        style="width: 18px; height: 18px; background: #16a34a; color: #ffffff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800;">✓</span>
+                                    รายการคุณสมบัติสินค้า (จะแปลงเป็น &lt;li&gt; ติ๊กถูกสีเขียว)
+                                </span>
+                            </div>
+                            <div id="admin-features-list"></div>
+                            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                                <button type="button" class="btn-tool-sm" onclick="addAdminFeatureRow()"
+                                    style="font-size: 0.75rem; color: #166534; background: #dcfce7; border-color: #86efac; cursor: pointer;">
+                                    + เพิ่มคุณสมบัติอีกข้อ
+                                </button>
+                                <button type="button" class="btn-tool-sm" onclick="syncFeaturesToDescription()"
+                                    style="font-size: 0.75rem; color: var(--fh-blue); cursor: pointer;">
+                                    🔄 ซิงค์ลงในช่องคำอธิบาย
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Toggle: Installation Steps -->
@@ -2000,6 +2943,15 @@
                 const btnAdmin = document.getElementById('btn-admin-manage');
                 if (btnAdmin) btnAdmin.style.display = 'inline-flex';
             }
+
+            setupGithubImageDropZone();
+
+            // Disable browser autocomplete and suggestion popups across all inputs
+            document.querySelectorAll('form, input, textarea').forEach(el => {
+                el.setAttribute('autocomplete', 'off');
+                el.setAttribute('autocorrect', 'off');
+                el.setAttribute('autocapitalize', 'off');
+            });
 
             await checkStoreStatus();
             setInterval(checkStoreStatus, 8000);
@@ -2137,6 +3089,7 @@
         }
 
         const LANG_MAP = {
+            pinescript: { name: 'Pine Script', icon: '🌲', ext: '.pine', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
             php: { name: 'PHP', icon: '🐘', ext: '.php', color: '#8b5cf6', bg: '#f5f3ff', border: '#ddd6fe' },
             exe: { name: 'EXE', icon: '⚡', ext: '.exe', color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
             python: { name: 'Python', icon: '🐍', ext: '.py', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
@@ -2318,15 +3271,16 @@
                             <div class="program-details">
                                 <div class="program-title-row">
                                     <div class="program-name">${escapeHtml(p.title)}</div>
-                                    ${isService ? '<span class="badge-service-pill">🛠️ บริการออนไลน์</span>' : '<span class="badge-safe-sm">✓ ปลอดภัย</span>'}
+                                    ${isService ? '<span class="badge-service-pill">🛠️ บริการออนไลน์</span>' : ''}
                                     ${p.isRecommended ? '<span class="badge-recommended">⭐ แนะนำ</span>' : ''}
                                 </div>
-                                <div class="program-excerpt">${escapeHtml(p.description || '')}</div>
+                                <div class="program-excerpt">${escapeHtml((p.description || '').replace(/<hr[^>]*>/gi, ' ').replace(/---/g, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim())}</div>
                                 <div class="program-meta-chips">
                                     ${isService ? `
                                         <span>🌐 บริการออนไลน์</span>                                    ` : `
-                                        ${langMeta ? `<span style="background:${langMeta.bg}; color:${langMeta.color}; border:1px solid ${langMeta.border}; font-weight:700;">💻 เขียนด้วย: ${langMeta.icon} ${escapeHtml(langMeta.name)}</span>` : ''}
+                                        ${langMeta ? `<span style="background:${langMeta.bg}; color:${langMeta.color}; border:1px solid ${langMeta.border}; font-weight:700; padding:2px 8px; border-radius:4px; white-space:nowrap;">💻 เขียนด้วย: ${langMeta.icon} ${escapeHtml(langMeta.name)}</span>` : ''}
                                         ${p.category ? `<span>📁 ${escapeHtml(p.category)}</span>` : ''}
+                                        ${(Array.isArray(p.images) && p.images.length > 1) ? `<span>📷 ${p.images.length} รูปภาพ</span>` : ''}
                                         ${p.hasInstallGuide ? '<span>🛠️ มีคู่มือติดตั้ง</span>' : ''}
                                     `}
                                 </div>
@@ -2401,6 +3355,49 @@
         }
 
         // --- Program Detail View & SEO Injection ---
+        let detailProductImages = [];
+        let detailProductImageIdx = 0;
+
+        function updateDetailSliderState() {
+            if (detailProductImages.length === 0) return;
+            const imgEl = document.getElementById('detail-cover-showcase-img');
+            const currIdxEl = document.getElementById('detail-slider-curr-idx');
+            const totalCntEl = document.getElementById('detail-slider-total-cnt');
+
+            if (imgEl) {
+                imgEl.style.opacity = '0.35';
+                setTimeout(() => {
+                    imgEl.src = detailProductImages[detailProductImageIdx];
+                    imgEl.style.opacity = '1';
+                }, 100);
+            }
+
+            if (currIdxEl) currIdxEl.textContent = detailProductImageIdx + 1;
+            if (totalCntEl) totalCntEl.textContent = detailProductImages.length;
+
+            const thumbs = document.querySelectorAll('.detail-thumb-item');
+            thumbs.forEach((th, i) => {
+                if (i === detailProductImageIdx) {
+                    th.classList.add('active');
+                    th.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                } else {
+                    th.classList.remove('active');
+                }
+            });
+        }
+
+        function navigateDetailSlider(delta) {
+            if (detailProductImages.length <= 1) return;
+            detailProductImageIdx = (detailProductImageIdx + delta + detailProductImages.length) % detailProductImages.length;
+            updateDetailSliderState();
+        }
+
+        function selectDetailSliderImage(idx) {
+            if (idx < 0 || idx >= detailProductImages.length) return;
+            detailProductImageIdx = idx;
+            updateDetailSliderState();
+        }
+
         function openProductDetail(productId) {
             const p = products.find(x => x.id === productId);
             if (!p) return;
@@ -2418,6 +3415,62 @@
 
             document.getElementById('detail-main-img').src = p.coverImage || '';
             document.getElementById('detail-title').textContent = p.title;
+
+            // Full Advertisement / Cover Showcase Banner (Multi-Image Gallery Supported)
+            const showcaseBox = document.getElementById('detail-cover-showcase-box');
+            const showcaseImg = document.getElementById('detail-cover-showcase-img');
+            const prevBtn = document.getElementById('detail-slider-prev-btn');
+            const nextBtn = document.getElementById('detail-slider-next-btn');
+            const counterBadge = document.getElementById('detail-slider-counter');
+            const thumbsRow = document.getElementById('detail-slider-thumbnails');
+
+            let imgs = [];
+            if (Array.isArray(p.images) && p.images.length > 0) {
+                imgs = p.images.filter(x => x && typeof x === 'string' && x.trim());
+            }
+            if (imgs.length === 0 && p.coverImage) {
+                imgs = [p.coverImage];
+            }
+
+            detailProductImages = imgs;
+            detailProductImageIdx = 0;
+
+            if (showcaseBox && showcaseImg) {
+                if (imgs.length > 0) {
+                    showcaseBox.style.display = 'block';
+                    showcaseImg.dataset.triedFallback = '';
+                    showcaseImg.src = imgs[0];
+                    showcaseImg.onerror = function () {
+                        if (imgs[0] && imgs[0].includes('shop/images/') && !this.dataset.triedFallback) {
+                            this.dataset.triedFallback = '1';
+                            const fname = imgs[0].split('shop/images/').pop();
+                            this.src = `shop/images/${fname}`;
+                        }
+                    };
+
+                    if (imgs.length > 1) {
+                        if (prevBtn) prevBtn.style.display = 'flex';
+                        if (nextBtn) nextBtn.style.display = 'flex';
+                        if (counterBadge) counterBadge.style.display = 'block';
+                        if (thumbsRow) {
+                            thumbsRow.style.display = 'flex';
+                            thumbsRow.innerHTML = imgs.map((u, i) => `
+                                <div class="detail-thumb-item ${i === 0 ? 'active' : ''}" onclick="selectDetailSliderImage(${i})">
+                                    <img src="${escapeHtml(u)}" alt="Thumb ${i + 1}" loading="lazy" onerror="this.src='https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png'">
+                                </div>
+                            `).join('');
+                        }
+                        updateDetailSliderState();
+                    } else {
+                        if (prevBtn) prevBtn.style.display = 'none';
+                        if (nextBtn) nextBtn.style.display = 'none';
+                        if (counterBadge) counterBadge.style.display = 'none';
+                        if (thumbsRow) thumbsRow.style.display = 'none';
+                    }
+                } else {
+                    showcaseBox.style.display = 'none';
+                }
+            }
 
             const langMeta = getLanguageMeta(p.language);
             const langBadge = document.getElementById('detail-language-badge');
@@ -2438,28 +3491,29 @@
             if (specLang) {
                 if (p.isService) {
                     specLang.textContent = '🌐 บริการออนไลน์ (Web Service / ไม่ต้องติดตั้ง)';
+                } else if (p.language === 'pinescript') {
+                    specLang.textContent = '🌲 Pine Script';
                 } else {
                     specLang.textContent = langMeta ? `${langMeta.icon} ${langMeta.name}` : (p.language || '-');
                 }
             }
 
-            document.getElementById('detail-price-tag').textContent = p.price <= 0 ? 'ฟรี (Free)' : `฿ ${Number(p.price).toFixed(2)}`;
-            document.getElementById('detail-description').textContent = p.description || '';
-
-            // Install steps
-            const installBox = document.getElementById('detail-install-box');
-            const installList = document.getElementById('detail-install-steps');
-            if (p.hasInstallGuide && Array.isArray(p.installSteps) && p.installSteps.length > 0) {
-                installBox.style.display = 'block';
-                installList.innerHTML = p.installSteps.map((step, idx) => `
-                    <div class="step-row-fh">
-                        <div class="step-bubble">${idx + 1}</div>
-                        <div>${escapeHtml(step)}</div>
-                    </div>
-                `).join('');
-            } else {
-                installBox.style.display = 'none';
+            const specCat = document.getElementById('detail-spec-category');
+            if (specCat) {
+                specCat.textContent = p.category || 'ทั่วไป';
             }
+
+            const specDelivery = document.getElementById('detail-delivery-spec');
+            if (specDelivery) {
+                if (p.language === 'pinescript') {
+                    specDelivery.textContent = '🌲 ปลดล็อคโค้ดสคริปต์สำหรับคัดลอกลง Pine Editor ทันที';
+                } else {
+                    specDelivery.textContent = 'รับลิงก์ดาวน์โหลดทันทีหลังชำระเงิน';
+                }
+            }
+
+            document.getElementById('detail-price-tag').textContent = p.price <= 0 ? 'ฟรี (Free)' : `฿ ${Number(p.price).toFixed(2)}`;
+            document.getElementById('detail-description').innerHTML = formatProductDescription(p.description, p.features);
 
             updateDetailCTAState();
             document.getElementById('detail-modal').classList.add('active');
@@ -2490,16 +3544,24 @@
             const isPurchased = checkIsPurchased(activeDetailProduct.id);
 
             if (isPurchased) {
-                btn.className = 'btn-big-download unlocked';
-                btn.innerHTML = '<span>📥 ดาวน์โหลดไฟล์ของคุณ (Dropbox)</span>';
-                btn.onclick = () => downloadPurchasedProduct(activeDetailProduct.id);
+                if (activeDetailProduct.language === 'pinescript') {
+                    btn.className = 'btn-big-download unlocked';
+                    btn.style.background = 'linear-gradient(135deg, #059669 0%, #10b981 100%)';
+                    btn.innerHTML = '<span>🌲 ดูและคัดลอกโค้ด Pine Script</span>';
+                    btn.onclick = () => openPurchasedCodeModal(activeDetailProduct.id);
+                } else {
+                    btn.className = 'btn-big-download unlocked';
+                    btn.style.background = '';
+                    btn.innerHTML = '<span>📥 ดาวน์โหลดไฟล์ของคุณ (Dropbox)</span>';
+                    btn.onclick = () => downloadPurchasedProduct(activeDetailProduct.id);
+                }
             } else if (!storeIsOnline) {
                 btn.className = 'btn-big-download disabled';
                 btn.innerHTML = '<span>🔴 ร้านค้าปิดทำการ (ไม่สามารถสแกนได้)</span>';
                 btn.onclick = () => showToast('⚠️ คอมพิวเตอร์แอดมิน Offline อยู่ โปรดเข้ามาใหม่ในเวลาทำการครับ', 'warning');
             } else {
                 btn.className = 'btn-big-download';
-                const priceTxt = activeDetailProduct.price <= 0 ? 'ดาวน์โหลดฟรี 1-Click' : `สแกนพร้อมเพย์ (฿${Number(activeDetailProduct.price).toFixed(2)})`;
+                const priceTxt = activeDetailProduct.price <= 0 ? 'ดาวน์โหลดฟรี 1-Click' : `สแกนพร้อมเพย์ ( ${Number(activeDetailProduct.price).toFixed(2)} ฿)`;
                 btn.innerHTML = `<span>⚡ ${priceTxt}</span>`;
                 btn.onclick = () => handleDetailCheckoutClick();
             }
@@ -2573,12 +3635,19 @@
 
             currentCheckoutOrder = {
                 orderId: orderId,
+                product: product,
                 productId: product.id,
                 productTitle: product.title,
                 price: product.price,
                 secretToken: secretToken,
                 expiresAt: expiresAt
             };
+
+            const checkoutModalContainer = document.getElementById('checkout-modal-container');
+            if (checkoutModalContainer) {
+                checkoutModalContainer.style.maxWidth = '440px';
+                checkoutModalContainer.style.width = '';
+            }
 
             document.getElementById('checkout-view-pending').style.display = 'block';
             document.getElementById('checkout-view-success').style.display = 'none';
@@ -2616,7 +3685,18 @@
             if (adminShortcut) {
                 if (isLocalAdmin) {
                     adminShortcut.style.display = 'block';
-                    adminShortcut.innerHTML = `<div style="padding: 6px 10px; background: #eff6ff; border: 1px dashed #93c5fd; border-radius: 6px; font-size: 0.78rem;">🛠️ <strong>แอดมินทดสอบ:</strong> <a href="admin-payment.html" target="_blank" style="color: var(--fh-blue); font-weight: 700; text-decoration: underline;">เปิดหน้าจอ Admin ยืนยันยอด Order ${orderId}</a></div>`;
+                    const priceVal = Number(product.price || 0);
+                    const priceFormatted = priceVal % 1 === 0 ? priceVal.toFixed(0) : priceVal.toFixed(2);
+                    adminShortcut.innerHTML = `
+                        <div style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 5px 12px; background: #eff6ff; border: 1px dashed #93c5fd; border-radius: 6px; font-size: 0.78rem;">
+                            <span style="font-weight: 700; color: #1e40af;">🛠️ แอดมิน:</span>
+                            <button type="button" id="btn-admin-simulate-pay" onclick="simulateAdminPayment('${orderId}')"
+                                style="border: none; background: #2563eb; color: #ffffff; font-weight: 700; font-size: 0.76rem; padding: 4px 12px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: var(--transition);"
+                                onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">
+                                <span>จำลองเงินเข้า ${priceFormatted} บ.</span>
+                            </button>
+                        </div>
+                    `;
                 } else {
                     adminShortcut.style.display = 'none';
                 }
@@ -2682,8 +3762,8 @@
 
             new QRCode(targetEl, {
                 text: payload,
-                width: 220,
-                height: 220,
+                width: 175,
+                height: 175,
                 colorDark: "#0f172a",
                 colorLight: "#ffffff",
                 correctLevel: QRCode.CorrectLevel.M
@@ -2815,37 +3895,92 @@
             }, 3000);
         }
 
+        async function simulateAdminPayment(orderId) {
+            const product = (currentCheckoutOrder && currentCheckoutOrder.product) ? currentCheckoutOrder.product : activeDetailProduct;
+            const btn = document.getElementById('btn-admin-simulate-pay');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '⏳ กำลังจำลองเงินเข้า...';
+            }
+
+            try {
+                if (checkoutCountdownTimer) {
+                    clearInterval(checkoutCountdownTimer);
+                    checkoutCountdownTimer = null;
+                }
+                if (checkoutPollingTimer) {
+                    clearInterval(checkoutPollingTimer);
+                    checkoutPollingTimer = null;
+                }
+
+                await fetch(`${PAYMENT_ENDPOINT}/${orderId}.json`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 'approved',
+                        approvedAt: Date.now()
+                    })
+                });
+
+                showToast('🎉 จำลองเงินเข้าสำเร็จ! ยืนยันยอดเรียบร้อย', 'success');
+                handlePaymentApprovedSuccess(orderId, product, { status: 'approved' });
+            } catch (err) {
+                console.error('Simulate payment error:', err);
+                showToast('❌ จำลองเงินเข้าไม่สำเร็จ: ' + err.message, 'warning');
+                if (btn) {
+                    btn.disabled = false;
+                    const priceVal = Number((product && product.price) || 0);
+                    const priceFormatted = priceVal % 1 === 0 ? priceVal.toFixed(0) : priceVal.toFixed(2);
+                    btn.innerHTML = `<span>จำลองเงินเข้า ${priceFormatted} บ.</span>`;
+                }
+            }
+        }
+
         async function handlePaymentApprovedSuccess(orderId, product, paymentData = null) {
             triggerConfettiEffect();
             playSuccessChimeSound();
 
             let downloadUrl = "";
+            let sourceCode = "";
 
             // 1. ตรวจสอบจาก paymentData / order payload (ถ้ามี)
             if (paymentData && (paymentData.downloadUrl || paymentData.fileUrl)) {
                 downloadUrl = paymentData.downloadUrl || paymentData.fileUrl;
             }
+            if (paymentData && (paymentData.sourceCode || paymentData.pinescriptCode)) {
+                sourceCode = paymentData.sourceCode || paymentData.pinescriptCode;
+            }
 
-            // 2. ตรวจสอบจาก product.downloadUrl
+            // 2. ตรวจสอบจาก product
             if (!downloadUrl && product && product.downloadUrl) {
                 downloadUrl = product.downloadUrl;
             }
+            if (!sourceCode && product && (product.sourceCode || product.pinescriptCode)) {
+                sourceCode = product.sourceCode || product.pinescriptCode;
+            }
 
             // 3. ตรวจสอบจาก Firebase VAULT_ENDPOINT
-            if (!downloadUrl && product && product.id) {
+            if (product && product.id) {
                 try {
                     const vaultRes = await fetch(`${VAULT_ENDPOINT}/${product.id}.json`);
                     if (vaultRes.ok) {
                         const vaultData = await vaultRes.json();
-                        if (vaultData && vaultData.downloadUrl) {
-                            downloadUrl = vaultData.downloadUrl;
+                        if (vaultData) {
+                            if (!downloadUrl && vaultData.downloadUrl) {
+                                downloadUrl = vaultData.downloadUrl;
+                            }
+                            if (!sourceCode && (vaultData.sourceCode || vaultData.pinescriptCode)) {
+                                sourceCode = vaultData.sourceCode || vaultData.pinescriptCode;
+                            }
                         }
                     }
                 } catch (e) { }
             }
 
-            // 4. Fallback สำหรับ Sample Products ให้ลูกค้ากดโหลดได้จริงเสมอ
-            if (!downloadUrl) {
+            const isPineScriptProduct = (product?.language === 'pinescript' || !!product?.isCodeProduct || !!sourceCode);
+
+            // 4. Fallback สำหรับ Sample Products ให้ลูกค้ากดโหลดได้จริงเสมอ (ถ้าไม่ใช่โค้ด)
+            if (!isPineScriptProduct && !downloadUrl) {
                 const sampleFallbacks = {
                     'prod_win_optimizer_2026': 'https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png',
                     'prod_cinematic_luts_pack': 'https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png',
@@ -2855,7 +3990,7 @@
             }
 
             let directDropboxUrl = downloadUrl;
-            if (directDropboxUrl.includes('dropbox.com')) {
+            if (directDropboxUrl && directDropboxUrl.includes('dropbox.com')) {
                 directDropboxUrl = directDropboxUrl.replace('dl=0', 'dl=1');
                 if (!directDropboxUrl.includes('dl=1')) {
                     directDropboxUrl += (directDropboxUrl.includes('?') ? '&dl=1' : '?dl=1');
@@ -2867,31 +4002,109 @@
                 productId: product.id,
                 productTitle: product.title,
                 price: product.price,
+                language: product.language,
                 coverImage: product.coverImage,
                 downloadUrl: directDropboxUrl,
+                sourceCode: sourceCode,
+                installSteps: product.installSteps || [],
                 purchasedAt: Date.now()
             });
 
-            // สลับเปิดหน้าจอแสดงปุ่มดาวน์โหลดทันที
+            // สลับเปิดหน้าจอแสดงผลสำเร็จ
             document.getElementById('checkout-view-pending').style.display = 'none';
             document.getElementById('checkout-view-success').style.display = 'block';
 
-            const dlBtn = document.getElementById('btn-unlocked-download-link');
-            if (dlBtn) {
-                dlBtn.href = directDropboxUrl;
-                dlBtn.setAttribute('target', '_blank');
-                dlBtn.onclick = () => {
-                    window.open(directDropboxUrl, '_blank');
-                };
+            const checkoutModalContainer = document.getElementById('checkout-modal-container');
+            if (isPineScriptProduct) {
+                if (checkoutModalContainer) {
+                    checkoutModalContainer.style.maxWidth = '980px';
+                    checkoutModalContainer.style.width = '96vw';
+                }
+            } else {
+                if (checkoutModalContainer) {
+                    checkoutModalContainer.style.maxWidth = '640px';
+                    checkoutModalContainer.style.width = '92vw';
+                }
             }
 
-            const urlTextEl = document.getElementById('unlocked-direct-link-url');
-            if (urlTextEl) {
-                urlTextEl.textContent = directDropboxUrl;
+            currentUnlockedCode = sourceCode || '';
+            currentUnlockedTitle = product.title || 'tradingview_script';
+
+            const dlSection = document.getElementById('unlocked-download-section');
+            const pineSection = document.getElementById('unlocked-pinescript-section');
+
+            if (isPineScriptProduct) {
+                if (dlSection) dlSection.style.display = 'none';
+                if (pineSection) {
+                    pineSection.style.display = 'block';
+                    const codeDisplay = document.getElementById('unlocked-pinescript-code-display');
+                    if (codeDisplay) codeDisplay.textContent = sourceCode || '// ไม่พบโค้ดสคริปต์ในระบบ โปรดติดต่อแอดมิน';
+                    const stats = document.getElementById('unlocked-code-stats');
+                    if (stats && sourceCode) {
+                        const lines = sourceCode.split('\n').length;
+                        stats.textContent = `${lines} บรรทัด • ${sourceCode.length} ตัวอักษร พร้อมคัดลอกลง Pine Editor`;
+                    }
+                }
+            } else {
+                if (pineSection) pineSection.style.display = 'none';
+                if (dlSection) dlSection.style.display = 'block';
+
+                const dlBtn = document.getElementById('btn-unlocked-download-link');
+                if (dlBtn) {
+                    dlBtn.href = directDropboxUrl;
+                    dlBtn.setAttribute('target', '_blank');
+                    dlBtn.onclick = () => {
+                        window.open(directDropboxUrl, '_blank');
+                    };
+                }
+
+                const urlTextEl = document.getElementById('unlocked-direct-link-url');
+                if (urlTextEl) {
+                    urlTextEl.textContent = directDropboxUrl;
+                }
             }
 
             updateDetailCTAState();
             renderCatalog();
+        }
+
+        let currentUnlockedCode = '';
+        let currentUnlockedTitle = 'tradingview_script';
+
+        function copyUnlockedCode(codeText) {
+            const text = codeText || currentUnlockedCode;
+            if (!text) {
+                showToast('⚠️ ไม่พบโค้ดสคริปต์สำหรับคัดลอก', 'warning');
+                return;
+            }
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('📋 คัดลอกโค้ด Pine Script สำเร็จแล้ว! นำไปวางใน Pine Editor ได้เลย', 'success');
+            }).catch(() => {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showToast('📋 คัดลอกโค้ด Pine Script เรียบร้อยแล้ว', 'success');
+            });
+        }
+
+        function downloadUnlockedCodeAsFile(title, codeText) {
+            const text = codeText || currentUnlockedCode;
+            const t = title || currentUnlockedTitle || 'tradingview_script';
+            if (!text) return;
+            const safeName = t.replace(/[^a-zA-Z0-9ก-๙_-]/g, '_') + '.pine';
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = safeName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast(`💾 บันทึกไฟล์ ${safeName} เรียบร้อยแล้ว`, 'success');
         }
 
         function copyUnlockedLink() {
@@ -2912,6 +4125,11 @@
             if (checkoutCountdownTimer) {
                 clearInterval(checkoutCountdownTimer);
                 checkoutCountdownTimer = null;
+            }
+            const checkoutModalContainer = document.getElementById('checkout-modal-container');
+            if (checkoutModalContainer) {
+                checkoutModalContainer.style.maxWidth = '480px';
+                checkoutModalContainer.style.width = '';
             }
             document.getElementById('checkout-modal').classList.remove('active');
             currentCheckoutOrder = null;
@@ -2945,7 +4163,13 @@
         }
 
         async function downloadPurchasedProduct(productId) {
+            const p = products.find(x => x.id === productId);
             const rec = getPurchasedRecords().find(x => x.productId === productId);
+            if ((p && p.language === 'pinescript') || (rec && (rec.language === 'pinescript' || rec.sourceCode))) {
+                openPurchasedCodeModal(productId);
+                return;
+            }
+
             if (rec && rec.downloadUrl) {
                 window.open(rec.downloadUrl, '_blank');
             } else {
@@ -2975,20 +4199,31 @@
                     </div>
                 `;
             } else {
-                container.innerHTML = list.map(item => `
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid var(--fh-border); border-radius: var(--radius-sm); background: #f8fafc;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <img src="${escapeHtml(item.coverImage || '')}" style="width: 44px; height: 44px; border-radius: 4px; object-fit: cover;">
-                            <div>
-                                <h4 style="font-size: 0.92rem; font-weight: 700; color: var(--fh-dark);">${escapeHtml(item.productTitle)}</h4>
-                                <div style="font-size: 0.76rem; color: var(--fh-muted);">ID: ${item.orderId} • ฿${Number(item.price || 0).toFixed(2)}</div>
+                container.innerHTML = list.map(item => {
+                    const isPine = (item.language === 'pinescript' || !!item.sourceCode);
+                    return `
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid var(--fh-border); border-radius: var(--radius-sm); background: #f8fafc;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <img src="${escapeHtml(item.coverImage || 'shop/images/tradingview_install_guide.svg')}" style="width: 44px; height: 44px; border-radius: 4px; object-fit: cover;">
+                                <div>
+                                    <h4 style="font-size: 0.92rem; font-weight: 700; color: var(--fh-dark);">${escapeHtml(item.productTitle)}</h4>
+                                    <div style="font-size: 0.76rem; color: var(--fh-muted);">ID: ${item.orderId || '-'} • ฿${Number(item.price || 0).toFixed(2)} ${isPine ? '• 🌲 Pine Script' : ''}</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 6px;">
+                                ${isPine ? `
+                                    <button type="button" class="btn-download-fh" style="padding: 7px 14px; font-size: 0.82rem; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-color: #059669;" onclick="openPurchasedCodeModal('${item.productId}')">
+                                        🌲 รับโค้ด
+                                    </button>
+                                ` : `
+                                    <a href="${item.downloadUrl || '#'}" target="_blank" class="btn-download-fh" style="padding: 7px 16px; font-size: 0.82rem; text-decoration: none;">
+                                        📥 ดาวน์โหลด
+                                    </a>
+                                `}
                             </div>
                         </div>
-                        <a href="${item.downloadUrl || '#'}" target="_blank" class="btn-download-fh" style="padding: 7px 16px; font-size: 0.82rem; text-decoration: none;">
-                            📥 ดาวน์โหลด
-                        </a>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             }
             document.getElementById('my-orders-modal').classList.add('active');
         }
@@ -2997,7 +4232,74 @@
             document.getElementById('my-orders-modal').classList.remove('active');
         }
 
+        // --- CODE VIEWER MODAL LOGIC ---
+        let viewerCurrentCode = '';
+        let viewerCurrentTitle = 'tradingview_script';
+
+        async function openPurchasedCodeModal(productId) {
+            const p = products.find(x => String(x.id) === String(productId));
+            const rec = getPurchasedRecords().find(x => String(x.productId) === String(productId));
+
+            let code = (rec && rec.sourceCode) || (p && (p.sourceCode || p.pinescriptCode)) || '';
+            const title = (p && p.title) || (rec && rec.productTitle) || 'TradingView Script';
+
+            if (!code) {
+                try {
+                    const res = await fetch(`${VAULT_ENDPOINT}/${productId}.json`);
+                    if (res.ok) {
+                        const v = await res.json();
+                        if (v && (v.sourceCode || v.pinescriptCode)) {
+                            code = v.sourceCode || v.pinescriptCode;
+                        }
+                    }
+                } catch (e) { }
+            }
+
+            viewerCurrentCode = code;
+            viewerCurrentTitle = title;
+
+            document.getElementById('code-viewer-title').textContent = title;
+            const codeDisplay = document.getElementById('code-viewer-code-display');
+            if (codeDisplay) codeDisplay.textContent = code || '// ไม่พบโค้ดสคริปต์ในระบบ โปรดติดต่อแอดมิน';
+
+            const meta = document.getElementById('code-viewer-meta');
+            if (meta && code) {
+                const lines = code.split('\n').length;
+                meta.textContent = `${lines} บรรทัด • ${code.length} ตัวอักษร พร้อมนำไปรันบน TradingView Pine Editor`;
+            }
+
+            document.getElementById('code-viewer-modal').classList.add('active');
+        }
+
+        function closeCodeViewerModal() {
+            document.getElementById('code-viewer-modal').classList.remove('active');
+        }
+
+        function copyViewerCode() {
+            copyUnlockedCode(viewerCurrentCode);
+        }
+
+        function downloadViewerCodeAsFile() {
+            downloadUnlockedCodeAsFile(viewerCurrentTitle, viewerCurrentCode);
+        }
+
         async function triggerFreeDownload(product) {
+            if (product.language === 'pinescript') {
+                savePurchaseRecord({
+                    orderId: 'FREE_' + Date.now().toString(36),
+                    productId: product.id,
+                    productTitle: product.title,
+                    price: 0,
+                    language: product.language,
+                    coverImage: product.coverImage,
+                    downloadUrl: '',
+                    sourceCode: product.sourceCode || '',
+                    purchasedAt: Date.now()
+                });
+                openPurchasedCodeModal(product.id);
+                return;
+            }
+
             try {
                 const res = await fetch(`${VAULT_ENDPOINT}/${product.id}.json`);
                 if (res.ok) {
@@ -3172,44 +4474,558 @@
             reader.readAsDataURL(file);
         }
 
-        // --- GITHUB IMAGE UPLOAD HANDLER ---
-        async function handleGithubImageUpload(input) {
-            if (!input.files || !input.files[0]) return;
-            const file = input.files[0];
+        // --- GITHUB MULTI-IMAGE UPLOAD & GALLERY HANDLER ---
+        let adminProductImages = [];
 
-            showToast('⏳ กำลังอัปโหลดภาพขึ้น GitHub (artnp/eworker)...', 'success');
+        function renderAdminImagesGallery() {
+            const container = document.getElementById('admin-images-gallery-list');
+            const badge = document.getElementById('admin-images-count-badge');
+            const coverInput = document.getElementById('admin-cover-image');
 
-            const reader = new FileReader();
-            reader.onload = async function (e) {
-                const dataUrl = e.target.result;
+            if (coverInput) {
+                coverInput.value = adminProductImages[0] || '';
+            }
+
+            if (badge) {
+                badge.textContent = `รูปภาพโฆษณาทั้งหมด (${adminProductImages.length} รูป)`;
+            }
+
+            if (!container) return;
+
+            if (adminProductImages.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column: 1 / -1; padding: 16px; text-align: center; color: var(--fh-muted); font-size: 0.8rem; background: #ffffff; border: 1px dashed var(--fh-border); border-radius: 6px;">
+                        ยังไม่มีรูปภาพ (กรุณาเลือกไฟล์เพื่ออัปโหลด หรือป้อน Image URL ด้านบน)
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = adminProductImages.map((url, idx) => {
+                const isCover = (idx === 0);
+                return `
+                    <div class="admin-image-card ${isCover ? 'is-cover' : ''}">
+                        <div style="position: relative;">
+                            <img src="${escapeHtml(url)}" alt="Image ${idx + 1}" onerror="this.src='https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png'">
+                            ${isCover ? '<span style="position: absolute; top: 4px; left: 4px; background: #16a34a; color: #fff; font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">⭐ รูปปก</span>' : ''}
+                        </div>
+                        <div class="admin-image-card-actions">
+                            ${!isCover ? `
+                                <button type="button" class="btn-img-cover-badge" onclick="setAdminCoverImage(${idx})" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;" title="ตั้งเป็นรูปปก">
+                                    ⭐ ตั้งเป็นปก
+                                </button>
+                            ` : `<span style="font-size: 0.68rem; color: #16a34a; font-weight: 700;">รูปหลัก</span>`}
+                            <div style="display: flex; gap: 3px;">
+                                ${idx > 0 ? `<button type="button" class="btn-tool-sm" onclick="moveAdminImage(${idx}, -1)" title="เลื่อนซ้าย" style="padding: 2px 5px; font-size: 0.68rem; cursor: pointer;">◀</button>` : ''}
+                                ${idx < adminProductImages.length - 1 ? `<button type="button" class="btn-tool-sm" onclick="moveAdminImage(${idx}, 1)" title="เลื่อนขวา" style="padding: 2px 5px; font-size: 0.68rem; cursor: pointer;">▶</button>` : ''}
+                                <button type="button" class="btn-tool-sm" onclick="removeAdminImage(${idx})" title="ลบรูปนี้" style="padding: 2px 6px; font-size: 0.68rem; color: var(--fh-danger); border-color: #fecaca; background: #fef2f2; cursor: pointer;">✕</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function setAdminCoverImage(idx) {
+            if (idx <= 0 || idx >= adminProductImages.length) return;
+            const chosen = adminProductImages.splice(idx, 1)[0];
+            adminProductImages.unshift(chosen);
+            renderAdminImagesGallery();
+            showToast('⭐ ตั้งเป็นรูปปกเรียบร้อยแล้ว', 'info');
+        }
+
+        function moveAdminImage(idx, dir) {
+            const target = idx + dir;
+            if (target < 0 || target >= adminProductImages.length) return;
+            const temp = adminProductImages[idx];
+            adminProductImages[idx] = adminProductImages[target];
+            adminProductImages[target] = temp;
+            renderAdminImagesGallery();
+        }
+
+        function removeAdminImage(idx) {
+            if (idx < 0 || idx >= adminProductImages.length) return;
+            adminProductImages.splice(idx, 1);
+            renderAdminImagesGallery();
+            showToast('🗑️ ลบรูปภาพเรียบร้อยแล้ว', 'info');
+        }
+
+        function addAdminImageUrlFromInput() {
+            const inp = document.getElementById('admin-add-image-url');
+            if (!inp) return;
+            const url = inp.value.trim();
+            if (!url) {
+                showToast('⚠️ กรุณาป้อน Image URL ก่อนกดเพิ่ม', 'warning');
+                return;
+            }
+            adminProductImages.push(url);
+            inp.value = '';
+            renderAdminImagesGallery();
+            showToast('🎉 เพิ่มรูปภาพเรียบร้อยแล้ว', 'success');
+        }
+
+        async function uploadSingleImageToGithub(file) {
+            return new Promise((resolve, reject) => {
+                if (!file || (file.type && !file.type.startsWith('image/'))) {
+                    return reject(new Error('ไม่ใช่ไฟล์รูปภาพ'));
+                }
+                const reader = new FileReader();
+                reader.onload = async function (e) {
+                    try {
+                        const dataUrl = e.target.result;
+                        const cleanFileName = `img_${Date.now()}_${Math.floor(Math.random() * 899 + 100)}_${file.name.replace(/[^a-zA-Z0-9_\-\.]/g, '_')}`;
+                        const res = await fetch('/upload-image-github', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                filename: cleanFileName,
+                                dataUrl: dataUrl
+                            })
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data && data.success) {
+                                const finalUrl = data.url || data.rawUrl || `shop/images/${data.filename || cleanFileName}`;
+                                return resolve(finalUrl);
+                            }
+                        }
+                        reject(new Error('เซิร์ฟเวอร์ปฏิเสธการอัปโหลด'));
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+                reader.onerror = () => reject(new Error('อ่านไฟล์ล้มเหลว'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function uploadMultipleImagesToGithub(files) {
+            if (!files || files.length === 0) return;
+            const fileList = Array.from(files).filter(f => !f.type || f.type.startsWith('image/'));
+            if (fileList.length === 0) {
+                showToast('⚠️ โปรดเลือกไฟล์ที่เป็นรูปภาพเท่านั้น (PNG, JPG, WebP, SVG)', 'warning');
+                return;
+            }
+
+            showToast(`⏳ กำลังอัปโหลดภาพ ${fileList.length} รูปขึ้น GitHub...`, 'info');
+
+            let successCount = 0;
+            for (let i = 0; i < fileList.length; i++) {
                 try {
-                    const res = await fetch('/upload-image-github', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            filename: `img_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9_\-\.]/g, '_')}`,
-                            dataUrl: dataUrl
-                        })
-                    });
+                    const finalUrl = await uploadSingleImageToGithub(fileList[i]);
+                    adminProductImages.push(finalUrl);
+                    renderAdminImagesGallery();
+                    successCount++;
+                } catch (e) {
+                    console.error('Upload failed for file:', fileList[i].name, e);
+                }
+            }
 
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (data && data.success) {
-                            document.getElementById('admin-cover-image').value = data.url;
-                            const preview = document.getElementById('admin-img-preview');
-                            preview.src = data.url;
-                            preview.style.display = 'block';
-                            showToast('🎉 ฝากภาพขึ้น GitHub (shop/images) สำเร็จ!', 'success');
-                            return;
+            if (successCount > 0) {
+                showToast(`🎉 อัปโหลดสำเร็จ ${successCount} รูปขึ้น GitHub (shop/images) เรียบร้อย!`, 'success');
+            } else {
+                showToast('❌ ข้อผิดพลาดในการอัปโหลดภาพ ตรวจสอบว่าเปิด 127.0.0.1:5000 อยู่หรือไม่', 'warning');
+            }
+        }
+
+        async function handleGithubImageUpload(input) {
+            if (!input.files || input.files.length === 0) return;
+            await uploadMultipleImagesToGithub(input.files);
+            input.value = '';
+        }
+
+        function setupGithubImageDropZone() {
+            const dropZone = document.getElementById('github-uploader-dropzone');
+            if (!dropZone) return;
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.add('dragover');
+                }, false);
+            });
+
+            ['dragleave', 'dragend', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.remove('dragover');
+                }, false);
+            });
+
+            dropZone.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const dt = e.dataTransfer;
+                if (dt && dt.files && dt.files.length > 0) {
+                    await uploadMultipleImagesToGithub(dt.files);
+                }
+            }, false);
+        }
+
+        // --- BOLD & DESCRIPTION TOOLBAR HELPERS ---
+        function syncAdminEditorToHiddenField() {
+            const editor = document.getElementById('admin-description-editor');
+            const hidden = document.getElementById('admin-description');
+            if (editor && hidden) {
+                const textOnly = editor.innerText.trim();
+                if (!textOnly && !editor.querySelector('img, hr')) {
+                    hidden.value = '';
+                } else {
+                    hidden.value = editor.innerHTML.trim();
+                }
+            }
+        }
+
+        function insertBoldTagIntoDescription() {
+            const editor = document.getElementById('admin-description-editor');
+            if (editor) {
+                editor.focus();
+                const sel = window.getSelection();
+                if (!sel || sel.isCollapsed || !sel.toString().trim()) {
+                    document.execCommand('insertHTML', false, '<b>ข้อความตัวหนา</b>');
+                } else {
+                    document.execCommand('bold', false, null);
+                }
+                syncAdminEditorToHiddenField();
+                showToast('𝐁 ทำตัวหนาเรียบร้อย', 'info');
+                return;
+            }
+            const ta = document.getElementById('admin-description');
+            if (!ta) return;
+            const start = ta.selectionStart || 0;
+            const end = ta.selectionEnd || 0;
+            const selectedText = ta.value.substring(start, end);
+            if (selectedText) {
+                const replacement = `<b>${selectedText}</b>`;
+                ta.setRangeText(replacement, start, end, 'end');
+            } else {
+                const placeholder = `<b>ข้อความตัวหนา</b>`;
+                ta.setRangeText(placeholder, start, end, 'end');
+                ta.setSelectionRange(start + 3, start + 3 + 14);
+            }
+            ta.focus();
+            showToast('𝐁 ทำตัวหนาเรียบร้อย', 'info');
+        }
+
+        function insertLiTagIntoDescription() {
+            const editor = document.getElementById('admin-description-editor');
+            if (editor) {
+                editor.focus();
+                const sel = window.getSelection();
+                const selText = sel ? sel.toString().trim() : '';
+                const itemText = selText || 'คุณสมบัติเด่นของสินค้า';
+                const html = `<div style="margin: 4px 0;"><li><b>${escapeHtml(itemText)}</b></li></div>`;
+                document.execCommand('insertHTML', false, html);
+                syncAdminEditorToHiddenField();
+                showToast('✅ แทรกคุณสมบัติ (ตัวหนา) เรียบร้อย', 'info');
+                return;
+            }
+            const ta = document.getElementById('admin-description');
+            if (!ta) return;
+            const start = ta.selectionStart || 0;
+            const end = ta.selectionEnd || 0;
+            const selectedText = ta.value.substring(start, end).trim();
+            const replacement = selectedText ? `<li><b>${selectedText}</b></li>\n` : `<li><b>คุณสมบัติสินค้าใหม่</b></li>\n`;
+            ta.setRangeText(replacement, start, end, 'end');
+            ta.focus();
+            showToast('✅ แทรกคุณสมบัติ (ตัวหนา) เรียบร้อย', 'info');
+        }
+
+        function insertDividerIntoDescription() {
+            const editor = document.getElementById('admin-description-editor');
+            if (editor) {
+                editor.focus();
+                document.execCommand('insertHTML', false, '<hr class="overview-divider"><br>');
+                syncAdminEditorToHiddenField();
+                showToast('➖ แทรกเส้นแบ่งบรรทัดเรียบร้อย', 'info');
+                return;
+            }
+            const ta = document.getElementById('admin-description');
+            if (!ta) return;
+            const start = ta.selectionStart || 0;
+            const end = ta.selectionEnd || 0;
+            ta.setRangeText('\n<hr>\n', start, end, 'end');
+            ta.focus();
+            showToast('➖ แทรกเส้นแบ่งบรรทัดเรียบร้อย', 'info');
+        }
+
+        function escapeHtmlKeepBold(str) {
+            if (!str) return '';
+            let s = String(str);
+            s = s.replace(/\*\*([^*\r\n<]+?)\*\*/g, '<b>$1</b>');
+            s = s.replace(/\*\*([^*\r\n<]+)/g, '<b>$1</b>');
+            let escaped = escapeHtml(s);
+            escaped = escaped
+                .replace(/&lt;b&gt;(.*?)&lt;\/b&gt;/gi, '<b>$1</b>')
+                .replace(/&lt;strong&gt;(.*?)&lt;\/strong&gt;/gi, '<strong>$1</strong>')
+                .replace(/&lt;code&gt;(.*?)&lt;\/code&gt;/gi, '<code>$1</code>')
+                .replace(/&lt;hr(?:\s+[^&>]*)?&gt;/gi, '<hr class="overview-divider">');
+            return escaped;
+        }
+
+        function formatRichInline(text) {
+            if (!text) return '';
+            let s = String(text);
+            s = s.replace(/\*\*([^*\r\n<]+?)\*\*/g, '<b>$1</b>');
+            s = s.replace(/\*\*([^*\r\n<]+)/g, '<b>$1</b>');
+            return s;
+        }
+
+        // --- HIGHLIGHT ENGLISH WORDS (GRAY) & NUMBERS (ORANGE) IN LI ITEMS ---
+        function highlightFeatureTokens(html) {
+            if (!html) return '';
+            const parts = html.split(/(<[^>]+>|&[a-zA-Z0-9#]+;)/g);
+            return parts.map(part => {
+                if (!part || part.startsWith('<') || (part.startsWith('&') && part.endsWith(';'))) return part;
+                return part.replace(/([0-9]+(?:\.[0-9]+)?)|([a-zA-Z]+(?:['\-_&:][a-zA-Z]+)*|[a-zA-Z]+)/g, (m, num, en) => {
+                    if (num) return `<span class="feat-num">${num}</span>`;
+                    if (en) return `<span class="feat-en">${en}</span>`;
+                    return m;
+                });
+            }).join('');
+        }
+
+        // --- DESCRIPTION & FEATURES FORMATTERS ---
+        function formatProductDescription(desc, features) {
+            const raw = (desc || '').trim();
+            const featList = Array.isArray(features) ? features.filter(f => f && f.trim()) : [];
+
+            if (!raw && featList.length === 0) {
+                return '<p style="color:var(--fh-muted); font-style:italic; text-align:center;">ไม่มีรายละเอียดเพิ่มเติม</p>';
+            }
+
+            let normalized = raw.replace(/\r\n/g, '\n').replace(/---/g, '<hr>');
+            let html = '';
+
+            if (normalized.includes('<li>')) {
+                let clean = normalized.replace(/<ul[^>]*>/gi, '').replace(/<\/ul>/gi, '');
+                const parts = clean.split(/(<li>.*?<\/li>|<hr[^>]*>)/gis);
+                let inUl = false;
+                let isTopPromo = true;
+                let buf = '';
+
+                for (let part of parts) {
+                    const trimmed = part.trim();
+                    if (/^<li>.*?<\/li>$/is.test(trimmed)) {
+                        isTopPromo = false;
+                        if (!inUl) {
+                            buf += '<ul class="feature-check-list">';
+                            inUl = true;
+                        }
+                        const inner = trimmed.replace(/^<li>/i, '').replace(/<\/li>$/i, '').trim();
+                        buf += `<li>${highlightFeatureTokens(formatRichInline(inner))}</li>`;
+                    } else if (/^<hr[^>]*>$/is.test(trimmed)) {
+                        if (inUl) {
+                            buf += '</ul>';
+                            inUl = false;
+                        }
+                        buf += '<hr class="overview-divider">';
+                    } else if (trimmed) {
+                        if (inUl) {
+                            buf += '</ul>';
+                            inUl = false;
+                        }
+                        if (isTopPromo) {
+                            buf += `<div class="overview-promo-lead">${formatRichInline(trimmed).replace(/\n/g, '<br>')}</div>`;
+                        } else {
+                            buf += `<p style="margin: 8px 0;">${formatRichInline(trimmed).replace(/\n/g, '<br>')}</p>`;
                         }
                     }
-                    showToast('⚠️ ไม่สามารถอัปโหลดขึ้น GitHub ได้ โปรดลองอีกครั้ง', 'warning');
-                } catch (err) {
-                    console.error('Upload GitHub err:', err);
-                    showToast('❌ ข้อผิดพลาดในการอัปโหลดภาพ', 'warning');
                 }
-            };
-            reader.readAsDataURL(file);
+                if (inUl) buf += '</ul>';
+                html = buf;
+            } else {
+                const lines = normalized.split('\n');
+                let inUl = false;
+                let isTopPromo = true;
+                let promoLines = [];
+                let restBuf = '';
+
+                for (let line of lines) {
+                    const trimmed = line.trim();
+                    if (/^[-*•✓✅✔]\s+(.+)/.test(trimmed)) {
+                        isTopPromo = false;
+                        if (promoLines.length > 0) {
+                            restBuf += `<div class="overview-promo-lead">${promoLines.map(l => formatRichInline(l)).join('<br>')}</div>`;
+                            promoLines = [];
+                        }
+                        if (!inUl) {
+                            restBuf += '<ul class="feature-check-list">';
+                            inUl = true;
+                        }
+                        const content = trimmed.replace(/^[-*•✓✅✔]\s+/, '');
+                        restBuf += `<li>${highlightFeatureTokens(escapeHtmlKeepBold(content))}</li>`;
+                    } else if (/^<hr[^>]*>$/i.test(trimmed)) {
+                        if (promoLines.length > 0) {
+                            restBuf += `<div class="overview-promo-lead">${promoLines.map(l => formatRichInline(l)).join('<br>')}</div>`;
+                            promoLines = [];
+                        }
+                        if (inUl) {
+                            restBuf += '</ul>';
+                            inUl = false;
+                        }
+                        restBuf += '<hr class="overview-divider">';
+                    } else if (trimmed) {
+                        if (inUl) {
+                            restBuf += '</ul>';
+                            inUl = false;
+                        }
+                        if (isTopPromo) {
+                            promoLines.push(trimmed);
+                        } else {
+                            restBuf += `<p style="margin: 8px 0;">${escapeHtmlKeepBold(trimmed)}</p>`;
+                        }
+                    }
+                }
+                if (inUl) restBuf += '</ul>';
+                if (promoLines.length > 0) {
+                    restBuf = `<div class="overview-promo-lead">${promoLines.map(l => formatRichInline(l)).join('<br>')}</div>` + restBuf;
+                }
+                html = restBuf;
+            }
+
+            if (featList.length > 0) {
+                html += `<ul class="feature-check-list" style="margin-top: 14px;">` +
+                    featList.map(f => `<li>${highlightFeatureTokens(escapeHtmlKeepBold(f))}</li>`).join('') +
+                    `</ul>`;
+            }
+
+            return html;
+        }
+
+        function toggleFeatureBuilder() {
+            const box = document.getElementById('admin-feature-builder-box');
+            if (!box) return;
+            const isShowing = (box.style.display !== 'none');
+            box.style.display = isShowing ? 'none' : 'block';
+            const btn = document.getElementById('btn-toggle-feature-builder');
+            if (btn) btn.textContent = isShowing ? '➕ กรอกแยกเป็นช่องข้อๆ' : '✕ ซ่อนช่องกรอกแยก';
+
+            if (!isShowing && document.querySelectorAll('.admin-feature-input-row').length === 0) {
+                addAdminFeatureRow();
+                addAdminFeatureRow();
+            }
+        }
+
+        function addAdminFeatureRow(val = '') {
+            const list = document.getElementById('admin-features-list');
+            if (!list) return;
+            const div = document.createElement('div');
+            div.className = 'admin-feature-input-row';
+            div.style.cssText = 'display:flex; gap:8px; align-items:center; margin-bottom:6px;';
+            div.innerHTML = `
+                <span style="width:20px; height:20px; background:linear-gradient(135deg, #16a34a 0%, #22c55e 100%); color:#ffffff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.72rem; font-weight:800; flex-shrink:0; box-shadow:0 2px 4px rgba(22,163,74,0.3);">✓</span>
+                <input type="text" class="form-control-clean admin-feature-item-val" style="flex:1; padding:6px 10px; font-size:0.83rem;" placeholder="คุณสมบัติเด่น เช่น คำนวณและแสดงผลอัตโนมัติ..." value="${escapeHtml(val)}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                <button type="button" class="btn-tool-sm" style="color:var(--fh-danger);" onclick="this.parentElement.remove();">✕</button>
+            `;
+            list.appendChild(div);
+        }
+
+        function syncFeaturesToDescription() {
+            const rows = document.querySelectorAll('.admin-feature-item-val');
+            const items = [];
+            rows.forEach(r => {
+                if (r.value.trim()) items.push(`<li><b>${r.value.trim()}</b></li>`);
+            });
+            if (items.length === 0) {
+                showToast('⚠️ ยังไม่มีข้อความในช่องคุณสมบัติ', 'warning');
+                return;
+            }
+            const editorEl = document.getElementById('admin-description-editor');
+            if (editorEl) {
+                editorEl.innerHTML = (editorEl.innerHTML.trim() ? editorEl.innerHTML.trim() + '<br>' : '') + items.join('<br>');
+                syncAdminEditorToHiddenField();
+            } else {
+                const ta = document.getElementById('admin-description');
+                if (ta) ta.value = (ta.value ? ta.value.trim() + '\n' : '') + items.join('\n');
+            }
+            showToast('🎉 ซิงค์คุณสมบัติ (ตัวหนา) เรียบร้อยแล้ว', 'success');
+        }
+
+        // --- TRADINGVIEW DEFAULT STEPS & HANDLERS ---
+        const TRADINGVIEW_DEFAULT_STEPS = [
+            "เข้าสู่เว็บไซต์ TradingView.com แล้วเข้าสู่ระบบ เปิดหน้าต่างกราฟ (Chart) คู่เหรียญหรือหุ้นที่ต้องการใช้งาน",
+            "มองหาแถบเครื่องมือแถวล่างสุดของกราฟ แล้วคลิกที่แท็บ 'Pine Editor' (ตัวแก้ไข Pine) เพื่อเปิดหน้าต่างเขียนโค้ด",
+            "ลบโค้ดเริ่มต้นในหน้าต่างแก้ไขออกทั้งหมด (กด Ctrl+A แล้ว Delete) จากนั้นคลิกขวาแล้วเลือก 'วาง (Paste)' หรือกด Ctrl+V เพื่อวางโค้ดสคริปต์ที่คัดลอกมา",
+            "คลิกปุ่ม 'บันทึก (Save)' ตั้งชื่อสคริปต์ และคลิกปุ่ม 'เพิ่มลงในชาร์ต (Add to chart)' เพื่ออัปเดตกราฟและเริ่มใช้งานอินดิเคเตอร์ทันที"
+        ];
+
+        function loadDefaultTradingViewSteps() {
+            const list = document.getElementById('admin-steps-list');
+            if (!list) return;
+            list.innerHTML = '';
+            TRADINGVIEW_DEFAULT_STEPS.forEach(s => addAdminStepRow(s));
+            document.getElementById('admin-has-install-guide').checked = true;
+            document.getElementById('admin-steps-container').style.display = 'block';
+            showToast('✅ โหลดคู่มือการติดตั้ง TradingView เริ่มต้นเรียบร้อย', 'info');
+        }
+
+        async function pasteClipboardToPineEditor() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text && text.trim()) {
+                    document.getElementById('admin-pinescript-code').value = text;
+                    showToast('📋 วางโค้ดจากคลิปบอร์ดเรียบร้อยแล้ว', 'success');
+                } else {
+                    showToast('⚠️ ไม่พบข้อความในคลิปบอร์ด', 'warning');
+                }
+            } catch (e) {
+                showToast('⚠️ โปรดกดคลิกในช่องแล้วกด Ctrl + V เพื่อวางโค้ด', 'info');
+                document.getElementById('admin-pinescript-code').focus();
+            }
+        }
+
+        // --- ADMIN CATEGORY SUGGESTIONS & CHIPS ---
+        function renderAdminCategoryOptions(currentVal = '') {
+            const datalist = document.getElementById('admin-category-datalist');
+            const chipsList = document.getElementById('admin-category-chips-list');
+            if (!datalist && !chipsList) return;
+
+            // Collect unique categories in the system
+            const catSet = new Set(['TradingView / สคริปต์', 'เครื่องมือ', 'บอท', 'โปรแกรม', 'บริการออนไลน์']);
+            if (Array.isArray(products)) {
+                products.forEach(p => {
+                    const c = (p.category || '').trim();
+                    if (c && c !== 'บริการ') catSet.add(c);
+                });
+            }
+
+            const catList = Array.from(catSet);
+
+            if (datalist) {
+                datalist.innerHTML = catList.map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
+            }
+
+            if (chipsList) {
+                const targetVal = (currentVal || (document.getElementById('admin-category-input') ? document.getElementById('admin-category-input').value : '')).trim();
+                chipsList.innerHTML = catList.map(c => {
+                    const isActive = (targetVal === c);
+                    return `<button type="button" class="btn-cat-chip ${isActive ? 'active' : ''}" onclick="selectAdminCategory('${escapeHtml(c)}')">🏷️ ${escapeHtml(c)}</button>`;
+                }).join('');
+            }
+        }
+
+        function selectAdminCategory(cat) {
+            const input = document.getElementById('admin-category-input');
+            if (input) {
+                input.value = cat;
+                updateAdminCategoryChipsActive(cat);
+            }
+        }
+
+        function updateAdminCategoryChipsActive(val) {
+            const chips = document.querySelectorAll('#admin-category-chips-list .btn-cat-chip');
+            const trimmed = (val || '').trim();
+            chips.forEach(chip => {
+                const chipText = chip.textContent.replace(/^🏷️\s*/, '').trim();
+                if (chipText === trimmed) {
+                    chip.classList.add('active');
+                } else {
+                    chip.classList.remove('active');
+                }
+            });
         }
 
         // --- ADMIN PRODUCT MANAGER (127.0.0.1:5000) ---
@@ -3220,14 +5036,37 @@
             document.getElementById('admin-steps-list').innerHTML = '';
             document.getElementById('admin-steps-container').style.display = 'none';
             document.getElementById('admin-has-install-guide').checked = false;
-            document.getElementById('admin-img-preview').style.display = 'none';
+            adminProductImages = [];
+            renderAdminImagesGallery();
+            const addImgInp = document.getElementById('admin-add-image-url');
+            if (addImgInp) addImgInp.value = '';
+            const editorEl = document.getElementById('admin-description-editor');
+            if (editorEl) editorEl.innerHTML = '';
+            document.getElementById('admin-description').value = '';
             document.getElementById('btn-admin-delete').style.display = 'none';
+
+            const pineCode = document.getElementById('admin-pinescript-code');
+            if (pineCode) pineCode.value = '';
 
             const dbxStatus = document.getElementById('dropbox-upload-status');
             if (dbxStatus) dbxStatus.textContent = '';
             const dbxProg = document.getElementById('dropbox-upload-progress-wrap');
             if (dbxProg) dbxProg.style.display = 'none';
             checkDropboxTokenStatus();
+
+            const langSel = document.getElementById('admin-language-select');
+            if (langSel) {
+                handleAdminLanguageChange(langSel.value, false);
+            }
+
+            renderAdminCategoryOptions(document.getElementById('admin-category-input').value);
+
+            const featList = document.getElementById('admin-features-list');
+            if (featList) featList.innerHTML = '';
+            const featBox = document.getElementById('admin-feature-builder-box');
+            if (featBox) featBox.style.display = 'none';
+            const btnFeat = document.getElementById('btn-toggle-feature-builder');
+            if (btnFeat) btnFeat.textContent = '➕ กรอกแยกเป็นช่องข้อๆ';
 
             document.getElementById('admin-modal').classList.add('active');
         }
@@ -3249,25 +5088,45 @@
             document.getElementById('admin-price').value = p.price || 0;
             document.getElementById('admin-cover-image').value = p.coverImage || '';
             document.getElementById('admin-category-input').value = p.category || '';
-            document.getElementById('admin-description').value = p.description || '';
-
-            if (p.coverImage) {
-                const preview = document.getElementById('admin-img-preview');
-                preview.src = p.coverImage;
-                preview.style.display = 'block';
+            const desc = p.description || '';
+            document.getElementById('admin-description').value = desc;
+            const editorEl = document.getElementById('admin-description-editor');
+            if (editorEl) {
+                let htmlDesc = desc;
+                htmlDesc = htmlDesc.replace(/\*\*([^*\r\n<]+?)\*\*/g, '<b>$1</b>');
+                htmlDesc = htmlDesc.replace(/\*\*([^*\r\n<]+)/g, '<b>$1</b>');
+                editorEl.innerHTML = htmlDesc.includes('<') ? htmlDesc : htmlDesc.replace(/\n/g, '<br>');
             }
 
+            renderAdminCategoryOptions(p.category || '');
+
+            let editImgs = [];
+            if (Array.isArray(p.images) && p.images.length > 0) {
+                editImgs = p.images.filter(x => x && typeof x === 'string' && x.trim());
+            }
+            if (editImgs.length === 0 && p.coverImage) {
+                editImgs = [p.coverImage];
+            }
+            adminProductImages = editImgs;
+            renderAdminImagesGallery();
+            const addImgInpEdit = document.getElementById('admin-add-image-url');
+            if (addImgInpEdit) addImgInpEdit.value = '';
+
+            let vaultData = null;
             try {
                 const res = await fetch(`${VAULT_ENDPOINT}/${p.id}.json`);
                 if (res.ok) {
-                    const v = await res.json();
-                    document.getElementById('admin-dropbox-url').value = (v && v.downloadUrl) || '';
+                    vaultData = await res.json();
+                    document.getElementById('admin-dropbox-url').value = (vaultData && vaultData.downloadUrl) || '';
+                    if (document.getElementById('admin-pinescript-code')) {
+                        document.getElementById('admin-pinescript-code').value = (vaultData && (vaultData.sourceCode || vaultData.pinescriptCode)) || '';
+                    }
                 }
             } catch (e) { }
 
             const langSel = document.getElementById('admin-language-select');
             const langCustom = document.getElementById('admin-language-custom');
-            const currentLang = (p.language || 'php').toLowerCase();
+            const currentLang = (p.language || 'pinescript').toLowerCase();
             let langFound = false;
             if (langSel) {
                 for (let opt of langSel.options) {
@@ -3286,6 +5145,7 @@
                 } else if (langCustom) {
                     langCustom.style.display = 'none';
                 }
+                handleAdminLanguageChange(langSel.value, true);
             }
 
             const hasGuide = !!p.hasInstallGuide && Array.isArray(p.installSteps) && p.installSteps.length > 0;
@@ -3296,6 +5156,17 @@
             stepsList.innerHTML = '';
             if (hasGuide) {
                 p.installSteps.forEach(s => addAdminStepRow(s));
+            }
+
+            const featList = document.getElementById('admin-features-list');
+            if (featList) featList.innerHTML = '';
+            if (Array.isArray(p.features) && p.features.length > 0) {
+                p.features.forEach(f => addAdminFeatureRow(f));
+                document.getElementById('admin-feature-builder-box').style.display = 'block';
+                document.getElementById('btn-toggle-feature-builder').textContent = '✕ ซ่อนช่องกรอกแยก';
+            } else {
+                document.getElementById('admin-feature-builder-box').style.display = 'none';
+                document.getElementById('btn-toggle-feature-builder').textContent = '➕ กรอกแยกเป็นช่องข้อๆ';
             }
 
             const dbxStatus = document.getElementById('dropbox-upload-status');
@@ -3312,16 +5183,47 @@
             document.getElementById('admin-modal').classList.remove('active');
         }
 
-        function handleAdminLanguageChange(val) {
+        function handleAdminLanguageChange(val, isEditing = false) {
             const custom = document.getElementById('admin-language-custom');
             if (custom) custom.style.display = (val === '__custom__') ? 'block' : 'none';
+
+            const dropboxBox = document.getElementById('admin-dropbox-box');
+            const dropboxUrl = document.getElementById('admin-dropbox-url');
+            const pineBox = document.getElementById('admin-pinescript-box');
+            const catInput = document.getElementById('admin-category-input');
+
+            if (val === 'pinescript') {
+                if (dropboxBox) dropboxBox.style.display = 'none';
+                if (dropboxUrl) dropboxUrl.required = false;
+                if (pineBox) pineBox.style.display = 'block';
+
+                if (!isEditing) {
+                    if (catInput && !catInput.value) {
+                        catInput.value = 'TradingView / สคริปต์';
+                        updateAdminCategoryChipsActive('TradingView / สคริปต์');
+                    }
+                    const currentRows = document.querySelectorAll('.admin-step-input-row');
+                    if (currentRows.length === 0) {
+                        loadDefaultTradingViewSteps();
+                    }
+                }
+            } else {
+                if (dropboxBox) dropboxBox.style.display = 'block';
+                if (dropboxUrl) dropboxUrl.required = true;
+                if (pineBox) pineBox.style.display = 'none';
+            }
         }
 
         function toggleInstallStepsInput(checked) {
             document.getElementById('admin-steps-container').style.display = checked ? 'block' : 'none';
             if (checked && document.querySelectorAll('.admin-step-input-row').length === 0) {
-                addAdminStepRow();
-                addAdminStepRow();
+                const langSel = document.getElementById('admin-language-select');
+                if (langSel && langSel.value === 'pinescript') {
+                    loadDefaultTradingViewSteps();
+                } else {
+                    addAdminStepRow();
+                    addAdminStepRow();
+                }
             }
         }
 
@@ -3333,7 +5235,7 @@
             div.style.cssText = 'display:flex; gap:8px; align-items:center; margin-bottom:8px;';
             div.innerHTML = `
                 <span style="font-weight:700; width:20px; color:var(--fh-blue); font-size:0.85rem;">${count}</span>
-                <input type="text" class="form-control-clean admin-step-item-val" style="flex:1;" placeholder="รายละเอียดขั้นตอนที่ ${count}..." value="${escapeHtml(val)}">
+                <input type="text" class="form-control-clean admin-step-item-val" style="flex:1;" placeholder="รายละเอียดขั้นตอนที่ ${count}..." value="${escapeHtml(val)}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
                 <button type="button" class="btn-tool-sm" style="color:var(--fh-danger);" onclick="this.parentElement.remove(); reindexStepRows();">✕</button>
             `;
             list.appendChild(div);
@@ -3348,17 +5250,33 @@
 
         async function handleAdminFormSubmit(e) {
             e.preventDefault();
+            syncAdminEditorToHiddenField();
 
             const editId = document.getElementById('admin-edit-product-id').value;
             const id = editId || `prod_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 6)}`;
             const title = document.getElementById('admin-title').value.trim();
             const price = parseFloat(document.getElementById('admin-price').value) || 0;
-            const coverImage = document.getElementById('admin-cover-image').value.trim();
+            const coverImage = (adminProductImages[0] || document.getElementById('admin-cover-image').value.trim() || '').trim();
+            const images = [...adminProductImages];
+
+            if (images.length === 0 && !coverImage) {
+                showToast('⚠️ กรุณาเพิ่มรูปภาพโฆษณาสินค้าอย่างน้อย 1 รูป', 'warning');
+                return;
+            }
+
             const dropboxUrl = document.getElementById('admin-dropbox-url').value.trim();
             const category = document.getElementById('admin-category-input').value.trim();
 
             const langSelect = document.getElementById('admin-language-select').value;
+            const isPineScript = (langSelect === 'pinescript');
             const language = langSelect === '__custom__' ? (document.getElementById('admin-language-custom').value.trim() || 'other') : langSelect;
+            const pinescriptCode = document.getElementById('admin-pinescript-code') ? document.getElementById('admin-pinescript-code').value.trim() : '';
+
+            if (isPineScript && !pinescriptCode) {
+                showToast('⚠️ กรุณาวางซอร์สโค้ด Pine Script ก่อนบันทึก', 'warning');
+                document.getElementById('admin-pinescript-code').focus();
+                return;
+            }
 
             const description = document.getElementById('admin-description').value.trim();
             const hasInstallGuide = document.getElementById('admin-has-install-guide').checked;
@@ -3374,17 +5292,25 @@
             const isBestSeller = false;
             const slug = title.toLowerCase().replace(/[^a-z0-9ก-๙]+/g, '-').replace(/(^-|-$)/g, '');
 
+            const features = [];
+            document.querySelectorAll('.admin-feature-item-val').forEach(inp => {
+                if (inp.value.trim()) features.push(inp.value.trim());
+            });
+
             const publicProductData = {
                 id: id,
                 title: title,
                 slug: slug,
                 price: price,
-                category: category,
+                category: category || (isPineScript ? 'TradingView / สคริปต์' : ''),
                 language: language,
                 coverImage: coverImage,
+                images: images,
                 description: description,
+                features: features,
                 hasInstallGuide: hasInstallGuide,
                 installSteps: installSteps,
+                isCodeProduct: isPineScript,
                 isRecommended: isRecommended,
                 isBestSeller: isBestSeller,
                 updatedAt: Date.now(),
@@ -3393,7 +5319,9 @@
 
             const vaultData = {
                 productId: id,
-                downloadUrl: dropboxUrl,
+                downloadUrl: isPineScript ? '' : dropboxUrl,
+                sourceCode: isPineScript ? pinescriptCode : '',
+                pinescriptCode: isPineScript ? pinescriptCode : '',
                 updatedAt: Date.now()
             };
 
