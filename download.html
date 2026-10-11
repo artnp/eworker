@@ -1358,8 +1358,8 @@
                             <p>สแกนจ่ายแล้ว <strong>ระบบจะส่งไฟล์จริงให้ทันที</strong></p>
                         </div>
                     </div>
-                    〣
-                    <!-- ปุ่มยืนยันกรณีโอนแล้วแต่ระบบไม่อนุมัติ (เช่น ช่วงปิดปรับปรุงธนาคาร 23:00-02:00 น.) -->
+                    <!-- เส้นแบ่งแยก -->
+                    <div class="manual-confirm-divider" id="manual-confirm-divider"></div>
                     <div class="manual-confirm-box" id="manual-confirm-box">
                         <button type="button" class="btn-manual-confirm" id="btn-manual-confirm"
                             onclick="triggerManualPaymentAlert()">
@@ -2429,7 +2429,7 @@
             if (manualDivider) manualDivider.style.display = 'none';
         }
 
-        // ฟังก์ชันควบคุมการแสดงผลปุ่มแจ้งเตือนตามช่วงเวลา (23:00 - 02:00 น. หรือเมื่อรอนาน)
+        // ฟังก์ชันควบคุมการแสดงผลปุ่มแจ้งเตือน (แสดงเฉพาะช่วงรอบดึก 23:00 - 02:59 น. เท่านั้น)
         function updateManualConfirmVisibility() {
             const manualBox = document.getElementById('manual-confirm-box');
             const divider = document.getElementById('manual-confirm-divider');
@@ -2445,29 +2445,16 @@
             const isLateNight = (hour >= 23 || hour < 3);
 
             if (isLateNight) {
-                // ช่วงรอบดึก: แสดงเส้นแบ่งและปุ่มทันที
+                // ช่วงรอบดึก: แสดงเส้นแบ่งและปุ่มทันที เพื่อรองรับระบบธนาคารดีเลย์
                 manualBox.style.display = 'flex';
                 if (divider) divider.style.display = 'block';
                 if (hint) {
-                    hint.textContent = '💡 หากโอนช่วงรอบดึก (23:00 - 02:00 น.) ระบบธนาคารอาจแจ้งเตือนล่าช้า กดปุ่มนี้เพื่อส่งสัญญาณให้แอดมินอนุมัติทันที';
+                    hint.textContent = '💡 หากโอนช่วงรอบดึก (23:00 - 02:00 น.) ระบบธนาคารอาจแจ้งเตือนล่าช้า กดปุ่มนี้เพื่อให้แอดมินอนุมัติทันที';
                 }
             } else {
-                // ช่วงกลางวันปกติ: ซ่อนไว้ก่อน เพื่อให้ระบบตรวจจับยอดเงินอัตโนมัติทำงาน
-                // แต่หากลูกค้ารอนานเกิน 20 วินาทีแล้วยอดเงินยังไม่เข้า ค่อย fade-in ขึ้นมาเป็นปุ่มช่วยเหลือสำรอง
+                // ช่วงกลางวันปกติ: ซ่อนถาวร 100% (เพราะ LINE แจ้งเตือนเงินเข้าอัตโนมัติภายใน 2-5 วิ อยู่แล้ว ป้องกันลูกค้ากดเล่นก่อนโอนจริง)
                 manualBox.style.display = 'none';
                 if (divider) divider.style.display = 'none';
-
-                if (!manualBox.__daytimeTimer) {
-                    manualBox.__daytimeTimer = setTimeout(() => {
-                        if (!__isPaid && isServerOnline) {
-                            manualBox.style.display = 'flex';
-                            if (divider) divider.style.display = 'block';
-                            if (hint) {
-                                hint.textContent = '💡 หากสแกนจ่ายแล้วแต่ระบบยังไม่ปลดล็อค สามารถกดปุ่มนี้เพื่อแจ้งเตือนแอดมินตรวจสอบได้';
-                            }
-                        }
-                    }, 20000);
-                }
             }
         }
 
