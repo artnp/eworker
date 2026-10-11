@@ -2226,8 +2226,16 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                 file_type_param = "img" if ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'] else ("pdf" if ext == '.pdf' else "file")
 
                 b64_url = base64.b64encode(full_url.encode('utf-8')).decode('utf-8')
+                EW_SIGN_SALT = "EW_SALT_2026_SECURE_KEY"
+                import hashlib
+                import urllib.parse
+                norm_price = f"{float(amount or 0):.2f}"
+                sig_payload = f"{b64_url}:{norm_price}:{timestamp}:{EW_SIGN_SALT}"
+                sig = hashlib.sha256(sig_payload.encode('utf-8')).hexdigest()[:12]
+
                 base_url = "https://artnp.github.io/eworker/download.html"
-                view_url = f"{base_url}?d={b64_url}&exp={timestamp}&type={file_type_param}&price={amount}"
+                quoted_d = urllib.parse.quote(b64_url)
+                view_url = f"{base_url}?d={quoted_d}&exp={timestamp}&type={file_type_param}&price={amount}&s={sig}"
                 message = f"✅เสร็จแล้ว!\n{view_url}"
 
                 # คัดลอกลง Windows Clipboard แบบไร้หน้าต่างดำ
