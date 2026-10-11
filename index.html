@@ -869,10 +869,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 28px 20px;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.2s ease;
+            overflow-y: auto;
         }
 
         /* 10-Minute Countdown Badge */
@@ -922,13 +923,13 @@
             border-radius: var(--radius-md);
             width: 100%;
             max-width: 900px;
-            max-height: 90vh;
-            overflow-y: auto;
             position: relative;
             transform: scale(0.96);
             transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
             border: 1px solid var(--fh-border);
+            margin: auto;
+            overflow: visible;
         }
 
         .modal-overlay.active .modal-container {
@@ -950,60 +951,64 @@
             }
         }
 
-        .modal-sticky-close-bar {
-            position: sticky;
-            top: 0;
-            width: 100%;
-            height: 0;
-            z-index: 200;
-            display: flex;
-            justify-content: flex-end;
-            padding: 14px 14px 0 0;
-            pointer-events: none;
-            overflow: visible;
-        }
-
         .modal-close-fh {
             position: absolute;
-            top: 14px;
-            right: 14px;
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(0, 0, 0, 0.12);
-            color: #334155;
-            width: 36px;
-            height: 36px;
+            top: -14px;
+            right: -14px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            border: 2px solid #ffffff;
+            color: #ffffff !important;
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            min-height: 44px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.15rem;
-            font-weight: 800;
+            font-size: 1.35rem;
+            font-weight: 900;
+            line-height: 1;
             cursor: pointer;
-            z-index: 210;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-            pointer-events: auto;
-        }
-
-        .modal-sticky-close-bar .modal-close-fh {
-            position: relative;
-            top: 0;
-            right: 0;
+            z-index: 10000;
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.45), 0 2px 6px rgba(0, 0, 0, 0.2);
+            transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+            pointer-events: auto !important;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            padding: 0;
+            outline: none;
         }
 
         .modal-close-fh:hover {
-            background: #ffffff;
-            color: #ef4444;
+            background: linear-gradient(135deg, #f87171 0%, #b91c1c 100%);
+            color: #ffffff !important;
             transform: scale(1.08);
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
-            border-color: rgba(239, 68, 68, 0.3);
+            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.65), 0 3px 8px rgba(0, 0, 0, 0.25);
+            border-color: #ffffff;
+        }
+
+        .modal-close-fh:active {
+            transform: scale(0.92);
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.5);
+        }
+
+        @media (max-width: 640px) {
+            .modal-close-fh {
+                top: -10px;
+                right: -10px;
+                width: 38px;
+                height: 38px;
+                min-width: 38px;
+                min-height: 38px;
+                font-size: 1.2rem;
+            }
         }
 
         /* ===== PROGRAM DETAIL MODAL ( Dedicated Style) ===== */
         .detail-header-block {
-            padding: 14px 54px;
+            padding: 16px 68px 14px 68px;
             border-bottom: 1px solid var(--fh-border);
             display: flex;
             flex-direction: column;
@@ -1013,6 +1018,8 @@
             gap: 10px;
             background: #f8fafc;
             position: relative;
+            border-top-left-radius: var(--radius-md);
+            border-top-right-radius: var(--radius-md);
         }
 
         .detail-brand-title {
@@ -1442,6 +1449,83 @@
             width: 160px;
         }
 
+        /* Detail Bottom Grid & PromptPay Checkout Card */
+        .detail-bottom-grid {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 22px;
+            align-items: stretch;
+            margin-top: 24px;
+            margin-bottom: 20px;
+        }
+
+        .detail-bottom-grid.no-checkout {
+            grid-template-columns: 1fr;
+        }
+
+        .detail-bottom-checkout-card {
+            background: #ffffff;
+            border: 1.5px solid #bbf7d0;
+            border-radius: var(--radius-sm);
+            padding: 18px 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 4px 16px rgba(22, 163, 74, 0.08);
+            transition: var(--transition);
+        }
+
+        .detail-bottom-checkout-card:hover {
+            border-color: #86efac;
+            box-shadow: 0 6px 20px rgba(22, 163, 74, 0.14);
+        }
+
+        .detail-bottom-checkout-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .detail-bottom-promptpay-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.82rem;
+            font-weight: 800;
+            color: #15803d;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            padding: 3px 10px;
+            border-radius: 6px;
+        }
+
+        .detail-bottom-price-val {
+            font-size: 1.85rem;
+            font-weight: 900;
+            color: #16a34a;
+            line-height: 1.1;
+            letter-spacing: -0.5px;
+            text-align: center;
+        }
+
+        .detail-bottom-checkout-card .btn-big-download {
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+            padding: 13px 20px;
+            font-size: 1rem;
+            border-radius: 8px;
+            margin: 0;
+        }
+
+        @media (max-width: 768px) {
+            .detail-bottom-grid {
+                grid-template-columns: 1fr;
+                gap: 18px;
+            }
+        }
+
         /* ===== TRADINGVIEW GUIDE & UNLOCKED CODE BOX ===== */
         .unlocked-code-box {
             background: #030712;
@@ -1677,7 +1761,7 @@
 
         /* ===== ADMIN FORM MODAL (127.0.0.1) ===== */
         .admin-form-header {
-            padding: 20px 24px;
+            padding: 20px 68px 20px 24px;
             border-bottom: 1px solid var(--fh-border);
             background: #f8fafc;
         }
@@ -1931,6 +2015,7 @@
         .detail-slider-main {
             position: relative;
             width: 100%;
+            aspect-ratio: 16 / 9;
             min-height: 280px;
             max-height: 520px;
             display: flex;
@@ -1949,6 +2034,22 @@
             display: block;
             margin: 0 auto;
             transition: opacity 0.2s ease-in-out;
+        }
+
+        #detail-slider-video-wrap {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            background: #000000;
+            z-index: 2;
+        }
+
+        #detail-slider-video-wrap iframe {
+            width: 100%;
+            height: 100%;
+            border: 0;
+            display: block;
         }
 
         .slider-nav-btn {
@@ -2042,6 +2143,13 @@
             height: 100%;
             object-fit: cover;
             display: block;
+        }
+
+        /* Video Thumbnail Style in Slider */
+        .detail-thumb-video {
+            border: 2px solid #ef4444 !important;
+            cursor: pointer;
+            position: relative;
         }
 
         /* Toast Alert */
@@ -2211,11 +2319,10 @@
     </main>
 
     <!-- ===== PROGRAM DETAIL MODAL ( Technical Style) ===== -->
-    <div class="modal-overlay" id="detail-modal">
+    <div class="modal-overlay" id="detail-modal" onclick="handleDetailModalOverlayClick(event)">
         <div class="modal-container">
-            <div class="modal-sticky-close-bar">
-                <button class="modal-close-fh" onclick="closeDetailModal()" title="ปิดหน้าต่าง">✕</button>
-            </div>
+            <button type="button" class="modal-close-fh" onclick="closeDetailModal(event)" title="ปิดหน้าต่าง"
+                aria-label="ปิดหน้าต่าง">✕</button>
 
             <!-- Top Header Block -->
             <div class="detail-header-block">
@@ -2234,7 +2341,7 @@
                         <span>⚡ ดาวน์โหลดเวอร์ชันล่าสุด</span>
                     </button>
                     <span
-                        style="font-size: 0.75rem; color: var(--fh-muted); text-align: center;">ดาวน์โหลดตรงความเร็วสูง</span>
+                        style="font-size: 0.75rem; color: var(--fh-muted); text-align: center;">⚡พร้อมส่งลิ้งค์ดาวน์โหลดทันที</span>
                 </div>
             </div>
 
@@ -2246,6 +2353,13 @@
                         <div class="detail-slider-main">
                             <img id="detail-cover-showcase-img" src="" alt="ภาพโฆษณาสินค้า">
 
+                            <!-- YouTube Video Slide in Slider Main -->
+                            <div id="detail-slider-video-wrap" style="display: none;">
+                                <iframe id="detail-slider-video-iframe" src="" title="YouTube video player"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    allowfullscreen></iframe>
+                            </div>
+
                             <!-- Prev / Next slide navigation buttons -->
                             <button type="button" class="slider-nav-btn prev" id="detail-slider-prev-btn"
                                 onclick="navigateDetailSlider(-1)" title="รูปก่อนหน้า">‹</button>
@@ -2254,8 +2368,8 @@
 
                             <!-- Slide Counter Badge -->
                             <div class="slider-counter-badge" id="detail-slider-counter" style="display: none;">
-                                📷 <span id="detail-slider-curr-idx">1</span> / <span
-                                    id="detail-slider-total-cnt">1</span>
+                                <span id="detail-slider-badge-icon">📷</span> <span id="detail-slider-curr-idx">1</span>
+                                / <span id="detail-slider-total-cnt">1</span>
                             </div>
                         </div>
 
@@ -2282,25 +2396,55 @@
                     <div class="detail-gallery-row" id="detail-gallery-row"></div>
                 </div>
 
-                <!-- Technical Specs Table -->
-                <div style="margin-top: 24px; margin-bottom: 20px;" id="detail-specs-box">
-                    <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; color: var(--fh-dark);">
-                        ข้อมูลทางเทคนิค (Technical Specs)
-                    </h3>
-                    <table class="specs-table">
-                        <tr>
-                            <td>ภาษาที่ใช้พัฒนา:</td>
-                            <td id="detail-spec-language" style="font-weight: 700; color: var(--fh-blue);">-</td>
-                        </tr>
-                        <tr>
-                            <td>หมวดหมู่:</td>
-                            <td id="detail-spec-category" style="font-weight: 600; color: #334155;">-</td>
-                        </tr>
-                        <tr>
-                            <td>การส่งมอบ:</td>
-                            <td id="detail-delivery-spec">รับลิงก์ดาวน์โหลดทันทีหลังชำระเงิน</td>
-                        </tr>
-                    </table>
+                <!-- Bottom Section: Technical Specs & PromptPay Checkout Card -->
+                <div class="detail-bottom-grid" id="detail-bottom-section">
+                    <!-- Left: Technical Specs Table -->
+                    <div id="detail-specs-box">
+                        <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; color: var(--fh-dark);">
+                            ข้อมูลทางเทคนิค (Technical Specs)
+                        </h3>
+                        <table class="specs-table">
+                            <tr>
+                                <td>ภาษาที่ใช้พัฒนา:</td>
+                                <td id="detail-spec-language" style="font-weight: 700; color: var(--fh-blue);">-</td>
+                            </tr>
+                            <tr>
+                                <td>หมวดหมู่:</td>
+                                <td id="detail-spec-category" style="font-weight: 600; color: #334155;">-</td>
+                            </tr>
+                            <tr>
+                                <td>การส่งมอบ:</td>
+                                <td id="detail-delivery-spec">รับลิงก์ดาวน์โหลดทันทีหลังชำระเงิน</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Right: Bottom PromptPay Price & Scan Card -->
+                    <div class="detail-bottom-checkout-card" id="detail-bottom-checkout-card">
+                        <div>
+                            <div class="detail-bottom-checkout-header">
+                                <span class="detail-bottom-promptpay-badge">
+                                    <span>⚡ PromptPay</span>
+                                </span>
+                                <span style="font-size: 0.76rem; color: var(--fh-muted);"
+                                    id="detail-bottom-status-note">
+                                    สแกนผ่านทุกแอปธนาคาร
+                                </span>
+                            </div>
+                            <div
+                                style="display: flex; align-items: center; justify-content: center; margin: 10px 0 16px 0; text-align: center;">
+                                <div class="detail-bottom-price-val" id="detail-bottom-price-tag">฿ 50.00</div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <button class="btn-big-download" id="btn-detail-checkout-bottom"
+                                onclick="handleDetailCheckoutClick()">
+                                <span>⛶ สแกนพร้อมเพย์</span>
+                            </button>
+
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -2308,10 +2452,11 @@
     </div>
 
     <!-- ===== CHECKOUT / QR MODAL ===== -->
-    <div class="modal-overlay" id="checkout-modal">
+    <div class="modal-overlay" id="checkout-modal" onclick="handleCheckoutModalOverlayClick(event)">
         <div class="modal-container" id="checkout-modal-container"
             style="max-width: 380px; transition: max-width 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
-            <button class="modal-close-fh" onclick="closeCheckoutModal()">✕</button>
+            <button type="button" class="modal-close-fh" onclick="closeCheckoutModal(event)" title="ปิดหน้าต่าง"
+                aria-label="ปิดหน้าต่าง">✕</button>
 
             <div class="checkout-box-clean" id="checkout-view-pending">
                 <h4 style="font-size: 1.08rem; font-weight: 800; color: #16a34a; margin: 0 0 4px 0;">🎉
@@ -2499,9 +2644,10 @@
     </div>
 
     <!-- ===== MY PURCHASES MODAL ===== -->
-    <div class="modal-overlay" id="my-orders-modal">
+    <div class="modal-overlay" id="my-orders-modal" onclick="handleMyOrdersModalOverlayClick(event)">
         <div class="modal-container" style="max-width: 600px;">
-            <button class="modal-close-fh" onclick="closeMyOrdersModal()">✕</button>
+            <button type="button" class="modal-close-fh" onclick="closeMyOrdersModal(event)" title="ปิดหน้าต่าง"
+                aria-label="ปิดหน้าต่าง">✕</button>
             <div style="padding: 24px;">
                 <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 6px;">📥 คลังดาวน์โหลดของฉัน</h3>
                 <p style="font-size: 0.84rem; color: var(--fh-muted); margin-bottom: 18px;">
@@ -2513,11 +2659,10 @@
     </div>
 
     <!-- ===== CODE VIEWER MODAL (For Purchased Pine Scripts) ===== -->
-    <div class="modal-overlay" id="code-viewer-modal">
+    <div class="modal-overlay" id="code-viewer-modal" onclick="handleCodeViewerModalOverlayClick(event)">
         <div class="modal-container" style="max-width: 980px; width: 96vw;">
-            <div class="modal-sticky-close-bar">
-                <button class="modal-close-fh" onclick="closeCodeViewerModal()" title="ปิดหน้าต่าง">✕</button>
-            </div>
+            <button type="button" class="modal-close-fh" onclick="closeCodeViewerModal(event)" title="ปิดหน้าต่าง"
+                aria-label="ปิดหน้าต่าง">✕</button>
             <div style="padding: 24px;">
                 <div style="text-align: center; margin-bottom: 14px;">
                     <div style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
@@ -2608,11 +2753,10 @@
     </div>
 
     <!-- ===== ADMIN PRODUCT MANAGER (127.0.0.1:5000) ===== -->
-    <div class="modal-overlay" id="admin-modal">
+    <div class="modal-overlay" id="admin-modal" onclick="handleAdminModalOverlayClick(event)">
         <div class="modal-container">
-            <div class="modal-sticky-close-bar">
-                <button class="modal-close-fh" onclick="closeAdminModal()" title="ปิดหน้าต่าง">✕</button>
-            </div>
+            <button type="button" class="modal-close-fh" onclick="closeAdminModal(event)" title="ปิดหน้าต่าง"
+                aria-label="ปิดหน้าต่าง">✕</button>
 
             <div class="admin-form-header">
                 <h3 id="admin-form-header-text">👑 เพิ่มสินค้าดิจิทัลใหม่ (โพสต์ขึ้นโฮสต์)</h3>
@@ -2853,6 +2997,55 @@
                                     รูปแรกคือรูปปกที่ใช้แสดงในหน้าแรก</span>
                             </div>
                             <div id="admin-images-gallery-list" class="admin-images-grid"></div>
+                        </div>
+                    </div>
+
+                    <!-- YOUTUBE VIDEO SECTION (เพิ่มได้ทั้งตอนโพสต์และแก้ไขสินค้า) -->
+                    <div class="form-group-clean"
+                        style="margin-top: 14px; background: #fffbfb; border: 1px solid #fed7d7; border-radius: var(--radius-sm); padding: 12px 14px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
+                            <label class="form-label-clean"
+                                style="margin: 0; color: #b91c1c; display: flex; align-items: center; gap: 6px; font-weight: 700;">
+                                <svg style="width: 18px; height: 18px; fill: #ef4444; flex-shrink: 0;"
+                                    viewBox="0 0 24 24">
+                                    <path
+                                        d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                                </svg>
+                                วิดีโอ YouTube (ใส่ลิงก์ YouTube เพื่อ Embed แสดงท้ายภาพสินค้า)
+                            </label>
+                            <span style="font-size: 0.72rem; color: #dc2626; font-weight: 600;">🎬
+                                แสดงท้ายสุดหลังภาพสินค้า</span>
+                        </div>
+                        <div style="display: flex; gap: 6px;">
+                            <input type="text" id="admin-youtube-url" class="form-control-clean"
+                                placeholder="เช่น https://www.youtube.com/watch?v=... หรือ https://youtu.be/... หรือ Embed ID"
+                                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                                oninput="handleAdminYoutubeInput(this.value)"
+                                style="font-size: 0.82rem; margin: 0; background: #ffffff;">
+                            <button type="button" class="btn-tool-sm" onclick="clearAdminYoutubeInput()"
+                                style="padding: 7px 14px; font-size: 0.76rem; color: #dc2626; border-color: #fecaca; background: #ffffff; cursor: pointer; white-space: nowrap;"
+                                title="ล้างลิงก์ YouTube">
+                                ✕ ลบ
+                            </button>
+                        </div>
+                        <span style="font-size: 0.72rem; color: #64748b; margin-top: 4px; display: block;">
+                            💡 รองรับทั้งลิงก์เต็ม youtube.com, ลิงก์ย่อ youtu.be, YouTube Shorts หรือรหัส Video ID
+                        </span>
+                        <!-- Live Preview of YouTube video in Admin modal -->
+                        <div id="admin-youtube-preview-wrap" style="display: none; margin-top: 10px;">
+                            <div
+                                style="font-size: 0.75rem; color: #475569; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between;">
+                                <span style="font-weight: 600; color: #1e293b;">📺 ตัวอย่างวิดีโอ (Live Preview):</span>
+                                <span id="admin-youtube-id-badge"
+                                    style="font-family: monospace; font-size: 0.7rem; color: #b91c1c; background: #fee2e2; padding: 2px 8px; border-radius: 4px; font-weight: 700;"></span>
+                            </div>
+                            <div
+                                style="position: relative; width: 100%; padding-bottom: 56.25%; height: 0; border-radius: 6px; overflow: hidden; background: #000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                                <iframe id="admin-youtube-preview-iframe" src=""
+                                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
+                                    allowfullscreen></iframe>
+                            </div>
                         </div>
                     </div>
 
@@ -3342,6 +3535,37 @@
             if (e) e.stopPropagation();
         }
 
+        function decodeHtmlEntities(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&amp;nbsp;/gi, ' ')
+                .replace(/&nbsp;/gi, ' ')
+                .replace(/&#160;/g, ' ')
+                .replace(/&#xa0;/gi, ' ')
+                .replace(/&amp;quot;/gi, '"')
+                .replace(/&quot;/gi, '"')
+                .replace(/&amp;#39;/gi, "'")
+                .replace(/&#39;/gi, "'")
+                .replace(/&apos;/gi, "'")
+                .replace(/&amp;lt;/gi, '<')
+                .replace(/&lt;/gi, '<')
+                .replace(/&amp;gt;/gi, '>')
+                .replace(/&gt;/gi, '>')
+                .replace(/&amp;amp;/gi, '&')
+                .replace(/&amp;/gi, '&');
+        }
+
+        function formatCardExcerpt(desc) {
+            if (!desc) return '';
+            let text = String(desc);
+            text = text.replace(/<hr[^>]*>/gi, ' ').replace(/---/g, ' ');
+            text = decodeHtmlEntities(text);
+            text = text.replace(/<[^>]+>/g, ' ');
+            text = decodeHtmlEntities(text);
+            text = text.replace(/\s+/g, ' ').trim();
+            return escapeHtml(text);
+        }
+
         // --- Render Clean Program List ( Style) ---
         function renderCatalog() {
             const container = document.getElementById('program-list-container');
@@ -3403,7 +3627,7 @@
                                     ${isService ? '<span class="badge-service-pill">🛠️ บริการออนไลน์</span>' : ''}
                                     ${p.isRecommended ? '<span class="badge-recommended">⭐ แนะนำ</span>' : ''}
                                 </div>
-                                <div class="program-excerpt">${escapeHtml((p.description || '').replace(/<hr[^>]*>/gi, ' ').replace(/---/g, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim())}</div>
+                                <div class="program-excerpt">${formatCardExcerpt(p.description)}</div>
                                 <div class="program-meta-chips">
                                     ${isService ? `
                                         <span>🌐 บริการออนไลน์</span>                                    ` : `
@@ -3499,31 +3723,64 @@
         }
 
         // --- Program Detail View & SEO Injection ---
-        let detailProductImages = [];
+        let detailSliderItems = [];
         let detailProductImageIdx = 0;
 
         function updateDetailSliderState() {
-            if (detailProductImages.length === 0) return;
+            if (detailSliderItems.length === 0) return;
             const imgEl = document.getElementById('detail-cover-showcase-img');
+            const videoWrap = document.getElementById('detail-slider-video-wrap');
+            const videoIframe = document.getElementById('detail-slider-video-iframe');
             const currIdxEl = document.getElementById('detail-slider-curr-idx');
             const totalCntEl = document.getElementById('detail-slider-total-cnt');
+            const badgeIconEl = document.getElementById('detail-slider-badge-icon');
 
-            if (imgEl) {
-                imgEl.style.opacity = '0.35';
-                setTimeout(() => {
-                    imgEl.src = detailProductImages[detailProductImageIdx];
-                    imgEl.style.opacity = '1';
-                }, 100);
+            const currentItem = detailSliderItems[detailProductImageIdx];
+
+            if (currentItem.type === 'video') {
+                if (imgEl) imgEl.style.display = 'none';
+                if (videoWrap) videoWrap.style.display = 'block';
+                if (videoIframe && videoIframe.dataset.currId !== currentItem.youtubeId) {
+                    videoIframe.dataset.currId = currentItem.youtubeId;
+                    videoIframe.src = `https://www.youtube-nocookie.com/embed/${currentItem.youtubeId}?rel=0`;
+                }
+                if (badgeIconEl) badgeIconEl.textContent = '🎬';
+            } else {
+                if (videoWrap) videoWrap.style.display = 'none';
+                if (videoIframe) {
+                    videoIframe.dataset.currId = '';
+                    videoIframe.src = '';
+                }
+                if (imgEl) {
+                    imgEl.style.display = 'block';
+                    imgEl.style.opacity = '0.35';
+                    setTimeout(() => {
+                        imgEl.src = currentItem.url;
+                        imgEl.style.opacity = '1';
+                    }, 80);
+                    imgEl.onerror = function () {
+                        if (currentItem.url && currentItem.url.includes('shop/images/') && !this.dataset.triedFallback) {
+                            this.dataset.triedFallback = '1';
+                            const fname = currentItem.url.split('shop/images/').pop();
+                            this.src = `shop/images/${fname}`;
+                        }
+                    };
+                }
+                if (badgeIconEl) badgeIconEl.textContent = '📷';
             }
 
             if (currIdxEl) currIdxEl.textContent = detailProductImageIdx + 1;
-            if (totalCntEl) totalCntEl.textContent = detailProductImages.length;
+            if (totalCntEl) totalCntEl.textContent = detailSliderItems.length;
 
             const thumbs = document.querySelectorAll('.detail-thumb-item');
+            const thumbsContainer = document.getElementById('detail-slider-thumbnails');
             thumbs.forEach((th, i) => {
                 if (i === detailProductImageIdx) {
                     th.classList.add('active');
-                    th.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                    if (thumbsContainer) {
+                        const targetLeft = th.offsetLeft - (thumbsContainer.clientWidth / 2) + (th.clientWidth / 2);
+                        thumbsContainer.scrollTo({ left: targetLeft, behavior: 'smooth' });
+                    }
                 } else {
                     th.classList.remove('active');
                 }
@@ -3531,13 +3788,13 @@
         }
 
         function navigateDetailSlider(delta) {
-            if (detailProductImages.length <= 1) return;
-            detailProductImageIdx = (detailProductImageIdx + delta + detailProductImages.length) % detailProductImages.length;
+            if (detailSliderItems.length <= 1) return;
+            detailProductImageIdx = (detailProductImageIdx + delta + detailSliderItems.length) % detailSliderItems.length;
             updateDetailSliderState();
         }
 
         function selectDetailSliderImage(idx) {
-            if (idx < 0 || idx >= detailProductImages.length) return;
+            if (idx < 0 || idx >= detailSliderItems.length) return;
             detailProductImageIdx = idx;
             updateDetailSliderState();
         }
@@ -3561,9 +3818,8 @@
             if (mainImg) mainImg.src = p.coverImage || '';
             document.getElementById('detail-title').textContent = p.title;
 
-            // Full Advertisement / Cover Showcase Banner (Multi-Image Gallery Supported)
+            // Full Advertisement / Cover Showcase Banner (Multi-Image + Video Slider)
             const showcaseBox = document.getElementById('detail-cover-showcase-box');
-            const showcaseImg = document.getElementById('detail-cover-showcase-img');
             const prevBtn = document.getElementById('detail-slider-prev-btn');
             const nextBtn = document.getElementById('detail-slider-next-btn');
             const counterBadge = document.getElementById('detail-slider-counter');
@@ -3577,41 +3833,52 @@
                 imgs = [p.coverImage];
             }
 
-            detailProductImages = imgs;
+            const ytId = extractYoutubeId(p.youtubeUrl || p.youtubeId || p.youtube || '');
+
+            detailSliderItems = imgs.map(url => ({ type: 'image', url: url }));
+            if (ytId) {
+                detailSliderItems.push({ type: 'video', youtubeId: ytId });
+            }
+
             detailProductImageIdx = 0;
 
-            if (showcaseBox && showcaseImg) {
-                if (imgs.length > 0) {
+            if (showcaseBox) {
+                if (detailSliderItems.length > 0) {
                     showcaseBox.style.display = 'block';
-                    showcaseImg.dataset.triedFallback = '';
-                    showcaseImg.src = imgs[0];
-                    showcaseImg.onerror = function () {
-                        if (imgs[0] && imgs[0].includes('shop/images/') && !this.dataset.triedFallback) {
-                            this.dataset.triedFallback = '1';
-                            const fname = imgs[0].split('shop/images/').pop();
-                            this.src = `shop/images/${fname}`;
-                        }
-                    };
 
-                    if (imgs.length > 1) {
+                    if (detailSliderItems.length > 1) {
                         if (prevBtn) prevBtn.style.display = 'flex';
                         if (nextBtn) nextBtn.style.display = 'flex';
                         if (counterBadge) counterBadge.style.display = 'block';
                         if (thumbsRow) {
                             thumbsRow.style.display = 'flex';
-                            thumbsRow.innerHTML = imgs.map((u, i) => `
-                                <div class="detail-thumb-item ${i === 0 ? 'active' : ''}" onclick="selectDetailSliderImage(${i})">
-                                    <img src="${escapeHtml(u)}" alt="Thumb ${i + 1}" loading="lazy" onerror="this.src='https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png'">
-                                </div>
-                            `).join('');
+                            thumbsRow.innerHTML = detailSliderItems.map((item, i) => {
+                                if (item.type === 'video') {
+                                    return `
+                                        <div class="detail-thumb-item detail-thumb-video ${i === 0 ? 'active' : ''}" onclick="selectDetailSliderImage(${i})" title="ดูคลิปวิดีโอ YouTube">
+                                            <div style="position:relative; width:100%; height:100%; background:#18181b;">
+                                                <img src="https://img.youtube.com/vi/${item.youtubeId}/mqdefault.jpg" alt="Video" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;" onerror="this.style.display='none'">
+                                                <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.35);">
+                                                    <svg style="width:20px; height:20px; fill:#ef4444;" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `;
+                                }
+                                return `
+                                    <div class="detail-thumb-item ${i === 0 ? 'active' : ''}" onclick="selectDetailSliderImage(${i})">
+                                        <img src="${escapeHtml(item.url)}" alt="Thumb ${i + 1}" loading="lazy" onerror="this.src='https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png'">
+                                    </div>
+                                `;
+                            }).join('');
                         }
-                        updateDetailSliderState();
                     } else {
                         if (prevBtn) prevBtn.style.display = 'none';
                         if (nextBtn) nextBtn.style.display = 'none';
                         if (counterBadge) counterBadge.style.display = 'none';
                         if (thumbsRow) thumbsRow.style.display = 'none';
                     }
+                    updateDetailSliderState();
                 } else {
                     showcaseBox.style.display = 'none';
                 }
@@ -3662,69 +3929,142 @@
             document.getElementById('detail-description').innerHTML = formatProductDescription(p.description, p.features);
 
             updateDetailCTAState();
-            document.getElementById('detail-modal').classList.add('active');
+            const modalEl = document.getElementById('detail-modal');
+            modalEl.classList.add('active');
+            modalEl.scrollTop = 0;
+            const contEl = modalEl.querySelector('.modal-container');
+            if (contEl) contEl.scrollTop = 0;
         }
 
-        function closeDetailModal() {
-            document.getElementById('detail-modal').classList.remove('active');
-            activeDetailProduct = null;
-            if (activeCategory && activeCategory !== 'all') {
-                window.history.pushState({ category: activeCategory }, '', `?c=${encodeURIComponent(activeCategory)}`);
-            } else {
-                window.history.pushState({}, '', window.location.pathname);
+        function closeDetailModal(e) {
+            if (e) {
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
             }
-            updatePageSEO(null);
+            const modal = document.getElementById('detail-modal');
+            if (modal) modal.classList.remove('active');
+            const videoIframe = document.getElementById('detail-slider-video-iframe');
+            if (videoIframe) {
+                videoIframe.dataset.currId = '';
+                videoIframe.src = '';
+            }
+            activeDetailProduct = null;
+            try {
+                if (activeCategory && activeCategory !== 'all') {
+                    window.history.pushState({ category: activeCategory }, '', `?c=${encodeURIComponent(activeCategory)}`);
+                } else {
+                    window.history.pushState({}, '', window.location.pathname);
+                }
+            } catch (err) { }
+            try {
+                updatePageSEO(null);
+            } catch (err) { }
+        }
+
+        function handleDetailModalOverlayClick(e) {
+            if (e && e.target === document.getElementById('detail-modal')) {
+                closeDetailModal(e);
+            }
         }
 
         function updateDetailCTAState() {
             const btn = document.getElementById('btn-detail-checkout');
-            if (!btn || !activeDetailProduct) return;
+            const btnBottom = document.getElementById('btn-detail-checkout-bottom');
+            const bottomCard = document.getElementById('detail-bottom-checkout-card');
+            const bottomGrid = document.getElementById('detail-bottom-section');
+            const bottomPrice = document.getElementById('detail-bottom-price-tag');
+            const bottomNote = document.getElementById('detail-bottom-status-note');
+
+            if (!activeDetailProduct) return;
+
+            const isPurchased = checkIsPurchased(activeDetailProduct.id);
+
+            // ถ้าปลดล็อคแล้ว (ซื้อแล้ว) หรือเป็นบริการ ให้ซ่อนกล่องข้างล่างออกทั้งหมด
+            if (isPurchased || activeDetailProduct.isService) {
+                if (bottomCard) bottomCard.style.display = 'none';
+                if (bottomGrid) bottomGrid.classList.add('no-checkout');
+            } else {
+                if (bottomCard) bottomCard.style.display = 'flex';
+                if (bottomGrid) bottomGrid.classList.remove('no-checkout');
+            }
+
+            const priceNum = Number(activeDetailProduct.price || 0);
+            const priceFormatted = priceNum <= 0 ? 'ฟรี (Free)' : `฿ ${priceNum.toFixed(2)}`;
+            if (bottomPrice) bottomPrice.textContent = priceFormatted;
 
             if (activeDetailProduct.isService) {
                 const isFree = !activeDetailProduct.price || Number(activeDetailProduct.price) <= 0;
                 if (!storeIsOnline && !isFree) {
-                    btn.className = 'btn-big-download disabled';
-                    btn.style.background = '#94a3b8';
-                    btn.innerHTML = `<span>❌ตอนนี้ร้านปิด</span>`;
-                    btn.onclick = () => {
-                        showToast('❌ ตอนนี้ร้านปิดให้บริการ เนื่องจากระบบต้องเชื่อมต่อเซิร์ฟเวอร์เพื่อตรวจสอบการโอนเงิน', 'warning');
-                    };
+                    if (btn) {
+                        btn.className = 'btn-big-download disabled';
+                        btn.style.background = '#94a3b8';
+                        btn.innerHTML = `<span>❌ตอนนี้ร้านปิด</span>`;
+                        btn.onclick = () => showToast('❌ ตอนนี้ร้านปิดให้บริการ เนื่องจากระบบต้องเชื่อมต่อเซิร์ฟเวอร์เพื่อตรวจสอบการโอนเงิน', 'warning');
+                    }
                     return;
                 }
-                btn.className = 'btn-big-download btn-service-fh';
-                btn.style.background = '';
-                btn.innerHTML = `<span>🚀 เริ่มต้นใช้งาน</span>`;
-                btn.onclick = () => {
-                    const svc = activeDetailProduct;
-                    closeDetailModal();
-                    openServiceModal(svc);
-                };
+                if (btn) {
+                    btn.className = 'btn-big-download btn-service-fh';
+                    btn.style.background = '';
+                    btn.innerHTML = `<span>🚀 เริ่มต้นใช้งาน</span>`;
+                    btn.onclick = () => {
+                        const svc = activeDetailProduct;
+                        closeDetailModal();
+                        openServiceModal(svc);
+                    };
+                }
                 return;
             }
 
-            const isPurchased = checkIsPurchased(activeDetailProduct.id);
-
             if (isPurchased) {
                 if (activeDetailProduct.language === 'pinescript') {
-                    btn.className = 'btn-big-download unlocked';
-                    btn.style.background = 'linear-gradient(135deg, #059669 0%, #10b981 100%)';
-                    btn.innerHTML = '<span>🌲 ดูและคัดลอกโค้ด Pine Script</span>';
-                    btn.onclick = () => openPurchasedCodeModal(activeDetailProduct.id);
+                    if (btn) {
+                        btn.className = 'btn-big-download unlocked';
+                        btn.style.background = 'linear-gradient(135deg, #059669 0%, #10b981 100%)';
+                        btn.innerHTML = '<span>🌲 ดูและคัดลอกโค้ด Pine Script</span>';
+                        btn.onclick = () => openPurchasedCodeModal(activeDetailProduct.id);
+                    }
                 } else {
-                    btn.className = 'btn-big-download unlocked';
-                    btn.style.background = '';
-                    btn.innerHTML = '<span>📥 ดาวน์โหลดไฟล์ของคุณ (Dropbox)</span>';
-                    btn.onclick = () => downloadPurchasedProduct(activeDetailProduct.id);
+                    if (btn) {
+                        btn.className = 'btn-big-download unlocked';
+                        btn.style.background = '';
+                        btn.innerHTML = '<span>📥 ดาวน์โหลดไฟล์ของคุณ (Dropbox)</span>';
+                        btn.onclick = () => downloadPurchasedProduct(activeDetailProduct.id);
+                    }
                 }
             } else if (!storeIsOnline) {
-                btn.className = 'btn-big-download disabled';
-                btn.innerHTML = '<span>🔴 ร้านค้าปิดทำการ (ไม่สามารถสแกนได้)</span>';
-                btn.onclick = () => showToast('⚠️ คอมพิวเตอร์แอดมิน Offline อยู่ โปรดเข้ามาใหม่ในเวลาทำการครับ', 'warning');
+                if (bottomNote) bottomNote.textContent = 'ระบบแอดมินออฟไลน์';
+                if (btn) {
+                    btn.className = 'btn-big-download disabled';
+                    btn.style.background = '#94a3b8';
+                    btn.innerHTML = '<span>🔴 ร้านค้าปิดทำการ (ไม่สามารถสแกนได้)</span>';
+                    btn.onclick = () => showToast('⚠️ คอมพิวเตอร์แอดมิน Offline อยู่ โปรดเข้ามาใหม่ในเวลาทำการครับ', 'warning');
+                }
+                if (btnBottom) {
+                    btnBottom.className = 'btn-big-download disabled';
+                    btnBottom.style.background = '#94a3b8';
+                    btnBottom.innerHTML = '<span>🔴 ร้านค้าปิดทำการ</span>';
+                    btnBottom.onclick = () => showToast('⚠️ คอมพิวเตอร์แอดมิน Offline อยู่ โปรดเข้ามาใหม่ในเวลาทำการครับ', 'warning');
+                }
             } else {
-                btn.className = 'btn-big-download';
-                const priceTxt = activeDetailProduct.price <= 0 ? 'ดาวน์โหลดฟรี 1-Click' : `สแกนพร้อมเพย์ ( ${Number(activeDetailProduct.price).toFixed(2)} ฿)`;
-                btn.innerHTML = `<span>⚡ ${priceTxt}</span>`;
-                btn.onclick = () => handleDetailCheckoutClick();
+                const topPriceTxt = activeDetailProduct.price <= 0 ? 'ดาวน์โหลดฟรี 1-Click' : `สแกนพร้อมเพย์ ( ${priceNum.toFixed(2)} ฿)`;
+                const bottomPriceTxt = activeDetailProduct.price <= 0 ? 'ดาวน์โหลดฟรี' : 'สแกนพร้อมเพย์';
+
+                if (btn) {
+                    btn.className = 'btn-big-download';
+                    btn.style.background = '';
+                    btn.innerHTML = `<span>⛶ ${topPriceTxt}</span>`;
+                    btn.onclick = () => handleDetailCheckoutClick();
+                }
+
+                if (btnBottom) {
+                    btnBottom.className = 'btn-big-download';
+                    btnBottom.style.background = '';
+                    btnBottom.innerHTML = `<span>⛶ ${bottomPriceTxt}</span>`;
+                    btnBottom.onclick = () => handleDetailCheckoutClick();
+                }
+
+                if (bottomNote) bottomNote.textContent = 'สแกนผ่านทุกแอปธนาคาร';
             }
         }
 
@@ -4393,7 +4733,11 @@
             }
         }
 
-        function closeCheckoutModal() {
+        function closeCheckoutModal(e) {
+            if (e) {
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+            }
             if (checkoutPollingTimer) {
                 clearInterval(checkoutPollingTimer);
                 checkoutPollingTimer = null;
@@ -4409,6 +4753,12 @@
             }
             document.getElementById('checkout-modal').classList.remove('active');
             currentCheckoutOrder = null;
+        }
+
+        function handleCheckoutModalOverlayClick(e) {
+            if (e && e.target === document.getElementById('checkout-modal')) {
+                closeCheckoutModal(e);
+            }
         }
 
         function copyOrderId() {
@@ -4504,8 +4854,18 @@
             document.getElementById('my-orders-modal').classList.add('active');
         }
 
-        function closeMyOrdersModal() {
+        function closeMyOrdersModal(e) {
+            if (e) {
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+            }
             document.getElementById('my-orders-modal').classList.remove('active');
+        }
+
+        function handleMyOrdersModalOverlayClick(e) {
+            if (e && e.target === document.getElementById('my-orders-modal')) {
+                closeMyOrdersModal(e);
+            }
         }
 
         // --- CODE VIEWER MODAL LOGIC ---
@@ -4547,8 +4907,18 @@
             document.getElementById('code-viewer-modal').classList.add('active');
         }
 
-        function closeCodeViewerModal() {
+        function closeCodeViewerModal(e) {
+            if (e) {
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+            }
             document.getElementById('code-viewer-modal').classList.remove('active');
+        }
+
+        function handleCodeViewerModalOverlayClick(e) {
+            if (e && e.target === document.getElementById('code-viewer-modal')) {
+                closeCodeViewerModal(e);
+            }
         }
 
         function copyViewerCode() {
@@ -4750,6 +5120,51 @@
             reader.readAsDataURL(file);
         }
 
+        // --- YOUTUBE EMBED & PREVIEW HELPERS ---
+        function extractYoutubeId(input) {
+            if (!input || typeof input !== 'string') return '';
+            input = input.trim();
+            if (!input) return '';
+            // Match iframe embed tag
+            const iframeMatch = input.match(/src=["'](?:https?:)?\/\/(?:www\.|m\.)?youtube(?:-nocookie)?\.com\/embed\/([a-zA-Z0-9_-]{11})/i);
+            if (iframeMatch && iframeMatch[1]) return iframeMatch[1];
+            // Match standard, short, embed or shorts URL
+            const urlPattern = /(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i;
+            const match = input.match(urlPattern);
+            if (match && match[1]) return match[1];
+            // Match raw 11-char ID
+            if (/^[a-zA-Z0-9_-]{11}$/.test(input)) return input;
+            return '';
+        }
+
+        function handleAdminYoutubeInput(val) {
+            const wrap = document.getElementById('admin-youtube-preview-wrap');
+            const iframe = document.getElementById('admin-youtube-preview-iframe');
+            const badge = document.getElementById('admin-youtube-id-badge');
+            const ytid = extractYoutubeId(val);
+
+            if (ytid) {
+                if (wrap) wrap.style.display = 'block';
+                if (badge) badge.textContent = `ID: ${ytid}`;
+                if (iframe && iframe.dataset.currId !== ytid) {
+                    iframe.dataset.currId = ytid;
+                    iframe.src = `https://www.youtube-nocookie.com/embed/${ytid}?rel=0`;
+                }
+            } else {
+                if (wrap) wrap.style.display = 'none';
+                if (iframe) {
+                    iframe.dataset.currId = '';
+                    iframe.src = '';
+                }
+            }
+        }
+
+        function clearAdminYoutubeInput() {
+            const inp = document.getElementById('admin-youtube-url');
+            if (inp) inp.value = '';
+            handleAdminYoutubeInput('');
+        }
+
         // --- GITHUB MULTI-IMAGE UPLOAD & GALLERY HANDLER ---
         let adminProductImages = [];
 
@@ -4949,7 +5364,7 @@
                 if (!textOnly && !editor.querySelector('img, hr')) {
                     hidden.value = '';
                 } else {
-                    hidden.value = editor.innerHTML.trim();
+                    hidden.value = editor.innerHTML.replace(/&nbsp;/gi, ' ').trim();
                 }
             }
         }
@@ -5044,6 +5459,7 @@
         function formatRichInline(text) {
             if (!text) return '';
             let s = String(text);
+            s = s.replace(/&amp;nbsp;/gi, ' ').replace(/&nbsp;/gi, ' ');
             s = s.replace(/\*\*([^*\r\n<]+?)\*\*/g, '<b>$1</b>');
             s = s.replace(/\*\*([^*\r\n<]+)/g, '<b>$1</b>');
             return s;
@@ -5072,7 +5488,13 @@
                 return '<p style="color:var(--fh-muted); font-style:italic; text-align:center;">ไม่มีรายละเอียดเพิ่มเติม</p>';
             }
 
-            let normalized = raw.replace(/\r\n/g, '\n').replace(/---/g, '<hr>');
+            let normalized = raw
+                .replace(/&amp;nbsp;/gi, ' ')
+                .replace(/&nbsp;/gi, ' ')
+                .replace(/&#160;/g, ' ')
+                .replace(/&#xa0;/gi, ' ')
+                .replace(/\r\n/g, '\n')
+                .replace(/---/g, '<hr>');
             let html = '';
 
             if (normalized.includes('<li>')) {
@@ -5316,6 +5738,7 @@
             renderAdminImagesGallery();
             const addImgInp = document.getElementById('admin-add-image-url');
             if (addImgInp) addImgInp.value = '';
+            clearAdminYoutubeInput();
             const editorEl = document.getElementById('admin-description-editor');
             if (editorEl) editorEl.innerHTML = '';
             document.getElementById('admin-description').value = '';
@@ -5388,6 +5811,12 @@
             const addImgInpEdit = document.getElementById('admin-add-image-url');
             if (addImgInpEdit) addImgInpEdit.value = '';
 
+            const ytInpEdit = document.getElementById('admin-youtube-url');
+            if (ytInpEdit) {
+                ytInpEdit.value = p.youtubeUrl || p.youtubeId || p.youtube || '';
+                handleAdminYoutubeInput(ytInpEdit.value);
+            }
+
             let vaultData = null;
             try {
                 const res = await fetch(`${VAULT_ENDPOINT}/${p.id}.json`);
@@ -5455,8 +5884,23 @@
             document.getElementById('admin-modal').classList.add('active');
         }
 
-        function closeAdminModal() {
+        function closeAdminModal(e) {
+            if (e) {
+                if (typeof e.preventDefault === 'function') e.preventDefault();
+                if (typeof e.stopPropagation === 'function') e.stopPropagation();
+            }
             document.getElementById('admin-modal').classList.remove('active');
+            const previewIframe = document.getElementById('admin-youtube-preview-iframe');
+            if (previewIframe) {
+                previewIframe.dataset.currId = '';
+                previewIframe.src = '';
+            }
+        }
+
+        function handleAdminModalOverlayClick(e) {
+            if (e && e.target === document.getElementById('admin-modal')) {
+                closeAdminModal(e);
+            }
         }
 
         function handleAdminLanguageChange(val, isEditing = false) {
@@ -5534,6 +5978,7 @@
             const price = parseFloat(document.getElementById('admin-price').value) || 0;
             const coverImage = (adminProductImages[0] || document.getElementById('admin-cover-image').value.trim() || '').trim();
             const images = [...adminProductImages];
+            const youtubeUrl = (document.getElementById('admin-youtube-url')?.value || '').trim();
 
             if (images.length === 0 && !coverImage) {
                 showToast('⚠️ กรุณาเพิ่มรูปภาพโฆษณาสินค้าอย่างน้อย 1 รูป', 'warning');
@@ -5582,6 +6027,7 @@
                 language: language,
                 coverImage: coverImage,
                 images: images,
+                youtubeUrl: youtubeUrl,
                 description: description,
                 features: features,
                 hasInstallGuide: hasInstallGuide,
