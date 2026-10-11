@@ -923,9 +923,15 @@
                             </div>
                             <div class="row-meta">
                                 <div class="row-meta-top">
-                                    <span class="status-pill pending">
-                                        ⏳ รอตรวจสอบยอด
-                                    </span>
+                                    ${req.manualConfirmed ? `
+                                        <span class="status-pill urgent" style="background: rgba(239, 68, 68, 0.25); border: 1px solid rgba(239, 68, 68, 0.6); color: #fecaca; font-weight: 700;">
+                                            🚨 ลูกค้ากดยืนยันโอนแล้ว (ตรวจสอบด่วน)
+                                        </span>
+                                    ` : `
+                                        <span class="status-pill pending">
+                                            ⏳ รอตรวจสอบยอด
+                                        </span>
+                                    `}
                                     <span class="time-ago">${timeAgo}</span>
                                 </div>
                                 <div class="order-id-label">
