@@ -2159,6 +2159,21 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps({'success': False, 'error': str(e)}).encode())
             return
 
+        if parsed_url.path == '/trigger-admin-payment':
+            log_kbank("[API] 🔔 Customer clicked manual confirm -> Opening admin-payment.html in Chrome")
+            try:
+                import winsound
+                winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+            except Exception:
+                pass
+            open_admin_payment_in_chrome()
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps({'success': True}).encode('utf-8'))
+            return
+
         if parsed_url.path == '/send-work-link':
             content_length = int(self.headers.get('Content-Length', 0))
             try:
@@ -2505,10 +2520,29 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
         pass
 
-# --- AUTO OPEN ADMIN PAYMENT IN CHROME ---
+# --- AUTO OPEN ADMIN PAYMENT IN CHROME (เมื่อลูกค้ากดยืนยันโอนด้วยตนเอง) ---
 def open_admin_payment_in_chrome():
-    # ปิดการเด้งเปิด Chrome หน้า admin-payment.html ทั้งหมด (ทำงานอนุมัติอัตโนมัติ 100% ในเบื้องหลัง)
-    return
+    try:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        admin_html = os.path.join(script_dir, "admin-payment.html")
+        admin_url = f"http://127.0.0.1:{PORT}/admin-payment.html" if os.path.exists(admin_html) else admin_html
+
+        chrome_candidates = [
+            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+            os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe")
+        ]
+        opened = False
+        for cpath in chrome_candidates:
+            if os.path.exists(cpath):
+                subprocess.Popen([cpath, admin_url])
+                opened = True
+                break
+        if not opened:
+            webbrowser.open(admin_url)
+        log_kbank("[Admin Payment] 🚀 Popped up admin-payment.html in Chrome")
+    except Exception as e:
+        log_kbank(f"[Admin Payment] ⚠️ Failed to open admin-payment.html: {e}")
 
 _last_deposit_event = {
     "time": 0,
@@ -2725,7 +2759,7 @@ def start_payment_requests_watcher():
                     # 2. กรณีลูกค้ากดยืนยันด้วยตนเอง (manualConfirmed) หรือแจ้งเตือนซ้ำ -> เปิดหน้าจอแอดมินทันที + ส่งเสียงเตือน
                     for k, v in pending_items:
                         is_manual = v.get('manualConfirmed', False)
-                        last_confirmed = v.get('lastConfirmedAt') or v.get('reAlertAt') or 0
+                        last_confirmed = v.get('lastConfirmedAt') or v.get('reAlertAt') or v.get('manualClaimAt') or 0
                         should_alert = False
                         if is_manual and k not in _opened_payment_keys:
                             should_alert = True
@@ -2735,12 +2769,13 @@ def start_payment_requests_watcher():
 
                         if should_alert:
                             _last_alert_time[k] = last_confirmed if last_confirmed else int(time.time() * 1000)
-                            log_kbank(f"[Payment Watcher] 🔔 Customer payment request: {k} (Auto-handling in background)")
+                            log_kbank(f"[Payment Watcher] 🔔 Customer manual claim triggered for Order: {k} -> Opening admin-payment.html in Chrome")
                             try:
                                 import winsound
-                                winsound.MessageBeep(winsound.MB_ICONASTERISK)
+                                winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
                             except Exception:
                                 pass
+                            open_admin_payment_in_chrome()
 
                     for k, v in data.items():
                         if isinstance(v, dict) and v.get('status') != 'pending':
