@@ -2159,6 +2159,108 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps({'success': False, 'error': str(e)}).encode())
             return
 
+        if parsed_url.path == '/send-work-link':
+            content_length = int(self.headers.get('Content-Length', 0))
+            try:
+                data = json.loads(self.rfile.read(content_length) or b'{}')
+                raw_amount = str(data.get('amount', '60')).strip()
+                if not re.match(r'^\d+(\.\d{1,2})?$', raw_amount) or float(raw_amount) < 0:
+                    raw_amount = '60'
+                amount = raw_amount
+
+                req_path = data.get('path')
+                target_file = None
+                if req_path and os.path.exists(req_path) and os.path.isfile(req_path):
+                    target_file = req_path
+                else:
+                    default_path = os.path.join(DESKTOP_PATH, 'complete.png')
+                    if os.path.exists(default_path):
+                        target_file = default_path
+
+                if not target_file or not os.path.exists(target_file):
+                    raise FileNotFoundError('ยังไม่พบไฟล์ Desktop/complete.png กรุณาบันทึกหรือเตรียมไฟล์ภาพก่อนส่งงาน')
+
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                upload_script = os.path.join(script_dir, "upload.py")
+
+                if not os.path.exists(upload_script):
+                    raise FileNotFoundError('ไม่พบไฟล์สคริปต์ upload.py ในโฟลเดอร์ระบบ')
+
+                # รัน upload.py แบบซ่อนหน้าต่าง 100% (No CMD / Black Window)
+                import sys, subprocess, base64, time
+                cmd = [sys.executable, upload_script, target_file]
+                proc = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0,
+                    timeout=90
+                )
+
+                if proc.returncode != 0 and not proc.stdout:
+                    err_msg = proc.stderr.strip() or 'อัปโหลดล้มเหลว'
+                    raise RuntimeError(err_msg)
+
+                try:
+                    upload_data = json.loads(proc.stdout.strip())
+                except Exception:
+                    raise RuntimeError(f'ผลลัพธ์จากเซิร์ฟเวอร์อัปโหลดไม่ถูกต้อง: {proc.stdout[:200]}')
+
+                if not upload_data.get('url'):
+                    raise RuntimeError(upload_data.get('error') or 'ไม่ได้รับลิงก์ภาพจากระบบอัปโหลด')
+
+                upload_url = upload_data['url']
+                source = upload_data.get('source', 'Cloud')
+
+                # จัดรูปแบบ URL ตามระบบ PrivateSend
+                if upload_url.startswith("fb_"):
+                    full_url = upload_url
+                elif upload_url.startswith("tf_"):
+                    full_url = f"https://tmpfiles.org/{upload_url[3:]}"
+                else:
+                    full_url = upload_url
+
+                expiry_hours = 1
+                timestamp = int((time.time() + (expiry_hours * 3600)) * 1000)
+                ext = os.path.splitext(target_file)[1].lower()
+                file_type_param = "img" if ext in ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'] else ("pdf" if ext == '.pdf' else "file")
+
+                b64_url = base64.b64encode(full_url.encode('utf-8')).decode('utf-8')
+                base_url = "https://artnp.github.io/eworker/download.html"
+                view_url = f"{base_url}?d={b64_url}&exp={timestamp}&type={file_type_param}&price={amount}"
+                message = f"✅เสร็จแล้ว!\n{view_url}"
+
+                # คัดลอกลง Windows Clipboard แบบไร้หน้าต่างดำ
+                try:
+                    subprocess.run(
+                        ['powershell', '-WindowStyle', 'Hidden', '-NoProfile', '-Command', f'Set-Clipboard -Value @\'\n{message}\n\'@'],
+                        creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0,
+                        timeout=5
+                    )
+                except Exception as ce:
+                    print(f'[Watcher] Set-Clipboard warning: {ce}')
+
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    'success': True,
+                    'amount': amount,
+                    'url': view_url,
+                    'message': message,
+                    'source': source,
+                    'file': target_file
+                }).encode('utf-8'))
+            except Exception as e:
+                print(f'[Watcher] Send work link error: {e}')
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': False, 'error': str(e)}).encode('utf-8'))
+            return
+
         if parsed_url.path == '/mark-points':
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
