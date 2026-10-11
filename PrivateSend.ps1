@@ -3,6 +3,13 @@ Add-Type -AssemblyName System.Drawing, System.Windows.Forms
 # รับค่าไฟล์จากการลากวาง
 $filePath = $args[0]
 $noPrice = $args[1] -eq "-noPrice"
+$givenPrice = $null
+
+if ($args[1] -eq "-price" -and $args[2]) {
+    $givenPrice = ($args[2] -replace '[^\d.]', '')
+} elseif ($args[1] -and $args[1] -ne "-noPrice" -and ($args[1] -match '^\d+(\.\d{1,2})?$')) {
+    $givenPrice = $args[1]
+}
 
 if (-not $filePath) {
     [System.Windows.Forms.MessageBox]::Show("กรุณาลากไฟล์ภาพมาวางที่ไอคอนนี้เพื่อส่งงาน", "PrivateSend")
@@ -20,9 +27,12 @@ $fileTypeParam = "file"
 if ($isImage) { $fileTypeParam = "img" }
 elseif ($isPdf) { $fileTypeParam = "pdf" }
 
-# 2. ขอราคางาน (ข้ามหากเป็น -noPrice) บังคับให้กรอกเฉพาะตัวเลขเท่านั้น
+# 2. ขอราคางาน (ข้ามหากเป็น -noPrice หรือระบุราคามาแล้ว) บังคับให้กรอกเฉพาะตัวเลขเท่านั้น
 $price = "0"
-if (-not $noPrice) {
+if ($null -ne $givenPrice -and $givenPrice -ne "") {
+    $price = $givenPrice
+    Write-Host "💰 ยอดเรียกเก็บ (ระบุจากระบบ): $price บาท" -ForegroundColor Green
+} elseif (-not $noPrice) {
     Write-Host "💰 ยอดเรียกเก็บ (บาท) [รอ 6 วิ หรือพิมพ์ราคา]: " -NoNewline
     $startTime = Get-Date
     $timeout = 6
