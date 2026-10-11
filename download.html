@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>บันทึกงาน - PrivateSend</title>
 
     <!-- ป้องกันการแสดงภาพ Thumbnail / Link Preview เมื่อนำลิงก์ไปแชร์ที่อื่น -->
@@ -18,73 +18,178 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Prompt:wght@300;400;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Prompt:wght@300;400;600;700;800&display=swap"
         rel="stylesheet">
 
     <style>
         :root {
             --primary: #6366f1;
+            --primary-hover: #4f46e5;
             --danger: #ef4444;
+            --danger-bg: rgba(239, 68, 68, 0.12);
             --success: #10b981;
-            --bg: #0f172a;
-            --card-bg: rgba(30, 41, 59, 0.95);
+            --warning: #f59e0b;
+            --bg: #0b1120;
+            --card-bg: rgba(22, 30, 49, 0.88);
+            --card-border: rgba(255, 255, 255, 0.08);
             --text: #f8fafc;
             --text-muted: #94a3b8;
-            --border: rgba(255, 255, 255, 0.1);
+            --border: rgba(255, 255, 255, 0.08);
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html,
+        body {
+            height: 100%;
+            min-height: 100dvh;
+            max-height: 100dvh;
+            overflow: hidden;
         }
 
         body {
-            font-family: 'Inter', 'Prompt', sans-serif;
+            font-family: 'Inter', 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg);
             background-image:
-                radial-gradient(at 20% 20%, rgba(99, 102, 241, 0.1) 0px, transparent 50%),
-                radial-gradient(at 80% 80%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+                radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.15) 0px, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(16, 185, 129, 0.12) 0px, transparent 45%),
+                radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.8) 0px, transparent 100%);
             color: var(--text);
-            min-height: 100vh;
-            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            padding: 10px 14px;
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 6px 8px;
+            }
         }
 
         .container {
-            max-width: 1200px;
+            width: 100%;
+            max-width: 1140px;
             margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            height: 100%;
         }
 
-        /* Header */
+        /* Header Bar */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            gap: 15px;
+            padding: 0 4px 8px;
+            flex-shrink: 0;
+            gap: 8px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .logo {
-            font-size: 1.5rem;
+            font-size: 1.15rem;
             font-weight: 700;
-            color: var(--primary);
+            color: #818cf8;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            letter-spacing: -0.3px;
         }
 
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: nowrap;
+        }
+
+        /* Server Status Badge */
+        .server-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .server-status-badge.online {
+            background: rgba(16, 185, 129, 0.12);
+            border-color: rgba(16, 185, 129, 0.35);
+            color: #34d399;
+        }
+
+        .server-status-badge.offline {
+            background: rgba(239, 68, 68, 0.12);
+            border-color: rgba(239, 68, 68, 0.35);
+            color: #f87171;
+        }
+
+        .server-status-badge .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
+            display: inline-block;
+        }
+
+        .server-status-badge.online .status-dot {
+            box-shadow: 0 0 6px #34d399;
+            animation: pulseDot 2s infinite ease-in-out;
+        }
+
+        .server-status-badge.offline .status-dot {
+            box-shadow: 0 0 6px #f87171;
+        }
+
+        @keyframes pulseDot {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.45;
+                transform: scale(0.85);
+            }
+        }
+
+        /* Timer Badge */
         .timer-badge {
             background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: var(--danger);
-            padding: 8px 16px;
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #fca5a5;
+            padding: 4px 10px;
             border-radius: 50px;
-            font-size: 0.9rem;
+            font-size: 0.75rem;
             font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
         }
 
         .timer-badge .timer-text {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-right: 5px;
+            color: #94a3b8;
+            font-size: 0.7rem;
         }
 
         .timer-badge .timer-value {
@@ -92,80 +197,173 @@
             font-weight: 700;
         }
 
-        /* Main Content Layout */
+        /* Mobile Compact Preview Banner (Shown only on small screens < 768px) */
+        .mobile-preview-strip {
+            display: none;
+            background: rgba(24, 33, 50, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 7px 10px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-shrink: 0;
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: background 0.2s ease;
+        }
+
+        .mobile-preview-strip:active {
+            background: rgba(30, 41, 59, 0.95);
+        }
+
+        .mobile-preview-strip-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .mobile-thumb-box {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .mobile-thumb-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .mobile-thumb-info {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .mobile-thumb-info .title {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #f1f5f9;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mobile-thumb-info .subtitle {
+            font-size: 0.7rem;
+            color: #94a3b8;
+        }
+
+        .mobile-preview-strip-btn {
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.35);
+            color: #a5b4fc;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 767px) {
+            .mobile-preview-strip {
+                display: flex;
+            }
+        }
+
+        /* Content Grid */
         .content-grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 30px;
+            gap: 10px;
+            flex: 1;
+            min-height: 0;
+            height: 100%;
         }
 
         @media (min-width: 768px) {
             .content-grid {
-                grid-template-columns: 1fr 420px;
+                grid-template-columns: 1fr 390px;
+                gap: 16px;
             }
         }
 
         /* Card Styles */
         .card {
             background: var(--card-bg);
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            padding: 25px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            border-radius: 18px;
+            border: 1px solid var(--card-border);
+            padding: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(14px);
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
         }
 
-        /* Image Preview */
+        /* Image Preview Column (Desktop) */
         .image-preview {
-            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        @media (max-width: 767px) {
+            .image-preview {
+                display: none !important;
+            }
         }
 
         .image-container {
             position: relative;
-            background: rgba(15, 23, 42, 0.5);
-            border-radius: 12px;
-            padding: 20px;
-            min-height: 300px;
+            background: rgba(11, 17, 32, 0.6);
+            border-radius: 14px;
+            padding: 10px;
+            width: 100%;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.04);
         }
 
         .image-container img {
             max-width: 100%;
-            max-height: 60vh;
+            max-height: 100%;
+            object-fit: contain;
             border-radius: 8px;
             cursor: zoom-in;
-            transition: transform 0.3s ease;
-            pointer-events: auto;
+            transition: transform 0.25s ease;
         }
 
-        .image-container img:hover {
-            transform: scale(1.02);
-        }
-
-        .image-container.protected img {
-            pointer-events: none;
-            user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            cursor: not-allowed;
-        }
-
-        .image-container.protected {
-            position: relative;
-        }
-
-        /* กรอบหุ้มรูปภาพและลายน้ำ ให้มีขนาดพอดีกับรูป */
         .preview-wrapper {
             position: relative;
-            display: inline-block;
+            display: inline-flex;
             max-width: 100%;
-            vertical-align: middle;
+            max-height: 100%;
+            align-items: center;
+            justify-content: center;
         }
 
-        /* เส้นลายน้ำทับรูปภาพเมื่อยังไม่ได้ชำระเงิน */
-        /* ระบบลายน้ำทับรูปภาพ ป้องกัน AI ลบลายน้ำ (Anti-AI Watermark Shield) */
+        /* Anti-AI Watermark Shield */
         .watermark-overlay {
             position: absolute;
             top: 0;
@@ -177,7 +375,6 @@
             display: none;
             border-radius: 8px;
             overflow: hidden;
-            /* เส้นตารางทแยงมุมหลากทิศทาง รบกวน Convolutional / Inpainting Kernels */
             background-image:
                 repeating-linear-gradient(-45deg,
                     transparent,
@@ -195,7 +392,6 @@
                     rgba(0, 0, 0, 0.3) 26px);
         }
 
-        /* ข้อความบล็อก AI และคำสั่ง System Prompt Injection เพื่อให้ Vision AI ปฏิเสธการลบลายน้ำ */
         .watermark-overlay::before {
             content: "";
             position: absolute;
@@ -208,7 +404,6 @@
             pointer-events: none;
         }
 
-        /* ตารางไมโครเมชความถี่สูง (Adversarial High-Frequency Perturbation Grid) ป้องกัน AI Inpainting / Generative Fill */
         .watermark-overlay::after {
             content: "";
             position: absolute;
@@ -226,29 +421,14 @@
             display: block;
         }
 
-        /* ป้องกันดาวน์โหลดภาพก่อนจ่ายเงิน */
-        .image-protected {
-            pointer-events: none;
-            user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            -webkit-touch-callout: none;
-            cursor: not-allowed !important;
-        }
-
         .protection-overlay {
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            inset: 0;
             background: transparent;
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 100;
-            border-radius: 12px;
             pointer-events: none;
         }
 
@@ -257,267 +437,69 @@
         }
 
         .protection-message {
-            background: rgba(239, 68, 68, 0.88);
+            background: rgba(239, 68, 68, 0.9);
             color: white;
-            padding: 12px 24px;
+            padding: 8px 18px;
             border-radius: 50px;
-            text-align: center;
             font-weight: 600;
-            font-size: 0.9rem;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-            border: 2px solid rgba(255, 255, 255, 0.35);
+            font-size: 0.82rem;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.3);
             backdrop-filter: blur(8px);
         }
 
-        /* ปุ่มโหลดหมุนวน รอระบบเช็คยอด */
-        .btn-spinner {
-            display: inline-block;
-            width: 18px;
-            height: 18px;
-            border: 3px solid rgba(255, 255, 255, 0.35);
-            border-radius: 50%;
-            border-top-color: #ffffff;
-            animation: spin 0.75s linear infinite;
-            vertical-align: middle;
-            margin-right: 8px;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .btn.btn-loading {
-            background: linear-gradient(135deg, #f59e0b, #d97706) !important;
-            color: #ffffff !important;
-            cursor: wait !important;
-            opacity: 0.95 !important;
-            box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4) !important;
-            transform: none !important;
-        }
-
-        .payment-waiting-box {
-            margin-top: 15px;
-            padding: 14px 16px;
-            background: rgba(245, 158, 11, 0.12);
-            border: 1px solid rgba(245, 158, 11, 0.4);
-            border-radius: 14px;
-            text-align: center;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .payment-waiting-box.active {
-            display: flex;
-        }
-
-        .payment-waiting-box .waiting-text {
-            width: 100%;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .waiting-header {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .waiting-pulse-dot {
-            width: 15px;
-            height: 15px;
-            border: 2px solid rgba(245, 158, 11, 0.25);
-            border-top: 2px solid #fbbf24;
-            border-right: 2px solid #f59e0b;
-            border-radius: 50%;
-            animation: spin 0.85s linear infinite;
-            flex-shrink: 0;
-            display: inline-block;
-        }
-
-        .payment-waiting-box h4 {
-            font-size: 0.95rem;
-            color: #fbbf24;
-            margin: 0;
-            text-align: center;
-        }
-
-        .payment-waiting-box p {
-            font-size: 0.85rem;
-            color: #e2e8f0;
-            line-height: 1.4;
-            margin: 0;
-            text-align: center;
-        }
-
-        .payment-waiting-box .waiting-hint {
-            font-size: 0.78rem;
-            color: #94a3b8;
-            margin-top: 4px;
-        }
-
-        @keyframes stepBlinkGreen {
-            0% {
-                opacity: 0.45;
-                color: #94a3b8;
-                background: rgba(255, 255, 255, 0.03);
-                border-color: rgba(255, 255, 255, 0.08);
-                box-shadow: none;
-                transform: scale(0.98);
-            }
-
-            18% {
-                opacity: 1;
-                color: #4ade80;
-                background: rgba(16, 185, 129, 0.12);
-                border-color: rgba(74, 222, 128, 0.65);
-                box-shadow: 0 0 10px rgba(74, 222, 128, 0.35);
-                transform: scale(1.02);
-            }
-
-            36%,
-            100% {
-                opacity: 0.45;
-                color: #94a3b8;
-                background: rgba(255, 255, 255, 0.03);
-                border-color: rgba(255, 255, 255, 0.08);
-                box-shadow: none;
-                transform: scale(0.98);
-            }
-        }
-
-        .waiting-steps {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: nowrap;
-            gap: 5px;
-            margin-top: 9px;
-            padding-top: 9px;
-            border-top: 1px dashed rgba(245, 158, 11, 0.22);
-            width: 100%;
-        }
-
-        .waiting-step-item {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 0.72rem;
-            font-weight: 600;
-            color: #94a3b8;
-            background: rgba(255, 255, 255, 0.03);
-            padding: 3px 7px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            white-space: nowrap;
-            flex-shrink: 0;
-            opacity: 0.45;
-            transform: scale(0.98);
-        }
-
-        .waiting-step-item.step-1 {
-            animation: stepBlinkGreen 3.6s infinite ease-in-out;
-            animation-delay: 0s;
-        }
-
-        .waiting-step-item.step-2 {
-            animation: stepBlinkGreen 3.6s infinite ease-in-out;
-            animation-delay: 1.2s;
-        }
-
-        .waiting-step-item.step-3 {
-            animation: stepBlinkGreen 3.6s infinite ease-in-out;
-            animation-delay: 2.4s;
-        }
-
-        .waiting-step-num {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 15px;
-            height: 15px;
-            background: rgba(255, 255, 255, 0.08);
-            color: inherit;
-            border-radius: 50%;
-            font-size: 0.65rem;
-            font-weight: 700;
-            line-height: 1;
-            flex-shrink: 0;
-        }
-
-        .waiting-step-arrow {
-            color: #64748b;
-            opacity: 0.45;
-            font-size: 0.7rem;
-            user-select: none;
-            flex-shrink: 0;
-        }
-
-        @keyframes pulseGlow {
-            0% {
-                transform: scale(0.9);
-                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
-            }
-
-            70% {
-                transform: scale(1.1);
-                box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
-            }
-
-            100% {
-                transform: scale(0.9);
-                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
-            }
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(6px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        #loading-text {
-            color: var(--text-muted);
-            text-align: center;
-        }
-
-        /* Payment Card */
+        /* Payment Card (Fit & Compact) */
         .payment-card {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            justify-content: center;
+            align-items: center;
+            padding: 12px 16px;
+            height: 100%;
+            overflow-y: auto;
+            scrollbar-width: thin;
         }
 
+        @media (max-width: 640px) {
+            .payment-card {
+                padding: 10px 12px;
+                border-radius: 16px;
+            }
+        }
+
+        #payment-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+            gap: 6px;
+        }
+
+        /* Payment Header */
         .payment-header {
             text-align: center;
-            padding-bottom: 20px;
-            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
         }
 
         .payment-header h2 {
-            font-size: 1.3rem;
-            margin-bottom: 10px;
-            color: var(--text);
+            font-size: 1.02rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
         .payment-amount {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin: 10px 0;
-            background: linear-gradient(135deg, #f97316, #fb923c, #fbbf24, #f59e0b, #f97316);
+            font-size: 2.1rem;
+            font-weight: 800;
+            line-height: 1.15;
+            margin: 2px 0;
+            background: linear-gradient(135deg, #f97316, #fbbf24, #f59e0b, #f97316);
             background-size: 200% 200%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -541,97 +523,213 @@
         }
 
         .payment-amount .currency {
-            font-size: 1.5rem;
+            font-size: 1.15rem;
+            font-weight: 700;
             background: linear-gradient(135deg, #94a3b8, #cbd5e1);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            margin-left: 2px;
         }
 
-        /* QR Code */
+        .qr-header-text {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        /* QR Code Wrapper */
+        .qr-content-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            gap: 8px;
+            margin-top: 2px;
+            margin-bottom: 2px;
+        }
+
         .qr-wrapper {
-            background: white;
-            padding: 20px;
+            background: #ffffff;
+            padding: 10px;
             border-radius: 16px;
-            display: inline-block;
-            margin: 0 auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
-            transition: transform 0.3s ease;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
             position: relative;
         }
 
         .qr-wrapper:hover {
-            transform: scale(1.05);
+            transform: scale(1.02);
+            box-shadow: 0 12px 32px rgba(99, 102, 241, 0.35);
         }
 
         #qrcode-display {
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 200px;
-            position: relative;
+            min-height: 195px;
+            min-width: 195px;
+            border-radius: 8px;
+            overflow: hidden;
         }
 
-        .promptpay-logo {
-            width: 60px;
-            height: auto;
-            display: inline-block;
-            vertical-align: middle;
-            margin-left: 8px;
-        }
-
-        .promptpay-logo img {
-            width: 100%;
-            height: auto;
-            object-fit: contain;
+        #qrcode-display canvas,
+        #qrcode-display img {
+            width: 195px !important;
+            height: 195px !important;
             display: block;
         }
 
-        .qr-code-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        @media (min-width: 768px) {
+            #qrcode-display {
+                min-height: 210px;
+                min-width: 210px;
+            }
+
+            #qrcode-display canvas,
+            #qrcode-display img {
+                width: 210px !important;
+                height: 210px !important;
+            }
         }
 
-        .qr-header-text {
+        @media (max-height: 700px) {
+
+            #qrcode-display canvas,
+            #qrcode-display img {
+                width: 165px !important;
+                height: 165px !important;
+            }
+        }
+
+        /* Action Buttons: Save QR */
+        .qr-action-buttons {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 270px;
+            margin: 2px auto 0;
+        }
+
+        .btn-action-primary {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            flex-wrap: wrap;
+            gap: 6px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
         }
 
-        .qr-hint {
+        .btn-action-primary:active {
+            transform: scale(0.98);
+        }
+
+        /* Compact Waiting Box / Live Status Bar */
+        .payment-waiting-box {
+            padding: 7px 10px;
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 10px;
             text-align: center;
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            margin-top: 10px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: 100%;
+        }
+
+        .payment-waiting-box.active {
+            display: flex;
+        }
+
+        .waiting-text {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .waiting-header {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .waiting-pulse-dot {
+            width: 10px;
+            height: 10px;
+            border: 2px solid rgba(245, 158, 11, 0.3);
+            border-top: 2px solid #fbbf24;
+            border-right: 2px solid #f59e0b;
+            border-radius: 50%;
+            animation: spin 0.85s linear infinite;
+            flex-shrink: 0;
+            display: inline-block;
+        }
+
+        .payment-waiting-box h4 {
+            font-size: 0.8rem;
+            color: #fbbf24;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .payment-waiting-box p {
+            font-size: 0.72rem;
+            color: #cbd5e1;
+            margin: 0;
         }
 
         /* Bank Icons */
         .bank-icons {
             display: flex;
             justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 15px;
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 12px;
+            align-items: center;
+            gap: 7px;
+            padding: 5px 8px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .bank-icons-label {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            margin-right: 2px;
         }
 
         .bank-logo {
-            width: 28px;
-            height: 28px;
-            border-radius: 6px;
+            width: 20px;
+            height: 20px;
+            border-radius: 5px;
             background-size: contain;
             background-position: center;
             background-repeat: no-repeat;
-            transition: transform 0.2s ease;
+            opacity: 0.85;
+            transition: opacity 0.2s, transform 0.2s;
         }
 
         .bank-logo:hover {
-            transform: scale(1.1);
+            opacity: 1;
+            transform: scale(1.15);
         }
 
         .bank-kbank {
@@ -658,72 +756,344 @@
             background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/TTB.png');
         }
 
-        /* Buttons */
-        .btn {
+        /* Server Offline Alert Panel */
+        .server-offline-panel {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            border-radius: 16px;
+            padding: 22px 16px;
+            text-align: center;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: auto 0;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .server-offline-panel.active {
+            display: flex;
+        }
+
+        .offline-icon {
+            font-size: 2.6rem;
+            line-height: 1;
+            filter: drop-shadow(0 4px 12px rgba(239, 68, 68, 0.4));
+        }
+
+        .offline-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #f87171;
+            margin: 0;
+        }
+
+        .offline-desc {
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            line-height: 1.5;
+            max-width: 300px;
+            margin: 0;
+        }
+
+        .offline-note {
+            font-size: 0.72rem;
+            color: #94a3b8;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px dashed rgba(239, 68, 68, 0.25);
+        }
+
+        .btn-retry-status {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.45);
+            color: #fca5a5;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-retry-status:hover {
+            background: rgba(239, 68, 68, 0.4);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        /* Success & Free Mode Section */
+        #success-section,
+        #free-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100%;
+            gap: 12px;
+        }
+
+        .success-message {
+            text-align: center;
+            padding: 22px 14px;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            border-radius: 14px;
+        }
+
+        .success-icon {
+            font-size: 2.6rem;
+            margin-bottom: 4px;
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        .success-message h3 {
+            font-size: 1.2rem;
+            color: #34d399;
+            margin-bottom: 4px;
+            font-weight: 700;
+        }
+
+        .btn-primary {
             width: 100%;
-            padding: 14px 24px;
+            padding: 12px 18px;
             border-radius: 12px;
             border: none;
-            font-weight: 600;
-            font-size: 1rem;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            font-size: 0.95rem;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
+            transition: all 0.2s ease;
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), #4f46e5);
-            color: white;
+        .btn-primary:active {
+            transform: scale(0.98);
         }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+        /* Download Tutorial */
+        .download-tutorial {
+            padding: 9px 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+            border: 1px dashed rgba(255, 255, 255, 0.08);
+            text-align: center;
+            font-size: 0.74rem;
+            color: var(--text-muted);
+            line-height: 1.45;
         }
 
-        .btn-success {
-            background: linear-gradient(135deg, var(--success), #059669);
-            color: white;
-        }
-
-        .btn-success:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid var(--border);
+        .download-tutorial strong {
             color: var(--text);
         }
 
-        .btn-secondary:hover {
+        /* Lightbox */
+        .lightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            cursor: zoom-out;
+            padding: 16px;
+            overflow: auto;
+        }
+
+        .lightbox.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .lightbox-content {
+            position: relative;
+            display: inline-flex;
+            max-width: 95%;
+            max-height: 92vh;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.85);
+            cursor: default;
+        }
+
+        .lightbox img {
+            max-width: 100%;
+            max-height: 92vh;
+            display: block;
+            object-fit: contain;
+            border-radius: 10px;
+        }
+
+        .lightbox.protected img {
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .lightbox.protected #lightbox-watermark-overlay {
+            display: block !important;
+        }
+
+        .lightbox-protection-badge {
+            position: absolute;
+            background: rgba(239, 68, 68, 0.92);
+            color: white;
+            padding: 9px 22px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(8px);
+            z-index: 35;
+            display: none;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .lightbox.protected .lightbox-protection-badge {
+            display: block;
+        }
+
+        .lightbox-close {
+            position: fixed;
+            top: 14px;
+            right: 14px;
+            width: 38px;
+            height: 38px;
             background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-2px);
-        }
-
-        /* Success Message */
-        .success-message {
-            text-align: center;
-            padding: 30px 20px;
-            background: rgba(16, 185, 129, 0.1);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            border-radius: 16px;
-        }
-
-        .success-message h3 {
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 1.5rem;
-            color: var(--success);
-            margin-bottom: 15px;
+            color: white;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            transition: background 0.2s ease;
+            z-index: 2010;
         }
 
-        .success-icon {
-            font-size: 3rem;
-            margin-bottom: 10px;
-            animation: pulse 2s infinite;
+        .lightbox-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Destroy Floating Button */
+        .destroy-wrapper {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+        }
+
+        .destroy-btn {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 5px 10px;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            transition: all 0.2s ease;
+            opacity: 0.65;
+        }
+
+        .destroy-btn:hover {
+            opacity: 1;
+            background: rgba(239, 68, 68, 0.85);
+            color: white;
+        }
+
+        .destroy-pin-input {
+            width: 100px;
+            padding: 5px 8px;
+            border-radius: 50px;
+            border: 2px solid #ef4444;
+            background: rgba(15, 23, 42, 0.95);
+            color: #ffffff;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-align: center;
+            outline: none;
+        }
+
+        /* Toast Notification */
+        .toast-notification {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(40px);
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: white;
+            padding: 9px 18px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(12px);
+            z-index: 3000;
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.28s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            white-space: nowrap;
+        }
+
+        .toast-notification.active {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Utilities */
+        .hidden {
+            display: none !important;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         @keyframes pulse {
@@ -736,341 +1106,18 @@
 
             50% {
                 opacity: 0.8;
-                transform: scale(1.1);
+                transform: scale(1.06);
             }
         }
 
-        /* Help Text with Animation */
-        .help-text {
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px dashed var(--border);
-            border-radius: 12px;
-            padding: 15px;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            line-height: 1.6;
-        }
-
-        .help-text strong {
-            color: var(--text);
-        }
-
-        /* Animation สอนวิธีดาวน์โหลด */
-        .download-tutorial {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            margin-top: 15px;
-            padding: 12px 10px;
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.03), rgba(139, 92, 246, 0.03));
-            border-radius: 12px;
-            border: 1px solid rgba(99, 102, 241, 0.15);
-            animation: fadeInUp 0.5s ease;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .tutorial-icon {
-            font-size: 2rem;
-            margin-bottom: 2px;
-            animation: bounce 2s ease-in-out infinite;
-        }
-
-        @keyframes bounce {
-
-            0%,
-            100% {
-                transform: translateY(0);
-            }
-
-            50% {
-                transform: translateY(-5px);
-            }
-        }
-
-        /* Animation for Mobile - กดค้าง */
-        .press-hold-animation {
-            position: relative;
-            display: inline-block;
-        }
-
-        .finger-icon {
-            font-size: 1.8rem;
-            display: inline-block;
-            animation: pressDown 2s ease-in-out infinite;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-        }
-
-        @keyframes pressDown {
-
-            0%,
-            100% {
-                transform: translateY(0) scale(1);
-                opacity: 0.9;
-            }
-
-            50% {
-                transform: translateY(5px) scale(0.95);
-                opacity: 1;
-            }
-        }
-
-        .ripple-effect {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(99, 102, 241, 0.3);
-            transform: translate(-50%, -50%);
-            animation: ripple 2s ease-out infinite;
-        }
-
-        @keyframes ripple {
-            0% {
-                width: 0;
-                height: 0;
-                opacity: 1;
-            }
-
-            100% {
-                width: 60px;
-                height: 60px;
-                opacity: 0;
-            }
-        }
-
-        /* Animation for Desktop - คลิกขวา */
-        .right-click-animation {
-            position: relative;
-            display: inline-block;
-        }
-
-        .mouse-icon {
-            font-size: 2.5rem;
-            display: inline-block;
-            animation: mouseClick 2s ease-in-out infinite;
-            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
-        }
-
-        @keyframes mouseClick {
-
-            0%,
-            100% {
-                transform: scale(1);
-                opacity: 0.9;
-            }
-
-            50% {
-                transform: scale(1.1);
-                opacity: 1;
-            }
-        }
-
-        .click-indicator {
-            position: absolute;
-            top: 20%;
-            right: -10%;
-            font-size: 1.2rem;
-            animation: clickBlink 2s ease-in-out infinite;
-        }
-
-        @keyframes clickBlink {
-
-            0%,
-            100% {
-                opacity: 0;
-                transform: scale(0.8);
-            }
-
-            50% {
-                opacity: 1;
-                transform: scale(1.2);
-            }
-        }
-
-        .tutorial-text {
-            text-align: center;
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            line-height: 1.4;
-        }
-
-        .tutorial-text strong {
-            color: var(--text);
-            display: block;
-            margin-bottom: 5px;
-            font-size: 0.8rem;
-        }
-
-        .tutorial-gif {
-            width: 100%;
-            max-width: 240px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            margin-bottom: 8px;
-        }
-
-        /* Error State */
-        .error-state {
-            text-align: center;
-            padding: 60px 20px;
-        }
-
-        .error-state h2 {
-            font-size: 1.5rem;
-            color: var(--danger);
-            margin-bottom: 10px;
-        }
-
-        .error-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
-        }
-
-        /* Lightbox */
-        .lightbox {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 1000;
-            cursor: zoom-out;
-            padding: 40px 20px;
-            overflow: auto;
-        }
-
-        .lightbox.active {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .lightbox.protected {
-            cursor: not-allowed;
-        }
-
-        .lightbox-content {
-            position: relative;
-            display: inline-block;
-        }
-
-        .lightbox img {
-            max-width: 95%;
-            max-height: 95vh;
-            border-radius: 12px;
-            box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        .lightbox.protected img {
-            pointer-events: none;
-        }
-
-        .lightbox-watermark {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-30deg);
-            font-size: 5rem;
-            font-weight: 900;
-            color: rgba(239, 68, 68, 0.4);
-            text-transform: uppercase;
-            letter-spacing: 15px;
-            white-space: nowrap;
-            pointer-events: none;
-            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
-            display: none;
-        }
-
-        .lightbox.protected .lightbox-watermark {
-            display: block;
-        }
-
-        .lightbox-close {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 50px;
-            height: 50px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            color: white;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
-        .lightbox-close:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        /* Responsive */
-        @media (max-width: 767px) {
-            .header {
-                flex-direction: column;
-                text-align: center;
-            }
-
-            .payment-amount {
-                font-size: 2rem;
-            }
-
-            .image-container img {
-                max-height: 50vh;
-            }
-        }
-
-        /* Loading Animation */
-        .spinner {
-            border: 3px solid rgba(255, 255, 255, 0.1);
-            border-top: 3px solid var(--primary);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Loading Progress Bar styles */
+        /* Progress Bar */
         .progress-container {
-            width: 200px;
+            width: 170px;
             background: rgba(255, 255, 255, 0.15);
-            height: 8px;
+            height: 6px;
             border-radius: 4px;
-            margin: 15px auto 5px;
+            margin: 8px auto 4px;
             overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.1);
             display: none;
         }
 
@@ -1078,103 +1125,31 @@
             width: 0%;
             height: 100%;
             background: linear-gradient(90deg, var(--primary), #818cf8);
-            box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
-            transition: width 0.1s ease-out;
             border-radius: 4px;
+            transition: width 0.15s ease-out;
         }
 
         .loading-percent {
-            font-size: 0.85rem;
+            font-size: 0.74rem;
             color: var(--text-muted);
             font-weight: 600;
-            margin-top: 5px;
             display: none;
         }
 
-        /* Hidden Elements */
-        .hidden {
-            display: none !important;
-        }
-
-        /* Destroy Button & Input */
-        .destroy-wrapper {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 999;
-            display: flex;
-            align-items: center;
-        }
-
-        .destroy-btn {
-            background: rgba(239, 68, 68, 0.2);
-            border: 1px solid rgba(239, 68, 68, 0.4);
-            color: #fca5a5;
-            padding: 10px 16px;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            backdrop-filter: blur(8px);
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .destroy-btn:hover {
-            background: rgba(239, 68, 68, 0.85);
-            color: white;
-            transform: scale(1.05);
-            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
-        }
-
-        .destroy-pin-input {
-            width: 120px;
-            padding: 9px 14px;
-            border-radius: 50px;
-            border: 2px solid #ef4444;
-            background: rgba(15, 23, 42, 0.95);
-            color: #ffffff;
-            font-size: 0.95rem;
-            font-weight: 700;
-            letter-spacing: 3px;
+        .error-state {
             text-align: center;
-            outline: none;
-            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.5);
-            backdrop-filter: blur(8px);
-            transition: all 0.3s ease;
+            padding: 30px 16px;
+            margin: auto;
         }
 
-        .destroy-pin-input::placeholder {
-            color: rgba(255, 255, 255, 0.4);
-            letter-spacing: normal;
-            font-weight: 400;
-            font-size: 0.85rem;
+        .error-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
         }
 
-        .destroy-pin-input.pin-error {
-            border-color: #f87171;
-            background: rgba(239, 68, 68, 0.3);
-            animation: shake 0.3s ease-in-out;
-        }
-
-        @keyframes shake {
-
-            0%,
-            100% {
-                transform: translateX(0);
-            }
-
-            20%,
-            60% {
-                transform: translateX(-6px);
-            }
-
-            40%,
-            80% {
-                transform: translateX(6px);
-            }
+        .error-state h2 {
+            font-size: 1.25rem;
+            color: var(--danger);
         }
     </style>
 </head>
@@ -1183,21 +1158,49 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <div class="logo">📦 PrivateSend</div>
-            <div class="timer-badge" id="countdown">
-                <span class="timer-text">ไฟล์จะถูกลบภายใน:</span>
-                <span class="timer-value">--:--:--</span>
+            <div class="header-left">
+                <div class="logo">📦 PrivateSend</div>
+                <div class="server-status-badge offline" id="server-status-badge"
+                    title="สถานะเซิร์ฟเวอร์ระบบรับชำระเงิน">
+                    <span class="status-dot"></span>
+                    <span id="server-status-text">ตรวจสถานะ...</span>
+                </div>
             </div>
+            <div class="header-right">
+                <div class="timer-badge" id="countdown">
+                    <span class="timer-text">จะลบใน:</span>
+                    <span class="timer-value">--:--:--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Compact Preview Strip (เห็นเฉพาะบนมือถือ < 768px) -->
+        <div class="mobile-preview-strip" id="mobile-preview-strip" onclick="handleImageClick()"
+            title="แตะเพื่อดูรูปตัวอย่างขนาดเต็ม">
+            <div class="mobile-preview-strip-left">
+                <div class="mobile-thumb-box">
+                    <img id="mobile-preview-thumb" src="" alt="Thumbnail" class="hidden">
+                    <span id="mobile-thumb-spinner" class="spinner"
+                        style="width: 16px; height: 16px; border-width: 2px;"></span>
+                </div>
+                <div class="mobile-thumb-info">
+                    <span class="title">📄 ไฟล์พร้อมส่งมอบ</span>
+                    <span class="subtitle" id="mobile-preview-subtext">🔒 ลายน้ำป้องกันก่อนชำระเงิน</span>
+                </div>
+            </div>
+            <button class="mobile-preview-strip-btn" type="button">
+                🔍 ขยายดูงาน
+            </button>
         </div>
 
         <!-- Main Content -->
         <div class="content-grid">
-            <!-- Left: Image Preview -->
-            <div class="card image-preview">
+            <!-- Left: Image Preview (Desktop Only) -->
+            <div class="card image-preview" id="desktop-image-preview">
                 <div class="image-container" id="image-container">
                     <div id="loading-text">
                         <div class="spinner"></div>
-                        <p style="margin-top: 20px;" id="loading-step-text">กำลังโหลดไฟล์...</p>
+                        <p style="margin-top: 15px; font-size: 0.88rem;" id="loading-step-text">กำลังโหลดไฟล์...</p>
                         <div class="progress-container" id="download-progress-container">
                             <div class="progress-bar" id="download-progress-bar"></div>
                         </div>
@@ -1227,21 +1230,37 @@
                         <div class="payment-amount">
                             <span id="price-display">0.00</span> <span class="currency">THB</span>
                         </div>
-                        <p class="qr-header-text" style="color: var(--text-muted); font-size: 0.85rem;">
-                            <span>สแกน QR เพื่อชำระเงิน
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/120px-PromptPay-logo.png"
-                                    alt="PromptPay"
-                                    style="width: 24%; height: auto; vertical-align: middle; transform: skewX(-10deg); display: inline-block;"></span>
+                        <p class="qr-header-text">
+                            <span>สแกน QR เพื่อชำระเงิน</span>
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/120px-PromptPay-logo.png"
+                                alt="PromptPay"
+                                style="width: 50px; height: auto; vertical-align: middle; display: inline-block;">
                         </p>
                     </div>
 
-                    <div style="text-align: center;">
-                        <div class="qr-wrapper" id="qr-wrapper" onclick="downloadQR()">
+                    <!-- Server Offline Panel (แสดงเฉพาะเมื่อเซิร์ฟเวอร์ Offline) -->
+                    <div class="server-offline-panel" id="server-offline-panel">
+                        <div class="offline-icon">🛑</div>
+                        <h3 class="offline-title">เซิร์ฟเวอร์ออฟไลน์ (Offline)</h3>
+                        <p class="offline-desc">
+                            ขณะนี้ระบบรับชำระเงินอัตโนมัติปิดให้บริการชั่วคราว
+                            จึงยังไม่สามารถเปิดรับยอดเงินหรือส่งไฟล์ได้
+                        </p>
+                        <div class="offline-note">
+                            💡 กรุณาติดต่อผู้ส่งงาน หรือรอให้เซิร์ฟเวอร์เปิดใช้งานอีกครั้ง
+                        </div>
+                        <button class="btn-retry-status" type="button" onclick="manualCheckServerStatus()">
+                            🔄 ตรวจสอบสถานะอีกครั้ง
+                        </button>
+                    </div>
+
+                    <!-- QR Content Wrapper (ซ่อนเมื่อเซิร์ฟเวอร์ Offline) -->
+                    <div class="qr-content-wrapper" id="qr-content-wrapper">
+                        <div class="qr-wrapper" id="qr-wrapper" onclick="downloadQR()" title="แตะที่ QR เพื่อบันทึกภาพ">
                             <div id="qrcode-display"></div>
                         </div>
-                        <div class="qr-hint">💡 คลิกที่ QR Code เพื่อบันทึก</div>
-
                         <div class="bank-icons">
+                            <span class="bank-icons-label">สแกนได้ทุกธนาคาร:</span>
                             <div class="bank-logo bank-kbank" title="ธนาคารกสิกรไทย"></div>
                             <div class="bank-logo bank-scb" title="ธนาคารไทยพาณิชย์"></div>
                             <div class="bank-logo bank-bay" title="ธนาคารกรุงศรีอยุธยา"></div>
@@ -1256,67 +1275,66 @@
                         <div class="waiting-text">
                             <div class="waiting-header">
                                 <span class="waiting-pulse-dot"></span>
-                                <h4>กำลังรอตรวจจับยอดเงินเข้า...</h4>
+                                <h4>กำลังตรวจจับยอดเงินเข้า...</h4>
                             </div>
-                            <p>จ่ายแล้ว <strong>ระบบจะส่งไฟล์จริงให้ทันที</strong></p>
-                            <div class="waiting-steps">
-                                <span class="waiting-step-item step-1">
-                                    <span class="waiting-step-num">1</span>
-                                    <span>สแกนจ่าย</span>
-                                </span>
-                                <span class="waiting-step-arrow">→</span>
-                                <span class="waiting-step-item step-2">
-                                    <span class="waiting-step-num">2</span>
-                                    <span>ไม่ต้องส่งสลิป</span>
-                                </span>
-                                <span class="waiting-step-arrow">→</span>
-                                <span class="waiting-step-item step-3">
-                                    <span class="waiting-step-num">3</span>
-                                    <span>รับไฟล์ทันที</span>
-                                </span>
-                            </div>
+                            <p>สแกนจ่ายแล้ว <strong>ระบบจะส่งไฟล์จริงให้ทันที</strong></p>
                         </div>
                     </div>
 
+                    <!-- Bank Icons -->
 
                 </div>
+            </div>
 
-                <!-- Success Section (Hidden by default) -->
-                <div id="success-section" class="hidden">
-                    <div class="success-message">
-                        <div class="success-icon">✨</div>
-                        <h3>ไฟล์พร้อมใช้งานแล้ว!</h3>
-                        <p style="color: var(--text-muted); margin-top: 10px;">คุณสามารถดาวน์โหลดไฟล์ได้แล้ว</p>
-                    </div>
-
-                    <button class="btn btn-primary" id="download-btn" onclick="downloadFile()">
-                        💾 ดาวน์โหลดไฟล์
-                    </button>
-
-                    <div id="download-tutorial-container"></div>
+            <!-- Success Section (Hidden by default) -->
+            <div id="success-section" class="hidden">
+                <div class="success-message">
+                    <div class="success-icon">✨</div>
+                    <h3>ไฟล์พร้อมใช้งานแล้ว!</h3>
+                    <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 4px;">
+                        คุณสามารถดาวน์โหลดไฟล์ได้ทันที</p>
                 </div>
 
-                <!-- Free Mode Section -->
-                <div id="free-section" class="hidden">
-                    <div class="success-message">
-                        <div class="success-icon">🎉</div>
-                        <h3>ไฟล์ของคุณพร้อมแล้ว!</h3>
-                    </div>
+                <button class="btn btn-primary" id="download-btn" onclick="downloadFile()">
+                    💾 ดาวน์โหลดไฟล์
+                </button>
 
-                    <button class="btn btn-primary" id="download-btn-free" onclick="downloadFile()">
-                        💾 ดาวน์โหลดไฟล์
-                    </button>
+                <div id="download-tutorial-container"></div>
+            </div>
 
-                    <div id="download-tutorial-container-free"></div>
+            <!-- Free Mode Section -->
+            <div id="free-section" class="hidden">
+                <div class="success-message">
+                    <div class="success-icon">🎉</div>
+                    <h3>ไฟล์ของคุณพร้อมแล้ว!</h3>
+                    <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 4px;">ไฟล์นี้ไม่มีค่าบริการ
+                        สามารถดาวน์โหลดได้ทันที</p>
                 </div>
+
+                <button class="btn btn-primary" id="download-btn-free" onclick="downloadFile()">
+                    💾 ดาวน์โหลดไฟล์
+                </button>
+
+                <div id="download-tutorial-container-free"></div>
             </div>
         </div>
     </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-notification" id="toast-notification"></div>
 
     <!-- Lightbox -->
     <div class="lightbox" id="lightbox" onclick="closeLightbox()">
         <div class="lightbox-close">×</div>
-        <img id="lightbox-image" alt="Full View">
+        <div class="lightbox-content" id="lightbox-content" onclick="event.stopPropagation()">
+            <img id="lightbox-image" alt="Full View">
+            <!-- เส้นลายน้ำป้องกัน AI ลบลายน้ำ คลุมเต็มรูปภาพ -->
+            <div class="watermark-overlay" id="lightbox-watermark-overlay"></div>
+            <div class="lightbox-protection-badge" id="lightbox-protection-badge">
+                🔒 โปรดชำระเงินเพื่อรับงาน
+            </div>
+        </div>
     </div>
 
     <!-- Destroy Button -->
@@ -1324,9 +1342,8 @@
         <button class="destroy-btn" id="destroy-btn" onclick="showPinInput()">
             💣 ทำลายทิ้ง
         </button>
-        <input type="password" id="destroy-pin-input" class="destroy-pin-input hidden" placeholder="กรอก PIN"
-            maxlength="6" oninput="checkPin(this.value)" onblur="hidePinInputIfEmpty(this)" autocomplete="off"
-            inputmode="numeric">
+        <input type="password" id="destroy-pin-input" class="destroy-pin-input hidden" placeholder="PIN" maxlength="6"
+            oninput="checkPin(this.value)" onblur="hidePinInputIfEmpty(this)" autocomplete="off" inputmode="numeric">
     </div>
 
     <script>
@@ -1356,6 +1373,11 @@
         const countdownElement = document.getElementById('countdown');
 
         let __isPaid = false;
+        let isServerOnline = false;
+        let serverStatusTimer = null;
+        let paymentPollingTimer = null;
+
+        const STATUS_ENDPOINT = 'https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/store_status.json';
 
         function getLinkKey() {
             const raw = fileUrl || window.location.search;
@@ -1365,6 +1387,124 @@
                 hash |= 0;
             }
             return 'k' + Math.abs(hash);
+        }
+
+        // แสดง Toast Notification
+        function showToast(text, type = 'info') {
+            const toast = document.getElementById('toast-notification');
+            if (!toast) return;
+            toast.textContent = text;
+            toast.classList.add('active');
+            clearTimeout(toast.__timer);
+            toast.__timer = setTimeout(() => {
+                toast.classList.remove('active');
+            }, 2600);
+        }
+
+        // คัดลอกเบอร์พร้อมเพย์
+        function copyPromptPay() {
+            const num = "0988573074";
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(num).then(() => {
+                    showToast('📋 คัดลอกเบอร์พร้อมเพย์ 098-857-3074 สำเร็จแล้ว!');
+                }).catch(() => fallbackCopy(num));
+            } else {
+                fallbackCopy(num);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const input = document.createElement('input');
+            input.value = text;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+            showToast('📋 คัดลอกเบอร์พร้อมเพย์ 098-857-3074 สำเร็จแล้ว!');
+        }
+
+        // ตรวจสอบสถานะเซิร์ฟเวอร์จาก Firebase store_status.json
+        async function checkServerStatus() {
+            try {
+                const res = await fetch(`${STATUS_ENDPOINT}?t=${Date.now()}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.online === true && (Date.now() - (data.lastSeen || 0) < 45000)) {
+                        return true;
+                    }
+                }
+                return false;
+            } catch (e) {
+                console.warn('Check server status error:', e);
+                return false;
+            }
+        }
+
+        // อัปเดต UI ตามสถานะเซิร์ฟเวอร์ Online / Offline
+        function updateServerStatusUI(online) {
+            isServerOnline = online;
+            const badge = document.getElementById('server-status-badge');
+            const badgeText = document.getElementById('server-status-text');
+            const offlinePanel = document.getElementById('server-offline-panel');
+            const qrWrapper = document.getElementById('qr-content-wrapper');
+
+            if (badge && badgeText) {
+                if (online) {
+                    badge.className = 'server-status-badge online';
+                    badgeText.textContent = 'ออนไลน์';
+                } else {
+                    badge.className = 'server-status-badge offline';
+                    badgeText.textContent = 'ออฟไลน์';
+                }
+            }
+
+            // ถ้าจ่ายเงินแล้ว หรือเป็นไฟล์ฟรี ไม่ต้องแสดง Offline Panel
+            if (price <= 0 || __isPaid) {
+                if (offlinePanel) offlinePanel.classList.remove('active');
+                if (qrWrapper) qrWrapper.classList.remove('hidden');
+                return;
+            }
+
+            if (!online) {
+                // เซิร์ฟเวอร์ Offline: ห้ามระบบชำระเงิน! ซ่อน QR Code และแสดงป้ายเตือน
+                if (offlinePanel) offlinePanel.classList.add('active');
+                if (qrWrapper) qrWrapper.classList.add('hidden');
+                if (paymentPollingTimer) {
+                    clearInterval(paymentPollingTimer);
+                    paymentPollingTimer = null;
+                }
+            } else {
+                // เซิร์ฟเวอร์ Online: ปลดบล็อคและแสดง QR Code
+                if (offlinePanel) offlinePanel.classList.remove('active');
+                if (qrWrapper) qrWrapper.classList.remove('hidden');
+                if (!__isPaid && price > 0) {
+                    initAutoPaymentDetection();
+                }
+            }
+        }
+
+        // ผู้ใช้กดปุ่มตรวจสอบสถานะเซิร์ฟเวอร์ด้วยตัวเอง
+        async function manualCheckServerStatus() {
+            showToast('🔄 กำลังตรวจสอบสถานะเซิร์ฟเวอร์...');
+            const online = await checkServerStatus();
+            updateServerStatusUI(online);
+            if (online) {
+                showToast('🟢 เซิร์ฟเวอร์ออนไลน์แล้ว! พร้อมสแกนชำระเงิน');
+            } else {
+                showToast('🔴 เซิร์ฟเวอร์ยังคงออฟไลน์อยู่ โปรดรอสักครู่');
+            }
+        }
+
+        // เริ่มวนเช็คสถานะเซิร์ฟเวอร์ทุกๆ 5 วินาที
+        function startServerStatusPolling() {
+            if (serverStatusTimer) clearInterval(serverStatusTimer);
+            serverStatusTimer = setInterval(async () => {
+                if (__isPaid || price <= 0) return;
+                const online = await checkServerStatus();
+                if (online !== isServerOnline) {
+                    updateServerStatusUI(online);
+                }
+            }, 5000);
         }
 
         // Initialize
@@ -1379,7 +1519,7 @@
                         const now = Date.now();
                         const recordTime = typeof data === 'object' && data.t ? data.t : null;
 
-                        // ถ้าข้อมูลงลบเกิน 24 ชั่วโมงแล้ว (86,400,000 ms) ให้ลบทิ้งจาก Firebase อัตโนมัติ
+                        // ถ้าข้อมูลถูกลบเกิน 24 ชั่วโมงแล้ว (86,400,000 ms) ให้ลบทิ้งจาก Firebase อัตโนมัติ
                         if (recordTime && (now - recordTime > 86400000)) {
                             fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/destroyed_${linkKey}.json`, {
                                 method: 'DELETE'
@@ -1402,12 +1542,16 @@
                 showInAppBrowserWarning();
             }
 
+            // ตรวจสอบสถานะ Server ก่อนเริ่มระบบชำระเงิน
+            const serverOnlineInitial = await checkServerStatus();
+            updateServerStatusUI(serverOnlineInitial);
+            startServerStatusPolling();
+
             // Update price display
             if (price > 0) {
                 priceDisplay.textContent = price.toFixed(2);
                 generateQRCode();
 
-                const linkKey = getLinkKey();
                 const isLocalPaid = localStorage.getItem('paid_' + linkKey) === '1' || (fileUrl && localStorage.getItem('paid_' + fileUrl) === '1');
 
                 if (isLocalPaid) {
@@ -1415,6 +1559,7 @@
                     paymentSection.classList.add('hidden');
                     successSection.classList.remove('hidden');
                     removeProtection();
+                    updateServerStatusUI(serverOnlineInitial);
                     setTimeout(() => showDownloadTutorial(), 100);
                 } else {
                     // ตรวจสอบสถานะจาก Firebase แบบ await (ถ้าแอดมินอนุมัติแล้ว ให้เปิดหน้าดาวน์โหลดทันที 100%)
@@ -1432,8 +1577,8 @@
                         console.warn('Check init payment status error:', e);
                     }
 
-                    // หากยังไม่ได้อนุมัติ เริ่มระบบตรวจจับยอดเงินอัตโนมัติทันทีตั้งแต่เปิดหน้าเว็บ (ลูกค้าไม่ต้องกดปุ่ม)
-                    if (!alreadyApproved) {
+                    // หากยังไม่ได้อนุมัติ และ Server Online เริ่มระบบตรวจจับยอดเงินอัตโนมัติทันที
+                    if (!alreadyApproved && serverOnlineInitial) {
                         initAutoPaymentDetection();
                     }
                 }
@@ -1457,73 +1602,40 @@
 
         // แสดง Animation Tutorial ตามอุปกรณ์
         function showDownloadTutorial() {
-            console.log('=== showDownloadTutorial called ===');
-
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             const isInAppBrowser = /Line|FBAV|FBAN|Instagram|Messenger|Fastwork/i.test(navigator.userAgent);
 
-            console.log('Device detection:', { isMobile, isInAppBrowser });
-
-            // หา container ที่จะแสดง
             let container = null;
-
             const successSectionHidden = document.getElementById('success-section').classList.contains('hidden');
             const freeSectionHidden = document.getElementById('free-section').classList.contains('hidden');
 
-            console.log('Section visibility:', { successSectionHidden, freeSectionHidden });
-
-            // ตรวจสอบว่า section ไหนกำลังแสดงอยู่
             if (!successSectionHidden) {
                 container = document.getElementById('download-tutorial-container');
-                console.log('Using success-section container');
             } else if (!freeSectionHidden) {
                 container = document.getElementById('download-tutorial-container-free');
-                console.log('Using free-section container');
             }
 
-            if (!container) {
-                console.error('❌ No visible container found!');
-                return;
-            }
-
-            console.log('✅ Container found:', container.id);
+            if (!container) return;
 
             let tutorialHTML = '<div class="download-tutorial">';
 
             if (isInAppBrowser) {
-                // สำหรับ In-App Browser
                 tutorialHTML += `
-                    <div class="tutorial-text">
-                        <strong>💡 หากกดปุ่มดาวน์โหลดไม่ได้:</strong>
-                        กดปุ่ม <strong>"⋯"</strong> หรือ <strong>"..."</strong> มุมบนขวา<br>
-                        → เลือก <strong>"เปิดในเบราว์เซอร์"</strong> หรือ <strong>"Open in Browser"</strong>
-                    </div>
+                    <strong>💡 หากกดดาวน์โหลดไม่ได้:</strong>
+                    กด <strong>"⋯"</strong> มุมบนขวา → เลือก <strong>"เปิดในเบราว์เซอร์"</strong>
                 `;
             } else if (isMobile) {
-                // สำหรับ Mobile Browser
                 tutorialHTML += `
-                    <div class="tutorial-text">
-                        <strong>💡 หากกดปุ่มดาวน์โหลดไม่ได้:</strong>
-                        <strong>กดนิ้วค้าง</strong>ที่รูปภาพด้านซ้าย<br>
-                        → เลือก <strong>"บันทึกรูปภาพ"</strong> หรือ <strong>"Save Image"</strong>
-                    </div>
+                    <strong>💡 คำแนะนำ:</strong> หากกดดาวน์โหลดไม่ได้ สามารถ<strong>กดค้างที่รูปภาพ</strong> → เลือก <strong>"บันทึกรูปภาพ"</strong>
                 `;
             } else {
-                // สำหรับ Desktop
                 tutorialHTML += `
-                    <div class="tutorial-text">
-                        <strong>💡 หากกดปุ่มดาวน์โหลดไม่ได้:</strong>
-                        <strong>คลิกขวา</strong>ที่รูปภาพด้านซ้าย<br>
-                        → เลือก <strong>"Save Image As..."</strong> หรือ <strong>"บันทึกรูปภาพเป็น..."</strong>
-                    </div>
+                    <strong>💡 คำแนะนำ:</strong> สามารถคลิกขวาที่รูปภาพตัวอย่าง → เลือก <strong>"บันทึกรูปภาพเป็น..."</strong> ได้เช่นกัน
                 `;
             }
 
             tutorialHTML += '</div>';
             container.innerHTML = tutorialHTML;
-
-            console.log('✅ Tutorial HTML injected');
-            console.log('Tutorial type:', isMobile ? 'Mobile' : isInAppBrowser ? 'In-App Browser' : 'Desktop');
         }
 
         // Show In-App Browser Warning
@@ -1536,29 +1648,18 @@
                 right: 0;
                 background: linear-gradient(135deg, #f59e0b, #d97706);
                 color: white;
-                padding: 12px 20px;
+                padding: 8px 14px;
                 text-align: center;
-                font-size: 0.9rem;
+                font-size: 0.78rem;
                 font-weight: 600;
                 z-index: 1000;
                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-                animation: slideDown 0.5s ease;
             `;
             warningBanner.innerHTML = `
-                ⚠️ <strong>แนะนำ:</strong> กดปุ่ม "..." มุมบนขวา → เปิดในเบราว์เซอร์ เพื่อดาวน์โหลดได้สะดวกกว่า
+                ⚠️ แนะนำ: กดปุ่ม "..." มุมบนขวา → เปิดในเบราว์เซอร์ เพื่อดาวน์โหลดไฟล์ได้สะดวก
             `;
             document.body.insertBefore(warningBanner, document.body.firstChild);
-            document.querySelector('.container').style.marginTop = '60px';
-
-            // Add animation
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes slideDown {
-                    from { transform: translateY(-100%); opacity: 0; }
-                    to { transform: translateY(0); opacity: 1; }
-                }
-            `;
-            document.head.appendChild(style);
+            document.querySelector('.container').style.marginTop = '36px';
         }
 
         // Generate QR Code for PromptPay
@@ -1566,13 +1667,12 @@
             const payload = generatePromptPayPayload(promptPayId, price);
             const qrDisplay = document.getElementById('qrcode-display');
 
-            // Clear และสร้าง QR Code ธรรมดา
             qrDisplay.innerHTML = '';
 
             new QRCode(qrDisplay, {
                 text: payload,
-                width: 200,
-                height: 200,
+                width: 240,
+                height: 240,
                 colorDark: "#000000",
                 colorLight: "#ffffff",
                 correctLevel: QRCode.CorrectLevel.M
@@ -1621,60 +1721,38 @@
             let downloadUrl = fileUrl;
             let previewUrl = fileUrl;
 
-            // tmpfiles.org format: https://tmpfiles.org/dl/123456/file.jpg
             if (fileUrl.includes('tmpfiles.org')) {
-                // tmpfiles.org ใช้ URL เดียวกันทั้งดูและโหลด
                 previewUrl = fileUrl;
                 downloadUrl = fileUrl;
-                console.log('tmpfiles.org detected:', downloadUrl);
-            }
-            // file.io format: https://file.io/abc123
-            else if (fileUrl.includes('file.io')) {
-                // file.io ใช้ URL เดียวกันทั้งดูและโหลด (แต่จะลบหลังโหลด 1 ครั้ง)
+            } else if (fileUrl.includes('file.io')) {
                 previewUrl = fileUrl;
                 downloadUrl = fileUrl;
-                console.log('file.io detected:', downloadUrl);
-            }
-            // Uguu.se format: https://uguu.se/abc123.jpg
-            else if (fileUrl.includes('uguu.se')) {
-                // Uguu direct link works as-is
+            } else if (fileUrl.includes('uguu.se')) {
                 previewUrl = fileUrl;
                 downloadUrl = fileUrl;
-                console.log('Uguu.se detected:', downloadUrl);
-            }
-            // Pixeldrain format: https://pixeldrain.com/u/abc123
-            else if (fileUrl.includes('pixeldrain.com')) {
+            } else if (fileUrl.includes('pixeldrain.com')) {
                 const fileId = fileUrl.split('/u/')[1];
                 if (fileId) {
                     previewUrl = `https://pixeldrain.com/api/file/${fileId}`;
                     downloadUrl = `https://pixeldrain.com/api/file/${fileId}?download`;
-                    console.log('Pixeldrain detected:', { fileId, previewUrl });
                 }
-            }
-            // GoFile format: https://gofile.io/d/abc123
-            else if (fileUrl.includes('gofile.io')) {
+            } else if (fileUrl.includes('gofile.io')) {
                 previewUrl = fileUrl;
                 downloadUrl = fileUrl;
-                console.log('GoFile detected - redirecting to page');
                 window.location.href = fileUrl;
                 return;
-            }
-            // Firebase format: fb_12345678_abcd
-            else if (fileUrl.startsWith('fb_')) {
+            } else if (fileUrl.startsWith('fb_')) {
                 const fileId = fileUrl.substring(3);
                 const firebaseUrl = `https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/${fileId}.json`;
-                console.log('Firebase detected, fetching data...', fileId);
 
-                updateDownloadProgress('กำลังโหลดข้อมูลจากฐานข้อมูล...', 0);
+                updateDownloadProgress('กำลังโหลดข้อมูล...', 0);
 
-                // Fetch base64 data from Firebase with progress
-                downloadWithProgress(firebaseUrl, 'กำลังโหลดข้อมูลจากฐานข้อมูล...', (percent) => {
-                    updateDownloadProgress('กำลังโหลดข้อมูลจากฐานข้อมูล...', percent);
+                downloadWithProgress(firebaseUrl, 'กำลังโหลดข้อมูล...', (percent) => {
+                    updateDownloadProgress('กำลังโหลดข้อมูล...', percent);
                 })
                     .then(data => {
                         if (data && data.data) {
-                            updateDownloadProgress('กำลังประมวลผลรูปภาพ...', 100);
-                            // Convert base64 to blob
+                            updateDownloadProgress('กำลังประมวลผล...', 100);
                             const binary = atob(data.data);
                             const bytes = new Uint8Array(binary.length);
                             for (let i = 0; i < binary.length; i++) {
@@ -1687,9 +1765,9 @@
                             window.__downloadUrl = blobUrl;
 
                             previewImage.onload = function () {
-                                console.log('✅ Firebase image loaded');
                                 loadingText.classList.add('hidden');
                                 previewImage.classList.remove('hidden');
+                                syncMobileThumb(blobUrl);
                                 applyProtection();
                             };
                         } else {
@@ -1698,39 +1776,31 @@
                     })
                     .catch(err => {
                         console.error('Firebase fetch error:', err);
-                        showError('โหลดไฟล์ไม่สำเร็จ', 'ไม่สามารถดึงข้อมูลจาก Firebase ได้');
+                        showError('โหลดไฟล์ไม่สำเร็จ', 'ไม่สามารถดึงข้อมูลจากฐานข้อมูลได้');
                     });
-                return; // Early exit for Firebase
-            }
-            // Litterbox/Catbox format
-            else if (fileUrl.includes('litter.catbox.moe') || fileUrl.includes('catbox.moe')) {
+                return;
+            } else if (fileUrl.includes('litter.catbox.moe') || fileUrl.includes('catbox.moe')) {
                 previewUrl = fileUrl;
                 downloadUrl = fileUrl;
-                console.log('Catbox URL:', downloadUrl);
-            }
-            // Generic URL
-            else if (fileUrl.startsWith('http')) {
+            } else if (fileUrl.startsWith('http')) {
                 previewUrl = fileUrl;
                 downloadUrl = fileUrl;
-                console.log('Generic URL:', downloadUrl);
             }
 
-            // Store download URL globally
             window.__downloadUrl = downloadUrl;
 
-            // Load image using XMLHttpRequest with progress, with fallback to CORS proxy
-            updateDownloadProgress('กำลังดาวน์โหลดไฟล์เพื่อแสดงผล...', 0);
+            updateDownloadProgress('กำลังดาวน์โหลดไฟล์...', 0);
 
-            downloadWithProgress(previewUrl, 'กำลังดาวน์โหลดไฟล์เพื่อแสดงผล...', (percent) => {
-                updateDownloadProgress('กำลังดาวน์โหลดไฟล์เพื่อแสดงผล...', percent);
+            downloadWithProgress(previewUrl, 'กำลังดาวน์โหลดไฟล์...', (percent) => {
+                updateDownloadProgress('กำลังดาวน์โหลดไฟล์...', percent);
             })
                 .then(blob => {
                     const blobUrl = URL.createObjectURL(blob);
                     previewImage.src = blobUrl;
                     previewImage.onload = function () {
-                        console.log('✅ Image loaded successfully');
                         loadingText.classList.add('hidden');
                         previewImage.classList.remove('hidden');
+                        syncMobileThumb(blobUrl);
                         applyProtection();
                     };
                 })
@@ -1750,10 +1820,10 @@
                             console.error('All fallbacks failed');
                             if (fileUrl.includes('file.io') || fileUrl.includes('tmpfiles.org')) {
                                 loadingText.innerHTML = `
-                                <div style="text-align: center; color: var(--text-muted);">
-                                    <div style="font-size: 4rem; margin-bottom: 15px;">📄</div>
-                                    <p style="font-size: 1.1rem; margin-bottom: 8px;">ไฟล์พร้อมดาวน์โหลด</p>
-                                    <p style="font-size: 0.85rem;">(ไม่แสดงตัวอย่าง - กดปุ่มดาวน์โหลดเพื่อรับไฟล์)</p>
+                                <div style="text-align: center; color: var(--text-muted); padding: 20px;">
+                                    <div style="font-size: 3rem; margin-bottom: 10px;">📄</div>
+                                    <p style="font-size: 1rem; margin-bottom: 4px;">ไฟล์พร้อมดาวน์โหลด</p>
+                                    <p style="font-size: 0.8rem;">(กดปุ่มดาวน์โหลดเพื่อรับไฟล์จริง)</p>
                                 </div>
                             `;
                                 applyProtection();
@@ -1765,20 +1835,19 @@
 
                         const fb = fallbacks[fallbackIndex];
                         fallbackIndex++;
-                        updateDownloadProgress('กำลังโหลดไฟล์เพื่อแสดงผล (' + fb.name + ')...', 50);
+                        updateDownloadProgress('กำลังโหลดไฟล์ (' + fb.name + ')...', 50);
 
                         if (fb.opts?.referrer) {
                             previewImage.referrerPolicy = fb.opts.referrer;
                         }
 
                         previewImage.onload = function () {
-                            console.log('✅ Image loaded via ' + fb.name);
                             loadingText.classList.add('hidden');
                             previewImage.classList.remove('hidden');
+                            syncMobileThumb(fb.getUrl());
                             applyProtection();
                         };
                         previewImage.onerror = function () {
-                            console.warn(fb.name + ' failed, trying next...');
                             tryFallback();
                         };
                         previewImage.src = fb.getUrl();
@@ -1788,28 +1857,37 @@
                 });
         }
 
+        // ซิงค์รูปภาพลงใน Mobile Thumbnail Strip
+        function syncMobileThumb(url) {
+            const mobileThumb = document.getElementById('mobile-preview-thumb');
+            const mobileSpinner = document.getElementById('mobile-thumb-spinner');
+            if (mobileThumb) {
+                mobileThumb.src = url;
+                mobileThumb.classList.remove('hidden');
+            }
+            if (mobileSpinner) {
+                mobileSpinner.classList.add('hidden');
+            }
+        }
+
         // ฟังก์ชันป้องกันดาวน์โหลด
         function applyProtection() {
             const isPaid = __isPaid || price === 0;
             const isFree = price === 0;
 
-            console.log('Protection check:', { price, isPaid, isFree });
-
             const watermark = document.getElementById('watermark-overlay');
             const protectionOverlay = document.getElementById('protection-overlay');
+            const mobileSubtext = document.getElementById('mobile-preview-subtext');
 
             if (!isFree && !isPaid) {
-                // ยังไม่จ่ายเงิน - เปิดการป้องกัน + แสดงเส้นลายน้ำ
-                console.log('🔒 Applying protection & watermark lines');
                 imageContainer.classList.add('protected');
                 if (protectionOverlay) protectionOverlay.classList.add('active');
                 if (watermark) watermark.style.display = 'block';
+                if (mobileSubtext) mobileSubtext.textContent = '🔒 ลายน้ำป้องกันก่อนชำระเงิน';
                 previewImage.style.pointerEvents = 'none';
                 previewImage.ondragstart = () => false;
                 previewImage.oncontextmenu = () => false;
             } else {
-                // จ่ายเงินแล้วหรือฟรี - ปิดการป้องกัน + ซ่อนเส้นลายน้ำ
-                console.log('✅ Removing protection & watermark lines');
                 removeProtection();
             }
         }
@@ -1818,10 +1896,12 @@
         function removeProtection() {
             const watermark = document.getElementById('watermark-overlay');
             const protectionOverlay = document.getElementById('protection-overlay');
+            const mobileSubtext = document.getElementById('mobile-preview-subtext');
 
             imageContainer.classList.remove('protected');
             if (protectionOverlay) protectionOverlay.classList.remove('active');
             if (watermark) watermark.style.display = 'none';
+            if (mobileSubtext) mobileSubtext.textContent = '✨ ไฟล์ปลดล็อคแล้ว พร้อมใช้งาน';
             previewImage.style.pointerEvents = 'auto';
             previewImage.ondragstart = null;
             previewImage.oncontextmenu = null;
@@ -1833,23 +1913,21 @@
             const isFree = price === 0;
 
             if (!isFree && !isPaid) {
-                // ยังไม่จ่ายเงิน - แสดง alert
-                alert('🔒 กรุณาชำระเงินก่อนดูรูปแบบเต็ม');
+                // ถ้ายังไม่จ่ายเงินแต่ต้องการดูรูปตัวอย่าง
+                openLightbox();
                 return;
             }
 
-            // จ่ายเงินแล้ว - เปิด Lightbox
             openLightbox();
         }
 
-        let paymentPollingTimer = null;
-
-        // Auto Payment Detection (ทำงานอัตโนมัติทันทีตั้งแต่เปิดหน้าเว็บ โดยลูกค้าไม่ต้องกดปุ่ม)
+        // Auto Payment Detection (ทำงานเฉพาะเมื่อ Server Online)
         async function initAutoPaymentDetection() {
-            if (price <= 0 || __isPaid) return;
+            if (price <= 0 || __isPaid || !isServerOnline) return;
 
             const linkKey = getLinkKey();
-            setPaymentAutoWaitingUI();
+            const waitingBox = document.getElementById('payment-waiting-box');
+            if (waitingBox) waitingBox.classList.add('active');
 
             // ส่งข้อมูลรอชำระเงินไปยัง Firebase อัตโนมัติทันที
             try {
@@ -1870,95 +1948,26 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                console.log('⚡ Auto-registered payment pending request to Firebase:', linkKey);
             } catch (err) {
                 console.warn('Auto register payment error:', err);
             }
 
-            // เริ่มวนเช็คสถานะการอนุมัติจากหลังบ้านทุกๆ 1.5 วินาที
             startPaymentPolling();
-        }
-
-        function setPaymentAutoWaitingUI() {
-            const btn = document.getElementById('confirm-payment-btn');
-            const waitingBox = document.getElementById('payment-waiting-box');
-            const waitingPriceDisplay = document.getElementById('waiting-price-display');
-
-            if (waitingPriceDisplay) waitingPriceDisplay.textContent = price.toFixed(2);
-
-            if (waitingBox) {
-                waitingBox.classList.add('active');
-            }
-
-            if (btn) {
-                btn.disabled = false;
-                btn.classList.remove('btn-loading');
-                btn.innerHTML = `🔄 ระบบกำลังรอรับยอดเงินอัตโนมัติ... (หรือคลิกเพื่อตรวจสอบซ้ำ)`;
-            }
-        }
-
-        // Confirm Payment (กรณีลูกค้ากดปุ่มยืนยันเอง หรือต้องการบังคับเช็คซ้ำ)
-        async function confirmPayment(isManualClick = false) {
-            if (price <= 0 || __isPaid) return;
-
-            const linkKey = getLinkKey();
-            const btn = document.getElementById('confirm-payment-btn');
-            if (btn) {
-                btn.disabled = true;
-                btn.classList.add('btn-loading');
-                btn.innerHTML = `<span class="btn-spinner"></span> <span>กำลังส่งคำขอตรวจสอบยอดเงิน...</span>`;
-            }
-
-            try {
-                const payload = {
-                    linkKey: linkKey,
-                    fileUrl: fileUrl,
-                    previewUrl: window.__downloadUrl || fileUrl,
-                    price: price,
-                    status: 'pending',
-                    createdAt: Date.now(),
-                    timeStr: new Date().toLocaleTimeString('th-TH'),
-                    dateStr: new Date().toLocaleDateString('th-TH'),
-                    manualConfirmed: isManualClick
-                };
-
-                await fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests/${linkKey}.json`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                // แจ้งเตือน Watcher ฝั่งแอดมินให้เปิดหน้าจอตรวจสอบ (ถ้าเปิดโปรแกรมไว้)
-                fetch('http://localhost:5000/trigger-admin-payment', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ linkKey: linkKey, price: price })
-                }).catch(() => { });
-            } catch (err) {
-                console.warn('Manual payment notification error:', err);
-            }
-
-            setTimeout(() => {
-                if (btn && !__isPaid) {
-                    btn.disabled = false;
-                    btn.classList.remove('btn-loading');
-                    btn.innerHTML = `🔄 ส่งคำขอตรวจยอดแล้ว (ระบบกำลังรอรับเงิน...)`;
-                }
-            }, 2000);
-
-            startPaymentPolling();
-        }
-
-        function setPaymentWaitingUI() {
-            setPaymentAutoWaitingUI();
         }
 
         function startPaymentPolling() {
             if (paymentPollingTimer) clearInterval(paymentPollingTimer);
+            if (!isServerOnline || __isPaid) return;
 
             const linkKey = getLinkKey();
 
             paymentPollingTimer = setInterval(async () => {
+                if (!isServerOnline) {
+                    clearInterval(paymentPollingTimer);
+                    paymentPollingTimer = null;
+                    return;
+                }
+
                 try {
                     // ตรวจสอบว่าไฟล์ถูกสั่งทำลายทิ้งจากฝั่งแอดมินหรือไม่
                     const destroyRes = await fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/destroyed_${linkKey}.json`);
@@ -1999,95 +2008,11 @@
                 if (fileUrl) localStorage.setItem('paid_' + fileUrl, '1');
             } catch (e) { }
 
-            const btn = document.getElementById('confirm-payment-btn');
-            const waitingBox = document.getElementById('payment-waiting-box');
-
-            if (immediate) {
-                paymentSection.classList.add('hidden');
-                successSection.classList.remove('hidden');
-                removeProtection();
-                setTimeout(() => showDownloadTutorial(), 100);
-                return;
-            }
-
-            if (btn) {
-                btn.classList.remove('btn-loading');
-                btn.classList.remove('btn-warning');
-                btn.classList.add('btn-success');
-                btn.innerHTML = `✨ ยืนยันยอดเงินสำเร็จ! กำลังเปิดหน้าดาวน์โหลด...`;
-            }
-
-            if (waitingBox) {
-                waitingBox.innerHTML = `
-                    <div style="color: #10b981; font-size: 1.25rem;">✅</div>
-                    <div>
-                        <h4 style="color: #10b981;">ตรวจสอบยอดเงินเข้าเรียบร้อยแล้ว</h4>
-                        <p style="margin-bottom: 0;">ระบบได้ปลดล็อคไฟล์ให้คุณเรียบร้อยแล้ว สามารถดาวน์โหลดได้ทันที</p>
-                    </div>
-                `;
-            }
-
-            // แสดงหน้าดาวน์โหลดทันที ไม่ต้องหน่วงเวลา
             paymentSection.classList.add('hidden');
             successSection.classList.remove('hidden');
             removeProtection();
             showDownloadTutorial();
-        }
-
-        function resetPaymentRejectedUI() {
-            const btn = document.getElementById('confirm-payment-btn');
-            const waitingBox = document.getElementById('payment-waiting-box');
-
-            if (btn) {
-                btn.disabled = false;
-                btn.classList.remove('btn-loading');
-                btn.innerHTML = `✅ ฉันโอนเงินเรียบร้อยแล้ว`;
-            }
-            if (waitingBox) {
-                waitingBox.classList.remove('active');
-            }
-
-            alert('⚠️ แอดมินยังไม่พบยอดเงินเข้า กรุณาตรวจสอบยอดโอนหรือติดต่อแอดมิน');
-        }
-
-        // Request QR Code Again
-        function requestQRAgain() {
-            __isPaid = false;
-            const linkKey = getLinkKey();
-            localStorage.removeItem('paid_' + linkKey);
-            localStorage.removeItem('paid_' + fileUrl);
-
-            if (paymentPollingTimer) {
-                clearInterval(paymentPollingTimer);
-                paymentPollingTimer = null;
-            }
-
-            successSection.classList.add('hidden');
-            paymentSection.classList.remove('hidden');
-
-            const btn = document.getElementById('confirm-payment-btn');
-            if (btn) {
-                btn.disabled = false;
-                btn.classList.remove('btn-loading');
-                btn.innerHTML = `✅ ฉันโอนเงินเรียบร้อยแล้ว`;
-            }
-
-            const waitingBox = document.getElementById('payment-waiting-box');
-            if (waitingBox) {
-                waitingBox.classList.remove('active');
-                waitingBox.innerHTML = `
-                    <div class="waiting-text">
-                        <div class="waiting-header">
-                            <span class="waiting-pulse-dot"></span>
-                            <h4>⏳ ระบบกำลังรอตรวจสอบยอดเงินเข้า</h4>
-                        </div>
-                        <p>ให้เปิดหน้าเว็บค้างไว้ / ไม่ต้องส่งสลิป</p>
-                        <p class="waiting-hint">💡 อนุมัติแล้ว จะโหลดไฟล์ได้ทันที!</p>
-                    </div>
-                `;
-            }
-
-            applyProtection();
+            showToast('✨ ยืนยันยอดเงินสำเร็จ! ไฟล์พร้อมดาวน์โหลดแล้ว', 'success');
         }
 
         function updateDownloadProgress(text, percent) {
@@ -2108,7 +2033,6 @@
                 const xhr = new XMLHttpRequest();
                 xhr.open('GET', url, true);
 
-                // If it's a firebase fetch, we want json response type, else blob
                 const isFirebase = url.includes('.firebasedatabase.app') || url.includes('/temp_files/');
                 if (!isFirebase) {
                     xhr.responseType = 'blob';
@@ -2153,32 +2077,23 @@
             btn.disabled = true;
             btn.style.opacity = '0.7';
 
-            // Use the download URL we stored during loadFile
             let downloadUrl = window.__downloadUrl || fileUrl;
 
-            console.log('Downloading from:', downloadUrl);
-
-            // ตรวจสอบว่าเป็น In-App Browser หรือไม่
             const userAgent = navigator.userAgent || navigator.vendor || window.opera;
             const isInAppBrowser = /Line|FBAV|FBAN|Instagram|Messenger|Fastwork/i.test(userAgent);
 
             if (isInAppBrowser) {
-                // สำหรับ In-App Browser: เปิดใน Browser ภายนอก
                 btn.innerHTML = '🌐 กำลังเปิดในเบราว์เซอร์...';
                 btn.disabled = false;
                 btn.style.opacity = '1';
-
-                // พยายามเปิดใน default browser
                 window.location.href = downloadUrl;
-
                 setTimeout(() => {
-                    btn.innerHTML = '💡 กรุณาเลือก "เปิดในเบราว์เซอร์"';
+                    btn.innerHTML = '💡 แนะนำเลือก "เปิดในเบราว์เซอร์"';
                     setTimeout(() => btn.innerHTML = originalText, 4000);
                 }, 1500);
                 return;
             }
 
-            // สำหรับ file.io: เปิดลิงก์ในแท็บใหม่ (เพราะมันลบหลังโหลด 1 ครั้ง)
             if (downloadUrl.includes('file.io')) {
                 window.open(downloadUrl, '_blank');
                 btn.innerHTML = '✅ เปิดลิงก์ดาวน์โหลดแล้ว!';
@@ -2193,7 +2108,6 @@
                 return;
             }
 
-            // สำหรับ tmpfiles.org หรือ Browser ปกติ: ดาวน์โหลดตรง พร้อม % การดาวน์โหลด
             downloadWithProgress(downloadUrl, 'กำลังดาวน์โหลด...', (percent) => {
                 btn.innerHTML = `⏳ กำลังดาวน์โหลด... (${percent}%)`;
             })
@@ -2203,14 +2117,12 @@
                     a.style.display = 'none';
                     a.href = url;
 
-                    // Extract filename from URL
                     let filename = 'download.jpg';
                     const urlParts = downloadUrl.split('/');
                     const lastPart = urlParts[urlParts.length - 1].split('?')[0];
                     if (lastPart && lastPart.includes('.')) {
                         filename = lastPart;
                     } else {
-                        // Use file type from params
                         filename = 'file.' + (fileType === 'pdf' ? 'pdf' : 'jpg');
                     }
 
@@ -2226,7 +2138,6 @@
                 })
                 .catch(err => {
                     console.error('Download failed:', err);
-                    // Fallback: เปิดในแท็บใหม่
                     window.open(downloadUrl, '_blank');
                     btn.innerHTML = '📱 เปิดไฟล์ในแท็บใหม่';
                     btn.disabled = false;
@@ -2235,13 +2146,16 @@
                 });
         }
 
-        // Download QR Code (ไม่มีโลโก้ในภาพ QR แล้ว)
+        // Download QR Code
         function downloadQR() {
-            const qrImg = document.querySelector('#qrcode-display canvas, #qrcode-display img');
+            if (!isServerOnline && price > 0 && !__isPaid) {
+                showToast('⚠️ เซิร์ฟเวอร์ออฟไลน์ ไม่สามารถทำรายการได้');
+                return;
+            }
 
+            const qrImg = document.querySelector('#qrcode-display canvas, #qrcode-display img');
             if (!qrImg) return;
 
-            // ดาวน์โหลด QR Code ธรรมดา
             if (qrImg.tagName === 'CANVAS') {
                 qrImg.toBlob((blob) => {
                     const url = window.URL.createObjectURL(blob);
@@ -2252,6 +2166,7 @@
                     link.click();
                     document.body.removeChild(link);
                     window.URL.revokeObjectURL(url);
+                    showToast('📥 บันทึกภาพ QR Code เรียบร้อยแล้ว! เปิดแอปธนาคารสแกนได้เลย');
                 });
             } else if (qrImg.src) {
                 const link = document.createElement('a');
@@ -2260,6 +2175,7 @@
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
+                showToast('📥 บันทึกภาพ QR Code เรียบร้อยแล้ว! เปิดแอปธนาคารสแกนได้เลย');
             }
         }
 
@@ -2271,20 +2187,13 @@
             const lightbox = document.getElementById('lightbox');
             const lightboxImage = document.getElementById('lightbox-image');
 
+            if (!previewImage.src) return;
+
             lightboxImage.src = previewImage.src;
             lightbox.classList.add('active');
 
-            // เพิ่มลายน้ำถ้ายังไม่จ่ายเงิน
             if (!isFree && !isPaid) {
                 lightbox.classList.add('protected');
-
-                // สร้างลายน้ำถ้ายังไม่มี
-                if (!document.querySelector('.lightbox-watermark')) {
-                    const watermark = document.createElement('div');
-                    watermark.className = 'lightbox-watermark';
-                    watermark.textContent = 'ยังไม่ชำระเงิน';
-                    lightbox.appendChild(watermark);
-                }
             } else {
                 lightbox.classList.remove('protected');
             }
@@ -2342,10 +2251,10 @@
                 executeDestruction();
             } else if (val.length >= 6) {
                 const input = document.getElementById('destroy-pin-input');
-                input.classList.add('pin-error');
+                input.style.borderColor = '#f87171';
                 setTimeout(() => {
                     input.value = '';
-                    input.classList.remove('pin-error');
+                    input.style.borderColor = '#ef4444';
                 }, 300);
             }
         }
@@ -2353,7 +2262,6 @@
         async function executeDestruction() {
             const linkKey = getLinkKey();
 
-            // 1. บันทึกสถานะทำลายพร้อมเวลาสร้าง (t) เพื่อให้ระบบลบข้อมูลเก่าออกอัตโนมัติเมื่อครบ 24 ชม.
             try {
                 await fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/destroyed_${linkKey}.json`, {
                     method: 'PUT',
@@ -2367,7 +2275,6 @@
                 console.error('Firebase destroy error:', e);
             }
 
-            // 2. ถ้าเป็นไฟล์ Firebase Payload ให้ลบไฟล์หลักทิ้งด้วย
             if (fileUrl && fileUrl.startsWith('fb_')) {
                 const fileId = fileUrl.substring(3);
                 fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/${fileId}.json`, {
@@ -2384,7 +2291,7 @@
                 <div class="error-state">
                     <div class="error-icon">⚠️</div>
                     <h2>${title}</h2>
-                    <p style="color: var(--text-muted); margin-top: 15px;">${message}</p>
+                    <p style="color: var(--text-muted); margin-top: 10px; font-size: 0.88rem;">${message}</p>
                 </div>
             `;
             const destroyWrapper = document.getElementById('destroy-wrapper');
