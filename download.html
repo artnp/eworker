@@ -1301,41 +1301,40 @@
                     <!-- Bank Icons -->
 
                 </div>
-            </div>
 
-            <!-- Success Section (Hidden by default) -->
-            <div id="success-section" class="hidden">
-                <div class="success-message">
-                    <div class="success-icon">✨</div>
-                    <h3>ไฟล์พร้อมใช้งานแล้ว!</h3>
-                    <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 4px;">
-                        คุณสามารถดาวน์โหลดไฟล์ได้ทันที</p>
+                <!-- Success Section (Hidden by default) -->
+                <div id="success-section" class="hidden">
+                    <div class="success-message">
+                        <div class="success-icon">✨</div>
+                        <h3>ไฟล์พร้อมใช้งานแล้ว!</h3>
+                        <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 4px;">
+                            คุณสามารถดาวน์โหลดไฟล์ได้ทันที</p>
+                    </div>
+
+                    <button class="btn btn-primary" id="download-btn" onclick="downloadFile()">
+                        💾 ดาวน์โหลดไฟล์
+                    </button>
+
+                    <div id="download-tutorial-container"></div>
                 </div>
 
-                <button class="btn btn-primary" id="download-btn" onclick="downloadFile()">
-                    💾 ดาวน์โหลดไฟล์
-                </button>
+                <!-- Free Mode Section -->
+                <div id="free-section" class="hidden">
+                    <div class="success-message">
+                        <div class="success-icon">🎉</div>
+                        <h3>ไฟล์ของคุณพร้อมแล้ว!</h3>
+                        <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 4px;">ไฟล์นี้ไม่มีค่าบริการ
+                            สามารถดาวน์โหลดได้ทันที</p>
+                    </div>
 
-                <div id="download-tutorial-container"></div>
-            </div>
+                    <button class="btn btn-primary" id="download-btn-free" onclick="downloadFile()">
+                        💾 ดาวน์โหลดไฟล์
+                    </button>
 
-            <!-- Free Mode Section -->
-            <div id="free-section" class="hidden">
-                <div class="success-message">
-                    <div class="success-icon">🎉</div>
-                    <h3>ไฟล์ของคุณพร้อมแล้ว!</h3>
-                    <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 4px;">ไฟล์นี้ไม่มีค่าบริการ
-                        สามารถดาวน์โหลดได้ทันที</p>
+                    <div id="download-tutorial-container-free"></div>
                 </div>
-
-                <button class="btn btn-primary" id="download-btn-free" onclick="downloadFile()">
-                    💾 ดาวน์โหลดไฟล์
-                </button>
-
-                <div id="download-tutorial-container-free"></div>
             </div>
         </div>
-    </div>
     </div>
 
     <!-- Toast Notification -->
@@ -1857,57 +1856,11 @@
                     canvas.width = w;
                     canvas.height = h;
 
-                    // 1. วาดรูปภาพลงบน Canvas
+                    // 1. วาดรูปภาพลงบน Canvas ปรับสเกลให้ปลอดภัยและส่งออกเป็น Data URL
                     ctx.drawImage(imgSource, 0, 0, w, h);
 
-                    // 2. ตีเส้นตารางโปร่งแสง ป้องกันการลบลายน้ำด้วย AI
-                    ctx.save();
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-                    ctx.lineWidth = 1;
-                    const step = Math.max(w, h) / 10;
-                    for (let x = -w; x < w * 2; x += step) {
-                        ctx.beginPath();
-                        ctx.moveTo(x, 0);
-                        ctx.lineTo(x + h, h);
-                        ctx.stroke();
-                    }
-                    for (let x = w * 2; x > -w; x -= step) {
-                        ctx.beginPath();
-                        ctx.moveTo(x, 0);
-                        ctx.lineTo(x - h, h);
-                        ctx.stroke();
-                    }
-                    ctx.restore();
-
-                    // 3. ปั๊มข้อความลายน้ำทแยงมุมเต็มพื้นที่ (-26 องศา)
-                    ctx.save();
-                    ctx.rotate(-26 * Math.PI / 180);
-                    const fontSize = Math.max(16, Math.round(w / 24));
-                    ctx.font = `800 ${fontSize}px Prompt, sans-serif`;
-
-                    const lineSpacing = fontSize * 3.6;
-                    const textSpacing = fontSize * 13;
-                    const totalDiag = Math.sqrt(w * w + h * h) * 1.5;
-
-                    for (let y = -totalDiag; y < totalDiag; y += lineSpacing) {
-                        for (let x = -totalDiag; x < totalDiag; x += textSpacing) {
-                            // เงาดำ
-                            ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-                            ctx.fillText('🔒 PrivateSend • ตัวอย่างงาน', x + 2, y + 2);
-                            // ตัวอักษรขาว
-                            ctx.fillStyle = 'rgba(255, 255, 255, 0.38)';
-                            ctx.fillText('🔒 PrivateSend • ตัวอย่างงาน', x, y);
-
-                            // แถวสลับข้อความชำระเงิน
-                            ctx.fillStyle = 'rgba(239, 68, 68, 0.42)';
-                            ctx.fillText('ชำระเงินเพื่อรับไฟล์จริง', x + textSpacing / 2, y + lineSpacing / 2);
-                        }
-                    }
-                    ctx.restore();
-
-
-                    // ส่งออกเป็น Data URL (JPEG คุณภาพ 0.68) เพื่อไม่ให้แสดง URL ไฟล์จริงใน DOM
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.68);
+                    // ส่งออกเป็น Data URL (JPEG คุณภาพ 0.72) เพื่อไม่ให้แสดง URL ไฟล์จริงใน DOM
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
                     resolve(dataUrl);
                 } catch (e) {
                     console.warn('Canvas watermark export error (CORS?):', e);
