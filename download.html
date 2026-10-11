@@ -827,6 +827,14 @@
             transform: translateY(-1px);
         }
 
+        /* เมื่อเซิร์ฟเวอร์ออฟไลน์ ซ่อนหัวข้อชำระเงิน QR และกล่องตรวจจับยอดเงิน */
+        #payment-section.server-offline #payment-header,
+        #payment-section.server-offline .payment-header,
+        #payment-section.server-offline #qr-content-wrapper,
+        #payment-section.server-offline #payment-waiting-box {
+            display: none !important;
+        }
+
         /* Success & Free Mode Section */
         #success-section,
         #free-section {
@@ -1225,7 +1233,7 @@
             <div class="card payment-card" id="payment-card">
                 <!-- Payment Section -->
                 <div id="payment-section">
-                    <div class="payment-header">
+                    <div class="payment-header" id="payment-header">
                         <h2>💳 ชำระค่าบริการ</h2>
                         <div class="payment-amount">
                             <span id="price-display">0.00</span> <span class="currency">THB</span>
@@ -1447,6 +1455,9 @@
             const badgeText = document.getElementById('server-status-text');
             const offlinePanel = document.getElementById('server-offline-panel');
             const qrWrapper = document.getElementById('qr-content-wrapper');
+            const paymentHeader = document.getElementById('payment-header');
+            const waitingBox = document.getElementById('payment-waiting-box');
+            const paymentSec = document.getElementById('payment-section');
 
             if (badge && badgeText) {
                 if (online) {
@@ -1462,21 +1473,36 @@
             if (price <= 0 || __isPaid) {
                 if (offlinePanel) offlinePanel.classList.remove('active');
                 if (qrWrapper) qrWrapper.classList.remove('hidden');
+                if (paymentHeader) paymentHeader.classList.remove('hidden');
+                if (waitingBox) waitingBox.classList.remove('hidden');
+                if (paymentSec) paymentSec.classList.remove('server-offline');
                 return;
             }
 
             if (!online) {
-                // เซิร์ฟเวอร์ Offline: ห้ามระบบชำระเงิน! ซ่อน QR Code และแสดงป้ายเตือน
+                // เซิร์ฟเวอร์ Offline: ห้ามระบบชำระเงิน! ซ่อน QR Code, ส่วนหัวชำระเงิน, กล่องตรวจจับยอดเงิน และแสดงป้ายเตือน
+                if (paymentSec) paymentSec.classList.add('server-offline');
                 if (offlinePanel) offlinePanel.classList.add('active');
                 if (qrWrapper) qrWrapper.classList.add('hidden');
+                if (paymentHeader) paymentHeader.classList.add('hidden');
+                if (waitingBox) {
+                    waitingBox.classList.add('hidden');
+                    waitingBox.classList.remove('active');
+                }
                 if (paymentPollingTimer) {
                     clearInterval(paymentPollingTimer);
                     paymentPollingTimer = null;
                 }
             } else {
-                // เซิร์ฟเวอร์ Online: ปลดบล็อคและแสดง QR Code
+                // เซิร์ฟเวอร์ Online: ปลดบล็อคและแสดงส่วนชำระเงิน QR Code
+                if (paymentSec) paymentSec.classList.remove('server-offline');
                 if (offlinePanel) offlinePanel.classList.remove('active');
                 if (qrWrapper) qrWrapper.classList.remove('hidden');
+                if (paymentHeader) paymentHeader.classList.remove('hidden');
+                if (waitingBox) {
+                    waitingBox.classList.remove('hidden');
+                    waitingBox.classList.add('active');
+                }
                 if (!__isPaid && price > 0) {
                     initAutoPaymentDetection();
                 }
