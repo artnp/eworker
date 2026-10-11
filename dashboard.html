@@ -31,13 +31,16 @@
             width: 8px;
             height: 8px;
         }
+
         ::-webkit-scrollbar-track {
             background: #0f141c;
         }
+
         ::-webkit-scrollbar-thumb {
             background: #2a374d;
             border-radius: 4px;
         }
+
         ::-webkit-scrollbar-thumb:hover {
             background: #3b4b66;
         }
@@ -1485,7 +1488,9 @@
                 พื้นหลังสีฟ้า</div>
             <div class="tag-item" onclick="addTag('ตัดต่อภาพที่ 2 ไปใส่ ภาพที่ 1')">รูป 2 ใส่ 1</div>
             <div class="tag-item" onclick="addTag('จงเปลี่ยนเป็นชุด')">เปลี่ยนชุด..</div>
-            <div class="tag-item" onclick="addTag('ไดคัทแยกตัวแบบ ลบพื้นหลังออกทั้งหมด ทำเป็นพื้นหลังสีขาวล้วน (Solid Pure White) ไม่มีเงาตกกระทบ ไม่สะท้อนแสง')" title="ไดคัทแยกตัวแบบ พื้นขาวล้วน ไร้เงา ลบพื้นหลังต่อง่าย">พื้นขาว ไร้เงา</div>
+            <div class="tag-item"
+                onclick="addTag('ไดคัทแยกตัวแบบ ลบพื้นหลังออกทั้งหมด ทำเป็นพื้นหลังสีขาวล้วน (Solid Pure White) ไม่มีเงาตกกระทบ ไม่สะท้อนแสง')"
+                title="ไดคัทแยกตัวแบบ พื้นขาวล้วน ไร้เงา ลบพื้นหลังต่อง่าย">พื้นขาว ไร้เงา</div>
         </div>
 
         <!-- Ultra-Compact Gemini Bar (Centered) -->
@@ -1539,17 +1544,20 @@
         <!-- Watermark Check Section (ส่วนตรวจสอบลายน้ำ - Clean & Compact พร้อม Drag & Drop) -->
         <div id="watermark-check-container"
             style="width: 100%; max-width: 950px; margin: 10px auto; padding: 15px; background: var(--surface); border: 2px dashed var(--border); border-radius: 16px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.3); min-height: 50px; display: flex; flex-direction: column; justify-content: center; position: relative; transition: all 0.25s ease;">
-            
+
             <!-- Drag & Drop Visual Overlay -->
             <div id="watermark-drop-overlay"
                 style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 20, 32, 0.95); border: 2.5px dashed #6366f1; border-radius: 16px; z-index: 50; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(4px); pointer-events: none; transition: all 0.2s ease;">
                 <span style="font-size: 2.4rem; margin-bottom: 8px;">📥</span>
-                <span style="font-size: 1.05rem; font-weight: 700; color: #a5b4fc;">วางไฟล์ภาพที่นี่เพื่อจัดการทันที</span>
-                <span style="font-size: 0.78rem; color: #818cf8; margin-top: 4px;">ครอป 4 ทิศทาง • AI Enhancer • ลบลายน้ำ • ขยายภาพ AI • ลบฉากหลัง</span>
+                <span
+                    style="font-size: 1.05rem; font-weight: 700; color: #a5b4fc;">วางไฟล์ภาพที่นี่เพื่อจัดการทันที</span>
+                <span style="font-size: 0.78rem; color: #818cf8; margin-top: 4px;">ครอป 4 ทิศทาง • AI Enhancer •
+                    ลบลายน้ำ • ขยายภาพ AI • ลบฉากหลัง</span>
             </div>
 
             <!-- Hidden File Input for Direct Upload -->
-            <input type="file" id="watermark-file-input" accept="image/*" style="display: none;" onchange="handleWatermarkFileInput(this)">
+            <input type="file" id="watermark-file-input" accept="image/*" style="display: none;"
+                onchange="handleWatermarkFileInput(this)">
 
             <div id="watermark-check-content" style="display: none; position: relative;">
 
@@ -1607,12 +1615,42 @@
                         </button>
                     </div>
                 </div>
-                <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center; margin:0 0 12px; padding:9px 10px; border:1px solid rgba(34, 197, 94, 0.3); border-radius:10px; background:rgba(16, 185, 129, 0.1);">
-                    <span style="font-size:.75rem; font-weight:700; color:#4ade80;">💳 ยอดใน QR ของ example.png</span>
-                    <label style="font-size:.74rem; color:#86efac; cursor:pointer;"><input type="radio" name="qr-amount-option" value="60" checked onchange="selectQrAmountOption(this)"> 60 บาท</label>
-                    <label style="font-size:.74rem; color:#86efac; cursor:pointer;"><input type="radio" name="qr-amount-option" value="100" onchange="selectQrAmountOption(this)"> 100 บาท</label>
-                    <input id="custom-qr-amount" type="number" min="0.01" max="999999.99" step="0.01" inputmode="decimal" placeholder="กำหนดยอดเอง" oninput="selectCustomQrAmount()" style="width:118px; padding:4px 7px; border:1px solid rgba(34, 197, 94, 0.4); background:#151b26; color:#e2e8f0; border-radius:7px; font:inherit; font-size:.74rem;">
-                    <button id="update-example-qr-btn" type="button" onclick="updateExampleQr()" style="padding:5px 10px; border:0; border-radius:7px; color:#fff; background:#16a34a; font:inherit; font-size:.74rem; font-weight:700; cursor:pointer;">อัปเดต QR</button>
+                <div
+                    style="display:flex; flex-wrap:nowrap; gap:6px; align-items:center; margin:0 0 12px; padding:7px 10px; border:1px solid rgba(34, 197, 94, 0.3); border-radius:10px; background:rgba(16, 185, 129, 0.1); overflow-x:auto;">
+                    <span style="font-size:.74rem; font-weight:700; color:#4ade80; white-space:nowrap; flex-shrink:0;" title="ยอดใน QR ของ example.png">💳 ยอดใน QR</span>
+                    <label style="font-size:.73rem; color:#86efac; cursor:pointer; white-space:nowrap; flex-shrink:0;"><input type="radio"
+                            name="qr-amount-option" value="60" checked onchange="selectQrAmountOption(this)"> 60
+                        บาท</label>
+                    <label style="font-size:.73rem; color:#86efac; cursor:pointer; white-space:nowrap; flex-shrink:0;"><input type="radio"
+                            name="qr-amount-option" value="100" onchange="selectQrAmountOption(this)"> 100 บาท</label>
+                    <input id="custom-qr-amount" type="number" min="0.01" max="999999.99" step="0.01"
+                        inputmode="decimal" placeholder="กำหนดยอด" oninput="selectCustomQrAmount()"
+                        style="width:82px; padding:4px 6px; border:1px solid rgba(34, 197, 94, 0.4); background:#151b26; color:#e2e8f0; border-radius:7px; font:inherit; font-size:.74rem; flex-shrink:0;">
+                    <button id="update-example-qr-btn" type="button" onclick="updateExampleQr()"
+                        style="padding:5px 9px; border:0; border-radius:7px; color:#fff; background:#16a34a; font:inherit; font-size:.74rem; font-weight:700; cursor:pointer; white-space:nowrap; flex-shrink:0;">อัปเดต
+                        QR</button>
+                    <div style="margin-left:auto; display:inline-flex; align-items:center; gap:6px; flex-shrink:0;">
+                        <!-- Status / Progress Bar Tag Container -->
+                        <div id="send-work-status-tag" style="display:none; align-items:center;">
+                            <!-- In-progress state: mini progress bar -->
+                            <div id="send-work-progress-box" style="display:none; align-items:center; gap:5px; padding:2px 7px; background:rgba(30,41,59,0.85); border:1px solid rgba(59,130,246,0.35); border-radius:7px; backdrop-filter:blur(4px); white-space:nowrap;">
+                                <span style="font-size:0.68rem; color:#93c5fd; font-weight:600; white-space:nowrap; display:inline-flex; align-items:center; gap:3px;">
+                                    <span style="display:inline-block; animation:spin 1s linear infinite;">⚡</span> อัปโหลด...
+                                </span>
+                                <div style="width:55px; height:5px; background:rgba(255,255,255,0.12); border-radius:3px; overflow:hidden;">
+                                    <div id="send-work-progress-bar" style="width:15%; height:100%; background:linear-gradient(90deg, #3b82f6, #60a5fa); border-radius:3px; transition:width 0.3s ease;"></div>
+                                </div>
+                                <span id="send-work-progress-pct" style="font-size:0.65rem; color:#60a5fa; font-weight:700;">15%</span>
+                            </div>
+                            <!-- Success Tag -->
+                            <div id="send-work-success-tag" style="display:none; align-items:center; gap:4px; padding:2px 8px; background:rgba(34,197,94,0.18); border:1px solid rgba(34,197,94,0.45); border-radius:7px; color:#4ade80; font-size:0.71rem; font-weight:700; box-shadow:0 0 10px rgba(34,197,94,0.2); white-space:nowrap;">
+                                <span>✅ คัดลอกลิงก์สำเร็จแล้ว!</span>
+                            </div>
+                        </div>
+                        <button id="send-work-link-btn" type="button" onclick="sendWorkLink()"
+                            style="padding:5px 11px; border:0; border-radius:7px; color:#fff; background:#2563eb; font:inherit; font-size:.74rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(37,99,235,0.3); transition:all .2s ease; white-space:nowrap; flex-shrink:0;"
+                            title="อัปโหลดส่งงานพร้อมกำหนดยอดเงินและคัดลอกลิงก์อัตโนมัติ">🔗 ลิ้งค์ส่งงาน</button>
+                    </div>
                 </div>
                 <div style="display: flex; gap: 12px; align-items: stretch; justify-content: center; width: 100%;">
 
@@ -1620,7 +1658,8 @@
                     <div
                         style="flex: 1; min-width: 120px; max-width: 180px; display: flex; flex-direction: column; align-items: center; border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #131922;">
                         <span
-                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬅️ ซ้าย</span>
+                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬅️
+                            ซ้าย</span>
                         <div
                             style="width: 100%; height: 260px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #0b0f15; border: 1px solid var(--border); border-radius: 6px;">
                             <canvas id="crop-canvas-left"
@@ -1635,7 +1674,8 @@
                         <div
                             style="display: flex; flex-direction: column; align-items: center; border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #131922; flex: 1;">
                             <span
-                                style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬆️ บน</span>
+                                style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬆️
+                                บน</span>
                             <div
                                 style="width: 100%; height: 110px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #0b0f15; border: 1px solid var(--border); border-radius: 6px;">
                                 <canvas id="crop-canvas-top"
@@ -1646,7 +1686,8 @@
                         <div
                             style="display: flex; flex-direction: column; align-items: center; border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #131922; flex: 1;">
                             <span
-                                style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬇️ ล่าง</span>
+                                style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬇️
+                                ล่าง</span>
                             <div
                                 style="width: 100%; height: 110px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #0b0f15; border: 1px solid var(--border); border-radius: 6px;">
                                 <canvas id="crop-canvas-bottom"
@@ -1659,7 +1700,8 @@
                     <div
                         style="flex: 1; min-width: 120px; max-width: 180px; display: flex; flex-direction: column; align-items: center; border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #131922;">
                         <span
-                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">➡️ ขวา</span>
+                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">➡️
+                            ขวา</span>
                         <div
                             style="width: 100%; height: 260px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #0b0f15; border: 1px solid var(--border); border-radius: 6px;">
                             <canvas id="crop-canvas-right"
@@ -1683,7 +1725,8 @@
                                     style="font-size: 0.54rem; font-weight: 700; color: #a5b4fc; white-space: nowrap;">1/7</span>
                             </div>
                             <span id="quota-acc-credits"
-                                style="font-size: 0.52rem; font-weight: 700; color: #34d399; white-space: nowrap;">เหลือ 71.1%</span>
+                                style="font-size: 0.52rem; font-weight: 700; color: #34d399; white-space: nowrap;">เหลือ
+                                71.1%</span>
                         </div>
 
                         <!-- 1. Enhancer AI Button -->
@@ -1701,9 +1744,9 @@
                                 <path d="M17 19h4" />
                             </svg>
                             <span id="btn-enhancer-text"
-                                style="font-size: 0.62rem; font-weight: 700; color: #c7d2fe; white-space: nowrap; line-height: 1.1;">Enhance AI</span>
-                            <span
-                                style="font-size: 0.50rem; color: #a5b4fc; font-weight: 600;">ปรับชัดกู้เบลอ</span>
+                                style="font-size: 0.62rem; font-weight: 700; color: #c7d2fe; white-space: nowrap; line-height: 1.1;">Enhance
+                                AI</span>
+                            <span style="font-size: 0.50rem; color: #a5b4fc; font-weight: 600;">ปรับชัดกู้เบลอ</span>
                         </button>
 
                         <!-- 2. Remove Watermark Button (Cloudinary AI Inpaint) -->
@@ -1739,7 +1782,8 @@
                                 <rect width="8" height="8" x="8" y="8" rx="2" stroke-dasharray="2 2" />
                             </svg>
                             <span
-                                style="font-size: 0.62rem; font-weight: 700; color: #7dd3fc; white-space: nowrap; line-height: 1.1;">ขยายภาพ AI</span>
+                                style="font-size: 0.62rem; font-weight: 700; color: #7dd3fc; white-space: nowrap; line-height: 1.1;">ขยายภาพ
+                                AI</span>
                             <span style="font-size: 0.50rem; color: #38bdf8; font-weight: 600;">+20% ทุกทิศ</span>
                         </button>
 
@@ -1767,7 +1811,8 @@
                 style="cursor: pointer; padding: 28px 16px; border-radius: 12px; transition: all 0.2s ease;"
                 title="คลิกเพื่อเลือกไฟล์ หรือลากไฟล์ภาพมาปล่อยที่นี่">
                 <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                    <div style="width: 52px; height: 52px; border-radius: 50%; background: rgba(99, 102, 241, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #818cf8; margin-bottom: 2px;">
+                    <div
+                        style="width: 52px; height: 52px; border-radius: 50%; background: rgba(99, 102, 241, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #818cf8; margin-bottom: 2px;">
                         📥
                     </div>
                     <p style="color: #c7d2fe; font-size: 0.95rem; font-weight: 700; margin: 0;">
@@ -1776,7 +1821,8 @@
                     <p style="color: var(--text-sub); font-size: 0.78rem; margin: 0;">
                         จัดการได้โดยตรง: ครอป 4 ทิศทาง • AI Enhancer • ลบลายน้ำ • ขยายภาพ AI • ลบฉากหลัง
                     </p>
-                    <span style="font-size: 0.70rem; color: var(--text-sub); background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); padding: 3px 10px; border-radius: 12px; margin-top: 4px;">
+                    <span
+                        style="font-size: 0.70rem; color: var(--text-sub); background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); padding: 3px 10px; border-radius: 12px; margin-top: 4px;">
                         (หรือภาพตัวอย่างจาก Desktop complete.png จะปรากฏที่นี่อัตโนมัติ)
                     </span>
                 </div>
@@ -3233,6 +3279,130 @@
             } finally {
                 button.disabled = false;
                 button.textContent = originalText;
+            }
+        }
+
+        let sendWorkStatusTimer = null;
+
+        async function sendWorkLink() {
+            const customInput = document.getElementById('custom-qr-amount');
+            const selected = document.querySelector('input[name="qr-amount-option"]:checked');
+            const amount = (customInput && customInput.value.trim()) ? customInput.value.trim() : (selected ? selected.value : '60');
+            const button = document.getElementById('send-work-link-btn');
+
+            const statusWrap = document.getElementById('send-work-status-tag');
+            const progressBox = document.getElementById('send-work-progress-box');
+            const progressBar = document.getElementById('send-work-progress-bar');
+            const progressPct = document.getElementById('send-work-progress-pct');
+            const successTag = document.getElementById('send-work-success-tag');
+
+            if (!/^\d+(\.\d{1,2})?$/.test(amount) || Number(amount) < 0) {
+                showToast('⚠️ กรุณาระบุยอดเงินที่ถูกต้อง (ตัวเลขและทศนิยมไม่เกิน 2 ตำแหน่ง)');
+                return;
+            }
+
+            const targetPath = (typeof currentWatermarkPath !== 'undefined' && currentWatermarkPath) ? currentWatermarkPath : 'C:\\Users\\artwh\\Desktop\\complete.png';
+
+            if (sendWorkStatusTimer) {
+                clearTimeout(sendWorkStatusTimer);
+                sendWorkStatusTimer = null;
+            }
+
+            const originalText = button ? button.innerHTML : '🔗 ลิ้งค์ส่งงาน';
+            if (button) {
+                button.disabled = true;
+                button.style.opacity = '0.7';
+                button.innerHTML = '<span style="display:inline-block; animation:spin 1s linear infinite;">⏳</span> ส่งงาน...';
+            }
+
+            // แสดง Progress Bar ทันที
+            if (statusWrap) statusWrap.style.display = 'inline-flex';
+            if (progressBox) progressBox.style.display = 'inline-flex';
+            if (successTag) {
+                successTag.style.display = 'none';
+                successTag.style.borderColor = 'rgba(34,197,94,0.45)';
+                successTag.style.background = 'rgba(34,197,94,0.18)';
+            }
+
+            let currentPct = 12;
+            if (progressBar) progressBar.style.width = '12%';
+            if (progressPct) progressPct.textContent = '12%';
+
+            const progressInterval = setInterval(() => {
+                if (currentPct < 90) {
+                    currentPct += Math.floor(Math.random() * 8) + 4;
+                    if (currentPct > 90) currentPct = 90;
+                    if (progressBar) progressBar.style.width = currentPct + '%';
+                    if (progressPct) progressPct.textContent = currentPct + '%';
+                }
+            }, 350);
+
+            try {
+                const response = await fetch(getHubApiUrl('/send-work-link'), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: amount,
+                        path: targetPath
+                    })
+                });
+
+                clearInterval(progressInterval);
+
+                const result = await response.json();
+                if (!response.ok || !result.success) throw new Error(result.error || 'ส่งงานไม่สำเร็จ');
+
+                // วิ่งเต็ม 100%
+                if (progressBar) progressBar.style.width = '100%';
+                if (progressPct) progressPct.textContent = '100%';
+
+                // คัดลอกข้อความลง Clipboard อัตโนมัติ (ระดับ Browser)
+                const copyMessage = result.message || `✅เสร็จแล้ว!\n${result.url}`;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    try {
+                        await navigator.clipboard.writeText(copyMessage);
+                    } catch (clipErr) {
+                        console.warn('Browser clipboard writeText warning:', clipErr);
+                    }
+                }
+
+                // สลับแสดงผล Success Tag ข้างปุ่ม
+                setTimeout(() => {
+                    if (progressBox) progressBox.style.display = 'none';
+                    if (successTag) {
+                        successTag.innerHTML = `<span>✅ คัดลอกลิงก์สำเร็จแล้ว! (${result.amount} บ.)</span>`;
+                        successTag.style.display = 'inline-flex';
+                    }
+                }, 220);
+
+                showToast(`✅ อัปโหลดสำเร็จและคัดลอกลิงก์ส่งงาน (${result.amount} บาท) ลง Clipboard แล้ว!`);
+
+                // ค่อยๆ ซ่อน Tag อัตโนมัติหลัง 8 วินาที
+                sendWorkStatusTimer = setTimeout(() => {
+                    if (statusWrap) statusWrap.style.display = 'none';
+                    if (successTag) successTag.style.display = 'none';
+                }, 8000);
+
+            } catch (error) {
+                clearInterval(progressInterval);
+                console.error('Send work link error:', error);
+                if (progressBox) progressBox.style.display = 'none';
+                if (successTag) {
+                    successTag.innerHTML = `<span style="color:#f87171;">❌ ${error.message}</span>`;
+                    successTag.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+                    successTag.style.background = 'rgba(239, 68, 68, 0.15)';
+                    successTag.style.display = 'inline-flex';
+                }
+                showToast(`❌ ส่งงานไม่สำเร็จ: ${error.message}`);
+                sendWorkStatusTimer = setTimeout(() => {
+                    if (statusWrap) statusWrap.style.display = 'none';
+                }, 6000);
+            } finally {
+                if (button) {
+                    button.disabled = false;
+                    button.style.opacity = '1';
+                    button.innerHTML = originalText;
+                }
             }
         }
 
