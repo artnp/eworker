@@ -8,6 +8,6 @@ if "%~1"=="" (
 )
 
 :: รัน PowerShell script
-powershell -ExecutionPolicy Bypass -File "%~dp0PrivateSend.ps1" "%~1"
+powershell -ExecutionPolicy Bypass -File "%~dp0PrivateSend.ps1" "%~1" %2 %3 %4
 
 exit
