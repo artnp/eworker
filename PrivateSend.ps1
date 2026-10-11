@@ -150,15 +150,27 @@ if ($uploadUrl -match "^fb_(.+)$") {
     $fullUrl = $uploadUrl
 }
 
+$EW_SIGN_SALT = "EW_SALT_2026_SECURE_KEY"
+function Get-LinkSignature($dVal, $expVal, $priceVal) {
+    $normPrice = "{0:F2}" -f [double]($priceVal -as [double])
+    $payload = "$($dVal):$($normPrice):$($expVal):$($EW_SIGN_SALT)"
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($payload)
+    $hash = [System.Security.Cryptography.SHA256]::Create().ComputeHash($bytes)
+    return [BitConverter]::ToString($hash).Replace("-","").ToLower().Substring(0, 12)
+}
+
 $b64Url = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($fullUrl))
-$viewUrl = "$($baseUrl)?d=$($b64Url)&exp=$($timestamp)&type=$($fileTypeParam)"
+$escapedB64 = [Uri]::EscapeDataString($b64Url)
 
 if ($noPrice) {
-    # Format สำหรับ Screenshot ตัวอย่าง
+    # Format สำหรับ Screenshot ตัวอย่าง (price = 0)
+    $sig = Get-LinkSignature $b64Url $timestamp 0
+    $viewUrl = "$($baseUrl)?d=$($escapedB64)&exp=$($timestamp)&type=$($fileTypeParam)&price=0&s=$sig"
     $message = "🧩ตัวอย่างงานของท่านเสร็จแล้ว!`n$($viewUrl)"
 } else {
     # Format ปกติพร้อมเก็บเงิน
-    $viewUrl += "&price=$price"
+    $sig = Get-LinkSignature $b64Url $timestamp $price
+    $viewUrl = "$($baseUrl)?d=$($escapedB64)&exp=$($timestamp)&type=$($fileTypeParam)&price=$price&s=$sig"
     $message = "✅เสร็จแล้ว!`n$($viewUrl)"
 }
 
