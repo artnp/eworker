@@ -2499,23 +2499,8 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
 
 # --- AUTO OPEN ADMIN PAYMENT IN CHROME ---
 def open_admin_payment_in_chrome():
-    chrome_paths = [
-        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-        os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe")
-    ]
-    admin_html = os.path.join(os.path.dirname(os.path.abspath(__file__)), "admin-payment.html")
-    for cp in chrome_paths:
-        if os.path.exists(cp):
-            try:
-                subprocess.Popen([cp, admin_html])
-                return
-            except Exception:
-                pass
-    try:
-        os.system(f'start chrome "{admin_html}"')
-    except Exception:
-        pass
+    # ปิดการเด้งเปิด Chrome หน้า admin-payment.html ทั้งหมด (ทำงานอนุมัติอัตโนมัติ 100% ในเบื้องหลัง)
+    return
 
 _last_deposit_event = {
     "time": 0,
@@ -2577,27 +2562,27 @@ def handle_kbank_deposit_received(amount=None):
                         break
                 except Exception:
                     continue
+            # ถ้าไม่เจอรายการที่ยอดตรงเป๊ะ แต่มีคิวรออยู่ 1 รายการ และยอดที่โอน >= ยอดเรียกเก็บ
+            if not matched_key and len(pending_items) == 1:
+                try:
+                    req_price = float(pending_items[0][1].get('price', 0))
+                    if amount >= req_price:
+                        matched_key = pending_items[0][0]
+                        matched_price = req_price
+                except Exception:
+                    pass
         else:
             # กรณีที่ 2 (Option B): LINE ส่งมาแค่ "แจ้งเตือนเงินเข้า" ไม่มียอดเงิน
-            if len(pending_items) == 1:
-                # มีคิวเดียวที่กำลังรออยู่ อนุมัติให้อัตโนมัติทันที
+            if len(pending_items) >= 1:
+                # อนุมัติคิวที่รออยู่โดยอัตโนมัติทันที
                 matched_key = pending_items[0][0]
                 try:
                     matched_price = float(pending_items[0][1].get('price', 0))
                 except Exception:
                     matched_price = 0.0
-                log_kbank(f"[KBank AutoPay] 🎯 Single pending queue detected ({matched_key}, {matched_price:.2f} THB). Auto-approving upon LINE 'แจ้งเตือนเงินเข้า' alert!")
-            elif len(pending_items) > 1:
-                log_kbank(f"[KBank AutoPay] ⚠️ Alert 'แจ้งเตือนเงินเข้า' received but {len(pending_items)} orders are pending simultaneously. Opening admin dashboard for manual safety confirmation.")
-                open_admin_payment_in_chrome()
-                try:
-                    import winsound
-                    winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
-                except Exception:
-                    pass
-                return
+                log_kbank(f"[KBank AutoPay] 🎯 Pending queue detected ({matched_key}, {matched_price:.2f} THB). Auto-approving upon deposit alert!")
             else:
-                log_kbank(f"[KBank AutoPay] ⏳ Bank deposit received at {time.strftime('%H:%M:%S')}, but customer hasn't clicked 'ฉันโอนเงินแล้ว' yet. Holding in memory for 3 minutes...")
+                log_kbank(f"[KBank AutoPay] ⏳ Bank deposit received at {time.strftime('%H:%M:%S')}, but customer hasn't opened page yet. Holding in memory for 3 minutes...")
                 return
 
         if matched_key:
@@ -2742,11 +2727,10 @@ def start_payment_requests_watcher():
 
                         if should_alert:
                             _last_alert_time[k] = last_confirmed if last_confirmed else int(time.time() * 1000)
-                            log_kbank(f"[Payment Watcher] 🔔 Customer manually confirmed / re-alerted payment: {k}. Opening Admin Chrome...")
-                            open_admin_payment_in_chrome()
+                            log_kbank(f"[Payment Watcher] 🔔 Customer payment request: {k} (Auto-handling in background)")
                             try:
                                 import winsound
-                                winsound.MessageBeep(winsound.MB_ICONEXCLAMATION)
+                                winsound.MessageBeep(winsound.MB_ICONASTERISK)
                             except Exception:
                                 pass
 
