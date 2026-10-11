@@ -361,6 +361,15 @@
             max-height: 100%;
             align-items: center;
             justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        .image-container.protected img {
+            pointer-events: none !important;
+            user-select: none !important;
+            -webkit-user-drag: none !important;
         }
 
         /* Anti-AI Watermark Shield */
@@ -1358,17 +1367,51 @@
         // PDF.js Configuration
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-        // Parse URL Parameters
+        // Parse URL Parameters (ดึงจาก URL และสำรองใน sessionStorage รองรับการกด Refresh F5)
         const urlParams = new URLSearchParams(window.location.search.replace(/&amp;/gi, '&'));
-        const fileUrl = urlParams.get('d') ? atob(urlParams.get('d')) : decodeURIComponent(urlParams.get('url'));
-        const expiryTimestamp = parseInt(urlParams.get('exp')) || 0;
-        const price = parseFloat(urlParams.get('price')) || 0;
-        const fileType = urlParams.get('type') || 'img';
+        let rawD = urlParams.get('d');
+        let rawUrl = urlParams.get('url');
+        let rawExp = urlParams.get('exp');
+        let rawPrice = urlParams.get('price');
+        let rawType = urlParams.get('type');
+
+        if (rawD || rawUrl) {
+            try {
+                if (rawD) sessionStorage.setItem('_ps_d', rawD);
+                if (rawUrl) sessionStorage.setItem('_ps_url', rawUrl);
+                if (rawExp) sessionStorage.setItem('_ps_exp', rawExp);
+                if (rawPrice) sessionStorage.setItem('_ps_price', rawPrice);
+                if (rawType) sessionStorage.setItem('_ps_type', rawType);
+            } catch (e) { }
+        } else {
+            try {
+                rawD = sessionStorage.getItem('_ps_d');
+                rawUrl = sessionStorage.getItem('_ps_url');
+                rawExp = sessionStorage.getItem('_ps_exp');
+                rawPrice = sessionStorage.getItem('_ps_price');
+                rawType = sessionStorage.getItem('_ps_type');
+            } catch (e) { }
+        }
+
+        const fileUrl = rawD ? atob(rawD) : (rawUrl ? decodeURIComponent(rawUrl) : '');
+        const expiryTimestamp = parseInt(rawExp) || 0;
+        const price = parseFloat(rawPrice) || 0;
+        const fileType = rawType || 'img';
         const promptPayId = "0988573074";
 
-        console.log('Parsed URL:', fileUrl);
-        console.log('Price:', price);
-        console.log('Expiry:', new Date(expiryTimestamp));
+        // ลบพารามิเตอร์ URL ใน Address Bar ทันที ป้องกันการแอบดูหรือถอดรหัส Base64
+        if (window.history && window.history.replaceState) {
+            try {
+                const cleanLocation = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                window.history.replaceState({}, document.title, cleanLocation);
+            } catch (e) { }
+        }
+
+        // ตัวแปรภายในสำหรับป้องกันการขโมยไฟล์
+        let _rawFileUrl = fileUrl;
+        let _rawDownloadUrl = null;
+        let _cleanBlobUrl = null;
+        window.__downloadUrl = null; // ปิดกั้นไม่ให้เข้าถึง URL ไฟล์ตรงผ่าน window object ก่อนจ่ายเงิน
 
         // Elements
         const imageContainer = document.getElementById('image-container');
@@ -1384,6 +1427,55 @@
         let isServerOnline = false;
         let serverStatusTimer = null;
         let paymentPollingTimer = null;
+
+        // ป้องกันการ Inspect และการคลิกขวาขโมยรูปภาพก่อนชำระเงิน
+        document.addEventListener('contextmenu', function (e) {
+            if (price > 0 && !__isPaid) {
+                e.preventDefault();
+                showToast('🔒 ภาพนี้ได้รับการคุ้มครอง กรุณาชำระเงินเพื่อดาวน์โหลดไฟล์จริง');
+                return false;
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (price > 0 && !__isPaid) {
+                // ป้องกัน F12
+                if (e.key === 'F12' || e.keyCode === 123) {
+                    e.preventDefault();
+                    showToast('🔒 ระบบป้องกันการตรวจสอบโค้ด กรุณาชำระเงินเพื่อรับไฟล์จริง');
+                    return false;
+                }
+                // ป้องกัน Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
+                if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) {
+                    e.preventDefault();
+                    showToast('🔒 ระบบป้องกันการตรวจสอบโค้ด กรุณาชำระเงินเพื่อรับไฟล์จริง');
+                    return false;
+                }
+                // ป้องกัน Ctrl+U (View Source) และ Ctrl+S (Save Page)
+                if (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.key === 'S' || e.key === 's')) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        });
+
+        // ตรวจจับการพยายามแทรกแซงหรือลบ Overlay ลายน้ำใน DevTools
+        function initSecurityObservers() {
+            const previewWrapper = document.getElementById('preview-wrapper');
+            if (!previewWrapper) return;
+
+            const observer = new MutationObserver(() => {
+                if (__isPaid || price <= 0) return;
+                const wm = document.getElementById('watermark-overlay');
+                if (!wm || wm.style.display === 'none' || wm.hidden) {
+                    if (wm) {
+                        wm.style.display = 'block';
+                    }
+                }
+            });
+
+            observer.observe(previewWrapper, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class', 'hidden'] });
+        }
 
         const STATUS_ENDPOINT = 'https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/store_status.json';
 
@@ -1616,7 +1708,8 @@
                 setTimeout(() => showDownloadTutorial(), 100);
             }
 
-            // Load file
+            // Load file & init security
+            initSecurityObservers();
             loadFile();
 
             // Start countdown
@@ -1735,14 +1828,205 @@
             return payload + crc16(payload);
         }
 
+        // ฟังก์ชันเบิร์นลายน้ำฝังแน่นลงในพิกเซลของภาพ (Canvas Hard Watermark)
+        async function bakeWatermarkToCanvas(imgSource) {
+            return new Promise((resolve) => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) {
+                        resolve(null);
+                        return;
+                    }
+
+                    // ย่อขนาดพรีวิวสูงสุดไม่เกิน 1280px เพื่อลดทอนความละเอียด ป้องกันการขโมยไฟล์คมชัดสูงก่อนชำระเงิน
+                    const maxDim = 1280;
+                    let w = imgSource.naturalWidth || imgSource.width || 800;
+                    let h = imgSource.naturalHeight || imgSource.height || 600;
+
+                    if (w > maxDim || h > maxDim) {
+                        if (w > h) {
+                            h = Math.round((h * maxDim) / w);
+                            w = maxDim;
+                        } else {
+                            w = Math.round((w * maxDim) / h);
+                            h = maxDim;
+                        }
+                    }
+
+                    canvas.width = w;
+                    canvas.height = h;
+
+                    // 1. วาดรูปภาพลงบน Canvas
+                    ctx.drawImage(imgSource, 0, 0, w, h);
+
+                    // 2. ตีเส้นตารางโปร่งแสง ป้องกันการลบลายน้ำด้วย AI
+                    ctx.save();
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+                    ctx.lineWidth = 1;
+                    const step = Math.max(w, h) / 10;
+                    for (let x = -w; x < w * 2; x += step) {
+                        ctx.beginPath();
+                        ctx.moveTo(x, 0);
+                        ctx.lineTo(x + h, h);
+                        ctx.stroke();
+                    }
+                    for (let x = w * 2; x > -w; x -= step) {
+                        ctx.beginPath();
+                        ctx.moveTo(x, 0);
+                        ctx.lineTo(x - h, h);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+
+                    // 3. ปั๊มข้อความลายน้ำทแยงมุมเต็มพื้นที่ (-26 องศา)
+                    ctx.save();
+                    ctx.rotate(-26 * Math.PI / 180);
+                    const fontSize = Math.max(16, Math.round(w / 24));
+                    ctx.font = `800 ${fontSize}px Prompt, sans-serif`;
+
+                    const lineSpacing = fontSize * 3.6;
+                    const textSpacing = fontSize * 13;
+                    const totalDiag = Math.sqrt(w * w + h * h) * 1.5;
+
+                    for (let y = -totalDiag; y < totalDiag; y += lineSpacing) {
+                        for (let x = -totalDiag; x < totalDiag; x += textSpacing) {
+                            // เงาดำ
+                            ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+                            ctx.fillText('🔒 PrivateSend • ตัวอย่างงาน', x + 2, y + 2);
+                            // ตัวอักษรขาว
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.38)';
+                            ctx.fillText('🔒 PrivateSend • ตัวอย่างงาน', x, y);
+
+                            // แถวสลับข้อความชำระเงิน
+                            ctx.fillStyle = 'rgba(239, 68, 68, 0.42)';
+                            ctx.fillText('ชำระเงินเพื่อรับไฟล์จริง', x + textSpacing / 2, y + lineSpacing / 2);
+                        }
+                    }
+                    ctx.restore();
+
+
+                    // ส่งออกเป็น Data URL (JPEG คุณภาพ 0.68) เพื่อไม่ให้แสดง URL ไฟล์จริงใน DOM
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.68);
+                    resolve(dataUrl);
+                } catch (e) {
+                    console.warn('Canvas watermark export error (CORS?):', e);
+                    resolve(null);
+                }
+            });
+        }
+
+        // ดึง Blob อย่างปลอดภัยผ่าน Direct XHR หรือ CORS Proxies
+        async function fetchImageBlobWithFallbacks(url) {
+            try {
+                const blob = await downloadWithProgress(url, 'กำลังโหลดรูปภาพ...', (p) => {
+                    updateDownloadProgress('กำลังโหลดรูปภาพ...', p);
+                });
+                if (blob && blob.size > 0) return blob;
+            } catch (err) {
+                console.warn('Direct XHR failed, trying secure CORS proxies...', err);
+            }
+
+            const proxySources = [
+                `https://images.weserv.nl/?url=${encodeURIComponent(url)}`,
+                `https://corsproxy.io/?${encodeURIComponent(url)}`,
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+            ];
+
+            for (let i = 0; i < proxySources.length; i++) {
+                try {
+                    updateDownloadProgress('กำลังประมวลผลไฟล์...', 45 + (i * 20));
+                    const res = await fetch(proxySources[i]);
+                    if (res.ok) {
+                        const blob = await res.blob();
+                        if (blob && blob.size > 0) {
+                            updateDownloadProgress('ประมวลผลเสร็จสิ้น', 100);
+                            return blob;
+                        }
+                    }
+                } catch (e) { }
+            }
+
+            return null;
+        }
+
+        // โหลดรูปภาพตัวอย่างแบบเข้ารหัสและป้องกันการ Inspect ขโมย URL
+        async function loadSecureImagePreview(previewUrl) {
+            const isNeedProtection = price > 0 && !__isPaid;
+
+            const blob = await fetchImageBlobWithFallbacks(previewUrl);
+
+            if (blob) {
+                const blobUrl = URL.createObjectURL(blob);
+                _cleanBlobUrl = blobUrl;
+
+                if (isNeedProtection) {
+                    const tempImg = new Image();
+                    tempImg.crossOrigin = 'anonymous';
+                    tempImg.onload = async function () {
+                        const watermarkedUrl = await bakeWatermarkToCanvas(tempImg);
+                        // ตั้งค่า src เป็น watermarked DataURL เท่านั้น จะไม่เปิดเผย raw url ใน DOM
+                        previewImage.src = watermarkedUrl || blobUrl;
+                        syncMobileThumb(watermarkedUrl || blobUrl);
+                        loadingText.classList.add('hidden');
+                        previewImage.classList.remove('hidden');
+                        applyProtection();
+                    };
+                    tempImg.onerror = function () {
+                        previewImage.src = blobUrl;
+                        syncMobileThumb(blobUrl);
+                        loadingText.classList.add('hidden');
+                        previewImage.classList.remove('hidden');
+                        applyProtection();
+                    };
+                    tempImg.src = blobUrl;
+                } else {
+                    previewImage.src = blobUrl;
+                    window.__downloadUrl = blobUrl;
+                    loadingText.classList.add('hidden');
+                    previewImage.classList.remove('hidden');
+                    syncMobileThumb(blobUrl);
+                    applyProtection();
+                }
+            } else {
+                // หากดึง Blob ไม่ได้ ดึงผ่าน images.weserv.nl proxy ที่มี CORS เปิดตลอด
+                const proxySafeUrl = `https://images.weserv.nl/?url=${encodeURIComponent(previewUrl)}&w=1200&q=65`;
+                if (isNeedProtection) {
+                    const tempImg = new Image();
+                    tempImg.crossOrigin = 'anonymous';
+                    tempImg.onload = async function () {
+                        const watermarkedUrl = await bakeWatermarkToCanvas(tempImg);
+                        previewImage.src = watermarkedUrl || proxySafeUrl;
+                        syncMobileThumb(watermarkedUrl || proxySafeUrl);
+                        loadingText.classList.add('hidden');
+                        previewImage.classList.remove('hidden');
+                        applyProtection();
+                    };
+                    tempImg.onerror = function () {
+                        previewImage.src = proxySafeUrl;
+                        syncMobileThumb(proxySafeUrl);
+                        loadingText.classList.add('hidden');
+                        previewImage.classList.remove('hidden');
+                        applyProtection();
+                    };
+                    tempImg.src = proxySafeUrl;
+                } else {
+                    previewImage.src = proxySafeUrl;
+                    window.__downloadUrl = _rawDownloadUrl || previewUrl;
+                    loadingText.classList.add('hidden');
+                    previewImage.classList.remove('hidden');
+                    syncMobileThumb(proxySafeUrl);
+                    applyProtection();
+                }
+            }
+        }
+
         // Load File (Image/PDF)
         function loadFile() {
             if (!fileUrl) {
                 showError('ไม่พบลิงก์', 'กรุณาตรวจสอบ URL');
                 return;
             }
-
-            console.log('Original fileUrl:', fileUrl);
 
             let downloadUrl = fileUrl;
             let previewUrl = fileUrl;
@@ -1786,16 +2070,27 @@
                             }
                             const blob = new Blob([bytes]);
                             const blobUrl = URL.createObjectURL(blob);
+                            _cleanBlobUrl = blobUrl;
 
-                            previewImage.src = blobUrl;
-                            window.__downloadUrl = blobUrl;
-
-                            previewImage.onload = function () {
+                            if (price > 0 && !__isPaid) {
+                                const tempImg = new Image();
+                                tempImg.onload = async function () {
+                                    const watermarkedDataUrl = await bakeWatermarkToCanvas(tempImg);
+                                    previewImage.src = watermarkedDataUrl || blobUrl;
+                                    syncMobileThumb(watermarkedDataUrl || blobUrl);
+                                    loadingText.classList.add('hidden');
+                                    previewImage.classList.remove('hidden');
+                                    applyProtection();
+                                };
+                                tempImg.src = blobUrl;
+                            } else {
+                                previewImage.src = blobUrl;
+                                window.__downloadUrl = blobUrl;
                                 loadingText.classList.add('hidden');
                                 previewImage.classList.remove('hidden');
                                 syncMobileThumb(blobUrl);
                                 applyProtection();
-                            };
+                            }
                         } else {
                             showError('โหลดไฟล์ไม่สำเร็จ', 'ไม่พบข้อมูลใน Firebase');
                         }
@@ -1813,74 +2108,15 @@
                 downloadUrl = fileUrl;
             }
 
-            window.__downloadUrl = downloadUrl;
+            _rawDownloadUrl = downloadUrl;
+            if (__isPaid || price <= 0) {
+                window.__downloadUrl = downloadUrl;
+            } else {
+                window.__downloadUrl = null;
+            }
 
-            updateDownloadProgress('กำลังดาวน์โหลดไฟล์...', 0);
-
-            downloadWithProgress(previewUrl, 'กำลังดาวน์โหลดไฟล์...', (percent) => {
-                updateDownloadProgress('กำลังดาวน์โหลดไฟล์...', percent);
-            })
-                .then(blob => {
-                    const blobUrl = URL.createObjectURL(blob);
-                    previewImage.src = blobUrl;
-                    previewImage.onload = function () {
-                        loadingText.classList.add('hidden');
-                        previewImage.classList.remove('hidden');
-                        syncMobileThumb(blobUrl);
-                        applyProtection();
-                    };
-                })
-                .catch(err => {
-                    console.warn('Direct XHR load failed, trying fallback methods...', err);
-
-                    let fallbackIndex = 0;
-                    const fallbacks = [
-                        { name: 'direct src (no-referrer)', getUrl: () => previewUrl, opts: { referrer: 'no-referrer' } },
-                        { name: 'proxy corsproxy.io', getUrl: () => 'https://corsproxy.io/?' + encodeURIComponent(previewUrl) },
-                        { name: 'proxy api.allorigins.win', getUrl: () => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(previewUrl) },
-                        { name: 'proxy images.weserv.nl', getUrl: () => 'https://images.weserv.nl/?url=' + encodeURIComponent(previewUrl) },
-                    ];
-
-                    const tryFallback = () => {
-                        if (fallbackIndex >= fallbacks.length) {
-                            console.error('All fallbacks failed');
-                            if (fileUrl.includes('file.io') || fileUrl.includes('tmpfiles.org')) {
-                                loadingText.innerHTML = `
-                                <div style="text-align: center; color: var(--text-muted); padding: 20px;">
-                                    <div style="font-size: 3rem; margin-bottom: 10px;">📄</div>
-                                    <p style="font-size: 1rem; margin-bottom: 4px;">ไฟล์พร้อมดาวน์โหลด</p>
-                                    <p style="font-size: 0.8rem;">(กดปุ่มดาวน์โหลดเพื่อรับไฟล์จริง)</p>
-                                </div>
-                            `;
-                                applyProtection();
-                            } else {
-                                showError('โหลดไฟล์ไม่สำเร็จ', 'ลิงก์อาจหมดอายุหรือถูกลบแล้ว');
-                            }
-                            return;
-                        }
-
-                        const fb = fallbacks[fallbackIndex];
-                        fallbackIndex++;
-                        updateDownloadProgress('กำลังโหลดไฟล์ (' + fb.name + ')...', 50);
-
-                        if (fb.opts?.referrer) {
-                            previewImage.referrerPolicy = fb.opts.referrer;
-                        }
-
-                        previewImage.onload = function () {
-                            loadingText.classList.add('hidden');
-                            previewImage.classList.remove('hidden');
-                            syncMobileThumb(fb.getUrl());
-                            applyProtection();
-                        };
-                        previewImage.onerror = function () {
-                            tryFallback();
-                        };
-                        previewImage.src = fb.getUrl();
-                    };
-
-                    tryFallback();
-                });
+            updateDownloadProgress('กำลังเตรียมภาพตัวอย่าง...', 0);
+            loadSecureImagePreview(previewUrl);
         }
 
         // ซิงค์รูปภาพลงใน Mobile Thumbnail Strip
@@ -2034,6 +2270,17 @@
                 if (fileUrl) localStorage.setItem('paid_' + fileUrl, '1');
             } catch (e) { }
 
+            window.__downloadUrl = _rawDownloadUrl || _rawFileUrl || fileUrl;
+
+            // นำภาพต้นฉบับคมชัด ไร้ลายน้ำ กลับมาแสดงผลแทนภาพตัวอย่าง
+            if (_cleanBlobUrl) {
+                previewImage.src = _cleanBlobUrl;
+                syncMobileThumb(_cleanBlobUrl);
+            } else if (window.__downloadUrl) {
+                previewImage.src = window.__downloadUrl;
+                syncMobileThumb(window.__downloadUrl);
+            }
+
             paymentSection.classList.add('hidden');
             successSection.classList.remove('hidden');
             removeProtection();
@@ -2097,13 +2344,20 @@
 
         // Download File
         function downloadFile() {
-            const btn = event.target;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '⏳ กำลังดาวน์โหลด... (0%)';
-            btn.disabled = true;
-            btn.style.opacity = '0.7';
+            if (price > 0 && !__isPaid) {
+                showToast('🔒 กรุณาชำระเงินก่อนดาวน์โหลดไฟล์จริง');
+                return;
+            }
 
-            let downloadUrl = window.__downloadUrl || fileUrl;
+            const btn = event ? event.target : document.getElementById('download-btn');
+            const originalText = btn ? btn.innerHTML : '💾 ดาวน์โหลดไฟล์';
+            if (btn) {
+                btn.innerHTML = '⏳ กำลังดาวน์โหลด... (0%)';
+                btn.disabled = true;
+                btn.style.opacity = '0.7';
+            }
+
+            let downloadUrl = window.__downloadUrl || _rawDownloadUrl || _rawFileUrl || fileUrl;
 
             const userAgent = navigator.userAgent || navigator.vendor || window.opera;
             const isInAppBrowser = /Line|FBAV|FBAN|Instagram|Messenger|Fastwork/i.test(userAgent);
