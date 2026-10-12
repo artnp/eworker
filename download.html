@@ -351,7 +351,28 @@
             object-fit: contain;
             border-radius: 8px;
             cursor: zoom-in;
-            transition: transform 0.25s ease;
+            transition: transform 0.25s ease, filter 0.5s ease;
+        }
+
+        /* เมื่อหมดเวลาตรวจจับชำระเงิน 10 นาที: เบลอภาพตัวอย่างจนมองไม่รู้เรื่อง */
+        body.payment-expired .image-container img,
+        body.payment-expired #preview-image,
+        body.payment-expired #mobile-preview-thumb,
+        body.payment-expired #lightbox-image {
+            filter: blur(36px) grayscale(75%) contrast(0.6) brightness(0.55) !important;
+            transform: scale(0.98);
+            pointer-events: none !important;
+            user-select: none !important;
+        }
+
+        body.payment-expired .watermark-overlay {
+            opacity: 0.25;
+            transition: opacity 0.5s ease;
+        }
+
+        body.payment-expired .protection-message {
+            background: rgba(220, 38, 38, 0.95);
+            box-shadow: 0 8px 24px rgba(220, 38, 38, 0.4);
         }
 
         .preview-wrapper {
@@ -701,10 +722,103 @@
             font-weight: 600;
         }
 
+        .payment-timer-highlight {
+            font-variant-numeric: tabular-nums;
+            font-weight: 700;
+            color: #fbbf24;
+            letter-spacing: 0.3px;
+            transition: color 0.3s ease;
+        }
+
         .payment-waiting-box p {
             font-size: 0.72rem;
             color: #cbd5e1;
             margin: 0;
+        }
+
+        /* เมื่อหมดเวลาตรวจจับ 10 นาที: ซ่อนหัวข้อชำระเงิน QR code และปุ่มแจ้งเตือน */
+        #payment-section.payment-expired #payment-header,
+        #payment-section.payment-expired .payment-header,
+        #payment-section.payment-expired #qr-content-wrapper,
+        #payment-section.payment-expired #manual-confirm-divider,
+        #payment-section.payment-expired #manual-confirm-box {
+            display: none !important;
+        }
+
+        #payment-section.payment-expired #payment-waiting-box {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            border-radius: 16px;
+            padding: 28px 18px;
+            text-align: center;
+            display: flex !important;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: auto 0;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .expired-clock-icon {
+            font-size: 2.8rem;
+            line-height: 1;
+            filter: drop-shadow(0 4px 12px rgba(239, 68, 68, 0.4));
+            margin-bottom: 2px;
+        }
+
+        .expired-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #f87171;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .btn-renew-qr {
+            margin-top: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #0f172a;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+            width: 100%;
+            max-width: 290px;
+        }
+
+        .btn-renew-qr:hover {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(245, 158, 11, 0.4);
+        }
+
+        .btn-renew-qr:active {
+            transform: translateY(0);
+        }
+
+        .btn-renew-qr:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-renew-qr .renew-icon {
+            font-size: 1rem;
+            display: inline-block;
+            transition: transform 0.4s ease;
+        }
+
+        .btn-renew-qr:hover .renew-icon {
+            transform: rotate(180deg);
         }
 
         /* Manual Payment Confirmation Box & Button */
@@ -1350,12 +1464,21 @@
 
                     <!-- กล่องสถานะรอระบบเช็คยอดเงินเข้าอัตโนมัติ -->
                     <div class="payment-waiting-box active" id="payment-waiting-box">
-                        <div class="waiting-text">
+                        <div class="waiting-text" id="waiting-text-normal">
                             <div class="waiting-header">
                                 <span class="waiting-pulse-dot"></span>
                                 <h4>กำลังตรวจจับยอดเงินเข้า...</h4>
                             </div>
-                            <p>สแกนจ่ายแล้ว <strong>ระบบจะส่งไฟล์จริงให้ทันที</strong></p>
+                            <p>กรุณาชำระภายใน <span id="payment-countdown-timer"
+                                    class="payment-timer-highlight">10:00</span> นาที เพื่อรับไฟล์ทันที</p>
+                        </div>
+                        <div class="waiting-text" id="waiting-text-expired" style="display: none;">
+                            <div class="expired-clock-icon">⏱️</div>
+                            <h3 class="expired-title">หมดเวลาตรวจจับชำระเงิน</h3>
+                            <button type="button" class="btn-renew-qr" id="btn-renew-qr" onclick="renewPaymentQR()">
+                                <span class="renew-icon">🔄</span>
+                                <span>ขอ QR code ใหม่</span>
+                            </button>
                         </div>
                     </div>
                     <!-- เส้นแบ่งแยก -->
@@ -1755,6 +1878,10 @@
                     clearInterval(paymentPollingTimer);
                     paymentPollingTimer = null;
                 }
+                if (paymentCountdownTimer) {
+                    clearInterval(paymentCountdownTimer);
+                    paymentCountdownTimer = null;
+                }
             } else {
                 // เซิร์ฟเวอร์ Online: ปลดบล็อคและแสดงส่วนชำระเงิน QR Code
                 if (paymentSec) paymentSec.classList.remove('server-offline');
@@ -1765,7 +1892,7 @@
                     waitingBox.classList.remove('hidden');
                     waitingBox.classList.add('active');
                 }
-                if (!__isPaid && price > 0) {
+                if (!__isPaid && price > 0 && window.__initPaymentDone) {
                     initAutoPaymentDetection();
                     updateManualConfirmVisibility();
                 }
@@ -1861,8 +1988,15 @@
                     updateServerStatusUI(serverOnlineInitial);
                     setTimeout(() => showDownloadTutorial(), 100);
                 } else {
+                    // ตรวจสอบเวลาที่บันทึกไว้ใน localStorage ก่อน (เพื่อให้เวลานับต่อเนื่องเมื่อกดรีเฟรช F5)
+                    let savedCreatedAt = parseInt(localStorage.getItem('payment_created_' + linkKey));
+                    if (savedCreatedAt && !isNaN(savedCreatedAt)) {
+                        __paymentCreatedAt = savedCreatedAt;
+                    }
+
                     // ตรวจสอบสถานะจาก Firebase แบบ await (ถ้าแอดมินอนุมัติแล้ว ให้เปิดหน้าดาวน์โหลดทันที 100%)
                     let alreadyApproved = false;
+                    let initialTimedOut = false;
                     try {
                         const pRes = await fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests/${linkKey}.json`);
                         if (pRes.ok) {
@@ -1870,15 +2004,39 @@
                             if (data && data.status === 'approved') {
                                 alreadyApproved = true;
                                 unlockPaidStatus(true);
+                            } else if (data && data.status === 'rejected') {
+                                const isFileStillValid = !expiryTimestamp || (expiryTimestamp > Date.now());
+                                if (isFileStillValid) {
+                                    initialTimedOut = true;
+                                }
+                            } else if (data && data.createdAt) {
+                                // ถ้าใน Firebase มี createdAt ให้ยึดเวลาจาก Firebase เป็นหลัก
+                                __paymentCreatedAt = data.createdAt;
+                                localStorage.setItem('payment_created_' + linkKey, __paymentCreatedAt);
+                                const age = Date.now() - data.createdAt;
+                                if (age >= 10 * 60 * 1000) {
+                                    initialTimedOut = true;
+                                }
                             }
                         }
                     } catch (e) {
                         console.warn('Check init payment status error:', e);
                     }
 
+                    // ตรวจสอบว่าผ่านไปเกิน 10 นาทีแล้วหรือไม่
+                    if (__paymentCreatedAt && (Date.now() - __paymentCreatedAt >= 10 * 60 * 1000)) {
+                        initialTimedOut = true;
+                    }
+
+                    window.__initPaymentDone = true;
+
                     // หากยังไม่ได้อนุมัติ และ Server Online เริ่มระบบตรวจจับยอดเงินอัตโนมัติทันที
                     if (!alreadyApproved && serverOnlineInitial) {
-                        initAutoPaymentDetection();
+                        if (initialTimedOut) {
+                            handlePaymentTimeout();
+                        } else {
+                            initAutoPaymentDetection();
+                        }
                         updateManualConfirmVisibility();
                     }
                 }
@@ -2307,6 +2465,10 @@
 
         // จัดการการคลิกที่รูป
         function handleImageClick() {
+            if (document.body.classList.contains('payment-expired')) {
+                showToast('⏱️ หมดเวลาตรวจจับชำระเงิน กรุณากดขอสร้าง QR ใหม่ทางขวา');
+                return;
+            }
             const isPaid = __isPaid || price === 0;
             const isFree = price === 0;
 
@@ -2319,6 +2481,164 @@
             openLightbox();
         }
 
+        let paymentCountdownTimer = null;
+        let __paymentCreatedAt = null;
+
+        function handlePaymentTimeout() {
+            if (__isPaid) return;
+
+            // ตรวจสอบว่าอายุไฟล์จริงหมดหรือยัง
+            if (expiryTimestamp && Date.now() >= expiryTimestamp) {
+                showError('ลิงก์หมดอายุ', 'ไฟล์ถูกลบออกจากระบบแล้ว');
+                return;
+            }
+
+            if (paymentPollingTimer) {
+                clearInterval(paymentPollingTimer);
+                paymentPollingTimer = null;
+            }
+            if (paymentCountdownTimer) {
+                clearInterval(paymentCountdownTimer);
+                paymentCountdownTimer = null;
+            }
+
+            document.body.classList.add('payment-expired');
+            const paymentSec = document.getElementById('payment-section');
+            if (paymentSec) paymentSec.classList.add('payment-expired');
+
+            const protMsg = document.querySelector('.protection-message');
+            if (protMsg) protMsg.innerHTML = '⏱️ หมดเวลาตรวจจับชำระเงิน';
+
+            const normalView = document.getElementById('waiting-text-normal');
+            const expiredView = document.getElementById('waiting-text-expired');
+            const qrWrapper = document.getElementById('qr-wrapper');
+            const waitingBox = document.getElementById('payment-waiting-box');
+
+            if (normalView) normalView.style.display = 'none';
+            if (expiredView) expiredView.style.display = 'flex';
+            if (qrWrapper) qrWrapper.classList.add('qr-expired');
+            if (waitingBox) {
+                waitingBox.classList.add('expired-mode');
+                waitingBox.classList.add('active');
+            }
+        }
+
+        let isRenewing = false;
+        async function renewPaymentQR() {
+            if (isRenewing || __isPaid) return;
+
+            // ตรวจสอบว่าอายุไฟล์จริง 1 ชั่วโมงหมดหรือยัง
+            if (expiryTimestamp && Date.now() >= expiryTimestamp) {
+                showError('ลิงก์หมดอายุ', 'ไฟล์ถูกลบออกจากระบบแล้ว');
+                return;
+            }
+
+            isRenewing = true;
+            const renewBtn = document.getElementById('btn-renew-qr');
+            if (renewBtn) {
+                renewBtn.disabled = true;
+                renewBtn.innerHTML = '<span>⏳ กำลังเชื่อมต่อระบบใหม่...</span>';
+            }
+
+            const linkKey = getLinkKey();
+            __paymentCreatedAt = Date.now();
+            localStorage.setItem('payment_created_' + linkKey, __paymentCreatedAt);
+
+            try {
+                const payload = {
+                    linkKey: linkKey,
+                    fileUrl: fileUrl,
+                    previewUrl: window.__downloadUrl || fileUrl,
+                    price: price,
+                    status: 'pending',
+                    createdAt: __paymentCreatedAt,
+                    timeStr: new Date(__paymentCreatedAt).toLocaleTimeString('th-TH'),
+                    dateStr: new Date(__paymentCreatedAt).toLocaleDateString('th-TH'),
+                    autoRegistered: true
+                };
+
+                await fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests/${linkKey}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                document.body.classList.remove('payment-expired');
+                const paymentSec = document.getElementById('payment-section');
+                if (paymentSec) paymentSec.classList.remove('payment-expired');
+
+                const protMsg = document.querySelector('.protection-message');
+                if (protMsg) protMsg.innerHTML = '🔒 โปรดชำระเงินเพื่อรับงาน';
+
+                const normalView = document.getElementById('waiting-text-normal');
+                const expiredView = document.getElementById('waiting-text-expired');
+                const qrWrapper = document.getElementById('qr-wrapper');
+                const waitingBox = document.getElementById('payment-waiting-box');
+
+                if (normalView) normalView.style.display = 'flex';
+                if (expiredView) expiredView.style.display = 'none';
+                if (qrWrapper) qrWrapper.classList.remove('qr-expired');
+                if (waitingBox) {
+                    waitingBox.classList.remove('expired-mode');
+                    waitingBox.classList.add('active');
+                }
+
+                startPaymentCountdown(__paymentCreatedAt);
+                startPaymentPolling();
+
+                showToast('✨ ต่อเวลาตรวจจับยอดเงินเรียบร้อยแล้ว (10 นาที)', 'success');
+            } catch (err) {
+                console.error('Renew QR error:', err);
+                showToast('⚠️ เกิดข้อผิดพลาดในการต่อเวลา กรุณาลองใหม่อีกครั้ง');
+            } finally {
+                isRenewing = false;
+                if (renewBtn) {
+                    renewBtn.disabled = false;
+                    renewBtn.innerHTML = '<span class="renew-icon">🔄</span><span>ขอ QR code ใหม่</span>';
+                }
+            }
+        }
+
+        function startPaymentCountdown(startTime) {
+            if (paymentCountdownTimer) clearInterval(paymentCountdownTimer);
+            __paymentCreatedAt = startTime || __paymentCreatedAt || Date.now();
+
+            const timerEl = document.getElementById('payment-countdown-timer');
+
+            function updateTimer() {
+                if (__isPaid) {
+                    if (paymentCountdownTimer) clearInterval(paymentCountdownTimer);
+                    return;
+                }
+
+                const elapsed = Date.now() - __paymentCreatedAt;
+                const remaining = Math.max(0, (10 * 60 * 1000) - elapsed);
+                const totalSeconds = Math.floor(remaining / 1000);
+                const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+                const seconds = String(totalSeconds % 60).padStart(2, '0');
+
+                if (timerEl) {
+                    timerEl.textContent = `${minutes}:${seconds}`;
+                    if (totalSeconds <= 120 && totalSeconds > 0) {
+                        timerEl.style.color = '#f87171';
+                    } else if (totalSeconds === 0) {
+                        timerEl.textContent = `00:00`;
+                        timerEl.style.color = '#ef4444';
+                        if (paymentCountdownTimer) clearInterval(paymentCountdownTimer);
+                        const isFileStillValid = !expiryTimestamp || (expiryTimestamp > Date.now());
+                        if (isFileStillValid) {
+                            handlePaymentTimeout();
+                        }
+                    } else {
+                        timerEl.style.color = '#fbbf24';
+                    }
+                }
+            }
+
+            updateTimer();
+            paymentCountdownTimer = setInterval(updateTimer, 1000);
+        }
+
         // Auto Payment Detection (ทำงานเฉพาะเมื่อ Server Online)
         async function initAutoPaymentDetection() {
             if (price <= 0 || __isPaid || !isServerOnline) return;
@@ -2326,6 +2646,39 @@
             const linkKey = getLinkKey();
             const waitingBox = document.getElementById('payment-waiting-box');
             if (waitingBox) waitingBox.classList.add('active');
+
+            document.body.classList.remove('payment-expired');
+            const paymentSec = document.getElementById('payment-section');
+            if (paymentSec) paymentSec.classList.remove('payment-expired');
+
+            const protMsg = document.querySelector('.protection-message');
+            if (protMsg) protMsg.innerHTML = '🔒 โปรดชำระเงินเพื่อรับงาน';
+
+            const normalView = document.getElementById('waiting-text-normal');
+            const expiredView = document.getElementById('waiting-text-expired');
+            const qrWrapper = document.getElementById('qr-wrapper');
+            if (normalView) normalView.style.display = 'flex';
+            if (expiredView) expiredView.style.display = 'none';
+            if (qrWrapper) qrWrapper.classList.remove('qr-expired');
+            if (waitingBox) waitingBox.classList.remove('expired-mode');
+
+            if (!__paymentCreatedAt) {
+                const savedCreatedAt = parseInt(localStorage.getItem('payment_created_' + linkKey));
+                if (savedCreatedAt && !isNaN(savedCreatedAt)) {
+                    __paymentCreatedAt = savedCreatedAt;
+                } else {
+                    __paymentCreatedAt = Date.now();
+                }
+            }
+            localStorage.setItem('payment_created_' + linkKey, __paymentCreatedAt);
+
+            // ตรวจสอบว่าหมดเวลา 10 นาทีหรือยังก่อนเริ่ม
+            if (Date.now() - __paymentCreatedAt >= 10 * 60 * 1000) {
+                handlePaymentTimeout();
+                return;
+            }
+
+            startPaymentCountdown(__paymentCreatedAt);
 
             // ส่งข้อมูลรอชำระเงินไปยัง Firebase อัตโนมัติทันที
             try {
@@ -2335,9 +2688,9 @@
                     previewUrl: window.__downloadUrl || fileUrl,
                     price: price,
                     status: 'pending',
-                    createdAt: Date.now(),
-                    timeStr: new Date().toLocaleTimeString('th-TH'),
-                    dateStr: new Date().toLocaleDateString('th-TH'),
+                    createdAt: __paymentCreatedAt,
+                    timeStr: new Date(__paymentCreatedAt).toLocaleTimeString('th-TH'),
+                    dateStr: new Date(__paymentCreatedAt).toLocaleDateString('th-TH'),
                     autoRegistered: true
                 };
 
@@ -2387,9 +2740,14 @@
                             paymentPollingTimer = null;
                             unlockPaidStatus();
                         } else if (data && data.status === 'rejected') {
-                            clearInterval(paymentPollingTimer);
-                            paymentPollingTimer = null;
-                            showError('404 Not Found', 'ไม่พบไฟล์นี้ หรือลิงก์ถูกทำลายแล้ว');
+                            const isFileStillValid = !expiryTimestamp || (expiryTimestamp > Date.now());
+                            if (isFileStillValid) {
+                                handlePaymentTimeout();
+                            } else {
+                                clearInterval(paymentPollingTimer);
+                                paymentPollingTimer = null;
+                                showError('404 Not Found', 'ไม่พบไฟล์นี้ หรือลิงก์ถูกทำลายแล้ว');
+                            }
                         }
                     }
                 } catch (e) {
@@ -2399,11 +2757,29 @@
         }
 
         function unlockPaidStatus(immediate = false) {
+            if (paymentCountdownTimer) {
+                clearInterval(paymentCountdownTimer);
+                paymentCountdownTimer = null;
+            }
+            document.body.classList.remove('payment-expired');
+            const paymentSec = document.getElementById('payment-section');
+            if (paymentSec) paymentSec.classList.remove('payment-expired');
+
+            const normalView = document.getElementById('waiting-text-normal');
+            const expiredView = document.getElementById('waiting-text-expired');
+            const qrWrapper = document.getElementById('qr-wrapper');
+            const waitingBox = document.getElementById('payment-waiting-box');
+            if (normalView) normalView.style.display = 'flex';
+            if (expiredView) expiredView.style.display = 'none';
+            if (qrWrapper) qrWrapper.classList.remove('qr-expired');
+            if (waitingBox) waitingBox.classList.remove('expired-mode');
+
             const linkKey = getLinkKey();
             __isPaid = true;
             try {
                 localStorage.setItem('paid_' + linkKey, '1');
                 if (fileUrl) localStorage.setItem('paid_' + fileUrl, '1');
+                localStorage.removeItem('payment_created_' + linkKey);
             } catch (e) { }
 
             window.__downloadUrl = _rawDownloadUrl || _rawFileUrl || fileUrl;
@@ -2661,6 +3037,12 @@
 
         // Download QR Code
         function downloadQR() {
+            const qrWrapper = document.getElementById('qr-wrapper');
+            if (qrWrapper && qrWrapper.classList.contains('qr-expired')) {
+                renewPaymentQR();
+                return;
+            }
+
             if (!isServerOnline && price > 0 && !__isPaid) {
                 showToast('⚠️ เซิร์ฟเวอร์ออฟไลน์ ไม่สามารถทำรายการได้');
                 return;
@@ -2694,6 +3076,10 @@
 
         // Lightbox Functions
         function openLightbox() {
+            if (document.body.classList.contains('payment-expired')) {
+                showToast('⏱️ หมดเวลาตรวจจับชำระเงิน กรุณากดขอสร้าง QR ใหม่ทางขวา');
+                return;
+            }
             const isPaid = __isPaid || price === 0;
             const isFree = price === 0;
 
