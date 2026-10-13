@@ -8,7 +8,6 @@ import crypto from 'crypto';
 import readline from 'readline';
 import { fileURLToPath } from 'url';
 import os from 'os';
-import { publishGiveawayPost } from './Binance_Free-code/binance_giveaway.js';
 
 const execPromise = promisify(exec);
 const execFilePromise = promisify(execFile);
@@ -3502,17 +3501,7 @@ async function pauseOnError(isDebugPause, message) {
       console.log(`Successfully completed ${postsProcessedCount} posts.`);
       console.log('============================================');
 
-      // 🎁 โพสต์สุดท้าย: แจกโค้ด Binance Cryptobox Red Packet ปิดท้ายรอบการทำงาน
-      try {
-        console.log('\n🎁 [Final Step] Publishing Binance Red Packet Giveaway Post...');
-        await publishGiveawayPost(fbPage, async (pct, status, detail, logType) => {
-          reportStatus(pct, status, detail, logType, AUTO_GROUPS_MAX);
-        });
-      } catch (giveawayErr) {
-        console.error('[BinanceGiveaway] Error during final giveaway post:', giveawayErr.message || giveawayErr);
-      }
-
-      showWindowsNotification('Facebook Bot', `ทำรายการครบ ${postsProcessedCount}/${AUTO_GROUPS_MAX} และแจกโค้ดสำเร็จ!`);
+      showWindowsNotification('Facebook Bot', `ทำรายการครบ ${postsProcessedCount}/${AUTO_GROUPS_MAX} เรียบร้อย!`);
 
       console.log('Closing browser and process...');
 
