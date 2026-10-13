@@ -91,7 +91,7 @@
 
         .downloads-container {
             width: 100%;
-            max-width: 1000px;
+            max-width: 1280px;
             margin-bottom: 20px;
         }
 
@@ -202,15 +202,19 @@
 
         .ai-hub-main {
             width: 100%;
-            max-width: 1000px;
+            max-width: 1360px;
             display: flex;
             flex-direction: column;
+            align-items: center;
             gap: 10px;
         }
 
         .pasted-previews {
             display: flex;
             flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            max-width: 950px;
             gap: 10px;
             margin-bottom: 5px;
         }
@@ -257,6 +261,9 @@
         }
 
         .input-bar {
+            width: 100%;
+            max-width: 950px;
+            box-sizing: border-box;
             background: #ffffff;
             border-radius: 30px;
             display: flex;
@@ -315,26 +322,32 @@
 
         .quick-tags {
             display: flex;
-            gap: 10px;
+            gap: 7px;
             margin-top: 15px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
             justify-content: center;
+            align-items: center;
             max-width: 100%;
+            overflow-x: auto;
+            white-space: nowrap;
+            padding: 4px 6px;
+            box-sizing: border-box;
         }
 
         .tag-item {
             background: var(--surface);
             border: 1px solid var(--border);
             color: var(--text-sub);
-            padding: 8px 18px;
+            padding: 6px 14px;
             border-radius: 20px;
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             cursor: pointer;
             transition: all 0.3s;
             white-space: nowrap;
             display: flex;
             align-items: center;
             font-weight: 600;
+            flex-shrink: 0;
         }
 
         .tag-item:nth-child(1) {
@@ -383,6 +396,12 @@
             border-color: #10b981;
             color: #059669;
             background: rgba(16, 185, 129, 0.1);
+        }
+
+        .tag-item:nth-child(9) {
+            border-color: #64748b;
+            color: #94a3b8;
+            background: rgba(100, 116, 139, 0.12);
         }
 
         /* Gemini Account Selector */
@@ -1448,14 +1467,6 @@
             </label>
             <span id="badge-Gemini" class="model-status-badge"></span>
             |
-
-            <label class="model-checkbox">
-                <input type="checkbox" name="model" value="COPILOT">
-                <span>COPILOT</span>
-            </label>
-            <span id="badge-COPILOT" class="model-status-badge"></span>
-
-            |
             <button id="btn-all-ai" type="button" class="all-ai-btn" onclick="submitAllAI(event)">
                 ✨ All AI
             </button> |
@@ -1479,7 +1490,8 @@
         </div>
 
         <!-- Default Mode Quick Tags -->
-        <div class="quick-tags" id="default-quick-tags">
+        <div class="quick-tags" id="default-quick-tags"
+            style="display: flex; flex-wrap: nowrap; justify-content: center; align-items: center; gap: 7px; max-width: 100%; overflow-x: auto; white-space: nowrap;">
             <div class="tag-item" onclick="addTag('จงปรับภาพให้ชัด')">ปรับให้ชัด</div>
             <div class="tag-item" onclick="addTag('จงเปลี่ยนเป็นภาพสี')">เป็นภาพสี</div>
             <div class="tag-item" onclick="addTag('จงทำให้ภาพเนียนกว่านี้')">ให้ภาพเนียน</div>
@@ -1487,17 +1499,18 @@
             <div class="tag-item" onclick="addTag('เปลี่ยนเป็นพื้นหลังสีฟ้าหน้าตรงครึ่งตัว')">
                 พื้นหลังสีฟ้า</div>
             <div class="tag-item" onclick="addTag('ตัดต่อภาพที่ 2 ไปใส่ ภาพที่ 1')">รูป 2 ใส่ 1</div>
+            <div class="tag-item" onclick="addTag('จงทำรูปคู่ให้อยู่ในฉากเดียวกัน')">คู่ฉากเดียวกัน</div>
             <div class="tag-item" onclick="addTag('จงเปลี่ยนเป็นชุด')">เปลี่ยนชุด..</div>
             <div class="tag-item"
                 onclick="addTag('ไดคัทแยกตัวแบบ ลบพื้นหลังออกทั้งหมด ทำเป็นพื้นหลังสีขาวล้วน (Solid Pure White) ไม่มีเงาตกกระทบ ไม่สะท้อนแสง')"
                 title="ไดคัทแยกตัวแบบ พื้นขาวล้วน ไร้เงา ลบพื้นหลังต่อง่าย">พื้นขาว ไร้เงา</div>
         </div>
 
-        <!-- Ultra-Compact Gemini Bar (Centered) -->
+        <!-- Ultra-Compact Gemini Bar (Centered - All on single unified row) -->
         <div class="quota-panel" id="quota-panel"
-            style="margin: 8px auto 0 auto; padding: 6px 14px; display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; width: fit-content; max-width: 100%;">
-            <div style="display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
-                <h3 style="margin: 0; font-size: 0.85rem; color: var(--text-sub); white-space: nowrap; cursor: pointer; display: flex; align-items: center; gap: 4px;"
+            style="margin: 8px auto 0 auto; padding: 6px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: fit-content; max-width: 100%; box-sizing: border-box;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: nowrap; white-space: nowrap; max-width: 100%; overflow-x: auto;">
+                <h3 style="margin: 0; font-size: 0.85rem; color: var(--text-sub); white-space: nowrap; cursor: pointer; display: flex; align-items: center; gap: 4px; flex-shrink: 0;"
                     onclick="const g = document.getElementById('quota-grid'); const isOpen = g.style.display !== 'none'; g.style.display = isOpen ? 'none' : 'grid'; if (!isOpen) loadQuotaStatus();">
                     <span>🔑 Gemini:</span>
                     <small
@@ -1506,12 +1519,12 @@
 
                 <!-- Gemini Account Selector with Status Dots -->
                 <div class="account-selector" id="gemini-account-selector"
-                    style="margin: 0; padding: 0; background: transparent; border: none; gap: 8px; display: inline-flex; align-items: center; justify-content: center; flex-wrap: wrap;">
+                    style="margin: 0; padding: 0; background: transparent; border: none; gap: 6px; display: inline-flex; align-items: center; justify-content: center; flex-wrap: nowrap; flex-shrink: 0;">
                     <!-- Generated dynamically -->
                 </div>
 
                 <div
-                    style="display: inline-flex; align-items: center; gap: 4px; border-left: 1px solid var(--border); padding-left: 10px; margin-left: 5px;">
+                    style="display: inline-flex; align-items: center; gap: 4px; border-left: 1px solid var(--border); padding-left: 8px; margin-left: 2px; flex-shrink: 0;">
                     <button onclick="changeGeminiAccountCount(-1)"
                         style="font-size: 0.7rem; padding: 2px 7px; border: 1px solid var(--border); border-radius: 4px; background: #1a2230; cursor: pointer; color: var(--text-sub);"
                         title="ลดบัญชี">- บัญชี</button>
@@ -1522,15 +1535,12 @@
 
                 <!-- Compact Status Summary -->
                 <span id="quota-summary"
-                    style="font-size: 0.75rem; color: var(--text-sub); border-left: 1px solid var(--border); padding-left: 10px; margin-left: 5px; white-space: nowrap;"></span>
-            </div>
+                    style="font-size: 0.75rem; color: var(--text-sub); border-left: 1px solid var(--border); padding-left: 8px; margin-left: 2px; white-space: nowrap; flex-shrink: 0;"></span>
 
-            <button class="refresh-btn" onclick="loadQuotaStatus()"
-                style="padding: 2px 6px; font-size: 0.75rem; background: none; border: none; cursor: pointer;"
-                title="รีเฟรชโควต้า">🔄</button>
-            <button onclick="clearStuckPrompts()"
-                style="padding: 2px 8px; font-size: 0.72rem; border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 6px; background: rgba(239, 68, 68, 0.15); color: #fca5a5; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"
-                title="ล้างคิวคำสั่งและรูปภาพที่ค้างส่งซ้ำในระบบ">🧹 ล้างค้าง</button>
+                <button class="refresh-btn" onclick="loadQuotaStatus()"
+                    style="padding: 2px 6px; font-size: 0.75rem; background: none; border: none; cursor: pointer; flex-shrink: 0;"
+                    title="รีเฟรชโควต้า">🔄</button>
+            </div>
 
             <!-- Grid (Hidden by default, click Gemini icon to show) -->
             <div class="quota-grid" id="quota-grid"
@@ -1541,9 +1551,13 @@
             </div>
         </div>
 
-        <!-- Watermark Check Section (ส่วนตรวจสอบลายน้ำ - Clean & Compact พร้อม Drag & Drop) -->
-        <div id="watermark-check-container"
-            style="width: 100%; max-width: 950px; margin: 10px auto; padding: 15px; background: var(--surface); border: 2px dashed var(--border); border-radius: 16px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.3); min-height: 50px; display: flex; flex-direction: column; justify-content: center; position: relative; transition: all 0.25s ease;">
+        <!-- Watermark Check & Finished Work Preview Row -->
+        <div id="watermark-and-preview-row"
+            style="display: flex; gap: 14px; align-items: stretch; justify-content: center; width: 100%; max-width: 1320px; margin: 10px auto; flex-wrap: nowrap; box-sizing: border-box;">
+
+            <!-- Watermark Check Section (ส่วนตรวจสอบลายน้ำ & เครื่องมือ) -->
+            <div id="watermark-check-container"
+                style="flex: 0 0 880px; width: 880px; max-width: 880px; margin: 0; padding: 15px; background: var(--surface); border: 2px dashed var(--border); border-radius: 16px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.3); min-height: 50px; display: flex; flex-direction: column; justify-content: center; position: relative; transition: all 0.25s ease; box-sizing: border-box;">
 
             <!-- Drag & Drop Visual Overlay -->
             <div id="watermark-drop-overlay"
@@ -1818,6 +1832,7 @@
                             <span style="font-size: 0.50rem; color: #fb7185; font-weight: 600;">AI Cutout</span>
                         </button>
                     </div>
+
                 </div>
             </div>
             <div id="watermark-check-placeholder" onclick="document.getElementById('watermark-file-input').click()"
@@ -1841,6 +1856,25 @@
                 </div>
             </div>
         </div>
+
+        <!-- Finished Work Preview Card (แสดงเฉพาะภาพผลงานเสร็จล้วนๆ ในตำแหน่งกรอบสีแดงด้านขวา) -->
+        <div id="finished-work-preview-container"
+            style="flex: 0 0 380px; width: 380px; max-width: 440px; min-width: 280px; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--surface); border: 2px dashed var(--border); border-radius: 16px; padding: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3); box-sizing: border-box; position: relative; transition: all 0.25s ease;"
+            title="คลิกเพื่อดูภาพเต็มขนาดจริง">
+            <div style="width: 100%; height: 100%; min-height: 350px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #0b0f15; border: 1px solid var(--border); border-radius: 12px; position: relative;">
+                <img id="finished-work-preview-img" src="" alt="ภาพเต็มงานเสร็จ"
+                    style="display: none; width: 100%; height: 100%; max-height: 480px; object-fit: contain; cursor: pointer; border-radius: 8px; transition: transform 0.2s ease;"
+                    onclick="openFinishedPreviewFull()"
+                    onmouseover="this.style.transform='scale(1.02)'"
+                    onmouseout="this.style.transform='scale(1)'">
+                <div id="finished-preview-empty"
+                    style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--text-sub); padding: 20px;">
+                    <span style="font-size: 2.5rem; opacity: 0.35;">🖼️</span>
+                    <span style="font-size: 0.78rem; color: #64748b;">รอภาพงานเสร็จ</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
         <!-- Face Swap Studio Section (ระบบเปลี่ยนหน้า) -->
         <div id="faceswap-studio-container"
@@ -2530,6 +2564,7 @@
             const btnFaceswap = document.getElementById('btn-mode-faceswap');
             const btnPhotopea = document.getElementById('btn-mode-photopea');
             const cropSection = document.getElementById('watermark-check-container');
+            const watermarkPreviewRow = document.getElementById('watermark-and-preview-row');
             const faceswapSection = document.getElementById('faceswap-studio-container');
             const photopeaSection = document.getElementById('photopea-studio-container');
             const defaultQuickTags = document.getElementById('default-quick-tags');
@@ -2546,6 +2581,7 @@
                 }
 
                 if (cropSection) cropSection.style.display = 'none';
+                if (watermarkPreviewRow) watermarkPreviewRow.style.display = 'none';
                 if (faceswapSection) faceswapSection.style.display = 'none';
                 if (photopeaSection) {
                     photopeaSection.style.display = 'flex';
@@ -2586,6 +2622,7 @@
                 if (btnFaceswap) btnFaceswap.classList.add('active', 'faceswap-active');
 
                 if (cropSection) cropSection.style.display = 'none';
+                if (watermarkPreviewRow) watermarkPreviewRow.style.display = 'none';
                 if (photopeaSection) photopeaSection.style.display = 'none';
                 if (faceswapSection) faceswapSection.style.display = 'flex';
 
@@ -2609,6 +2646,7 @@
                 if (btnCrop) btnCrop.classList.add('active');
 
                 if (cropSection) cropSection.style.display = 'flex';
+                if (watermarkPreviewRow) watermarkPreviewRow.style.display = 'flex';
                 if (faceswapSection) faceswapSection.style.display = 'none';
                 if (photopeaSection) photopeaSection.style.display = 'none';
 
@@ -3214,6 +3252,7 @@
                             if (saveRes.ok) {
                                 showToast('✅ บันทึกทับ C:\\Users\\artwh\\Desktop\\complete.png สำเร็จ! (สร้าง example.png แล้ว)');
                                 if (typeof loadDownloads === 'function') loadDownloads();
+                                if (typeof refreshFinishedWorkPreview === 'function') refreshFinishedWorkPreview();
                             } else {
                                 showToast('⚠️ บันทึก complete.png ไม่สำเร็จ');
                             }
@@ -3286,6 +3325,7 @@
                 if (!response.ok || !result.success) throw new Error(result.error || 'สร้าง QR ไม่สำเร็จ');
                 showToast(`✅ อัปเดต QR ใน example.png เป็น ${result.amount} บาทแล้ว`);
                 if (typeof loadDownloads === 'function') loadDownloads();
+                if (typeof refreshFinishedWorkPreview === 'function') refreshFinishedWorkPreview();
             } catch (error) {
                 console.error('QR update error:', error);
                 showToast(`❌ อัปเดต QR ไม่สำเร็จ: ${error.message}`);
@@ -4407,8 +4447,7 @@
                     'GPT': 'https://chatgpt.com',
                     'Gemini': 'https://gemini.google.com/app',
                     'GROK': 'https://grok.com',
-                    'META': 'https://www.meta.ai',
-                    'COPILOT': 'https://copilot.microsoft.com'
+                    'META': 'https://www.meta.ai'
                 };
 
                 const selectedModels = Array.from(document.querySelectorAll('input[name="model"]:checked')).map(el => el.value);
@@ -4416,7 +4455,22 @@
                 // Reset AI model checkboxes to default (unchecked) so they do not stay stuck
                 document.querySelectorAll('input[name="model"]').forEach(cb => cb.checked = false);
 
-                // Prepare images
+                // Prepare images: synchronize order with #previews DOM and fallback if needed
+                if (typeof syncPastedFilesOrder === 'function') {
+                    syncPastedFilesOrder();
+                }
+                if (pastedFiles.length === 0) {
+                    const domThumbs = document.querySelectorAll('#previews .preview-thumb img');
+                    for (const img of domThumbs) {
+                        if (img.src) {
+                            try {
+                                const r = await fetch(img.src);
+                                const b = await r.blob();
+                                pastedFiles.push({ id: Math.random().toString(36).substr(2, 9), blob: b, url: img.src });
+                            } catch (e) { }
+                        }
+                    }
+                }
                 const imagePaths = [...selectedFilesList];
                 const pastedImageDataUrls = await Promise.all(pastedFiles.map(async (item) => {
                     let dataUrl = await new Promise(r => { const rd = new FileReader(); rd.onloadend = () => r(rd.result); rd.readAsDataURL(item.blob); });
@@ -4906,6 +4960,7 @@
                 });
         }
         refreshDesktopWatermark();
+        setTimeout(() => { if (typeof refreshFinishedWorkPreview === 'function') refreshFinishedWorkPreview(); }, 400);
 
         // --- Watermark Check Section: Drag and Drop & Direct Import ---
         function initWatermarkDropZone() {
@@ -4989,6 +5044,46 @@
                     return;
                 }
             });
+
+            // Enable drop on finished-work-preview-container
+            const previewContainer = document.getElementById('finished-work-preview-container');
+            if (previewContainer) {
+                previewContainer.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.dataTransfer.dropEffect = 'copy';
+                    previewContainer.style.borderColor = '#818cf8';
+                });
+                previewContainer.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    previewContainer.style.borderColor = 'rgba(99, 102, 241, 0.4)';
+                });
+                previewContainer.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    previewContainer.style.borderColor = 'rgba(99, 102, 241, 0.4)';
+                    const files = e.dataTransfer.files;
+                    if (files && files.length > 0) {
+                        const imgFile = Array.from(files).find(f => f.type.startsWith('image/') || f.name.toLowerCase().match(/\.(png|jpe?g|webp|gif|bmp)$/i));
+                        if (imgFile) {
+                            handleDirectImageFile(imgFile);
+                            return;
+                        }
+                    }
+                    const previewId = e.dataTransfer.getData('application/x-preview-id') || dragSource?.dataset?.id;
+                    if (previewId) {
+                        const found = pastedFiles.find(f => f.id === previewId);
+                        if (found) {
+                            if (found.blob) handleDirectImageFile(found.blob);
+                            else if (found.url) handleDirectImageUrl(found.url);
+                            return;
+                        }
+                    }
+                    const textUrl = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('text/uri-list') || dragSource?.dataset?.url || dragSource?.querySelector('img')?.src;
+                    if (textUrl) handleDirectImageUrl(textUrl);
+                });
+            }
         }
 
         function handleWatermarkFileInput(input) {
@@ -5115,14 +5210,68 @@
                 if (currentStudioMode === 'faceswap' || !faceSwapTargetImg) {
                     loadTargetImageToFaceSwap(`/get-img?path=${encodeURIComponent(currentWatermarkPath)}&v=${Date.now()}`);
                 }
+
+                // Sync image to Finished Work Preview Panel
+                updateFinishedWorkPreview(currentWatermarkPath, img);
             };
             img.onerror = () => {
                 const contentEl = document.getElementById('watermark-check-content');
                 const placeholderEl = document.getElementById('watermark-check-placeholder');
                 if (contentEl) contentEl.style.display = 'none';
                 if (placeholderEl) placeholderEl.style.display = 'block';
+
+                updateFinishedWorkPreview(null, null);
             };
             img.src = `/get-img?path=${encodeURIComponent(targetPath)}&v=${Date.now()}`;
+        }
+
+        // --- Finished Work Preview Controller (พรีวิวรูปเต็มงานเสร็จ - แสดงเฉพาะภาพล้วนๆ) ---
+        let currentFinishedPreviewUrl = '';
+
+        async function refreshFinishedWorkPreview(forceToast = false) {
+            const targetPath = currentWatermarkPath || 'C:\\Users\\artwh\\Desktop\\complete.png';
+            const imgEl = document.getElementById('finished-work-preview-img');
+            const emptyEl = document.getElementById('finished-preview-empty');
+
+            try {
+                const checkUrl = `/get-img?path=${encodeURIComponent(targetPath)}&v=${Date.now()}`;
+                const res = await fetch(checkUrl);
+                if (!res.ok) throw new Error('File not found');
+
+                currentFinishedPreviewUrl = checkUrl;
+                if (imgEl) {
+                    imgEl.onload = function () {
+                        if (emptyEl) emptyEl.style.display = 'none';
+                        imgEl.style.display = 'block';
+                    };
+                    imgEl.src = checkUrl;
+                }
+                if (forceToast) showToast('🔄 รีเฟรชภาพงานเสร็จเรียบร้อย');
+            } catch (err) {
+                if (imgEl) imgEl.style.display = 'none';
+                if (emptyEl) emptyEl.style.display = 'flex';
+                if (forceToast) showToast('⚠️ ไม่พบไฟล์ภาพงานเสร็จในระบบ');
+            }
+        }
+
+        function updateFinishedWorkPreview(targetPath, imgObj) {
+            const imgEl = document.getElementById('finished-work-preview-img');
+            const emptyEl = document.getElementById('finished-preview-empty');
+            if (!targetPath && !imgObj) {
+                if (imgEl) imgEl.style.display = 'none';
+                if (emptyEl) emptyEl.style.display = 'flex';
+                return;
+            }
+            refreshFinishedWorkPreview();
+        }
+
+        function openFinishedPreviewFull() {
+            if (currentFinishedPreviewUrl) {
+                window.open(currentFinishedPreviewUrl, '_blank');
+            } else {
+                const targetPath = currentWatermarkPath || 'C:\\Users\\artwh\\Desktop\\complete.png';
+                window.open(`/get-img?path=${encodeURIComponent(targetPath)}&v=${Date.now()}`, '_blank');
+            }
         }
 
         async function saveCroppedImage(newDataUrl) {
