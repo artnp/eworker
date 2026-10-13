@@ -19,6 +19,8 @@ import re
 import sys
 import tempfile
 import requests
+import hashlib
+import urllib.parse
 
 # --- CONFIG ---
 PORT = 5000
@@ -1716,7 +1718,7 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                 payload = {
                     'success': True,
                     'audioBase64': base64.b64encode(audio).decode('ascii'),
-                    'wordBoundaries': []
+                    'wordBoundaries': raw_boundaries or []
                 }
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
@@ -2017,7 +2019,6 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                         f.write(binary_data)
 
                     if data.get('openPhotoshop'):
-                        import subprocess
                         ps_path = r"C:\Program Files\Adobe\Adobe Photoshop 2023\Photoshop.exe"
                         if os.path.exists(ps_path):
                             subprocess.Popen([ps_path, target])
@@ -2202,7 +2203,6 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                     raise FileNotFoundError('ไม่พบไฟล์สคริปต์ upload.py ในโฟลเดอร์ระบบ')
 
                 # รัน upload.py แบบซ่อนหน้าต่าง 100% (No CMD / Black Window)
-                import sys, subprocess, base64, time
                 cmd = [sys.executable, upload_script, target_file]
                 proc = subprocess.run(
                     cmd,
@@ -2242,8 +2242,6 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
 
                 b64_url = base64.b64encode(full_url.encode('utf-8')).decode('utf-8')
                 EW_SIGN_SALT = "EW_SALT_2026_SECURE_KEY"
-                import hashlib
-                import urllib.parse
                 norm_price = f"{float(amount or 0):.2f}"
                 sig_payload = f"{b64_url}:{norm_price}:{timestamp}:{EW_SIGN_SALT}"
                 sig = hashlib.sha256(sig_payload.encode('utf-8')).hexdigest()[:12]
@@ -2328,7 +2326,6 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                         print(f"[Watcher] Error parsing base64 image data: {base64_err}")
                 
                 if download_success and os.path.exists(temp_path):
-                    import subprocess
                     ps_script = os.path.join(script_dir, "MarkPoints.ps1")
                     # Run MarkPoints.ps1 asynchronously
                     cmd = f'powershell -ExecutionPolicy Bypass -File "{ps_script}" "{temp_path}"'
@@ -2414,7 +2411,6 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
             post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
             v_id = None
             try:
-                import sys
                 import importlib
                 bs_folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "binance-square")
                 if bs_folder not in sys.path:
