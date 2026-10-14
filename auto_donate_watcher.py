@@ -1446,6 +1446,46 @@ def process_bigdata_video_task(video_url, start_sec, end_sec, text, copy_to_desk
                         pending_cleanup_videos.discard(v_id)
         except Exception as cle:
             print(f"[Bigdata Cache] Refcount cleanup error: {cle}")
+# --- TTS PRONUNCIATION DICTIONARY SYSTEM ---
+PRONUNCIATION_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tts_pronunciation.json")
+
+def load_pronunciation_dict():
+    if os.path.exists(PRONUNCIATION_FILE):
+        try:
+            with open(PRONUNCIATION_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict):
+                    return data
+        except Exception as e:
+            print(f"[Watcher] Error loading tts_pronunciation.json: {e}")
+    default_dict = {
+        "เพลา": "พเลา",
+        "ยักษ์": "ยัก"
+    }
+    save_pronunciation_dict(default_dict)
+    return default_dict
+
+def save_pronunciation_dict(data):
+    try:
+        with open(PRONUNCIATION_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        print(f"[Watcher] Error saving tts_pronunciation.json: {e}")
+        return False
+
+def apply_pronunciation_rules(text):
+    if not text:
+        return text
+    rules = load_pronunciation_dict()
+    # Sort keys by length descending so longer words/phrases match first
+    sorted_keys = sorted(rules.keys(), key=len, reverse=True)
+    for orig in sorted_keys:
+        repl = rules[orig]
+        if orig and orig in text:
+            text = text.replace(orig, repl)
+    return text
+
 # --- SERVER LOGIC ---
 class HubHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
@@ -1659,17 +1699,259 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps({"hasToken": bool(tok), "token": tok}).encode())
             return
 
+        if parsed_url.path == '/edge-tts/pronunciations':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(json.dumps(load_pronunciation_dict(), ensure_ascii=False).encode('utf-8'))
+            return
+
+        if parsed_url.path == '/edge-tts':
+            import edge_tts
+            v = getattr(edge_tts, '__version__', 'unknown')
+            html = f"""<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Edge TTS Service & Pronunciation Manager</title>
+<style>
+  * {{ box-sizing: border-box; }}
+  body {{ font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; margin: 0; padding: 2rem 1rem; }}
+  .container {{ width: 100%; max-width: 640px; display: flex; flex-direction: column; gap: 1.5rem; }}
+  .card {{ background: #1e293b; padding: 1.75rem; border-radius: 1rem; border: 1px solid #334155; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }}
+  .badge {{ display: inline-flex; align-items: center; gap: 0.5rem; background: #064e3b; color: #34d399; padding: 0.35rem 0.85rem; border-radius: 9999px; font-weight: 600; font-size: 0.85rem; margin-bottom: 1rem; }}
+  .badge-dot {{ width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; }}
+  h1 {{ font-size: 1.4rem; margin: 0 0 0.5rem 0; color: #f1f5f9; }}
+  h2 {{ font-size: 1.15rem; margin: 0 0 1rem 0; color: #38bdf8; display: flex; align-items: center; gap: 0.5rem; }}
+  p {{ color: #94a3b8; font-size: 0.9rem; margin: 0 0 1.25rem 0; line-height: 1.5; }}
+  input {{ width: 100%; padding: 0.75rem 1rem; background: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; color: #fff; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }}
+  input:focus {{ border-color: #38bdf8; }}
+  button {{ padding: 0.75rem 1rem; background: #0284c7; color: #fff; border: none; border-radius: 0.5rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }}
+  button:hover {{ background: #0369a1; }}
+  button:disabled {{ background: #475569; cursor: not-allowed; }}
+  .btn-danger {{ background: #dc2626; padding: 0.4rem 0.75rem; font-size: 0.8rem; }}
+  .btn-danger:hover {{ background: #b91c1c; }}
+  .btn-secondary {{ background: #334155; padding: 0.4rem 0.75rem; font-size: 0.8rem; }}
+  .btn-secondary:hover {{ background: #475569; }}
+  #status {{ margin-top: 0.75rem; font-size: 0.85rem; color: #38bdf8; min-height: 1.25rem; }}
+  .rule-form {{ display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1.25rem; }}
+  @media (max-width: 520px) {{ .rule-form {{ grid-template-columns: 1fr; }} }}
+  table {{ width: 100%; border-collapse: collapse; margin-top: 0.5rem; }}
+  th, td {{ padding: 0.75rem 0.85rem; text-align: left; border-bottom: 1px solid #334155; font-size: 0.9rem; }}
+  th {{ color: #94a3b8; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }}
+  td code {{ background: #0f172a; padding: 0.2rem 0.45rem; border-radius: 0.25rem; color: #f472b6; font-size: 0.95em; }}
+  td code.repl {{ color: #34d399; }}
+  .actions-cell {{ display: flex; gap: 0.5rem; justify-content: flex-end; }}
+  .count-pill {{ background: #334155; color: #cbd5e1; padding: 0.15rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; }}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div class="badge"><span class="badge-dot"></span> Edge TTS Online (v{v})</div>
+    <h1>ระบบสังเคราะห์เสียง Edge TTS</h1>
+    <p>แปลงข้อความเป็นเสียงสำหรับ Chrome Addon และระบบหลังบ้าน พร้อมระบบแก้คำอ่านภาษาไทยอัตโนมัติ</p>
+    <div style="display: flex; gap: 0.75rem; flex-direction: column;">
+      <input id="txt" type="text" value="เพลาล้อหมุนเร็วมาก และยักษ์ตัวใหญ่" placeholder="พิมพ์ข้อความที่ต้องการทดสอบเสียง..." />
+      <button id="btn" onclick="playTTS()">🔊 ทดสอบฟังเสียง (ระบบสะกดคำจะทำงานอัตโนมัติ)</button>
+    </div>
+    <div id="status"></div>
+  </div>
+
+  <div class="card">
+    <h2>📖 ระบบสะกดคำอ่านให้ถูกต้อง <span id="ruleCount" class="count-pill">0 คำ</span></h2>
+    <p>แก้คำที่ Edge TTS มักอ่านผิด โดยแทนที่ด้วยคำสะกดที่ออกเสียงตรงตามต้องการ (เช่น "เพลา" อ่านเป็น "พเลา")</p>
+    
+    <div class="rule-form">
+      <input id="wordInput" type="text" placeholder="คำเดิม (เช่น เพลา)" />
+      <input id="replInput" type="text" placeholder="สะกดแก้เสียง (เช่น พเลา)" />
+      <button onclick="addRule()">➕ บันทึก</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>คำเดิม</th>
+          <th>สะกดแก้เสียงอ่าน</th>
+          <th style="text-align: right;">การจัดการ</th>
+        </tr>
+      </thead>
+      <tbody id="ruleTableBody">
+        <tr><td colspan="3" style="text-align:center; color:#64748b;">กำลังโหลดรายการคำ...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+let currentRules = {{}};
+
+async function loadRules() {{
+  try {{
+    const res = await fetch('/edge-tts/pronunciations');
+    currentRules = await res.json();
+    renderRules();
+  }} catch(e) {{
+    document.getElementById('ruleTableBody').innerHTML = '<tr><td colspan="3" style="text-align:center; color:#ef4444;">โหลดคำอ่านล้มเหลว</td></tr>';
+  }}
+}}
+
+function renderRules() {{
+  const tbody = document.getElementById('ruleTableBody');
+  const countEl = document.getElementById('ruleCount');
+  const keys = Object.keys(currentRules);
+  countEl.textContent = keys.length + ' คำ';
+
+  if (keys.length === 0) {{
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#64748b;">ยังไม่มีการตั้งค่าคำอ่าน</td></tr>';
+    return;
+  }}
+
+  tbody.innerHTML = keys.map(word => {{
+    const repl = currentRules[word];
+    return `<tr>
+      <td><code>${{word}}</code></td>
+      <td><code class="repl">${{repl}}</code></td>
+      <td class="actions-cell">
+        <button class="btn-secondary" onclick="testSingleWord('${{word}}')">🔊 ฟัง</button>
+        <button class="btn-danger" onclick="deleteRule('${{word}}')">🗑️ ลบ</button>
+      </td>
+    </tr>`;
+  }}).join('');
+}}
+
+async function addRule() {{
+  const word = document.getElementById('wordInput').value.trim();
+  const repl = document.getElementById('replInput').value.trim();
+  if (!word || !repl) {{
+    alert('กรุณากรอกทั้งคำเดิม และคำสะกดแก้เสียง');
+    return;
+  }}
+  try {{
+    const res = await fetch('/edge-tts/pronunciations', {{
+      method: 'POST',
+      headers: {{ 'Content-Type': 'application/json' }},
+      body: JSON.stringify({{ action: 'add', word, replace: repl }})
+    }});
+    const data = await res.json();
+    if (data.success) {{
+      currentRules = data.rules;
+      renderRules();
+      document.getElementById('wordInput').value = '';
+      document.getElementById('replInput').value = '';
+    }}
+  }} catch(e) {{
+    alert('บันทึกล้มเหลว: ' + e.message);
+  }}
+}}
+
+async function deleteRule(word) {{
+  if (!confirm('ต้องการลบคำว่า "' + word + '" ออกจากพจนานุกรมใช่หรือไม่?')) return;
+  try {{
+    const res = await fetch('/edge-tts/pronunciations', {{
+      method: 'POST',
+      headers: {{ 'Content-Type': 'application/json' }},
+      body: JSON.stringify({{ action: 'delete', word }})
+    }});
+    const data = await res.json();
+    if (data.success) {{
+      currentRules = data.rules;
+      renderRules();
+    }}
+  }} catch(e) {{
+    alert('ลบล้มเหลว: ' + e.message);
+  }}
+}}
+
+async function testSingleWord(word) {{
+  document.getElementById('txt').value = word;
+  playTTS();
+}}
+
+async function playTTS() {{
+  const btn = document.getElementById('btn');
+  const status = document.getElementById('status');
+  const text = document.getElementById('txt').value.trim();
+  if (!text) return;
+  btn.disabled = true;
+  status.textContent = '⏳ กำลังสังเคราะห์เสียง...';
+  try {{
+    const res = await fetch('/edge-tts', {{
+      method: 'POST',
+      headers: {{ 'Content-Type': 'application/json' }},
+      body: JSON.stringify({{ text }})
+    }});
+    const data = await res.json();
+    if (data.success && data.audioBase64) {{
+      status.textContent = '▶️ กำลังเล่นเสียง...';
+      const audio = new Audio('data:audio/mp3;base64,' + data.audioBase64);
+      audio.onended = () => {{ status.textContent = '✅ เล่นเสร็จสิ้น'; btn.disabled = false; }};
+      audio.onerror = () => {{ status.textContent = '❌ เล่นเสียงล้มเหลว'; btn.disabled = false; }};
+      await audio.play();
+    }} else {{
+      status.textContent = '❌ ผิดพลาด: ' + (data.error || 'ไม่ได้รับเสียง');
+      btn.disabled = false;
+    }}
+  }} catch (e) {{
+    status.textContent = '❌ การเชื่อมต่อผิดพลาด: ' + e.message;
+    btn.disabled = false;
+  }}
+}}
+
+loadRules();
+</script>
+</body>
+</html>"""
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(html.encode('utf-8'))
+            return
+
         return super().do_GET()
 
     def do_POST(self):
         parsed_url = urlparse(self.path)
+        if parsed_url.path == '/edge-tts/pronunciations':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
+            try:
+                data = json.loads(post_data.decode('utf-8'))
+                action = data.get('action', 'add')
+                word = str(data.get('word', '')).strip()
+                rules = load_pronunciation_dict()
+                if action == 'delete':
+                    if word in rules:
+                        del rules[word]
+                        save_pronunciation_dict(rules)
+                elif action == 'add':
+                    replace_with = str(data.get('replace', '')).strip()
+                    if word and replace_with:
+                        rules[word] = replace_with
+                        save_pronunciation_dict(rules)
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json; charset=utf-8')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": True, "rules": rules}, ensure_ascii=False).encode('utf-8'))
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode('utf-8'))
+            return
+
         if parsed_url.path == '/edge-tts':
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
             try:
                 data = json.loads(post_data.decode('utf-8'))
                 text = re.sub(r'[\u200b\ufeff\u00ad]', '', str(data.get('text', '')))
-                text = text.replace('ยักษ์', 'ยัก')
+                text = apply_pronunciation_rules(text)
                 text = re.sub(r'\s+', ' ', text).strip()
                 if not text:
                     raise ValueError('Missing text')
