@@ -451,6 +451,63 @@
             display: block;
         }
 
+        /* PDF Page Navigation */
+        .pdf-page-nav {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 50px;
+            padding: 4px 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 110;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+        }
+
+        .pdf-page-nav.hidden {
+            display: none !important;
+        }
+
+        .pdf-nav-btn {
+            background: rgba(99, 102, 241, 0.25);
+            border: 1px solid rgba(99, 102, 241, 0.5);
+            color: #cbd5e1;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.72rem;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .pdf-nav-btn:hover:not(:disabled) {
+            background: #6366f1;
+            color: #ffffff;
+            transform: scale(1.08);
+        }
+
+        .pdf-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .pdf-page-indicator {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #f1f5f9;
+            white-space: nowrap;
+            user-select: none;
+        }
+
         .protection-overlay {
             position: absolute;
             inset: 0;
@@ -1404,6 +1461,13 @@
                         <div class="watermark-overlay" id="watermark-overlay"></div>
                     </div>
 
+                    <!-- PDF Page Navigation Controls -->
+                    <div id="pdf-page-nav" class="pdf-page-nav hidden">
+                        <button type="button" class="pdf-nav-btn" id="pdf-prev-btn" onclick="changePdfPage(-1)" title="หน้าก่อนหน้า">◀</button>
+                        <span class="pdf-page-indicator" id="pdf-page-indicator">หน้า 1 / 1</span>
+                        <button type="button" class="pdf-nav-btn" id="pdf-next-btn" onclick="changePdfPage(1)" title="หน้าถัดไป">▶</button>
+                    </div>
+
                     <!-- Protection Overlay -->
                     <div class="protection-overlay" id="protection-overlay">
                         <div class="protection-message">
@@ -1700,6 +1764,14 @@
         let _rawDownloadUrl = null;
         let _cleanBlobUrl = null;
         window.__downloadUrl = null; // ปิดกั้นไม่ให้เข้าถึง URL ไฟล์ตรงผ่าน window object ก่อนจ่ายเงิน
+
+        // ตัวแปรสถานะเอกสาร PDF
+        let _isPdfMode = false;
+        let _pdfDoc = null;
+        let _currentPdfPage = 1;
+        let _pdfTotalPages = 1;
+        let _pdfCleanPreviewUrl = null;
+        let _isRenderingPage = false;
 
         // Elements
         const imageContainer = document.getElementById('image-container');
@@ -2197,8 +2269,22 @@
                     canvas.width = w;
                     canvas.height = h;
 
-                    // 1. วาดรูปภาพลงบน Canvas ปรับสเกลให้ปลอดภัยและส่งออกเป็น Data URL
+                    // 1. วาดรูปภาพลงบน Canvas ปรับสเกลให้ปลอดภัย
                     ctx.drawImage(imgSource, 0, 0, w, h);
+
+                    // 2. ฝังลายน้ำข้อความทะแยงมุมแน่นหนาลงในเนื้อพิกเซลโดยตรง (Hard Watermark)
+                    ctx.save();
+                    ctx.translate(w / 2, h / 2);
+                    ctx.rotate(-28 * Math.PI / 180);
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.22)';
+                    const fontSize = Math.max(16, Math.round(w / 24));
+                    ctx.font = `bold ${fontSize}px Prompt, sans-serif`;
+                    ctx.textAlign = 'center';
+                    const stepY = Math.max(70, Math.round(h / 7));
+                    for (let y = -h * 1.2; y <= h * 1.2; y += stepY) {
+                        ctx.fillText('🔒 ตัวอย่างเอกสารก่อนชำระเงิน • PRIVATE SEND 🔒', 0, y);
+                    }
+                    ctx.restore();
 
                     // ส่งออกเป็น Data URL (JPEG คุณภาพ 0.72) เพื่อไม่ให้แสดง URL ไฟล์จริงใน DOM
                     const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
@@ -2210,18 +2296,190 @@
             });
         }
 
-        // ดึง Blob อย่างปลอดภัยผ่าน Direct XHR หรือ CORS Proxies
-        async function fetchImageBlobWithFallbacks(url) {
+        // แปลง Blob เป็น ArrayBuffer เพื่อความเข้ากันได้ 100% กับทุกเบราว์เซอร์
+        function blobToArrayBuffer(blob) {
+            if (blob.arrayBuffer) {
+                return blob.arrayBuffer();
+            }
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(blob);
+            });
+        }
+
+        // ตรวจสอบว่าเป็นไฟล์ PDF หรือไม่
+        function isPdfCheck(targetUrl, bytes) {
+            if (fileType === 'pdf') return true;
+            if (typeof targetUrl === 'string') {
+                const clean = targetUrl.toLowerCase().split('?')[0];
+                if (clean.endsWith('.pdf') || clean.includes('.pdf')) return true;
+            }
+            if (bytes && bytes.length >= 4) {
+                // Magic bytes: %PDF -> 0x25, 0x50, 0x44, 0x46
+                if (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // เรนเดอร์หน้าเอกสาร PDF ออกมาเป็น Canvas และ Data URL
+        async function renderPdfPage(pageNum) {
+            if (!_pdfDoc) return null;
+            const page = await _pdfDoc.getPage(pageNum);
+
+            // คำนวณความละเอียดให้คมชัด
+            const unscaledViewport = page.getViewport({ scale: 1.0 });
+            let scale = 1.6;
+            if (unscaledViewport.width < 700) {
+                scale = 1200 / unscaledViewport.width;
+            } else if (unscaledViewport.width > 1600) {
+                scale = 1600 / unscaledViewport.width;
+            }
+            if (unscaledViewport.height * scale > 2400) {
+                scale = 2400 / unscaledViewport.height;
+            }
+
+            const viewport = page.getViewport({ scale: scale });
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(viewport.width);
+            canvas.height = Math.round(viewport.height);
+            const ctx = canvas.getContext('2d');
+
+            // เติมพื้นหลังสีขาวเสมอ เนื่องจากหน้า PDF มักโปร่งใส
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            await page.render({
+                canvasContext: ctx,
+                viewport: viewport
+            }).promise;
+
+            const cleanDataUrl = canvas.toDataURL('image/jpeg', 0.90);
+            return { canvas, cleanDataUrl };
+        }
+
+        // อัปเดตแถบควบคุมหน้าเอกสาร PDF
+        function updatePdfNavUI() {
+            const nav = document.getElementById('pdf-page-nav');
+            const indicator = document.getElementById('pdf-page-indicator');
+            const prevBtn = document.getElementById('pdf-prev-btn');
+            const nextBtn = document.getElementById('pdf-next-btn');
+            if (!nav) return;
+
+            if (_isPdfMode && _pdfDoc && _pdfDoc.numPages > 1) {
+                nav.classList.remove('hidden');
+                if (indicator) indicator.textContent = `หน้า ${_currentPdfPage} / ${_pdfDoc.numPages}`;
+                if (prevBtn) prevBtn.disabled = _currentPdfPage <= 1 || _isRenderingPage;
+                if (nextBtn) nextBtn.disabled = _currentPdfPage >= _pdfDoc.numPages || _isRenderingPage;
+            } else {
+                nav.classList.add('hidden');
+            }
+        }
+
+        // ฟังก์ชันเปลี่ยนหน้าเอกสาร PDF
+        async function changePdfPage(delta) {
+            if (!_pdfDoc || _isRenderingPage) return;
+            const targetPage = _currentPdfPage + delta;
+            if (targetPage < 1 || targetPage > _pdfDoc.numPages) return;
+
+            _isRenderingPage = true;
+            _currentPdfPage = targetPage;
+            updatePdfNavUI();
+
             try {
-                const blob = await downloadWithProgress(url, 'กำลังโหลดรูปภาพ...', (p) => {
-                    updateDownloadProgress('กำลังโหลดรูปภาพ...', p);
+                const renderRes = await renderPdfPage(_currentPdfPage);
+                if (renderRes) {
+                    _pdfCleanPreviewUrl = renderRes.cleanDataUrl;
+                    const isNeedProtection = price > 0 && !__isPaid;
+                    if (isNeedProtection) {
+                        const watermarkedUrl = await bakeWatermarkToCanvas(renderRes.canvas);
+                        previewImage.src = watermarkedUrl || renderRes.cleanDataUrl;
+                        syncMobileThumb(watermarkedUrl || renderRes.cleanDataUrl);
+                    } else {
+                        previewImage.src = renderRes.cleanDataUrl;
+                        syncMobileThumb(renderRes.cleanDataUrl);
+                    }
+                }
+            } catch (err) {
+                console.error('Change PDF page error:', err);
+            } finally {
+                _isRenderingPage = false;
+                updatePdfNavUI();
+            }
+        }
+
+        // ประมวลผลและแสดงตัวอย่าง PDF
+        async function processAndDisplayPdf(pdfSource) {
+            _isPdfMode = true;
+            updateDownloadProgress('กำลังประมวลผลเอกสาร PDF...', 85);
+
+            let loadingTask;
+            if (pdfSource instanceof ArrayBuffer || pdfSource instanceof Uint8Array) {
+                loadingTask = pdfjsLib.getDocument({
+                    data: pdfSource,
+                    cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+                    cMapPacked: true
+                });
+            } else {
+                loadingTask = pdfjsLib.getDocument({
+                    url: pdfSource,
+                    cMapUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/',
+                    cMapPacked: true
+                });
+            }
+
+            _pdfDoc = await loadingTask.promise;
+            _pdfTotalPages = _pdfDoc.numPages;
+            _currentPdfPage = 1;
+
+            // ปรับข้อความบนแถบมือถือ
+            const mobileThumbTitle = document.querySelector('#mobile-preview-strip .title');
+            if (mobileThumbTitle) {
+                mobileThumbTitle.textContent = `📄 เอกสาร PDF (${_pdfTotalPages} หน้า)`;
+            }
+
+            // เรนเดอร์หน้าแรก
+            const renderRes = await renderPdfPage(1);
+            if (!renderRes) throw new Error('ไม่สามารถเรนเดอร์หน้าเอกสารได้');
+
+            _pdfCleanPreviewUrl = renderRes.cleanDataUrl;
+
+            const isNeedProtection = price > 0 && !__isPaid;
+            if (isNeedProtection) {
+                const watermarkedUrl = await bakeWatermarkToCanvas(renderRes.canvas);
+                previewImage.src = watermarkedUrl || renderRes.cleanDataUrl;
+                syncMobileThumb(watermarkedUrl || renderRes.cleanDataUrl);
+                applyProtection();
+            } else {
+                previewImage.src = renderRes.cleanDataUrl;
+                syncMobileThumb(renderRes.cleanDataUrl);
+                applyProtection();
+            }
+
+            loadingText.classList.add('hidden');
+            previewImage.classList.remove('hidden');
+            updatePdfNavUI();
+        }
+
+        // ดึง Blob อย่างปลอดภัยผ่าน Direct XHR หรือ CORS Proxies
+        async function fetchImageBlobWithFallbacks(url, isPdf = false) {
+            try {
+                const blob = await downloadWithProgress(url, isPdf ? 'กำลังโหลดเอกสาร PDF...' : 'กำลังโหลดรูปภาพ...', (p) => {
+                    updateDownloadProgress(isPdf ? 'กำลังโหลดเอกสาร PDF...' : 'กำลังโหลดรูปภาพ...', p);
                 });
                 if (blob && blob.size > 0) return blob;
             } catch (err) {
                 console.warn('Direct XHR failed, trying secure CORS proxies...', err);
             }
 
-            const proxySources = [
+            const proxySources = isPdf ? [
+                `https://corsproxy.io/?${encodeURIComponent(url)}`,
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`
+            ] : [
                 `https://images.weserv.nl/?url=${encodeURIComponent(url)}`,
                 `https://corsproxy.io/?${encodeURIComponent(url)}`,
                 `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
@@ -2233,7 +2491,7 @@
                     const res = await fetch(proxySources[i]);
                     if (res.ok) {
                         const blob = await res.blob();
-                        if (blob && blob.size > 0) {
+                        if (blob && blob.size > 0 && !blob.type.includes('text/html')) {
                             updateDownloadProgress('ประมวลผลเสร็จสิ้น', 100);
                             return blob;
                         }
@@ -2244,15 +2502,40 @@
             return null;
         }
 
-        // โหลดรูปภาพตัวอย่างแบบเข้ารหัสและป้องกันการ Inspect ขโมย URL
+        // โหลดรูปภาพหรือเอกสาร PDF ตัวอย่างแบบเข้ารหัสและป้องกันการ Inspect ขโมย URL
         async function loadSecureImagePreview(previewUrl) {
             const isNeedProtection = price > 0 && !__isPaid;
+            const isLikelyPdf = isPdfCheck(previewUrl);
 
-            const blob = await fetchImageBlobWithFallbacks(previewUrl);
+            const blob = await fetchImageBlobWithFallbacks(previewUrl, isLikelyPdf);
 
             if (blob) {
-                const blobUrl = URL.createObjectURL(blob);
+                // ตรวจสอบ Magic Bytes ของ PDF เพื่อความแม่นยำ 100%
+                let isDetectedPdf = isLikelyPdf || blob.type === 'application/pdf';
+                if (!isDetectedPdf && blob.size >= 4) {
+                    try {
+                        const headSlice = await blob.slice(0, 4).arrayBuffer();
+                        const headBytes = new Uint8Array(headSlice);
+                        if (headBytes[0] === 0x25 && headBytes[1] === 0x50 && headBytes[2] === 0x44 && headBytes[3] === 0x46) {
+                            isDetectedPdf = true;
+                        }
+                    } catch (e) { }
+                }
+
+                const mimeType = isDetectedPdf ? 'application/pdf' : (blob.type || 'image/jpeg');
+                const typedBlob = new Blob([blob], { type: mimeType });
+                const blobUrl = URL.createObjectURL(typedBlob);
                 _cleanBlobUrl = blobUrl;
+
+                if (isDetectedPdf) {
+                    try {
+                        const arrayBuffer = await blobToArrayBuffer(typedBlob);
+                        await processAndDisplayPdf(arrayBuffer);
+                        return;
+                    } catch (pdfErr) {
+                        console.error('PDF render error from blob:', pdfErr);
+                    }
+                }
 
                 if (isNeedProtection) {
                     const tempImg = new Image();
@@ -2283,7 +2566,20 @@
                     applyProtection();
                 }
             } else {
-                // หากดึง Blob ไม่ได้ ดึงผ่าน images.weserv.nl proxy ที่มี CORS เปิดตลอด
+                // หากดึง Blob ไม่ได้
+                if (isLikelyPdf) {
+                    try {
+                        const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(previewUrl);
+                        await processAndDisplayPdf(proxyUrl);
+                        return;
+                    } catch (directPdfErr) {
+                        console.error('Direct PDF proxy load error:', directPdfErr);
+                        showError('โหลดตัวอย่าง PDF ไม่สำเร็จ', 'ไม่สามารถเชื่อมต่อไฟล์จากเซิร์ฟเวอร์ปลายทางได้');
+                        return;
+                    }
+                }
+
+                // รูปภาพ: ดึงผ่าน images.weserv.nl proxy ที่มี CORS เปิดตลอด
                 const proxySafeUrl = `https://images.weserv.nl/?url=${encodeURIComponent(previewUrl)}&w=1200&q=65`;
                 if (isNeedProtection) {
                     const tempImg = new Image();
@@ -2354,36 +2650,54 @@
                 downloadWithProgress(firebaseUrl, 'กำลังโหลดข้อมูล...', (percent) => {
                     updateDownloadProgress('กำลังโหลดข้อมูล...', percent);
                 })
-                    .then(data => {
+                    .then(async data => {
                         if (data && data.data) {
-                            updateDownloadProgress('กำลังประมวลผล...', 100);
+                            updateDownloadProgress('กำลังประมวลผล...', 70);
                             const binary = atob(data.data);
                             const bytes = new Uint8Array(binary.length);
                             for (let i = 0; i < binary.length; i++) {
                                 bytes[i] = binary.charCodeAt(i);
                             }
-                            const blob = new Blob([bytes]);
+                            const isPdfFile = isPdfCheck(fileUrl, bytes);
+                            const mimeType = isPdfFile ? 'application/pdf' : 'image/jpeg';
+                            const blob = new Blob([bytes], { type: mimeType });
                             const blobUrl = URL.createObjectURL(blob);
                             _cleanBlobUrl = blobUrl;
 
-                            if (price > 0 && !__isPaid) {
-                                const tempImg = new Image();
-                                tempImg.onload = async function () {
-                                    const watermarkedDataUrl = await bakeWatermarkToCanvas(tempImg);
-                                    previewImage.src = watermarkedDataUrl || blobUrl;
-                                    syncMobileThumb(watermarkedDataUrl || blobUrl);
+                            if (isPdfFile) {
+                                try {
+                                    await processAndDisplayPdf(bytes.buffer);
+                                } catch (pdfErr) {
+                                    console.error('Firebase PDF display error:', pdfErr);
+                                    showError('แสดงผล PDF ไม่สำเร็จ', 'ไม่สามารถอ่านโครงสร้างเอกสารได้');
+                                }
+                            } else {
+                                if (price > 0 && !__isPaid) {
+                                    const tempImg = new Image();
+                                    tempImg.onload = async function () {
+                                        const watermarkedDataUrl = await bakeWatermarkToCanvas(tempImg);
+                                        previewImage.src = watermarkedDataUrl || blobUrl;
+                                        syncMobileThumb(watermarkedDataUrl || blobUrl);
+                                        loadingText.classList.add('hidden');
+                                        previewImage.classList.remove('hidden');
+                                        applyProtection();
+                                    };
+                                    tempImg.onerror = function () {
+                                        previewImage.src = blobUrl;
+                                        syncMobileThumb(blobUrl);
+                                        loadingText.classList.add('hidden');
+                                        previewImage.classList.remove('hidden');
+                                        applyProtection();
+                                    };
+                                    tempImg.src = blobUrl;
+                                } else {
+                                    previewImage.src = blobUrl;
+                                    window.__downloadUrl = blobUrl;
                                     loadingText.classList.add('hidden');
                                     previewImage.classList.remove('hidden');
+                                    syncMobileThumb(blobUrl);
                                     applyProtection();
-                                };
-                                tempImg.src = blobUrl;
-                            } else {
-                                previewImage.src = blobUrl;
-                                window.__downloadUrl = blobUrl;
-                                loadingText.classList.add('hidden');
-                                previewImage.classList.remove('hidden');
-                                syncMobileThumb(blobUrl);
-                                applyProtection();
+                                }
                             }
                         } else {
                             showError('โหลดไฟล์ไม่สำเร็จ', 'ไม่พบข้อมูลใน Firebase');
@@ -2785,7 +3099,10 @@
             window.__downloadUrl = _rawDownloadUrl || _rawFileUrl || fileUrl;
 
             // นำภาพต้นฉบับคมชัด ไร้ลายน้ำ กลับมาแสดงผลแทนภาพตัวอย่าง
-            if (_cleanBlobUrl) {
+            if (_isPdfMode && _pdfCleanPreviewUrl) {
+                previewImage.src = _pdfCleanPreviewUrl;
+                syncMobileThumb(_pdfCleanPreviewUrl);
+            } else if (_cleanBlobUrl) {
                 previewImage.src = _cleanBlobUrl;
                 syncMobileThumb(_cleanBlobUrl);
             } else if (window.__downloadUrl) {
@@ -3012,7 +3329,7 @@
                     if (lastPart && lastPart.includes('.')) {
                         filename = lastPart;
                     } else {
-                        filename = 'file.' + (fileType === 'pdf' ? 'pdf' : 'jpg');
+                        filename = 'file.' + ((fileType === 'pdf' || _isPdfMode) ? 'pdf' : 'jpg');
                     }
 
                     a.download = filename;
