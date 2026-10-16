@@ -2717,8 +2717,9 @@ async function pauseOnError(isDebugPause, message) {
     '--disable-blink-features=AutomationControlled',
     '--disable-dev-shm-usage',
     '--no-sandbox',
-    '--disable-web-security',
-    '--disable-features=CalculateNativeWinOcclusion,IsolateOrigins,site-per-process',
+    // NOTE: ห้ามใส่ --disable-web-security เพราะ Gemini ใช้ SameSite cookies + fetch credentials
+    // ถ้าปิด web security จะทำให้ Gemini ส่ง prompt ไม่ผ่านและขึ้น Error (1)
+    '--disable-features=CalculateNativeWinOcclusion',
     `--load-extension=${extensionPath}`,
     `--disable-extensions-except=${extensionPath}`,
     '--window-size=1280,800',
