@@ -1449,23 +1449,49 @@ def process_bigdata_video_task(video_url, start_sec, end_sec, text, copy_to_desk
 # --- TTS PRONUNCIATION DICTIONARY SYSTEM ---
 PRONUNCIATION_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tts_pronunciation.json")
 
-def load_pronunciation_dict():
+DEFAULT_PRONUNCIATION_CONFIG = {
+    "words": {
+        "1:20": "1 ต่อ 20",
+        "เพลา": "พเลา",
+        "ยักษ์": "ยัก",
+        "กลไก": "กนไก",
+        "ขัดสมาธิ": "ขัดสะหมาด"
+    },
+    "patterns": [
+        {
+            "id": "ratio_colon",
+            "name": "อัตราส่วน/สัดส่วน 1:20 -> 1 ต่อ 20",
+            "pattern": r"(\d+)\s*:\s*(\d+)(?!\d)(?!\s*(?:น\.|นาฬิกา))",
+            "replace": r"\1 ต่อ \2",
+            "enabled": True
+        }
+    ]
+}
+
+def load_pronunciation_config():
     if os.path.exists(PRONUNCIATION_FILE):
         try:
             with open(PRONUNCIATION_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 if isinstance(data, dict):
-                    return data
+                    if "words" in data and isinstance(data["words"], dict):
+                        if "patterns" not in data or not isinstance(data["patterns"], list):
+                            data["patterns"] = list(DEFAULT_PRONUNCIATION_CONFIG["patterns"])
+                        return data
+                    else:
+                        # Convert legacy flat dictionary to structured config
+                        converted = {
+                            "words": data,
+                            "patterns": list(DEFAULT_PRONUNCIATION_CONFIG["patterns"])
+                        }
+                        save_pronunciation_config(converted)
+                        return converted
         except Exception as e:
             print(f"[Watcher] Error loading tts_pronunciation.json: {e}")
-    default_dict = {
-        "เพลา": "พเลา",
-        "ยักษ์": "ยัก"
-    }
-    save_pronunciation_dict(default_dict)
-    return default_dict
+    save_pronunciation_config(DEFAULT_PRONUNCIATION_CONFIG)
+    return DEFAULT_PRONUNCIATION_CONFIG
 
-def save_pronunciation_dict(data):
+def save_pronunciation_config(data):
     try:
         with open(PRONUNCIATION_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
@@ -1474,16 +1500,40 @@ def save_pronunciation_dict(data):
         print(f"[Watcher] Error saving tts_pronunciation.json: {e}")
         return False
 
+def load_pronunciation_dict():
+    config = load_pronunciation_config()
+    return config.get("words", {})
+
+def save_pronunciation_dict(words_dict):
+    config = load_pronunciation_config()
+    config["words"] = words_dict
+    return save_pronunciation_config(config)
+
 def apply_pronunciation_rules(text):
     if not text:
         return text
-    rules = load_pronunciation_dict()
-    # Sort keys by length descending so longer words/phrases match first
-    sorted_keys = sorted(rules.keys(), key=len, reverse=True)
+    config = load_pronunciation_config()
+
+    # 1. Apply regex patterns first (e.g. 1:20 -> 1 ต่อ 20)
+    patterns = config.get("patterns", [])
+    for pat in patterns:
+        if pat.get("enabled", True):
+            p_str = pat.get("pattern", "")
+            r_str = pat.get("replace", "")
+            if p_str and r_str is not None:
+                try:
+                    text = re.sub(p_str, r_str, text)
+                except Exception as pe:
+                    print(f"[Watcher] Regex pattern error ({p_str}): {pe}")
+
+    # 2. Apply word replacements (sorted descending by length)
+    words = config.get("words", {})
+    sorted_keys = sorted(words.keys(), key=len, reverse=True)
     for orig in sorted_keys:
-        repl = rules[orig]
+        repl = words[orig]
         if orig and orig in text:
             text = text.replace(orig, repl)
+
     return text
 
 # --- SERVER LOGIC ---
@@ -1704,7 +1754,7 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-type', 'application/json; charset=utf-8')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps(load_pronunciation_dict(), ensure_ascii=False).encode('utf-8'))
+            self.wfile.write(json.dumps(load_pronunciation_config(), ensure_ascii=False).encode('utf-8'))
             return
 
         if parsed_url.path == '/edge-tts':
@@ -1715,16 +1765,18 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Edge TTS Service & Pronunciation Manager</title>
+<title>Edge TTS Service & Central Pronunciation Manager</title>
 <style>
   * {{ box-sizing: border-box; }}
   body {{ font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; margin: 0; padding: 2rem 1rem; }}
-  .container {{ width: 100%; max-width: 640px; display: flex; flex-direction: column; gap: 1.5rem; }}
+  .container {{ width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 1.5rem; }}
   .card {{ background: #1e293b; padding: 1.75rem; border-radius: 1rem; border: 1px solid #334155; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }}
-  .badge {{ display: inline-flex; align-items: center; gap: 0.5rem; background: #064e3b; color: #34d399; padding: 0.35rem 0.85rem; border-radius: 9999px; font-weight: 600; font-size: 0.85rem; margin-bottom: 1rem; }}
+  .badge-bar {{ display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }}
+  .badge {{ display: inline-flex; align-items: center; gap: 0.4rem; background: #064e3b; color: #34d399; padding: 0.35rem 0.75rem; border-radius: 9999px; font-weight: 600; font-size: 0.8rem; }}
   .badge-dot {{ width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; }}
+  .badge-info {{ background: #0f365c; color: #38bdf8; }}
   h1 {{ font-size: 1.4rem; margin: 0 0 0.5rem 0; color: #f1f5f9; }}
-  h2 {{ font-size: 1.15rem; margin: 0 0 1rem 0; color: #38bdf8; display: flex; align-items: center; gap: 0.5rem; }}
+  h2 {{ font-size: 1.15rem; margin: 0 0 1rem 0; color: #38bdf8; display: flex; align-items: center; justify-content: space-between; }}
   p {{ color: #94a3b8; font-size: 0.9rem; margin: 0 0 1.25rem 0; line-height: 1.5; }}
   input {{ width: 100%; padding: 0.75rem 1rem; background: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; color: #fff; font-size: 0.95rem; outline: none; transition: border-color 0.2s; }}
   input:focus {{ border-color: #38bdf8; }}
@@ -1735,13 +1787,18 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
   .btn-danger:hover {{ background: #b91c1c; }}
   .btn-secondary {{ background: #334155; padding: 0.4rem 0.75rem; font-size: 0.8rem; }}
   .btn-secondary:hover {{ background: #475569; }}
+  .btn-toggle {{ padding: 0.35rem 0.7rem; font-size: 0.8rem; border-radius: 0.4rem; }}
+  .btn-toggle.on {{ background: #065f46; color: #6ee7b7; }}
+  .btn-toggle.off {{ background: #334155; color: #94a3b8; }}
   #status {{ margin-top: 0.75rem; font-size: 0.85rem; color: #38bdf8; min-height: 1.25rem; }}
+  .preview-box {{ background: #0b1120; border: 1px solid #1e293b; border-radius: 0.5rem; padding: 0.75rem 1rem; margin-top: 0.75rem; font-size: 0.88rem; }}
+  .preview-line {{ margin: 0.25rem 0; }}
   .rule-form {{ display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.75rem; margin-bottom: 1.25rem; }}
   @media (max-width: 520px) {{ .rule-form {{ grid-template-columns: 1fr; }} }}
   table {{ width: 100%; border-collapse: collapse; margin-top: 0.5rem; }}
   th, td {{ padding: 0.75rem 0.85rem; text-align: left; border-bottom: 1px solid #334155; font-size: 0.9rem; }}
   th {{ color: #94a3b8; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }}
-  td code {{ background: #0f172a; padding: 0.2rem 0.45rem; border-radius: 0.25rem; color: #f472b6; font-size: 0.95em; }}
+  td code {{ background: #0f172a; padding: 0.2rem 0.45rem; border-radius: 0.25rem; color: #f472b6; font-size: 0.95em; word-break: break-all; }}
   td code.repl {{ color: #34d399; }}
   .actions-cell {{ display: flex; gap: 0.5rem; justify-content: flex-end; }}
   .count-pill {{ background: #334155; color: #cbd5e1; padding: 0.15rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; }}
@@ -1750,24 +1807,50 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
 <body>
 <div class="container">
   <div class="card">
-    <div class="badge"><span class="badge-dot"></span> Edge TTS Online (v{v})</div>
-    <h1>ระบบสังเคราะห์เสียง Edge TTS</h1>
-    <p>แปลงข้อความเป็นเสียงสำหรับ Chrome Addon และระบบหลังบ้าน พร้อมระบบแก้คำอ่านภาษาไทยอัตโนมัติ</p>
+    <div class="badge-bar">
+      <span class="badge"><span class="badge-dot"></span> Edge TTS Online (v{v})</span>
+      <span class="badge badge-info">🔗 เชื่อมต่อ: Chrome Addon | vdoAI | ebookAI</span>
+    </div>
+    <h1>ระบบสังเคราะห์เสียง & ฐานข้อมูลคำอ่านกลาง</h1>
+    <p>แก้คำอ่านและกฎตัวเลข (เช่น <code>1:20</code> เป็น <code>1 ต่อ 20</code>) ที่จุดนี้จุดเดียว จะมีผลทันทีกับทั้ง Chrome Addon (Gemini), vdoAI และ ebookAI</p>
     <div style="display: flex; gap: 0.75rem; flex-direction: column;">
-      <input id="txt" type="text" value="เพลาล้อหมุนเร็วมาก และยักษ์ตัวใหญ่" placeholder="พิมพ์ข้อความที่ต้องการทดสอบเสียง..." />
-      <button id="btn" onclick="playTTS()">🔊 ทดสอบฟังเสียง (ระบบสะกดคำจะทำงานอัตโนมัติ)</button>
+      <input id="txt" type="text" value="อัตราส่วน 1:20 และ ยักษ์ใหญ่ หมุนเพลาเร็ว" placeholder="พิมพ์ข้อความที่ต้องการทดสอบเสียง..." />
+      <button id="btn" onclick="playTTS()">🔊 ทดสอบฟังเสียง (ผ่านระบบแปลงเสียงอัตโนมัติ)</button>
     </div>
     <div id="status"></div>
+    <div id="previewBox" class="preview-box" style="display: none;">
+      <div class="preview-line" id="previewOrig" style="color: #94a3b8;"></div>
+      <div class="preview-line" id="previewTrans" style="color: #38bdf8; font-weight: 600;"></div>
+    </div>
   </div>
 
+  <!-- PATTERNS CARD -->
   <div class="card">
-    <h2>📖 ระบบสะกดคำอ่านให้ถูกต้อง <span id="ruleCount" class="count-pill">0 คำ</span></h2>
-    <p>แก้คำที่ Edge TTS มักอ่านผิด โดยแทนที่ด้วยคำสะกดที่ออกเสียงตรงตามต้องการ (เช่น "เพลา" อ่านเป็น "พเลา")</p>
+    <h2>⚡ กฎสัดส่วน & รูปแบบ Regex <span id="patCount" class="count-pill">0 กฎ</span></h2>
+    <p>กฎแปลงสัญลักษณ์หรือตัวเลขอัตโนมัติ เช่น แปลงสัดส่วน <code>1:20</code> เป็น <code>1 ต่อ 20</code> แต่ไม่กระทบเวลา (เช่น <code>10:30 น.</code>)</p>
+    <table>
+      <thead>
+        <tr>
+          <th>ชื่อกฎ / วัตถุประสงค์</th>
+          <th>Pattern -> แทนที่</th>
+          <th style="text-align: right;">สถานะ</th>
+        </tr>
+      </thead>
+      <tbody id="patternTableBody">
+        <tr><td colspan="3" style="text-align:center; color:#64748b;">กำลังโหลดรายการกฎ...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- WORDS CARD -->
+  <div class="card">
+    <h2>📖 พจนานุกรมคำอ่านเฉพาะ <span id="wordCount" class="count-pill">0 คำ</span></h2>
+    <p>คำอ่านเฉพาะที่ต้องการให้อ่านออกเสียงตรงตามสะกด (แก้ที่นี่มีผลกับทุกระบบ)</p>
     
     <div class="rule-form">
-      <input id="wordInput" type="text" placeholder="คำเดิม (เช่น เพลา)" />
-      <input id="replInput" type="text" placeholder="สะกดแก้เสียง (เช่น พเลา)" />
-      <button onclick="addRule()">➕ บันทึก</button>
+      <input id="wordInput" type="text" placeholder="คำเดิม (เช่น 1:20 หรือ เพลา)" />
+      <input id="replInput" type="text" placeholder="สะกดแก้เสียง (เช่น 1 ต่อ 20 หรือ พเลา)" />
+      <button onclick="addWord()">➕ บันทึก</button>
     </div>
 
     <table>
@@ -1786,12 +1869,13 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
 </div>
 
 <script>
-let currentRules = {{}};
+let currentConfig = {{ words: {{}}, patterns: [] }};
 
 async function loadRules() {{
   try {{
     const res = await fetch('/edge-tts/pronunciations');
-    currentRules = await res.json();
+    const data = await res.json();
+    currentConfig = data.words ? data : {{ words: data, patterns: [] }};
     renderRules();
   }} catch(e) {{
     document.getElementById('ruleTableBody').innerHTML = '<tr><td colspan="3" style="text-align:center; color:#ef4444;">โหลดคำอ่านล้มเหลว</td></tr>';
@@ -1799,30 +1883,52 @@ async function loadRules() {{
 }}
 
 function renderRules() {{
-  const tbody = document.getElementById('ruleTableBody');
-  const countEl = document.getElementById('ruleCount');
-  const keys = Object.keys(currentRules);
-  countEl.textContent = keys.length + ' คำ';
+  const words = currentConfig.words || {{}};
+  const patterns = currentConfig.patterns || [];
 
-  if (keys.length === 0) {{
-    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#64748b;">ยังไม่มีการตั้งค่าคำอ่าน</td></tr>';
-    return;
+  // 1. Render Words
+  const wordTbody = document.getElementById('ruleTableBody');
+  const wordCountEl = document.getElementById('wordCount');
+  const wordKeys = Object.keys(words);
+  wordCountEl.textContent = wordKeys.length + ' คำ';
+
+  if (wordKeys.length === 0) {{
+    wordTbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#64748b;">ยังไม่มีคำในพจนานุกรม</td></tr>';
+  }} else {{
+    wordTbody.innerHTML = wordKeys.map(word => {{
+      const repl = words[word];
+      return `<tr>
+        <td><code>${{word}}</code></td>
+        <td><code class="repl">${{repl}}</code></td>
+        <td class="actions-cell">
+          <button class="btn-secondary" onclick="testSingleWord('${{word}}')">🔊 ฟัง</button>
+          <button class="btn-danger" onclick="deleteWord('${{word}}')">🗑️ ลบ</button>
+        </td>
+      </tr>`;
+    }}).join('');
   }}
 
-  tbody.innerHTML = keys.map(word => {{
-    const repl = currentRules[word];
-    return `<tr>
-      <td><code>${{word}}</code></td>
-      <td><code class="repl">${{repl}}</code></td>
-      <td class="actions-cell">
-        <button class="btn-secondary" onclick="testSingleWord('${{word}}')">🔊 ฟัง</button>
-        <button class="btn-danger" onclick="deleteRule('${{word}}')">🗑️ ลบ</button>
-      </td>
-    </tr>`;
-  }}).join('');
+  // 2. Render Patterns
+  const patTbody = document.getElementById('patternTableBody');
+  const patCountEl = document.getElementById('patCount');
+  patCountEl.textContent = patterns.length + ' กฎ';
+
+  if (patterns.length === 0) {{
+    patTbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#64748b;">ยังไม่มีกฎ Pattern</td></tr>';
+  }} else {{
+    patTbody.innerHTML = patterns.map(p => {{
+      const isOn = p.enabled !== false;
+      const statusBtn = `<button class="btn-toggle ${{isOn ? 'on' : 'off'}}" onclick="togglePattern('${{p.id}}')">${{isOn ? '✅ ใช้งาน' : '⚪ ปิด'}}</button>`;
+      return `<tr>
+        <td><strong>${{p.name || p.id}}</strong></td>
+        <td><code>${{p.pattern}}</code> &rarr; <code class="repl">${{p.replace}}</code></td>
+        <td class="actions-cell">${{statusBtn}}</td>
+      </tr>`;
+    }}).join('');
+  }}
 }}
 
-async function addRule() {{
+async function addWord() {{
   const word = document.getElementById('wordInput').value.trim();
   const repl = document.getElementById('replInput').value.trim();
   if (!word || !repl) {{
@@ -1837,7 +1943,8 @@ async function addRule() {{
     }});
     const data = await res.json();
     if (data.success) {{
-      currentRules = data.rules;
+      currentConfig = data.config || currentConfig;
+      if (data.rules) currentConfig.words = data.rules;
       renderRules();
       document.getElementById('wordInput').value = '';
       document.getElementById('replInput').value = '';
@@ -1847,8 +1954,8 @@ async function addRule() {{
   }}
 }}
 
-async function deleteRule(word) {{
-  if (!confirm('ต้องการลบคำว่า "' + word + '" ออกจากพจนานุกรมใช่หรือไม่?')) return;
+async function deleteWord(word) {{
+  if (!confirm('ต้องการลบคำว่า "' + word + '" ออกจากฐานข้อมูลใช่หรือไม่?')) return;
   try {{
     const res = await fetch('/edge-tts/pronunciations', {{
       method: 'POST',
@@ -1857,11 +1964,29 @@ async function deleteRule(word) {{
     }});
     const data = await res.json();
     if (data.success) {{
-      currentRules = data.rules;
+      currentConfig = data.config || currentConfig;
+      if (data.rules) currentConfig.words = data.rules;
       renderRules();
     }}
   }} catch(e) {{
     alert('ลบล้มเหลว: ' + e.message);
+  }}
+}}
+
+async function togglePattern(id) {{
+  try {{
+    const res = await fetch('/edge-tts/pronunciations', {{
+      method: 'POST',
+      headers: {{ 'Content-Type': 'application/json' }},
+      body: JSON.stringify({{ action: 'toggle_pattern', id }})
+    }});
+    const data = await res.json();
+    if (data.success) {{
+      currentConfig = data.config || currentConfig;
+      renderRules();
+    }}
+  }} catch(e) {{
+    alert('สลับสถานะล้มเหลว: ' + e.message);
   }}
 }}
 
@@ -1873,10 +1998,11 @@ async function testSingleWord(word) {{
 async function playTTS() {{
   const btn = document.getElementById('btn');
   const status = document.getElementById('status');
+  const previewBox = document.getElementById('previewBox');
   const text = document.getElementById('txt').value.trim();
   if (!text) return;
   btn.disabled = true;
-  status.textContent = '⏳ กำลังสังเคราะห์เสียง...';
+  status.textContent = '⏳ กำลังสังเคราะห์เสียงผ่าน Edge TTS...';
   try {{
     const res = await fetch('/edge-tts', {{
       method: 'POST',
@@ -1886,8 +2012,13 @@ async function playTTS() {{
     const data = await res.json();
     if (data.success && data.audioBase64) {{
       status.textContent = '▶️ กำลังเล่นเสียง...';
+      if (data.transformedText) {{
+        previewBox.style.display = 'block';
+        document.getElementById('previewOrig').textContent = 'ข้อความเดิม: ' + text;
+        document.getElementById('previewTrans').textContent = 'ข้อความที่ออกเสียง: ' + data.transformedText;
+      }}
       const audio = new Audio('data:audio/mp3;base64,' + data.audioBase64);
-      audio.onended = () => {{ status.textContent = '✅ เล่นเสร็จสิ้น'; btn.disabled = false; }};
+      audio.onended = () => {{ status.textContent = '✅ สังเคราะห์และเล่นเสร็จสมบูรณ์'; btn.disabled = false; }};
       audio.onerror = () => {{ status.textContent = '❌ เล่นเสียงล้มเหลว'; btn.disabled = false; }};
       await audio.play();
     }} else {{
@@ -1921,22 +2052,51 @@ loadRules();
             try:
                 data = json.loads(post_data.decode('utf-8'))
                 action = data.get('action', 'add')
-                word = str(data.get('word', '')).strip()
-                rules = load_pronunciation_dict()
+                config = load_pronunciation_config()
+                words = config.get("words", {})
+                patterns = config.get("patterns", [])
+
                 if action == 'delete':
-                    if word in rules:
-                        del rules[word]
-                        save_pronunciation_dict(rules)
+                    word = str(data.get('word', '')).strip()
+                    if word in words:
+                        del words[word]
+                        config["words"] = words
+                        save_pronunciation_config(config)
                 elif action == 'add':
+                    word = str(data.get('word', '')).strip()
                     replace_with = str(data.get('replace', '')).strip()
                     if word and replace_with:
-                        rules[word] = replace_with
-                        save_pronunciation_dict(rules)
+                        words[word] = replace_with
+                        config["words"] = words
+                        save_pronunciation_config(config)
+                elif action == 'toggle_pattern':
+                    pat_id = str(data.get('id', '')).strip()
+                    for p in patterns:
+                        if p.get('id') == pat_id:
+                            p['enabled'] = not p.get('enabled', True)
+                            break
+                    config["patterns"] = patterns
+                    save_pronunciation_config(config)
+                elif action == 'add_pattern':
+                    p_str = str(data.get('pattern', '')).strip()
+                    r_str = str(data.get('replace', '')).strip()
+                    name_str = str(data.get('name', '')).strip()
+                    if p_str and r_str:
+                        patterns.append({
+                            "id": f"pat_{int(time.time())}",
+                            "name": name_str or p_str,
+                            "pattern": p_str,
+                            "replace": r_str,
+                            "enabled": True
+                        })
+                        config["patterns"] = patterns
+                        save_pronunciation_config(config)
+
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json; charset=utf-8')
                 self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
-                self.wfile.write(json.dumps({"success": True, "rules": rules}, ensure_ascii=False).encode('utf-8'))
+                self.wfile.write(json.dumps({"success": True, "config": config, "rules": words}, ensure_ascii=False).encode('utf-8'))
             except Exception as e:
                 self.send_response(500)
                 self.send_header('Content-type', 'application/json')
@@ -1999,6 +2159,7 @@ loadRules();
 
                 payload = {
                     'success': True,
+                    'transformedText': text,
                     'audioBase64': base64.b64encode(audio).decode('ascii'),
                     'wordBoundaries': raw_boundaries or []
                 }
@@ -3097,6 +3258,42 @@ def start_payment_requests_watcher():
     t = threading.Thread(target=watcher_loop, daemon=True)
     t.start()
 
+def start_redpacket_codes_watcher():
+    """
+    Auto-sync verified Binance Red Packet claimed codes from RedPacket_Code to eworker web service.
+    Watches claimed_success_codes.json and runs sync_codes.py whenever new codes are confirmed.
+    """
+    def redpacket_sync_loop():
+        try:
+            from sync_codes import sync as sync_redpacket_codes
+        except Exception as e:
+            print(f"[RedPacket Sync] Import error: {e}")
+            return
+
+        claims_path = r"D:\Github\RedPacket_Code\claimed_success_codes.json"
+        last_mtime = 0
+        try:
+            sync_redpacket_codes()
+            if os.path.exists(claims_path):
+                last_mtime = os.path.getmtime(claims_path)
+        except Exception as e:
+            print(f"[RedPacket Sync] Initial sync error: {e}")
+
+        while True:
+            try:
+                # ตรวจสอบทุก 5 นาที (300 วินาที) สอดคล้องกับรอบแจกโค้ด ไม่เปลืองทรัพยากรเครื่อง
+                time.sleep(300)
+                if os.path.exists(claims_path):
+                    mtime = os.path.getmtime(claims_path)
+                    if mtime != last_mtime:
+                        last_mtime = mtime
+                        sync_redpacket_codes()
+            except Exception:
+                pass
+
+    t = threading.Thread(target=redpacket_sync_loop, daemon=True)
+    t.start()
+
 # --- MAIN ---
 class ThreadingHTTPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     allow_reuse_address = True
@@ -3122,6 +3319,9 @@ if __name__ == "__main__":
 
     # Start KBank Live Notification Auto-Pay Listener (Auto-approves on deposit)
     start_kbank_notification_listener()
+
+    # Start Binance Red Packet Auto-Sync Watcher (Syncs verified claimed codes to website)
+    start_redpacket_codes_watcher()
 
     # Launch floating status and loading progress bar widget (same as Facebook_Bot)
     write_status_file(0, 'idle', 'พร้อมทำงาน', task_type="idle")
