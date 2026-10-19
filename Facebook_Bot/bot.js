@@ -1928,7 +1928,7 @@ async function postComment(article, imagePath, postUrl) {
     let commentUrl = null;
     try {
       console.log('[Comment URL] Searching for newly created comment URL...');
-      const profileName = await getLoggedInProfileName(page).catch(() => null) || 'รับแก้ไขภาพออนไลน์';
+      const profileName = await getLoggedInProfileName(page).catch(() => null) || 'รับตัดต่อแก้ไขรูปภาพ';
       console.log('[Comment URL] Using profile name:', profileName);
 
       // ดึง ID ของโพสต์จาก URL ไว้กรอง comment (เช่น 4444885335784287)
@@ -2027,6 +2027,24 @@ async function postComment(article, imagePath, postUrl) {
                   debug.push('Pass 2 fallback matched: ' + commentUrl);
                   break;
                 }
+              } catch (e) { }
+            }
+          }
+
+          // Pass 3: final fallback — ใช้ link ใหม่สุดที่ isOld=false โดยไม่เช็ค author
+          // (บอทเพิ่งโพสต์ comment นี้ ดังนั้น comment_id ที่ไม่อยู่ใน oldIds คือ comment ของเราแน่นอน)
+          if (!commentUrl) {
+            debug.push('Executing Pass 3: picking newest non-old link regardless of author');
+            for (let i = allLinks.length - 1; i >= 0; i--) {
+              const a = allLinks[i];
+              try {
+                if (!a.href.includes('/groups/')) continue;
+                const url = new URL(a.href);
+                const cid = url.searchParams.get('comment_id');
+                if (!cid || cid.startsWith('client:') || oldIds.includes(cid)) continue;
+                commentUrl = a.href;
+                debug.push('Pass 3 fallback matched (newest isOld=false): ' + commentUrl);
+                break;
               } catch (e) { }
             }
           }
