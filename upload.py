@@ -2,39 +2,147 @@ import sys
 import requests
 import json
 import os
+import time
+import base64
+import uuid
+
+REGISTRY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".firebase_uploads.json")
+
+def cleanup_firebase_files():
+    """ลบไฟล์ขยะใน Firebase RTDB ที่มีอายุเกิน 1 ชั่วโมงอัตโนมัติ เพื่อป้องกันพื้นที่เต็ม"""
+    if not os.path.exists(REGISTRY_FILE):
+        return
+    try:
+        with open(REGISTRY_FILE, 'r', encoding='utf-8') as f:
+            registry = json.load(f)
+        
+        now = time.time()
+        updated_registry = {}
+        deleted_count = 0
+        
+        for file_id, uploaded_at in registry.items():
+            # หากไฟล์มีอายุเกิน 1 ชั่วโมง (3600 วินาที) สั่ง DELETE ออกจาก Firebase ทันที
+            if now - uploaded_at > 3600:
+                try:
+                    del_url = f"https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/{file_id}.json"
+                    requests.delete(del_url, timeout=5)
+                    deleted_count += 1
+                except Exception:
+                    pass
+            else:
+                updated_registry[file_id] = uploaded_at
+                
+        with open(REGISTRY_FILE, 'w', encoding='utf-8') as f:
+            json.dump(updated_registry, f)
+            
+        if deleted_count > 0:
+            print(f"🧹 ล้างไฟล์หมดอายุใน Firebase สำเร็จ {deleted_count} ไฟล์", file=sys.stderr)
+    except Exception as e:
+        print(f"Firebase auto-cleanup error: {e}", file=sys.stderr)
+
+def register_firebase_file(file_id):
+    """บันทึกประวัติไฟล์ Firebase เพื่อรอสั่งลบอัตโนมัติเมื่อครบ 1 ชม."""
+    try:
+        registry = {}
+        if os.path.exists(REGISTRY_FILE):
+            with open(REGISTRY_FILE, 'r', encoding='utf-8') as f:
+                registry = json.load(f)
+        registry[file_id] = time.time()
+        with open(REGISTRY_FILE, 'w', encoding='utf-8') as f:
+            json.dump(registry, f)
+    except Exception:
+        pass
 
 def upload_litterbox(file_path):
-    """อัพโหลดไปยัง Litterbox (1hr expiry) - ระบบหลัก"""
+    """อัพโหลดไปยัง Litterbox (1hr expiry) - อันดับ 1"""
     url = 'https://litterbox.catbox.moe/resources/internals/api.php'
     filename = os.path.basename(file_path)
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
     }
     
-    # ลองอัปโหลดสูงสุด 3 ครั้ง เพื่อรองรับกรณีเน็ตช้าหรือ SSL/Cloudflare ติดขัดชั่วคราว
-    for attempt in range(1, 4):
+    for attempt in range(1, 3):
         try:
             with open(file_path, 'rb') as f:
                 files = {'fileToUpload': (filename, f)}
                 data = {'reqtype': 'fileupload', 'time': '1h'}
-                response = requests.post(url, data=data, files=files, headers=headers, timeout=60)
+                response = requests.post(url, data=data, files=files, headers=headers, timeout=15)
                 res_text = response.text.strip()
                 
                 if response.status_code == 200 and res_text.startswith('http'):
                     return res_text
                 else:
-                    print(f"Litterbox attempt {attempt} failed ({response.status_code}): {res_text[:200]}", file=sys.stderr)
+                    print(f"Litterbox attempt {attempt} failed ({response.status_code}): {res_text[:120]}", file=sys.stderr)
         except Exception as e:
             print(f"Litterbox attempt {attempt} error: {e}", file=sys.stderr)
         
-        if attempt < 3:
-            import time
+        if attempt < 2:
             time.sleep(1)
             
     return None
 
+def upload_firebase(file_path):
+    """อัพโหลดไปยัง Firebase RTDB (อันดับ 2: เสถียรในไทย, รองรับ PDF และรูปภาพ, ปลอดภัยสำหรับส่งงานลับ)"""
+    try:
+        # ล้างไฟล์ขยะที่หมดอายุเกิน 1 ชม. ก่อนเริ่มอัปโหลดไฟล์ใหม่
+        cleanup_firebase_files()
+
+        file_size = os.path.getsize(file_path)
+        # Firebase RTDB เหมาะสำหรับไฟล์ขนาดไม่เกิน 15MB
+        if file_size > 15 * 1024 * 1024:
+            print("ไฟล์ขนาดเกิน 15MB ข้ามระบบ Firebase...", file=sys.stderr)
+            return None
+
+        file_id = f"{int(time.time())}_{uuid.uuid4().hex[:8]}"
+        filename = os.path.basename(file_path)
+        
+        with open(file_path, 'rb') as f:
+            encoded_data = base64.b64encode(f.read()).decode('ascii')
+
+        url = f"https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/{file_id}.json"
+        payload = {
+            "data": encoded_data,
+            "created": int(time.time() * 1000),
+            "filename": filename,
+            "size": file_size
+        }
+        
+        response = requests.put(url, json=payload, timeout=45)
+        if response.status_code == 200:
+            register_firebase_file(file_id)
+            return f"fb_{file_id}"
+        else:
+            print(f"Firebase failed ({response.status_code}): {response.text[:200]}", file=sys.stderr)
+    except Exception as e:
+        print(f"Firebase error: {e}", file=sys.stderr)
+    return None
+
+def upload_catbox(file_path):
+    """อัพโหลดไปยัง Catbox.moe (อันดับ 3: รองรับทุกไฟล์ PDF/รูปภาพ ไม่จำกัด)"""
+    url = 'https://catbox.moe/user/api.php'
+    filename = os.path.basename(file_path)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
+    }
+    for attempt in range(1, 3):
+        try:
+            with open(file_path, 'rb') as f:
+                files = {'fileToUpload': (filename, f)}
+                data = {'reqtype': 'fileupload'}
+                response = requests.post(url, data=data, files=files, headers=headers, timeout=45)
+                res_text = response.text.strip()
+                if response.status_code == 200 and res_text.startswith('http'):
+                    return res_text
+                else:
+                    print(f"Catbox attempt {attempt} failed ({response.status_code}): {res_text[:120]}", file=sys.stderr)
+        except Exception as e:
+            print(f"Catbox attempt {attempt} error: {e}", file=sys.stderr)
+        if attempt < 2:
+            time.sleep(1)
+    return None
+
 def upload_tmpfiles(file_path):
-    """อัพโหลดไปยัง tmpfiles.org (1hr expiry) - รองรับทุกไฟล์"""
+    """อัพโหลดไปยัง tmpfiles.org (อันดับ 4: 1hr expiry) - สำรองสุดท้าย"""
     url = 'https://tmpfiles.org/api/v1/upload'
     filename = os.path.basename(file_path)
     headers = {
@@ -43,8 +151,8 @@ def upload_tmpfiles(file_path):
     try:
         with open(file_path, 'rb') as f:
             files = {'file': (filename, f)}
-            data = {'expire': '3600'}  # 1 hour = 3600 seconds
-            response = requests.post(url, data=data, files=files, headers=headers, timeout=45)
+            data = {'expire': '3600'}
+            response = requests.post(url, data=data, files=files, headers=headers, timeout=20)
             
             if response.status_code == 200:
                 result = response.json()
@@ -52,13 +160,13 @@ def upload_tmpfiles(file_path):
                     original_url = result['data']['url']
                     download_url = original_url.replace('tmpfiles.org/', 'tmpfiles.org/dl/')
                     return download_url
-            print(f"tmpfiles.org failed: {response.text[:200]}", file=sys.stderr)
+            print(f"tmpfiles.org failed: {response.text[:120]}", file=sys.stderr)
     except Exception as e:
         print(f"tmpfiles.org error: {e}", file=sys.stderr)
     return None
 
 def upload_uguu(file_path):
-    """อัพโหลดไปยัง Uguu.se (1hr expiry) - รองรับเฉพาะรูปภาพ"""
+    """อัพโหลดไปยัง Uguu.se (1hr expiry) - สำรองเสริมเฉพาะรูปภาพ"""
     url = 'https://uguu.se/upload'
     filename = os.path.basename(file_path)
     headers = {
@@ -67,37 +175,15 @@ def upload_uguu(file_path):
     try:
         with open(file_path, 'rb') as f:
             files = {'files[]': (filename, f)}
-            response = requests.post(url, files=files, headers=headers, timeout=45)
+            response = requests.post(url, files=files, headers=headers, timeout=30)
             
             if response.status_code == 200:
                 result = response.json()
                 if result.get('success') and result.get('files'):
                     return result['files'][0]['url']
-            print(f"Uguu failed: {response.text[:200]}", file=sys.stderr)
+            print(f"Uguu failed: {response.text[:120]}", file=sys.stderr)
     except Exception as e:
         print(f"Uguu error: {e}", file=sys.stderr)
-    return None
-
-def upload_fileio(file_path):
-    """อัพโหลดไปยัง file.io (ลบอัตโนมัติหลัง 1 ครั้ง หรือ 14 วัน) - รองรับทุกไฟล์"""
-    url = 'https://file.io/'
-    filename = os.path.basename(file_path)
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
-    }
-    try:
-        with open(file_path, 'rb') as f:
-            files = {'file': (filename, f)}
-            data = {'expires': '1d'}
-            response = requests.post(url, data=data, files=files, headers=headers, timeout=45)
-            
-            if response.status_code == 200:
-                result = response.json()
-                if result.get('success') and result.get('link'):
-                    return result['link']
-            print(f"file.io failed: {response.text[:200]}", file=sys.stderr)
-    except Exception as e:
-        print(f"file.io error: {e}", file=sys.stderr)
     return None
 
 if __name__ == "__main__":
@@ -106,6 +192,10 @@ if __name__ == "__main__":
         sys.exit(1)
 
     file_path = sys.argv[1]
+    if not os.path.exists(file_path):
+        print(json.dumps({"error": f"File not found: {file_path}"}))
+        sys.exit(1)
+
     result = None
     source = None
     
@@ -116,61 +206,82 @@ if __name__ == "__main__":
     
     # === สำหรับไฟล์ PDF ===
     if is_pdf:
-        # 1st: Litterbox (รองรับ PDF)
+        # อันดับ 1: Litterbox
+        print("กำลังลองอัปโหลด: Litterbox (อันดับ 1)...", file=sys.stderr)
         result = upload_litterbox(file_path)
         source = "Litterbox"
         
-        # 2nd: file.io (สำหรับ PDF - ลบหลังโหลด 1 ครั้ง)
+        # อันดับ 2: Firebase Cloud
         if not result:
-            print("กำลังลองระบบสำรอง: file.io (ลบหลังโหลด 1 ครั้ง)...", file=sys.stderr)
-            result = upload_fileio(file_path)
-            source = "file.io"
-        
-        # 3rd: tmpfiles.org (รองรับ PDF)
+            print("กำลังลองระบบสำรอง: Firebase Cloud (อันดับ 2)...", file=sys.stderr)
+            result = upload_firebase(file_path)
+            source = "Firebase (Private Cloud)"
+            
+        # อันดับ 3: Catbox.moe
         if not result:
-            print("กำลังลองระบบสำรอง: tmpfiles.org (1hr)...", file=sys.stderr)
+            print("กำลังลองระบบสำรอง: Catbox.moe (อันดับ 3)...", file=sys.stderr)
+            result = upload_catbox(file_path)
+            source = "Catbox"
+            
+        # อันดับ 4: tmpfiles.org
+        if not result:
+            print("กำลังลองระบบสำรอง: tmpfiles.org (อันดับ 4)...", file=sys.stderr)
             result = upload_tmpfiles(file_path)
             source = "tmpfiles.org"
     
     # === สำหรับรูปภาพ ===
     elif is_image:
-        # 1st: Litterbox (รองรับรูปภาพ)
+        # อันดับ 1: Litterbox
+        print("กำลังลองอัปโหลด: Litterbox (อันดับ 1)...", file=sys.stderr)
         result = upload_litterbox(file_path)
         source = "Litterbox"
         
-        # 2nd: Uguu.se (รองรับเฉพาะรูปภาพ)
+        # อันดับ 2: Firebase Cloud
         if not result:
-            print("กำลังลองระบบสำรอง: Uguu.se (1hr)...", file=sys.stderr)
-            result = upload_uguu(file_path)
-            source = "Uguu"
-        
-        # 3rd: file.io (สำรอง)
+            print("กำลังลองระบบสำรอง: Firebase Cloud (อันดับ 2)...", file=sys.stderr)
+            result = upload_firebase(file_path)
+            source = "Firebase (Private Cloud)"
+            
+        # อันดับ 3: Catbox.moe
         if not result:
-            print("กำลังลองระบบสำรอง: file.io (ลบหลังโหลด 1 ครั้ง)...", file=sys.stderr)
-            result = upload_fileio(file_path)
-            source = "file.io"
-        
-        # 4th: tmpfiles.org (สำรองสุดท้าย)
+            print("กำลังลองระบบสำรอง: Catbox.moe (อันดับ 3)...", file=sys.stderr)
+            result = upload_catbox(file_path)
+            source = "Catbox"
+            
+        # อันดับ 4: tmpfiles.org
         if not result:
-            print("กำลังลองระบบสำรอง: tmpfiles.org (1hr)...", file=sys.stderr)
+            print("กำลังลองระบบสำรอง: tmpfiles.org (อันดับ 4)...", file=sys.stderr)
             result = upload_tmpfiles(file_path)
             source = "tmpfiles.org"
+
+        # เสริม: Uguu.se (เฉพาะรูปภาพ)
+        if not result:
+            print("กำลังลองระบบสำรอง: Uguu.se...", file=sys.stderr)
+            result = upload_uguu(file_path)
+            source = "Uguu"
     
     # === สำหรับไฟล์ประเภทอื่นๆ ===
     else:
-        # 1st: Litterbox
+        # อันดับ 1: Litterbox
+        print("กำลังลองอัปโหลด: Litterbox (อันดับ 1)...", file=sys.stderr)
         result = upload_litterbox(file_path)
         source = "Litterbox"
         
-        # 2nd: file.io
+        # อันดับ 2: Firebase Cloud
         if not result:
-            print("กำลังลองระบบสำรอง: file.io (ลบหลังโหลด 1 ครั้ง)...", file=sys.stderr)
-            result = upload_fileio(file_path)
-            source = "file.io"
-        
-        # 3rd: tmpfiles.org
+            print("กำลังลองระบบสำรอง: Firebase Cloud (อันดับ 2)...", file=sys.stderr)
+            result = upload_firebase(file_path)
+            source = "Firebase (Private Cloud)"
+            
+        # อันดับ 3: Catbox.moe
         if not result:
-            print("กำลังลองระบบสำรอง: tmpfiles.org (1hr)...", file=sys.stderr)
+            print("กำลังลองระบบสำรอง: Catbox.moe (อันดับ 3)...", file=sys.stderr)
+            result = upload_catbox(file_path)
+            source = "Catbox"
+            
+        # อันดับ 4: tmpfiles.org
+        if not result:
+            print("กำลังลองระบบสำรอง: tmpfiles.org (อันดับ 4)...", file=sys.stderr)
             result = upload_tmpfiles(file_path)
             source = "tmpfiles.org"
     
