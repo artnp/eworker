@@ -2664,7 +2664,12 @@
                             const blobUrl = URL.createObjectURL(blob);
                             _cleanBlobUrl = blobUrl;
 
+                            if (data && data.filename) {
+                                window.__originalFilename = data.filename;
+                            }
+
                             if (isPdfFile) {
+                                window.__downloadUrl = blobUrl;
                                 try {
                                     await processAndDisplayPdf(bytes.buffer);
                                 } catch (pdfErr) {
@@ -3096,7 +3101,7 @@
                 localStorage.removeItem('payment_created_' + linkKey);
             } catch (e) { }
 
-            window.__downloadUrl = _rawDownloadUrl || _rawFileUrl || fileUrl;
+            window.__downloadUrl = _cleanBlobUrl || _rawDownloadUrl || _rawFileUrl || fileUrl;
 
             // นำภาพต้นฉบับคมชัด ไร้ลายน้ำ กลับมาแสดงผลแทนภาพตัวอย่าง
             if (_isPdfMode && _pdfCleanPreviewUrl) {
@@ -3283,7 +3288,24 @@
                 btn.style.opacity = '0.7';
             }
 
-            let downloadUrl = window.__downloadUrl || _rawDownloadUrl || _rawFileUrl || fileUrl;
+            let downloadUrl = _cleanBlobUrl || window.__downloadUrl || _rawDownloadUrl || _rawFileUrl || fileUrl;
+
+            // หากมี Blob อยู่แล้วในหน่วยความจำ ให้ดาวน์โหลดทันทีอย่างรวดเร็ว
+            if (downloadUrl && downloadUrl.startsWith('blob:')) {
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = downloadUrl;
+                let filename = window.__originalFilename || ('document.' + ((fileType === 'pdf' || _isPdfMode) ? 'pdf' : 'jpg'));
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                btn.innerHTML = '✅ ดาวน์โหลดสำเร็จ!';
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                setTimeout(() => btn.innerHTML = originalText, 3000);
+                return;
+            }
 
             const userAgent = navigator.userAgent || navigator.vendor || window.opera;
             const isInAppBrowser = /Line|FBAV|FBAN|Instagram|Messenger|Fastwork/i.test(userAgent);
@@ -3428,6 +3450,12 @@
             const timeLeft = expiryTimestamp - now;
 
             if (timeLeft <= 0) {
+                if (fileUrl && fileUrl.startsWith('fb_')) {
+                    const fileId = fileUrl.substring(3);
+                    fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/${fileId}.json`, {
+                        method: 'DELETE'
+                    }).catch(e => { });
+                }
                 showError('ลิงก์หมดอายุ', 'ไฟล์ถูกลบออกจากระบบแล้ว');
                 return;
             }
