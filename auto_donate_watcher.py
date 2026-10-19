@@ -3164,6 +3164,7 @@ def start_payment_requests_watcher():
         firebase_url = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests.json"
         
         _last_heartbeat_time = 0
+        _last_fb_clean_time = 0
         while True:
             try:
                 # ส่งสัญญาณ Heartbeat แจ้งว่าเครื่องคอมพิวเตอร์แอดมิน Online พร้อมรับสแกนและอนุมัติยอด
@@ -3251,6 +3252,33 @@ def start_payment_requests_watcher():
                                     urllib.request.urlopen(del_req, timeout=3)
                                 except Exception:
                                     pass
+
+                    # ล้างไฟล์อัปโหลดชั่วคราวใน Firebase ที่มีอายุเกิน 1 ชั่วโมงอัตโนมัติ (ตรวจเช็คทุกๆ 5 นาที)
+                    if time.time() - _last_fb_clean_time > 300:
+                        _last_fb_clean_time = time.time()
+                        reg_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".firebase_uploads.json")
+                        if os.path.exists(reg_file):
+                            try:
+                                with open(reg_file, 'r', encoding='utf-8') as rf:
+                                    reg = json.load(rf)
+                                updated_reg = {}
+                                c_now = time.time()
+                                for f_id, up_time in reg.items():
+                                    if c_now - up_time > 3600:
+                                        try:
+                                            d_req = urllib.request.Request(
+                                                f"https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/{f_id}.json",
+                                                method='DELETE'
+                                            )
+                                            urllib.request.urlopen(d_req, timeout=5)
+                                        except Exception:
+                                            pass
+                                    else:
+                                        updated_reg[f_id] = up_time
+                                with open(reg_file, 'w', encoding='utf-8') as rf:
+                                    json.dump(updated_reg, rf)
+                            except Exception:
+                                pass
             except Exception:
                 pass
             time.sleep(2)
