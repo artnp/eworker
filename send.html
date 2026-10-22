@@ -1028,6 +1028,9 @@
                     console.warn('⏰ Session expired');
                     // Delete expired session
                     await database.ref(`annotations/${id}`).remove();
+                    if (data.fileUrl && data.fileUrl.startsWith('fb_')) {
+                        deleteFirebaseFile(data.fileUrl.substring(3));
+                    }
                     throw new Error('เซสชันหมดอายุแล้ว (1 ชม.)');
                 }
 
@@ -1074,6 +1077,51 @@
             }
         }
 
+        async function uploadFirebase(file) {
+            try {
+                console.log('🔄 Trying Firebase RTDB...');
+                const stepName = 'กำลังอัปโหลดไปยัง Firebase (Private Cloud)...';
+                updateLoadingProgress(stepName, 20);
+
+                const base64Data = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        const res = reader.result;
+                        const base64 = res.substring(res.indexOf(',') + 1);
+                        resolve(base64);
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+
+                const fileId = `${Math.floor(Date.now() / 1000)}_${Math.random().toString(36).substring(2, 10)}`;
+                const payload = {
+                    data: base64Data,
+                    created: Date.now(),
+                    filename: file.name,
+                    size: file.size
+                };
+
+                updateLoadingProgress(stepName, 70);
+                if (typeof database !== 'undefined') {
+                    await database.ref(`temp_files/${fileId}`).set(payload);
+                } else {
+                    await fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/${fileId}.json`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                }
+
+                updateLoadingProgress(stepName, 100);
+                console.log('✅ Firebase upload success: fb_' + fileId);
+                return { success: true, url: `fb_${fileId}` };
+            } catch (err) {
+                console.error('❌ Firebase upload error:', err);
+                return { success: false };
+            }
+        }
+
         async function uploadFile(file) {
             const isPDF = file.type === 'application/pdf';
             const isImage = file.type.startsWith('image/');
@@ -1082,14 +1130,21 @@
 
             // Try upload services based on file type
             if (isPDF || isImage) {
-                // Order: Litterbox → tmpfiles → file.io → Uguu (สุดท้าย)
+                // Order: Litterbox → Firebase (Private) → tmpfiles → file.io → Uguu (สุดท้าย)
                 let result = await uploadLitterbox(file);
                 if (result.success) {
                     console.log('✅ Uploaded via Litterbox');
                     return result;
                 }
 
-                console.warn('⚠️ Litterbox failed, trying tmpfiles...');
+                console.warn('⚠️ Litterbox failed, trying Firebase (Private Cloud)...');
+                result = await uploadFirebase(file);
+                if (result.success) {
+                    console.log('✅ Uploaded via Firebase');
+                    return result;
+                }
+
+                console.warn('⚠️ Firebase failed, trying tmpfiles...');
                 result = await uploadTmpfiles(file);
                 if (result.success) {
                     console.log('✅ Uploaded via tmpfiles');
@@ -1215,11 +1270,66 @@
             }
         }
 
+        async function deleteFirebaseFile(fileId) {
+            if (!fileId) return;
+            try {
+                if (typeof database !== 'undefined') {
+                    await database.ref(`temp_files/${fileId}`).remove();
+                } else {
+                    await fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/${fileId}.json`, { method: 'DELETE' });
+                }
+                console.log('🗑️ Deleted Firebase file:', fileId);
+            } catch (e) {
+                console.warn('Failed to delete Firebase file:', e);
+            }
+        }
+
         async function loadFile(url, type) {
             console.log('🔍 loadFile called:', { url, type });
             
             let finalUrl = url;
-            if (url.includes('tmpfiles.org') && !url.includes('corsproxy.io')) {
+            let rawBytesBuffer = null;
+
+            if (url && url.startsWith('fb_')) {
+                const fileId = url.substring(3);
+                const stepName = 'กำลังโหลดไฟล์จาก Firebase Cloud...';
+                showLoading(stepName);
+                updateLoadingProgress(stepName, 25);
+
+                try {
+                    let fileData = null;
+                    if (typeof database !== 'undefined') {
+                        const snap = await database.ref(`temp_files/${fileId}`).once('value');
+                        fileData = snap.val();
+                    }
+                    if (!fileData) {
+                        const resp = await fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/${fileId}.json`);
+                        fileData = await resp.json();
+                    }
+
+                    if (!fileData || !fileData.data) {
+                        throw new Error('ไม่พบไฟล์ใน Firebase หรือไฟล์หมดอายุ/ถูกลบแล้ว');
+                    }
+
+                    updateLoadingProgress('กำลังประมวลผลไฟล์...', 75);
+                    const binary = atob(fileData.data);
+                    const bytes = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) {
+                        bytes[i] = binary.charCodeAt(i);
+                    }
+                    rawBytesBuffer = bytes.buffer;
+
+                    const isPdf = type === 'pdf' || (fileData.filename && fileData.filename.toLowerCase().endsWith('.pdf'));
+                    const mimeType = isPdf ? 'application/pdf' : 'image/jpeg';
+                    const blob = new Blob([bytes], { type: mimeType });
+                    finalUrl = URL.createObjectURL(blob);
+                    window.__firebaseFileId = fileId;
+                    console.log('✅ Firebase file converted to Blob URL:', finalUrl);
+                } catch (fbErr) {
+                    console.error('❌ Firebase load error:', fbErr);
+                    throw new Error('โหลดไฟล์จาก Firebase ไม่สำเร็จ: ' + fbErr.message);
+                }
+            } else if (url && url.includes('tmpfiles.org') && !url.includes('corsproxy.io')) {
                 console.warn('⚠️ tmpfiles.org detected - using CORS proxy');
                 finalUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
             }
@@ -1240,6 +1350,10 @@
                             resolve();
                         };
                         mainImage.onerror = () => {
+                            if (src.startsWith('blob:')) {
+                                reject(new Error('ไม่สามารถแสดงผลรูปภาพจากข้อมูลที่แปลงได้'));
+                                return;
+                            }
                             if (attempt === 1) {
                                 console.warn('⚠️ Direct image load failed, trying weserv proxy...');
                                 const proxyUrl = 'https://images.weserv.nl/?url=' + encodeURIComponent(url);
@@ -1261,7 +1375,11 @@
                 try {
                     console.log('📄 Loading PDF...');
                     try {
-                        pdfDoc = await pdfjsLib.getDocument(finalUrl).promise;
+                        if (rawBytesBuffer) {
+                            pdfDoc = await pdfjsLib.getDocument({ data: rawBytesBuffer }).promise;
+                        } else {
+                            pdfDoc = await pdfjsLib.getDocument(finalUrl).promise;
+                        }
                     } catch (pdfErr) {
                         console.warn('Direct PDF load failed, trying CORS proxy...', pdfErr);
                         const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
@@ -1281,7 +1399,7 @@
                     fitToScreen();
                 } catch (err) {
                     console.error('❌ PDF load error:', err);
-                    throw new Error('โหลด PDF ไม่สำเร็จ');
+                    throw new Error('โหลด PDF ไม่สำเร็จ: ' + err.message);
                 }
             }
         }
@@ -2066,6 +2184,11 @@
                     
                     if (sessionId) {
                         database.ref(`annotations/${sessionId}`).remove();
+                    }
+                    if (fileUrl && fileUrl.startsWith('fb_')) {
+                        deleteFirebaseFile(fileUrl.substring(3));
+                    } else if (window.__firebaseFileId) {
+                        deleteFirebaseFile(window.__firebaseFileId);
                     }
                     
                     alert('⚠️ เซสชันหมดอายุแล้ว\n\nไฟล์และข้อมูลทั้งหมดถูกลบแล้ว\nกรุณาอัพโหลดใหม่');
