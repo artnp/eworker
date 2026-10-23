@@ -2793,6 +2793,65 @@ loadRules();
                 self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode())
             return
 
+        # ===== TEXT-TOUCH SERVICE ENDPOINTS =====
+        if parsed_url.path == '/text-touch-open-ps':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
+            try:
+                data = json.loads(post_data.decode('utf-8')) if post_data else {}
+                session_id = data.get('sessionId', '')
+                file_url = data.get('fileUrl', '')
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                import importlib.util
+                engine_path = os.path.join(script_dir, 'text_touch_engine.py')
+                if os.path.exists(engine_path):
+                    spec = importlib.util.spec_from_file_location('text_touch_engine', engine_path)
+                    tte = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(tte)
+                    success = tte.open_in_photoshop(session_id, file_url)
+                else:
+                    success = False
+                self.send_response(200 if success else 500)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': success}).encode())
+            except Exception as e:
+                print(f'[Text-Touch] open-ps error: {e}')
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': False, 'error': str(e)}).encode())
+            return
+
+        if parsed_url.path == '/text-touch-submit':
+            try:
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                import importlib.util
+                engine_path = os.path.join(script_dir, 'text_touch_engine.py')
+                if os.path.exists(engine_path):
+                    spec = importlib.util.spec_from_file_location('text_touch_engine', engine_path)
+                    tte = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(tte)
+                    success = tte.submit_active_point_from_photoshop()
+                else:
+                    success = False
+                self.send_response(200 if success else 500)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': success}).encode())
+            except Exception as e:
+                print(f'[Text-Touch] submit error: {e}')
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': False, 'error': str(e)}).encode())
+            return
+        # ===== END TEXT-TOUCH =====
+
         if parsed_url.path in ('/upscale', '/ai-transform'):
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
