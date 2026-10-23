@@ -3855,6 +3855,39 @@
         let pastedFiles = [];
         let selectedFilesList = [];
 
+        // Auto-adjust promptInput height on user typing
+        if (promptInput) {
+            promptInput.addEventListener('input', () => {
+                promptInput.style.height = 'auto';
+                promptInput.style.height = promptInput.scrollHeight + 'px';
+            });
+        }
+
+        // Auto paste text from clipboard on entry/focus if prompt-input is empty
+        async function autoPasteClipboardIfEmpty() {
+            if (!promptInput || promptInput.value.trim() !== '') return;
+            try {
+                if (navigator.clipboard && navigator.clipboard.readText) {
+                    const text = await navigator.clipboard.readText();
+                    if (text && text.trim() && !promptInput.value.trim()) {
+                        promptInput.value = text.trim();
+                        promptInput.style.height = 'auto';
+                        promptInput.style.height = promptInput.scrollHeight + 'px';
+                    }
+                }
+            } catch (err) {
+                // Clipboard read permission might require user gesture or focus
+            }
+        }
+
+        if (promptInput) {
+            promptInput.addEventListener('focus', autoPasteClipboardIfEmpty);
+        }
+        window.addEventListener('focus', autoPasteClipboardIfEmpty);
+        document.addEventListener('pointerdown', autoPasteClipboardIfEmpty, { once: true });
+        setTimeout(autoPasteClipboardIfEmpty, 200);
+        setTimeout(autoPasteClipboardIfEmpty, 600);
+
         // Undo state: stores the last submitted data
         let lastSubmitState = null;
 
@@ -3885,7 +3918,6 @@
                     if (currentStatus === lastDownloadFilenames) return;
                     lastDownloadFilenames = currentStatus;
 
-                    const now = Date.now() / 1000;
                     dlGrid.innerHTML = '';
                     downloads.slice(0, 20).forEach(item => {
                         const div = document.createElement('div');
@@ -3893,19 +3925,6 @@
                         div.draggable = true;
                         div.dataset.filename = item.filename;
                         div.innerHTML = `<button class="delete-btn">✕</button><img src="/get-img?path=${encodeURIComponent(item.filename)}"><div class="time">${item.shortname}</div>`;
-
-                        // Auto-select ไฟล์ที่มาใหม่ภายใน 1 นาที
-                        if (item.mtime && (now - item.mtime) <= 60 && !selectedFilesList.includes(item.filename)) {
-                            selectedFilesList.push(item.filename);
-                            div.classList.add('selected');
-                            const incomingImgUrl = `/get-img?path=${encodeURIComponent(item.filename)}&v=${Date.now()}`;
-                            if (isDesktopCompletePng(item.filename)) {
-                                showWatermarkCheck(incomingImgUrl);
-                            }
-                            if (currentStudioMode === 'photopea') {
-                                autoInjectAiResultAsLayer(incomingImgUrl, lastInpaintBounds);
-                            }
-                        }
 
                         div.onclick = (e) => {
                             if (e.target.classList.contains('delete-btn')) return;
@@ -4929,7 +4948,10 @@
         setInterval(loadQuotaStatus, 15000);
 
         loadDownloads();
-        window.onfocus = loadDownloads;
+        window.addEventListener('focus', () => {
+            loadDownloads();
+            autoPasteClipboardIfEmpty();
+        });
 
         function isDesktopCompletePng(pathStr) {
             if (!pathStr) return false;
