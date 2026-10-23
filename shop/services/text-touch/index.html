@@ -1,0 +1,1866 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Text-Touch | บริการชี้จุดแก้ไขข้อความและเอกสาร</title>
+
+    <!-- Meta Tags -->
+    <meta name="description" content="บริการชี้จุดแก้ไขข้อความ รีทัชภาพ แก้เอกสาร PDF ทีละจุด รวดเร็ว ปลอดภัย ตรวจงานก่อนจ่ายเงิน">
+    <link rel="icon" type="image/x-icon" href="../../favicon.ico">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <!-- PDF.js & Canvas Confetti -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+    <!-- Firebase SDK (Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #eef2ff;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --success-dark: #059669;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --bg-body: #0b1120;
+            --bg-card: #1e293b;
+            --bg-surface: #0f172a;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+            --border-active: #6366f1;
+            --header-height: 58px;
+            --admin-bar-height: 48px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Prompt', 'Sarabun', sans-serif;
+            background: var(--bg-body);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== TOP NAVBAR ===== */
+        .app-header {
+            height: var(--header-height);
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 100;
+            flex-shrink: 0;
+            gap: 12px;
+        }
+
+        .brand-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .brand-logo {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        .brand-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .brand-badge {
+            font-size: 0.68rem;
+            background: rgba(99, 102, 241, 0.2);
+            color: #a5b4fc;
+            border: 1px solid rgba(99, 102, 241, 0.35);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        /* Queue Banner in Nav */
+        .queue-status-banner {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            color: #fbbf24;
+            padding: 5px 14px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            animation: pulseSubtle 2s infinite ease-in-out;
+        }
+
+        .queue-status-banner.active-job {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.4);
+            color: #34d399;
+        }
+
+        @keyframes pulseSubtle {
+            0%, 100% { opacity: 0.95; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.02); }
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-nav {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-nav:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+        }
+
+        .btn-nav.primary {
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            border: none;
+            color: white;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+        }
+
+        .btn-nav.primary:hover {
+            filter: brightness(1.1);
+        }
+
+        /* ===== ADMIN CONTROL BAR (Visible on localhost or admin mode) ===== */
+        .admin-bar {
+            display: none;
+            background: linear-gradient(90deg, #1e1b4b, #312e81);
+            border-bottom: 2px solid #818cf8;
+            padding: 6px 16px;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 0.88rem;
+            z-index: 99;
+            flex-wrap: wrap;
+        }
+
+        .admin-bar.active {
+            display: flex;
+        }
+
+        .admin-badge {
+            background: #4338ca;
+            color: #c7d2fe;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .admin-queue-list {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            max-width: 50vw;
+            padding: 2px 0;
+        }
+
+        .admin-queue-item {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .admin-queue-item.current {
+            background: #10b981;
+            color: #022c22;
+            font-weight: 700;
+            border-color: #34d399;
+        }
+
+        .admin-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-admin {
+            background: rgba(255, 255, 255, 0.12);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-family: inherit;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-admin:hover {
+            background: rgba(255, 255, 255, 0.22);
+        }
+
+        .btn-admin.accept-btn {
+            background: #10b981;
+            color: #022c22;
+            border: none;
+        }
+
+        .btn-admin.ps-btn {
+            background: #0284c7;
+            color: white;
+            border: none;
+        }
+
+        /* ===== MAIN WORKSPACE ===== */
+        .main-workspace {
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 1. Upload Screen */
+        .upload-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            text-align: center;
+            background: radial-gradient(circle at 50% 30%, rgba(99, 102, 241, 0.08) 0%, transparent 60%);
+        }
+
+        .upload-box {
+            max-width: 580px;
+            width: 100%;
+            background: rgba(30, 41, 59, 0.7);
+            border: 2px dashed rgba(99, 102, 241, 0.4);
+            border-radius: 20px;
+            padding: 48px 32px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            backdrop-filter: blur(8px);
+        }
+
+        .upload-box:hover, .upload-box.dragover {
+            border-color: #818cf8;
+            background: rgba(99, 102, 241, 0.12);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(99, 102, 241, 0.25);
+        }
+
+        .upload-icon-circle {
+            width: 76px;
+            height: 76px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #818cf8;
+        }
+
+        .upload-box h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .upload-box p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .upload-btn-row {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .upload-action-btn {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.92rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+            transition: all 0.2s;
+        }
+
+        .upload-action-btn:hover {
+            background: #4338ca;
+            transform: translateY(-1px);
+        }
+
+        /* 2. Editor Split View */
+        .editor-view {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        .editor-view.active {
+            display: flex;
+        }
+
+        /* Left Canvas Area */
+        .canvas-section {
+            flex: 1;
+            position: relative;
+            background: #090d16;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .canvas-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            cursor: grab;
+        }
+
+        .canvas-container.grabbing {
+            cursor: grabbing;
+        }
+
+        .canvas-container.crosshair-mode {
+            cursor: crosshair;
+        }
+
+        .canvas-wrapper {
+            position: absolute;
+            transform-origin: 0 0;
+            will-change: transform;
+        }
+
+        .canvas-media {
+            display: block;
+            pointer-events: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+        }
+
+        /* Marker Boxes */
+        .marker-box {
+            position: absolute;
+            border: 2px solid #ef4444;
+            background: rgba(239, 68, 68, 0.15);
+            border-radius: 4px;
+            cursor: move;
+            z-index: 10;
+            box-sizing: border-box;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+
+        .marker-box.active {
+            border-color: #fbbf24;
+            background: rgba(251, 191, 36, 0.2);
+            box-shadow: 0 0 14px rgba(251, 191, 36, 0.5);
+            z-index: 20;
+        }
+
+        .marker-box.status-working {
+            border-color: #38bdf8;
+            background: rgba(56, 189, 248, 0.2);
+        }
+
+        .marker-box.status-awaiting-payment {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.25);
+            animation: pulseAwaiting 1.5s infinite;
+        }
+
+        @keyframes pulseAwaiting {
+            0%, 100% { border-color: #f59e0b; }
+            50% { border-color: #fbbf24; box-shadow: 0 0 12px rgba(245, 158, 11, 0.6); }
+        }
+
+        .marker-box.status-paid-done {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.2);
+        }
+
+        /* Watermark Overlay on that spot */
+        .marker-watermark-overlay {
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                -45deg,
+                rgba(239, 68, 68, 0.35),
+                rgba(239, 68, 68, 0.35) 10px,
+                rgba(0, 0, 0, 0.55) 10px,
+                rgba(0, 0, 0, 0.55) 20px
+            );
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 0.72rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 4px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+            letter-spacing: 0.5px;
+            pointer-events: none;
+            backdrop-filter: blur(2px);
+        }
+
+        .marker-badge {
+            position: absolute;
+            top: -12px;
+            left: -12px;
+            width: 24px;
+            height: 24px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+            border: 2px solid white;
+        }
+
+        .marker-box.status-paid-done .marker-badge {
+            background: #10b981;
+        }
+
+        .marker-box.status-working .marker-badge {
+            background: #0ea5e9;
+        }
+
+        .marker-box.status-awaiting-payment .marker-badge {
+            background: #f59e0b;
+        }
+
+        /* Resize Handles */
+        .resize-handle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: white;
+            border: 1px solid #1e293b;
+            border-radius: 2px;
+        }
+
+        .resize-handle.tl { top: -5px; left: -5px; cursor: nwse-resize; }
+        .resize-handle.tr { top: -5px; right: -5px; cursor: nesw-resize; }
+        .resize-handle.bl { bottom: -5px; left: -5px; cursor: nesw-resize; }
+        .resize-handle.br { bottom: -5px; right: -5px; cursor: nwse-resize; }
+
+        /* Floating Viewport Toolbar */
+        .canvas-toolbar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 30;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .tool-btn {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .tool-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #818cf8;
+        }
+
+        .tool-btn.active {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .zoom-text {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            min-width: 44px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        /* Right Sidebar: Annotation Cards & Checkout */
+        .sidebar-section {
+            width: 380px;
+            background: var(--bg-surface);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            z-index: 40;
+        }
+
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-header h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .point-counter-pill {
+            background: rgba(99, 102, 241, 0.2);
+            color: #a5b4fc;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        /* Point List */
+        .points-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .point-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 14px;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .point-card:hover {
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+
+        .point-card.active {
+            border-color: #6366f1;
+            background: rgba(30, 41, 59, 0.95);
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.25);
+        }
+
+        .point-card.status-paid-done {
+            border-left: 4px solid var(--success);
+        }
+
+        .point-card.status-awaiting-payment {
+            border-left: 4px solid var(--accent);
+        }
+
+        .point-card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .point-id-badge {
+            font-weight: 700;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .point-status-tag {
+            font-size: 0.72rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .point-status-tag.waiting {
+            background: rgba(148, 163, 184, 0.2);
+            color: #cbd5e1;
+        }
+
+        .point-status-tag.working {
+            background: rgba(56, 189, 248, 0.2);
+            color: #38bdf8;
+        }
+
+        .point-status-tag.awaiting-payment {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+            font-weight: 700;
+        }
+
+        .point-status-tag.done {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            font-weight: 700;
+        }
+
+        .point-input-note {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: var(--text-main);
+            padding: 8px 10px;
+            font-size: 0.88rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 54px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .point-input-note:focus {
+            border-color: #6366f1;
+        }
+
+        .point-card-footer {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.82rem;
+        }
+
+        .point-price-tag {
+            font-weight: 700;
+            color: #34d399;
+        }
+
+        /* Pay button for this specific point */
+        .btn-pay-point {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-pay-point:hover {
+            filter: brightness(1.1);
+            transform: scale(1.02);
+        }
+
+        /* Expiry Safe Banner (Countdown after final point completed) */
+        .expiry-banner {
+            display: none;
+            background: linear-gradient(135deg, #831843, #9d174d);
+            border: 1px solid #f43f5e;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin: 12px 14px;
+            animation: pulseSubtle 2s infinite;
+        }
+
+        .expiry-banner.active {
+            display: block;
+        }
+
+        .expiry-timer-digits {
+            font-size: 1.4rem;
+            font-weight: 800;
+            font-family: 'Outfit', sans-serif;
+            color: #ffe4e6;
+            margin: 4px 0;
+        }
+
+        /* Floating Mini Chat Button */
+        .floating-chat-trigger {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4f46e5, #9333ea);
+            color: white;
+            border: none;
+            box-shadow: 0 8px 24px rgba(79, 70, 229, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            cursor: pointer;
+            z-index: 999;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .floating-chat-trigger:hover {
+            transform: scale(1.08) rotate(5deg);
+        }
+
+        .chat-unread-dot {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 14px;
+            height: 14px;
+            background: #ef4444;
+            border: 2px solid #0f172a;
+            border-radius: 50%;
+            display: none;
+        }
+
+        /* Mini Chat Floating Container */
+        .mini-chat-popup {
+            position: fixed;
+            bottom: 88px;
+            right: 24px;
+            width: 380px;
+            height: 520px;
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 998;
+            backdrop-filter: blur(12px);
+        }
+
+        .mini-chat-popup.active {
+            display: flex;
+        }
+
+        .mini-chat-header {
+            padding: 10px 14px;
+            background: #1e293b;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .mini-chat-frame {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background: #0f172a;
+        }
+
+        /* Payment Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 16px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-card {
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            max-width: 420px;
+            width: 100%;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes modalPop {
+            0% { transform: scale(0.92); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .qr-box-img {
+            width: 220px;
+            height: 220px;
+            background: white;
+            border-radius: 12px;
+            padding: 8px;
+            margin: 16px auto;
+            display: block;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Mobile Viewport Toggle */
+        .mobile-view-tabs {
+            display: none;
+            background: #1e293b;
+            border-top: 1px solid var(--border);
+            height: 48px;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-view-tabs {
+                display: flex;
+            }
+
+            .mobile-tab-btn {
+                flex: 1;
+                background: none;
+                border: none;
+                color: var(--text-muted);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.72rem;
+                font-family: inherit;
+                gap: 2px;
+                cursor: pointer;
+            }
+
+            .mobile-tab-btn.active {
+                color: #818cf8;
+                font-weight: 700;
+                background: rgba(99, 102, 241, 0.1);
+            }
+
+            .sidebar-section {
+                width: 100%;
+                display: none;
+            }
+
+            .sidebar-section.mobile-show {
+                display: flex;
+            }
+
+            .canvas-section.mobile-hide {
+                display: none;
+            }
+
+            .mini-chat-popup {
+                width: 92vw;
+                right: 4vw;
+                height: 70vh;
+                bottom: 80px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ===== 1. TOP HEADER ===== -->
+    <header class="app-header">
+        <a class="brand-group" href="../../index.html">
+            <div class="brand-logo">
+                <i class="fa-solid fa-crosshairs"></i>
+            </div>
+            <div>
+                <div class="brand-title">
+                    <span>Text-Touch</span>
+                    <span class="brand-badge">ชี้จุดแก้ข้อความ</span>
+                </div>
+            </div>
+        </a>
+
+        <!-- Real-time Queue Counter Banner -->
+        <div class="queue-status-banner" id="queueStatusBanner">
+            <i class="fa-solid fa-spinner fa-spin" id="queueIcon"></i>
+            <span id="queueStatusText">กำลังเชื่อมต่อคิว...</span>
+        </div>
+
+        <div class="nav-actions">
+            <button class="btn-nav" id="btnShareSession" title="คัดลอกลิงก์เซสชัน">
+                <i class="fa-solid fa-link"></i> <span class="hide-mobile">แชร์ลิงก์</span>
+            </button>
+            <button class="btn-nav primary" id="btnDownloadWork" style="display:none;" title="ดาวน์โหลดงาน">
+                <i class="fa-solid fa-cloud-arrow-down"></i> ดาวน์โหลด
+            </button>
+        </div>
+    </header>
+
+    <!-- ===== 2. ADMIN CONTROL BAR (Visible on 127.0.0.1 or ?admin=1) ===== -->
+    <div class="admin-bar" id="adminBar">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <span class="admin-badge"><i class="fa-solid fa-shield-halved"></i> แอดมินหลังบ้าน</span>
+            <div class="admin-queue-list" id="adminQueueList">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+
+        <div class="admin-actions">
+            <button class="btn-admin accept-btn" id="btnAdminAcceptJob">
+                <i class="fa-solid fa-check-circle"></i> รับงานคิวนี้
+            </button>
+            <button class="btn-admin ps-btn" id="btnAdminOpenPS">
+                <i class="fa-solid fa-paintbrush"></i> เปิดใน Photoshop
+            </button>
+            <button class="btn-admin" id="btnAdminNextQueue" title="เรียกคิวถัดไป">
+                <i class="fa-solid fa-forward-step"></i> คิวถัดไป
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== 3. MAIN WORKSPACE ===== -->
+    <main class="main-workspace">
+
+        <!-- 3.1 Initial Upload View -->
+        <div class="upload-view" id="uploadView">
+            <div class="upload-box" id="dropZone">
+                <div class="upload-icon-circle">
+                    <i class="fa-solid fa-arrow-up-from-bracket"></i>
+                </div>
+                <h2>ลากไฟล์ภาพหรือ PDF วางที่นี่</h2>
+                <p>รองรับไฟล์ JPG, PNG, WEBP หรือ PDF<br>คลิกเพื่อเลือกไฟล์ หรือถ่ายภาพจากมือถือเพื่อชี้จุดแก้ไขได้ทันที</p>
+                <div class="upload-btn-row">
+                    <button class="upload-action-btn" onclick="document.getElementById('fileInput').click()">
+                        <i class="fa-solid fa-image"></i> เลือกไฟล์ภาพ / เอกสาร
+                    </button>
+                </div>
+                <input type="file" id="fileInput" accept="image/*,application/pdf" style="display:none;">
+            </div>
+        </div>
+
+        <!-- 3.2 Editor View (Canvas + Point List) -->
+        <div class="editor-view" id="editorView">
+
+            <!-- Left: Canvas Area with Pan & Zoom -->
+            <section class="canvas-section" id="canvasSection">
+                <div class="canvas-container" id="canvasContainer">
+                    <div class="canvas-wrapper" id="canvasWrapper">
+                        <img id="mainImage" class="canvas-media" style="display:none;" alt="Canvas Image">
+                        <canvas id="pdfCanvas" class="canvas-media" style="display:none;"></canvas>
+                        <!-- Markers injected dynamically -->
+                    </div>
+                </div>
+
+                <!-- Floating Canvas Toolbar -->
+                <div class="canvas-toolbar">
+                    <button class="tool-btn active" id="toolSelect" title="เลื่อน/ย่อ-ขยาย"><i class="fa-solid fa-hand"></i></button>
+                    <button class="tool-btn" id="toolAddPoint" title="เพิ่มจุดแก้ไข"><i class="fa-solid fa-plus-circle"></i></button>
+                    <div style="width:1px; height:18px; background:var(--border);"></div>
+                    <button class="tool-btn" id="btnZoomOut" title="ซูมออก"><i class="fa-solid fa-minus"></i></button>
+                    <span class="zoom-text" id="zoomText">100%</span>
+                    <button class="tool-btn" id="btnZoomIn" title="ซูมเข้า"><i class="fa-solid fa-plus"></i></button>
+                    <button class="tool-btn" id="btnFitScreen" title="พอดีจอ"><i class="fa-solid fa-expand"></i></button>
+                </div>
+            </section>
+
+            <!-- Right: Points Sidebar & Checkouts -->
+            <aside class="sidebar-section" id="sidebarSection">
+                <div class="sidebar-header">
+                    <h3>
+                        <i class="fa-solid fa-list-check" style="color:#818cf8;"></i>
+                        <span>รายการจุดแก้ไข</span>
+                    </h3>
+                    <span class="point-counter-pill" id="pointCounterPill">0 จุด</span>
+                </div>
+
+                <!-- Expiry Warning (Triggered when all points are paid) -->
+                <div class="expiry-banner" id="expiryBanner">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong><i class="fa-solid fa-lock-open"></i> งานเสร็จสมบูรณ์แล้ว!</strong>
+                        <button id="btnExtendExpiry" style="background:rgba(255,255,255,0.2); border:none; color:white; padding:2px 8px; border-radius:4px; font-size:0.75rem; cursor:pointer;">+30 นาที</button>
+                    </div>
+                    <div class="expiry-timer-digits" id="expiryTimerDigits">60:00</div>
+                    <small style="opacity:0.9;">เพื่อความเป็นส่วนตัว ไฟล์จะถูกทำลายอัตโนมัติเมื่อหมดเวลา</small>
+                </div>
+
+                <!-- Point Cards Container -->
+                <div class="points-list" id="pointsList">
+                    <!-- Populated by JS -->
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- Mobile Viewport Navigation Tabs -->
+    <nav class="mobile-view-tabs" id="mobileTabs">
+        <button class="mobile-tab-btn active" id="mobileTabCanvas" onclick="switchMobileTab('canvas')">
+            <i class="fa-solid fa-image"></i>
+            <span>หน้าภาพ</span>
+        </button>
+        <button class="mobile-tab-btn" id="mobileTabPoints" onclick="switchMobileTab('points')">
+            <i class="fa-solid fa-list-check"></i>
+            <span>จุดแก้ไข (<span id="mobilePointCount">0</span>)</span>
+        </button>
+    </nav>
+
+    <!-- ===== 4. MINI CHAT FLOATING WIDGET ===== -->
+    <button class="floating-chat-trigger" id="chatTriggerBtn" title="แชทคุยกับช่าง">
+        <i class="fa-solid fa-comments"></i>
+        <span class="chat-unread-dot" id="chatUnreadDot"></span>
+    </button>
+
+    <div class="mini-chat-popup" id="miniChatPopup">
+        <div class="mini-chat-header">
+            <span><i class="fa-solid fa-comments" style="color:#818cf8;"></i> คุยกับช่างแบบปลอดภัย</span>
+            <button onclick="toggleMiniChat(false)" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.1rem;">×</button>
+        </div>
+        <iframe id="miniChatFrame" class="mini-chat-frame" src="about:blank"></iframe>
+    </div>
+
+    <!-- ===== 5. PAYMENT MODAL ===== -->
+    <div class="modal-overlay" id="paymentModal">
+        <div class="modal-card">
+            <button class="modal-close-btn" onclick="closePaymentModal()">×</button>
+            <h3 style="font-size:1.2rem; font-weight:700; margin-bottom:4px;">ชำระเงินค่าแก้ไข</h3>
+            <p style="color:var(--text-muted); font-size:0.88rem;" id="modalPointTitle">จุดที่ 1</p>
+            
+            <div style="font-size:1.8rem; font-weight:800; color:#34d399; margin:10px 0;" id="modalPriceText">
+                ฿50.00
+            </div>
+
+            <img id="modalQrImg" class="qr-box-img" src="" alt="PromptPay QR">
+
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:14px;">
+                สแกนจ่ายผ่านแอปธนาคารใดก็ได้<br>เมื่อเงินเข้า ระบบจะปลดล็อคลายน้ำจุดนี้ให้อัตโนมัติทันที
+            </p>
+
+            <button class="upload-action-btn" style="width:100%; justify-content:center;" onclick="confirmPaymentSimulation()">
+                <i class="fa-solid fa-circle-check"></i> ยืนยันการโอนเงินแล้ว
+            </button>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- LOGIC & FIREBASE SYNC SCRIPT               -->
+    <!-- ========================================== -->
+    <script>
+        // --- 1. CONFIG & STATE ---
+        const FIREBASE_CONFIG = {
+            databaseURL: "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+        firebase.initializeApp(FIREBASE_CONFIG);
+        const db = firebase.database();
+
+        let sessionId = new URLSearchParams(window.location.search).get('id');
+        const isLocalAdmin = window.location.hostname === 'localhost' || 
+                             window.location.hostname === '127.0.0.1' || 
+                             new URLSearchParams(window.location.search).has('admin');
+
+        let fileData = null; // { url, type, width, height }
+        let currentMode = 'select'; // 'select' | 'add'
+        let markers = {};
+        let activeMarkerId = null;
+        let scale = 1;
+        let translateX = 0;
+        let translateY = 0;
+        let isPanning = false;
+        let panStartX = 0, panStartY = 0;
+        let currentQueuePosition = 0;
+        let isSessionExpired = false;
+
+        // --- 2. DOM ELEMENTS ---
+        const uploadView = document.getElementById('uploadView');
+        const editorView = document.getElementById('editorView');
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const canvasWrapper = document.getElementById('canvasWrapper');
+        const mainImage = document.getElementById('mainImage');
+        const pdfCanvas = document.getElementById('pdfCanvas');
+        const pointsList = document.getElementById('pointsList');
+        const pointCounterPill = document.getElementById('pointCounterPill');
+        const mobilePointCount = document.getElementById('mobilePointCount');
+        const zoomText = document.getElementById('zoomText');
+        const queueStatusBanner = document.getElementById('queueStatusBanner');
+        const queueStatusText = document.getElementById('queueStatusText');
+        const queueIcon = document.getElementById('queueIcon');
+        const adminBar = document.getElementById('adminBar');
+        const adminQueueList = document.getElementById('adminQueueList');
+        const paymentModal = document.getElementById('paymentModal');
+        const expiryBanner = document.getElementById('expiryBanner');
+        const expiryTimerDigits = document.getElementById('expiryTimerDigits');
+
+        // --- 3. INIT & ADMIN DETECTION ---
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (isLocalAdmin) {
+                adminBar.classList.add('active');
+                initAdminQueueListener();
+            }
+
+            if (sessionId) {
+                await loadExistingSession(sessionId);
+            } else {
+                initNewSession();
+            }
+
+            initCanvasEvents();
+            initToolbar();
+            listenToQueueUpdates();
+        });
+
+        // Generate clean session ID
+        function generateSessionId() {
+            return 'tt_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
+        }
+
+        function initNewSession() {
+            sessionId = generateSessionId();
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.set('id', sessionId);
+            window.history.replaceState({}, '', newUrl);
+            updateChatFrame();
+        }
+
+        async function loadExistingSession(id) {
+            sessionId = id;
+            updateChatFrame();
+
+            const snapshot = await db.ref(`text_touch/sessions/${sessionId}`).once('value');
+            const data = snapshot.val();
+            if (data && data.fileUrl) {
+                uploadView.style.display = 'none';
+                editorView.classList.add('active');
+                await loadMedia(data.fileUrl, data.fileType || 'image');
+                listenToMarkers();
+            }
+        }
+
+        // --- 4. UPLOAD & FILE HANDLING ---
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFileUpload(file);
+        });
+
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files[0]) handleFileUpload(e.dataTransfer.files[0]);
+        });
+
+        async function handleFileUpload(file) {
+            const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+            const fileType = isPdf ? 'pdf' : 'image';
+
+            dropZone.innerHTML = `
+                <div class="upload-icon-circle"><i class="fa-solid fa-spinner fa-spin"></i></div>
+                <h2>กำลังประมวลผลไฟล์...</h2>
+                <p>กรุณารอสักครู่ ระบบกำลังนำไฟล์เข้าสู่คิวงาน</p>
+            `;
+
+            // Convert to base64 or upload to Firebase temp storage
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const base64Data = e.target.result;
+                const fileRefKey = 'f_' + Date.now().toString(36);
+                
+                // Save to Firebase temp files
+                await db.ref(`temp_files/${fileRefKey}`).set({
+                    data: base64Data.split(',')[1] || base64Data,
+                    type: fileType,
+                    filename: file.name,
+                    createdAt: Date.now()
+                });
+
+                const payload = {
+                    sessionId,
+                    fileUrl: `fb_${fileRefKey}`,
+                    fileType,
+                    fileName: file.name,
+                    createdAt: Date.now(),
+                    status: 'waiting', // 'waiting' | 'in_progress' | 'completed'
+                    markers: {}
+                };
+
+                // Save to session and add to queue
+                await db.ref(`text_touch/sessions/${sessionId}`).set(payload);
+                await db.ref(`text_touch/queue/${sessionId}`).set({
+                    sessionId,
+                    fileName: file.name,
+                    createdAt: Date.now(),
+                    status: 'waiting'
+                });
+
+                uploadView.style.display = 'none';
+                editorView.classList.add('active');
+                await loadMedia(`fb_${fileRefKey}`, fileType);
+                listenToMarkers();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function loadMedia(url, type) {
+            let finalSrc = url;
+            if (url.startsWith('fb_')) {
+                const fileKey = url.replace('fb_', '');
+                const snap = await db.ref(`temp_files/${fileKey}`).once('value');
+                const fileObj = snap.val();
+                if (fileObj && fileObj.data) {
+                    finalSrc = `data:${fileObj.type === 'pdf' ? 'application/pdf' : 'image/jpeg'};base64,${fileObj.data}`;
+                }
+            }
+
+            if (type === 'image') {
+                return new Promise((resolve) => {
+                    mainImage.onload = () => {
+                        mainImage.style.display = 'block';
+                        pdfCanvas.style.display = 'none';
+                        fitToScreen();
+                        resolve();
+                    };
+                    mainImage.src = finalSrc;
+                });
+            } else if (type === 'pdf') {
+                const pdf = await pdfjsLib.getDocument(finalSrc).promise;
+                const page = await pdf.getPage(1);
+                const viewport = page.getViewport({ scale: 2 });
+                pdfCanvas.width = viewport.width;
+                pdfCanvas.height = viewport.height;
+                const ctx = pdfCanvas.getContext('2d');
+                await page.render({ canvasContext: ctx, viewport }).promise;
+                pdfCanvas.style.display = 'block';
+                mainImage.style.display = 'none';
+                fitToScreen();
+            }
+        }
+
+        // --- 5. CANVAS NAVIGATION (PAN & ZOOM) ---
+        function fitToScreen() {
+            const container = canvasContainer.getBoundingClientRect();
+            const content = mainImage.style.display !== 'none' ? mainImage : pdfCanvas;
+            const contentW = content.naturalWidth || content.width || 800;
+            const contentH = content.naturalHeight || content.height || 600;
+
+            const scaleX = (container.width * 0.9) / contentW;
+            const scaleY = (container.height * 0.9) / contentH;
+            scale = Math.min(scaleX, scaleY, 1);
+
+            translateX = (container.width - contentW * scale) / 2;
+            translateY = (container.height - contentH * scale) / 2;
+            applyTransform();
+        }
+
+        function applyTransform() {
+            canvasWrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            zoomText.textContent = Math.round(scale * 100) + '%';
+        }
+
+        function initCanvasEvents() {
+            canvasContainer.addEventListener('mousedown', (e) => {
+                if (currentMode === 'add') {
+                    startDrawingMarker(e);
+                    return;
+                }
+                if (e.target === canvasContainer || e.target === canvasWrapper || e.target === mainImage || e.target === pdfCanvas) {
+                    isPanning = true;
+                    canvasContainer.classList.add('grabbing');
+                    panStartX = e.clientX - translateX;
+                    panStartY = e.clientY - translateY;
+                }
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (isPanning) {
+                    translateX = e.clientX - panStartX;
+                    translateY = e.clientY - panStartY;
+                    applyTransform();
+                }
+            });
+
+            window.addEventListener('mouseup', () => {
+                isPanning = false;
+                canvasContainer.classList.remove('grabbing');
+            });
+
+            // Wheel Zoom
+            canvasContainer.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                const rect = canvasContainer.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                const oldScale = scale;
+                scale = Math.max(0.15, Math.min(6, scale * delta));
+                translateX = mouseX - (mouseX - translateX) * (scale / oldScale);
+                translateY = mouseY - (mouseY - translateY) * (scale / oldScale);
+                applyTransform();
+            });
+
+            // Touch events for Mobile
+            let touchDist = 0;
+            canvasContainer.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) {
+                    touchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                } else if (e.touches.length === 1 && currentMode !== 'add') {
+                    if (e.target.closest('.marker-box')) return;
+                    isPanning = true;
+                    panStartX = e.touches[0].clientX - translateX;
+                    panStartY = e.touches[0].clientY - translateY;
+                }
+            }, { passive: true });
+
+            canvasContainer.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2) {
+                    const newDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                    scale = Math.max(0.15, Math.min(6, scale * (newDist / touchDist)));
+                    touchDist = newDist;
+                    applyTransform();
+                } else if (isPanning && e.touches.length === 1) {
+                    translateX = e.touches[0].clientX - panStartX;
+                    translateY = e.touches[0].clientY - panStartY;
+                    applyTransform();
+                }
+            }, { passive: true });
+
+            canvasContainer.addEventListener('touchend', () => { isPanning = false; });
+        }
+
+        function initToolbar() {
+            const toolSelect = document.getElementById('toolSelect');
+            const toolAddPoint = document.getElementById('toolAddPoint');
+
+            toolSelect.addEventListener('click', () => {
+                currentMode = 'select';
+                toolSelect.classList.add('active');
+                toolAddPoint.classList.remove('active');
+                canvasContainer.classList.remove('crosshair-mode');
+            });
+
+            toolAddPoint.addEventListener('click', () => {
+                currentMode = 'add';
+                toolAddPoint.classList.add('active');
+                toolSelect.classList.remove('active');
+                canvasContainer.classList.add('crosshair-mode');
+            });
+
+            document.getElementById('btnZoomIn').addEventListener('click', () => { scale = Math.min(6, scale * 1.25); applyTransform(); });
+            document.getElementById('btnZoomOut').addEventListener('click', () => { scale = Math.max(0.15, scale / 1.25); applyTransform(); });
+            document.getElementById('btnFitScreen').addEventListener('click', fitToScreen);
+
+            document.getElementById('btnShareSession').addEventListener('click', () => {
+                navigator.clipboard.writeText(window.location.href);
+                alert('📋 คัดลอกลิงก์เซสชัน text-touch เรียบร้อยแล้ว!');
+            });
+        }
+
+        // --- 6. ADD & DRAG MARKERS ---
+        function startDrawingMarker(e) {
+            const content = mainImage.style.display !== 'none' ? mainImage : pdfCanvas;
+            const rect = content.getBoundingClientRect();
+            
+            const startX = ((e.clientX - rect.left) / rect.width) * 100;
+            const startY = ((e.clientY - rect.top) / rect.height) * 100;
+
+            const markerId = 'm_' + Date.now().toString(36);
+            const count = Object.keys(markers).length + 1;
+
+            const newMarker = {
+                id: markerId,
+                number: count,
+                x: Math.max(0, Math.min(95, startX)),
+                y: Math.max(0, Math.min(95, startY)),
+                width: 14,
+                height: 8,
+                note: '',
+                price: 50,
+                status: 'waiting', // 'waiting' | 'working' | 'awaiting_payment' | 'paid_done'
+                watermarked: false
+            };
+
+            db.ref(`text_touch/sessions/${sessionId}/markers/${markerId}`).set(newMarker);
+
+            // Switch back to select mode
+            document.getElementById('toolSelect').click();
+        }
+
+        function listenToMarkers() {
+            const markersRef = db.ref(`text_touch/sessions/${sessionId}/markers`);
+            markersRef.on('value', (snapshot) => {
+                markers = snapshot.val() || {};
+                renderAllMarkers();
+                renderAllCards();
+                checkIfAllPaid();
+            });
+        }
+
+        function renderAllMarkers() {
+            document.querySelectorAll('.marker-box').forEach(el => el.remove());
+
+            Object.values(markers).forEach(m => {
+                const box = document.createElement('div');
+                box.className = `marker-box status-${m.status.replace('_', '-')}`;
+                if (m.id === activeMarkerId) box.classList.add('active');
+                box.dataset.id = m.id;
+                box.style.left = m.x + '%';
+                box.style.top = m.y + '%';
+                box.style.width = m.width + '%';
+                box.style.height = m.height + '%';
+
+                box.innerHTML = `
+                    <div class="marker-badge">${m.number}</div>
+                    ${m.status === 'awaiting_payment' ? `<div class="marker-watermark-overlay">รอชำระเงิน<br>฿${m.price || 50}</div>` : ''}
+                    <div class="resize-handle br"></div>
+                `;
+
+                // Dragging Marker
+                box.addEventListener('mousedown', (e) => {
+                    if (e.target.classList.contains('resize-handle')) {
+                        initResize(e, m);
+                    } else {
+                        initDrag(e, m);
+                    }
+                });
+
+                box.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    setActiveMarker(m.id);
+                });
+
+                canvasWrapper.appendChild(box);
+            });
+        }
+
+        function initDrag(e, m) {
+            e.stopPropagation();
+            const content = mainImage.style.display !== 'none' ? mainImage : pdfCanvas;
+            const rect = content.getBoundingClientRect();
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const origX = m.x;
+            const origY = m.y;
+
+            function onMove(moveEvent) {
+                const dx = ((moveEvent.clientX - startX) / rect.width) * 100;
+                const dy = ((moveEvent.clientY - startY) / rect.height) * 100;
+                m.x = Math.max(0, Math.min(100 - m.width, origX + dx));
+                m.y = Math.max(0, Math.min(100 - m.height, origY + dy));
+                const el = document.querySelector(`.marker-box[data-id="${m.id}"]`);
+                if (el) { el.style.left = m.x + '%'; el.style.top = m.y + '%'; }
+            }
+
+            function onUp() {
+                window.removeEventListener('mousemove', onMove);
+                window.removeEventListener('mouseup', onUp);
+                db.ref(`text_touch/sessions/${sessionId}/markers/${m.id}`).update({ x: m.x, y: m.y });
+            }
+
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
+        }
+
+        function initResize(e, m) {
+            e.stopPropagation();
+            const content = mainImage.style.display !== 'none' ? mainImage : pdfCanvas;
+            const rect = content.getBoundingClientRect();
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const origW = m.width;
+            const origH = m.height;
+
+            function onResizeMove(moveEvent) {
+                const dx = ((moveEvent.clientX - startX) / rect.width) * 100;
+                const dy = ((moveEvent.clientY - startY) / rect.height) * 100;
+                m.width = Math.max(4, Math.min(100 - m.x, origW + dx));
+                m.height = Math.max(3, Math.min(100 - m.y, origH + dy));
+                const el = document.querySelector(`.marker-box[data-id="${m.id}"]`);
+                if (el) { el.style.width = m.width + '%'; el.style.height = m.height + '%'; }
+            }
+
+            function onResizeUp() {
+                window.removeEventListener('mousemove', onResizeMove);
+                window.removeEventListener('mouseup', onResizeUp);
+                db.ref(`text_touch/sessions/${sessionId}/markers/${m.id}`).update({ width: m.width, height: m.height });
+            }
+
+            window.addEventListener('mousemove', onResizeMove);
+            window.addEventListener('mouseup', onResizeUp);
+        }
+
+        // --- 7. CARDS & CHECKOUT UI ---
+        function renderAllCards() {
+            pointsList.innerHTML = '';
+            const count = Object.keys(markers).length;
+            pointCounterPill.textContent = count + ' จุด';
+            mobilePointCount.textContent = count;
+
+            if (count === 0) {
+                pointsList.innerHTML = `
+                    <div style="text-align:center; padding:30px 10px; color:var(--text-muted);">
+                        <i class="fa-solid fa-crosshairs" style="font-size:2rem; margin-bottom:10px; color:#4f46e5;"></i>
+                        <p>ยังไม่มีจุดแก้ไข</p>
+                        <small>กดปุ่ม "+" ในแถบเครื่องมือเพื่อวงจุดที่ต้องการแก้</small>
+                    </div>
+                `;
+                return;
+            }
+
+            Object.values(markers).sort((a,b) => a.number - b.number).forEach(m => {
+                const card = document.createElement('div');
+                card.className = `point-card status-${m.status.replace('_', '-')}`;
+                if (m.id === activeMarkerId) card.classList.add('active');
+                card.dataset.id = m.id;
+
+                let statusBadge = '';
+                if (m.status === 'waiting') statusBadge = '<span class="point-status-tag waiting">รอคิวทำ</span>';
+                else if (m.status === 'working') statusBadge = '<span class="point-status-tag working"><i class="fa-solid fa-paintbrush"></i> กำลังแก้ไข</span>';
+                else if (m.status === 'awaiting_payment') statusBadge = '<span class="point-status-tag awaiting-payment">เสร็จแล้ว รอชำระ</span>';
+                else if (m.status === 'paid_done') statusBadge = '<span class="point-status-tag done"><i class="fa-solid fa-check"></i> เสร็จสมบูรณ์</span>';
+
+                let actionHtml = '';
+                if (m.status === 'awaiting_payment') {
+                    actionHtml = `<button class="btn-pay-point" onclick="openPaymentModal('${m.id}')"><i class="fa-solid fa-qrcode"></i> ชำระ ฿${m.price}</button>`;
+                }
+
+                // Admin Controls on Card
+                let adminCardControl = '';
+                if (isLocalAdmin) {
+                    adminCardControl = `
+                        <div style="display:flex; gap:6px; align-items:center; margin-top:8px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:6px;">
+                            <input type="number" value="${m.price || 50}" style="width:60px; background:#0f172a; border:1px solid #6366f1; color:white; border-radius:4px; padding:2px 4px; font-size:0.75rem;" onchange="updateMarkerPrice('${m.id}', this.value)"> บาท
+                            <button class="btn-admin" style="padding:2px 6px; font-size:0.7rem;" onclick="adminSetStatus('${m.id}', 'working')">กำลังทำ</button>
+                            <button class="btn-admin" style="padding:2px 6px; font-size:0.7rem; background:#f59e0b;" onclick="adminSetStatus('${m.id}', 'awaiting_payment')">พาดลายน้ำ</button>
+                            <button class="btn-admin" style="padding:2px 6px; font-size:0.7rem; background:#10b981;" onclick="adminSetStatus('${m.id}', 'paid_done')">จ่ายแล้ว</button>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div class="point-card-top">
+                        <span class="point-id-badge">
+                            <span style="background:#ef4444; width:18px; height:18px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:white; font-size:0.7rem;">${m.number}</span>
+                            จุดที่ ${m.number}
+                        </span>
+                        ${statusBadge}
+                    </div>
+                    <textarea class="point-input-note" placeholder="พิมพ์สิ่งที่ต้องการแก้ไขตรงนี้..." oninput="updateMarkerNote('${m.id}', this.value)">${m.note || ''}</textarea>
+                    <div class="point-card-footer">
+                        <span class="point-price-tag">฿${m.price || 50}.00</span>
+                        ${actionHtml}
+                    </div>
+                    ${adminCardControl}
+                `;
+
+                card.addEventListener('click', () => setActiveMarker(m.id));
+                pointsList.appendChild(card);
+            });
+        }
+
+        function setActiveMarker(id) {
+            activeMarkerId = id;
+            document.querySelectorAll('.marker-box').forEach(b => b.classList.toggle('active', b.dataset.id === id));
+            document.querySelectorAll('.point-card').forEach(c => c.classList.toggle('active', c.dataset.id === id));
+        }
+
+        let noteTimeout;
+        function updateMarkerNote(id, text) {
+            clearTimeout(noteTimeout);
+            noteTimeout = setTimeout(() => {
+                db.ref(`text_touch/sessions/${sessionId}/markers/${id}`).update({ note: text });
+            }, 400);
+        }
+
+        function updateMarkerPrice(id, val) {
+            const price = parseFloat(val) || 50;
+            db.ref(`text_touch/sessions/${sessionId}/markers/${id}`).update({ price });
+        }
+
+        function adminSetStatus(id, st) {
+            db.ref(`text_touch/sessions/${sessionId}/markers/${id}`).update({ status: st });
+        }
+
+        // --- 8. QUEUE MANAGEMENT SYSTEM ---
+        function listenToQueueUpdates() {
+            db.ref('text_touch/queue').on('value', (snapshot) => {
+                const queueObj = snapshot.val() || {};
+                const list = Object.values(queueObj).sort((a,b) => a.createdAt - b.createdAt);
+                
+                // Find our position
+                const ourIndex = list.findIndex(item => item.sessionId === sessionId);
+                if (ourIndex === 0) {
+                    queueStatusBanner.classList.add('active-job');
+                    queueStatusText.textContent = '🟢 ถึงคิวของคุณแล้ว (ช่างกำลังทำงาน)';
+                    queueIcon.className = 'fa-solid fa-circle-check';
+                } else if (ourIndex > 0) {
+                    queueStatusBanner.classList.remove('active-job');
+                    queueStatusText.textContent = `⏳ ช่างกำลังติดงาน... รออีก ${ourIndex} คิว`;
+                    queueIcon.className = 'fa-solid fa-hourglass-half';
+                } else {
+                    queueStatusBanner.classList.remove('active-job');
+                    queueStatusText.textContent = '✅ พร้อมรับงาน';
+                    queueIcon.className = 'fa-solid fa-bolt';
+                }
+            });
+        }
+
+        // Admin Queue Bar Listing
+        function initAdminQueueListener() {
+            db.ref('text_touch/queue').on('value', (snapshot) => {
+                const queueObj = snapshot.val() || {};
+                adminQueueList.innerHTML = '';
+                const list = Object.values(queueObj).sort((a,b) => a.createdAt - b.createdAt);
+
+                list.forEach((item, idx) => {
+                    const el = document.createElement('div');
+                    el.className = `admin-queue-item ${item.sessionId === sessionId ? 'current' : ''}`;
+                    el.innerHTML = `<span>#${idx+1}</span> ${item.fileName || 'งานใหม่'} ${item.sessionId === sessionId ? '(เปิดอยู่)' : ''}`;
+                    el.onclick = () => {
+                        window.location.search = `?id=${item.sessionId}&admin=1`;
+                    };
+                    adminQueueList.appendChild(el);
+                });
+            });
+
+            document.getElementById('btnAdminAcceptJob').addEventListener('click', async () => {
+                await db.ref(`text_touch/sessions/${sessionId}`).update({ status: 'in_progress' });
+                alert('✅ ยืนยันรับงานเรียบร้อย!');
+            });
+
+            document.getElementById('btnAdminOpenPS').addEventListener('click', async () => {
+                try {
+                    const snap = await db.ref(`text_touch/sessions/${sessionId}`).once('value');
+                    const sess = snap.val();
+                    const res = await fetch('http://127.0.0.1:5000/text-touch-open-ps', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sessionId, fileUrl: sess.fileUrl })
+                    });
+                    if (res.ok) alert('🎨 ส่งคำสั่งเปิด Photoshop เรียบร้อยแล้ว!');
+                    else alert('⚠️ ติดต่อ Local Watcher 5000 ไม่สำเร็จ กรุณาตรวจสอบว่าเปิดระบบอยู่หรือไม่');
+                } catch(e) {
+                    alert('⚠️ ไม่สามารถเชื่อมต่อ http://127.0.0.1:5000 ได้: ' + e.message);
+                }
+            });
+        }
+
+        // --- 9. PAYMENTS & PROMPTPAY MODAL ---
+        function openPaymentModal(markerId) {
+            const m = markers[markerId];
+            if (!m) return;
+
+            document.getElementById('modalPointTitle').textContent = `จุดที่ ${m.number}: ${m.note || 'แก้ไขข้อความ'}`;
+            document.getElementById('modalPriceText').textContent = `฿${Number(m.price || 50).toFixed(2)}`;
+            
+            // PromptPay QR URL (with 0988573074)
+            const qrUrl = `https://promptpay.io/0988573074/${Number(m.price || 50).toFixed(2)}.png`;
+            document.getElementById('modalQrImg').src = qrUrl;
+            paymentModal.classList.add('active');
+            paymentModal.dataset.markerId = markerId;
+        }
+
+        function closePaymentModal() {
+            paymentModal.classList.remove('active');
+        }
+
+        async function confirmPaymentSimulation() {
+            const id = paymentModal.dataset.markerId;
+            if (id) {
+                await db.ref(`text_touch/sessions/${sessionId}/markers/${id}`).update({
+                    status: 'paid_done',
+                    paidAt: Date.now()
+                });
+                confetti({ particleCount: 70, spread: 60, origin: { y: 0.7 } });
+                closePaymentModal();
+            }
+        }
+
+        // --- 10. COMPLETION & 1-HOUR EXPIRY TIMER ---
+        function checkIfAllPaid() {
+            const markerVals = Object.values(markers);
+            if (markerVals.length > 0 && markerVals.every(m => m.status === 'paid_done')) {
+                document.getElementById('btnDownloadWork').style.display = 'inline-flex';
+                expiryBanner.classList.add('active');
+                startExpiryTimer();
+            }
+        }
+
+        let expiryInterval;
+        function startExpiryTimer() {
+            if (expiryInterval) return;
+            let secondsLeft = 3600; // 1 hour
+
+            expiryInterval = setInterval(() => {
+                secondsLeft--;
+                if (secondsLeft <= 0) {
+                    clearInterval(expiryInterval);
+                    triggerAutoDestruct();
+                    return;
+                }
+                const mins = Math.floor(secondsLeft / 60);
+                const secs = secondsLeft % 60;
+                expiryTimerDigits.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            }, 1000);
+
+            document.getElementById('btnExtendExpiry').onclick = () => {
+                secondsLeft += 1800; // +30 mins
+                alert('⏳ ขยายเวลาให้เพิ่มอีก 30 นาทีเรียบร้อยแล้ว!');
+            };
+        }
+
+        async function triggerAutoDestruct() {
+            alert('🔒 เซสชันนี้หมดเวลา 1 ชั่วโมงแล้ว ระบบได้ทำลายไฟล์เพื่อความเป็นส่วนตัว');
+            await db.ref(`text_touch/sessions/${sessionId}`).remove();
+            await db.ref(`text_touch/queue/${sessionId}`).remove();
+            window.location.reload();
+        }
+
+        // --- 11. MINI CHAT EMBEDDING ---
+        function updateChatFrame() {
+            if (!sessionId) return;
+            const chatUrl = `https://artnp.github.io/chat/?room=tt_${sessionId}&mini=1`;
+            document.getElementById('miniChatFrame').src = chatUrl;
+        }
+
+        const chatTriggerBtn = document.getElementById('chatTriggerBtn');
+        const miniChatPopup = document.getElementById('miniChatPopup');
+
+        chatTriggerBtn.addEventListener('click', () => {
+            const isOpen = miniChatPopup.classList.contains('active');
+            toggleMiniChat(!isOpen);
+        });
+
+        function toggleMiniChat(show) {
+            miniChatPopup.classList.toggle('active', show);
+            if (show) document.getElementById('chatUnreadDot').style.display = 'none';
+        }
+
+        // Mobile Tabs Switcher
+        function switchMobileTab(tab) {
+            const canvasSec = document.getElementById('canvasSection');
+            const sidebarSec = document.getElementById('sidebarSection');
+            const tabCanvas = document.getElementById('mobileTabCanvas');
+            const tabPoints = document.getElementById('mobileTabPoints');
+
+            if (tab === 'canvas') {
+                canvasSec.classList.remove('mobile-hide');
+                sidebarSec.classList.remove('mobile-show');
+                tabCanvas.classList.add('active');
+                tabPoints.classList.remove('active');
+            } else {
+                canvasSec.classList.add('mobile-hide');
+                sidebarSec.classList.add('mobile-show');
+                tabPoints.classList.add('active');
+                tabCanvas.classList.remove('active');
+            }
+        }
+    </script>
+</body>
+</html>
