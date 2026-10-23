@@ -2794,63 +2794,92 @@ loadRules();
             return
 
         # ===== TEXT-TOUCH SERVICE ENDPOINTS =====
-        if parsed_url.path == '/text-touch-open-ps':
+        # ===== TEXT-RETOUCH AGENT ENDPOINTS =====
+        if parsed_url.path == '/text-retouch-submit':
+            """กด F12 ใน Photoshop → ส่งผลลัพธ์ patch กลับให้ลูกค้า"""
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
             try:
-                data = json.loads(post_data.decode('utf-8')) if post_data else {}
-                session_id = data.get('sessionId', '')
-                file_url = data.get('fileUrl', '')
+                req_data = json.loads(post_data.decode('utf-8')) if post_data else {}
                 script_dir = os.path.dirname(os.path.abspath(__file__))
                 import importlib.util
-                engine_path = os.path.join(script_dir, 'text_touch_engine.py')
+                engine_path = os.path.join(script_dir, 'text_retouch_engine.py')
                 if os.path.exists(engine_path):
-                    spec = importlib.util.spec_from_file_location('text_touch_engine', engine_path)
-                    tte = importlib.util.module_from_spec(spec)
-                    spec.loader.exec_module(tte)
-                    success = tte.open_in_photoshop(session_id, file_url)
+                    spec = importlib.util.spec_from_file_location('text_retouch_engine', engine_path)
+                    rte = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(rte)
+                    result = rte.handle_request('submit', req_data)
                 else:
-                    success = False
-                self.send_response(200 if success else 500)
+                    result = {'ok': False, 'error': 'text_retouch_engine.py not found'}
+                self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
-                self.wfile.write(json.dumps({'success': success}).encode())
+                self.wfile.write(json.dumps(result).encode())
             except Exception as e:
-                print(f'[Text-Touch] open-ps error: {e}')
+                print(f'[TextRetouch] submit error: {e}')
                 self.send_response(500)
                 self.send_header('Content-type', 'application/json')
                 self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
-                self.wfile.write(json.dumps({'success': False, 'error': str(e)}).encode())
+                self.wfile.write(json.dumps({'ok': False, 'error': str(e)}).encode())
             return
 
-        if parsed_url.path == '/text-touch-submit':
+        if parsed_url.path == '/text-retouch-confirm':
+            """ยืนยันการชำระเงิน → ปลดลายน้ำ patch"""
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
+            try:
+                req_data = json.loads(post_data.decode('utf-8')) if post_data else {}
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                import importlib.util
+                engine_path = os.path.join(script_dir, 'text_retouch_engine.py')
+                if os.path.exists(engine_path):
+                    spec = importlib.util.spec_from_file_location('text_retouch_engine', engine_path)
+                    rte = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(rte)
+                    result = rte.handle_request('confirm_payment', req_data)
+                else:
+                    result = {'ok': False, 'error': 'engine not found'}
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps(result).encode())
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                self.wfile.write(json.dumps({'ok': False, 'error': str(e)}).encode())
+            return
+
+        if parsed_url.path == '/text-retouch-watch':
+            """ตรวจหา patch ใหม่ใน Firebase แล้วเปิดใน Photoshop"""
             try:
                 script_dir = os.path.dirname(os.path.abspath(__file__))
                 import importlib.util
-                engine_path = os.path.join(script_dir, 'text_touch_engine.py')
+                engine_path = os.path.join(script_dir, 'text_retouch_engine.py')
                 if os.path.exists(engine_path):
-                    spec = importlib.util.spec_from_file_location('text_touch_engine', engine_path)
-                    tte = importlib.util.module_from_spec(spec)
-                    spec.loader.exec_module(tte)
-                    success = tte.submit_active_point_from_photoshop()
+                    spec = importlib.util.spec_from_file_location('text_retouch_engine', engine_path)
+                    rte = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(rte)
+                    result = rte.handle_request('watch')
                 else:
-                    success = False
-                self.send_response(200 if success else 500)
+                    result = {'ok': False, 'error': 'engine not found'}
+                self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
-                self.wfile.write(json.dumps({'success': success}).encode())
+                self.wfile.write(json.dumps(result).encode())
             except Exception as e:
-                print(f'[Text-Touch] submit error: {e}')
                 self.send_response(500)
                 self.send_header('Content-type', 'application/json')
                 self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
-                self.wfile.write(json.dumps({'success': False, 'error': str(e)}).encode())
+                self.wfile.write(json.dumps({'ok': False, 'error': str(e)}).encode())
             return
-        # ===== END TEXT-TOUCH =====
+        # ===== END TEXT-RETOUCH AGENT =====
 
         if parsed_url.path in ('/upscale', '/ai-transform'):
             content_length = int(self.headers.get('Content-Length', 0))
@@ -3441,48 +3470,53 @@ if __name__ == "__main__":
                 pass
     threading.Thread(target=firebase_temp_cleanup_loop, daemon=True).start()
 
-    # Start Text-Touch New Job Watcher (Alerts admin when customer uploads document/points)
-    def text_touch_job_watcher_loop():
-        seen_sessions = set()
+    # Start Text-Retouch Agent Watcher (auto-opens patches from customers in Photoshop)
+    def text_retouch_agent_watcher_loop():
+        """ตรวจ Firebase ทุก 5 วินาที — เมื่อพบ patch ใหม่ (status=working) เปิดใน Photoshop อัตโนมัติ"""
+        import importlib.util
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        engine_path = os.path.join(script_dir, 'text_retouch_engine.py')
+        seen_patches = set()
         first_run = True
         while True:
             try:
-                time.sleep(4)
-                req_url = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files.json?shallow=false"
+                time.sleep(5)
+                req_url = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/text_retouch.json?shallow=false"
                 req = urllib.request.Request(req_url, headers={'User-Agent': 'Mozilla/5.0'})
-                with urllib.request.urlopen(req, timeout=5) as resp:
-                    all_files = json.loads(resp.read().decode('utf-8')) or {}
-                
-                queue_items = [v for k, v in all_files.items() if (k.startswith('__tt_queue_') or (isinstance(v, dict) and v.get('_isQueue')))]
-                
-                if first_run:
-                    for it in queue_items:
-                        if isinstance(it, dict) and it.get('sessionId'):
-                            seen_sessions.add(it['sessionId'])
-                    first_run = False
-                    continue
+                with urllib.request.urlopen(req, timeout=8) as resp:
+                    all_sessions = json.loads(resp.read().decode('utf-8')) or {}
 
-                for it in queue_items:
-                    if not isinstance(it, dict): continue
-                    s_id = it.get('sessionId')
-                    if s_id and s_id not in seen_sessions:
-                        seen_sessions.add(s_id)
-                        fn = it.get('fileName') or 'เอกสารใหม่'
-                        print(f"\n[Text-Touch] 🔔🔔 มีลูกค้าส่งงานใหม่เข้ามา! ไฟล์: {fn} (ID: {s_id})")
-                        try:
-                            import winsound
-                            winsound.PlaySound("SystemAsterisk", winsound.SND_ALIAS | winsound.SND_ASYNC)
-                        except Exception:
-                            pass
-                        # Auto open admin text-touch interface in Chrome
-                        try:
-                            admin_url = f"https://artnp.github.io/eworker/shop/services/text-touch/?id={s_id}&admin=1"
-                            webbrowser.open_new_tab(admin_url)
-                        except Exception as oe:
-                            print(f"[Text-Touch] Open Chrome error: {oe}")
+                for session_id, session in (all_sessions or {}).items():
+                    if not isinstance(session, dict): continue
+                    patches = session.get('patches', {}) or {}
+                    for patch_id, patch in patches.items():
+                        if not isinstance(patch, dict): continue
+                        if patch.get('status') == 'working' and patch_id not in seen_patches:
+                            if first_run:
+                                seen_patches.add(patch_id)
+                                continue
+                            seen_patches.add(patch_id)
+                            num = patch.get('num', '?')
+                            note = patch.get('note', '')[:40]
+                            print(f"\n[TextRetouch] 🔔 งานใหม่! จุดที่ {num} — '{note}' (session: {session_id})")
+                            try:
+                                import winsound
+                                winsound.PlaySound("SystemAsterisk", winsound.SND_ALIAS | winsound.SND_ASYNC)
+                            except Exception:
+                                pass
+                            # Auto-open patch in Photoshop
+                            if os.path.exists(engine_path):
+                                try:
+                                    spec = importlib.util.spec_from_file_location('text_retouch_engine', engine_path)
+                                    rte = importlib.util.module_from_spec(spec)
+                                    spec.loader.exec_module(rte)
+                                    rte.open_patch_in_photoshop(session_id, patch_id, patch)
+                                except Exception as pe:
+                                    print(f"[TextRetouch] เปิด PS ล้มเหลว: {pe}")
+                first_run = False
             except Exception:
                 pass
-    threading.Thread(target=text_touch_job_watcher_loop, daemon=True).start()
+    threading.Thread(target=text_retouch_agent_watcher_loop, daemon=True).start()
 
     # Launch floating status and loading progress bar widget (same as Facebook_Bot)
     write_status_file(0, 'idle', 'พร้อมทำงาน', task_type="idle")
