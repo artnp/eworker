@@ -1,53 +1,76 @@
-#target photoshop
-// ==============================================================
-// auto_text_touch_from_Photoshop.jsx
-// สคริปต์ส่งออกภาพ Text-Touch พาดลายน้ำและอัปเดตสถานะให้ลูกค้า
-// ==============================================================
+// auto_text_retouch_from_Photoshop.jsx
+// กด F12 ใน Photoshop เพื่อส่งผลลัพธ์กลับให้ลูกค้า
+// ──────────────────────────────────────────────────
 
-var desktop = Folder.desktop;
-var pngFile = new File(desktop + '/text_touch_complete.png');
+var ENGINE_URL = "http://localhost:37791/text-retouch-submit";
 
-var win = new Window('palette', 'Text-Touch Export', undefined);
-win.alignChildren = 'left';
-var progressBar = win.add('progressbar', undefined, 0, 100);
-progressBar.preferredSize.width = 320;
-var statusText = win.add('statictext', undefined, 'กำลังเริ่มส่งออก...');
-statusText.preferredSize.width = 320;
-win.show();
-
-function setProgress(v, t) {
-    progressBar.value = v;
-    statusText.text = t;
-    win.update();
-}
-
-if (!app.documents.length) {
-    alert("กรุณาเปิดภาพงานที่กำลังแก้อยู่ก่อนครับ!");
+// 1. Save as PNG ไปยัง result path
+var doc = app.activeDocument;
+if (!doc) {
+    alert("❌ ไม่มี document ที่เปิดอยู่!");
 } else {
-    var doc = app.activeDocument;
+    // Flatten ก่อน save
+    doc.flatten();
 
-    setProgress(20, 'กำลังส่งออก PNG ไปยัง Desktop...');
+    // หา result path จาก active state
+    var stateFile = new File("D:/Github/eworker/cache/text_retouch/active_patch.json");
+    var resultPath = "";
+    var patchNum = "";
+    var sessionId = "";
+    var patchId = "";
 
-    var opts = new ExportOptionsSaveForWeb();
-    opts.format = SaveDocumentType.PNG;
-    opts.PNG8 = false;
-    opts.transparency = true;
+    if (stateFile.exists) {
+        stateFile.open("r");
+        var stateJson = stateFile.read();
+        stateFile.close();
 
-    doc.exportDocument(pngFile, ExportType.SAVEFORWEB, opts);
+        // Parse JSON manually (no JSON.parse in old ExtendScript)
+        var resultMatch = stateJson.match(/"result_path":\s*"([^"]+)"/);
+        var numMatch = stateJson.match(/"patch_num":\s*(\d+)/);
+        var sidMatch = stateJson.match(/"session_id":\s*"([^"]+)"/);
+        var pidMatch = stateJson.match(/"patch_id":\s*"([^"]+)"/);
 
-    setProgress(60, 'ส่งออก PNG สำเร็จ กำลังพาดลายน้ำและอัปเดต...');
+        if (resultMatch) resultPath = resultMatch[1].replace(/\\\//g, "/");
+        if (numMatch) patchNum = numMatch[1];
+        if (sidMatch) sessionId = sidMatch[1];
+        if (pidMatch) patchId = pidMatch[1];
+    }
 
-    var scriptDir = decodeURI($.fileName).replace(/\/[^\/]+$/, '');
-    var batFile = new File(scriptDir + "/auto_text_touch_submit.bat");
+    if (!resultPath) {
+        // Fallback: save to Desktop
+        resultPath = Folder.desktop.absoluteURI + "/text_retouch_result.png";
+    }
 
-    if (batFile.exists) {
-        setProgress(90, 'กำลังส่งงานขึ้นคลาวด์...');
-        batFile.execute();
-        setProgress(100, '✅ ส่งงานจุดนี้ให้ลูกค้าเรียบร้อยแล้ว!');
-        $.sleep(1200);
-        win.close();
-    } else {
-        alert("ไม่พบไฟล์: " + batFile.fsName);
-        win.close();
+    // Save PNG
+    var saveFile = new File(resultPath);
+    var opts = new PNGSaveOptions();
+    opts.compression = 6;
+    doc.saveAs(saveFile, opts, true, Extension.LOWERCASE);
+
+    // 2. ส่งสัญญาณไปยัง local server
+    try {
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", ENGINE_URL, false); // synchronous
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send(JSON.stringify({
+            resultPath: resultPath,
+            sessionId: sessionId,
+            patchId: patchId,
+            patchNum: parseInt(patchNum) || 1
+        }));
+
+        if (xhr.status === 200) {
+            var resp = eval("(" + xhr.responseText + ")");
+            if (resp.ok) {
+                alert("✅ ส่งงานจุดที่ " + (patchNum || "?") + " ให้ลูกค้าแล้ว!\n\nลูกค้าจะเห็นตัวอย่างพร้อม QR PromptPay ทันที");
+            } else {
+                alert("❌ ส่งงานไม่สำเร็จ: " + (resp.error || "unknown error"));
+            }
+        } else {
+            alert("⚠️ Server ไม่ตอบสนอง (status " + xhr.status + ")\n\nกรุณาตรวจสอบว่า auto_donate_watcher.py รันอยู่");
+        }
+    } catch (e) {
+        // Fallback: เปิดหน้าต่าง submit แทน
+        alert("⚠️ ไม่สามารถเชื่อมต่อ local server ได้\n\nบันทึกไฟล์แล้วที่:\n" + resultPath + "\n\nกรุณารัน auto_text_retouch_submit.bat เพื่อส่งงาน");
     }
 }
