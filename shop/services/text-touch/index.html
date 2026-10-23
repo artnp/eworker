@@ -1233,7 +1233,7 @@
             sessionId = id;
             updateChatFrame();
 
-            const snapshot = await db.ref(`text_touch/sessions/${sessionId}`).once('value');
+            const snapshot = await db.ref(`annotations/${sessionId}`).once('value');
             const data = snapshot.val();
             if (data && data.fileUrl) {
                 uploadView.style.display = 'none';
@@ -1257,56 +1257,164 @@
             if (e.dataTransfer.files[0]) handleFileUpload(e.dataTransfer.files[0]);
         });
 
+        // ===== UPLOAD API ENDPOINTS (same order as send.html / upload.py) =====
+        const UPLOAD_APIS = {
+            litterbox: 'https://litterbox.catbox.moe/resources/internals/api.php',
+            tmpfiles:  'https://tmpfiles.org/api/v1/upload',
+            fileio:    'https://file.io',
+            uguu:      'https://uguu.se/upload'
+        };
+
+        async function uploadWithXHR(url, formData) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', url, true);
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const pct = Math.round((e.loaded / e.total) * 100);
+                        dropZone.querySelector('p').textContent = `กำลังอัปโหลด... ${pct}%`;
+                    }
+                };
+                xhr.onload = () => (xhr.status >= 200 && xhr.status < 300) ? resolve(xhr.responseText) : reject(new Error(`HTTP ${xhr.status}`));
+                xhr.onerror = () => reject(new Error('Network error'));
+                xhr.send(formData);
+            });
+        }
+
+        async function tryLitterbox(file) {
+            try {
+                const fd = new FormData();
+                fd.append('reqtype', 'fileupload');
+                fd.append('time', '1h');
+                fd.append('fileToUpload', file);
+                const res = await uploadWithXHR(UPLOAD_APIS.litterbox, fd);
+                if (res.startsWith('http')) return { success: true, url: res.trim(), source: 'Litterbox' };
+            } catch(e) {}
+            return { success: false };
+        }
+
+        async function tryFirebaseBase64(file) {
+            try {
+                const b64 = await new Promise(r => {
+                    const fr = new FileReader();
+                    fr.onload = () => r(fr.result.split(',')[1]);
+                    fr.readAsDataURL(file);
+                });
+                const key = 'f_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4);
+                dropZone.querySelector('p').textContent = 'กำลังบันทึกลง Firebase Cloud...';
+                await db.ref(`temp_files/${key}`).set({
+                    data: b64,
+                    type: file.type.includes('pdf') ? 'pdf' : 'image',
+                    filename: file.name,
+                    createdAt: Date.now()
+                });
+                return { success: true, url: `fb_${key}`, source: 'Firebase' };
+            } catch(e) {}
+            return { success: false };
+        }
+
+        async function tryTmpfiles(file) {
+            try {
+                const fd = new FormData();
+                fd.append('file', file);
+                const res = await uploadWithXHR(UPLOAD_APIS.tmpfiles, fd);
+                const j = JSON.parse(res);
+                if (j.status === 'success' && j.data?.url)
+                    return { success: true, url: j.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/'), source: 'tmpfiles' };
+            } catch(e) {}
+            return { success: false };
+        }
+
+        async function tryFileIO(file) {
+            try {
+                const fd = new FormData();
+                fd.append('file', file);
+                fd.append('expires', '1d');
+                const res = await uploadWithXHR(UPLOAD_APIS.fileio, fd);
+                const j = JSON.parse(res);
+                if (j.success && j.link) return { success: true, url: j.link, source: 'file.io' };
+            } catch(e) {}
+            return { success: false };
+        }
+
+        async function tryUguu(file) {
+            try {
+                const fd = new FormData();
+                fd.append('files[]', file);
+                const res = await uploadWithXHR(UPLOAD_APIS.uguu, fd);
+                const j = JSON.parse(res);
+                if (j.success && j.files?.[0]?.url) return { success: true, url: j.files[0].url, source: 'Uguu' };
+            } catch(e) {}
+            return { success: false };
+        }
+
+        async function uploadFile(file) {
+            dropZone.querySelector('h2').textContent = 'กำลังอัปโหลดไฟล์...';
+            dropZone.querySelector('p').textContent = 'กำลังลองผ่าน Litterbox...';
+
+            for (const fn of [tryLitterbox, tryFirebaseBase64, tryTmpfiles, tryFileIO, tryUguu]) {
+                const result = await fn(file);
+                if (result.success) {
+                    console.log(`✅ Uploaded via ${result.source}:`, result.url);
+                    return result;
+                }
+                dropZone.querySelector('p').textContent = 'ลองช่องทางสำรอง...';
+            }
+            return { success: false, error: 'ทุกช่องทางล้มเหลว กรุณาลองใหม่อีกครั้ง' };
+        }
+
         async function handleFileUpload(file) {
             const isPdf = file.type === 'application/pdf' || file.name.endsWith('.pdf');
             const fileType = isPdf ? 'pdf' : 'image';
 
             dropZone.innerHTML = `
                 <div class="upload-icon-circle"><i class="fa-solid fa-spinner fa-spin"></i></div>
-                <h2>กำลังประมวลผลไฟล์...</h2>
-                <p>กรุณารอสักครู่ ระบบกำลังนำไฟล์เข้าสู่คิวงาน</p>
+                <h2>กำลังอัปโหลดไฟล์...</h2>
+                <p>กำลังลองช่องทาง Litterbox ก่อน...</p>
             `;
 
-            // Convert to base64 or upload to Firebase temp storage
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const base64Data = e.target.result;
-                const fileRefKey = 'f_' + Date.now().toString(36);
-                
-                // Save to Firebase temp files
-                await db.ref(`temp_files/${fileRefKey}`).set({
-                    data: base64Data.split(',')[1] || base64Data,
-                    type: fileType,
-                    filename: file.name,
-                    createdAt: Date.now()
-                });
+            const uploaded = await uploadFile(file);
+            if (!uploaded.success) {
+                dropZone.innerHTML = `
+                    <div class="upload-icon-circle" style="color:#ef4444;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <h2 style="color:#ef4444;">อัปโหลดล้มเหลว</h2>
+                    <p>${uploaded.error || 'กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่'}</p>
+                    <div class="upload-btn-row"><button class="upload-action-btn" onclick="location.reload()">↺ ลองอีกครั้ง</button></div>
+                `;
+                return;
+            }
 
-                const payload = {
-                    sessionId,
-                    fileUrl: `fb_${fileRefKey}`,
-                    fileType,
-                    fileName: file.name,
-                    createdAt: Date.now(),
-                    status: 'waiting', // 'waiting' | 'in_progress' | 'completed'
-                    markers: {}
-                };
+            dropZone.querySelector('p').textContent = `✅ อัปโหลดสำเร็จผ่าน ${uploaded.source}`;
 
-                // Save to session and add to queue
-                await db.ref(`text_touch/sessions/${sessionId}`).set(payload);
-                await db.ref(`text_touch/queue/${sessionId}`).set({
-                    sessionId,
-                    fileName: file.name,
-                    createdAt: Date.now(),
-                    status: 'waiting'
-                });
-
-                uploadView.style.display = 'none';
-                editorView.classList.add('active');
-                await loadMedia(`fb_${fileRefKey}`, fileType);
-                listenToMarkers();
+            const payload = {
+                sessionId,
+                fileUrl: uploaded.url,
+                fileType,
+                fileName: file.name,
+                createdAt: Date.now(),
+                status: 'waiting',
+                markers: {}
             };
-            reader.readAsDataURL(file);
+
+            // Save session in annotations/ (already permitted in Firebase Rules)
+            await db.ref(`annotations/${sessionId}`).set(payload);
+
+            // Queue stored in temp_files/ under a special key (also already permitted)
+            const queueKey = `__tt_queue_${sessionId}`;
+            await db.ref(`temp_files/${queueKey}`).set({
+                sessionId,
+                fileName: file.name,
+                createdAt: Date.now(),
+                status: 'waiting',
+                _isQueue: true
+            });
+
+            uploadView.style.display = 'none';
+            editorView.classList.add('active');
+            await loadMedia(uploaded.url, fileType);
+            listenToMarkers();
         }
+
 
         async function loadMedia(url, type) {
             let finalSrc = url;
@@ -1486,14 +1594,14 @@
                 watermarked: false
             };
 
-            db.ref(`text_touch/sessions/${sessionId}/markers/${markerId}`).set(newMarker);
+            db.ref(`annotations/${sessionId}/markers/${markerId}`).set(newMarker);
 
             // Switch back to select mode
             document.getElementById('toolSelect').click();
         }
 
         function listenToMarkers() {
-            const markersRef = db.ref(`text_touch/sessions/${sessionId}/markers`);
+            const markersRef = db.ref(`annotations/${sessionId}/markers`);
             markersRef.on('value', (snapshot) => {
                 markers = snapshot.val() || {};
                 renderAllMarkers();
@@ -1560,7 +1668,7 @@
             function onUp() {
                 window.removeEventListener('mousemove', onMove);
                 window.removeEventListener('mouseup', onUp);
-                db.ref(`text_touch/sessions/${sessionId}/markers/${m.id}`).update({ x: m.x, y: m.y });
+                db.ref(`annotations/${sessionId}/markers/${m.id}`).update({ x: m.x, y: m.y });
             }
 
             window.addEventListener('mousemove', onMove);
@@ -1588,7 +1696,7 @@
             function onResizeUp() {
                 window.removeEventListener('mousemove', onResizeMove);
                 window.removeEventListener('mouseup', onResizeUp);
-                db.ref(`text_touch/sessions/${sessionId}/markers/${m.id}`).update({ width: m.width, height: m.height });
+                db.ref(`annotations/${sessionId}/markers/${m.id}`).update({ width: m.width, height: m.height });
             }
 
             window.addEventListener('mousemove', onResizeMove);
@@ -1674,24 +1782,27 @@
         function updateMarkerNote(id, text) {
             clearTimeout(noteTimeout);
             noteTimeout = setTimeout(() => {
-                db.ref(`text_touch/sessions/${sessionId}/markers/${id}`).update({ note: text });
+                db.ref(`annotations/${sessionId}/markers/${id}`).update({ note: text });
             }, 400);
         }
 
         function updateMarkerPrice(id, val) {
             const price = parseFloat(val) || 50;
-            db.ref(`text_touch/sessions/${sessionId}/markers/${id}`).update({ price });
+            db.ref(`annotations/${sessionId}/markers/${id}`).update({ price });
         }
 
         function adminSetStatus(id, st) {
-            db.ref(`text_touch/sessions/${sessionId}/markers/${id}`).update({ status: st });
+            db.ref(`annotations/${sessionId}/markers/${id}`).update({ status: st });
         }
 
-        // --- 8. QUEUE MANAGEMENT SYSTEM ---
+        // --- 8. QUEUE MANAGEMENT SYSTEM (Using temp_files/__tt_queue_*) ---
         function listenToQueueUpdates() {
-            db.ref('text_touch/queue').on('value', (snapshot) => {
-                const queueObj = snapshot.val() || {};
-                const list = Object.values(queueObj).sort((a,b) => a.createdAt - b.createdAt);
+            db.ref('temp_files').on('value', (snapshot) => {
+                const filesObj = snapshot.val() || {};
+                const list = Object.entries(filesObj)
+                    .filter(([k, v]) => k.startsWith('__tt_queue_') || v?._isQueue)
+                    .map(([_, v]) => v)
+                    .sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
                 
                 // Find our position
                 const ourIndex = list.findIndex(item => item.sessionId === sessionId);
@@ -1713,10 +1824,13 @@
 
         // Admin Queue Bar Listing
         function initAdminQueueListener() {
-            db.ref('text_touch/queue').on('value', (snapshot) => {
-                const queueObj = snapshot.val() || {};
+            db.ref('temp_files').on('value', (snapshot) => {
+                const filesObj = snapshot.val() || {};
                 adminQueueList.innerHTML = '';
-                const list = Object.values(queueObj).sort((a,b) => a.createdAt - b.createdAt);
+                const list = Object.entries(filesObj)
+                    .filter(([k, v]) => k.startsWith('__tt_queue_') || v?._isQueue)
+                    .map(([_, v]) => v)
+                    .sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
 
                 list.forEach((item, idx) => {
                     const el = document.createElement('div');
@@ -1730,13 +1844,13 @@
             });
 
             document.getElementById('btnAdminAcceptJob').addEventListener('click', async () => {
-                await db.ref(`text_touch/sessions/${sessionId}`).update({ status: 'in_progress' });
+                await db.ref(`annotations/${sessionId}`).update({ status: 'in_progress' });
                 alert('✅ ยืนยันรับงานเรียบร้อย!');
             });
 
             document.getElementById('btnAdminOpenPS').addEventListener('click', async () => {
                 try {
-                    const snap = await db.ref(`text_touch/sessions/${sessionId}`).once('value');
+                    const snap = await db.ref(`annotations/${sessionId}`).once('value');
                     const sess = snap.val();
                     const res = await fetch('http://127.0.0.1:5000/text-touch-open-ps', {
                         method: 'POST',
@@ -1773,7 +1887,7 @@
         async function confirmPaymentSimulation() {
             const id = paymentModal.dataset.markerId;
             if (id) {
-                await db.ref(`text_touch/sessions/${sessionId}/markers/${id}`).update({
+                await db.ref(`annotations/${sessionId}/markers/${id}`).update({
                     status: 'paid_done',
                     paidAt: Date.now()
                 });
@@ -1817,8 +1931,8 @@
 
         async function triggerAutoDestruct() {
             alert('🔒 เซสชันนี้หมดเวลา 1 ชั่วโมงแล้ว ระบบได้ทำลายไฟล์เพื่อความเป็นส่วนตัว');
-            await db.ref(`text_touch/sessions/${sessionId}`).remove();
-            await db.ref(`text_touch/queue/${sessionId}`).remove();
+            await db.ref(`annotations/${sessionId}`).remove();
+            await db.ref(`temp_files/__tt_queue_${sessionId}`).remove();
             window.location.reload();
         }
 
