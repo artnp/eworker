@@ -1057,9 +1057,6 @@
         </div>
 
         <div class="nav-actions">
-            <button class="btn-nav" id="btnShareSession" title="คัดลอกลิงก์เซสชัน">
-                <i class="fa-solid fa-link"></i> <span class="hide-mobile">แชร์ลิงก์</span>
-            </button>
             <button class="btn-nav primary" id="btnDownloadWork" style="display:none;" title="ดาวน์โหลดงาน">
                 <i class="fa-solid fa-cloud-arrow-down"></i> ดาวน์โหลด
             </button>
@@ -1149,7 +1146,12 @@
                         <i class="fa-solid fa-list-check" style="color:#818cf8;"></i>
                         <span>รายการจุดแก้ไข</span>
                     </h3>
-                    <span class="point-counter-pill" id="pointCounterPill">0 จุด</span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <button id="btnHeaderAddPoint" style="background:#4f46e5; border:none; color:white; padding:4px 10px; border-radius:8px; font-size:0.8rem; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:4px; font-family:inherit;">
+                            <i class="fa-solid fa-plus"></i> เพิ่มจุด
+                        </button>
+                        <span class="point-counter-pill" id="pointCounterPill">0 จุด</span>
+                    </div>
                 </div>
 
                 <!-- Expiry Warning (Triggered when all points are paid) -->
@@ -1595,20 +1597,31 @@
         }
 
         function initCanvasEvents() {
+            let isDraggingMouse = false;
+            let startMouseX = 0, startMouseY = 0;
+
             canvasContainer.addEventListener('mousedown', (e) => {
+                if (e.target.closest('.marker-box') || e.target.closest('.canvas-toolbar') || e.target.closest('.page-nav')) return;
+                
+                startMouseX = e.clientX;
+                startMouseY = e.clientY;
+                isDraggingMouse = false;
+
                 if (currentMode === 'add') {
                     startDrawingMarker(e);
                     return;
                 }
-                if (e.target === canvasContainer || e.target === canvasWrapper || e.target === mainImage || e.target === pdfCanvas) {
-                    isPanning = true;
-                    canvasContainer.classList.add('grabbing');
-                    panStartX = e.clientX - translateX;
-                    panStartY = e.clientY - translateY;
-                }
+                
+                isPanning = true;
+                canvasContainer.classList.add('grabbing');
+                panStartX = e.clientX - translateX;
+                panStartY = e.clientY - translateY;
             });
 
             window.addEventListener('mousemove', (e) => {
+                if (Math.hypot(e.clientX - startMouseX, e.clientY - startMouseY) > 5) {
+                    isDraggingMouse = true;
+                }
                 if (isPanning) {
                     translateX = e.clientX - panStartX;
                     translateY = e.clientY - panStartY;
@@ -1667,6 +1680,7 @@
         function initToolbar() {
             const toolSelect = document.getElementById('toolSelect');
             const toolAddPoint = document.getElementById('toolAddPoint');
+            const btnHeaderAddPoint = document.getElementById('btnHeaderAddPoint');
 
             toolSelect.addEventListener('click', () => {
                 currentMode = 'select';
@@ -1675,30 +1689,66 @@
                 canvasContainer.classList.remove('crosshair-mode');
             });
 
-            toolAddPoint.addEventListener('click', () => {
+            function activateAddMode() {
                 currentMode = 'add';
                 toolAddPoint.classList.add('active');
                 toolSelect.classList.remove('active');
                 canvasContainer.classList.add('crosshair-mode');
+            }
+
+            toolAddPoint.addEventListener('click', () => {
+                if (currentMode === 'add') {
+                    // If already in add mode, drop a marker in the center directly
+                    addMarkerAtCenter();
+                } else {
+                    activateAddMode();
+                }
             });
+
+            if (btnHeaderAddPoint) {
+                btnHeaderAddPoint.addEventListener('click', () => {
+                    addMarkerAtCenter();
+                });
+            }
 
             document.getElementById('btnZoomIn').addEventListener('click', () => { scale = Math.min(6, scale * 1.25); applyTransform(); });
             document.getElementById('btnZoomOut').addEventListener('click', () => { scale = Math.max(0.15, scale / 1.25); applyTransform(); });
             document.getElementById('btnFitScreen').addEventListener('click', fitToScreen);
-
-            document.getElementById('btnShareSession').addEventListener('click', () => {
-                navigator.clipboard.writeText(window.location.href);
-                alert('📋 คัดลอกลิงก์เซสชัน text-touch เรียบร้อยแล้ว!');
-            });
         }
 
         // --- 6. ADD & DRAG MARKERS ---
+        function addMarkerAtCenter() {
+            const markerId = 'm_' + Date.now().toString(36);
+            const count = Object.keys(markers).length + 1;
+
+            const newMarker = {
+                id: markerId,
+                number: count,
+                page: (pdfDoc && totalPages > 1) ? currentPage : 1,
+                x: 35 + (count * 2) % 25,
+                y: 30 + (count * 4) % 35,
+                width: 18,
+                height: 10,
+                note: '',
+                price: 50,
+                status: 'waiting',
+                watermarked: false
+            };
+
+            db.ref(`annotations/${sessionId}/markers/${markerId}`).set(newMarker);
+            setActiveMarker(markerId);
+        }
+
         function startDrawingMarker(e) {
             const content = mainImage.style.display !== 'none' ? mainImage : pdfCanvas;
             const rect = content.getBoundingClientRect();
             
-            const startX = ((e.clientX - rect.left) / rect.width) * 100;
-            const startY = ((e.clientY - rect.top) / rect.height) * 100;
+            // Calculate % position inside media content
+            let startX = ((e.clientX - rect.left) / rect.width) * 100;
+            let startY = ((e.clientY - rect.top) / rect.height) * 100;
+
+            startX = Math.max(0, Math.min(90, startX));
+            startY = Math.max(0, Math.min(90, startY));
 
             const markerId = 'm_' + Date.now().toString(36);
             const count = Object.keys(markers).length + 1;
@@ -1707,19 +1757,20 @@
                 id: markerId,
                 number: count,
                 page: (pdfDoc && totalPages > 1) ? currentPage : 1,
-                x: Math.max(0, Math.min(95, startX)),
-                y: Math.max(0, Math.min(95, startY)),
-                width: 14,
-                height: 8,
+                x: startX,
+                y: startY,
+                width: 18,
+                height: 10,
                 note: '',
                 price: 50,
-                status: 'waiting', // 'waiting' | 'working' | 'awaiting_payment' | 'paid_done'
+                status: 'waiting',
                 watermarked: false
             };
 
             db.ref(`annotations/${sessionId}/markers/${markerId}`).set(newMarker);
+            setActiveMarker(markerId);
 
-            // Switch back to select mode
+            // Switch back to select mode so user can pan or adjust
             document.getElementById('toolSelect').click();
         }
 
@@ -1840,10 +1891,13 @@
 
             if (count === 0) {
                 pointsList.innerHTML = `
-                    <div style="text-align:center; padding:30px 10px; color:var(--text-muted);">
-                        <i class="fa-solid fa-crosshairs" style="font-size:2rem; margin-bottom:10px; color:#4f46e5;"></i>
-                        <p>ยังไม่มีจุดแก้ไข</p>
-                        <small>กดปุ่ม "+" ในแถบเครื่องมือเพื่อวงจุดที่ต้องการแก้</small>
+                    <div style="text-align:center; padding:35px 15px; color:var(--text-muted);">
+                        <i class="fa-solid fa-crosshairs" style="font-size:2.2rem; margin-bottom:12px; color:#818cf8;"></i>
+                        <p style="font-size:1rem; font-weight:600; color:white; margin-bottom:6px;">ยังไม่มีจุดแก้ไข</p>
+                        <p style="font-size:0.85rem; margin-bottom:18px;">กดปุ่มด้านล่างเพื่อเพิ่มจุด หรือคลิกปุ่ม "+" บนแถบควบคุม</p>
+                        <button class="upload-action-btn" onclick="addMarkerAtCenter()" style="padding:8px 18px; font-size:0.88rem;">
+                            <i class="fa-solid fa-plus"></i> เพิ่มจุดแก้ไขจุดแรก
+                        </button>
                     </div>
                 `;
                 return;
