@@ -172,7 +172,7 @@ def submit_active_point_from_photoshop():
         return False
         
     # ดึงข้อมูล Markers จาก Firebase
-    req_url = f"{FIREBASE_DB_URL}/text_touch/sessions/{session_id}/markers.json"
+    req_url = f"{FIREBASE_DB_URL}/annotations/{session_id}/markers.json"
     with urllib.request.urlopen(req_url) as resp:
         markers = json.loads(resp.read().decode('utf-8')) or {}
         
@@ -221,7 +221,7 @@ def submit_active_point_from_photoshop():
     urllib.request.urlopen(req)
     
     # 3. อัปเดตสถานะของ Marker เป็น 'awaiting_payment'
-    marker_update_url = f"{FIREBASE_DB_URL}/text_touch/sessions/{session_id}/markers/{marker_id}.json"
+    marker_update_url = f"{FIREBASE_DB_URL}/annotations/{session_id}/markers/{marker_id}.json"
     update_data = json.dumps({
         "status": "awaiting_payment",
         "previewUrl": f"fb_{preview_key}",
