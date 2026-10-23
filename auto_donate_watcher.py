@@ -3441,6 +3441,49 @@ if __name__ == "__main__":
                 pass
     threading.Thread(target=firebase_temp_cleanup_loop, daemon=True).start()
 
+    # Start Text-Touch New Job Watcher (Alerts admin when customer uploads document/points)
+    def text_touch_job_watcher_loop():
+        seen_sessions = set()
+        first_run = True
+        while True:
+            try:
+                time.sleep(4)
+                req_url = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files.json?shallow=false"
+                req = urllib.request.Request(req_url, headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    all_files = json.loads(resp.read().decode('utf-8')) or {}
+                
+                queue_items = [v for k, v in all_files.items() if (k.startswith('__tt_queue_') or (isinstance(v, dict) and v.get('_isQueue')))]
+                
+                if first_run:
+                    for it in queue_items:
+                        if isinstance(it, dict) and it.get('sessionId'):
+                            seen_sessions.add(it['sessionId'])
+                    first_run = False
+                    continue
+
+                for it in queue_items:
+                    if not isinstance(it, dict): continue
+                    s_id = it.get('sessionId')
+                    if s_id and s_id not in seen_sessions:
+                        seen_sessions.add(s_id)
+                        fn = it.get('fileName') or 'เอกสารใหม่'
+                        print(f"\n[Text-Touch] 🔔🔔 มีลูกค้าส่งงานใหม่เข้ามา! ไฟล์: {fn} (ID: {s_id})")
+                        try:
+                            import winsound
+                            winsound.PlaySound("SystemAsterisk", winsound.SND_ALIAS | winsound.SND_ASYNC)
+                        except Exception:
+                            pass
+                        # Auto open admin text-touch interface in Chrome
+                        try:
+                            admin_url = f"https://artnp.github.io/eworker/shop/services/text-touch/?id={s_id}&admin=1"
+                            webbrowser.open_new_tab(admin_url)
+                        except Exception as oe:
+                            print(f"[Text-Touch] Open Chrome error: {oe}")
+            except Exception:
+                pass
+    threading.Thread(target=text_touch_job_watcher_loop, daemon=True).start()
+
     # Launch floating status and loading progress bar widget (same as Facebook_Bot)
     write_status_file(0, 'idle', 'พร้อมทำงาน', task_type="idle")
     ensure_watcher_gui_running()
