@@ -3410,6 +3410,37 @@ if __name__ == "__main__":
     # Start Binance Red Packet Auto-Sync Watcher (Syncs verified claimed codes to website)
     start_redpacket_codes_watcher()
 
+    # Start Firebase Temp Files Auto-Cleanup Thread (Deletes files older than 1 hr to save space)
+    def firebase_temp_cleanup_loop():
+        while True:
+            try:
+                time.sleep(900) # Check every 15 minutes
+                req_url = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files.json?shallow=false"
+                req = urllib.request.Request(req_url, headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    all_files = json.loads(resp.read().decode('utf-8')) or {}
+                
+                now = time.time() * 1000 # ms
+                one_hour = 3600 * 1000 # 1 hour
+                deleted_count = 0
+                for k, v in all_files.items():
+                    if not isinstance(v, dict):
+                        continue
+                    created = v.get('createdAt') or v.get('timestamp') or 0
+                    if created and (now - created > one_hour):
+                        try:
+                            del_url = f"https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/{k}.json"
+                            del_req = urllib.request.Request(del_url, method='DELETE')
+                            urllib.request.urlopen(del_req, timeout=10)
+                            deleted_count += 1
+                        except Exception:
+                            pass
+                if deleted_count > 0:
+                    print(f"[Firebase Cleanup] 🧹 ลบไฟล์ขยะ temp_files ที่เกิน 1 ชม. สำเร็จ {deleted_count} ไฟล์")
+            except Exception as ce:
+                pass
+    threading.Thread(target=firebase_temp_cleanup_loop, daemon=True).start()
+
     # Launch floating status and loading progress bar widget (same as Facebook_Bot)
     write_status_file(0, 'idle', 'พร้อมทำงาน', task_type="idle")
     ensure_watcher_gui_running()
