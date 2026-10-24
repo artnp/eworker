@@ -20,6 +20,8 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <!-- QRCode JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <style>
         :root {
@@ -1323,6 +1325,91 @@
             white-space: nowrap;
         }
 
+        /* ===== SYSTEM ERROR & REJECTED BOXES ===== */
+        .patch-rejected-box {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+            color: #b91c1c;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            line-height: 1.4;
+        }
+
+        .patch-system-error-box {
+            background: #fff7ed;
+            border: 1.5px solid #fdba74;
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(194, 65, 12, 0.08);
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        .system-error-header {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-weight: 800;
+            font-size: 0.9rem;
+            color: #c2410c;
+        }
+
+        .system-error-desc {
+            font-size: 0.82rem;
+            color: #7c2d12;
+            line-height: 1.45;
+        }
+
+        .btn-line-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            background: #e8f8f0;
+            border: 1px solid #86efac;
+            color: #16a34a;
+            border-radius: 30px;
+            padding: 6px 16px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 4px rgba(22, 163, 74, 0.15);
+            width: fit-content;
+            margin-top: 2px;
+        }
+
+        .btn-line-pill:hover {
+            background: #dcfce7;
+            border-color: #4ade80;
+            color: #15803d;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(22, 163, 74, 0.25);
+        }
+
+        .patch-status-label.status-system_error {
+            color: #dc2626;
+            background: #fee2e2;
+        }
+
+        .patch-num-circle.status-system_error {
+            background: #dc2626;
+            color: #ffffff;
+        }
+
+        .patch-overlay.patch-status-system_error {
+            border-color: #dc2626;
+            background: rgba(220, 38, 38, 0.15);
+        }
+
         /* ===== SIDEBAR FOOTER ===== */
         .sidebar-footer {
             padding: 14px 16px;
@@ -2089,7 +2176,8 @@
 
             <!-- QR Code Card -->
             <div class="qr-clean-card">
-                <img id="qrImage" src="" alt="QR Code">
+                <div id="qrCodeCanvasTarget" style="display:flex; justify-content:center; align-items:center; min-height:220px; width:220px; margin:0 auto;"></div>
+                <img id="qrImage" src="" alt="QR Code" style="display:none; width:220px; height:220px; object-fit:contain; margin:0 auto;">
                 <div
                     style="font-size: 0.75rem; font-weight: 700; color: #0b1120; margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 5px;">
                     <img src="../../assets/promptpay_header_full.png"
@@ -2419,6 +2507,11 @@
                         await applyPatchToCanvas(pid, false);
                     }
                 }
+                // If patch is in pending_payment, auto-open payment modal
+                const pendingPaymentPatch = Object.values(patches).find(p => p.status === 'pending_payment');
+                if (pendingPaymentPatch) {
+                    setTimeout(() => openPaymentModal(pendingPaymentPatch.id), 200);
+                }
                 savePatchesToLocalStorage();
                 renderPatchOverlays();
                 updateEmpty();
@@ -2547,6 +2640,7 @@
             updateEmpty();
             updateTotal();
             updateAddPatchButton();
+            listenToPatchUpdates();
             toast('พร้อมเลือกไฟล์ใหม่แล้ว', 'info');
         }
 
@@ -3086,103 +3180,145 @@
         /* ======================================================
            FIREBASE REAL-TIME LISTENER
         ====================================================== */
+        let currentPatchListenerRef = null;
+
         function listenToPatchUpdates() {
-            db.ref(`text_retouch/${sessionId}/patches`).on('value', snap => {
-                const fbPatches = snap.val() || {};
-                Object.entries(fbPatches).forEach(([pid, fbPatch]) => {
-                    if (!patches[pid]) {
-                        // Patch from server not yet in memory -> add it
-                        patches[pid] = {
-                            id: pid,
-                            num: fbPatch.num || 1,
-                            sessionId,
-                            note: fbPatch.note || '',
-                            price: fbPatch.price || 0,
-                            status: fbPatch.status || 'waiting',
-                            page: fbPatch.page || 1,
-                            cropRect: fbPatch.cropRect || { x: 0, y: 0, w: 10, h: 10 },
-                            patchDataUrl: fbPatch.patchImage ? `data:image/jpeg;base64,${fbPatch.patchImage}` : '',
-                            resultDataUrl: fbPatch.resultImage ? `data:image/png;base64,${fbPatch.resultImage}` : null,
-                            rejectReason: fbPatch.rejectReason || '',
-                            composited: fbPatch.status === 'done',
-                            createdAt: fbPatch.createdAt || Date.now()
-                        };
-                        renderPatchCard(pid);
-                        renderPatchOverlays();
-                        updateEmpty();
-                        updateTotal();
-                    }
+            if (!sessionId) return;
+            if (currentPatchListenerRef) {
+                try { currentPatchListenerRef.off(); } catch (e) { }
+                currentPatchListenerRef = null;
+            }
 
-                    const local = patches[pid];
+            currentPatchListenerRef = db.ref(`text_retouch/${sessionId}/patches`);
+            currentPatchListenerRef.on('value', snap => {
+                try {
+                    const fbPatches = snap.val() || {};
+                    let patchToOpenPayment = null;
 
-                    // 1. Rejected
-                    if (fbPatch.status === 'rejected' && local.status !== 'rejected') {
-                        local.status = 'rejected';
-                        local.rejectReason = fbPatch.rejectReason || 'นักรีทัชปฏิเสธงานนี้';
-                        patches[pid] = local;
-                        renderPatchCard(pid);
-                        renderPatchOverlays();
-                        updateTotal();
-                        toast(`❌ จุดที่ ${local.num} ถูกปฏิเสธ: ${local.rejectReason}`, 'error');
-                    }
+                    Object.entries(fbPatches).forEach(([pid, fbPatch]) => {
+                        if (!patches[pid]) {
+                            // Patch from server not yet in memory -> add it
+                            patches[pid] = {
+                                id: pid,
+                                num: fbPatch.num || 1,
+                                sessionId,
+                                note: fbPatch.note || '',
+                                price: fbPatch.price || 0,
+                                status: fbPatch.status || 'waiting',
+                                page: fbPatch.page || 1,
+                                cropRect: fbPatch.cropRect || { x: 0, y: 0, w: 10, h: 10 },
+                                patchDataUrl: fbPatch.patchImage ? `data:image/jpeg;base64,${fbPatch.patchImage}` : '',
+                                resultDataUrl: fbPatch.resultImage ? `data:image/png;base64,${fbPatch.resultImage}` : null,
+                                rejectReason: fbPatch.rejectReason || '',
+                                errorMessage: fbPatch.errorMessage || '',
+                                composited: fbPatch.status === 'done',
+                                createdAt: fbPatch.createdAt || Date.now()
+                            };
+                            renderPatchCard(pid);
+                            renderPatchOverlays();
+                            updateEmpty();
+                            updateTotal();
+                        }
 
-                    // 2. Admin quoted price -> show payment
-                    if (fbPatch.status === 'pending_payment' && local.status !== 'pending_payment' && local.status !== 'paid' && local.status !== 'working' && local.status !== 'done') {
-                        local.status = 'pending_payment';
-                        local.price = fbPatch.price || 0;
-                        patches[pid] = local;
-                        renderPatchCard(pid);
-                        renderPatchOverlays();
-                        updateTotal();
-                        toast(`💰 นักรีทัชประเมินราคาจุดที่ ${local.num}: ฿${local.price}`, 'info');
-                        openPaymentModal(pid);
-                    }
+                        const local = patches[pid];
 
-                    // 3. Paid
-                    if (fbPatch.status === 'paid' && local.status !== 'paid' && local.status !== 'working' && local.status !== 'done') {
-                        local.status = 'paid';
-                        patches[pid] = local;
-                        renderPatchCard(pid);
-                        renderPatchOverlays();
-                        toast(`💳 จุดที่ ${local.num} ยืนยันชำระเงินแล้ว! กำลังส่งเข้า Photoshop...`, 'success');
-                        const modal = document.getElementById('paymentModal');
-                        if (modal && modal.classList.contains('open')) modal.classList.remove('open');
-                    }
+                        // 1. System error (Admin clicked "ลบรายการนี้ออกจากระบบ")
+                        if (fbPatch.status === 'system_error' && local.status !== 'system_error') {
+                            local.status = 'system_error';
+                            local.errorMessage = fbPatch.errorMessage || 'ระบบขัดข้อง โปรดติดต่อ LINE';
+                            patches[pid] = local;
+                            renderPatchCard(pid);
+                            renderPatchOverlays();
+                            updateTotal();
 
-                    // 4. Working in Photoshop
-                    if (fbPatch.status === 'working' && local.status !== 'working' && local.status !== 'done') {
-                        local.status = 'working';
-                        local.workingStartedAt = fbPatch.openedAt || fbPatch.paidAt || Date.now();
-                        patches[pid] = local;
-                        renderPatchCard(pid);
-                        renderPatchOverlays();
-                        ensureWorkingTimerRunning();
-                        toast(`🎨 นักรีทัชกำลังดำเนินการจุดที่ ${local.num} ใน Photoshop...`, 'info');
-                    }
+                            const modal = document.getElementById('paymentModal');
+                            if (modal && modal.classList.contains('open') && currentPayingPatchId === pid) {
+                                modal.classList.remove('open');
+                            }
+                            toast(`⚠️ จุดที่ ${local.num} ระบบขัดข้อง โปรดติดต่อทาง LINE เพื่อให้เจ้าหน้าที่ดูแลทันที`, 'error');
+                        }
 
-                    // 5. Result completed
-                    if (fbPatch.resultImage && fbPatch.status === 'done' && local.status !== 'done') {
-                        local.status = 'done';
-                        local.resultDataUrl = 'data:image/png;base64,' + fbPatch.resultImage;
-                        patches[pid] = local;
-                        renderPatchCard(pid);
-                        renderPatchOverlays();
-                        updateTotal();
-                        updateWorkingTimers();
-                        toast(`🎉 จุดที่ ${local.num} ทำเสร็จแล้ว! กำลังประกอบร่าง...`, 'success');
-                        applyPatchToCanvas(pid, true);
-                        checkAllDone();
-                    }
+                        // 2. Rejected
+                        if (fbPatch.status === 'rejected' && local.status !== 'rejected') {
+                            local.status = 'rejected';
+                            local.rejectReason = fbPatch.rejectReason || 'นักรีทัชปฏิเสธงานนี้';
+                            patches[pid] = local;
+                            renderPatchCard(pid);
+                            renderPatchOverlays();
+                            updateTotal();
+                            toast(`❌ จุดที่ ${local.num} ถูกปฏิเสธ: ${local.rejectReason}`, 'error');
+                        }
 
-                    // Price update
-                    if (fbPatch.price && fbPatch.price !== local.price) {
-                        local.price = fbPatch.price;
-                        patches[pid] = local;
-                        renderPatchCard(pid);
-                        updateTotal();
+                        // 3. Admin quoted price -> show payment
+                        if (fbPatch.status === 'pending_payment') {
+                            const priceChanged = fbPatch.price && fbPatch.price !== local.price;
+                            const statusChanged = local.status !== 'pending_payment';
+                            if (statusChanged || priceChanged) {
+                                local.status = 'pending_payment';
+                                local.price = fbPatch.price || local.price || 0;
+                                patches[pid] = local;
+                                renderPatchCard(pid);
+                                renderPatchOverlays();
+                                updateTotal();
+                                if (statusChanged) {
+                                    toast(`💰 นักรีทัชประเมินราคาจุดที่ ${local.num}: ฿${local.price}`, 'info');
+                                    patchToOpenPayment = pid;
+                                }
+                            }
+                        }
+
+                        // 4. Paid
+                        if (fbPatch.status === 'paid' && local.status !== 'paid' && local.status !== 'working' && local.status !== 'done') {
+                            local.status = 'paid';
+                            patches[pid] = local;
+                            renderPatchCard(pid);
+                            renderPatchOverlays();
+                            toast(`💳 จุดที่ ${local.num} ยืนยันชำระเงินแล้ว! กำลังส่งเข้า Photoshop...`, 'success');
+                            const modal = document.getElementById('paymentModal');
+                            if (modal && modal.classList.contains('open')) modal.classList.remove('open');
+                        }
+
+                        // 5. Working in Photoshop
+                        if (fbPatch.status === 'working' && local.status !== 'working' && local.status !== 'done') {
+                            local.status = 'working';
+                            local.workingStartedAt = fbPatch.openedAt || fbPatch.paidAt || Date.now();
+                            patches[pid] = local;
+                            renderPatchCard(pid);
+                            renderPatchOverlays();
+                            ensureWorkingTimerRunning();
+                            toast(`🎨 นักรีทัชกำลังดำเนินการจุดที่ ${local.num} ใน Photoshop...`, 'info');
+                        }
+
+                        // 6. Result completed
+                        if (fbPatch.resultImage && fbPatch.status === 'done' && local.status !== 'done') {
+                            local.status = 'done';
+                            local.resultDataUrl = 'data:image/png;base64,' + fbPatch.resultImage;
+                            patches[pid] = local;
+                            renderPatchCard(pid);
+                            renderPatchOverlays();
+                            updateTotal();
+                            updateWorkingTimers();
+                            toast(`🎉 จุดที่ ${local.num} ทำเสร็จแล้ว! กำลังประกอบร่าง...`, 'success');
+                            applyPatchToCanvas(pid, true);
+                            checkAllDone();
+                        }
+
+                        // Price update
+                        if (fbPatch.price && fbPatch.price !== local.price) {
+                            local.price = fbPatch.price;
+                            patches[pid] = local;
+                            renderPatchCard(pid);
+                            updateTotal();
+                        }
+                    });
+
+                    if (patchToOpenPayment) {
+                        openPaymentModal(patchToOpenPayment);
                     }
-                });
-                savePatchesToLocalStorage();
+                    savePatchesToLocalStorage();
+                } catch (err) {
+                    console.error('Error handling patch updates:', err);
+                }
             });
         }
 
@@ -3201,7 +3337,8 @@
                 pending_payment: '💳 นักรีทัชคิดราคาแล้ว (รอโอนเงิน)',
                 paid: '⚡ โอนแล้ว (กำลังเข้า PS)',
                 working: '🎨 กำลังทำใน Photoshop',
-                done: '✅ ทำการแก้เสร็จแล้ว'
+                done: '✅ ทำการแก้เสร็จแล้ว',
+                system_error: '⚠️ ระบบขัดข้อง'
             };
 
             // Live clock text for working status
@@ -3222,7 +3359,7 @@
             <div class="patch-card-meta">
                 <div class="patch-status-label status-${patch.status}">${statusLabels[patch.status] || patch.status}</div>
             </div>
-            ${patch.price > 0 ? `<span class="price-tag">฿${patch.price}</span>` : ''}
+            ${patch.price > 0 && patch.status !== 'system_error' ? `<span class="price-tag">฿${patch.price}</span>` : ''}
         </div>
         <div class="patch-card-body">
             <div class="patch-thumb-row">
@@ -3238,6 +3375,21 @@
                 </div>` : `
                 <div class="patch-thumb-placeholder">รอผลลัพธ์</div>`}
             </div>
+
+            ${patch.status === 'system_error' ? `
+            <div class="patch-system-error-box">
+                <div class="system-error-header">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span>ระบบขัดข้อง</span>
+                </div>
+                <div class="system-error-desc">
+                    ขออภัยในความไม่สะดวก รายการนี้ระบบขัดข้อง โปรดติดต่อทาง LINE เพื่อให้เจ้าหน้าที่ดูแลทันที
+                </div>
+                <a href="https://line.me/ti/p/gqIluRmdJ_" target="_blank" rel="noopener noreferrer" class="btn-line-pill">
+                    <span>💬</span>
+                    <span>ติดต่อ LINE</span>
+                </a>
+            </div>` : ''}
 
             ${patch.status === 'rejected' ? `
             <div class="patch-rejected-box">
@@ -3264,6 +3416,11 @@
                     <span style="font-size:0.82rem;color:#b45309;font-weight:700;display:flex;align-items:center;gap:6px;">
                         <span class="spinner"></span> รอนักรีทัชตรวจสอบ & คิดราคา...
                     </span>
+                ` : ''}
+                ${patch.status === 'system_error' ? `
+                    <button class="btn-delete" onclick="deletePatch('${patchId}')" title="ลบจุดนี้ออกจากหน้าจอ" style="width:100%;height:34px;display:flex;align-items:center;justify-content:center;gap:6px;">
+                        <i class="fa-solid fa-trash"></i> ลบรายการนี้ออกจากหน้าจอ
+                    </button>
                 ` : ''}
                 ${patch.status === 'rejected' ? `
                     <button class="btn-delete" onclick="deletePatch('${patchId}')" title="ลบจุดนี้" style="width:100%;height:34px;display:flex;align-items:center;justify-content:center;gap:6px;">
@@ -3664,6 +3821,35 @@
             paymentCountdownInterval = setInterval(updateDisplay, 1000);
         }
 
+        function generatePromptPayPayload(phone, amount) {
+            const crc16 = (data) => {
+                let crc = 0xFFFF;
+                for (let i = 0; i < data.length; i++) {
+                    crc ^= data.charCodeAt(i) << 8;
+                    for (let j = 0; j < 8; j++) {
+                        crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) & 0xFFFF : (crc << 1) & 0xFFFF;
+                    }
+                }
+                return crc.toString(16).toUpperCase().padStart(4, '0');
+            };
+
+            let target = phone.replace(/[^0-9]/g, '');
+            if (target.length === 10 && target.startsWith('0')) {
+                target = '0066' + target.substring(1);
+            }
+
+            let merchantInfo = '0016A000000677010111' + '01' + ('00' + target.length).slice(-2) + target;
+            let payload = '000201010211' + '29' + ('00' + merchantInfo.length).slice(-2) + merchantInfo + '5802TH5303764';
+
+            if (!isNaN(amount) && amount > 0) {
+                const amtStr = Number(amount).toFixed(2);
+                payload += '54' + ('00' + amtStr.length).slice(-2) + amtStr;
+            }
+
+            payload += '6304';
+            return payload + crc16(payload);
+        }
+
         function openPaymentModal(patchId) {
             const patch = patches[patchId];
             if (!patch) return;
@@ -3672,8 +3858,28 @@
             document.getElementById('paymentAmountNum').textContent = patch.price;
             document.getElementById('paymentPatchNum').textContent = patch.num;
 
-            const qrUrl = `https://promptpay.io/${PROMPTPAY_PHONE}/${patch.price}.png`;
-            document.getElementById('qrImage').src = qrUrl;
+            const qrTarget = document.getElementById('qrCodeCanvasTarget');
+            const qrImg = document.getElementById('qrImage');
+
+            if (typeof QRCode !== 'undefined' && qrTarget) {
+                qrTarget.innerHTML = '';
+                qrTarget.style.display = 'flex';
+                if (qrImg) qrImg.style.display = 'none';
+                const payload = generatePromptPayPayload(PROMPTPAY_PHONE, patch.price);
+                new QRCode(qrTarget, {
+                    text: payload,
+                    width: 220,
+                    height: 220,
+                    colorDark: "#0f172a",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            } else if (qrImg) {
+                const qrUrl = `https://promptpay.io/${PROMPTPAY_PHONE}/${patch.price}.png`;
+                qrImg.src = qrUrl;
+                qrImg.style.display = 'block';
+                if (qrTarget) qrTarget.style.display = 'none';
+            }
 
             startPaymentCountdown(15);
             document.getElementById('paymentModal').classList.add('open');
@@ -3690,8 +3896,8 @@
         }
 
         function downloadPaymentQR() {
+            const qrCanvas = document.querySelector('#qrCodeCanvasTarget canvas');
             const qrImg = document.getElementById('qrImage');
-            if (!qrImg || !qrImg.src) return;
 
             const patch = patches[currentPayingPatchId] || { price: 5, num: 1 };
             const canvas = document.createElement('canvas');
@@ -3711,10 +3917,8 @@
             ctx.fillStyle = '#64748b';
             ctx.fillText(`Text-Retouch จุดที่ #${patch.num} (${patch.price} บาท)`, 200, 68);
 
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.onload = () => {
-                ctx.drawImage(img, 75, 88, 250, 250);
+            const drawRest = (source) => {
+                ctx.drawImage(source, 75, 88, 250, 250);
 
                 ctx.fillStyle = '#16a34a';
                 ctx.font = 'bold 28px Outfit, Prompt, sans-serif';
@@ -3730,10 +3934,16 @@
                 link.click();
                 toast('📥 ดาวน์โหลด QR Code เรียบร้อยแล้ว สามารถนำเข้าแอปธนาคารได้ทันที', 'success');
             };
-            img.onerror = () => {
-                window.open(qrImg.src, '_blank');
-            };
-            img.src = qrImg.src;
+
+            if (qrCanvas) {
+                drawRest(qrCanvas);
+            } else if (qrImg && qrImg.src) {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => drawRest(img);
+                img.onerror = () => window.open(qrImg.src, '_blank');
+                img.src = qrImg.src;
+            }
         }
 
         async function confirmPayment(patchId) {
