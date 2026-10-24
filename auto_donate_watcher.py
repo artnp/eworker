@@ -3480,7 +3480,6 @@ if __name__ == "__main__":
                             except Exception as pop_err:
                                 print(f"[TextRetouch] เด้ง Chrome ล้มเหลว: {pop_err}")
 
-                        # 2. ลูกค้าโอนเงินแล้ว -> เปิดเข้า Photoshop ทันที
                         elif status == 'paid' and key not in seen_paids:
                             seen_paids.add(key)
                             num = patch.get('num', '?')
@@ -3503,6 +3502,11 @@ if __name__ == "__main__":
                                     })
                                 except Exception as pe:
                                     print(f"[TextRetouch] เปิด PS ล้มเหลว: {pe}")
+
+                        if status != 'pending_review' and key in seen_reviews:
+                            seen_reviews.discard(key)
+                        if status != 'paid' and key in seen_paids:
+                            seen_paids.discard(key)
 
                 first_run = False
             except Exception:
