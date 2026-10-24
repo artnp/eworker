@@ -1232,6 +1232,128 @@
             pointer-events: none;
             user-select: none;
             -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        .lightbox:not(.protected) img {
+            pointer-events: auto !important;
+            user-select: auto !important;
+            -webkit-user-select: auto !important;
+            -webkit-touch-callout: default !important;
+            cursor: pointer;
+        }
+
+        .lightbox-hint-badge {
+            position: fixed;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(5, 150, 105, 0.95));
+            color: #ffffff;
+            padding: 8px 18px;
+            border-radius: 50px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(8px);
+            z-index: 2015;
+            display: none;
+            text-align: center;
+            max-width: 90%;
+            pointer-events: none;
+        }
+
+        .lightbox:not(.protected).active .lightbox-hint-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Unlocked Preview Card in Success / Free Section */
+        .unlocked-preview-card {
+            width: 100%;
+            max-width: 320px;
+            margin: 8px auto 10px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(15, 23, 42, 0.75);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .unlocked-preview-card:hover {
+            transform: scale(1.02);
+            border-color: rgba(16, 185, 129, 0.6);
+        }
+
+        .unlocked-preview-card img {
+            max-height: 160px;
+            width: 100%;
+            object-fit: contain;
+            background: #090d16;
+            display: block;
+            -webkit-touch-callout: default !important;
+            user-select: auto !important;
+            -webkit-user-select: auto !important;
+        }
+
+        .unlocked-preview-badge {
+            width: 100%;
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 5px 8px;
+            text-align: center;
+            border-top: 1px solid rgba(16, 185, 129, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .success-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+            max-width: 320px;
+            margin: 6px auto;
+        }
+
+        .btn-view-full {
+            background: rgba(99, 102, 241, 0.16);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            color: #c7d2fe;
+            padding: 9px 16px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            width: 100%;
+        }
+
+        .btn-view-full:hover {
+            background: rgba(99, 102, 241, 0.28);
+            color: #ffffff;
+            border-color: rgba(99, 102, 241, 0.7);
+        }
+
+        .btn-view-full:active {
+            transform: scale(0.98);
         }
 
         .lightbox.protected #lightbox-watermark-overlay {
@@ -1616,12 +1738,23 @@
                         <div class="success-icon">✨</div>
                         <h3>ไฟล์พร้อมใช้งานแล้ว!</h3>
                         <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 4px;">
-                            คุณสามารถดาวน์โหลดไฟล์ได้ทันที</p>
+                            คุณสามารถดาวน์โหลดหรือบันทึกไฟล์ได้ทันที</p>
                     </div>
 
-                    <button class="btn btn-primary" id="download-btn" onclick="downloadFile()">
-                        💾 ดาวน์โหลดไฟล์
-                    </button>
+                    <!-- ภาพตัวอย่างผลงานที่ปลดล็อคแล้ว (เห็นชัดเจนทั้งบนมือถือและคอม) -->
+                    <div class="unlocked-preview-card" id="unlocked-preview-card" onclick="openLightbox()" title="แตะเพื่อขยายภาพเต็ม / แตะค้างเพื่อบันทึกรูป">
+                        <img id="unlocked-preview-img" alt="ภาพผลงานที่ปลดล็อค">
+                        <div class="unlocked-preview-badge">🔍 แตะเพื่อดูภาพเต็ม (หรือแตะค้างเพื่อบันทึก)</div>
+                    </div>
+
+                    <div class="success-actions">
+                        <button class="btn btn-primary" id="download-btn" onclick="downloadFile()">
+                            💾 ดาวน์โหลดไฟล์
+                        </button>
+                        <button type="button" class="btn-view-full" id="btn-view-full" onclick="openLightbox()">
+                            👁️ ขยายภาพเต็ม (แตะค้างเพื่อบันทึก)
+                        </button>
+                    </div>
 
                     <div id="download-tutorial-container"></div>
                 </div>
@@ -1632,12 +1765,23 @@
                         <div class="success-icon">🎉</div>
                         <h3>ไฟล์ของคุณพร้อมแล้ว!</h3>
                         <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 4px;">ไฟล์นี้ไม่มีค่าบริการ
-                            สามารถดาวน์โหลดได้ทันที</p>
+                            สามารถดาวน์โหลดหรือบันทึกได้ทันที</p>
                     </div>
 
-                    <button class="btn btn-primary" id="download-btn-free" onclick="downloadFile()">
-                        💾 ดาวน์โหลดไฟล์
-                    </button>
+                    <!-- ภาพตัวอย่างผลงานฟรี (เห็นชัดเจนทั้งบนมือถือและคอม) -->
+                    <div class="unlocked-preview-card" id="unlocked-preview-card-free" onclick="openLightbox()" title="แตะเพื่อขยายภาพเต็ม / แตะค้างเพื่อบันทึกรูป">
+                        <img id="unlocked-preview-img-free" alt="ภาพผลงาน">
+                        <div class="unlocked-preview-badge">🔍 แตะเพื่อดูภาพเต็ม (หรือแตะค้างเพื่อบันทึก)</div>
+                    </div>
+
+                    <div class="success-actions">
+                        <button class="btn btn-primary" id="download-btn-free" onclick="downloadFile()">
+                            💾 ดาวน์โหลดไฟล์
+                        </button>
+                        <button type="button" class="btn-view-full" id="btn-view-full-free" onclick="openLightbox()">
+                            👁️ ขยายภาพเต็ม (แตะค้างเพื่อบันทึก)
+                        </button>
+                    </div>
 
                     <div id="download-tutorial-container-free"></div>
                 </div>
@@ -1650,6 +1794,9 @@
 
     <!-- Lightbox -->
     <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <div class="lightbox-hint-badge" id="lightbox-hint-badge">
+            <span>📱 แตะค้างที่รูปภาพ แล้วเลือก <strong>"บันทึกรูปภาพ"</strong></span>
+        </div>
         <div class="lightbox-close">×</div>
         <div class="lightbox-content" id="lightbox-content" onclick="event.stopPropagation()">
             <img id="lightbox-image" alt="Full View">
@@ -2206,6 +2353,7 @@
         function showDownloadTutorial() {
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             const isInAppBrowser = /Line|FBAV|FBAN|Instagram|Messenger|Fastwork/i.test(navigator.userAgent);
+            const isPdf = _isPdfMode || fileType === 'pdf';
 
             let container = null;
             const successSectionHidden = document.getElementById('success-section').classList.contains('hidden');
@@ -2221,18 +2369,21 @@
 
             let tutorialHTML = '<div class="download-tutorial">';
 
-            if (isInAppBrowser) {
+            if (isPdf) {
                 tutorialHTML += `
-                    <strong>💡 หากกดดาวน์โหลดไม่ได้:</strong>
-                    กด <strong>"⋯"</strong> มุมบนขวา → เลือก <strong>"เปิดในเบราว์เซอร์"</strong>
+                    <strong>💡 คำแนะนำเอกสาร PDF:</strong> กดปุ่ม <strong>"📄 เปิดอ่านเอกสาร PDF"</strong> เพื่อเปิดอ่านหรือกดบันทึกลงเครื่อง
+                `;
+            } else if (isInAppBrowser) {
+                tutorialHTML += `
+                    <strong>💡 บนแอป LINE / แชท:</strong> สามารถ <strong>แตะค้างที่รูปภาพ</strong> ด้านบน → เลือก <strong>"บันทึกรูปภาพ"</strong> ได้ทันที 100%
                 `;
             } else if (isMobile) {
                 tutorialHTML += `
-                    <strong>💡 คำแนะนำ:</strong> หากกดดาวน์โหลดไม่ได้ สามารถ<strong>กดค้างที่รูปภาพ</strong> → เลือก <strong>"บันทึกรูปภาพ"</strong>
+                    <strong>💡 คำแนะนำสำหรับมือถือ:</strong> สามารถ <strong>แตะค้างที่รูปภาพ</strong> ด้านบน → เลือก <strong>"บันทึกรูปภาพ"</strong> ลงเครื่องได้ทันที
                 `;
             } else {
                 tutorialHTML += `
-                    <strong>💡 คำแนะนำ:</strong> สามารถคลิกขวาที่รูปภาพตัวอย่าง → เลือก <strong>"บันทึกรูปภาพเป็น..."</strong> ได้เช่นกัน
+                    <strong>💡 คำแนะนำ:</strong> หากกดดาวน์โหลดไม่ได้ สามารถคลิกขวาที่รูปภาพตัวอย่าง → เลือก <strong>"บันทึกรูปภาพเป็น..."</strong> ได้เช่นกัน
                 `;
             }
 
@@ -3073,6 +3224,45 @@
             loadSecureImagePreview(previewUrl);
         }
 
+        // ซิงค์รูปภาพผลงานที่ปลดล็อคแล้วเข้ากับการ์ดในหน้า Success / Free
+        function syncUnlockedPreview(url) {
+            if (!url) return;
+            const img1 = document.getElementById('unlocked-preview-img');
+            const img2 = document.getElementById('unlocked-preview-img-free');
+            if (img1) img1.src = url;
+            if (img2) img2.src = url;
+
+            const isPdf = _isPdfMode || fileType === 'pdf';
+            const card1 = document.getElementById('unlocked-preview-card');
+            const card2 = document.getElementById('unlocked-preview-card-free');
+            const btn1 = document.getElementById('btn-view-full');
+            const btn2 = document.getElementById('btn-view-full-free');
+
+            if (isPdf) {
+                if (card1) card1.style.display = 'none';
+                if (card2) card2.style.display = 'none';
+                if (btn1) {
+                    btn1.innerHTML = '📄 เปิดอ่านเอกสาร PDF (แท็บใหม่)';
+                    btn1.onclick = () => window.open(url, '_blank');
+                }
+                if (btn2) {
+                    btn2.innerHTML = '📄 เปิดอ่านเอกสาร PDF (แท็บใหม่)';
+                    btn2.onclick = () => window.open(url, '_blank');
+                }
+            } else {
+                if (card1) card1.style.display = 'flex';
+                if (card2) card2.style.display = 'flex';
+                if (btn1) {
+                    btn1.innerHTML = '👁️ ขยายภาพเต็ม (แตะค้างเพื่อบันทึก)';
+                    btn1.onclick = openLightbox;
+                }
+                if (btn2) {
+                    btn2.innerHTML = '👁️ ขยายภาพเต็ม (แตะค้างเพื่อบันทึก)';
+                    btn2.onclick = openLightbox;
+                }
+            }
+        }
+
         // ซิงค์รูปภาพลงใน Mobile Thumbnail Strip
         function syncMobileThumb(url) {
             const mobileThumb = document.getElementById('mobile-preview-thumb');
@@ -3084,6 +3274,7 @@
             if (mobileSpinner) {
                 mobileSpinner.classList.add('hidden');
             }
+            syncUnlockedPreview(url);
         }
 
         // ฟังก์ชันป้องกันดาวน์โหลด
@@ -3121,6 +3312,9 @@
             previewImage.style.pointerEvents = 'auto';
             previewImage.ondragstart = null;
             previewImage.oncontextmenu = null;
+
+            const cleanUrl = _cleanBlobUrl || previewImage.src || window.__downloadUrl;
+            if (cleanUrl) syncUnlockedPreview(cleanUrl);
         }
 
         // จัดการการคลิกที่รูป
@@ -3621,110 +3815,100 @@
                 return;
             }
 
-            const btn = event ? event.target : document.getElementById('download-btn');
+            const btn = event ? event.target : (document.getElementById('download-btn') || document.getElementById('download-btn-free'));
             const originalText = btn ? btn.innerHTML : '💾 ดาวน์โหลดไฟล์';
+
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+            const isInAppBrowser = /Line|FBAV|FBAN|Instagram|Messenger|Fastwork/i.test(userAgent);
+            const isPdf = _isPdfMode || fileType === 'pdf';
+
+            let downloadUrl = _cleanBlobUrl || window.__downloadUrl || _rawDownloadUrl || _rawFileUrl || previewImage.src || fileUrl;
+
+            // หากเป็น Firebase ID แปลงเป็น URL จริง
+            if (downloadUrl && typeof downloadUrl === 'string' && downloadUrl.startsWith('fb_')) {
+                const fId = downloadUrl.substring(3);
+                downloadUrl = `https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/${fId}.json`;
+            }
+
+            // ถ้าเป็นมือถือและเป็นรูปภาพ: เปิด Lightbox ให้ทันที พร้อมแจ้งเตือนแตะค้างบันทึกรูป
+            if (isMobile && !isPdf) {
+                openLightbox();
+                showToast('📱 แตะค้างที่รูปภาพ แล้วเลือก "บันทึกรูปภาพ" เพื่อเซฟลงเครื่อง', 'success');
+            }
+
             if (btn) {
-                btn.innerHTML = '⏳ กำลังดาวน์โหลด... (0%)';
+                btn.innerHTML = isMobile ? '⏳ กำลังเตรียมไฟล์...' : '⏳ กำลังดาวน์โหลด... (0%)';
                 btn.disabled = true;
                 btn.style.opacity = '0.7';
             }
 
-            let downloadUrl = _cleanBlobUrl || window.__downloadUrl || _rawDownloadUrl || _rawFileUrl || fileUrl;
-
-            // หากมี Blob อยู่แล้วในหน่วยความจำ ให้ดาวน์โหลดทันทีอย่างรวดเร็ว
-            if (downloadUrl && downloadUrl.startsWith('blob:')) {
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = downloadUrl;
-                let filename = window.__originalFilename || ('document.' + ((fileType === 'pdf' || _isPdfMode) ? 'pdf' : 'jpg'));
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                btn.innerHTML = '✅ ดาวน์โหลดสำเร็จ!';
+            const restoreBtn = (customText, delay = 3500) => {
+                if (!btn) return;
+                btn.innerHTML = customText || originalText;
                 btn.disabled = false;
                 btn.style.opacity = '1';
-                setTimeout(() => btn.innerHTML = originalText, 3000);
-                return;
-            }
-
-            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            const isInAppBrowser = /Line|FBAV|FBAN|Instagram|Messenger|Fastwork/i.test(userAgent);
-
-            if (isInAppBrowser) {
-                // วิธีที่ 1: ถ้ามี blob → แปลงเป็น data URI แล้วเปิดในแท็บใหม่ (ทำงานใน In-App Browser ได้ดีกว่า blob:)
-                if (downloadUrl && downloadUrl.startsWith('blob:')) {
-                    btn.innerHTML = '⏳ กำลังเตรียมไฟล์...';
-                    try {
-                        const response = await fetch(downloadUrl);
-                        const blob = await response.blob();
-                        const reader = new FileReader();
-                        reader.onloadend = function() {
-                            const dataUrl = reader.result;
-                            // เปิด data URL ในแท็บใหม่ → ผู้ใช้กดค้างที่รูปเพื่อบันทึกได้
-                            const w = window.open();
-                            if (w) {
-                                w.document.write(`
-                                    <html><head><title>PrivateSend - บันทึกไฟล์</title>
-                                    <meta name="viewport" content="width=device-width,initial-scale=1">
-                                    <style>body{margin:0;background:#0b1120;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;}
-                                    img{max-width:95%;max-height:70vh;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.5);}
-                                    p{color:#94a3b8;font-size:14px;margin:16px 0 8px;text-align:center;}
-                                    .tip{color:#fbbf24;font-weight:bold;font-size:13px;}</style></head><body>
-                                    <p>📱 กดค้างที่รูปภาพ → เลือก <span class="tip">"บันทึกรูปภาพ"</span></p>
-                                    <img src="${dataUrl}" alt="file">
-                                    <p style="margin-top:12px;font-size:12px;color:#64748b;">หรือ กด ⋮ มุมบนขวา → เปิดในเบราว์เซอร์ เพื่อดาวน์โหลด</p>
-                                    </body></html>
-                                `);
-                                w.document.close();
-                                btn.innerHTML = '✅ เปิดไฟล์แล้ว! กดค้างเพื่อบันทึก';
-                            } else {
-                                // fallback: ใส่รูปใน DOM ให้กดค้างบันทึก
-                                btn.innerHTML = '💡 กดค้างที่รูปภาพ → บันทึกรูปภาพ';
-                            }
-                            btn.disabled = false;
-                            btn.style.opacity = '1';
-                            setTimeout(() => btn.innerHTML = originalText, 5000);
-                        };
-                        reader.readAsDataURL(blob);
-                        return;
-                    } catch (e) {
-                        console.warn('Blob to DataURL failed:', e);
+                setTimeout(() => {
+                    if (btn) {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
                     }
+                }, delay);
+            };
+
+            // กรณีมี Blob หรือ DataURL อยู่แล้ว (ดาวน์โหลดทันที หรือพยายามเซฟลงเครื่อง)
+            if (downloadUrl && (downloadUrl.startsWith('blob:') || downloadUrl.startsWith('data:'))) {
+                try {
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = downloadUrl;
+                    let filename = window.__originalFilename || ('document.' + (isPdf ? 'pdf' : 'jpg'));
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+
+                    restoreBtn(isMobile ? '✅ แตะค้างที่รูปเพื่อบันทึก' : '✅ ดาวน์โหลดสำเร็จ!');
+                    return;
+                } catch (e) {
+                    console.warn('Direct click download failed:', e);
+                }
+            }
+
+            // กรณีเปิดในแอปอย่าง LINE / Facebook / Messenger
+            if (isInAppBrowser) {
+                if (isPdf) {
+                    window.open(downloadUrl, '_blank');
+                    restoreBtn('📄 เปิดเอกสารในแท็บใหม่');
+                    return;
                 }
 
-                // วิธีที่ 2: เปิด URL ตรงในแท็บใหม่
-                btn.innerHTML = '🌐 กำลังเปิดไฟล์...';
-                btn.disabled = false;
-                btn.style.opacity = '1';
-                const w = window.open(downloadUrl, '_blank');
-                if (!w) {
-                    // popup ถูกบล็อก → ลอง location.href แทน
-                    window.location.href = downloadUrl;
-                }
-                setTimeout(() => {
-                    btn.innerHTML = '💡 กดค้างที่รูป → บันทึกรูปภาพ';
-                    setTimeout(() => btn.innerHTML = originalText, 4000);
-                }, 1500);
+                // รูปภาพ: Lightbox ถูกเปิดแล้วด้านบน
+                restoreBtn('📱 แตะค้างที่รูปเพื่อบันทึก');
                 return;
             }
 
-            if (downloadUrl.includes('file.io')) {
+            // กรณี file.io
+            if (downloadUrl && typeof downloadUrl === 'string' && downloadUrl.includes('file.io')) {
                 window.open(downloadUrl, '_blank');
-                btn.innerHTML = '✅ เปิดลิงก์ดาวน์โหลดแล้ว!';
-                btn.disabled = false;
-                btn.style.opacity = '1';
-                setTimeout(() => {
-                    btn.innerHTML = '⚠️ ลิงก์ใช้ได้ครั้งเดียว!';
-                    btn.disabled = true;
-                    btn.style.opacity = '0.5';
-                    btn.style.cursor = 'not-allowed';
-                }, 2000);
+                if (btn) {
+                    btn.innerHTML = '✅ เปิดลิงก์ดาวน์โหลดแล้ว!';
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    setTimeout(() => {
+                        btn.innerHTML = '⚠️ ลิงก์ใช้ได้ครั้งเดียว!';
+                        btn.disabled = true;
+                        btn.style.opacity = '0.5';
+                        btn.style.cursor = 'not-allowed';
+                    }, 2000);
+                }
                 return;
             }
 
+            // สำหรับไฟล์ภายนอกอื่นๆ ที่ต้องดึงผ่าน network
             downloadWithProgress(downloadUrl, 'กำลังดาวน์โหลด...', (percent) => {
-                btn.innerHTML = `⏳ กำลังดาวน์โหลด... (${percent}%)`;
+                if (btn) btn.innerHTML = `⏳ กำลังดาวน์โหลด... (${percent}%)`;
             })
                 .then(blob => {
                     const url = window.URL.createObjectURL(blob);
@@ -3738,7 +3922,7 @@
                     if (lastPart && lastPart.includes('.')) {
                         filename = lastPart;
                     } else {
-                        filename = 'file.' + ((fileType === 'pdf' || _isPdfMode) ? 'pdf' : 'jpg');
+                        filename = 'file.' + (isPdf ? 'pdf' : 'jpg');
                     }
 
                     a.download = filename;
@@ -3746,18 +3930,14 @@
                     a.click();
                     document.body.removeChild(a);
                     window.URL.revokeObjectURL(url);
-                    btn.innerHTML = '✅ ดาวน์โหลดสำเร็จ!';
-                    btn.disabled = false;
-                    btn.style.opacity = '1';
-                    setTimeout(() => btn.innerHTML = originalText, 3000);
+                    restoreBtn('✅ ดาวน์โหลดสำเร็จ!');
                 })
                 .catch(err => {
                     console.error('Download failed:', err);
-                    window.open(downloadUrl, '_blank');
-                    btn.innerHTML = '📱 เปิดไฟล์ในแท็บใหม่';
-                    btn.disabled = false;
-                    btn.style.opacity = '1';
-                    setTimeout(() => btn.innerHTML = originalText, 3000);
+                    if (!isMobile) {
+                        window.open(downloadUrl, '_blank');
+                    }
+                    restoreBtn(isMobile ? '📱 แตะค้างที่รูปเพื่อบันทึก' : '📱 เปิดไฟล์ในแท็บใหม่');
                 });
         }
 
@@ -3812,9 +3992,14 @@
             const lightbox = document.getElementById('lightbox');
             const lightboxImage = document.getElementById('lightbox-image');
 
-            if (!previewImage.src) return;
+            // เมื่อปลดล็อคแล้ว ให้เลือกรูปภาพต้นฉบับคมชัด ไร้ลายน้ำ
+            const currentSrc = (isPaid || isFree)
+                ? (_cleanBlobUrl || previewImage.src || window.__downloadUrl)
+                : (previewImage.src || _cleanBlobUrl);
 
-            lightboxImage.src = previewImage.src;
+            if (!currentSrc) return;
+
+            lightboxImage.src = currentSrc;
             lightbox.classList.add('active');
 
             if (!isFree && !isPaid) {
