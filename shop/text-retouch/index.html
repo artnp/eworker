@@ -140,6 +140,37 @@
             border-radius: 20px;
             padding: 4px 12px;
             font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .status-dot.status-online {
+            color: #059669;
+            background: #ecfdf5;
+            border-color: #a7f3d0;
+        }
+        .status-dot.status-online .dot {
+            background: #10b981;
+            animation: blink 2s infinite;
+        }
+
+        .status-dot.status-away {
+            color: #d97706;
+            background: #fffbeb;
+            border-color: #fde68a;
+        }
+        .status-dot.status-away .dot {
+            background: #f59e0b;
+            animation: blink 2.5s infinite;
+        }
+
+        .status-dot.status-offline {
+            color: #dc2626;
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+        .status-dot.status-offline .dot {
+            background: #ef4444;
+            animation: none;
         }
 
         .dot {
@@ -151,15 +182,8 @@
         }
 
         @keyframes blink {
-
-            0%,
-            100% {
-                opacity: 1
-            }
-
-            50% {
-                opacity: 0.4
-            }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
         }
 
         /* ===== MAIN LAYOUT ===== */
@@ -174,7 +198,7 @@
             align-items: center;
             padding: 60px 20px 40px;
             text-align: center;
-            max-width: 680px;
+            max-width: 980px;
             margin: 0 auto;
         }
 
@@ -194,18 +218,83 @@
 
         .hero-title {
             font-family: 'Outfit', 'Sarabun', sans-serif;
-            font-size: clamp(1.rem, 2vw, 2.6rem);
-            font-weight: 00;
-            line-height: 1.2;
+            font-size: clamp(1.4rem, 2.5vw, 2.3rem);
+            font-weight: 800;
+            line-height: 1.25;
             margin-bottom: 12px;
             color: #0f172a;
+            white-space: nowrap;
         }
 
         .hero-desc {
-            font-size: 0.98rem;
+            font-size: 0.95rem;
             color: var(--text-muted);
             line-height: 1.6;
             margin-bottom: 32px;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 768px) {
+            .hero-title, .hero-desc {
+                white-space: normal;
+            }
+        }
+
+        /* Full-page Drag Drop Overlay */
+        .page-drag-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(37, 99, 235, 0.08);
+            border: 4px dashed #2563eb;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            backdrop-filter: blur(2px);
+        }
+        .page-drag-overlay.active {
+            opacity: 1;
+        }
+        .page-drag-card {
+            background: white;
+            padding: 24px 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            text-align: center;
+            border: 2px solid #3b82f6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            color: #1e3a8a;
+            font-weight: 700;
+            font-size: 1.15rem;
+        }
+
+        /* Textarea Highlight when patch created */
+        .patch-note-input.highlight-note {
+            border-color: #2563eb !important;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25) !important;
+            animation: notePulse 1.5s ease-in-out infinite alternate;
+        }
+        @keyframes notePulse {
+            0% { box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
+            100% { box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.45); }
+        }
+
+        /* Send button highlight & bounce when note is filled */
+        .btn-patch-action.btn-send.highlight-btn {
+            background: #16a34a !important;
+            color: white !important;
+            box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.35), 0 4px 12px rgba(22, 163, 74, 0.3) !important;
+            animation: sendBtnBounce 1s infinite alternate;
+        }
+        @keyframes sendBtnBounce {
+            0% { transform: scale(1.0); }
+            100% { transform: scale(1.04); }
         }
 
         /* Clean Upload Zone */
@@ -218,7 +307,12 @@
             cursor: pointer;
             background: #f8fafc;
             transition: all 0.2s;
-            position: relative;
+        }
+        .upload-zone.is-offline {
+            opacity: 0.65;
+            border-color: #fca5a5;
+            background: #fff1f2;
+            cursor: not-allowed;
         }
 
         .upload-zone:hover,
@@ -1472,6 +1566,14 @@
 </head>
 
 <body>
+    <!-- FULLPAGE DRAG OVERLAY -->
+    <div class="page-drag-overlay" id="pageDragOverlay">
+        <div class="page-drag-card">
+            <i class="fa-solid fa-cloud-arrow-up" style="font-size:2.5rem;color:var(--primary);"></i>
+            <div>วางไฟล์ลงที่นี่เพื่อเริ่มรีทัชงาน</div>
+            <span style="font-size:0.85rem;color:#64748b;font-weight:500;">รองรับ JPG, PNG, WebP หรือ PDF</span>
+        </div>
+    </div>
 
     <!-- HEADER -->
     <header class="app-header">
@@ -1486,9 +1588,9 @@
             <button class="btn-new-file" id="btnNewFile" style="display:none;" onclick="startNewSession()">
                 <i class="fa-solid fa-plus"></i> เริ่มไฟล์ใหม่
             </button>
-            <div class="status-dot">
+            <div class="status-dot status-online" id="statusDot">
                 <span class="dot"></span>
-                <span id="headerStatus">พร้อมรับงาน</span>
+                <span id="headerStatus">พร้อมรับงานทันที</span>
             </div>
         </div>
     </header>
@@ -1500,7 +1602,8 @@
         <div id="landingView">
             <section class="landing-section">
                 <div class="hero-badge">
-                    <i class="fa-solid fa-shield-halved"></i> ไฟล์ต้นฉบับปลอดภัย 100% ไม่ออกจากเครื่องคุณ
+                    <i class="fa-solid fa-shield-halved"></i> ไฟล์ต้นฉบับปลอดภัยสูงสุด
+                    [จะไม่มีการอัพโหลดออกจากเครื่องคุณ]
                 </div>
                 <h1 class="hero-title">บริการแก้ไขข้อความ เนียนเหมือนต้นฉบับ</h1>
                 <p class="hero-desc">
@@ -1583,11 +1686,10 @@
                         </div>
                         <button class="btn-add-patch" id="btnAddPatch">
                             <i class="fa-solid fa-crosshairs"></i>
-                            ชี้จุดที่จะแก้จุดต่อไป
+                            ชี้จุดที่จะแก้
                         </button>
                         <p class="crop-hint" id="cropHint">
-                            คลิกลากบนรูปเพื่อเลือกส่วนที่ต้องการแก้ · กด <span class="crop-hint-key">Esc</span>
-                            เพื่อยกเลิก
+                            💡 แนะนำ: คลิกจุดที่จะแก้ หรือลากคลุมตำแหน่งให้เห็นครอบคลุมทั้งหมด · กด <span class="crop-hint-key">Esc</span> เพื่อยกเลิก
                         </p>
                     </div>
 
@@ -1636,10 +1738,10 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
             <h4 style="font-size: 1.05rem; font-weight: 800; color: #16a34a; margin: 0 0 4px 0; line-height: 1.4;">
-                🎉 ตอนนี้นักรีทัชตอบรับงานแล้ว ชำระเพื่อเริ่มงานทันที
+                🎉 นักรีทัชตอบรับงานแล้ว
             </h4>
             <p style="font-size: 0.78rem; color: #64748b; margin: 0 0 8px 0;">
-                งานจะเสร็จไม่เกิน 30 นาที · ส่งตรงเข้า Photoshop ทันทีหลังชำระเงิน
+                ✅ชำระแล้วงานจะถูกเริ่มทันที (ใช้เวลาไม่เกิน 30 นาที)
             </p>
 
             <!-- Countdown Box -->
@@ -1813,15 +1915,66 @@
             } catch (e) { }
         }
 
+        let shopStatus = 'online';
+
+        function initShopStatus() {
+            db.ref('text_retouch_status').on('value', snap => {
+                shopStatus = snap.val() || 'online';
+                const dot = document.getElementById('statusDot');
+                const text = document.getElementById('headerStatus');
+                const zone = document.getElementById('uploadZone');
+
+                if (!dot || !text) return;
+                dot.classList.remove('status-online', 'status-away', 'status-offline');
+
+                if (shopStatus === 'offline') {
+                    dot.classList.add('status-offline');
+                    text.textContent = 'ร้านปิด';
+                    if (zone) {
+                        zone.classList.add('is-offline');
+                        const title = zone.querySelector('.upload-title');
+                        if (title) title.textContent = '❌ ขณะนี้ร้านปิดรับงานชั่วคราว (ไม่สามารถส่งไฟล์ได้)';
+                    }
+                } else if (shopStatus === 'away' || shopStatus === 'always') {
+                    dot.classList.add('status-away');
+                    text.textContent = 'กำลังงีบอยู่ Zzz';
+                    if (zone) {
+                        zone.classList.remove('is-offline');
+                        const title = zone.querySelector('.upload-title');
+                        if (title) title.textContent = 'คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่ (ช่างกำลังงีบ อาจตอบกลับช้าเล็กน้อย)';
+                    }
+                } else {
+                    dot.classList.add('status-online');
+                    text.textContent = 'พร้อมรับงานทันที';
+                    if (zone) {
+                        zone.classList.remove('is-offline');
+                        const title = zone.querySelector('.upload-title');
+                        if (title) title.textContent = 'คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่';
+                    }
+                }
+            });
+        }
+
         function updatePatchNote(patchId, val) {
             if (patches[patchId]) {
                 patches[patchId].note = val;
                 savePatchesToLocalStorage();
+
+                // Highlight & animate send button when text is entered
+                const noteEl = document.getElementById(`note_${patchId}`);
+                const sendBtn = document.getElementById(`btnSend_${patchId}`);
+                if (val && val.trim().length > 0) {
+                    if (noteEl) noteEl.classList.remove('highlight-note');
+                    if (sendBtn) sendBtn.classList.add('highlight-btn');
+                } else {
+                    if (sendBtn) sendBtn.classList.remove('highlight-btn');
+                }
             }
         }
 
         // ── INIT ──
         window.addEventListener('DOMContentLoaded', async () => {
+            initShopStatus();
             initUploadZone();
             initCanvas();
 
@@ -1920,12 +2073,14 @@
                 renderPatchOverlays();
                 updateEmpty();
                 updateTotal();
+                updateAddPatchButton();
                 toast('🔄 กู้คืนไฟล์และรายการจุดแก้ไขเดิมของคุณเรียบร้อยแล้ว', 'info');
             } catch (e) {
                 console.error('Error restoring patches:', e);
                 renderPatchOverlays();
                 updateEmpty();
                 updateTotal();
+                updateAddPatchButton();
             }
         }
 
@@ -1936,6 +2091,7 @@
             }
             if (sessionId) {
                 localStorage.removeItem('tr_patches_' + sessionId);
+                localStorage.removeItem('tr_pdf_page_' + sessionId);
             }
             localStorage.removeItem('tr_active_session_id');
             localFile = null;
@@ -1955,23 +2111,68 @@
             document.querySelectorAll('.patch-overlay').forEach(o => o.remove());
             updateEmpty();
             updateTotal();
+            updateAddPatchButton();
             toast('พร้อมเลือกไฟล์ใหม่แล้ว', 'info');
         }
 
         /* ======================================================
-           UPLOAD ZONE
+           UPLOAD ZONE & FULL-PAGE DRAG DROP
         ====================================================== */
         function initUploadZone() {
             const zone = document.getElementById('uploadZone');
             const input = document.getElementById('fileInput');
+            const dragOverlay = document.getElementById('pageDragOverlay');
 
-            zone.addEventListener('click', () => input.click());
-            input.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+            zone.addEventListener('click', () => {
+                if (shopStatus === 'offline') {
+                    toast('❌ ขณะนี้ร้านปิดรับงานชั่วคราว ไม่สามารถส่งไฟล์ได้', 'error');
+                    return;
+                }
+                input.click();
+            });
+
+            input.addEventListener('change', e => {
+                if (shopStatus === 'offline') {
+                    toast('❌ ขณะนี้ร้านปิดรับงานชั่วคราว ไม่สามารถส่งไฟล์ได้', 'error');
+                    return;
+                }
+                if (e.target.files[0]) loadFile(e.target.files[0]);
+            });
+
             zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
             zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-            zone.addEventListener('drop', e => {
-                e.preventDefault(); zone.classList.remove('dragover');
-                if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+
+            // Full-page drag and drop
+            let dragCounter = 0;
+            window.addEventListener('dragenter', e => {
+                e.preventDefault();
+                dragCounter++;
+                if (dragOverlay) dragOverlay.classList.add('active');
+            });
+            window.addEventListener('dragleave', e => {
+                e.preventDefault();
+                dragCounter--;
+                if (dragCounter <= 0) {
+                    dragCounter = 0;
+                    if (dragOverlay) dragOverlay.classList.remove('active');
+                }
+            });
+            window.addEventListener('dragover', e => {
+                e.preventDefault();
+            });
+            window.addEventListener('drop', e => {
+                e.preventDefault();
+                dragCounter = 0;
+                if (dragOverlay) dragOverlay.classList.remove('active');
+                if (zone) zone.classList.remove('dragover');
+
+                if (shopStatus === 'offline') {
+                    toast('❌ ขณะนี้ร้านปิดรับงานชั่วคราว ไม่สามารถส่งไฟล์ได้', 'error');
+                    return;
+                }
+                if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    loadFile(e.dataTransfer.files[0]);
+                }
             });
         }
 
@@ -2019,20 +2220,33 @@
             });
         }
 
-        async function loadPdf(url) {
+        async function loadPdf(url, targetPage = null) {
             pdfDoc = await pdfjsLib.getDocument(url).promise;
             totalPages = pdfDoc.numPages;
-            currentPage = 1;
+
+            let savedPage = 1;
+            try {
+                savedPage = parseInt(localStorage.getItem('tr_pdf_page_' + sessionId) || '1', 10);
+            } catch (e) {}
+
+            currentPage = targetPage || Math.min(Math.max(1, savedPage), totalPages);
             await renderPdfPage(currentPage);
 
             if (totalPages > 1) {
                 document.getElementById('pageNav').classList.add('visible');
                 document.getElementById('pageTotal').textContent = totalPages;
                 document.getElementById('pageInput').max = totalPages;
+                updatePageInput();
             }
         }
 
         async function renderPdfPage(pageNum) {
+            currentPage = pageNum;
+            if (sessionId) {
+                try { localStorage.setItem('tr_pdf_page_' + sessionId, pageNum); } catch(e) {}
+            }
+            updatePageInput();
+
             const page = await pdfDoc.getPage(pageNum);
             const vp = page.getViewport({ scale: 2 });
             const canvas = document.getElementById('pdfCanvas');
@@ -2040,6 +2254,26 @@
             canvas.style.display = 'block';
             document.getElementById('mainImage').style.display = 'none';
             await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+
+            // Re-draw any completed/composited patches for this specific PDF page
+            const pdfCtx = canvas.getContext('2d');
+            for (const patch of Object.values(patches)) {
+                if ((patch.page === pageNum || !patch.page) && patch.resultDataUrl && (patch.composited || patch.status === 'done')) {
+                    try {
+                        const { x, y, w, h } = patch.cropRect;
+                        const px = (x / 100) * canvas.width;
+                        const py = (y / 100) * canvas.height;
+                        const pw = (w / 100) * canvas.width;
+                        const ph = (h / 100) * canvas.height;
+                        const rImg = new Image();
+                        await new Promise(r => { rImg.onload = r; rImg.src = patch.resultDataUrl; });
+                        pdfCtx.drawImage(rImg, px, py, pw, ph);
+                    } catch(err) {
+                        console.warn('PDF re-composite error:', err);
+                    }
+                }
+            }
+
             fitToScreen();
             renderPatchOverlays();
         }
@@ -2146,14 +2380,26 @@
                 const or = overlay.getBoundingClientRect();
                 const ex = Math.max(0, Math.min(or.width, e.clientX - or.left));
                 const ey = Math.max(0, Math.min(or.height, e.clientY - or.top));
-                const rx = Math.min(cropStartX, ex);
-                const ry = Math.min(cropStartY, ey);
                 const rw = Math.abs(ex - cropStartX);
                 const rh = Math.abs(ey - cropStartY);
 
-                if (rw < 15 || rh < 15) { exitCropMode(); return; }
+                // หากลูกค้าแค่ "คลิกจิ้ม" ที่จุด (ไม่ได้ลากกล่อง หรือลากสั้นกว่า 15px)
+                // ให้สร้างกล่องขนาดมาตรฐานรอบจุดที่คลิกให้โดยอัตโนมัติ
+                let finalX, finalY, finalW, finalH;
+                if (rw < 15 || rh < 15) {
+                    finalW = Math.min(180, or.width * 0.4);
+                    finalH = Math.min(65, or.height * 0.2);
+                    finalX = Math.max(0, Math.min(or.width - finalW, cropStartX - finalW / 2));
+                    finalY = Math.max(0, Math.min(or.height - finalH, cropStartY - finalH / 2));
+                    toast('💡 สร้างกรอบรอบจุดที่คลิกแล้ว สามารถพิมพ์โน้ตแก้ไขได้ทันที', 'info');
+                } else {
+                    finalX = Math.min(cropStartX, ex);
+                    finalY = Math.min(cropStartY, ey);
+                    finalW = rw;
+                    finalH = rh;
+                }
 
-                await createPatchFromCrop(rx, ry, rw, rh, or);
+                await createPatchFromCrop(finalX, finalY, finalW, finalH, or);
                 exitCropMode();
             });
 
@@ -2220,6 +2466,11 @@
         }
 
         function enterCropMode() {
+            // อนุญาตให้วงจุดได้เพียง 1 ตำแหน่งเท่านั้น
+            if (Object.keys(patches).length >= 1) {
+                toast('⚠️ อนุญาตให้ระบุจุดแก้ไขได้ทีละ 1 จุดเท่านั้นครับ (หากต้องการเปลี่ยนจุด กรุณาลบจุดเดิมก่อน)', 'info');
+                return;
+            }
             isCropMode = true;
             const btn = document.getElementById('btnAddPatch');
             btn.classList.add('active');
@@ -2234,18 +2485,38 @@
             isCropMode = false;
             const btn = document.getElementById('btnAddPatch');
             btn.classList.remove('active');
-            btn.innerHTML = '<i class="fa-solid fa-crosshairs"></i> ชี้จุดที่จะแก้จุดต่อไป';
+            btn.innerHTML = '<i class="fa-solid fa-crosshairs"></i> ชี้จุดที่จะแก้';
             document.getElementById('cropHint').classList.remove('visible');
             document.getElementById('cropOverlay').classList.remove('active');
             document.getElementById('cropRect').style.display = 'none';
             document.getElementById('canvasContainer').style.cursor = '';
             document.getElementById('toolSelect').classList.add('active');
+            updateAddPatchButton();
+        }
+
+        function updateAddPatchButton() {
+            const btn = document.getElementById('btnAddPatch');
+            if (!btn) return;
+            const count = Object.keys(patches).length;
+            if (count >= 1) {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+                btn.title = 'จำกัด 1 จุดต่อครั้ง (ลบจุดเดิมก่อนหากต้องการเปลี่ยนตำแหน่ง)';
+            } else {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+                btn.title = 'ชี้จุดที่จะแก้';
+            }
         }
 
         /* ======================================================
            CREATE PATCH FROM CROP
         ====================================================== */
         async function createPatchFromCrop(overlayX, overlayY, overlayW, overlayH, overlayRect) {
+            if (Object.keys(patches).length >= 1) return;
+
             const wrapper = document.getElementById('canvasWrapper');
             const wrapperRect = wrapper.getBoundingClientRect();
 
@@ -2306,11 +2577,17 @@
             renderPatchOverlays();
             updateEmpty();
             updateTotal();
+            updateAddPatchButton();
 
+            // Highlight และโฟกัสที่ช่องโน้ตข้อความทันที
             setTimeout(() => {
                 const noteEl = document.getElementById(`note_${patchId}`);
-                if (noteEl) noteEl.focus();
-            }, 100);
+                if (noteEl) {
+                    noteEl.classList.add('highlight-note');
+                    noteEl.focus();
+                    noteEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 120);
         }
 
         /* ======================================================
@@ -2523,7 +2800,7 @@
             </div>` : ''}
 
             <textarea class="patch-note-input" id="note_${patchId}"
-                placeholder="จุดนี้จะแก้เป็นอะไรขอรับนายท่าน'"
+                placeholder="จุดนี้จะแก้เป็นอะไรขอรับเจ้านาย"
                 ${patch.status !== 'waiting' ? 'disabled' : ''}
                 oninput="updatePatchNote('${patchId}', this.value)"
             >${patch.note}</textarea>
@@ -2608,6 +2885,7 @@
             } catch (e) { }
             updateEmpty();
             updateTotal();
+            updateAddPatchButton();
         }
 
         function updateEmpty() {
@@ -2617,6 +2895,7 @@
             const countEl = document.getElementById('mobilePatchCount');
             if (count > 0) { countEl.style.display = 'inline'; countEl.textContent = count; }
             else countEl.style.display = 'none';
+            updateAddPatchButton();
         }
 
         function updateTotal() {
@@ -2853,6 +3132,11 @@
                     img.src = newUrl;
                     localFileUrl = newUrl;
                     await new Promise(r => { img.onload = r; });
+                } else if (localFileType === 'pdf') {
+                    // วาดลงบน pdfCanvas ทันทีเพื่อให้แสดงผลประกอบร่างได้ตรงตำแหน่ง 100%
+                    const pdfCanvas = document.getElementById('pdfCanvas');
+                    const pdfCtx = pdfCanvas.getContext('2d');
+                    pdfCtx.drawImage(resultImg, px, py, pw, ph);
                 }
 
                 patch.status = 'done';
@@ -2882,9 +3166,18 @@
 
         async function downloadFinalFile() {
             if (localFileType === 'pdf') {
-                toast('สำหรับ PDF กรุณากด "ประกอบร่าง" แต่ละจุดและบันทึก', 'info');
+                const pdfCanvas = document.getElementById('pdfCanvas');
+                const a = document.createElement('a');
+                a.href = pdfCanvas.toDataURL('image/jpeg', 0.95);
+                a.download = `text-retouch-page-${currentPage}-completed.jpg`;
+                a.click();
+                toast(`ดาวน์โหลดภาพหน้า ${currentPage} ที่แก้ไขเรียบร้อย!`, 'success');
+                try {
+                    await db.ref(`text_retouch/${sessionId}`).remove();
+                } catch(e) {}
                 return;
             }
+
             const img = document.getElementById('mainImage');
             const a = document.createElement('a');
             a.href = img.src;
