@@ -396,13 +396,21 @@ def launch_on_default_desktop(cmd, cwd=None):
 
 
 def force_photoshop_foreground():
-    """ดึงหน้าต่าง Photoshop ขึ้นหน้าจอหลักขั้นเด็ดขาด (ทะลุ Foreground Lock และขยายหน้าจอ)"""
+    """ดึงหน้าต่าง Photoshop หลักขึ้นหน้าจอ (ไม่แตะต้อง GDI+ hook หรือ IME window ภายใน)"""
     def _do_activate():
         time.sleep(0.3)
         try:
             import ctypes
             import ctypes.wintypes
             user32 = ctypes.windll.user32
+
+            # สลับเข้า Default desktop เพื่อให้มองเห็นหน้าต่างจริง
+            try:
+                hdesk = user32.OpenDesktopW("Default", 0, False, 0x01FF)
+                if hdesk:
+                    user32.SetThreadDesktop(hdesk)
+            except Exception:
+                pass
 
             # ปลดล็อค Windows Foreground Lock โดยจำลองกดปุ่ม ALT
             user32.keybd_event(0x12, 0, 0, 0)
@@ -413,41 +421,33 @@ def force_photoshop_foreground():
 
             def enum_cb(hwnd, _):
                 if user32.IsWindow(hwnd):
-                    tbuf = ctypes.create_unicode_buffer(512)
-                    user32.GetWindowTextW(hwnd, tbuf, 512)
                     cbuf = ctypes.create_unicode_buffer(256)
                     user32.GetClassNameW(hwnd, cbuf, 256)
-                    t = tbuf.value.lower()
-                    c = cbuf.value.lower()
-                    if "photoshop" in t or "photoshop" in c:
-                        hwnds.append(hwnd)
+                    cls = cbuf.value
+                    tbuf = ctypes.create_unicode_buffer(512)
+                    user32.GetWindowTextW(hwnd, tbuf, 512)
+                    title = tbuf.value.lower()
+
+                    # เจาะจงเฉพาะหน้าต่างหลักของ Photoshop แท้ๆ (ไม่เอา GDI+ Hook Window และ IME)
+                    if cls == "Photoshop" and "gdi+" not in title and "ime" not in title:
+                        rect = ctypes.wintypes.RECT()
+                        user32.GetWindowRect(hwnd, ctypes.byref(rect))
+                        w = rect.right - rect.left
+                        h = rect.bottom - rect.top
+                        if w > 200 and h > 200:
+                            hwnds.append(hwnd)
                 return True
 
             user32.EnumWindows(WNDENUMPROC(enum_cb), 0)
 
             for hwnd in hwnds:
                 try:
-                    # ถ้าถูก minimize อยู่ ให้ restore
                     if user32.IsIconic(hwnd):
                         user32.ShowWindow(hwnd, 9)  # SW_RESTORE
-                    else:
-                        user32.ShowWindow(hwnd, 3)  # SW_MAXIMIZE
                     user32.SetForegroundWindow(hwnd)
                     user32.BringWindowToTop(hwnd)
-                    # กระตุ้นให้ขึ้นบนสุดชั่วครู่เพื่อดึงความสนใจจอ
-                    user32.SetWindowPos(hwnd, -1, 0, 0, 0, 0, 3)  # HWND_TOPMOST, SWP_NOMOVE | SWP_NOSIZE
-                    user32.SetWindowPos(hwnd, -2, 0, 0, 0, 0, 3)  # HWND_NOTOPMOST
                 except Exception:
                     pass
-        except Exception:
-            pass
-
-        # สำรองด้วย WScript.Shell
-        try:
-            import win32com.client
-            wsh = win32com.client.Dispatch("WScript.Shell")
-            wsh.AppActivate("Adobe Photoshop")
-            wsh.AppActivate("Photoshop")
         except Exception:
             pass
 
