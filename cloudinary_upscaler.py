@@ -10,16 +10,8 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.join(SCRIPT_DIR, "cloudinary_accounts.json")
 DESKTOP_PATH = os.path.join(os.path.expanduser("~"), "Desktop")
 
-# Cloudinary Accounts Pool
-DEFAULT_ACCOUNTS = [
-    {"cloud_name": "dbfh7dtne", "api_key": "314374931381631", "api_secret": "lOAhvI52wumhjCLmdreW5WdXgSU", "active": True},
-    {"cloud_name": "m9yyilb6", "api_key": "949466962937462", "api_secret": "xJOQVc9T2oXQ2kWOd96q4YlDxtQ", "active": True},
-    {"cloud_name": "fenpyqu3", "api_key": "334345428177449", "api_secret": "yO4wg5MPltuQMHgiqIyzAHD-L9E", "active": True},
-    {"cloud_name": "qtwdpw8x", "api_key": "182649854232788", "api_secret": "Vg2LCCHJ-4DUivlhNVh_50tyAVU", "active": True},
-    {"cloud_name": "tocchodh", "api_key": "732576314649364", "api_secret": "z-NNa8o9cZxRL97djoRRpJSf8tI", "active": True},
-    {"cloud_name": "y5bb3tak", "api_key": "915546952421175", "api_secret": "1z57lAUiKLoegQFrmbol8-XyLcU", "active": True},
-    {"cloud_name": "dpbt2gb1h", "api_key": "331776356594442", "api_secret": "4sQ4tZb5mAU2OARoI9OFivbajtQ", "active": False}
-]
+# Cloudinary Accounts Pool (Loaded from cloudinary_accounts.json)
+DEFAULT_ACCOUNTS = []
 
 def load_accounts():
     if os.path.exists(CONFIG_FILE):
