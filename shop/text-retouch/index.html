@@ -1871,6 +1871,22 @@
         a.download = 'text-retouch-completed.jpg';
         a.click();
         toast('ดาวน์โหลดไฟล์เรียบร้อย!', 'success');
+
+        // ลบข้อมูลไฟล์ภาพ patchImage และ resultImage ใน Firebase ทิ้งเพื่อประหยัดพื้นที่
+        // แต่งานบนหน้าจอและ Canvas ของลูกค้ายังคงอยู่ปกติ
+        try {
+            const updates = {};
+            Object.keys(patches).forEach(pid => {
+                updates[`text_retouch/${sessionId}/patches/${pid}/patchImage`] = null;
+                updates[`text_retouch/${sessionId}/patches/${pid}/resultImage`] = null;
+                updates[`text_retouch/${sessionId}/patches/${pid}/cleaned`] = true;
+            });
+            updates[`text_retouch/${sessionId}/status`] = 'completed';
+            await db.ref().update(updates);
+            console.log('[TextRetouch] ลบไฟล์ภาพใน Firebase เรียบร้อย (งานฝั่งลูกค้ายังอยู่ครบ)');
+        } catch(e) {
+            console.warn('[TextRetouch] Firebase cleanup error:', e);
+        }
     }
 
     /* ======================================================
