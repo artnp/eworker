@@ -73,24 +73,30 @@ def ensure_photoshop_config():
 
 def get_photoshop_path():
     ensure_photoshop_config()
+    candidates = [
+        r"C:\Program Files\Adobe\Adobe Photoshop 2023\PhotoshopLauncher.exe",
+        r"C:\Program Files\Adobe\Adobe Photoshop 2024\PhotoshopLauncher.exe",
+        r"C:\Program Files\Adobe\Adobe Photoshop 2025\PhotoshopLauncher.exe",
+        r"C:\Program Files\Adobe\Adobe Photoshop 2023\Photoshop.exe",
+        r"C:\Program Files\Adobe\Adobe Photoshop 2024\Photoshop.exe",
+        r"C:\Program Files\Adobe\Adobe Photoshop 2025\Photoshop.exe",
+        r"C:\Program Files\Adobe\Adobe Photoshop CC 2019\Photoshop.exe",
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return c
     try:
         import winreg
         key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
                              r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\Photoshop.exe")
         path, _ = winreg.QueryValueEx(key, "")
         if path and os.path.exists(path):
+            launcher = os.path.join(os.path.dirname(path), "PhotoshopLauncher.exe")
+            if os.path.exists(launcher):
+                return launcher
             return path
     except Exception:
         pass
-    candidates = [
-        r"C:\Program Files\Adobe\Adobe Photoshop 2025\Photoshop.exe",
-        r"C:\Program Files\Adobe\Adobe Photoshop 2024\Photoshop.exe",
-        r"C:\Program Files\Adobe\Adobe Photoshop 2023\Photoshop.exe",
-        r"C:\Program Files\Adobe\Adobe Photoshop CC 2019\Photoshop.exe",
-    ]
-    for c in candidates:
-        if os.path.exists(c):
-            return c
     return "photoshop"
 
 
@@ -393,7 +399,8 @@ try {{
     txt.position = [10, Math.min(doc.height * 0.75, doc.height - 5)];
     txt.color.rgb.hexValue = "000000";
 
-    {"textLayer.visible = false;" if is_delete_cmd else ""}
+    // ซ่อนเลเยอร์โน้ตไว้เสมอ เพื่อไม่ให้มีตัวหนังสือหรือสัญลักษณ์ส่วนเกินปรากฏบังภาพงาน
+    textLayer.visible = false;
 }} catch(e) {{}}
 
 // Active layer = Background (สำหรับรีทัชภาพ)
@@ -419,69 +426,51 @@ try {{
 
     print(f"[TextRetouch] 🎨 กำลังเปิดเข้า Photoshop: patch #{num} — '{note}'")
     ps_path = get_photoshop_path()
+    ps_dir = os.path.dirname(ps_path) if ps_path and os.path.exists(ps_path) else None
 
-    # ตรวจสอบและเปิด Photoshop อย่างปลอดภัย (กำจัด Zombie process <350MB อัตโนมัติ)
+    # ตรวจสอบว่า Photoshop กำลังรันอยู่หรือไม่
     import psutil
-    zombies = []
-    has_healthy_ps = False
+    has_ps_running = False
 
-    for p in psutil.process_iter(['pid', 'name', 'memory_info']):
+    for p in psutil.process_iter(['name']):
         try:
-            pname = p.info.get('name', '').lower()
-            if 'photoshop' in pname and 'launcher' not in pname:
-                mem_mb = p.info['memory_info'].rss / (1024 * 1024)
-                # หาก memory ต่ำกว่า 350 MB แสดงว่าเป็น Zombie headless ค้างจาก COM
-                if mem_mb < 350:
-                    zombies.append(p)
-                else:
-                    has_healthy_ps = True
+            if 'photoshop' in p.info.get('name', '').lower():
+                has_ps_running = True
+                break
         except Exception:
             pass
 
-    # เคลียร์ Zombie process
-    if zombies:
-        print(f"[TextRetouch] 🧹 ตรวจพบ Photoshop Zombie headless ({len(zombies)} ตัว) -> เคลียร์โปรเซสทันที...")
-        for z in zombies:
-            try:
-                z.kill()
-            except Exception:
-                pass
-        time.sleep(1)
-        has_healthy_ps = False
-
-    if not has_healthy_ps and ps_path and os.path.exists(ps_path):
-        print(f"[TextRetouch] 🚀 เปิดโปรแกรม Adobe Photoshop หน้าต่าง GUI ขึ้นมาใหม่ผ่าน Windows Shell...")
+    # หากยังไม่เปิด ให้รันผ่าน Launcher (พร้อม cwd ที่ถูกต้อง เพื่อให้โหลด GUI เต็มรูปแบบ)
+    if not has_ps_running and ps_path and os.path.exists(ps_path):
+        print(f"[TextRetouch] 🚀 เปิดโปรแกรม Photoshop ผ่าน Launcher: {ps_path}")
         try:
-            import ctypes
-            ctypes.windll.shell32.ShellExecuteW(None, "open", ps_path, f'"{jsx_path}"', None, 1)
-        except Exception as se:
-            subprocess.Popen([ps_path, jsx_path], shell=False)
-
-        # รอให้ Photoshop โหลด UI เสร็จ (memory > 450 MB หรือ COM ตอบรับ)
-        for _ in range(12):
-            time.sleep(1)
+            subprocess.Popen([ps_path, jsx_path], cwd=ps_dir, shell=False)
+        except Exception:
             try:
-                import win32com.client
-                ps = win32com.client.Dispatch("Photoshop.Application")
-                ps.DoJavaScriptFile(jsx_path)
-                print(f"[TextRetouch] ⚡ Photoshop โหลด UI เสร็จสมบูรณ์ และโหลดภาพเรียบร้อย")
-                break
+                import ctypes
+                ctypes.windll.shell32.ShellExecuteW(None, "open", ps_path, f'"{jsx_path}"', ps_dir, 1)
             except Exception:
                 pass
-    else:
-        # หากเปิดอยู่แล้ว ให้ส่ง JSX เข้า Photoshop ทันที
+
+    # ส่งคำสั่ง JSX ผ่าน COM Automation
+    connected = False
+    for attempt in range(25):
         try:
             import win32com.client
             ps = win32com.client.Dispatch("Photoshop.Application")
             ps.DoJavaScriptFile(jsx_path)
-            print(f"[TextRetouch] ⚡ ส่งเข้า Photoshop สำเร็จทันทีผ่าน COM Automation")
-        except Exception as e:
-            print(f"[TextRetouch] COM busy ({e}) -> สลับเป็น ShellExecute")
-            try:
-                import ctypes
-                ctypes.windll.shell32.ShellExecuteW(None, "open", ps_path, f'"{jsx_path}"', None, 1)
-            except Exception:
-                subprocess.Popen([ps_path, jsx_path], shell=False)
+            print(f"[TextRetouch] ⚡ Photoshop โหลดภาพและเลเยอร์เรียบร้อยสมบูรณ์")
+            connected = True
+            break
+        except Exception:
+            time.sleep(1)
+
+    if not connected and ps_path and os.path.exists(ps_path):
+        # Fallback สั่งเปิดไฟล์ JSX โดยตรง
+        try:
+            subprocess.Popen([ps_path, jsx_path], cwd=ps_dir, shell=False)
+        except Exception:
+            pass
 
     # ดึงหน้าต่าง Photoshop ขึ้นหน้าจอหลักทันที (Activate Foreground)
     try:
