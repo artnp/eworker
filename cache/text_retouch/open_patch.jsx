@@ -2,16 +2,16 @@
 app.displayDialogs = DialogModes.NO;
 
 // Text-Retouch: Auto-open patch #1
-var patchFile = new File("D:/Github/eworker/cache/text_retouch/p_mvm6i3jb5pj0.png");
+var patchFile = new File("D:/Github/eworker/cache/text_retouch/p_mvm8lz4mpuz2.png");
 var doc = app.open(patchFile);
 
 // สร้าง Text Layer แยกสำหรับข้อความที่จะแก้ (ขนาด Canvas คงเดิม 100% ไม่สร้างแถบสี)
 try {
     var textLayer = doc.artLayers.add();
     textLayer.kind = LayerKind.TEXT;
-    textLayer.name = "📝 #1: zzz";
+    textLayer.name = "📝 #1: 12";
     var txt = textLayer.textItem;
-    txt.contents = "zzz";
+    txt.contents = "12";
     txt.size = Math.min(Math.max(doc.height * 0.4, 14), 60);
     txt.position = [10, Math.min(doc.height * 0.75, doc.height - 5)];
     txt.color.rgb.hexValue = "000000";
@@ -28,7 +28,7 @@ try {
 try {
     app.putCustomOptions("TextRetouchResultPath", new ActionDescriptor(), true);
     var desc = new ActionDescriptor();
-    desc.putString(app.stringIDToTypeID("resultPath"), "D:/Github/eworker/cache/text_retouch/p_mvm6i3jb5pj0_result.png");
+    desc.putString(app.stringIDToTypeID("resultPath"), "D:/Github/eworker/cache/text_retouch/p_mvm8lz4mpuz2_result.png");
     app.putCustomOptions("TextRetouchResultPath", desc, true);
 } catch(e) {}
 
