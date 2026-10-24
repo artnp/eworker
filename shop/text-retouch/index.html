@@ -5,13 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Text-Retouch | แก้ไขข้อความ & ดีไซน์เฉพาะจุด</title>
-    <meta name="description" content="บริการแก้ไขข้อความและดีไซน์ ส่งเฉพาะจุดที่ต้องการแก้ ไฟล์ต้นฉบับไม่ออกจากเครื่องคุณ ปลอดภัย 100%">
+    <meta name="description"
+        content="บริการแก้ไขข้อความและดีไซน์ ส่งเฉพาะจุดที่ต้องการแก้ ไฟล์ต้นฉบับไม่ออกจากเครื่องคุณ ปลอดภัย 100%">
     <link rel="icon" type="image/x-icon" href="../../favicon.ico">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Sarabun:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
     <!-- Firebase SDK -->
@@ -37,7 +40,12 @@
             --border-active: #2563eb;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
 
         body {
             font-family: 'Sarabun', 'Outfit', sans-serif;
@@ -49,71 +57,154 @@
 
         /* ===== HEADER ===== */
         .app-header {
-            position: sticky; top: 0; z-index: 200;
+            position: sticky;
+            top: 0;
+            z-index: 200;
             background: #ffffff;
             border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 24px; height: 56px; gap: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            height: 56px;
+            gap: 16px;
         }
 
         .brand {
-            display: flex; align-items: center; gap: 10px;
-            font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.15rem;
-            text-decoration: none; color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.15rem;
+            text-decoration: none;
+            color: var(--text);
         }
+
         .brand-icon {
-            width: 34px; height: 34px;
+            width: 34px;
+            height: 34px;
             background: var(--primary);
             border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.95rem; color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            color: white;
         }
-        .brand-sub { font-size: 0.72rem; font-weight: 400; color: var(--text-muted); display: block; line-height: 1; margin-top: 2px; }
 
-        .header-right { display: flex; align-items: center; gap: 10px; }
+        .brand-sub {
+            font-size: 0.72rem;
+            font-weight: 400;
+            color: var(--text-muted);
+            display: block;
+            line-height: 1;
+            margin-top: 2px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
         .btn-new-file {
-            background: #f1f5f9; border: 1px solid var(--border-strong);
-            color: #334155; padding: 6px 12px; border-radius: 8px;
-            font-size: 0.8rem; font-weight: 700; cursor: pointer;
-            display: inline-flex; align-items: center; gap: 6px;
-            transition: all 0.15s; font-family: inherit;
+            background: #f1f5f9;
+            border: 1px solid var(--border-strong);
+            color: #334155;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s;
+            font-family: inherit;
         }
-        .btn-new-file:hover { background: #e2e8f0; color: #0f172a; }
+
+        .btn-new-file:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
 
         .status-dot {
-            display: flex; align-items: center; gap: 6px;
-            font-size: 0.78rem; color: #059669; background: #ecfdf5;
-            border: 1px solid #a7f3d0; border-radius: 20px; padding: 4px 12px; font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            color: #059669;
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-weight: 600;
         }
-        .dot { width: 7px; height: 7px; border-radius: 50%; background: #10b981; animation: blink 2s infinite; }
-        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+        .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: 0.4
+            }
+        }
 
         /* ===== MAIN LAYOUT ===== */
-        .main-wrap { position: relative; }
+        .main-wrap {
+            position: relative;
+        }
 
         /* ===== LANDING & UPLOAD VIEW ===== */
         .landing-section {
-            display: flex; flex-direction: column; align-items: center;
-            padding: 60px 20px 40px; text-align: center;
-            max-width: 680px; margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 60px 20px 40px;
+            text-align: center;
+            max-width: 680px;
+            margin: 0 auto;
         }
 
         .hero-badge {
-            display: inline-flex; align-items: center; gap: 6px;
-            background: #eff6ff; border: 1px solid #bfdbfe;
-            color: var(--primary); padding: 5px 14px; border-radius: 20px;
-            font-size: 0.8rem; font-weight: 600; margin-bottom: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: var(--primary);
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 20px;
         }
 
         .hero-title {
-            font-family: 'Outfit', 'Sarabun', sans-serif; font-size: clamp(1.8rem, 4vw, 2.6rem);
-            font-weight: 800; line-height: 1.2; margin-bottom: 12px;
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+            font-size: clamp(1.8rem, 4vw, 2.6rem);
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 12px;
             color: #0f172a;
         }
 
         .hero-desc {
-            font-size: 0.98rem; color: var(--text-muted); line-height: 1.6;
+            font-size: 0.98rem;
+            color: var(--text-muted);
+            line-height: 1.6;
             margin-bottom: 32px;
         }
 
@@ -121,92 +212,178 @@
         .upload-zone {
             width: 100%;
             border: 2px dashed #cbd5e1;
-            border-radius: 16px; padding: 48px 24px;
-            text-align: center; cursor: pointer;
+            border-radius: 16px;
+            padding: 48px 24px;
+            text-align: center;
+            cursor: pointer;
             background: #f8fafc;
-            transition: all 0.2s; position: relative;
+            transition: all 0.2s;
+            position: relative;
         }
-        .upload-zone:hover, .upload-zone.dragover {
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
             border-color: var(--primary);
             background: #eff6ff;
         }
 
         .upload-icon {
-            width: 56px; height: 56px;
+            width: 56px;
+            height: 56px;
             background: #dbeafe;
-            border-radius: 14px; display: flex; align-items: center; justify-content: center;
-            font-size: 1.5rem; color: var(--primary); margin: 0 auto 16px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--primary);
+            margin: 0 auto 16px;
         }
-        .upload-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.1rem; margin-bottom: 6px; color: #0f172a; }
-        .upload-desc { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px; }
-        .upload-types { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+
+        .upload-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 6px;
+            color: #0f172a;
+        }
+
+        .upload-desc {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+        }
+
+        .upload-types {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
         .type-badge {
-            background: white; border: 1px solid var(--border);
-            border-radius: 6px; padding: 4px 10px; font-size: 0.75rem; color: #475569; font-weight: 600;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            color: #475569;
+            font-weight: 600;
         }
-        #fileInput { display: none; }
+
+        #fileInput {
+            display: none;
+        }
 
         /* ===== EDITOR LAYOUT ===== */
-        #editorView { display: none; }
+        #editorView {
+            display: none;
+        }
 
         .editor-layout {
-            display: grid; grid-template-columns: 1fr 390px;
-            height: calc(100vh - 56px); overflow: hidden;
+            display: grid;
+            grid-template-columns: 1fr 390px;
+            height: calc(100vh - 56px);
+            overflow: hidden;
         }
 
         @media (max-width: 900px) {
-            .editor-layout { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+            .editor-layout {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr auto;
+            }
         }
 
         /* ===== CANVAS AREA ===== */
         .canvas-panel {
-            position: relative; overflow: hidden;
+            position: relative;
+            overflow: hidden;
             background: var(--bg-canvas);
             border-right: 1px solid var(--border);
         }
 
         .canvas-toolbar {
-            position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 4px; z-index: 50;
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 4px;
+            z-index: 50;
             background: #ffffff;
             border: 1px solid var(--border-strong);
-            border-radius: 10px; padding: 4px;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+            border-radius: 10px;
+            padding: 4px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
         }
 
         .tool-btn {
-            width: 34px; height: 34px; border: none; border-radius: 6px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.88rem; cursor: pointer; transition: all 0.15s;
-            background: transparent; color: #475569;
+            width: 34px;
+            height: 34px;
+            border: none;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.88rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            background: transparent;
+            color: #475569;
         }
-        .tool-btn:hover { background: #f1f5f9; color: #0f172a; }
-        .tool-btn.active { background: var(--primary); color: white; }
+
+        .tool-btn:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        .tool-btn.active {
+            background: var(--primary);
+            color: white;
+        }
 
         .zoom-label {
-            display: flex; align-items: center; padding: 0 8px;
-            font-size: 0.75rem; color: var(--text-muted); font-family: 'Outfit', sans-serif;
-            font-weight: 700; min-width: 44px; justify-content: center;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            min-width: 44px;
+            justify-content: center;
         }
 
         .canvas-container {
-            width: 100%; height: 100%; position: relative;
-            overflow: hidden; cursor: grab;
-            user-select: none; -webkit-user-select: none;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            cursor: grab;
+            user-select: none;
+            -webkit-user-select: none;
         }
-        .canvas-container.grabbing { cursor: grabbing; }
+
+        .canvas-container.grabbing {
+            cursor: grabbing;
+        }
 
         .canvas-wrapper {
-            position: absolute; top: 0; left: 0;
+            position: absolute;
+            top: 0;
+            left: 0;
             transform-origin: top left;
-            user-select: none; -webkit-user-select: none;
+            user-select: none;
+            -webkit-user-select: none;
             -webkit-user-drag: none;
         }
 
         /* Prevent image ghost drag */
-        #mainImage, #pdfCanvas {
-            display: block; max-width: none;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        #mainImage,
+        #pdfCanvas {
+            display: block;
+            max-width: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             user-select: none;
             -webkit-user-select: none;
             -webkit-user-drag: none;
@@ -216,17 +393,24 @@
 
         /* Crop selection overlay */
         #cropOverlay {
-            position: absolute; inset: 0; display: none;
-            cursor: crosshair; z-index: 40;
+            position: absolute;
+            inset: 0;
+            display: none;
+            cursor: crosshair;
+            z-index: 40;
         }
-        #cropOverlay.active { display: block; }
+
+        #cropOverlay.active {
+            display: block;
+        }
 
         #cropRect {
             position: absolute;
             border: 2px solid var(--danger);
-            background: rgba(220,38,38,0.12);
-            box-shadow: 0 0 0 9999px rgba(0,0,0,0.35);
-            display: none; pointer-events: none;
+            background: rgba(220, 38, 38, 0.12);
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+            display: none;
+            pointer-events: none;
         }
 
         /* Crop patches display on canvas */
@@ -236,65 +420,164 @@
             border-radius: 4px;
             cursor: pointer;
             transition: all 0.2s;
-            display: flex; align-items: flex-start; justify-content: flex-end;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-end;
             pointer-events: auto;
         }
-        .patch-overlay:hover { filter: brightness(1.1); transform: scale(1.01); }
+
+        .patch-overlay:hover {
+            filter: brightness(1.1);
+            transform: scale(1.01);
+        }
 
         .patch-num-badge {
-            position: absolute; top: -11px; left: -2px;
-            width: 22px; height: 22px; border-radius: 50%;
-            font-size: 0.7rem; font-weight: 800;
-            display: flex; align-items: center; justify-content: center;
-            font-family: 'Outfit', sans-serif; color: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            position: absolute;
+            top: -11px;
+            left: -2px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            font-size: 0.7rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Outfit', sans-serif;
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         /* Patch status colors on canvas */
-        .patch-status-waiting { border-color: #64748b; background: rgba(100,116,139,0.15); }
-        .patch-status-waiting .patch-num-badge { background: #475569; }
-        .patch-status-pending_review { border-color: #f59e0b; background: rgba(245,158,11,0.15); }
-        .patch-status-pending_review .patch-num-badge { background: #d97706; }
-        .patch-status-pending_payment { border-color: #2563eb; background: rgba(37,99,235,0.15); }
-        .patch-status-pending_payment .patch-num-badge { background: #2563eb; }
-        .patch-status-paid { border-color: #7c3aed; background: rgba(124,58,237,0.15); }
-        .patch-status-paid .patch-num-badge { background: #7c3aed; }
-        .patch-status-working { border-color: #0284c7; background: rgba(2,132,199,0.15); }
-        .patch-status-working .patch-num-badge { background: #0284c7; }
-        .patch-status-done { border-color: var(--success); background: rgba(22,163,74,0.15); }
-        .patch-status-done .patch-num-badge { background: var(--success); }
-        .patch-status-rejected { border-color: var(--danger); background: rgba(220,38,38,0.15); }
-        .patch-status-rejected .patch-num-badge { background: var(--danger); }
+        .patch-status-waiting {
+            border-color: #64748b;
+            background: rgba(100, 116, 139, 0.15);
+        }
+
+        .patch-status-waiting .patch-num-badge {
+            background: #475569;
+        }
+
+        .patch-status-pending_review {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.15);
+        }
+
+        .patch-status-pending_review .patch-num-badge {
+            background: #d97706;
+        }
+
+        .patch-status-pending_payment {
+            border-color: #2563eb;
+            background: rgba(37, 99, 235, 0.15);
+        }
+
+        .patch-status-pending_payment .patch-num-badge {
+            background: #2563eb;
+        }
+
+        .patch-status-paid {
+            border-color: #7c3aed;
+            background: rgba(124, 58, 237, 0.15);
+        }
+
+        .patch-status-paid .patch-num-badge {
+            background: #7c3aed;
+        }
+
+        .patch-status-working {
+            border-color: #0284c7;
+            background: rgba(2, 132, 199, 0.15);
+        }
+
+        .patch-status-working .patch-num-badge {
+            background: #0284c7;
+        }
+
+        .patch-status-done {
+            border-color: var(--success);
+            background: rgba(22, 163, 74, 0.15);
+        }
+
+        .patch-status-done .patch-num-badge {
+            background: var(--success);
+        }
+
+        .patch-status-rejected {
+            border-color: var(--danger);
+            background: rgba(220, 38, 38, 0.15);
+        }
+
+        .patch-status-rejected .patch-num-badge {
+            background: var(--danger);
+        }
 
         /* Page nav */
         .page-nav {
-            position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
-            display: none; align-items: center; gap: 8px; z-index: 50;
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            align-items: center;
+            gap: 8px;
+            z-index: 50;
             background: #ffffff;
-            border: 1px solid var(--border-strong); border-radius: 10px; padding: 6px 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            border: 1px solid var(--border-strong);
+            border-radius: 10px;
+            padding: 6px 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
         }
-        .page-nav.visible { display: flex; }
+
+        .page-nav.visible {
+            display: flex;
+        }
+
         .page-btn {
-            width: 28px; height: 28px; border: none; border-radius: 6px;
-            background: #f1f5f9; color: var(--text);
-            cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center;
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 6px;
+            background: #f1f5f9;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .page-btn:hover { background: var(--primary); color: white; }
-        .page-info { font-size: 0.8rem; color: var(--text-muted); font-family: 'Outfit', sans-serif; }
+
+        .page-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .page-info {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-family: 'Outfit', sans-serif;
+        }
+
         #pageInput {
-            width: 36px; text-align: center; background: #f8fafc;
-            border: 1px solid var(--border-strong); border-radius: 6px; color: var(--text);
-            font-size: 0.8rem; padding: 2px 4px; font-family: 'Outfit', sans-serif;
+            width: 36px;
+            text-align: center;
+            background: #f8fafc;
+            border: 1px solid var(--border-strong);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 0.8rem;
+            padding: 2px 4px;
+            font-family: 'Outfit', sans-serif;
         }
 
         /* ===== SIDEBAR (PROMINENT PATCH LIST) ===== */
         .sidebar {
-            display: flex; flex-direction: column;
+            display: flex;
+            flex-direction: column;
             background: #ffffff;
             border-left: 2px solid var(--border);
             overflow: hidden;
-            box-shadow: -4px 0 16px rgba(0,0,0,0.03);
+            box-shadow: -4px 0 16px rgba(0, 0, 0, 0.03);
         }
 
         .sidebar-header {
@@ -305,8 +588,13 @@
         }
 
         .sidebar-title {
-            font-family: 'Outfit', 'Sarabun', sans-serif; font-weight: 800; font-size: 1.05rem;
-            margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+            font-weight: 800;
+            font-size: 1.05rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             color: #0f172a;
         }
 
@@ -314,46 +602,103 @@
         .btn-add-patch {
             width: 100%;
             background: var(--danger);
-            border: none; border-radius: 10px; padding: 13px;
-            color: white; font-family: 'Outfit', 'Sarabun', sans-serif; font-weight: 800;
-            font-size: 0.95rem; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            transition: all 0.2s; box-shadow: 0 4px 12px rgba(220,38,38,0.3);
+            border: none;
+            border-radius: 10px;
+            padding: 13px;
+            color: white;
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+            font-weight: 800;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
         }
-        .btn-add-patch:hover { background: var(--danger-hover); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(220,38,38,0.4); }
+
+        .btn-add-patch:hover {
+            background: var(--danger-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+        }
+
         .btn-add-patch.active {
             background: #991b1b;
-            box-shadow: 0 0 0 3px rgba(220,38,38,0.3);
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.3);
             animation: pulseRed 1.5s infinite;
         }
+
         @keyframes pulseRed {
-            0%, 100% { box-shadow: 0 0 0 3px rgba(220,38,38,0.4); }
-            50% { box-shadow: 0 0 0 6px rgba(220,38,38,0.15); }
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 6px rgba(220, 38, 38, 0.15);
+            }
         }
 
         .crop-hint {
-            text-align: center; font-size: 0.78rem; color: var(--danger);
-            margin-top: 8px; display: none; font-weight: 600;
+            text-align: center;
+            font-size: 0.78rem;
+            color: var(--danger);
+            margin-top: 8px;
+            display: none;
+            font-weight: 600;
         }
-        .crop-hint.visible { display: block; }
+
+        .crop-hint.visible {
+            display: block;
+        }
+
         .crop-hint-key {
-            display: inline-block; background: #fee2e2;
-            border: 1px solid #fecaca; border-radius: 4px;
-            padding: 1px 5px; font-family: monospace; font-size: 0.72rem; color: #b91c1c;
+            display: inline-block;
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            border-radius: 4px;
+            padding: 1px 5px;
+            font-family: monospace;
+            font-size: 0.72rem;
+            color: #b91c1c;
         }
 
         .sidebar-scroll {
-            flex: 1; overflow-y: auto; padding: 14px;
+            flex: 1;
+            overflow-y: auto;
+            padding: 14px;
             background: #f8fafc;
         }
-        .sidebar-scroll::-webkit-scrollbar { width: 5px; }
-        .sidebar-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+        .sidebar-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
 
         .patches-empty {
-            text-align: center; padding: 48px 16px; color: var(--text-muted);
+            text-align: center;
+            padding: 48px 16px;
+            color: var(--text-muted);
         }
-        .patches-empty-icon { font-size: 2.2rem; margin-bottom: 12px; color: #cbd5e1; }
-        .patches-empty-text { font-size: 0.88rem; line-height: 1.5; font-weight: 500; }
+
+        .patches-empty-icon {
+            font-size: 2.2rem;
+            margin-bottom: 12px;
+            color: #cbd5e1;
+        }
+
+        .patches-empty-text {
+            font-size: 0.88rem;
+            line-height: 1.5;
+            font-weight: 500;
+        }
 
         /* PROMINENT PATCH CARD */
         .patch-card {
@@ -362,53 +707,127 @@
             border-radius: 14px;
             margin-bottom: 12px;
             overflow: hidden;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
             transition: all 0.2s;
             cursor: pointer;
         }
+
         .patch-card:hover {
             border-color: #94a3b8;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
         }
+
         .patch-card.active {
             border-color: var(--border-active);
             background: #f0f7ff;
-            box-shadow: 0 4px 14px rgba(37,99,235,0.15);
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.15);
         }
 
         .patch-card-header {
-            display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
             border-bottom: 1px solid var(--border);
             background: #ffffff;
         }
-        .patch-card.active .patch-card-header { background: #eff6ff; }
+
+        .patch-card.active .patch-card-header {
+            background: #eff6ff;
+        }
 
         .patch-num-circle {
-            width: 32px; height: 32px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 0.9rem;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 0.9rem;
             flex-shrink: 0;
         }
 
-        .patch-num-circle.status-waiting { background: #e2e8f0; color: #334155; }
-        .patch-num-circle.status-pending_review { background: #fef3c7; color: #b45309; }
-        .patch-num-circle.status-rejected { background: #fee2e2; color: #b91c1c; }
-        .patch-num-circle.status-pending_payment { background: #dbeafe; color: #1e40af; }
-        .patch-num-circle.status-paid { background: #ede9fe; color: #6d28d9; }
-        .patch-num-circle.status-working { background: #e0f2fe; color: #0369a1; }
-        .patch-num-circle.status-done { background: #dcfce7; color: #15803d; }
+        .patch-num-circle.status-waiting {
+            background: #e2e8f0;
+            color: #334155;
+        }
 
-        .patch-card-meta { flex: 1; min-width: 0; }
-        .patch-card-title { font-weight: 800; font-size: 0.92rem; color: #0f172a; }
-        .patch-status-label { font-size: 0.75rem; font-weight: 700; margin-top: 1px; }
+        .patch-num-circle.status-pending_review {
+            background: #fef3c7;
+            color: #b45309;
+        }
 
-        .patch-status-label.status-waiting { color: #64748b; }
-        .patch-status-label.status-pending_review { color: #b45309; }
-        .patch-status-label.status-rejected { color: #dc2626; }
-        .patch-status-label.status-pending_payment { color: #2563eb; }
-        .patch-status-label.status-paid { color: #7c3aed; }
-        .patch-status-label.status-working { color: #0284c7; }
-        .patch-status-label.status-done { color: var(--success); }
+        .patch-num-circle.status-rejected {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .patch-num-circle.status-pending_payment {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .patch-num-circle.status-paid {
+            background: #ede9fe;
+            color: #6d28d9;
+        }
+
+        .patch-num-circle.status-working {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .patch-num-circle.status-done {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .patch-card-meta {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .patch-card-title {
+            font-weight: 800;
+            font-size: 0.92rem;
+            color: #0f172a;
+        }
+
+        .patch-status-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-top: 1px;
+        }
+
+        .patch-status-label.status-waiting {
+            color: #64748b;
+        }
+
+        .patch-status-label.status-pending_review {
+            color: #b45309;
+        }
+
+        .patch-status-label.status-rejected {
+            color: #dc2626;
+        }
+
+        .patch-status-label.status-pending_payment {
+            color: #2563eb;
+        }
+
+        .patch-status-label.status-paid {
+            color: #7c3aed;
+        }
+
+        .patch-status-label.status-working {
+            color: #0284c7;
+        }
+
+        .patch-status-label.status-done {
+            color: var(--success);
+        }
 
         .patch-rejected-box {
             background: #fee2e2;
@@ -423,238 +842,623 @@
             gap: 6px;
             line-height: 1.4;
         }
-        .patch-rejected-box i { color: #dc2626; margin-top: 2px; }
 
-        .patch-card-body { padding: 12px 14px; }
+        .patch-rejected-box i {
+            color: #dc2626;
+            margin-top: 2px;
+        }
+
+        .patch-card-body {
+            padding: 12px 14px;
+        }
 
         .patch-thumb-row {
-            display: flex; gap: 8px; margin-bottom: 10px;
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
         }
+
         .patch-thumb {
-            width: 74px; height: 54px; border-radius: 6px; object-fit: cover;
-            border: 1px solid var(--border-strong); background: #f8fafc;
+            width: 74px;
+            height: 54px;
+            border-radius: 6px;
+            object-fit: cover;
+            border: 1px solid var(--border-strong);
+            background: #f8fafc;
             flex-shrink: 0;
         }
+
         .patch-thumb-placeholder {
-            width: 74px; height: 54px; border-radius: 6px;
-            background: #f8fafc; border: 1px dashed var(--border-strong);
-            display: flex; align-items: center; justify-content: center;
-            color: var(--text-muted); font-size: 0.7rem; text-align: center;
-            flex-shrink: 0; font-weight: 600;
+            width: 74px;
+            height: 54px;
+            border-radius: 6px;
+            background: #f8fafc;
+            border: 1px dashed var(--border-strong);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            text-align: center;
+            flex-shrink: 0;
+            font-weight: 600;
         }
+
         .patch-result-thumb {
-            flex: 1; min-width: 0; position: relative; border-radius: 6px; overflow: hidden;
+            flex: 1;
+            min-width: 0;
+            position: relative;
+            border-radius: 6px;
+            overflow: hidden;
             border: 1px solid #86efac;
         }
+
         .patch-result-img {
-            width: 100%; height: 54px; object-fit: cover; display: block;
+            width: 100%;
+            height: 54px;
+            object-fit: cover;
+            display: block;
         }
 
         .patch-note-input {
-            width: 100%; background: #ffffff;
-            border: 1.5px solid var(--border-strong); border-radius: 8px;
-            color: var(--text); padding: 8px 10px; font-size: 0.85rem;
-            font-family: inherit; resize: vertical; min-height: 52px;
-            outline: none; transition: border-color 0.2s;
+            width: 100%;
+            background: #ffffff;
+            border: 1.5px solid var(--border-strong);
+            border-radius: 8px;
+            color: var(--text);
+            padding: 8px 10px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 52px;
+            outline: none;
+            transition: border-color 0.2s;
             margin-bottom: 10px;
         }
-        .patch-note-input:focus { border-color: var(--primary); }
-        .patch-note-input:disabled { background: #f1f5f9; color: #475569; cursor: default; }
+
+        .patch-note-input:focus {
+            border-color: var(--primary);
+        }
+
+        .patch-note-input:disabled {
+            background: #f1f5f9;
+            color: #475569;
+            cursor: default;
+        }
 
         .patch-card-footer {
-            display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
         .btn-patch-action {
-            flex: 1; min-width: 80px; padding: 8px 12px; border: none; border-radius: 8px;
-            font-size: 0.82rem; font-weight: 700; font-family: inherit; cursor: pointer;
-            transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 6px;
+            flex: 1;
+            min-width: 80px;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
         .btn-send {
             background: var(--primary);
-            color: white; box-shadow: 0 2px 6px rgba(37,99,235,0.25);
+            color: white;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
         }
-        .btn-send:hover { background: var(--primary-hover); transform: translateY(-1px); }
-        .btn-send:disabled { opacity: 0.5; cursor: default; transform: none; }
+
+        .btn-send:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-send:disabled {
+            opacity: 0.5;
+            cursor: default;
+            transform: none;
+        }
 
         .btn-pay {
             background: #d97706;
-            color: white; box-shadow: 0 2px 8px rgba(217,119,6,0.25);
+            color: white;
+            box-shadow: 0 2px 8px rgba(217, 119, 6, 0.25);
         }
-        .btn-pay:hover { background: #b45309; transform: translateY(-1px); }
+
+        .btn-pay:hover {
+            background: #b45309;
+            transform: translateY(-1px);
+        }
 
         .btn-apply {
             background: var(--success);
-            color: white; box-shadow: 0 2px 6px rgba(22,163,74,0.25);
+            color: white;
+            box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);
         }
-        .btn-apply:hover { background: #15803d; transform: translateY(-1px); }
+
+        .btn-apply:hover {
+            background: #15803d;
+            transform: translateY(-1px);
+        }
 
         .btn-delete {
-            width: 32px; height: 32px; padding: 0;
-            background: #fee2e2; border: 1px solid #fecaca;
-            color: var(--danger); border-radius: 6px; font-size: 0.8rem; flex: none;
-            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: var(--danger);
+            border-radius: 6px;
+            font-size: 0.8rem;
+            flex: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
             transition: all 0.15s;
         }
-        .btn-delete:hover { background: #fca5a5; }
+
+        .btn-delete:hover {
+            background: #fca5a5;
+        }
 
         .price-tag {
-            font-family: 'Outfit', sans-serif; font-weight: 800;
-            color: #d97706; font-size: 0.95rem;
-            margin-left: auto; white-space: nowrap;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            color: #d97706;
+            font-size: 0.95rem;
+            margin-left: auto;
+            white-space: nowrap;
         }
 
         /* ===== SIDEBAR FOOTER ===== */
         .sidebar-footer {
-            padding: 14px 16px; border-top: 2px solid var(--border);
-            background: #ffffff; flex-shrink: 0;
+            padding: 14px 16px;
+            border-top: 2px solid var(--border);
+            background: #ffffff;
+            flex-shrink: 0;
         }
 
         .total-summary {
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             padding: 10px 14px;
-            background: #eff6ff; border: 1px solid #bfdbfe;
-            border-radius: 10px; margin-bottom: 10px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+            margin-bottom: 10px;
             font-family: 'Outfit', sans-serif;
         }
-        .total-label { font-size: 0.85rem; color: #1e40af; font-weight: 600; }
-        .total-amount { font-weight: 900; font-size: 1.2rem; color: #1e40af; }
+
+        .total-label {
+            font-size: 0.85rem;
+            color: #1e40af;
+            font-weight: 600;
+        }
+
+        .total-amount {
+            font-weight: 900;
+            font-size: 1.2rem;
+            color: #1e40af;
+        }
 
         .btn-download-final {
-            width: 100%; padding: 12px; border: none; border-radius: 10px;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
             background: var(--success);
-            color: white; font-weight: 800; font-size: 0.92rem; font-family: 'Outfit', 'Sarabun', sans-serif;
-            cursor: pointer; transition: all 0.15s; display: none;
-            align-items: center; justify-content: center; gap: 8px;
-            box-shadow: 0 4px 12px rgba(22,163,74,0.3);
-        }
-        .btn-download-final.visible { display: flex; }
-        .btn-download-final:hover { background: #15803d; transform: translateY(-1px); }
-
-        /* ===== PAYMENT MODAL ===== */
-        .modal-overlay {
-            position: fixed; inset: 0; z-index: 500;
-            background: rgba(15,23,42,0.6); backdrop-filter: blur(4px);
-            display: none; align-items: center; justify-content: center; padding: 20px;
-        }
-        .modal-overlay.open { display: flex; }
-
-        .modal-box {
-            background: #ffffff; border: 1px solid var(--border);
-            border-radius: 18px; width: 100%; max-width: 380px;
-            overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-            animation: modalIn 0.2s ease;
-        }
-        @keyframes modalIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-        .modal-header {
-            padding: 16px 20px; border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: space-between;
-        }
-        .modal-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.05rem; color: #0f172a; }
-        .modal-close {
-            width: 28px; height: 28px; border: none; background: #f1f5f9;
-            border-radius: 6px; color: var(--text-muted); cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .modal-close:hover { color: var(--text); background: #e2e8f0; }
-
-        .modal-body { padding: 20px; }
-
-        .qr-wrap {
-            background: white; border: 1.5px solid var(--border); border-radius: 14px;
-            padding: 14px; width: 190px; margin: 0 auto 16px;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-        }
-        #qrImage { width: 160px; height: 160px; object-fit: contain; }
-
-        .payment-amount { text-align: center; margin-bottom: 14px; }
-        .payment-amount-num { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: 2.2rem; color: #d97706; }
-        .payment-amount-label { font-size: 0.82rem; color: var(--text-muted); }
-
-        .payment-promptpay {
-            display: flex; align-items: center; gap: 8px; justify-content: center;
-            background: #f8fafc; border: 1px solid var(--border);
-            border-radius: 8px; padding: 8px 12px; margin-bottom: 14px;
-            font-size: 0.88rem; font-weight: 600; color: #334155;
-        }
-
-        .payment-instruction {
-            font-size: 0.8rem; color: var(--text-muted); line-height: 1.5;
-            text-align: center; margin-bottom: 16px;
-        }
-
-        .btn-confirm-paid {
-            width: 100%; padding: 12px; border: none; border-radius: 10px;
-            background: var(--success);
-            color: white; font-weight: 800; font-size: 0.95rem;
-            cursor: pointer; transition: all 0.15s;
+            color: white;
+            font-weight: 800;
+            font-size: 0.92rem;
             font-family: 'Outfit', 'Sarabun', sans-serif;
-            box-shadow: 0 4px 10px rgba(22,163,74,0.25);
+            cursor: pointer;
+            transition: all 0.15s;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
         }
-        .btn-confirm-paid:hover { background: #15803d; }
+
+        .btn-download-final.visible {
+            display: flex;
+        }
+
+        .btn-download-final:hover {
+            background: #15803d;
+            transform: translateY(-1px);
+        }
+
+        /* ===== PAYMENT MODAL (PromptPay card matching \shop\services) ===== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 500;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .payment-modal-card {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            max-width: 390px;
+            width: 100%;
+            padding: 22px 20px;
+            text-align: center;
+            position: relative;
+            max-height: 94vh;
+            overflow-y: auto;
+            animation: modalIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes modalIn {
+            from {
+                transform: scale(0.95);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .payment-modal-close {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            width: 30px;
+            height: 30px;
+            border: none;
+            background: #f1f5f9;
+            border-radius: 50%;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            transition: all 0.15s;
+        }
+
+        .payment-modal-close:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .checkout-countdown-box {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: #eff6ff;
+            color: #2563eb;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin: 6px 0 10px 0;
+            border: 1px solid #bfdbfe;
+        }
+
+        .checkout-countdown-box.urgent {
+            background: #fef2f2;
+            color: #dc2626;
+            border-color: #fecaca;
+            animation: pulseUrgent 1s infinite alternate;
+        }
+
+        @keyframes pulseUrgent {
+            from { opacity: 1; }
+            to { opacity: 0.6; }
+        }
+
+        .qr-clean-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            margin: 6px 0;
+        }
+
+        #qrImage {
+            width: 220px;
+            height: 220px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+            border-radius: 6px;
+        }
+
+        .polling-status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            margin: 6px 0;
+            background: #f8fafc;
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .clean-spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid #cbd5e1;
+            border-top-color: #2563eb;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .btn-download-slip {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 14px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            border-radius: 10px;
+            margin: 8px 0;
+            gap: 6px;
+            background: linear-gradient(135deg, #1d4ed8, #2563eb);
+            color: #ffffff;
+            border: none;
+            box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25);
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+        }
+
+        .btn-download-slip:hover {
+            background: linear-gradient(135deg, #1e40af, #1d4ed8);
+            transform: translateY(-1px);
+        }
+
+        .action-row-buttons {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            margin-top: 6px;
+        }
+
+        .btn-action-alert {
+            flex: 1;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            font-size: 0.82rem;
+            font-weight: 700;
+            padding: 8px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: all 0.15s;
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+        }
+
+        .btn-action-alert:hover {
+            background: #eff6ff;
+            border-color: #93c5fd;
+            color: #1d4ed8;
+        }
+
+        .btn-action-line {
+            flex: 1;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #16a34a;
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-decoration: none;
+            padding: 8px 10px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: all 0.15s;
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+        }
+
+        .btn-action-line:hover {
+            background: #dcfce7;
+            border-color: #86efac;
+        }
 
         /* ===== TOAST NOTIFICATIONS ===== */
         #toastContainer {
-            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-            z-index: 9999; display: flex; flex-direction: column-reverse; gap: 8px;
-            pointer-events: none; width: max-content; max-width: calc(100vw - 32px);
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 8px;
+            pointer-events: none;
+            width: max-content;
+            max-width: calc(100vw - 32px);
         }
+
         .toast {
-            background: #ffffff; border: 1.5px solid var(--border-strong);
-            border-radius: 8px; padding: 10px 16px;
-            font-size: 0.88rem; box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-            display: flex; align-items: center; gap: 8px; color: #0f172a;
-            animation: toastIn 0.25s ease; pointer-events: auto; font-weight: 500;
+            background: #ffffff;
+            border: 1.5px solid var(--border-strong);
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 0.88rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #0f172a;
+            animation: toastIn 0.25s ease;
+            pointer-events: auto;
+            font-weight: 500;
         }
-        @keyframes toastIn { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .toast.success { border-color: #86efac; background: #f0fdf4; color: #166534; }
-        .toast.error { border-color: #fca5a5; background: #fef2f2; color: #991b1b; }
-        .toast.info { border-color: #bfdbfe; background: #eff6ff; color: #1e40af; }
+
+        @keyframes toastIn {
+            from {
+                transform: translateY(8px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .toast.success {
+            border-color: #86efac;
+            background: #f0fdf4;
+            color: #166534;
+        }
+
+        .toast.error {
+            border-color: #fca5a5;
+            background: #fef2f2;
+            color: #991b1b;
+        }
+
+        .toast.info {
+            border-color: #bfdbfe;
+            background: #eff6ff;
+            color: #1e40af;
+        }
 
         /* ===== LOADING SPINNER ===== */
         .spinner {
-            display: inline-block; width: 14px; height: 14px;
-            border: 2px solid rgba(0,0,0,0.15);
-            border-top-color: currentColor; border-radius: 50%;
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(0, 0, 0, 0.15);
+            border-top-color: currentColor;
+            border-radius: 50%;
             animation: spin 0.7s linear infinite;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
 
         /* ===== COMPOSITING INDICATOR ===== */
         .composite-indicator {
-            position: absolute; inset: 0; display: none;
-            background: rgba(255,255,255,0.85); align-items: center; justify-content: center;
-            flex-direction: column; gap: 12px; z-index: 100;
+            position: absolute;
+            inset: 0;
+            display: none;
+            background: rgba(255, 255, 255, 0.85);
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 100;
         }
-        .composite-indicator.active { display: flex; }
-        .composite-text { font-size: 0.95rem; font-weight: 700; color: #0f172a; }
+
+        .composite-indicator.active {
+            display: flex;
+        }
+
+        .composite-text {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
 
         /* ===== MOBILE TABS ===== */
         .mobile-tabs {
             display: none;
-            position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
             background: #ffffff;
             border-top: 1px solid var(--border);
             padding: 8px 16px;
         }
-        .mobile-tab-row { display: flex; gap: 8px; }
-        .mobile-tab-btn {
-            flex: 1; padding: 10px; border: none; border-radius: 8px;
-            background: #f1f5f9; color: var(--text-muted);
-            font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.85rem;
-            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+
+        .mobile-tab-row {
+            display: flex;
+            gap: 8px;
         }
-        .mobile-tab-btn.active { background: var(--primary); color: white; }
+
+        .mobile-tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: #f1f5f9;
+            color: var(--text-muted);
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .mobile-tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
 
         @media (max-width: 900px) {
-            .mobile-tabs { display: block; }
-            .editor-layout { height: calc(100vh - 56px - 60px); }
-            .sidebar { display: none; }
-            .sidebar.mobile-show { display: flex; }
-            .canvas-panel.mobile-hide { display: none; }
+            .mobile-tabs {
+                display: block;
+            }
+
+            .editor-layout {
+                height: calc(100vh - 56px - 60px);
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .sidebar.mobile-show {
+                display: flex;
+            }
+
+            .canvas-panel.mobile-hide {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -692,7 +1496,7 @@
                 </div>
                 <h1 class="hero-title">แก้ไขข้อความ & ดีไซน์เฉพาะจุด</h1>
                 <p class="hero-desc">
-                    อัพโหลดรูปภาพหรือ PDF → ตีกรอบเฉพาะส่วนที่ต้องการให้แก้ → ส่งตรงถึงช่างผู้เชี่ยวชาญแบบ Real-time
+                    อัพโหลดรูปภาพหรือ PDF → ตีกรอบเฉพาะส่วนที่ต้องการให้แก้ → ส่งตรงถึงนักรีทัชผู้เชี่ยวชาญแบบ Real-time
                 </p>
 
                 <!-- Clean Upload Zone -->
@@ -723,9 +1527,12 @@
                             <i class="fa-solid fa-hand"></i>
                         </button>
                         <div style="width:1px;background:var(--border-strong);margin:4px 2px;"></div>
-                        <button class="tool-btn" id="toolZoomIn" title="ซูมเข้า"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
-                        <button class="tool-btn" id="toolZoomOut" title="ซูมออก"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
-                        <button class="tool-btn" id="toolFit" title="Fit to screen"><i class="fa-solid fa-expand"></i></button>
+                        <button class="tool-btn" id="toolZoomIn" title="ซูมเข้า"><i
+                                class="fa-solid fa-magnifying-glass-plus"></i></button>
+                        <button class="tool-btn" id="toolZoomOut" title="ซูมออก"><i
+                                class="fa-solid fa-magnifying-glass-minus"></i></button>
+                        <button class="tool-btn" id="toolFit" title="Fit to screen"><i
+                                class="fa-solid fa-expand"></i></button>
                         <div class="zoom-label" id="zoomLabel">100%</div>
                     </div>
 
@@ -746,13 +1553,15 @@
                     <!-- PDF Page Nav -->
                     <div class="page-nav" id="pageNav">
                         <button class="page-btn" id="prevPageBtn"><i class="fa-solid fa-chevron-left"></i></button>
-                        <span class="page-info">หน้า <input type="number" id="pageInput" value="1" min="1"> / <span id="pageTotal">1</span></span>
+                        <span class="page-info">หน้า <input type="number" id="pageInput" value="1" min="1"> / <span
+                                id="pageTotal">1</span></span>
                         <button class="page-btn" id="nextPageBtn"><i class="fa-solid fa-chevron-right"></i></button>
                     </div>
 
                     <!-- Compositing indicator -->
                     <div class="composite-indicator" id="compositeIndicator">
-                        <div class="spinner" style="width:36px;height:36px;border-width:3px;color:var(--primary);"></div>
+                        <div class="spinner" style="width:36px;height:36px;border-width:3px;color:var(--primary);">
+                        </div>
                         <div class="composite-text">กำลังประกอบร่างผลลัพธ์ลงภาพต้นฉบับ...</div>
                     </div>
                 </div>
@@ -761,14 +1570,16 @@
                 <div class="sidebar" id="sidebar">
                     <div class="sidebar-header">
                         <div class="sidebar-title">
-                            <span><i class="fa-solid fa-list-check" style="color:var(--primary);margin-right:8px;"></i>รายการจุดแก้ไข</span>
+                            <span><i class="fa-solid fa-list-check"
+                                    style="color:var(--primary);margin-right:8px;"></i>รายการจุดแก้ไข</span>
                         </div>
                         <button class="btn-add-patch" id="btnAddPatch">
                             <i class="fa-solid fa-crosshairs"></i>
                             วาดกรอบจุดที่จะแก้
                         </button>
                         <p class="crop-hint" id="cropHint">
-                            คลิกลากบนรูปเพื่อเลือกส่วนที่ต้องการแก้ · กด <span class="crop-hint-key">Esc</span> เพื่อยกเลิก
+                            คลิกลากบนรูปเพื่อเลือกส่วนที่ต้องการแก้ · กด <span class="crop-hint-key">Esc</span>
+                            เพื่อยกเลิก
                         </p>
                     </div>
 
@@ -801,7 +1612,8 @@
                     </button>
                     <button class="mobile-tab-btn" id="mobileTabPatches" onclick="switchMobileTab('patches')">
                         <i class="fa-solid fa-list-check"></i> รายการจุดแก้
-                        <span id="mobilePatchCount" style="background:var(--danger);color:white;border-radius:10px;padding:1px 6px;font-size:0.7rem;display:none;"></span>
+                        <span id="mobilePatchCount"
+                            style="background:var(--danger);color:white;border-radius:10px;padding:1px 6px;font-size:0.7rem;display:none;"></span>
                     </button>
                 </div>
             </div>
@@ -811,30 +1623,63 @@
 
     <!-- PAYMENT MODAL -->
     <div class="modal-overlay" id="paymentModal">
-        <div class="modal-box">
-            <div class="modal-header">
-                <div class="modal-title"><i class="fa-solid fa-qrcode" style="margin-right:8px;color:var(--primary);"></i>ชำระเงิน PromptPay</div>
-                <button class="modal-close" id="closePaymentModal"><i class="fa-solid fa-xmark"></i></button>
+        <div class="payment-modal-card">
+            <button class="payment-modal-close" id="closePaymentModal" title="ปิดหน้าต่าง">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h4 style="font-size: 1.05rem; font-weight: 800; color: #16a34a; margin: 0 0 4px 0; line-height: 1.4;">
+                🎉 ตอนนี้นักรีทัชตอบรับงานแล้ว ชำระเพื่อเริ่มงานทันที
+            </h4>
+            <p style="font-size: 0.78rem; color: #64748b; margin: 0 0 8px 0;">
+                งานจะเสร็จไม่เกิน 30 นาที · ส่งตรงเข้า Photoshop ทันทีหลังชำระเงิน
+            </p>
+
+            <!-- Countdown Box -->
+            <div class="checkout-countdown-box" id="checkoutCountdownBox">
+                <span>⏱️ กรุณาชำระเงินภายใน:</span>
+                <strong id="checkoutCountdownTimer" style="font-family: monospace; font-size: 0.95rem; font-weight: 800;">15:00</strong>
+                <span>นาที</span>
             </div>
-            <div class="modal-body">
-                <div class="qr-wrap">
-                    <img id="qrImage" src="" alt="QR Code">
+
+            <!-- QR Code Card -->
+            <div class="qr-clean-card">
+                <img id="qrImage" src="" alt="QR Code">
+                <div style="font-size: 0.75rem; font-weight: 700; color: #0b1120; margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                    <img src="../../assets/promptpay_header_full.png"
+                        onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/100px-PromptPay-logo.png'; this.onerror=function(){this.style.display='none';};"
+                        style="height: 16px; max-width: 75px; object-fit: contain;">
+                    <span>สแกนผ่านทุกแอปธนาคาร</span>
                 </div>
-                <div class="payment-amount">
-                    <div class="payment-amount-num">฿<span id="paymentAmountNum">0</span></div>
-                    <div class="payment-amount-label">สำหรับจุดที่ <span id="paymentPatchNum">1</span></div>
-                </div>
-                <div class="payment-promptpay">
-                    <i class="fa-solid fa-mobile-screen-button" style="color:var(--primary);"></i>
-                    <span id="paymentPhoneDisplay">PromptPay</span>
-                </div>
-                <div class="payment-instruction">
-                    สแกนโอนผ่าน App ธนาคารใดก็ได้<br>
-                    เมื่อโอนแล้ว กดปุ่มยืนยันด้านล่างเพื่อส่งงานเข้าช่างทันที
-                </div>
-                <button class="btn-confirm-paid" id="btnConfirmPaid">
-                    <i class="fa-solid fa-check"></i> โอนเงินแล้ว (แจ้งช่างเปิดทำใน Photoshop ทันที)
+            </div>
+
+            <!-- Amount -->
+            <div id="paymentAmountDisplay" style="font-size: 1.7rem; font-weight: 800; color: #16a34a; margin: 4px 0; line-height: 1.2;">
+                ฿ <span id="paymentAmountNum">0</span>.00
+            </div>
+            <div style="font-size: 0.76rem; color: #64748b; margin-bottom: 6px;">
+                สำหรับจุดแก้ไขที่ <span id="paymentPatchNum">1</span>
+            </div>
+
+            <!-- Button Download QR Code -->
+            <button type="button" class="btn-download-slip" id="btnDownloadSlip" onclick="downloadPaymentQR()">
+                <i class="fa-solid fa-download"></i>
+                <span>บันทึกรูป QR Code (นำเข้าแอปธนาคาร)</span>
+            </button>
+
+            <!-- Polling Status -->
+            <div class="polling-status-chip">
+                <div class="clean-spinner"></div>
+                <span>ระบบ KBank กำลังรอรับยอดเงินอัตโนมัติ...</span>
+            </div>
+
+            <!-- Action row: Alert & LINE -->
+            <div class="action-row-buttons">
+                <button type="button" class="btn-action-alert" id="btnManualConfirm" onclick="triggerManualPaymentAlert()" title="แจ้งโอนเงินแล้ว">
+                    🔔 แจ้งโอนแล้ว
                 </button>
+                <a href="https://line.me/ti/p/gqIluRmdJ_" target="_blank" rel="noopener noreferrer" class="btn-action-line" title="มีปัญหาชำระเงิน ติดต่อทาง LINE">
+                    💬 ติดต่อ LINE
+                </a>
             </div>
         </div>
     </div>
@@ -850,735 +1695,794 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
     <script>
-    /* =========================================================
-       TEXT-RETOUCH v3 — Agent-Style Patch System (retouch-ebid)
-       ========================================================= */
+        /* =========================================================
+           TEXT-RETOUCH v3 — Agent-Style Patch System (retouch-ebid)
+           ========================================================= */
 
-    // ── FIREBASE CONFIG ──
-    const FIREBASE_CONFIG = {
-        databaseURL: "https://retouch-ebid-default-rtdb.asia-southeast1.firebasedatabase.app"
-    };
-    firebase.initializeApp(FIREBASE_CONFIG);
-    const db = firebase.database();
+        // ── FIREBASE CONFIG ──
+        const FIREBASE_CONFIG = {
+            databaseURL: "https://retouch-ebid-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+        firebase.initializeApp(FIREBASE_CONFIG);
+        const db = firebase.database();
 
-    // ── PROMPTPAY CONFIG ──
-    const PROMPTPAY_PHONE = '0988573074';
+        // ── PROMPTPAY CONFIG ──
+        const PROMPTPAY_PHONE = '0988573074';
 
-    // ── INDEXEDDB PERSISTENCE (Safe local browser storage) ──
-    const IDB_NAME = 'TextRetouchDB';
-    const IDB_STORE = 'sessions';
+        // ── INDEXEDDB PERSISTENCE (Safe local browser storage) ──
+        const IDB_NAME = 'TextRetouchDB';
+        const IDB_STORE = 'sessions';
 
-    function openIDB() {
-        return new Promise((resolve, reject) => {
-            const req = indexedDB.open(IDB_NAME, 1);
-            req.onupgradeneeded = e => {
-                const db = e.target.result;
-                if (!db.objectStoreNames.contains(IDB_STORE)) {
-                    db.createObjectStore(IDB_STORE, { keyPath: 'sessionId' });
-                }
-            };
-            req.onsuccess = () => resolve(req.result);
-            req.onerror = () => reject(req.error);
-        });
-    }
-
-    async function saveFileToIndexedDB(sid, file, fileType) {
-        try {
-            const idb = await openIDB();
-            const tx = idb.transaction(IDB_STORE, 'readwrite');
-            tx.objectStore(IDB_STORE).put({
-                sessionId: sid,
-                file: file,
-                fileType: fileType,
-                fileName: file.name,
-                savedAt: Date.now()
+        function openIDB() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(IDB_NAME, 1);
+                req.onupgradeneeded = e => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(IDB_STORE)) {
+                        db.createObjectStore(IDB_STORE, { keyPath: 'sessionId' });
+                    }
+                };
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
             });
-        } catch(e) {
-            console.warn('IDB Save error:', e);
         }
-    }
 
-    async function getFileFromIndexedDB(sid) {
-        try {
-            const idb = await openIDB();
-            return new Promise(resolve => {
-                const tx = idb.transaction(IDB_STORE, 'readonly');
-                const req = tx.objectStore(IDB_STORE).get(sid);
-                req.onsuccess = () => resolve(req.result || null);
-                req.onerror = () => resolve(null);
-            });
-        } catch(e) {
-            return null;
-        }
-    }
-
-    async function clearFileFromIndexedDB(sid) {
-        try {
-            const idb = await openIDB();
-            const tx = idb.transaction(IDB_STORE, 'readwrite');
-            tx.objectStore(IDB_STORE).delete(sid);
-        } catch(e) {}
-    }
-
-    // ── STATE ──
-    let sessionId = new URLSearchParams(window.location.search).get('id');
-    let localFile = null;
-    let localFileUrl = null;
-    let localFileType = null;
-    let patches = {};
-    let activePatchId = null;
-    let scale = 1, translateX = 0, translateY = 0, isPanning = false;
-    let panStartX = 0, panStartY = 0;
-    let pdfDoc = null, currentPage = 1, totalPages = 1;
-    let isCropMode = false;
-    let cropStartX = 0, cropStartY = 0;
-    let isCropDragging = false;
-
-    function sessionPath() { return `text_retouch/${sessionId}`; }
-    function patchPath(pid) { return `text_retouch/${sessionId}/patches/${pid}`; }
-
-    // ── INIT ──
-    window.addEventListener('DOMContentLoaded', async () => {
-        initUploadZone();
-        initCanvas();
-
-        // 1. Guard against accidental refresh/close
-        window.addEventListener('beforeunload', e => {
-            if (localFile) {
-                e.preventDefault();
-                e.returnValue = '';
+        async function saveFileToIndexedDB(sid, file, fileType) {
+            try {
+                const idb = await openIDB();
+                const tx = idb.transaction(IDB_STORE, 'readwrite');
+                tx.objectStore(IDB_STORE).put({
+                    sessionId: sid,
+                    file: file,
+                    fileType: fileType,
+                    fileName: file.name,
+                    savedAt: Date.now()
+                });
+            } catch (e) {
+                console.warn('IDB Save error:', e);
             }
+        }
+
+        async function getFileFromIndexedDB(sid) {
+            try {
+                const idb = await openIDB();
+                return new Promise(resolve => {
+                    const tx = idb.transaction(IDB_STORE, 'readonly');
+                    const req = tx.objectStore(IDB_STORE).get(sid);
+                    req.onsuccess = () => resolve(req.result || null);
+                    req.onerror = () => resolve(null);
+                });
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function clearFileFromIndexedDB(sid) {
+            try {
+                const idb = await openIDB();
+                const tx = idb.transaction(IDB_STORE, 'readwrite');
+                tx.objectStore(IDB_STORE).delete(sid);
+            } catch (e) { }
+        }
+
+        // ── STATE ──
+        let sessionId = new URLSearchParams(window.location.search).get('id');
+        let localFile = null;
+        let localFileUrl = null;
+        let localFileType = null;
+        let patches = {};
+        let activePatchId = null;
+        let scale = 1, translateX = 0, translateY = 0, isPanning = false;
+        let panStartX = 0, panStartY = 0;
+        let pdfDoc = null, currentPage = 1, totalPages = 1;
+        let isCropMode = false;
+        let cropStartX = 0, cropStartY = 0;
+        let isCropDragging = false;
+
+        function sessionPath() { return `text_retouch/${sessionId}`; }
+        function patchPath(pid) { return `text_retouch/${sessionId}/patches/${pid}`; }
+
+        function savePatchesToLocalStorage() {
+            if (!sessionId) return;
+            try {
+                localStorage.setItem('tr_patches_' + sessionId, JSON.stringify(patches));
+            } catch (e) { }
+        }
+
+        function loadPatchesFromLocalStorage() {
+            if (!sessionId) return;
+            try {
+                const raw = localStorage.getItem('tr_patches_' + sessionId);
+                if (raw) {
+                    const saved = JSON.parse(raw);
+                    Object.assign(patches, saved);
+                }
+            } catch (e) { }
+        }
+
+        function updatePatchNote(patchId, val) {
+            if (patches[patchId]) {
+                patches[patchId].note = val;
+                savePatchesToLocalStorage();
+            }
+        }
+
+        // ── INIT ──
+        window.addEventListener('DOMContentLoaded', async () => {
+            initUploadZone();
+            initCanvas();
+
+            // 1. Guard against accidental refresh/close
+            window.addEventListener('beforeunload', e => {
+                if (localFile) {
+                    e.preventDefault();
+                    e.returnValue = '';
+                }
+            });
+
+            // 2. Resolve sessionId
+            if (!sessionId) {
+                sessionId = localStorage.getItem('tr_active_session_id');
+                if (sessionId) {
+                    const u = new URL(window.location);
+                    u.searchParams.set('id', sessionId);
+                    window.history.replaceState({}, '', u);
+                }
+            }
+            if (sessionId) {
+                localStorage.setItem('tr_active_session_id', sessionId);
+            }
+
+            // 3. Try to restore session on page reload
+            if (sessionId) {
+                const saved = await getFileFromIndexedDB(sessionId);
+                if (saved && saved.file) {
+                    await restoreSession(saved);
+                    listenToPatchUpdates();
+                    return;
+                }
+            }
+
+            // 4. New session if none exists
+            if (!sessionId) {
+                sessionId = 'tr_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
+                localStorage.setItem('tr_active_session_id', sessionId);
+                const u = new URL(window.location);
+                u.searchParams.set('id', sessionId);
+                window.history.replaceState({}, '', u);
+            }
+            listenToPatchUpdates();
         });
 
-        // 2. Try to restore session on page reload
-        if (sessionId) {
-            const saved = await getFileFromIndexedDB(sessionId);
-            if (saved && saved.file) {
-                await restoreSession(saved);
-                listenToPatchUpdates();
+        // ── RESTORE SESSION (AFTER REFRESH) ──
+        async function restoreSession(saved) {
+            localFile = saved.file;
+            localFileType = saved.fileType || (saved.file.type.includes('pdf') ? 'pdf' : 'image');
+            localFileUrl = URL.createObjectURL(saved.file);
+
+            document.getElementById('landingView').style.display = 'none';
+            document.getElementById('editorView').style.display = 'block';
+            document.getElementById('btnNewFile').style.display = 'inline-flex';
+
+            if (localFileType === 'image') {
+                await loadImage(localFileUrl);
+            } else {
+                await loadPdf(localFileUrl);
+            }
+
+            // Restore from localStorage first (immediate UI display)
+            loadPatchesFromLocalStorage();
+            Object.keys(patches).forEach(pid => {
+                renderPatchCard(pid);
+            });
+
+            // Restore & merge patches from Firebase
+            try {
+                const snap = await db.ref(`text_retouch/${sessionId}/patches`).once('value');
+                const fbPatches = snap.val() || {};
+                for (const [pid, p] of Object.entries(fbPatches)) {
+                    patches[pid] = Object.assign(patches[pid] || {}, {
+                        id: pid,
+                        num: p.num || 1,
+                        sessionId,
+                        note: p.note || (patches[pid] && patches[pid].note) || '',
+                        price: p.price || 0,
+                        status: p.status || 'waiting',
+                        page: p.page || 1,
+                        cropRect: p.cropRect || (patches[pid] && patches[pid].cropRect) || { x: 0, y: 0, w: 10, h: 10 },
+                        patchDataUrl: p.patchImage ? `data:image/jpeg;base64,${p.patchImage}` : (patches[pid] && patches[pid].patchDataUrl) || '',
+                        resultDataUrl: p.resultImage ? `data:image/png;base64,${p.resultImage}` : (patches[pid] && patches[pid].resultDataUrl) || null,
+                        rejectReason: p.rejectReason || '',
+                        composited: p.status === 'done',
+                        createdAt: p.createdAt || Date.now()
+                    });
+                    renderPatchCard(pid);
+
+                    // If patch is done, composite it onto the restored image
+                    if (p.status === 'done' && (p.resultImage || (patches[pid] && patches[pid].resultDataUrl))) {
+                        await applyPatchToCanvas(pid, false);
+                    }
+                }
+                savePatchesToLocalStorage();
+                renderPatchOverlays();
+                updateEmpty();
+                updateTotal();
+                toast('🔄 กู้คืนไฟล์และรายการจุดแก้ไขเดิมของคุณเรียบร้อยแล้ว', 'info');
+            } catch (e) {
+                console.error('Error restoring patches:', e);
+                renderPatchOverlays();
+                updateEmpty();
+                updateTotal();
+            }
+        }
+
+        // ── START NEW SESSION ──
+        async function startNewSession() {
+            if (localFile && !confirm('ต้องการเริ่มไฟล์ใหม่หรือไม่?\n(งานปัจจุบันที่ยังไม่เสร็จสามารถกลับมาเปิดได้ทาง URL เดิม)')) {
                 return;
             }
-        }
-
-        // 3. New session if none exists
-        if (!sessionId) {
+            if (sessionId) {
+                localStorage.removeItem('tr_patches_' + sessionId);
+            }
+            localStorage.removeItem('tr_active_session_id');
+            localFile = null;
+            localFileUrl = null;
+            patches = {};
             sessionId = 'tr_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
+            localStorage.setItem('tr_active_session_id', sessionId);
             const u = new URL(window.location);
             u.searchParams.set('id', sessionId);
             window.history.replaceState({}, '', u);
-        }
-        listenToPatchUpdates();
-    });
 
-    // ── RESTORE SESSION (AFTER REFRESH) ──
-    async function restoreSession(saved) {
-        localFile = saved.file;
-        localFileType = saved.fileType || (saved.file.type.includes('pdf') ? 'pdf' : 'image');
-        localFileUrl = URL.createObjectURL(saved.file);
-
-        document.getElementById('landingView').style.display = 'none';
-        document.getElementById('editorView').style.display = 'block';
-        document.getElementById('btnNewFile').style.display = 'inline-flex';
-
-        if (localFileType === 'image') {
-            await loadImage(localFileUrl);
-        } else {
-            await loadPdf(localFileUrl);
+            document.getElementById('mainImage').src = '';
+            document.getElementById('editorView').style.display = 'none';
+            document.getElementById('landingView').style.display = 'block';
+            document.getElementById('btnNewFile').style.display = 'none';
+            document.querySelectorAll('.patch-card').forEach(c => c.remove());
+            document.querySelectorAll('.patch-overlay').forEach(o => o.remove());
+            updateEmpty();
+            updateTotal();
+            toast('พร้อมเลือกไฟล์ใหม่แล้ว', 'info');
         }
 
-        // Restore patches from Firebase
-        try {
-            const snap = await db.ref(`text_retouch/${sessionId}/patches`).once('value');
-            const fbPatches = snap.val() || {};
-            for (const [pid, p] of Object.entries(fbPatches)) {
-                patches[pid] = {
-                    id: pid,
-                    num: p.num || 1,
-                    sessionId,
-                    note: p.note || '',
-                    price: p.price || 0,
-                    status: p.status || 'waiting',
-                    page: p.page || 1,
-                    cropRect: p.cropRect || { x: 0, y: 0, w: 10, h: 10 },
-                    patchDataUrl: p.patchImage ? `data:image/jpeg;base64,${p.patchImage}` : '',
-                    resultDataUrl: p.resultImage ? `data:image/png;base64,${p.resultImage}` : null,
-                    rejectReason: p.rejectReason || '',
-                    composited: p.status === 'done',
-                    createdAt: p.createdAt || Date.now()
-                };
-                renderPatchCard(pid);
+        /* ======================================================
+           UPLOAD ZONE
+        ====================================================== */
+        function initUploadZone() {
+            const zone = document.getElementById('uploadZone');
+            const input = document.getElementById('fileInput');
 
-                // If patch is done, composite it onto the restored image
-                if (p.status === 'done' && p.resultImage) {
-                    await applyPatchToCanvas(pid, false);
-                }
+            zone.addEventListener('click', () => input.click());
+            input.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+            zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+            zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+            zone.addEventListener('drop', e => {
+                e.preventDefault(); zone.classList.remove('dragover');
+                if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+            });
+        }
+
+        async function loadFile(file) {
+            localFile = file;
+            localFileType = file.type.includes('pdf') ? 'pdf' : 'image';
+            localFileUrl = URL.createObjectURL(file);
+
+            // Save to IndexedDB so refresh won't lose the file
+            await saveFileToIndexedDB(sessionId, file, localFileType);
+
+            document.getElementById('landingView').style.display = 'none';
+            document.getElementById('editorView').style.display = 'block';
+            document.getElementById('btnNewFile').style.display = 'inline-flex';
+
+            if (localFileType === 'image') {
+                await loadImage(localFileUrl);
+            } else {
+                await loadPdf(localFileUrl);
             }
+
+            await db.ref(sessionPath()).set({
+                sessionId,
+                fileName: file.name,
+                fileType: localFileType,
+                createdAt: Date.now(),
+                status: 'active',
+                patches: {}
+            });
+
+            toast('📁 โหลดไฟล์เรียบร้อย — ปลอดภัย 100% บันทึกในเครื่องอัตโนมัติ', 'success');
+        }
+
+        async function loadImage(url) {
+            return new Promise(resolve => {
+                const img = document.getElementById('mainImage');
+                img.onload = () => {
+                    img.style.display = 'block';
+                    document.getElementById('pdfCanvas').style.display = 'none';
+                    document.getElementById('pageNav').classList.remove('visible');
+                    fitToScreen();
+                    resolve();
+                };
+                img.src = url;
+            });
+        }
+
+        async function loadPdf(url) {
+            pdfDoc = await pdfjsLib.getDocument(url).promise;
+            totalPages = pdfDoc.numPages;
+            currentPage = 1;
+            await renderPdfPage(currentPage);
+
+            if (totalPages > 1) {
+                document.getElementById('pageNav').classList.add('visible');
+                document.getElementById('pageTotal').textContent = totalPages;
+                document.getElementById('pageInput').max = totalPages;
+            }
+        }
+
+        async function renderPdfPage(pageNum) {
+            const page = await pdfDoc.getPage(pageNum);
+            const vp = page.getViewport({ scale: 2 });
+            const canvas = document.getElementById('pdfCanvas');
+            canvas.width = vp.width; canvas.height = vp.height;
+            canvas.style.display = 'block';
+            document.getElementById('mainImage').style.display = 'none';
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+            fitToScreen();
+            renderPatchOverlays();
+        }
+
+        /* ======================================================
+           CANVAS / ZOOM / PAN (PREVENT GHOST DRAG)
+        ====================================================== */
+        function initCanvas() {
+            const container = document.getElementById('canvasContainer');
+            const overlay = document.getElementById('cropOverlay');
+            const rect = document.getElementById('cropRect');
+
+            // Prevent native browser image drag
+            container.addEventListener('dragstart', e => e.preventDefault());
+
+            // Toolbar buttons
+            document.getElementById('toolSelect').addEventListener('click', () => exitCropMode());
+            document.getElementById('toolZoomIn').addEventListener('click', () => { scale = Math.min(8, scale * 1.3); applyTransform(); });
+            document.getElementById('toolZoomOut').addEventListener('click', () => { scale = Math.max(0.1, scale / 1.3); applyTransform(); });
+            document.getElementById('toolFit').addEventListener('click', fitToScreen);
+
+            // Add Patch button
+            document.getElementById('btnAddPatch').addEventListener('click', () => {
+                if (isCropMode) exitCropMode();
+                else enterCropMode();
+            });
+
+            // Esc key
+            document.addEventListener('keydown', e => { if (e.key === 'Escape' && isCropMode) exitCropMode(); });
+
+            // Pan Mousedown (Prevent default to stop ghost dragging)
+            container.addEventListener('mousedown', e => {
+                if (isCropMode || e.target.closest('.patch-overlay')) return;
+                e.preventDefault(); // Stop native drag and text selection
+                isPanning = true;
+                container.classList.add('grabbing');
+                panStartX = e.clientX - translateX;
+                panStartY = e.clientY - translateY;
+            });
+
+            window.addEventListener('mousemove', e => {
+                if (!isPanning) return;
+                translateX = e.clientX - panStartX;
+                translateY = e.clientY - panStartY;
+                applyTransform();
+            });
+
+            const stopPan = () => {
+                if (isPanning) {
+                    isPanning = false;
+                    container.classList.remove('grabbing');
+                }
+            };
+
+            window.addEventListener('mouseup', stopPan);
+            window.addEventListener('mouseleave', stopPan);
+            window.addEventListener('blur', stopPan);
+
+            // Wheel zoom
+            container.addEventListener('wheel', e => {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? 0.85 : 1.18;
+                const cr = container.getBoundingClientRect();
+                const mx = e.clientX - cr.left;
+                const my = e.clientY - cr.top;
+                const oldScale = scale;
+                scale = Math.max(0.1, Math.min(8, scale * delta));
+                translateX = mx - (mx - translateX) * (scale / oldScale);
+                translateY = my - (my - translateY) * (scale / oldScale);
+                applyTransform();
+            }, { passive: false });
+
+            // ── CROP DRAW ──
+            overlay.addEventListener('mousedown', e => {
+                if (!isCropMode) return;
+                e.preventDefault();
+                isCropDragging = true;
+                const or = overlay.getBoundingClientRect();
+                cropStartX = e.clientX - or.left;
+                cropStartY = e.clientY - or.top;
+                rect.style.display = 'block';
+                rect.style.left = cropStartX + 'px'; rect.style.top = cropStartY + 'px';
+                rect.style.width = '0'; rect.style.height = '0';
+            });
+
+            window.addEventListener('mousemove', e => {
+                if (!isCropDragging) return;
+                const or = overlay.getBoundingClientRect();
+                const ex = Math.max(0, Math.min(or.width, e.clientX - or.left));
+                const ey = Math.max(0, Math.min(or.height, e.clientY - or.top));
+                const x = Math.min(cropStartX, ex);
+                const y = Math.min(cropStartY, ey);
+                const w = Math.abs(ex - cropStartX);
+                const h = Math.abs(ey - cropStartY);
+                rect.style.left = x + 'px'; rect.style.top = y + 'px';
+                rect.style.width = w + 'px'; rect.style.height = h + 'px';
+            });
+
+            window.addEventListener('mouseup', async e => {
+                if (!isCropDragging) return;
+                isCropDragging = false;
+                rect.style.display = 'none';
+
+                const or = overlay.getBoundingClientRect();
+                const ex = Math.max(0, Math.min(or.width, e.clientX - or.left));
+                const ey = Math.max(0, Math.min(or.height, e.clientY - or.top));
+                const rx = Math.min(cropStartX, ex);
+                const ry = Math.min(cropStartY, ey);
+                const rw = Math.abs(ex - cropStartX);
+                const rh = Math.abs(ey - cropStartY);
+
+                if (rw < 15 || rh < 15) { exitCropMode(); return; }
+
+                await createPatchFromCrop(rx, ry, rw, rh, or);
+                exitCropMode();
+            });
+
+            // Touch pan & zoom
+            let t1x = 0, t1y = 0, touchDist = 0;
+            container.addEventListener('touchstart', e => {
+                if (e.touches.length === 2) {
+                    touchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                } else if (!isCropMode) {
+                    isPanning = true;
+                    t1x = e.touches[0].clientX - translateX;
+                    t1y = e.touches[0].clientY - translateY;
+                }
+            }, { passive: true });
+
+            container.addEventListener('touchmove', e => {
+                if (e.touches.length === 2) {
+                    const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                    scale = Math.max(0.1, Math.min(8, scale * (d / touchDist)));
+                    touchDist = d; applyTransform();
+                } else if (isPanning) {
+                    translateX = e.touches[0].clientX - t1x;
+                    translateY = e.touches[0].clientY - t1y;
+                    applyTransform();
+                }
+            }, { passive: true });
+
+            container.addEventListener('touchend', stopPan);
+
+            // PDF page buttons
+            document.getElementById('prevPageBtn').addEventListener('click', async () => {
+                if (currentPage > 1) { currentPage--; await renderPdfPage(currentPage); updatePageInput(); }
+            });
+            document.getElementById('nextPageBtn').addEventListener('click', async () => {
+                if (currentPage < totalPages) { currentPage++; await renderPdfPage(currentPage); updatePageInput(); }
+            });
+            document.getElementById('pageInput').addEventListener('change', async function () {
+                const v = parseInt(this.value);
+                if (v >= 1 && v <= totalPages) { currentPage = v; await renderPdfPage(currentPage); }
+                else this.value = currentPage;
+            });
+        }
+
+        function updatePageInput() {
+            document.getElementById('pageInput').value = currentPage;
+        }
+
+        function applyTransform() {
+            document.getElementById('canvasWrapper').style.transform = `translate(${translateX}px,${translateY}px) scale(${scale})`;
+            document.getElementById('zoomLabel').textContent = Math.round(scale * 100) + '%';
+        }
+
+        function fitToScreen() {
+            const container = document.getElementById('canvasContainer');
+            const content = document.getElementById('mainImage').style.display !== 'none'
+                ? document.getElementById('mainImage') : document.getElementById('pdfCanvas');
+            const cW = content.naturalWidth || content.width || 800;
+            const cH = content.naturalHeight || content.height || 600;
+            const cr = container.getBoundingClientRect();
+            scale = Math.min((cr.width * 0.9) / cW, (cr.height * 0.9) / cH, 1);
+            translateX = (cr.width - cW * scale) / 2;
+            translateY = (cr.height - cH * scale) / 2;
+            applyTransform();
+        }
+
+        function enterCropMode() {
+            isCropMode = true;
+            const btn = document.getElementById('btnAddPatch');
+            btn.classList.add('active');
+            btn.innerHTML = '<i class="fa-solid fa-xmark"></i> ยกเลิกวาดกรอบ';
+            document.getElementById('cropHint').classList.add('visible');
+            document.getElementById('cropOverlay').classList.add('active');
+            document.getElementById('canvasContainer').style.cursor = 'crosshair';
+            document.getElementById('toolSelect').classList.remove('active');
+        }
+
+        function exitCropMode() {
+            isCropMode = false;
+            const btn = document.getElementById('btnAddPatch');
+            btn.classList.remove('active');
+            btn.innerHTML = '<i class="fa-solid fa-crosshairs"></i> วาดกรอบจุดที่จะแก้';
+            document.getElementById('cropHint').classList.remove('visible');
+            document.getElementById('cropOverlay').classList.remove('active');
+            document.getElementById('cropRect').style.display = 'none';
+            document.getElementById('canvasContainer').style.cursor = '';
+            document.getElementById('toolSelect').classList.add('active');
+        }
+
+        /* ======================================================
+           CREATE PATCH FROM CROP
+        ====================================================== */
+        async function createPatchFromCrop(overlayX, overlayY, overlayW, overlayH, overlayRect) {
+            const wrapper = document.getElementById('canvasWrapper');
+            const wrapperRect = wrapper.getBoundingClientRect();
+
+            const relX = (overlayX + overlayRect.left - wrapperRect.left) / scale;
+            const relY = (overlayY + overlayRect.top - wrapperRect.top) / scale;
+            const relW = overlayW / scale;
+            const relH = overlayH / scale;
+
+            const content = document.getElementById('mainImage').style.display !== 'none'
+                ? document.getElementById('mainImage') : document.getElementById('pdfCanvas');
+            const nativeW = content.naturalWidth || content.width;
+            const nativeH = content.naturalHeight || content.height;
+
+            const cx = Math.max(0, relX);
+            const cy = Math.max(0, relY);
+            const cw = Math.min(nativeW - cx, relW);
+            const ch = Math.min(nativeH - cy, relH);
+
+            if (cw < 10 || ch < 10) return;
+
+            const patchCanvas = document.createElement('canvas');
+            patchCanvas.width = cw; patchCanvas.height = ch;
+            const ctx = patchCanvas.getContext('2d');
+
+            if (localFileType === 'image') {
+                ctx.drawImage(content, cx, cy, cw, ch, 0, 0, cw, ch);
+            } else {
+                ctx.drawImage(document.getElementById('pdfCanvas'), cx, cy, cw, ch, 0, 0, cw, ch);
+            }
+
+            const patchDataUrl = patchCanvas.toDataURL('image/jpeg', 0.92);
+
+            const patchId = 'p_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4);
+            const num = Object.keys(patches).length + 1;
+
+            const patchData = {
+                id: patchId,
+                num,
+                sessionId,
+                note: '',
+                price: 0,
+                status: 'waiting',
+                page: currentPage,
+                cropRect: {
+                    x: (cx / nativeW) * 100,
+                    y: (cy / nativeH) * 100,
+                    w: (cw / nativeW) * 100,
+                    h: (ch / nativeH) * 100
+                },
+                patchDataUrl,
+                resultDataUrl: null,
+                createdAt: Date.now()
+            };
+
+            patches[patchId] = patchData;
+            savePatchesToLocalStorage();
+            renderPatchCard(patchId);
             renderPatchOverlays();
             updateEmpty();
             updateTotal();
-            toast('🔄 กู้คืนไฟล์และรายการจุดแก้ไขเดิมของคุณเรียบร้อยแล้ว', 'info');
-        } catch(e) {
-            console.error('Error restoring patches:', e);
-        }
-    }
 
-    // ── START NEW SESSION ──
-    async function startNewSession() {
-        if (localFile && !confirm('ต้องการเริ่มไฟล์ใหม่หรือไม่?\n(งานปัจจุบันที่ยังไม่เสร็จสามารถกลับมาเปิดได้ทาง URL เดิม)')) {
-            return;
-        }
-        localFile = null;
-        localFileUrl = null;
-        patches = {};
-        sessionId = 'tr_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
-        const u = new URL(window.location);
-        u.searchParams.set('id', sessionId);
-        window.history.replaceState({}, '', u);
-
-        document.getElementById('mainImage').src = '';
-        document.getElementById('editorView').style.display = 'none';
-        document.getElementById('landingView').style.display = 'block';
-        document.getElementById('btnNewFile').style.display = 'none';
-        document.querySelectorAll('.patch-card').forEach(c => c.remove());
-        document.querySelectorAll('.patch-overlay').forEach(o => o.remove());
-        updateEmpty();
-        updateTotal();
-        toast('พร้อมเลือกไฟล์ใหม่แล้ว', 'info');
-    }
-
-    /* ======================================================
-       UPLOAD ZONE
-    ====================================================== */
-    function initUploadZone() {
-        const zone = document.getElementById('uploadZone');
-        const input = document.getElementById('fileInput');
-
-        zone.addEventListener('click', () => input.click());
-        input.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
-        zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
-        zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-        zone.addEventListener('drop', e => {
-            e.preventDefault(); zone.classList.remove('dragover');
-            if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
-        });
-    }
-
-    async function loadFile(file) {
-        localFile = file;
-        localFileType = file.type.includes('pdf') ? 'pdf' : 'image';
-        localFileUrl = URL.createObjectURL(file);
-
-        // Save to IndexedDB so refresh won't lose the file
-        await saveFileToIndexedDB(sessionId, file, localFileType);
-
-        document.getElementById('landingView').style.display = 'none';
-        document.getElementById('editorView').style.display = 'block';
-        document.getElementById('btnNewFile').style.display = 'inline-flex';
-
-        if (localFileType === 'image') {
-            await loadImage(localFileUrl);
-        } else {
-            await loadPdf(localFileUrl);
+            setTimeout(() => {
+                const noteEl = document.getElementById(`note_${patchId}`);
+                if (noteEl) noteEl.focus();
+            }, 100);
         }
 
-        await db.ref(sessionPath()).set({
-            sessionId,
-            fileName: file.name,
-            fileType: localFileType,
-            createdAt: Date.now(),
-            status: 'active',
-            patches: {}
-        });
+        /* ======================================================
+           SEND PATCH TO FIREBASE
+        ====================================================== */
+        async function sendPatch(patchId) {
+            const patch = patches[patchId];
+            if (!patch) return;
 
-        toast('📁 โหลดไฟล์เรียบร้อย — ปลอดภัย 100% บันทึกในเครื่องอัตโนมัติ', 'success');
-    }
+            const note = document.getElementById(`note_${patchId}`)?.value || '';
+            patch.note = note;
 
-    async function loadImage(url) {
-        return new Promise(resolve => {
-            const img = document.getElementById('mainImage');
-            img.onload = () => {
-                img.style.display = 'block';
-                document.getElementById('pdfCanvas').style.display = 'none';
-                document.getElementById('pageNav').classList.remove('visible');
-                fitToScreen();
-                resolve();
-            };
-            img.src = url;
-        });
-    }
-
-    async function loadPdf(url) {
-        pdfDoc = await pdfjsLib.getDocument(url).promise;
-        totalPages = pdfDoc.numPages;
-        currentPage = 1;
-        await renderPdfPage(currentPage);
-
-        if (totalPages > 1) {
-            document.getElementById('pageNav').classList.add('visible');
-            document.getElementById('pageTotal').textContent = totalPages;
-            document.getElementById('pageInput').max = totalPages;
-        }
-    }
-
-    async function renderPdfPage(pageNum) {
-        const page = await pdfDoc.getPage(pageNum);
-        const vp = page.getViewport({ scale: 2 });
-        const canvas = document.getElementById('pdfCanvas');
-        canvas.width = vp.width; canvas.height = vp.height;
-        canvas.style.display = 'block';
-        document.getElementById('mainImage').style.display = 'none';
-        await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
-        fitToScreen();
-        renderPatchOverlays();
-    }
-
-    /* ======================================================
-       CANVAS / ZOOM / PAN (PREVENT GHOST DRAG)
-    ====================================================== */
-    function initCanvas() {
-        const container = document.getElementById('canvasContainer');
-        const overlay = document.getElementById('cropOverlay');
-        const rect = document.getElementById('cropRect');
-
-        // Prevent native browser image drag
-        container.addEventListener('dragstart', e => e.preventDefault());
-
-        // Toolbar buttons
-        document.getElementById('toolSelect').addEventListener('click', () => exitCropMode());
-        document.getElementById('toolZoomIn').addEventListener('click', () => { scale = Math.min(8, scale * 1.3); applyTransform(); });
-        document.getElementById('toolZoomOut').addEventListener('click', () => { scale = Math.max(0.1, scale / 1.3); applyTransform(); });
-        document.getElementById('toolFit').addEventListener('click', fitToScreen);
-
-        // Add Patch button
-        document.getElementById('btnAddPatch').addEventListener('click', () => {
-            if (isCropMode) exitCropMode();
-            else enterCropMode();
-        });
-
-        // Esc key
-        document.addEventListener('keydown', e => { if (e.key === 'Escape' && isCropMode) exitCropMode(); });
-
-        // Pan Mousedown (Prevent default to stop ghost dragging)
-        container.addEventListener('mousedown', e => {
-            if (isCropMode || e.target.closest('.patch-overlay')) return;
-            e.preventDefault(); // Stop native drag and text selection
-            isPanning = true;
-            container.classList.add('grabbing');
-            panStartX = e.clientX - translateX;
-            panStartY = e.clientY - translateY;
-        });
-
-        window.addEventListener('mousemove', e => {
-            if (!isPanning) return;
-            translateX = e.clientX - panStartX;
-            translateY = e.clientY - panStartY;
-            applyTransform();
-        });
-
-        const stopPan = () => {
-            if (isPanning) {
-                isPanning = false;
-                container.classList.remove('grabbing');
+            if (!patch.note.trim()) {
+                toast('กรุณาพิมพ์โน้ตระบุสิ่งที่ต้องการแก้ไขก่อนส่ง', 'error');
+                return;
             }
-        };
 
-        window.addEventListener('mouseup', stopPan);
-        window.addEventListener('mouseleave', stopPan);
-        window.addEventListener('blur', stopPan);
-
-        // Wheel zoom
-        container.addEventListener('wheel', e => {
-            e.preventDefault();
-            const delta = e.deltaY > 0 ? 0.85 : 1.18;
-            const cr = container.getBoundingClientRect();
-            const mx = e.clientX - cr.left;
-            const my = e.clientY - cr.top;
-            const oldScale = scale;
-            scale = Math.max(0.1, Math.min(8, scale * delta));
-            translateX = mx - (mx - translateX) * (scale / oldScale);
-            translateY = my - (my - translateY) * (scale / oldScale);
-            applyTransform();
-        }, { passive: false });
-
-        // ── CROP DRAW ──
-        overlay.addEventListener('mousedown', e => {
-            if (!isCropMode) return;
-            e.preventDefault();
-            isCropDragging = true;
-            const or = overlay.getBoundingClientRect();
-            cropStartX = e.clientX - or.left;
-            cropStartY = e.clientY - or.top;
-            rect.style.display = 'block';
-            rect.style.left = cropStartX + 'px'; rect.style.top = cropStartY + 'px';
-            rect.style.width = '0'; rect.style.height = '0';
-        });
-
-        window.addEventListener('mousemove', e => {
-            if (!isCropDragging) return;
-            const or = overlay.getBoundingClientRect();
-            const ex = Math.max(0, Math.min(or.width, e.clientX - or.left));
-            const ey = Math.max(0, Math.min(or.height, e.clientY - or.top));
-            const x = Math.min(cropStartX, ex);
-            const y = Math.min(cropStartY, ey);
-            const w = Math.abs(ex - cropStartX);
-            const h = Math.abs(ey - cropStartY);
-            rect.style.left = x + 'px'; rect.style.top = y + 'px';
-            rect.style.width = w + 'px'; rect.style.height = h + 'px';
-        });
-
-        window.addEventListener('mouseup', async e => {
-            if (!isCropDragging) return;
-            isCropDragging = false;
-            rect.style.display = 'none';
-
-            const or = overlay.getBoundingClientRect();
-            const ex = Math.max(0, Math.min(or.width, e.clientX - or.left));
-            const ey = Math.max(0, Math.min(or.height, e.clientY - or.top));
-            const rx = Math.min(cropStartX, ex);
-            const ry = Math.min(cropStartY, ey);
-            const rw = Math.abs(ex - cropStartX);
-            const rh = Math.abs(ey - cropStartY);
-
-            if (rw < 15 || rh < 15) { exitCropMode(); return; }
-
-            await createPatchFromCrop(rx, ry, rw, rh, or);
-            exitCropMode();
-        });
-
-        // Touch pan & zoom
-        let t1x = 0, t1y = 0, touchDist = 0;
-        container.addEventListener('touchstart', e => {
-            if (e.touches.length === 2) {
-                touchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-            } else if (!isCropMode) {
-                isPanning = true;
-                t1x = e.touches[0].clientX - translateX;
-                t1y = e.touches[0].clientY - translateY;
-            }
-        }, { passive: true });
-
-        container.addEventListener('touchmove', e => {
-            if (e.touches.length === 2) {
-                const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                scale = Math.max(0.1, Math.min(8, scale * (d / touchDist)));
-                touchDist = d; applyTransform();
-            } else if (isPanning) {
-                translateX = e.touches[0].clientX - t1x;
-                translateY = e.touches[0].clientY - t1y;
-                applyTransform();
-            }
-        }, { passive: true });
-
-        container.addEventListener('touchend', stopPan);
-
-        // PDF page buttons
-        document.getElementById('prevPageBtn').addEventListener('click', async () => {
-            if (currentPage > 1) { currentPage--; await renderPdfPage(currentPage); updatePageInput(); }
-        });
-        document.getElementById('nextPageBtn').addEventListener('click', async () => {
-            if (currentPage < totalPages) { currentPage++; await renderPdfPage(currentPage); updatePageInput(); }
-        });
-        document.getElementById('pageInput').addEventListener('change', async function () {
-            const v = parseInt(this.value);
-            if (v >= 1 && v <= totalPages) { currentPage = v; await renderPdfPage(currentPage); }
-            else this.value = currentPage;
-        });
-    }
-
-    function updatePageInput() {
-        document.getElementById('pageInput').value = currentPage;
-    }
-
-    function applyTransform() {
-        document.getElementById('canvasWrapper').style.transform = `translate(${translateX}px,${translateY}px) scale(${scale})`;
-        document.getElementById('zoomLabel').textContent = Math.round(scale * 100) + '%';
-    }
-
-    function fitToScreen() {
-        const container = document.getElementById('canvasContainer');
-        const content = document.getElementById('mainImage').style.display !== 'none'
-            ? document.getElementById('mainImage') : document.getElementById('pdfCanvas');
-        const cW = content.naturalWidth || content.width || 800;
-        const cH = content.naturalHeight || content.height || 600;
-        const cr = container.getBoundingClientRect();
-        scale = Math.min((cr.width * 0.9) / cW, (cr.height * 0.9) / cH, 1);
-        translateX = (cr.width - cW * scale) / 2;
-        translateY = (cr.height - cH * scale) / 2;
-        applyTransform();
-    }
-
-    function enterCropMode() {
-        isCropMode = true;
-        const btn = document.getElementById('btnAddPatch');
-        btn.classList.add('active');
-        btn.innerHTML = '<i class="fa-solid fa-xmark"></i> ยกเลิกวาดกรอบ';
-        document.getElementById('cropHint').classList.add('visible');
-        document.getElementById('cropOverlay').classList.add('active');
-        document.getElementById('canvasContainer').style.cursor = 'crosshair';
-        document.getElementById('toolSelect').classList.remove('active');
-    }
-
-    function exitCropMode() {
-        isCropMode = false;
-        const btn = document.getElementById('btnAddPatch');
-        btn.classList.remove('active');
-        btn.innerHTML = '<i class="fa-solid fa-crosshairs"></i> วาดกรอบจุดที่จะแก้';
-        document.getElementById('cropHint').classList.remove('visible');
-        document.getElementById('cropOverlay').classList.remove('active');
-        document.getElementById('cropRect').style.display = 'none';
-        document.getElementById('canvasContainer').style.cursor = '';
-        document.getElementById('toolSelect').classList.add('active');
-    }
-
-    /* ======================================================
-       CREATE PATCH FROM CROP
-    ====================================================== */
-    async function createPatchFromCrop(overlayX, overlayY, overlayW, overlayH, overlayRect) {
-        const wrapper = document.getElementById('canvasWrapper');
-        const wrapperRect = wrapper.getBoundingClientRect();
-
-        const relX = (overlayX + overlayRect.left - wrapperRect.left) / scale;
-        const relY = (overlayY + overlayRect.top - wrapperRect.top) / scale;
-        const relW = overlayW / scale;
-        const relH = overlayH / scale;
-
-        const content = document.getElementById('mainImage').style.display !== 'none'
-            ? document.getElementById('mainImage') : document.getElementById('pdfCanvas');
-        const nativeW = content.naturalWidth || content.width;
-        const nativeH = content.naturalHeight || content.height;
-
-        const cx = Math.max(0, relX);
-        const cy = Math.max(0, relY);
-        const cw = Math.min(nativeW - cx, relW);
-        const ch = Math.min(nativeH - cy, relH);
-
-        if (cw < 10 || ch < 10) return;
-
-        const patchCanvas = document.createElement('canvas');
-        patchCanvas.width = cw; patchCanvas.height = ch;
-        const ctx = patchCanvas.getContext('2d');
-
-        if (localFileType === 'image') {
-            ctx.drawImage(content, cx, cy, cw, ch, 0, 0, cw, ch);
-        } else {
-            ctx.drawImage(document.getElementById('pdfCanvas'), cx, cy, cw, ch, 0, 0, cw, ch);
-        }
-
-        const patchDataUrl = patchCanvas.toDataURL('image/jpeg', 0.92);
-
-        const patchId = 'p_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4);
-        const num = Object.keys(patches).length + 1;
-
-        const patchData = {
-            id: patchId,
-            num,
-            sessionId,
-            note: '',
-            price: 0,
-            status: 'waiting',
-            page: currentPage,
-            cropRect: {
-                x: (cx / nativeW) * 100,
-                y: (cy / nativeH) * 100,
-                w: (cw / nativeW) * 100,
-                h: (ch / nativeH) * 100
-            },
-            patchDataUrl,
-            resultDataUrl: null,
-            createdAt: Date.now()
-        };
-
-        patches[patchId] = patchData;
-        renderPatchCard(patchId);
-        renderPatchOverlays();
-        updateEmpty();
-        updateTotal();
-
-        setTimeout(() => {
-            const noteEl = document.getElementById(`note_${patchId}`);
-            if (noteEl) noteEl.focus();
-        }, 100);
-    }
-
-    /* ======================================================
-       SEND PATCH TO FIREBASE
-    ====================================================== */
-    async function sendPatch(patchId) {
-        const patch = patches[patchId];
-        if (!patch) return;
-
-        const note = document.getElementById(`note_${patchId}`)?.value || '';
-        patch.note = note;
-
-        if (!patch.note.trim()) {
-            toast('กรุณาพิมพ์โน้ตระบุสิ่งที่ต้องการแก้ไขก่อนส่ง', 'error');
-            return;
-        }
-
-        setSendBtnLoading(patchId, true);
-        patch.status = 'pending_review';
-        patches[patchId] = patch;
-        renderPatchOverlays();
-
-        try {
-            const patchBase64 = patch.patchDataUrl.split(',')[1];
-            const firebasePayload = {
-                id: patchId,
-                sessionId,
-                num: patch.num,
-                note: patch.note,
-                price: 0,
-                status: 'pending_review',
-                page: patch.page,
-                cropRect: patch.cropRect,
-                patchImage: patchBase64,
-                resultImage: null,
-                createdAt: patch.createdAt,
-                updatedAt: Date.now()
-            };
-
-            await db.ref(patchPath(patchId)).set(firebasePayload);
-            toast(`✅ ส่งจุดที่ ${patch.num} ให้ช่างประเมินราคาแล้ว กรุณารอสักครู่...`, 'success');
-        } catch (err) {
-            patch.status = 'waiting';
-            toast('❌ ส่งไม่สำเร็จ: ' + err.message, 'error');
-        } finally {
-            setSendBtnLoading(patchId, false);
-            renderPatchCard(patchId);
+            setSendBtnLoading(patchId, true);
+            patch.status = 'pending_review';
+            patches[patchId] = patch;
+            savePatchesToLocalStorage();
             renderPatchOverlays();
+
+            try {
+                const patchBase64 = patch.patchDataUrl.split(',')[1];
+                const firebasePayload = {
+                    id: patchId,
+                    sessionId,
+                    num: patch.num,
+                    note: patch.note,
+                    price: 0,
+                    status: 'pending_review',
+                    page: patch.page,
+                    cropRect: patch.cropRect,
+                    patchImage: patchBase64,
+                    resultImage: null,
+                    createdAt: patch.createdAt,
+                    updatedAt: Date.now()
+                };
+
+                await db.ref(patchPath(patchId)).set(firebasePayload);
+                savePatchesToLocalStorage();
+                toast(`✅ ส่งจุดที่ ${patch.num} ให้นักรีทัชประเมินราคาแล้ว กรุณารอสักครู่...`, 'success');
+            } catch (err) {
+                patch.status = 'waiting';
+                savePatchesToLocalStorage();
+                toast('❌ ส่งไม่สำเร็จ: ' + err.message, 'error');
+            } finally {
+                setSendBtnLoading(patchId, false);
+                renderPatchCard(patchId);
+                renderPatchOverlays();
+            }
         }
-    }
 
-    function setSendBtnLoading(patchId, loading) {
-        const btn = document.getElementById(`btnSend_${patchId}`);
-        if (!btn) return;
-        if (loading) {
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner"></span> กำลังส่ง...';
-        } else {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> ส่งคิดราคา';
+        function setSendBtnLoading(patchId, loading) {
+            const btn = document.getElementById(`btnSend_${patchId}`);
+            if (!btn) return;
+            if (loading) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner"></span> กำลังส่ง...';
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> ส่งคิดราคา';
+            }
         }
-    }
 
-    /* ======================================================
-       FIREBASE REAL-TIME LISTENER
-    ====================================================== */
-    function listenToPatchUpdates() {
-        db.ref(`text_retouch/${sessionId}/patches`).on('value', snap => {
-            const fbPatches = snap.val() || {};
-            Object.entries(fbPatches).forEach(([pid, fbPatch]) => {
-                if (!patches[pid]) {
-                    // Patch from server not yet in memory -> add it
-                    patches[pid] = {
-                        id: pid,
-                        num: fbPatch.num || 1,
-                        sessionId,
-                        note: fbPatch.note || '',
-                        price: fbPatch.price || 0,
-                        status: fbPatch.status || 'waiting',
-                        page: fbPatch.page || 1,
-                        cropRect: fbPatch.cropRect || { x: 0, y: 0, w: 10, h: 10 },
-                        patchDataUrl: fbPatch.patchImage ? `data:image/jpeg;base64,${fbPatch.patchImage}` : '',
-                        resultDataUrl: fbPatch.resultImage ? `data:image/png;base64,${fbPatch.resultImage}` : null,
-                        rejectReason: fbPatch.rejectReason || '',
-                        composited: fbPatch.status === 'done',
-                        createdAt: fbPatch.createdAt || Date.now()
-                    };
-                    renderPatchCard(pid);
-                    renderPatchOverlays();
-                    updateEmpty();
-                    updateTotal();
-                }
+        /* ======================================================
+           FIREBASE REAL-TIME LISTENER
+        ====================================================== */
+        function listenToPatchUpdates() {
+            db.ref(`text_retouch/${sessionId}/patches`).on('value', snap => {
+                const fbPatches = snap.val() || {};
+                Object.entries(fbPatches).forEach(([pid, fbPatch]) => {
+                    if (!patches[pid]) {
+                        // Patch from server not yet in memory -> add it
+                        patches[pid] = {
+                            id: pid,
+                            num: fbPatch.num || 1,
+                            sessionId,
+                            note: fbPatch.note || '',
+                            price: fbPatch.price || 0,
+                            status: fbPatch.status || 'waiting',
+                            page: fbPatch.page || 1,
+                            cropRect: fbPatch.cropRect || { x: 0, y: 0, w: 10, h: 10 },
+                            patchDataUrl: fbPatch.patchImage ? `data:image/jpeg;base64,${fbPatch.patchImage}` : '',
+                            resultDataUrl: fbPatch.resultImage ? `data:image/png;base64,${fbPatch.resultImage}` : null,
+                            rejectReason: fbPatch.rejectReason || '',
+                            composited: fbPatch.status === 'done',
+                            createdAt: fbPatch.createdAt || Date.now()
+                        };
+                        renderPatchCard(pid);
+                        renderPatchOverlays();
+                        updateEmpty();
+                        updateTotal();
+                    }
 
-                const local = patches[pid];
+                    const local = patches[pid];
 
-                // 1. Rejected
-                if (fbPatch.status === 'rejected' && local.status !== 'rejected') {
-                    local.status = 'rejected';
-                    local.rejectReason = fbPatch.rejectReason || 'ช่างปฏิเสธงานนี้';
-                    patches[pid] = local;
-                    renderPatchCard(pid);
-                    renderPatchOverlays();
-                    updateTotal();
-                    toast(`❌ จุดที่ ${local.num} ถูกปฏิเสธ: ${local.rejectReason}`, 'error');
-                }
+                    // 1. Rejected
+                    if (fbPatch.status === 'rejected' && local.status !== 'rejected') {
+                        local.status = 'rejected';
+                        local.rejectReason = fbPatch.rejectReason || 'นักรีทัชปฏิเสธงานนี้';
+                        patches[pid] = local;
+                        renderPatchCard(pid);
+                        renderPatchOverlays();
+                        updateTotal();
+                        toast(`❌ จุดที่ ${local.num} ถูกปฏิเสธ: ${local.rejectReason}`, 'error');
+                    }
 
-                // 2. Admin quoted price -> show payment
-                if (fbPatch.status === 'pending_payment' && local.status !== 'pending_payment' && local.status !== 'paid' && local.status !== 'working' && local.status !== 'done') {
-                    local.status = 'pending_payment';
-                    local.price = fbPatch.price || 0;
-                    patches[pid] = local;
-                    renderPatchCard(pid);
-                    renderPatchOverlays();
-                    updateTotal();
-                    toast(`💰 ช่างประเมินราคาจุดที่ ${local.num}: ฿${local.price}`, 'info');
-                    openPaymentModal(pid);
-                }
+                    // 2. Admin quoted price -> show payment
+                    if (fbPatch.status === 'pending_payment' && local.status !== 'pending_payment' && local.status !== 'paid' && local.status !== 'working' && local.status !== 'done') {
+                        local.status = 'pending_payment';
+                        local.price = fbPatch.price || 0;
+                        patches[pid] = local;
+                        renderPatchCard(pid);
+                        renderPatchOverlays();
+                        updateTotal();
+                        toast(`💰 นักรีทัชประเมินราคาจุดที่ ${local.num}: ฿${local.price}`, 'info');
+                        openPaymentModal(pid);
+                    }
 
-                // 3. Paid
-                if (fbPatch.status === 'paid' && local.status !== 'paid' && local.status !== 'working' && local.status !== 'done') {
-                    local.status = 'paid';
-                    patches[pid] = local;
-                    renderPatchCard(pid);
-                    renderPatchOverlays();
-                    toast(`💳 จุดที่ ${local.num} ยืนยันชำระเงินแล้ว! กำลังส่งเข้า Photoshop...`, 'success');
-                    const modal = document.getElementById('paymentModal');
-                    if (modal && modal.classList.contains('open')) modal.classList.remove('open');
-                }
+                    // 3. Paid
+                    if (fbPatch.status === 'paid' && local.status !== 'paid' && local.status !== 'working' && local.status !== 'done') {
+                        local.status = 'paid';
+                        patches[pid] = local;
+                        renderPatchCard(pid);
+                        renderPatchOverlays();
+                        toast(`💳 จุดที่ ${local.num} ยืนยันชำระเงินแล้ว! กำลังส่งเข้า Photoshop...`, 'success');
+                        const modal = document.getElementById('paymentModal');
+                        if (modal && modal.classList.contains('open')) modal.classList.remove('open');
+                    }
 
-                // 4. Working in Photoshop
-                if (fbPatch.status === 'working' && local.status !== 'working' && local.status !== 'done') {
-                    local.status = 'working';
-                    patches[pid] = local;
-                    renderPatchCard(pid);
-                    renderPatchOverlays();
-                    toast(`🎨 ช่างกำลังดำเนินการจุดที่ ${local.num} ใน Photoshop...`, 'info');
-                }
+                    // 4. Working in Photoshop
+                    if (fbPatch.status === 'working' && local.status !== 'working' && local.status !== 'done') {
+                        local.status = 'working';
+                        patches[pid] = local;
+                        renderPatchCard(pid);
+                        renderPatchOverlays();
+                        toast(`🎨 นักรีทัชกำลังดำเนินการจุดที่ ${local.num} ใน Photoshop...`, 'info');
+                    }
 
-                // 5. Result completed
-                if (fbPatch.resultImage && fbPatch.status === 'done' && local.status !== 'done') {
-                    local.status = 'done';
-                    local.resultDataUrl = 'data:image/png;base64,' + fbPatch.resultImage;
-                    patches[pid] = local;
-                    renderPatchCard(pid);
-                    renderPatchOverlays();
-                    updateTotal();
-                    toast(`🎉 จุดที่ ${local.num} ทำเสร็จแล้ว! กำลังประกอบร่าง...`, 'success');
-                    applyPatchToCanvas(pid, true);
-                    checkAllDone();
-                }
+                    // 5. Result completed
+                    if (fbPatch.resultImage && fbPatch.status === 'done' && local.status !== 'done') {
+                        local.status = 'done';
+                        local.resultDataUrl = 'data:image/png;base64,' + fbPatch.resultImage;
+                        patches[pid] = local;
+                        renderPatchCard(pid);
+                        renderPatchOverlays();
+                        updateTotal();
+                        toast(`🎉 จุดที่ ${local.num} ทำเสร็จแล้ว! กำลังประกอบร่าง...`, 'success');
+                        applyPatchToCanvas(pid, true);
+                        checkAllDone();
+                    }
 
-                // Price update
-                if (fbPatch.price && fbPatch.price !== local.price) {
-                    local.price = fbPatch.price;
-                    patches[pid] = local;
-                    renderPatchCard(pid);
-                    updateTotal();
-                }
+                    // Price update
+                    if (fbPatch.price && fbPatch.price !== local.price) {
+                        local.price = fbPatch.price;
+                        patches[pid] = local;
+                        renderPatchCard(pid);
+                        updateTotal();
+                    }
+                });
+                savePatchesToLocalStorage();
             });
-        });
-    }
+        }
 
-    /* ======================================================
-       PATCH CARD RENDERING (PROMINENT UI)
-    ====================================================== */
-    function renderPatchCard(patchId) {
-        const patch = patches[patchId];
-        const list = document.getElementById('patchList');
-        let card = document.getElementById(`card_${patchId}`);
+        /* ======================================================
+           PATCH CARD RENDERING (PROMINENT UI)
+        ====================================================== */
+        function renderPatchCard(patchId) {
+            const patch = patches[patchId];
+            const list = document.getElementById('patchList');
+            let card = document.getElementById(`card_${patchId}`);
 
-        const statusLabels = {
-            waiting: 'รอส่งประเมินราคา',
-            pending_review: '⏳ รอช่างคิดราคา...',
-            rejected: '❌ ช่างปฏิเสธงาน',
-            pending_payment: '💳 ช่างคิดราคาแล้ว (รอโอนเงิน)',
-            paid: '⚡ โอนแล้ว (กำลังเข้า PS)',
-            working: '🎨 กำลังทำใน Photoshop',
-            done: '✅ เสร็จสมบูรณ์'
-        };
+            const statusLabels = {
+                waiting: 'รอส่งประเมินราคา',
+                pending_review: '⏳ รอนักรีทัชคิดราคา...',
+                rejected: '❌ นักรีทัชปฏิเสธงาน',
+                pending_payment: '💳 นักรีทัชคิดราคาแล้ว (รอโอนเงิน)',
+                paid: '⚡ โอนแล้ว (กำลังเข้า PS)',
+                working: '🎨 กำลังทำใน Photoshop',
+                done: '✅ เสร็จสมบูรณ์'
+            };
 
-        const html = `
+            const html = `
         <div class="patch-card-header" onclick="setActivePatch('${patchId}')">
             <div class="patch-num-circle status-${patch.status}">${patch.num}</div>
             <div class="patch-card-meta">
@@ -1606,9 +2510,9 @@
             </div>` : ''}
 
             <textarea class="patch-note-input" id="note_${patchId}"
-                placeholder="บอกว่าต้องการแก้อะไร เช่น 'เปลี่ยนเลขเป็น 120' หรือ 'ลบตัวหนังสือออก'"
+                placeholder="จุดนี้จะแก้เป็นอะไรขอรับนายท่าน'"
                 ${patch.status !== 'waiting' ? 'disabled' : ''}
-                onchange="patches['${patchId}'].note=this.value"
+                oninput="updatePatchNote('${patchId}', this.value)"
             >${patch.note}</textarea>
 
             <div class="patch-card-footer">
@@ -1622,7 +2526,7 @@
                 ` : ''}
                 ${patch.status === 'pending_review' ? `
                     <span style="font-size:0.82rem;color:#b45309;font-weight:700;display:flex;align-items:center;gap:6px;">
-                        <span class="spinner"></span> รอช่างตรวจสอบ & คิดราคา...
+                        <span class="spinner"></span> รอนักรีทัชตรวจสอบ & คิดราคา...
                     </span>
                 ` : ''}
                 ${patch.status === 'rejected' ? `
@@ -1642,7 +2546,7 @@
                 ` : ''}
                 ${patch.status === 'working' ? `
                     <span style="font-size:0.82rem;color:#0284c7;font-weight:700;display:flex;align-items:center;gap:6px;">
-                        <span class="spinner"></span> ช่างกำลังทำใน Photoshop...
+                        <span class="spinner"></span> นักรีทัชกำลังทำใน Photoshop...
                     </span>
                 ` : ''}
                 ${patch.status === 'done' ? `
@@ -1654,270 +2558,366 @@
             </div>
         </div>`;
 
-        if (!card) {
-            card = document.createElement('div');
-            card.id = `card_${patchId}`;
-            list.insertBefore(card, document.getElementById('patchesEmpty'));
+            if (!card) {
+                card = document.createElement('div');
+                card.id = `card_${patchId}`;
+                list.insertBefore(card, document.getElementById('patchesEmpty'));
+            }
+            card.className = `patch-card ${activePatchId === patchId ? 'active' : ''}`;
+            card.innerHTML = html;
+
+            updateEmpty();
+            updateTotal();
         }
-        card.className = `patch-card ${activePatchId === patchId ? 'active' : ''}`;
-        card.innerHTML = html;
 
-        updateEmpty();
-        updateTotal();
-    }
-
-    function setActivePatch(patchId) {
-        activePatchId = patchId;
-        document.querySelectorAll('.patch-card').forEach(c => c.classList.remove('active'));
-        const card = document.getElementById(`card_${patchId}`);
-        if (card) card.classList.add('active');
-        renderPatchOverlays();
-    }
-
-    async function deletePatch(patchId) {
-        if (!confirm('ยืนยันลบจุดแก้ไขนี้ออก?')) return;
-        delete patches[patchId];
-        const card = document.getElementById(`card_${patchId}`);
-        if (card) card.remove();
-        const overlay = document.getElementById(`overlay_${patchId}`);
-        if (overlay) overlay.remove();
-        try {
-            await db.ref(patchPath(patchId)).remove();
-        } catch(e) {}
-        updateEmpty();
-        updateTotal();
-    }
-
-    function updateEmpty() {
-        const hasPatches = Object.keys(patches).length > 0;
-        document.getElementById('patchesEmpty').style.display = hasPatches ? 'none' : 'block';
-        const count = Object.keys(patches).length;
-        const countEl = document.getElementById('mobilePatchCount');
-        if (count > 0) { countEl.style.display = 'inline'; countEl.textContent = count; }
-        else countEl.style.display = 'none';
-    }
-
-    function updateTotal() {
-        let total = 0;
-        let hasAny = false;
-        Object.values(patches).forEach(p => {
-            if (p.price > 0) { total += p.price; hasAny = true; }
-        });
-        if (hasAny) {
-            document.getElementById('totalSummary').style.display = 'flex';
-            document.getElementById('totalAmount').textContent = '฿' + total;
-        } else {
-            document.getElementById('totalSummary').style.display = 'none';
-        }
-    }
-
-    /* ======================================================
-       PATCH OVERLAYS ON CANVAS
-    ====================================================== */
-    function renderPatchOverlays() {
-        document.querySelectorAll('.patch-overlay').forEach(el => el.remove());
-
-        const content = document.getElementById('mainImage').style.display !== 'none'
-            ? document.getElementById('mainImage') : document.getElementById('pdfCanvas');
-        const nW = content.naturalWidth || content.width;
-        const nH = content.naturalHeight || content.height;
-        if (!nW || !nH) return;
-
-        const wrapper = document.getElementById('canvasWrapper');
-
-        Object.values(patches).forEach(patch => {
-            if (patch.page && patch.page !== currentPage) return;
-
-            const { x, y, w, h } = patch.cropRect;
-            const px = (x / 100) * nW;
-            const py = (y / 100) * nH;
-            const pw = (w / 100) * nW;
-            const ph = (h / 100) * nH;
-
-            const div = document.createElement('div');
-            div.className = `patch-overlay patch-status-${patch.status}`;
-            div.id = `overlay_${patch.id}`;
-            div.style.cssText = `left:${px}px;top:${py}px;width:${pw}px;height:${ph}px;`;
-            div.title = `จุดที่ ${patch.num}: ${patch.note || 'ไม่มีโน้ต'}`;
-            div.onclick = () => setActivePatch(patch.id);
-
-            const badge = document.createElement('div');
-            badge.className = 'patch-num-badge';
-            badge.textContent = patch.num;
-            div.appendChild(badge);
-
-            wrapper.appendChild(div);
-        });
-    }
-
-    /* ======================================================
-       PAYMENT MODAL
-    ====================================================== */
-    function openPaymentModal(patchId) {
-        const patch = patches[patchId];
-        if (!patch) return;
-
-        document.getElementById('paymentAmountNum').textContent = patch.price;
-        document.getElementById('paymentPatchNum').textContent = patch.num;
-        document.getElementById('paymentPhoneDisplay').textContent = 'PromptPay: ' + PROMPTPAY_PHONE;
-
-        const qrUrl = `https://promptpay.io/${PROMPTPAY_PHONE}/${patch.price}.png`;
-        document.getElementById('qrImage').src = qrUrl;
-
-        document.getElementById('paymentModal').classList.add('open');
-
-        document.getElementById('btnConfirmPaid').onclick = () => {
-            confirmPayment(patchId);
-        };
-        document.getElementById('closePaymentModal').onclick = () => {
-            document.getElementById('paymentModal').classList.remove('open');
-        };
-    }
-
-    async function confirmPayment(patchId) {
-        const patch = patches[patchId];
-        if (!patch) return;
-
-        try {
-            await db.ref(patchPath(patchId)).update({
-                status: 'paid',
-                paidAt: Date.now()
-            });
-            patch.status = 'paid';
-            renderPatchCard(patchId);
+        function setActivePatch(patchId) {
+            activePatchId = patchId;
+            document.querySelectorAll('.patch-card').forEach(c => c.classList.remove('active'));
+            const card = document.getElementById(`card_${patchId}`);
+            if (card) card.classList.add('active');
             renderPatchOverlays();
-            toast('✅ แจ้งโอนเงินแล้ว! ส่งงานเข้า Photoshop ของช่างทันที...', 'success');
-            document.getElementById('paymentModal').classList.remove('open');
-        } catch(e) {
-            toast('เกิดข้อผิดพลาด: ' + e.message, 'error');
-        }
-    }
-
-    /* ======================================================
-       COMPOSITE RESULT BACK INTO CANVAS
-    ====================================================== */
-    async function applyPatchToCanvas(patchId, showToast = true) {
-        const patch = patches[patchId];
-        if (!patch || !patch.resultDataUrl) {
-            if (showToast) toast('ยังไม่มีผลลัพธ์จากช่าง', 'error');
-            return;
         }
 
-        const indicator = document.getElementById('compositeIndicator');
-        if (showToast) indicator.classList.add('active');
+        async function deletePatch(patchId) {
+            if (!confirm('ยืนยันลบจุดแก้ไขนี้ออก?')) return;
+            delete patches[patchId];
+            savePatchesToLocalStorage();
+            const card = document.getElementById(`card_${patchId}`);
+            if (card) card.remove();
+            const overlay = document.getElementById(`overlay_${patchId}`);
+            if (overlay) overlay.remove();
+            try {
+                await db.ref(patchPath(patchId)).remove();
+            } catch (e) { }
+            updateEmpty();
+            updateTotal();
+        }
 
-        try {
+        function updateEmpty() {
+            const hasPatches = Object.keys(patches).length > 0;
+            document.getElementById('patchesEmpty').style.display = hasPatches ? 'none' : 'block';
+            const count = Object.keys(patches).length;
+            const countEl = document.getElementById('mobilePatchCount');
+            if (count > 0) { countEl.style.display = 'inline'; countEl.textContent = count; }
+            else countEl.style.display = 'none';
+        }
+
+        function updateTotal() {
+            let total = 0;
+            let hasAny = false;
+            Object.values(patches).forEach(p => {
+                if (p.price > 0) { total += p.price; hasAny = true; }
+            });
+            if (hasAny) {
+                document.getElementById('totalSummary').style.display = 'flex';
+                document.getElementById('totalAmount').textContent = '฿' + total;
+            } else {
+                document.getElementById('totalSummary').style.display = 'none';
+            }
+        }
+
+        /* ======================================================
+           PATCH OVERLAYS ON CANVAS
+        ====================================================== */
+        function renderPatchOverlays() {
+            document.querySelectorAll('.patch-overlay').forEach(el => el.remove());
+
             const content = document.getElementById('mainImage').style.display !== 'none'
                 ? document.getElementById('mainImage') : document.getElementById('pdfCanvas');
             const nW = content.naturalWidth || content.width;
             const nH = content.naturalHeight || content.height;
 
-            const offscreen = document.createElement('canvas');
-            offscreen.width = nW; offscreen.height = nH;
-            const ctx = offscreen.getContext('2d');
-            ctx.drawImage(content, 0, 0);
-
-            const { x, y, w, h } = patch.cropRect;
-            const px = (x / 100) * nW;
-            const py = (y / 100) * nH;
-            const pw = (w / 100) * nW;
-            const ph = (h / 100) * nH;
-
-            const resultImg = new Image();
-            await new Promise(r => { resultImg.onload = r; resultImg.src = patch.resultDataUrl; });
-            ctx.drawImage(resultImg, px, py, pw, ph);
-
-            if (localFileType === 'image') {
-                const newUrl = offscreen.toDataURL('image/jpeg', 0.95);
-                const img = document.getElementById('mainImage');
-                img.src = newUrl;
-                localFileUrl = newUrl;
-                await new Promise(r => { img.onload = r; });
+            if (!nW || !nH) {
+                // If dimensions are not yet available (e.g. initial reload), retry
+                requestAnimationFrame(() => setTimeout(renderPatchOverlays, 80));
+                return;
             }
 
-            patch.status = 'done';
-            patch.composited = true;
-            renderPatchCard(patchId);
-            renderPatchOverlays();
+            const wrapper = document.getElementById('canvasWrapper');
 
-            if (showToast) toast(`✅ ประกอบร่างจุดที่ ${patch.num} เรียบร้อย!`, 'success');
-            checkAllDone();
-        } catch (err) {
-            if (showToast) toast('เกิดข้อผิดพลาดในการประกอบร่าง: ' + err.message, 'error');
-        } finally {
-            if (showToast) indicator.classList.remove('active');
-        }
-    }
+            Object.values(patches).forEach(patch => {
+                if (patch.page && patch.page !== currentPage) return;
 
-    function checkAllDone() {
-        const allPatches = Object.values(patches);
-        if (allPatches.length === 0) return;
-        const allComposited = allPatches.every(p => p.composited || p.status === 'done');
-        if (allComposited) {
-            document.getElementById('btnDownloadFinal').classList.add('visible');
-        }
-    }
+                const { x, y, w, h } = patch.cropRect;
+                const px = (x / 100) * nW;
+                const py = (y / 100) * nH;
+                const pw = (w / 100) * nW;
+                const ph = (h / 100) * nH;
 
-    document.getElementById('btnDownloadFinal').addEventListener('click', downloadFinalFile);
+                const div = document.createElement('div');
+                div.className = `patch-overlay patch-status-${patch.status}`;
+                div.id = `overlay_${patch.id}`;
+                div.style.cssText = `left:${px}px;top:${py}px;width:${pw}px;height:${ph}px;`;
+                div.title = `จุดที่ ${patch.num}: ${patch.note || 'ไม่มีโน้ต'}`;
+                div.onclick = (e) => {
+                    e.stopPropagation();
+                    setActivePatch(patch.id);
+                };
 
-    async function downloadFinalFile() {
-        if (localFileType === 'pdf') {
-            toast('สำหรับ PDF กรุณากด "ประกอบร่าง" แต่ละจุดและบันทึก', 'info');
-            return;
-        }
-        const img = document.getElementById('mainImage');
-        const a = document.createElement('a');
-        a.href = img.src;
-        a.download = 'text-retouch-completed.jpg';
-        a.click();
-        toast('ดาวน์โหลดไฟล์เรียบร้อย!', 'success');
+                const badge = document.createElement('div');
+                badge.className = 'patch-num-badge';
+                badge.textContent = patch.num;
+                div.appendChild(badge);
 
-        // ลบข้อมูลไฟล์ภาพ patchImage และ resultImage ใน Firebase ทิ้งเพื่อประหยัดพื้นที่
-        // แต่งานบนหน้าจอและ Canvas ของลูกค้ายังคงอยู่ปกติ
-        try {
-            const updates = {};
-            Object.keys(patches).forEach(pid => {
-                updates[`text_retouch/${sessionId}/patches/${pid}/patchImage`] = null;
-                updates[`text_retouch/${sessionId}/patches/${pid}/resultImage`] = null;
-                updates[`text_retouch/${sessionId}/patches/${pid}/cleaned`] = true;
+                wrapper.appendChild(div);
             });
-            updates[`text_retouch/${sessionId}/status`] = 'completed';
-            await db.ref().update(updates);
-            console.log('[TextRetouch] ลบไฟล์ภาพใน Firebase เรียบร้อย (งานฝั่งลูกค้ายังอยู่ครบ)');
-        } catch(e) {
-            console.warn('[TextRetouch] Firebase cleanup error:', e);
         }
-    }
 
-    /* ======================================================
-       TOAST
-    ====================================================== */
-    function toast(msg, type = 'info', duration = 4000) {
-        const tc = document.getElementById('toastContainer');
-        const el = document.createElement('div');
-        el.className = `toast ${type}`;
-        el.innerHTML = `<i class="fa-solid fa-${type==='success'?'circle-check':type==='error'?'circle-xmark':'circle-info'}"></i> ${msg}`;
-        tc.appendChild(el);
-        setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, duration);
-    }
+        /* ======================================================
+           PAYMENT MODAL (Matching \shop\services)
+        ====================================================== */
+        let paymentCountdownInterval = null;
+        let currentPayingPatchId = null;
 
-    /* ======================================================
-       MOBILE TABS
-    ====================================================== */
-    function switchMobileTab(tab) {
-        const canvas = document.getElementById('canvasPanel');
-        const sidebar = document.getElementById('sidebar');
-        document.getElementById('mobileTabCanvas').classList.toggle('active', tab === 'canvas');
-        document.getElementById('mobileTabPatches').classList.toggle('active', tab === 'patches');
-        if (tab === 'canvas') {
-            canvas.classList.remove('mobile-hide');
-            sidebar.classList.remove('mobile-show');
-        } else {
-            canvas.classList.add('mobile-hide');
-            sidebar.classList.add('mobile-show');
+        function startPaymentCountdown(durationMinutes = 15) {
+            if (paymentCountdownInterval) clearInterval(paymentCountdownInterval);
+            let remainingSeconds = durationMinutes * 60;
+            const timerEl = document.getElementById('checkoutCountdownTimer');
+            const boxEl = document.getElementById('checkoutCountdownBox');
+
+            function updateDisplay() {
+                const mins = Math.floor(remainingSeconds / 60);
+                const secs = remainingSeconds % 60;
+                if (timerEl) {
+                    timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                }
+                if (boxEl) {
+                    if (remainingSeconds <= 120) {
+                        boxEl.className = 'checkout-countdown-box urgent';
+                    } else {
+                        boxEl.className = 'checkout-countdown-box';
+                    }
+                }
+                if (remainingSeconds <= 0) {
+                    clearInterval(paymentCountdownInterval);
+                    if (timerEl) timerEl.textContent = '00:00 (หมดเวลา)';
+                }
+                remainingSeconds--;
+            }
+
+            updateDisplay();
+            paymentCountdownInterval = setInterval(updateDisplay, 1000);
         }
-    }
+
+        function openPaymentModal(patchId) {
+            const patch = patches[patchId];
+            if (!patch) return;
+            currentPayingPatchId = patchId;
+
+            document.getElementById('paymentAmountNum').textContent = patch.price;
+            document.getElementById('paymentPatchNum').textContent = patch.num;
+
+            const qrUrl = `https://promptpay.io/${PROMPTPAY_PHONE}/${patch.price}.png`;
+            document.getElementById('qrImage').src = qrUrl;
+
+            startPaymentCountdown(15);
+            document.getElementById('paymentModal').classList.add('open');
+
+            document.getElementById('closePaymentModal').onclick = () => {
+                if (paymentCountdownInterval) clearInterval(paymentCountdownInterval);
+                document.getElementById('paymentModal').classList.remove('open');
+            };
+        }
+
+        function triggerManualPaymentAlert() {
+            if (!currentPayingPatchId) return;
+            confirmPayment(currentPayingPatchId);
+        }
+
+        function downloadPaymentQR() {
+            const qrImg = document.getElementById('qrImage');
+            if (!qrImg || !qrImg.src) return;
+
+            const patch = patches[currentPayingPatchId] || { price: 5, num: 1 };
+            const canvas = document.createElement('canvas');
+            canvas.width = 400;
+            canvas.height = 490;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, 400, 490);
+
+            ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 20px Prompt, Sarabun, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('พร้อมเพย์ (PromptPay)', 200, 42);
+
+            ctx.font = '14px Prompt, Sarabun, sans-serif';
+            ctx.fillStyle = '#64748b';
+            ctx.fillText(`Text-Retouch จุดที่ #${patch.num} (${patch.price} บาท)`, 200, 68);
+
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => {
+                ctx.drawImage(img, 75, 88, 250, 250);
+
+                ctx.fillStyle = '#16a34a';
+                ctx.font = 'bold 28px Outfit, Prompt, sans-serif';
+                ctx.fillText(`฿ ${patch.price}.00`, 200, 385);
+
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '13px Prompt, Sarabun, sans-serif';
+                ctx.fillText('สแกนผ่านทุกแอปธนาคาร • งานเริ่มทันที', 200, 420);
+
+                const link = document.createElement('a');
+                link.download = `PromptPay_TextRetouch_${patch.price}THB_p${patch.num}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                toast('📥 ดาวน์โหลด QR Code เรียบร้อยแล้ว สามารถนำเข้าแอปธนาคารได้ทันที', 'success');
+            };
+            img.onerror = () => {
+                window.open(qrImg.src, '_blank');
+            };
+            img.src = qrImg.src;
+        }
+
+        async function confirmPayment(patchId) {
+            const patch = patches[patchId];
+            if (!patch) return;
+
+            try {
+                await db.ref(patchPath(patchId)).update({
+                    status: 'paid',
+                    paidAt: Date.now()
+                });
+                patch.status = 'paid';
+                savePatchesToLocalStorage();
+                renderPatchCard(patchId);
+                renderPatchOverlays();
+                toast('✅ แจ้งโอนเงินแล้ว! ส่งงานเข้า Photoshop ของนักรีทัชทันที...', 'success');
+                if (paymentCountdownInterval) clearInterval(paymentCountdownInterval);
+                document.getElementById('paymentModal').classList.remove('open');
+            } catch (e) {
+                toast('เกิดข้อผิดพลาด: ' + e.message, 'error');
+            }
+        }
+
+        /* ======================================================
+           COMPOSITE RESULT BACK INTO CANVAS
+        ====================================================== */
+        async function applyPatchToCanvas(patchId, showToast = true) {
+            const patch = patches[patchId];
+            if (!patch || !patch.resultDataUrl) {
+                if (showToast) toast('ยังไม่มีผลลัพธ์จากนักรีทัช', 'error');
+                return;
+            }
+
+            const indicator = document.getElementById('compositeIndicator');
+            if (showToast) indicator.classList.add('active');
+
+            try {
+                const content = document.getElementById('mainImage').style.display !== 'none'
+                    ? document.getElementById('mainImage') : document.getElementById('pdfCanvas');
+                const nW = content.naturalWidth || content.width;
+                const nH = content.naturalHeight || content.height;
+
+                const offscreen = document.createElement('canvas');
+                offscreen.width = nW; offscreen.height = nH;
+                const ctx = offscreen.getContext('2d');
+                ctx.drawImage(content, 0, 0);
+
+                const { x, y, w, h } = patch.cropRect;
+                const px = (x / 100) * nW;
+                const py = (y / 100) * nH;
+                const pw = (w / 100) * nW;
+                const ph = (h / 100) * nH;
+
+                const resultImg = new Image();
+                await new Promise(r => { resultImg.onload = r; resultImg.src = patch.resultDataUrl; });
+                ctx.drawImage(resultImg, px, py, pw, ph);
+
+                if (localFileType === 'image') {
+                    const newUrl = offscreen.toDataURL('image/jpeg', 0.95);
+                    const img = document.getElementById('mainImage');
+                    img.src = newUrl;
+                    localFileUrl = newUrl;
+                    await new Promise(r => { img.onload = r; });
+                }
+
+                patch.status = 'done';
+                patch.composited = true;
+                renderPatchCard(patchId);
+                renderPatchOverlays();
+
+                if (showToast) toast(`✅ ประกอบร่างจุดที่ ${patch.num} เรียบร้อย!`, 'success');
+                checkAllDone();
+            } catch (err) {
+                if (showToast) toast('เกิดข้อผิดพลาดในการประกอบร่าง: ' + err.message, 'error');
+            } finally {
+                if (showToast) indicator.classList.remove('active');
+            }
+        }
+
+        function checkAllDone() {
+            const allPatches = Object.values(patches);
+            if (allPatches.length === 0) return;
+            const allComposited = allPatches.every(p => p.composited || p.status === 'done');
+            if (allComposited) {
+                document.getElementById('btnDownloadFinal').classList.add('visible');
+            }
+        }
+
+        document.getElementById('btnDownloadFinal').addEventListener('click', downloadFinalFile);
+
+        async function downloadFinalFile() {
+            if (localFileType === 'pdf') {
+                toast('สำหรับ PDF กรุณากด "ประกอบร่าง" แต่ละจุดและบันทึก', 'info');
+                return;
+            }
+            const img = document.getElementById('mainImage');
+            const a = document.createElement('a');
+            a.href = img.src;
+            a.download = 'text-retouch-completed.jpg';
+            a.click();
+            toast('ดาวน์โหลดไฟล์เรียบร้อย!', 'success');
+
+            // ลบข้อมูลไฟล์ภาพ patchImage และ resultImage ใน Firebase ทิ้งเพื่อประหยัดพื้นที่
+            // แต่งานบนหน้าจอและ Canvas ของลูกค้ายังคงอยู่ปกติ
+            try {
+                const updates = {};
+                Object.keys(patches).forEach(pid => {
+                    updates[`text_retouch/${sessionId}/patches/${pid}/patchImage`] = null;
+                    updates[`text_retouch/${sessionId}/patches/${pid}/resultImage`] = null;
+                    updates[`text_retouch/${sessionId}/patches/${pid}/cleaned`] = true;
+                });
+                updates[`text_retouch/${sessionId}/status`] = 'completed';
+                await db.ref().update(updates);
+                console.log('[TextRetouch] ลบไฟล์ภาพใน Firebase เรียบร้อย (งานฝั่งลูกค้ายังอยู่ครบ)');
+            } catch (e) {
+                console.warn('[TextRetouch] Firebase cleanup error:', e);
+            }
+        }
+
+        /* ======================================================
+           TOAST
+        ====================================================== */
+        function toast(msg, type = 'info', duration = 4000) {
+            const tc = document.getElementById('toastContainer');
+            const el = document.createElement('div');
+            el.className = `toast ${type}`;
+            el.innerHTML = `<i class="fa-solid fa-${type === 'success' ? 'circle-check' : type === 'error' ? 'circle-xmark' : 'circle-info'}"></i> ${msg}`;
+            tc.appendChild(el);
+            setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, duration);
+        }
+
+        /* ======================================================
+           MOBILE TABS
+        ====================================================== */
+        function switchMobileTab(tab) {
+            const canvas = document.getElementById('canvasPanel');
+            const sidebar = document.getElementById('sidebar');
+            document.getElementById('mobileTabCanvas').classList.toggle('active', tab === 'canvas');
+            document.getElementById('mobileTabPatches').classList.toggle('active', tab === 'patches');
+            if (tab === 'canvas') {
+                canvas.classList.remove('mobile-hide');
+                sidebar.classList.remove('mobile-show');
+            } else {
+                canvas.classList.add('mobile-hide');
+                sidebar.classList.add('mobile-show');
+            }
+        }
 
     </script>
 </body>
+
 </html>
