@@ -45,7 +45,34 @@ def fb_patch(path, data):
         return json.loads(r.read().decode())
 
 
+def ensure_photoshop_config():
+    """เพิ่ม WarnRunningScripts 0 ให้กับ Photoshop settings ทุกเวอร์ชัน เพื่อไม่ให้เด้งถามสคริปต์"""
+    try:
+        appdata = os.environ.get("APPDATA", "")
+        adobe_dir = os.path.join(appdata, "Adobe")
+        if not os.path.exists(adobe_dir):
+            return
+        for item in os.listdir(adobe_dir):
+            if "Photoshop" in item:
+                ps_folder = os.path.join(adobe_dir, item)
+                if os.path.isdir(ps_folder):
+                    for sub in os.listdir(ps_folder):
+                        if "Settings" in sub:
+                            settings_dir = os.path.join(ps_folder, sub)
+                            cfg_path = os.path.join(settings_dir, "PSUserConfig.txt")
+                            content = ""
+                            if os.path.exists(cfg_path):
+                                with open(cfg_path, "r", encoding="utf-8", errors="ignore") as f:
+                                    content = f.read()
+                            if "WarnRunningScripts" not in content:
+                                with open(cfg_path, "a", encoding="utf-8") as f:
+                                    f.write("\nWarnRunningScripts 0\n")
+    except Exception as e:
+        pass
+
+
 def get_photoshop_path():
+    ensure_photoshop_config()
     try:
         import winreg
         key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,
@@ -65,6 +92,7 @@ def get_photoshop_path():
         if os.path.exists(c):
             return c
     return "photoshop"
+
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -367,8 +395,6 @@ app.putCustomOptions("TextRetouchResultPath", new ActionDescriptor(), true);
 var desc = new ActionDescriptor();
 desc.putString(app.stringIDToTypeID("resultPath"), "{result_path_jsx}");
 app.putCustomOptions("TextRetouchResultPath", desc, true);
-
-alert("✅ Text-Retouch #{num} โหลดแล้ว! (ลูกค้าโอนเงินแล้ว)\\n\\nโจทย์: {note_escaped}\\n\\nแก้ไขเสร็จแล้วกด F12 เพื่อส่งงานให้ลูกค้าทันที (ไม่มีลายน้ำ)");
 """
     with open(jsx_path, "w", encoding="utf-8") as f:
         f.write(jsx)
@@ -388,7 +414,7 @@ alert("✅ Text-Retouch #{num} โหลดแล้ว! (ลูกค้าโ�
 # ─────────────────────────────────────────────────────────────────
 #  4. SUBMIT RESULT FROM PHOTOSHOP (F12) — แบบไม่มีลายน้ำ
 # ─────────────────────────────────────────────────────────────────
-def submit_result_from_photoshop():
+def submit_result_from_photoshop(custom_file=None):
     """
     อ่านไฟล์ผลลัพธ์จาก Photoshop แล้วส่งขึ้น Firebase แบบ Clean (ไม่มีลายน้ำ)
     เพราะลูกค้าได้ชำระเงินก่อนแล้ว
@@ -404,6 +430,12 @@ def submit_result_from_photoshop():
     patch_id = state["patch_id"]
     patch_num = state.get("patch_num", 1)
     result_path = state["result_path"]
+
+    if custom_file and os.path.exists(custom_file):
+        import shutil
+        os.makedirs(os.path.dirname(result_path), exist_ok=True)
+        shutil.copy2(custom_file, result_path)
+        print(f"[TextRetouch] คัดลอกผลลัพธ์จาก {custom_file} -> {result_path}")
 
     if not os.path.exists(result_path):
         desktop = os.path.join(os.path.expanduser("~"), "Desktop")
@@ -487,7 +519,8 @@ if __name__ == "__main__":
         elif action == "--paid" and len(sys.argv) > 3:
             mark_patch_paid(sys.argv[2], sys.argv[3])
         elif action == "--submit":
-            submit_result_from_photoshop()
+            custom_arg = sys.argv[2] if len(sys.argv) > 2 else None
+            submit_result_from_photoshop(custom_arg)
         else:
             print("Usage:")
             print("  python text_retouch_engine.py --review <session_id> <patch_id>")
