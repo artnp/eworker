@@ -248,7 +248,15 @@
                     <p>ระบบตรวจสอบโจทย์ · คิดราคา · ปฏิเสธงาน · ส่งงานเข้า Photoshop</p>
                 </div>
             </div>
-            <div style="display:flex; align-items:center; gap:12px;">
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:6px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:10px; padding:4px 10px;">
+                    <span style="font-size:0.8rem; font-weight:700; color:#475569;">สถานะร้าน:</span>
+                    <select id="shopStatusSelect" onchange="setShopStatus(this.value)" style="border:none; background:transparent; font-weight:700; font-size:0.82rem; color:#0f172a; cursor:pointer; outline:none;">
+                        <option value="online">🟢 พร้อมรับงานทันที</option>
+                        <option value="away">🟡 กำลังงีบอยู่ Zzz</option>
+                        <option value="offline">🔴 ร้านปิด</option>
+                    </select>
+                </div>
                 <div class="live-badge">
                     <span class="pulse-dot"></span>
                     <span id="connectionStatus">เชื่อมต่อ Firebase แล้ว</span>
@@ -304,6 +312,21 @@
                 osc.start();
                 osc.stop(ctx.currentTime + 0.6);
             } catch(e) {}
+        }
+
+        // Listen to Shop Status
+        db.ref('text_retouch_status').on('value', snap => {
+            const val = snap.val() || 'online';
+            const sel = document.getElementById('shopStatusSelect');
+            if (sel) sel.value = val;
+        });
+
+        async function setShopStatus(val) {
+            try {
+                await db.ref('text_retouch_status').set(val);
+            } catch(e) {
+                alert('เกิดข้อผิดพลาดในการเปลี่ยนสถานะ: ' + e.message);
+            }
         }
 
         // Listen to Firebase
