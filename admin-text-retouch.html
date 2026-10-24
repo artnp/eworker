@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ Text-Retouch | ระบบหลังบ้านประเมินราคา & ตรวจสอบงาน</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+    <style>
+        :root {
+            --primary: #6366f1;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #070b14;
+            --card-bg: #0f172a;
+            --card-surface: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.08);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Sarabun', 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .brand-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 44px; height: 44px;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; color: white;
+            box-shadow: 0 4px 20px rgba(99,102,241,0.4);
+        }
+
+        .brand-text h1 {
+            font-size: 1.4rem; font-weight: 800; font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #f1f5f9, #a5b4fc);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .brand-text p { font-size: 0.78rem; color: var(--text-muted); }
+
+        .live-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34d399; padding: 6px 14px; border-radius: 50px; font-size: 0.82rem; font-weight: 600;
+        }
+        .pulse-dot {
+            width: 8px; height: 8px; background: #10b981; border-radius: 50%;
+            box-shadow: 0 0 10px #10b981; animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 16px; padding: 18px 20px;
+        }
+        .stat-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; }
+        .stat-value { font-size: 1.8rem; font-weight: 800; font-family: 'Outfit', sans-serif; }
+        .stat-pending { color: var(--warning); }
+        .stat-paid { color: #38bdf8; }
+        .stat-done { color: var(--success); }
+
+        /* Section Title */
+        .section-title {
+            font-size: 1.15rem; font-weight: 700; margin-bottom: 16px;
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        /* Review Grid */
+        .jobs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(520px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        @media (max-width: 600px) {
+            .jobs-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Job Card */
+        .job-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .job-card:hover { transform: translateY(-2px); border-color: rgba(99,102,241,0.4); }
+        .job-card.is-pending { border-color: rgba(245, 158, 11, 0.5); }
+
+        .job-header {
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .job-badge {
+            font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 8px;
+        }
+        .badge-pending { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-paid { background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.3); }
+        .badge-working { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+        .badge-done { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-rejected { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+        .job-body {
+            padding: 18px;
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 16px;
+        }
+        @media (max-width: 500px) {
+            .job-body { grid-template-columns: 1fr; }
+        }
+
+        .patch-preview-wrap {
+            background: #020617;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 8px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .patch-preview-img {
+            max-width: 100%; max-height: 180px; object-fit: contain; border-radius: 6px;
+        }
+
+        .job-info {
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .note-box {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 0.92rem;
+            color: #f1f5f9;
+            line-height: 1.5;
+            min-height: 60px;
+        }
+
+        /* Decision Section */
+        .decision-section {
+            padding: 14px 18px;
+            background: rgba(15, 23, 42, 0.4);
+            border-top: 1px solid var(--border);
+            display: flex; flex-direction: column; gap: 12px;
+        }
+
+        .quote-row {
+            display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+        }
+        .price-input-wrap {
+            display: flex; align-items: center; background: #020617; border: 1px solid var(--border);
+            border-radius: 8px; padding: 0 10px; height: 38px;
+        }
+        .price-input-wrap span { color: #34d399; font-weight: 700; margin-right: 4px; }
+        .price-input {
+            width: 80px; background: transparent; border: none; color: white;
+            font-size: 1.1rem; font-weight: 700; outline: none;
+        }
+
+        .quick-btn {
+            background: var(--card-surface); border: 1px solid var(--border);
+            color: var(--text-muted); border-radius: 6px; padding: 6px 10px;
+            font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+        }
+        .quick-btn:hover { background: #334155; color: white; }
+
+        .btn-action {
+            border: none; border-radius: 8px; padding: 9px 14px;
+            font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .btn-quote {
+            background: linear-gradient(135deg, #10b981, #059669); color: white;
+            box-shadow: 0 2px 10px rgba(16,185,129,0.3);
+        }
+        .btn-quote:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+        .reject-row {
+            display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+        }
+        .reject-select {
+            background: #020617; border: 1px solid var(--border); color: #f87171;
+            border-radius: 8px; padding: 8px 10px; font-size: 0.82rem; outline: none; flex: 1; min-width: 180px;
+        }
+        .btn-reject {
+            background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444; padding: 8px 14px;
+        }
+        .btn-reject:hover { background: rgba(239, 68, 68, 0.25); }
+
+        .btn-open-ps {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;
+            padding: 9px 16px; border-radius: 8px; font-weight: 700; border: none; cursor: pointer;
+        }
+        .btn-open-ps:hover { filter: brightness(1.1); }
+
+        .empty-card {
+            background: var(--card-bg); border: 1px dashed var(--border);
+            border-radius: 16px; padding: 40px; text-align: center; color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Top Bar -->
+        <header class="header">
+            <div class="brand-title">
+                <div class="brand-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+                <div class="brand-text">
+                    <h1>Text-Retouch Admin Dashboard</h1>
+                    <p>ระบบตรวจสอบโจทย์ · คิดราคา · ปฏิเสธงาน · ส่งงานเข้า Photoshop</p>
+                </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div class="live-badge">
+                    <span class="pulse-dot"></span>
+                    <span id="connectionStatus">เชื่อมต่อ Firebase แล้ว</span>
+                </div>
+                <button onclick="playChime()" class="quick-btn" title="ทดสอบเสียงเตือน"><i class="fa-solid fa-volume-high"></i> ทดสอบเสียง</button>
+            </div>
+        </header>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">⏳ รอประเมินราคา / ตรวจสอบ</div>
+                <div class="stat-value stat-pending" id="statPending">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">💳 ลูกค้าชำระเงินแล้ว (พร้อมทำ)</div>
+                <div class="stat-value stat-paid" id="statPaid">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">🎨 ช่างกำลังทำใน Photoshop</div>
+                <div class="stat-value" style="color:#a855f7;" id="statWorking">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">✅ ส่งงานสำเร็จแล้ว</div>
+                <div class="stat-value stat-done" id="statDone">0</div>
+            </div>
+        </div>
+
+        <!-- Section: งานรอคิดราคา -->
+        <div class="section-title">
+            <i class="fa-solid fa-bell" style="color:var(--warning);"></i>
+            <span>งานรอประเมินราคา & ตรวจสอบความถูกต้อง</span>
+        </div>
+        <div class="jobs-grid" id="pendingGrid">
+            <div class="empty-card" id="pendingEmpty">
+                <i class="fa-solid fa-circle-check" style="font-size:2rem;color:#10b981;margin-bottom:10px;display:block;"></i>
+                ยังไม่มีงานใหม่ที่รอประเมินราคา
+            </div>
+        </div>
+
+        <!-- Section: งานอื่นๆ (ชำระแล้ว / กำลังทำ / เสร็จแล้ว) -->
+        <div class="section-title">
+            <i class="fa-solid fa-list-check" style="color:var(--primary);"></i>
+            <span>คิวงานอื่นๆ (ชำระแล้ว / กำลังทำ / เสร็จสิ้น)</span>
+        </div>
+        <div class="jobs-grid" id="otherGrid">
+            <div class="empty-card" id="otherEmpty">
+                ยังไม่มีคิวงานอื่น
+            </div>
+        </div>
+    </div>
+
+    <!-- Script -->
+    <script>
+        const DB_URL = "https://retouch-ebid-default-rtdb.asia-southeast1.firebasedatabase.app";
+        firebase.initializeApp({ databaseURL: DB_URL });
+        const db = firebase.database();
+
+        let knownPending = new Set();
+        let soundEnabled = true;
+
+        function playChime() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+                osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.1); // A5
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.6);
+            } catch(e) {}
+        }
+
+        // Listen to Firebase
+        db.ref('text_retouch').on('value', snap => {
+            const data = snap.val() || {};
+            renderAll(data);
+        });
+
+        function renderAll(allSessions) {
+            let pendingHtml = '';
+            let otherHtml = '';
+            let countPending = 0, countPaid = 0, countWorking = 0, countDone = 0;
+
+            let hasNewPending = false;
+
+            Object.entries(allSessions).forEach(([sid, session]) => {
+                if (!session || typeof session !== 'object') return;
+                const patches = session.patches || {};
+                Object.entries(patches).forEach(([pid, patch]) => {
+                    if (!patch || typeof patch !== 'object') return;
+                    const status = patch.status || 'waiting';
+                    const num = patch.num || 1;
+                    const note = patch.note || '(ไม่มีโน้ต)';
+                    const price = patch.price || 0;
+                    const imgUrl = patch.patchImage ? `data:image/jpeg;base64,${patch.patchImage}` : '';
+                    const key = `${sid}_${pid}`;
+
+                    if (status === 'pending_review') {
+                        countPending++;
+                        if (!knownPending.has(key)) {
+                            knownPending.add(key);
+                            hasNewPending = true;
+                        }
+                        pendingHtml += renderPendingCard(sid, pid, num, note, imgUrl);
+                    } else {
+                        if (status === 'paid') countPaid++;
+                        else if (status === 'working') countWorking++;
+                        else if (status === 'done') countDone++;
+                        otherHtml += renderOtherCard(sid, pid, num, note, status, price, imgUrl, patch.resultImage);
+                    }
+                });
+            });
+
+            if (hasNewPending) {
+                playChime();
+            }
+
+            // Update stats
+            document.getElementById('statPending').textContent = countPending;
+            document.getElementById('statPaid').textContent = countPaid;
+            document.getElementById('statWorking').textContent = countWorking;
+            document.getElementById('statDone').textContent = countDone;
+
+            // Render pending
+            const pendingGrid = document.getElementById('pendingGrid');
+            if (pendingHtml) {
+                pendingGrid.innerHTML = pendingHtml;
+            } else {
+                pendingGrid.innerHTML = `
+                    <div class="empty-card" style="grid-column: 1 / -1;">
+                        <i class="fa-solid fa-circle-check" style="font-size:2rem;color:#10b981;margin-bottom:10px;display:block;"></i>
+                        ไม่มีงานใหม่ที่รอประเมินราคา
+                    </div>`;
+            }
+
+            // Render other
+            const otherGrid = document.getElementById('otherGrid');
+            if (otherHtml) {
+                otherGrid.innerHTML = otherHtml;
+            } else {
+                otherGrid.innerHTML = `
+                    <div class="empty-card" style="grid-column: 1 / -1;">
+                        ยังไม่มีคิวงานอื่น
+                    </div>`;
+            }
+        }
+
+        function renderPendingCard(sid, pid, num, note, imgUrl) {
+            return `
+            <div class="job-card is-pending" id="card_${pid}">
+                <div class="job-header">
+                    <span style="font-weight:700; font-size:0.95rem;">จุดที่ #${num}</span>
+                    <span class="job-badge badge-pending">⏳ รอประเมินราคา</span>
+                </div>
+                <div class="job-body">
+                    <div class="patch-preview-wrap">
+                        ${imgUrl ? `<img class="patch-preview-img" src="${imgUrl}" alt="Patch">` : '<span>ไม่มีภาพ</span>'}
+                    </div>
+                    <div class="job-info">
+                        <span style="font-size:0.78rem; color:var(--text-muted);">📝 คำสั่ง / โน้ตจากลูกค้า:</span>
+                        <div class="note-box">${escapeHtml(note)}</div>
+                        <span style="font-size:0.72rem; color:var(--text-muted); font-family:monospace;">Session: ${sid}</span>
+                    </div>
+                </div>
+                <div class="decision-section">
+                    <!-- เสนอราคา -->
+                    <div class="quote-row">
+                        <div class="price-input-wrap">
+                            <span>฿</span>
+                            <input type="number" class="price-input" id="price_${pid}" value="100">
+                        </div>
+                        <button class="quick-btn" onclick="setPrice('${pid}', 50)">฿50</button>
+                        <button class="quick-btn" onclick="setPrice('${pid}', 100)">฿100</button>
+                        <button class="quick-btn" onclick="setPrice('${pid}', 150)">฿150</button>
+                        <button class="quick-btn" onclick="setPrice('${pid}', 200)">฿200</button>
+                        <button class="btn-action btn-quote" onclick="submitQuote('${sid}', '${pid}')">
+                            <i class="fa-solid fa-paper-plane"></i> ส่งราคาให้ลูกค้าโอน
+                        </button>
+                    </div>
+
+                    <!-- ปฏิเสธงาน -->
+                    <div class="reject-row">
+                        <select class="reject-select" id="rejectReason_${pid}">
+                            <option value="เสี่ยงต่อกฎหมาย / เอกสารราชการ / ปลอมแปลง">⚖️ เสี่ยงต่อกฎหมาย / เอกสารราชการ</option>
+                            <option value="มีลายเซ็นต์ติด">✍️ มีลายเซ็นต์ติด</option>
+                            <option value="ติดตราครุฑ">🦅 ติดตราครุฑ</option>
+                            <option value="ภาพไม่ชัดเจน ไม่สามารถแก้ไขได้">⚠️ ภาพไม่ชัดเจน ไม่สามารถแก้ไขได้</option>
+                        </select>
+                        <button class="btn-action btn-reject" onclick="submitReject('${sid}', '${pid}')">
+                            <i class="fa-solid fa-ban"></i> ปฏิเสธงาน
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function renderOtherCard(sid, pid, num, note, status, price, imgUrl, resultImg) {
+            const badgeClass = status === 'paid' ? 'badge-paid' :
+                               status === 'working' ? 'badge-working' :
+                               status === 'done' ? 'badge-done' : 'badge-rejected';
+            const statusLabel = status === 'paid' ? '💳 ชำระแล้ว (พร้อมทำ)' :
+                                status === 'working' ? '🎨 กำลังทำใน PS' :
+                                status === 'done' ? '✅ เสร็จสมบูรณ์' : '❌ ปฏิเสธงาน';
+
+            return `
+            <div class="job-card">
+                <div class="job-header">
+                    <span style="font-weight:700; font-size:0.95rem;">จุดที่ #${num} ${price > 0 ? `<span style="color:#10b981;margin-left:8px;">฿${price}</span>` : ''}</span>
+                    <span class="job-badge ${badgeClass}">${statusLabel}</span>
+                </div>
+                <div class="job-body">
+                    <div class="patch-preview-wrap">
+                        ${imgUrl ? `<img class="patch-preview-img" src="${imgUrl}" alt="Patch">` : '<span>ไม่มีภาพ</span>'}
+                    </div>
+                    <div class="job-info">
+                        <span style="font-size:0.78rem; color:var(--text-muted);">📝 โน้ต:</span>
+                        <div class="note-box">${escapeHtml(note)}</div>
+                        ${status === 'paid' ? `
+                            <button class="btn-action btn-open-ps" onclick="openInPhotoshop('${sid}', '${pid}')">
+                                <i class="fa-solid fa-paintbrush"></i> เปิดเข้า Photoshop ทันที
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function setPrice(pid, val) {
+            const el = document.getElementById(`price_${pid}`);
+            if (el) el.value = val;
+        }
+
+        async function submitQuote(sid, pid) {
+            const priceEl = document.getElementById(`price_${pid}`);
+            const price = parseFloat(priceEl?.value || 0);
+            if (price <= 0) {
+                alert('กรุณาระบุราคามากกว่า 0 บาท');
+                return;
+            }
+            try {
+                await db.ref(`text_retouch/${sid}/patches/${pid}`).update({
+                    status: 'pending_payment',
+                    price: price,
+                    quotedAt: Date.now()
+                });
+                alert(`✅ ส่งราคา ฿${price} ให้ลูกค้าแล้ว!\n\nหน้าจอลูกค้าจะเด้ง PromptPay QR ให้โอนเงินทันที`);
+            } catch(e) {
+                alert('เกิดข้อผิดพลาด: ' + e.message);
+            }
+        }
+
+        async function submitReject(sid, pid) {
+            const reasonEl = document.getElementById(`rejectReason_${pid}`);
+            const reason = reasonEl?.value || 'ไม่สามารถรับงานนี้ได้';
+            if (!confirm(`ยืนยันปฏิเสธงานจุดนี้?\n\nเหตุผล: ${reason}`)) return;
+
+            try {
+                await db.ref(`text_retouch/${sid}/patches/${pid}`).update({
+                    status: 'rejected',
+                    rejectReason: reason,
+                    rejectedAt: Date.now()
+                });
+                alert('❌ ปฏิเสธงานเรียบร้อย');
+            } catch(e) {
+                alert('เกิดข้อผิดพลาด: ' + e.message);
+            }
+        }
+
+        async function openInPhotoshop(sid, pid) {
+            try {
+                const res = await fetch(`http://127.0.0.1:37791/text-retouch-paid`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: sid, patch_id: pid })
+                });
+                alert('🎨 สั่งเปิด Photoshop เรียบร้อย');
+            } catch(e) {
+                alert('เรียก server ล้มเหลว กรุณาตรวจสอบว่า auto_donate_watcher.py กำลังรันอยู่');
+            }
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
