@@ -1509,7 +1509,8 @@
         <!-- Ultra-Compact Gemini Bar (Centered - All on single unified row) -->
         <div class="quota-panel" id="quota-panel"
             style="margin: 8px auto 0 auto; padding: 6px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; width: fit-content; max-width: 100%; box-sizing: border-box;">
-            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: nowrap; white-space: nowrap; max-width: 100%; overflow-x: auto;">
+            <div
+                style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: nowrap; white-space: nowrap; max-width: 100%; overflow-x: auto;">
                 <h3 style="margin: 0; font-size: 0.85rem; color: var(--text-sub); white-space: nowrap; cursor: pointer; display: flex; align-items: center; gap: 4px; flex-shrink: 0;"
                     onclick="const g = document.getElementById('quota-grid'); const isOpen = g.style.display !== 'none'; g.style.display = isOpen ? 'none' : 'grid'; if (!isOpen) loadQuotaStatus();">
                     <span>🔑 Gemini:</span>
@@ -1559,322 +1560,327 @@
             <div id="watermark-check-container"
                 style="flex: 0 0 880px; width: 880px; max-width: 880px; margin: 0; padding: 15px; background: var(--surface); border: 2px dashed var(--border); border-radius: 16px; text-align: center; box-shadow: 0 4px 16px rgba(0,0,0,0.3); min-height: 50px; display: flex; flex-direction: column; justify-content: center; position: relative; transition: all 0.25s ease; box-sizing: border-box;">
 
-            <!-- Drag & Drop Visual Overlay -->
-            <div id="watermark-drop-overlay"
-                style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 20, 32, 0.95); border: 2.5px dashed #6366f1; border-radius: 16px; z-index: 50; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(4px); pointer-events: none; transition: all 0.2s ease;">
-                <span style="font-size: 2.4rem; margin-bottom: 8px;">📥</span>
-                <span
-                    style="font-size: 1.05rem; font-weight: 700; color: #a5b4fc;">วางไฟล์ภาพที่นี่เพื่อจัดการทันที</span>
-                <span style="font-size: 0.78rem; color: #818cf8; margin-top: 4px;">ครอป 4 ทิศทาง • AI Enhancer •
-                    ลบลายน้ำ • ขยายภาพ AI • ลบฉากหลัง</span>
-            </div>
+                <!-- Drag & Drop Visual Overlay -->
+                <div id="watermark-drop-overlay"
+                    style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 20, 32, 0.95); border: 2.5px dashed #6366f1; border-radius: 16px; z-index: 50; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(4px); pointer-events: none; transition: all 0.2s ease;">
+                    <span style="font-size: 2.4rem; margin-bottom: 8px;">📥</span>
+                    <span
+                        style="font-size: 1.05rem; font-weight: 700; color: #a5b4fc;">วางไฟล์ภาพที่นี่เพื่อจัดการทันที</span>
+                    <span style="font-size: 0.78rem; color: #818cf8; margin-top: 4px;">ครอป 4 ทิศทาง • AI Enhancer •
+                        ลบลายน้ำ • ขยายภาพ AI • ลบฉากหลัง</span>
+                </div>
 
-            <!-- Hidden File Input for Direct Upload -->
-            <input type="file" id="watermark-file-input" accept="image/*" style="display: none;"
-                onchange="handleWatermarkFileInput(this)">
+                <!-- Hidden File Input for Direct Upload -->
+                <input type="file" id="watermark-file-input" accept="image/*" style="display: none;"
+                    onchange="handleWatermarkFileInput(this)">
 
-            <div id="watermark-check-content" style="display: none; position: relative;">
+                <div id="watermark-check-content" style="display: none; position: relative;">
 
-                <!-- AI Upscale Progress Bar Panel -->
-                <div id="upscale-progress-panel"
-                    style="display: none; margin-bottom: 14px; padding: 12px 16px; background: linear-gradient(135deg, #171d2b 0%, #1e1b4b 100%); border: 1.5px solid #3730a3; border-radius: 12px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); text-align: left; transition: all 0.3s ease;">
+                    <!-- AI Upscale Progress Bar Panel -->
+                    <div id="upscale-progress-panel"
+                        style="display: none; margin-bottom: 14px; padding: 12px 16px; background: linear-gradient(135deg, #171d2b 0%, #1e1b4b 100%); border: 1.5px solid #3730a3; border-radius: 12px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3); text-align: left; transition: all 0.3s ease;">
 
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span
-                                style="font-size: 1.1rem; display: inline-block; animation: spin 1.2s linear infinite;">⚡</span>
-                            <span id="upscale-step-title" style="font-size: 0.85rem; font-weight: 700; color: #c7d2fe;">
-                                ขั้นตอนที่ 1/3: กำลังเชื่อมต่อ Cloudinary AI Cloud...
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span
+                                    style="font-size: 1.1rem; display: inline-block; animation: spin 1.2s linear infinite;">⚡</span>
+                                <span id="upscale-step-title"
+                                    style="font-size: 0.85rem; font-weight: 700; color: #c7d2fe;">
+                                    ขั้นตอนที่ 1/3: กำลังเชื่อมต่อ Cloudinary AI Cloud...
+                                </span>
+                            </div>
+                            <span id="upscale-pct-badge"
+                                style="font-size: 0.85rem; font-weight: 800; color: #818cf8; background: rgba(99, 102, 241, 0.2); padding: 2px 8px; border-radius: 20px;">
+                                0%
                             </span>
                         </div>
-                        <span id="upscale-pct-badge"
-                            style="font-size: 0.85rem; font-weight: 800; color: #818cf8; background: rgba(99, 102, 241, 0.2); padding: 2px 8px; border-radius: 20px;">
-                            0%
+
+                        <!-- Progress Bar Track -->
+                        <div
+                            style="width: 100%; height: 9px; background: #232d42; border-radius: 10px; overflow: hidden; position: relative; margin-bottom: 6px;">
+                            <div id="upscale-progress-fill"
+                                style="width: 0%; height: 100%; background: linear-gradient(90deg, #4f46e5 0%, #10b981 100%); border-radius: 10px; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 8px rgba(79, 70, 229, 0.4);">
+                            </div>
+                        </div>
+
+                        <!-- Steps Timeline & Details -->
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: #818cf8;">
+                            <div style="display: flex; gap: 12px;">
+                                <span id="upscale-step-1" style="font-weight: 600; color: #a5b4fc;">📁 1.
+                                    เชื่อมต่อคลาวด์</span>
+                                <span id="upscale-step-2" style="font-weight: 600; color: #64748b;">🤖 2. Cloud AI
+                                    Enhancer</span>
+                                <span id="upscale-step-3" style="font-weight: 600; color: #64748b;">🔒 3.
+                                    สร้างลายน้ำ</span>
+                            </div>
+                            <span id="upscale-detail-text"
+                                style="color: #94a3b8; font-size: 0.70rem;">เริ่มต้นคำนวณ...</span>
+                        </div>
+                    </div>
+
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <p style="font-size: 0.85rem; color: #f87171; margin: 0; font-weight: 600; cursor: default;">
+                            ตรวจเช็คและครอปภาพ 4 ทิศทาง (คลิกตำแหน่งที่ต้องการตัด)</p>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <button type="button" onclick="document.getElementById('watermark-file-input').click()"
+                                style="padding: 4px 10px; font-size: 0.72rem; font-weight: 600; color: #a5b4fc; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s ease;"
+                                title="คลิกเพื่อเลือกไฟล์ภาพใหม่ หรือลากไฟล์ภาพมาปล่อยที่นี่ได้ตลอดเวลา">
+                                <span>📥 นำเข้าภาพใหม่</span>
+                                <span style="font-size: 0.65rem; color: #818cf8;">(หรือลากมาวาง)</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div
+                        style="display:flex; flex-wrap:nowrap; gap:6px; align-items:center; margin:0 0 12px; padding:7px 10px; border:1px solid rgba(34, 197, 94, 0.3); border-radius:10px; background:rgba(16, 185, 129, 0.1); overflow-x:auto;">
+                        <span
+                            style="font-size:.74rem; font-weight:700; color:#4ade80; white-space:nowrap; flex-shrink:0;"
+                            title="ยอดใน QR ของ example.png">💳 ยอดใน QR</span>
+                        <label
+                            style="font-size:.73rem; color:#86efac; cursor:pointer; white-space:nowrap; flex-shrink:0;"><input
+                                type="radio" name="qr-amount-option" value="60" checked
+                                onchange="selectQrAmountOption(this)"> 60
+                            บาท</label>
+                        <label
+                            style="font-size:.73rem; color:#86efac; cursor:pointer; white-space:nowrap; flex-shrink:0;"><input
+                                type="radio" name="qr-amount-option" value="100" onchange="selectQrAmountOption(this)">
+                            100
+                            บาท</label>
+                        <input id="custom-qr-amount" type="number" min="0.01" max="999999.99" step="0.01"
+                            inputmode="decimal" oninput="selectCustomQrAmount()"
+                            style="width:82px; padding:4px 6px; border:1px solid rgba(34, 197, 94, 0.4); background:#151b26; color:#e2e8f0; border-radius:7px; font:inherit; font-size:.74rem; flex-shrink:0;">
+                        <button id="update-example-qr-btn" type="button" onclick="updateExampleQr()"
+                            style="padding:5px 9px; border:0; border-radius:7px; color:#fff; background:#16a34a; font:inherit; font-size:.74rem; font-weight:700; cursor:pointer; white-space:nowrap; flex-shrink:0;">อัปเดต
+                            QR</button>
+                        <div style="margin-left:auto; display:inline-flex; align-items:center; gap:6px; flex-shrink:0;">
+                            <!-- Status / Progress Bar Tag Container -->
+                            <div id="send-work-status-tag" style="display:none; align-items:center;">
+                                <!-- In-progress state: mini progress bar -->
+                                <div id="send-work-progress-box"
+                                    style="display:none; align-items:center; gap:5px; padding:2px 7px; background:rgba(30,41,59,0.85); border:1px solid rgba(59,130,246,0.35); border-radius:7px; backdrop-filter:blur(4px); white-space:nowrap;">
+                                    <span
+                                        style="font-size:0.68rem; color:#93c5fd; font-weight:600; white-space:nowrap; display:inline-flex; align-items:center; gap:3px;">
+                                        <span style="display:inline-block; animation:spin 1s linear infinite;">⚡</span>
+                                        อัปโหลด...
+                                    </span>
+                                    <div
+                                        style="width:55px; height:5px; background:rgba(255,255,255,0.12); border-radius:3px; overflow:hidden;">
+                                        <div id="send-work-progress-bar"
+                                            style="width:15%; height:100%; background:linear-gradient(90deg, #3b82f6, #60a5fa); border-radius:3px; transition:width 0.3s ease;">
+                                        </div>
+                                    </div>
+                                    <span id="send-work-progress-pct"
+                                        style="font-size:0.65rem; color:#60a5fa; font-weight:700;">15%</span>
+                                </div>
+                                <!-- Success Tag -->
+                                <div id="send-work-success-tag"
+                                    style="display:none; align-items:center; gap:4px; padding:2px 8px; background:rgba(34,197,94,0.18); border:1px solid rgba(34,197,94,0.45); border-radius:7px; color:#4ade80; font-size:0.71rem; font-weight:700; box-shadow:0 0 10px rgba(34,197,94,0.2); white-space:nowrap;">
+                                    <span>✅ คัดลอกลิงก์สำเร็จแล้ว!</span>
+                                </div>
+                            </div>
+                            <button id="send-work-link-btn" type="button" onclick="sendWorkLink()"
+                                style="padding:5px 11px; border:0; border-radius:7px; color:#fff; background:#2563eb; font:inherit; font-size:.74rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(37,99,235,0.3); transition:all .2s ease; white-space:nowrap; flex-shrink:0;"
+                                title="อัปโหลดส่งงานพร้อมกำหนดยอดเงินและคัดลอกลิงก์อัตโนมัติ">🔗 ลิ้งค์ส่งงาน</button>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 12px; align-items: stretch; justify-content: center; width: 100%;">
+
+                        <!-- Left Crop Column -->
+                        <div
+                            style="flex: 1; min-width: 120px; max-width: 180px; display: flex; flex-direction: column; align-items: center; border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #131922;">
+                            <span
+                                style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬅️
+                                ซ้าย</span>
+                            <div
+                                style="width: 100%; height: 260px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #0b0f15; border: 1px solid var(--border); border-radius: 6px;">
+                                <canvas id="crop-canvas-left"
+                                    style="max-width: 100%; max-height: 100%; object-fit: contain; cursor: w-resize; display: block;"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Center Column (Top & Bottom Crop) -->
+                        <div
+                            style="flex: 2; display: flex; flex-direction: column; gap: 12px; justify-content: space-between;">
+                            <!-- Top Crop Panel -->
+                            <div
+                                style="display: flex; flex-direction: column; align-items: center; border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #131922; flex: 1;">
+                                <span
+                                    style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬆️
+                                    บน</span>
+                                <div
+                                    style="width: 100%; height: 110px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #0b0f15; border: 1px solid var(--border); border-radius: 6px;">
+                                    <canvas id="crop-canvas-top"
+                                        style="width: 100%; height: auto; max-height: 100%; object-fit: contain; cursor: n-resize; display: block;"></canvas>
+                                </div>
+                            </div>
+                            <!-- Bottom Crop Panel -->
+                            <div
+                                style="display: flex; flex-direction: column; align-items: center; border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #131922; flex: 1;">
+                                <span
+                                    style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬇️
+                                    ล่าง</span>
+                                <div
+                                    style="width: 100%; height: 110px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #0b0f15; border: 1px solid var(--border); border-radius: 6px;">
+                                    <canvas id="crop-canvas-bottom"
+                                        style="width: 100%; height: auto; max-height: 100%; object-fit: contain; cursor: s-resize; display: block;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Crop Column -->
+                        <div
+                            style="flex: 1; min-width: 120px; max-width: 180px; display: flex; flex-direction: column; align-items: center; border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #131922;">
+                            <span
+                                style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">➡️
+                                ขวา</span>
+                            <div
+                                style="width: 100%; height: 260px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #0b0f15; border: 1px solid var(--border); border-radius: 6px;">
+                                <canvas id="crop-canvas-right"
+                                    style="max-width: 100%; max-height: 100%; object-fit: contain; cursor: e-resize; display: block;"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Tools / Clone Stamp / Upscale / Extender / Remove BG Column (Single Vertical Column) -->
+                        <div
+                            style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 6px; border: 1px solid var(--border); border-radius: 12px; padding: 8px 6px; background: #131922; width: 92px; min-width: 90px;">
+                            <span
+                                style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 1px;">เครื่องมือ</span>
+
+                            <!-- แถบโควต้า Cloudinary รวม (แยกไว้ข้างนอกปุ่ม) -->
+                            <div id="btn-quota-details" onclick="loadCloudinaryQuota(true)"
+                                style="width: 78px; padding: 3px 2px; border-radius: 8px; background: linear-gradient(135deg, #1e2538 0%, #171d2b 100%); border: 1px solid #334155; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; line-height: 1.15; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); transition: all 0.2s ease; margin-bottom: 2px;"
+                                title="โควต้า Cloudinary รวม (คลิกเพื่อดูสรุปทุกบัญชี)">
+                                <div style="display: flex; align-items: center; gap: 2px;">
+                                    <span style="font-size: 0.52rem; color: #a5b4fc; font-weight: 700;">☁️ บัญชี</span>
+                                    <span id="quota-acc-name"
+                                        style="font-size: 0.54rem; font-weight: 700; color: #a5b4fc; white-space: nowrap;">1/7</span>
+                                </div>
+                                <span id="quota-acc-credits"
+                                    style="font-size: 0.52rem; font-weight: 700; color: #34d399; white-space: nowrap;">เหลือ
+                                    71.1%</span>
+                            </div>
+
+                            <!-- 1. Enhancer AI Button -->
+                            <button id="btn-upscale" onclick="triggerUpscale(null, 1, 'cloudinary_enhancer')"
+                                style="width: 78px; height: 68px; border-radius: 12px; border: 1px solid #4338ca; background: linear-gradient(135deg, #1e1b4b 0%, #18202c 100%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); transition: all 0.2s ease-in-out; padding: 5px 2px;"
+                                title="AI Enhancer: ปรับความคมชัด กู้คืนรายละเอียด และลดความเบลอด้วย Cloudinary AI (ทับ complete.png และสร้าง example.png)">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#818cf8"
+                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+                                    style="margin-bottom: 2px; transition: transform 0.2s ease;">
+                                    <path
+                                        d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1 1.275-1.275L12 3Z" />
+                                    <path d="M5 3v4" />
+                                    <path d="M19 17v4" />
+                                    <path d="M3 5h4" />
+                                    <path d="M17 19h4" />
+                                </svg>
+                                <span id="btn-enhancer-text"
+                                    style="font-size: 0.62rem; font-weight: 700; color: #c7d2fe; white-space: nowrap; line-height: 1.1;">Enhance
+                                    AI</span>
+                                <span
+                                    style="font-size: 0.50rem; color: #a5b4fc; font-weight: 600;">ปรับชัดกู้เบลอ</span>
+                            </button>
+
+                            <!-- 2. Remove Watermark Button (Cloudinary AI Inpaint) -->
+                            <button id="btn-clone-stamp" onclick="toggleCloneStampMode()"
+                                style="width: 78px; height: 68px; border-radius: 12px; border: 1px solid #1e40af; background: linear-gradient(135deg, #172554 0%, #18202c 100%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); transition: all 0.2s ease-in-out; padding: 5px 2px;"
+                                title="ลบลายน้ำ AI (วงตำแหน่งเฉพาะจุด): กดปุ่มนี้แล้วคลิกวงตำแหน่งลายน้ำบนภาพ หรือลากกรอบ Marquee ใน Photopea แล้วกดปุ่มนี้">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60a5fa"
+                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+                                    style="margin-bottom: 2px; transition: transform 0.2s ease;">
+                                    <circle cx="12" cy="12" r="8" stroke-dasharray="3 3" />
+                                    <path d="M12 2v4" />
+                                    <path d="M12 18v4" />
+                                    <path d="M2 12h4" />
+                                    <path d="M18 12h4" />
+                                    <circle cx="12" cy="12" r="2" fill="#60a5fa" />
+                                </svg>
+                                <span
+                                    style="font-size: 0.62rem; font-weight: 700; color: #93c5fd; white-space: nowrap; line-height: 1.1;">ลบลายน้ำ</span>
+                                <span style="font-size: 0.50rem; color: #60a5fa; font-weight: 600;">วงตำแหน่ง AI</span>
+                            </button>
+
+                            <!-- 3. AI Extender (เพิ่มตำแหน่งภาพ) Button -->
+                            <button id="btn-ai-extender" onclick="triggerDirectAIExtender(event)"
+                                style="width: 78px; height: 68px; border-radius: 12px; border: 1px solid #0369a1; background: linear-gradient(135deg, #082f49 0%, #18202c 100%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); transition: all 0.2s ease-in-out; padding: 5px 2px;"
+                                title="ขยายภาพ AI (Cloudinary AI Image Extender): ขยายขอบภาพ 20% ทุกทิศทางอัตโนมัติทันทีด้วย AI Generative Fill (บันทึกทับ complete.png และสร้าง example.png)">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8"
+                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+                                    style="margin-bottom: 2px; transition: transform 0.2s ease;">
+                                    <path d="M15 3h6v6" />
+                                    <path d="M9 21H3v-6" />
+                                    <path d="M21 3l-7 7" />
+                                    <path d="M3 21l7-7" />
+                                    <rect width="8" height="8" x="8" y="8" rx="2" stroke-dasharray="2 2" />
+                                </svg>
+                                <span
+                                    style="font-size: 0.62rem; font-weight: 700; color: #7dd3fc; white-space: nowrap; line-height: 1.1;">ขยายภาพ
+                                    AI</span>
+                                <span style="font-size: 0.50rem; color: #38bdf8; font-weight: 600;">+20% ทุกทิศ</span>
+                            </button>
+
+                            <!-- 4. Remove Background (ลบฉากหลัง) Button -->
+                            <button id="btn-remove-bg" onclick="triggerDirectAIRemoveBg(event)"
+                                style="width: 78px; height: 68px; border-radius: 12px; border: 1px solid #9f1239; background: linear-gradient(135deg, #4c0519 0%, #18202c 100%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); transition: all 0.2s ease-in-out; padding: 5px 2px;"
+                                title="ลบฉากหลัง (Cloudinary AI Smart Cutout): ลบฉากหลังทุกชนิดอัตโนมัติด้วย AI ให้เป็นภาพโปร่งใส PNG (บันทึกทับ complete.png และสร้าง example.png)">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fb7185"
+                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+                                    style="margin-bottom: 2px; transition: transform 0.2s ease;">
+                                    <path d="M6 3v12" />
+                                    <circle cx="6" cy="18" r="3" />
+                                    <circle cx="18" cy="6" r="3" />
+                                    <path d="m18 9-9 9" />
+                                    <path d="M18 15v6" />
+                                </svg>
+                                <span
+                                    style="font-size: 0.62rem; font-weight: 700; color: #fecdd3; white-space: nowrap; line-height: 1.1;">ลบฉากหลัง</span>
+                                <span style="font-size: 0.50rem; color: #fb7185; font-weight: 600;">AI Cutout</span>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+                <div id="watermark-check-placeholder" onclick="document.getElementById('watermark-file-input').click()"
+                    style="cursor: pointer; padding: 28px 16px; border-radius: 12px; transition: all 0.2s ease;"
+                    title="คลิกเพื่อเลือกไฟล์ หรือลากไฟล์ภาพมาปล่อยที่นี่">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                        <div
+                            style="width: 52px; height: 52px; border-radius: 50%; background: rgba(99, 102, 241, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #818cf8; margin-bottom: 2px;">
+                            📥
+                        </div>
+                        <p style="color: #c7d2fe; font-size: 0.95rem; font-weight: 700; margin: 0;">
+                            ลากไฟล์ภาพมาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์
+                        </p>
+                        <p style="color: var(--text-sub); font-size: 0.78rem; margin: 0;">
+                            จัดการได้โดยตรง: ครอป 4 ทิศทาง • AI Enhancer • ลบลายน้ำ • ขยายภาพ AI • ลบฉากหลัง
+                        </p>
+                        <span
+                            style="font-size: 0.70rem; color: var(--text-sub); background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); padding: 3px 10px; border-radius: 12px; margin-top: 4px;">
+                            (หรือภาพตัวอย่างจาก Desktop complete.png จะปรากฏที่นี่อัตโนมัติ)
                         </span>
                     </div>
-
-                    <!-- Progress Bar Track -->
-                    <div
-                        style="width: 100%; height: 9px; background: #232d42; border-radius: 10px; overflow: hidden; position: relative; margin-bottom: 6px;">
-                        <div id="upscale-progress-fill"
-                            style="width: 0%; height: 100%; background: linear-gradient(90deg, #4f46e5 0%, #10b981 100%); border-radius: 10px; transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 8px rgba(79, 70, 229, 0.4);">
-                        </div>
-                    </div>
-
-                    <!-- Steps Timeline & Details -->
-                    <div
-                        style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: #818cf8;">
-                        <div style="display: flex; gap: 12px;">
-                            <span id="upscale-step-1" style="font-weight: 600; color: #a5b4fc;">📁 1.
-                                เชื่อมต่อคลาวด์</span>
-                            <span id="upscale-step-2" style="font-weight: 600; color: #64748b;">🤖 2. Cloud AI
-                                Enhancer</span>
-                            <span id="upscale-step-3" style="font-weight: 600; color: #64748b;">🔒 3. สร้างลายน้ำ</span>
-                        </div>
-                        <span id="upscale-detail-text"
-                            style="color: #94a3b8; font-size: 0.70rem;">เริ่มต้นคำนวณ...</span>
-                    </div>
                 </div>
+            </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <p style="font-size: 0.85rem; color: #f87171; margin: 0; font-weight: 600; cursor: default;">
-                        ตรวจเช็คและครอปภาพ 4 ทิศทาง (คลิกตำแหน่งที่ต้องการตัด)</p>
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <button type="button" onclick="document.getElementById('watermark-file-input').click()"
-                            style="padding: 4px 10px; font-size: 0.72rem; font-weight: 600; color: #a5b4fc; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.2s ease;"
-                            title="คลิกเพื่อเลือกไฟล์ภาพใหม่ หรือลากไฟล์ภาพมาปล่อยที่นี่ได้ตลอดเวลา">
-                            <span>📥 นำเข้าภาพใหม่</span>
-                            <span style="font-size: 0.65rem; color: #818cf8;">(หรือลากมาวาง)</span>
-                        </button>
-                    </div>
-                </div>
+            <!-- Finished Work Preview Card (แสดงเฉพาะภาพผลงานเสร็จล้วนๆ ในตำแหน่งกรอบสีแดงด้านขวา) -->
+            <div id="finished-work-preview-container"
+                style="flex: 0 0 380px; width: 380px; max-width: 440px; min-width: 280px; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--surface); border: 2px dashed var(--border); border-radius: 16px; padding: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3); box-sizing: border-box; position: relative; transition: all 0.25s ease;">
                 <div
-                    style="display:flex; flex-wrap:nowrap; gap:6px; align-items:center; margin:0 0 12px; padding:7px 10px; border:1px solid rgba(34, 197, 94, 0.3); border-radius:10px; background:rgba(16, 185, 129, 0.1); overflow-x:auto;">
-                    <span style="font-size:.74rem; font-weight:700; color:#4ade80; white-space:nowrap; flex-shrink:0;"
-                        title="ยอดใน QR ของ example.png">💳 ยอดใน QR</span>
-                    <label
-                        style="font-size:.73rem; color:#86efac; cursor:pointer; white-space:nowrap; flex-shrink:0;"><input
-                            type="radio" name="qr-amount-option" value="60" checked
-                            onchange="selectQrAmountOption(this)"> 60
-                        บาท</label>
-                    <label
-                        style="font-size:.73rem; color:#86efac; cursor:pointer; white-space:nowrap; flex-shrink:0;"><input
-                            type="radio" name="qr-amount-option" value="100" onchange="selectQrAmountOption(this)"> 100
-                        บาท</label>
-                    <input id="custom-qr-amount" type="number" min="0.01" max="999999.99" step="0.01"
-                        inputmode="decimal" oninput="selectCustomQrAmount()"
-                        style="width:82px; padding:4px 6px; border:1px solid rgba(34, 197, 94, 0.4); background:#151b26; color:#e2e8f0; border-radius:7px; font:inherit; font-size:.74rem; flex-shrink:0;">
-                    <button id="update-example-qr-btn" type="button" onclick="updateExampleQr()"
-                        style="padding:5px 9px; border:0; border-radius:7px; color:#fff; background:#16a34a; font:inherit; font-size:.74rem; font-weight:700; cursor:pointer; white-space:nowrap; flex-shrink:0;">อัปเดต
-                        QR</button>
-                    <div style="margin-left:auto; display:inline-flex; align-items:center; gap:6px; flex-shrink:0;">
-                        <!-- Status / Progress Bar Tag Container -->
-                        <div id="send-work-status-tag" style="display:none; align-items:center;">
-                            <!-- In-progress state: mini progress bar -->
-                            <div id="send-work-progress-box"
-                                style="display:none; align-items:center; gap:5px; padding:2px 7px; background:rgba(30,41,59,0.85); border:1px solid rgba(59,130,246,0.35); border-radius:7px; backdrop-filter:blur(4px); white-space:nowrap;">
-                                <span
-                                    style="font-size:0.68rem; color:#93c5fd; font-weight:600; white-space:nowrap; display:inline-flex; align-items:center; gap:3px;">
-                                    <span style="display:inline-block; animation:spin 1s linear infinite;">⚡</span>
-                                    อัปโหลด...
-                                </span>
-                                <div
-                                    style="width:55px; height:5px; background:rgba(255,255,255,0.12); border-radius:3px; overflow:hidden;">
-                                    <div id="send-work-progress-bar"
-                                        style="width:15%; height:100%; background:linear-gradient(90deg, #3b82f6, #60a5fa); border-radius:3px; transition:width 0.3s ease;">
-                                    </div>
-                                </div>
-                                <span id="send-work-progress-pct"
-                                    style="font-size:0.65rem; color:#60a5fa; font-weight:700;">15%</span>
-                            </div>
-                            <!-- Success Tag -->
-                            <div id="send-work-success-tag"
-                                style="display:none; align-items:center; gap:4px; padding:2px 8px; background:rgba(34,197,94,0.18); border:1px solid rgba(34,197,94,0.45); border-radius:7px; color:#4ade80; font-size:0.71rem; font-weight:700; box-shadow:0 0 10px rgba(34,197,94,0.2); white-space:nowrap;">
-                                <span>✅ คัดลอกลิงก์สำเร็จแล้ว!</span>
-                            </div>
-                        </div>
-                        <button id="send-work-link-btn" type="button" onclick="sendWorkLink()"
-                            style="padding:5px 11px; border:0; border-radius:7px; color:#fff; background:#2563eb; font:inherit; font-size:.74rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(37,99,235,0.3); transition:all .2s ease; white-space:nowrap; flex-shrink:0;"
-                            title="อัปโหลดส่งงานพร้อมกำหนดยอดเงินและคัดลอกลิงก์อัตโนมัติ">🔗 ลิ้งค์ส่งงาน</button>
+                    style="width: 100%; height: 100%; min-height: 350px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #0b0f15; border: 1px solid var(--border); border-radius: 12px; position: relative;">
+                    <img id="finished-work-preview-img" src="" alt="ภาพเต็มงานเสร็จ"
+                        style="display: none; width: 100%; height: 100%; max-height: 480px; object-fit: contain; cursor: crosshair; border-radius: 8px;">
+                    <canvas id="finished-work-crop-overlay" aria-hidden="true"
+                        style="display: none; position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; border-radius: 8px;"></canvas>
+                    <div id="finished-preview-empty"
+                        style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--text-sub); padding: 20px;">
+                        <span style="font-size: 2.5rem; opacity: 0.35;">🖼️</span>
+                        <span style="font-size: 0.78rem; color: #64748b;">รอภาพงานเสร็จ</span>
                     </div>
-                </div>
-                <div style="display: flex; gap: 12px; align-items: stretch; justify-content: center; width: 100%;">
-
-                    <!-- Left Crop Column -->
-                    <div
-                        style="flex: 1; min-width: 120px; max-width: 180px; display: flex; flex-direction: column; align-items: center; border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #131922;">
-                        <span
-                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬅️
-                            ซ้าย</span>
-                        <div
-                            style="width: 100%; height: 260px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #0b0f15; border: 1px solid var(--border); border-radius: 6px;">
-                            <canvas id="crop-canvas-left"
-                                style="max-width: 100%; max-height: 100%; object-fit: contain; cursor: w-resize; display: block;"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Center Column (Top & Bottom Crop) -->
-                    <div
-                        style="flex: 2; display: flex; flex-direction: column; gap: 12px; justify-content: space-between;">
-                        <!-- Top Crop Panel -->
-                        <div
-                            style="display: flex; flex-direction: column; align-items: center; border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #131922; flex: 1;">
-                            <span
-                                style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬆️
-                                บน</span>
-                            <div
-                                style="width: 100%; height: 110px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #0b0f15; border: 1px solid var(--border); border-radius: 6px;">
-                                <canvas id="crop-canvas-top"
-                                    style="width: 100%; height: auto; max-height: 100%; object-fit: contain; cursor: n-resize; display: block;"></canvas>
-                            </div>
-                        </div>
-                        <!-- Bottom Crop Panel -->
-                        <div
-                            style="display: flex; flex-direction: column; align-items: center; border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #131922; flex: 1;">
-                            <span
-                                style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">⬇️
-                                ล่าง</span>
-                            <div
-                                style="width: 100%; height: 110px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #0b0f15; border: 1px solid var(--border); border-radius: 6px;">
-                                <canvas id="crop-canvas-bottom"
-                                    style="width: 100%; height: auto; max-height: 100%; object-fit: contain; cursor: s-resize; display: block;"></canvas>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Right Crop Column -->
-                    <div
-                        style="flex: 1; min-width: 120px; max-width: 180px; display: flex; flex-direction: column; align-items: center; border: 1px solid var(--border); border-radius: 10px; padding: 8px; background: #131922;">
-                        <span
-                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 6px;">➡️
-                            ขวา</span>
-                        <div
-                            style="width: 100%; height: 260px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #0b0f15; border: 1px solid var(--border); border-radius: 6px;">
-                            <canvas id="crop-canvas-right"
-                                style="max-width: 100%; max-height: 100%; object-fit: contain; cursor: e-resize; display: block;"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Tools / Clone Stamp / Upscale / Extender / Remove BG Column (Single Vertical Column) -->
-                    <div
-                        style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 6px; border: 1px solid var(--border); border-radius: 12px; padding: 8px 6px; background: #131922; width: 92px; min-width: 90px;">
-                        <span
-                            style="font-size: 0.75rem; font-weight: 600; color: var(--text-sub); margin-bottom: 1px;">เครื่องมือ</span>
-
-                        <!-- แถบโควต้า Cloudinary รวม (แยกไว้ข้างนอกปุ่ม) -->
-                        <div id="btn-quota-details" onclick="loadCloudinaryQuota(true)"
-                            style="width: 78px; padding: 3px 2px; border-radius: 8px; background: linear-gradient(135deg, #1e2538 0%, #171d2b 100%); border: 1px solid #334155; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; line-height: 1.15; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); transition: all 0.2s ease; margin-bottom: 2px;"
-                            title="โควต้า Cloudinary รวม (คลิกเพื่อดูสรุปทุกบัญชี)">
-                            <div style="display: flex; align-items: center; gap: 2px;">
-                                <span style="font-size: 0.52rem; color: #a5b4fc; font-weight: 700;">☁️ บัญชี</span>
-                                <span id="quota-acc-name"
-                                    style="font-size: 0.54rem; font-weight: 700; color: #a5b4fc; white-space: nowrap;">1/7</span>
-                            </div>
-                            <span id="quota-acc-credits"
-                                style="font-size: 0.52rem; font-weight: 700; color: #34d399; white-space: nowrap;">เหลือ
-                                71.1%</span>
-                        </div>
-
-                        <!-- 1. Enhancer AI Button -->
-                        <button id="btn-upscale" onclick="triggerUpscale(null, 1, 'cloudinary_enhancer')"
-                            style="width: 78px; height: 68px; border-radius: 12px; border: 1px solid #4338ca; background: linear-gradient(135deg, #1e1b4b 0%, #18202c 100%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); transition: all 0.2s ease-in-out; padding: 5px 2px;"
-                            title="AI Enhancer: ปรับความคมชัด กู้คืนรายละเอียด และลดความเบลอด้วย Cloudinary AI (ทับ complete.png และสร้าง example.png)">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#818cf8"
-                                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-                                style="margin-bottom: 2px; transition: transform 0.2s ease;">
-                                <path
-                                    d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1 1.275-1.275L12 3Z" />
-                                <path d="M5 3v4" />
-                                <path d="M19 17v4" />
-                                <path d="M3 5h4" />
-                                <path d="M17 19h4" />
-                            </svg>
-                            <span id="btn-enhancer-text"
-                                style="font-size: 0.62rem; font-weight: 700; color: #c7d2fe; white-space: nowrap; line-height: 1.1;">Enhance
-                                AI</span>
-                            <span style="font-size: 0.50rem; color: #a5b4fc; font-weight: 600;">ปรับชัดกู้เบลอ</span>
-                        </button>
-
-                        <!-- 2. Remove Watermark Button (Cloudinary AI Inpaint) -->
-                        <button id="btn-clone-stamp" onclick="toggleCloneStampMode()"
-                            style="width: 78px; height: 68px; border-radius: 12px; border: 1px solid #1e40af; background: linear-gradient(135deg, #172554 0%, #18202c 100%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); transition: all 0.2s ease-in-out; padding: 5px 2px;"
-                            title="ลบลายน้ำ AI (วงตำแหน่งเฉพาะจุด): กดปุ่มนี้แล้วคลิกวงตำแหน่งลายน้ำบนภาพ หรือลากกรอบ Marquee ใน Photopea แล้วกดปุ่มนี้">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60a5fa"
-                                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-                                style="margin-bottom: 2px; transition: transform 0.2s ease;">
-                                <circle cx="12" cy="12" r="8" stroke-dasharray="3 3" />
-                                <path d="M12 2v4" />
-                                <path d="M12 18v4" />
-                                <path d="M2 12h4" />
-                                <path d="M18 12h4" />
-                                <circle cx="12" cy="12" r="2" fill="#60a5fa" />
-                            </svg>
-                            <span
-                                style="font-size: 0.62rem; font-weight: 700; color: #93c5fd; white-space: nowrap; line-height: 1.1;">ลบลายน้ำ</span>
-                            <span style="font-size: 0.50rem; color: #60a5fa; font-weight: 600;">วงตำแหน่ง AI</span>
-                        </button>
-
-                        <!-- 3. AI Extender (เพิ่มตำแหน่งภาพ) Button -->
-                        <button id="btn-ai-extender" onclick="triggerDirectAIExtender(event)"
-                            style="width: 78px; height: 68px; border-radius: 12px; border: 1px solid #0369a1; background: linear-gradient(135deg, #082f49 0%, #18202c 100%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); transition: all 0.2s ease-in-out; padding: 5px 2px;"
-                            title="ขยายภาพ AI (Cloudinary AI Image Extender): ขยายขอบภาพ 20% ทุกทิศทางอัตโนมัติทันทีด้วย AI Generative Fill (บันทึกทับ complete.png และสร้าง example.png)">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8"
-                                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-                                style="margin-bottom: 2px; transition: transform 0.2s ease;">
-                                <path d="M15 3h6v6" />
-                                <path d="M9 21H3v-6" />
-                                <path d="M21 3l-7 7" />
-                                <path d="M3 21l7-7" />
-                                <rect width="8" height="8" x="8" y="8" rx="2" stroke-dasharray="2 2" />
-                            </svg>
-                            <span
-                                style="font-size: 0.62rem; font-weight: 700; color: #7dd3fc; white-space: nowrap; line-height: 1.1;">ขยายภาพ
-                                AI</span>
-                            <span style="font-size: 0.50rem; color: #38bdf8; font-weight: 600;">+20% ทุกทิศ</span>
-                        </button>
-
-                        <!-- 4. Remove Background (ลบฉากหลัง) Button -->
-                        <button id="btn-remove-bg" onclick="triggerDirectAIRemoveBg(event)"
-                            style="width: 78px; height: 68px; border-radius: 12px; border: 1px solid #9f1239; background: linear-gradient(135deg, #4c0519 0%, #18202c 100%); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); transition: all 0.2s ease-in-out; padding: 5px 2px;"
-                            title="ลบฉากหลัง (Cloudinary AI Smart Cutout): ลบฉากหลังทุกชนิดอัตโนมัติด้วย AI ให้เป็นภาพโปร่งใส PNG (บันทึกทับ complete.png และสร้าง example.png)">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fb7185"
-                                stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
-                                style="margin-bottom: 2px; transition: transform 0.2s ease;">
-                                <path d="M6 3v12" />
-                                <circle cx="6" cy="18" r="3" />
-                                <circle cx="18" cy="6" r="3" />
-                                <path d="m18 9-9 9" />
-                                <path d="M18 15v6" />
-                            </svg>
-                            <span
-                                style="font-size: 0.62rem; font-weight: 700; color: #fecdd3; white-space: nowrap; line-height: 1.1;">ลบฉากหลัง</span>
-                            <span style="font-size: 0.50rem; color: #fb7185; font-weight: 600;">AI Cutout</span>
-                        </button>
-                    </div>
-
-                </div>
-            </div>
-            <div id="watermark-check-placeholder" onclick="document.getElementById('watermark-file-input').click()"
-                style="cursor: pointer; padding: 28px 16px; border-radius: 12px; transition: all 0.2s ease;"
-                title="คลิกเพื่อเลือกไฟล์ หรือลากไฟล์ภาพมาปล่อยที่นี่">
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                    <div
-                        style="width: 52px; height: 52px; border-radius: 50%; background: rgba(99, 102, 241, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #818cf8; margin-bottom: 2px;">
-                        📥
-                    </div>
-                    <p style="color: #c7d2fe; font-size: 0.95rem; font-weight: 700; margin: 0;">
-                        ลากไฟล์ภาพมาวางที่นี่ หรือคลิกเพื่อเลือกไฟล์
-                    </p>
-                    <p style="color: var(--text-sub); font-size: 0.78rem; margin: 0;">
-                        จัดการได้โดยตรง: ครอป 4 ทิศทาง • AI Enhancer • ลบลายน้ำ • ขยายภาพ AI • ลบฉากหลัง
-                    </p>
-                    <span
-                        style="font-size: 0.70rem; color: var(--text-sub); background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border); padding: 3px 10px; border-radius: 12px; margin-top: 4px;">
-                        (หรือภาพตัวอย่างจาก Desktop complete.png จะปรากฏที่นี่อัตโนมัติ)
-                    </span>
                 </div>
             </div>
         </div>
-
-        <!-- Finished Work Preview Card (แสดงเฉพาะภาพผลงานเสร็จล้วนๆ ในตำแหน่งกรอบสีแดงด้านขวา) -->
-        <div id="finished-work-preview-container"
-            style="flex: 0 0 380px; width: 380px; max-width: 440px; min-width: 280px; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--surface); border: 2px dashed var(--border); border-radius: 16px; padding: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.3); box-sizing: border-box; position: relative; transition: all 0.25s ease;"
-            title="คลิกเพื่อดูภาพเต็มขนาดจริง">
-            <div style="width: 100%; height: 100%; min-height: 350px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #0b0f15; border: 1px solid var(--border); border-radius: 12px; position: relative;">
-                <img id="finished-work-preview-img" src="" alt="ภาพเต็มงานเสร็จ"
-                    style="display: none; width: 100%; height: 100%; max-height: 480px; object-fit: contain; cursor: pointer; border-radius: 8px; transition: transform 0.2s ease;"
-                    onclick="openFinishedPreviewFull()"
-                    onmouseover="this.style.transform='scale(1.02)'"
-                    onmouseout="this.style.transform='scale(1)'">
-                <div id="finished-preview-empty"
-                    style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--text-sub); padding: 20px;">
-                    <span style="font-size: 2.5rem; opacity: 0.35;">🖼️</span>
-                    <span style="font-size: 0.78rem; color: #64748b;">รอภาพงานเสร็จ</span>
-                </div>
-            </div>
-        </div>
-    </div>
 
         <!-- Face Swap Studio Section (ระบบเปลี่ยนหน้า) -->
         <div id="faceswap-studio-container"
@@ -3893,6 +3899,9 @@
 
         let lastDownloadFilenames = "";
         let lastCheckedCompletePath = "";
+        // เลือกอัตโนมัติเฉพาะตอนเพิ่งเปิด/รีเฟรชหน้า ไม่รบกวนการเลือกของผู้ใช้ภายหลัง
+        let shouldAutoSelectRecentDownload = true;
+        const RECENT_DOWNLOAD_SELECTION_WINDOW_MS = 60 * 1000;
 
         function updateSelectionIndicators() {
             document.querySelectorAll('.dl-item').forEach(el => {
@@ -3917,6 +3926,23 @@
                     const currentStatus = downloads.map(d => `${d.filename}_${d.mtime}`).join(',');
                     if (currentStatus === lastDownloadFilenames) return;
                     lastDownloadFilenames = currentStatus;
+
+                    // ตอนเปิดหน้าใหม่ ให้เลือกไฟล์ที่ใหม่ที่สุดใน 1 นาทีเท่านั้น
+                    // โดยไม่เลือก Desktop\\complete.png ซึ่งเป็นไฟล์ผลลัพธ์/พรีวิว
+                    if (shouldAutoSelectRecentDownload) {
+                        shouldAutoSelectRecentDownload = false;
+                        const now = Date.now();
+                        const mostRecentEligibleFile = downloads
+                            .filter(item => Number.isFinite(Number(item.mtime)))
+                            .filter(item => !isDesktopCompletePng(item.filename))
+                            .filter(item => now - (Number(item.mtime) * 1000) >= 0)
+                            .filter(item => now - (Number(item.mtime) * 1000) <= RECENT_DOWNLOAD_SELECTION_WINDOW_MS)
+                            .sort((a, b) => Number(b.mtime) - Number(a.mtime))[0];
+
+                        if (mostRecentEligibleFile) {
+                            selectedFilesList = [mostRecentEligibleFile.filename];
+                        }
+                    }
 
                     dlGrid.innerHTML = '';
                     downloads.slice(0, 20).forEach(item => {
@@ -5296,6 +5322,123 @@
             }
         }
 
+        // ครอปจากพรีวิวงานเสร็จโดยตรง: เลื่อนเมาส์ไปทางขอบที่ต้องการ แล้วคลิกเส้นแดงเพื่อตัด
+        function getFinishedPreviewImageBounds(imgEl) {
+            const rect = imgEl.getBoundingClientRect();
+            const imageRatio = imgEl.naturalWidth / imgEl.naturalHeight;
+            const boxRatio = rect.width / rect.height;
+            let width = rect.width;
+            let height = rect.height;
+            let left = 0;
+            let top = 0;
+
+            if (imageRatio > boxRatio) {
+                height = rect.width / imageRatio;
+                top = (rect.height - height) / 2;
+            } else {
+                width = rect.height * imageRatio;
+                left = (rect.width - width) / 2;
+            }
+            return { rect, left, top, width, height };
+        }
+
+        function getFinishedPreviewCropTarget(event, imgEl) {
+            const bounds = getFinishedPreviewImageBounds(imgEl);
+            const x = Math.max(0, Math.min(bounds.width, event.clientX - bounds.rect.left - bounds.left));
+            const y = Math.max(0, Math.min(bounds.height, event.clientY - bounds.rect.top - bounds.top));
+            const distances = {
+                left: x,
+                right: bounds.width - x,
+                top: y,
+                bottom: bounds.height - y
+            };
+            const side = Object.keys(distances).reduce((closest, candidate) =>
+                distances[candidate] < distances[closest] ? candidate : closest
+            );
+            return { ...bounds, x, y, side };
+        }
+
+        function drawFinishedPreviewCropGuide(target) {
+            const overlay = document.getElementById('finished-work-crop-overlay');
+            if (!overlay) return;
+            overlay.width = Math.round(target.rect.width);
+            overlay.height = Math.round(target.rect.height);
+            overlay.style.display = 'block';
+            const ctx = overlay.getContext('2d');
+            const x = target.left + target.x;
+            const y = target.top + target.y;
+
+            ctx.clearRect(0, 0, overlay.width, overlay.height);
+            ctx.strokeStyle = '#ff3333';
+            ctx.fillStyle = 'rgba(255, 51, 51, 0.24)';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([9, 6]);
+            ctx.beginPath();
+            if (target.side === 'left' || target.side === 'right') {
+                ctx.moveTo(x, target.top);
+                ctx.lineTo(x, target.top + target.height);
+                if (target.side === 'left') ctx.fillRect(target.left, target.top, target.x, target.height);
+                else ctx.fillRect(x, target.top, target.width - target.x, target.height);
+            } else {
+                ctx.moveTo(target.left, y);
+                ctx.lineTo(target.left + target.width, y);
+                if (target.side === 'top') ctx.fillRect(target.left, target.top, target.width, target.y);
+                else ctx.fillRect(target.left, y, target.width, target.height - target.y);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        function clearFinishedPreviewCropGuide() {
+            const overlay = document.getElementById('finished-work-crop-overlay');
+            if (!overlay) return;
+            overlay.getContext('2d').clearRect(0, 0, overlay.width, overlay.height);
+            overlay.style.display = 'none';
+        }
+
+        function cropFinishedPreviewAt(target, imgEl) {
+            const scaleX = imgEl.naturalWidth / target.width;
+            const scaleY = imgEl.naturalHeight / target.height;
+            const cropX = Math.round(target.x * scaleX);
+            const cropY = Math.round(target.y * scaleY);
+            let sourceX = 0, sourceY = 0, sourceWidth = imgEl.naturalWidth, sourceHeight = imgEl.naturalHeight;
+
+            if (target.side === 'left') {
+                sourceX = cropX;
+                sourceWidth -= cropX;
+            } else if (target.side === 'right') {
+                sourceWidth = cropX;
+            } else if (target.side === 'top') {
+                sourceY = cropY;
+                sourceHeight -= cropY;
+            } else {
+                sourceHeight = cropY;
+            }
+
+            // หลีกเลี่ยงการสร้างภาพขนาดศูนย์จากการคลิกติดขอบ
+            if (sourceWidth < 1 || sourceHeight < 1) return;
+            const canvas = document.createElement('canvas');
+            canvas.width = sourceWidth;
+            canvas.height = sourceHeight;
+            canvas.getContext('2d').drawImage(imgEl, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, sourceWidth, sourceHeight);
+            saveCroppedImage(canvas.toDataURL('image/png', 1.0));
+        }
+
+        const finishedPreviewImage = document.getElementById('finished-work-preview-img');
+        if (finishedPreviewImage) {
+            finishedPreviewImage.addEventListener('mousemove', (event) => {
+                if (!finishedPreviewImage.naturalWidth) return;
+                drawFinishedPreviewCropGuide(getFinishedPreviewCropTarget(event, finishedPreviewImage));
+            });
+            finishedPreviewImage.addEventListener('mouseleave', clearFinishedPreviewCropGuide);
+            finishedPreviewImage.addEventListener('click', (event) => {
+                if (!finishedPreviewImage.naturalWidth) return;
+                const target = getFinishedPreviewCropTarget(event, finishedPreviewImage);
+                clearFinishedPreviewCropGuide();
+                cropFinishedPreviewAt(target, finishedPreviewImage);
+            });
+        }
+
         async function saveCroppedImage(newDataUrl) {
             try {
                 const targetPath = 'C:\\Users\\artwh\\Desktop\\complete.png';
@@ -5311,6 +5454,7 @@
                 if (response.ok) {
                     showToast('✅ ครอปและบันทึกทับ Desktop/complete.png สำเร็จ');
                     showWatermarkCheck(`/get-img?path=${encodeURIComponent(targetPath)}&v=${Date.now()}`);
+                    refreshFinishedWorkPreview();
                     if (typeof loadDownloads === 'function') loadDownloads();
                 } else {
                     showToast('❌ ไม่สามารถบันทึกได้');
