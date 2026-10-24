@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
 """
 text_retouch_engine.py
-ระบบแบบ Agent-Style สำหรับ Text-Retouch service
-- รับ patch เล็กๆ จาก Firebase (ไม่ใช่ไฟล์เต็ม)
-- เปิด patch ใน Photoshop พร้อม text layer โน้ต
-- ส่ง result กลับ + watermark
-- หลังชำระเงิน: ส่ง result ไม่มีลายน้ำ
+ระบบแบบ Agent-Style สำหรับ Text-Retouch service (โครงการ retouch-ebid)
+- ลูกค้าส่งโจทย์ (crop + note) -> สถานะ pending_review
+- เด้งหลังบ้านให้แอดมินดู -> เสนอราคา หรือ ปฏิเสธ (เสี่ยงกฎหมาย, มีลายเซ็นต์, ติดตราครุฑ)
+- เมื่อส่งราคา -> หน้าจอลูกค้าเด้ง PromptPay QR ให้โอนเงินก่อน
+- เมื่อโอนสำเร็จ (status=paid) -> ส่งภาพเข้า Photoshop ทันที
+- เมื่อแอดมินแก้เสร็จใน Photoshop (F12) -> ส่งงานกลับให้ลูกค้าแบบไม่มีลายน้ำ
 """
 
 import os, sys, json, base64, urllib.request, urllib.parse, subprocess, time
-from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
+from PIL import Image
 
-FIREBASE_DB_URL = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app"
+FIREBASE_DB_URL = "https://retouch-ebid-default-rtdb.asia-southeast1.firebasedatabase.app"
 CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cache", "text_retouch")
 ACTIVE_STATE_FILE = os.path.join(CACHE_DIR, "active_patch.json")
 
@@ -21,7 +22,8 @@ os.makedirs(CACHE_DIR, exist_ok=True)
 
 def fb_get(path):
     url = f"{FIREBASE_DB_URL}/{path}.json"
-    with urllib.request.urlopen(url, timeout=15) as r:
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urllib.request.urlopen(req, timeout=15) as r:
         return json.loads(r.read().decode())
 
 
@@ -29,7 +31,7 @@ def fb_set(path, data):
     url = f"{FIREBASE_DB_URL}/{path}.json"
     payload = json.dumps(data).encode()
     req = urllib.request.Request(url, data=payload, method="PUT",
-                                  headers={"Content-Type": "application/json"})
+                                  headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"})
     with urllib.request.urlopen(req, timeout=15) as r:
         return json.loads(r.read().decode())
 
@@ -38,7 +40,7 @@ def fb_patch(path, data):
     url = f"{FIREBASE_DB_URL}/{path}.json"
     payload = json.dumps(data).encode()
     req = urllib.request.Request(url, data=payload, method="PATCH",
-                                  headers={"Content-Type": "application/json"})
+                                  headers={"Content-Type": "application/json", "User-Agent": "Mozilla/5.0"})
     with urllib.request.urlopen(req, timeout=15) as r:
         return json.loads(r.read().decode())
 
@@ -66,43 +68,245 @@ def get_photoshop_path():
 
 
 # ─────────────────────────────────────────────────────────────────
-#  1. WATCH FOR NEW PATCHES — Called by auto_donate_watcher.py
+#  1. ADMIN REVIEW POPUP (Tkinter) — เด้งขึ้นมาให้คิดราคา หรือ ปฏิเสธ
 # ─────────────────────────────────────────────────────────────────
-def watch_and_open_next():
+def show_review_popup(session_id, patch_id):
     """
-    สแกน Firebase หา patch ที่ status=working แล้วยังไม่มีในเครื่อง
-    เปิด patch นั้นเข้า Photoshop ทันที
+    หน้าต่างเด้งขึ้นมาบนจอแอดมินทันทีเมื่อมีโจทย์ใหม่
+    - แสดงรูป patch + โน้ต
+    - เลือกคิดราคา (ส่ง QR ให้ลูกค้าโอน)
+    - หรือเลือกปฏิเสธ เพราะอะไร (เสี่ยงกฎหมาย, มีลายเซ็นต์, ติดตราครุฑ)
     """
-    print("[TextRetouch] 🔍 ค้นหางานใหม่...")
-    sessions = fb_get("text_retouch") or {}
+    import tkinter as tk
+    from tkinter import ttk, messagebox
+    from PIL import ImageTk
 
-    for session_id, session in sessions.items():
-        patches = session.get("patches", {})
-        for patch_id, patch in patches.items():
-            if patch.get("status") == "working" and patch.get("patchImage"):
-                # ตรวจสอบว่าเราทำ patch นี้อยู่แล้วหรือเปล่า
-                if os.path.exists(ACTIVE_STATE_FILE):
-                    with open(ACTIVE_STATE_FILE) as f:
-                        active = json.load(f)
-                    if active.get("patch_id") == patch_id:
-                        print(f"[TextRetouch] ⏳ กำลังทำ patch {patch_id} อยู่แล้ว")
-                        return
+    try:
+        import winsound
+        winsound.PlaySound("SystemAsterisk", winsound.SND_ALIAS | winsound.SND_ASYNC)
+    except Exception:
+        pass
 
-                open_patch_in_photoshop(session_id, patch_id, patch)
-                return  # ทำทีละอัน
+    patch_data = fb_get(f"text_retouch/{session_id}/patches/{patch_id}") or {}
+    if not patch_data:
+        print(f"[TextRetouch] ❌ ไม่พบข้อมูล patch {patch_id}")
+        return
 
-    print("[TextRetouch] 💤 ไม่มีงานใหม่")
+    # บันทึกรูปชั่วคราวเพื่อแสดงใน GUI
+    patch_b64 = patch_data.get("patchImage", "")
+    patch_img = None
+    if patch_b64:
+        try:
+            img_bytes = base64.b64decode(patch_b64)
+            patch_img = Image.open(BytesIO(img_bytes))
+        except Exception as e:
+            print(f"[TextRetouch] แปลงรูปภาพล้มเหลว: {e}")
+
+    num = patch_data.get("num", 1)
+    note = patch_data.get("note", "(ไม่มีโน้ต)")
+
+    root = tk.Tk()
+    root.title(f"🔔 Text-Retouch: โจทย์ใหม่ #{num} (Session: {session_id[:10]}...)")
+    root.geometry("820x620")
+    root.configure(bg="#0b1120")
+    root.attributes("-topmost", True)
+
+    # Styling colors
+    BG_CARD = "#1e293b"
+    TEXT_MAIN = "#f8fafc"
+    TEXT_MUTED = "#94a3b8"
+    ACCENT_GREEN = "#10b981"
+    ACCENT_RED = "#ef4444"
+    ACCENT_BLUE = "#6366f1"
+
+    # Header
+    header_frame = tk.Frame(root, bg="#0f172a", padx=20, pady=12)
+    header_frame.pack(fill="x")
+    title_lbl = tk.Label(header_frame, text=f"✨ มีงานใหม่ส่งเข้ามา! จุดที่ #{num}", 
+                         font=("Sarabun", 15, "bold"), fg="#fbbf24", bg="#0f172a")
+    title_lbl.pack(side="left")
+    sub_lbl = tk.Label(header_frame, text=f"Session: {session_id}", 
+                       font=("Consolas", 9), fg=TEXT_MUTED, bg="#0f172a")
+    sub_lbl.pack(side="right", pady=4)
+
+    # Main content frame (2 columns)
+    content_frame = tk.Frame(root, bg="#0b1120", padx=16, pady=12)
+    content_frame.pack(fill="both", expand=True)
+
+    # ── Left Column: Preview Image + Note ──
+    left_frame = tk.Frame(content_frame, bg=BG_CARD, padx=14, pady=14, relief="ridge", bd=1)
+    left_frame.pack(side="left", fill="both", expand=True, padx=(0, 10))
+
+    tk.Label(left_frame, text="🔍 ชิ้นส่วนที่ลูกค้าต้องการแก้ไข (Crop Patch):", 
+             font=("Sarabun", 11, "bold"), fg=TEXT_MAIN, bg=BG_CARD).pack(anchor="w", pady=(0, 6))
+
+    # Image preview box
+    img_lbl = tk.Label(left_frame, bg="#020617", relief="sunken", bd=1)
+    img_lbl.pack(fill="both", expand=True, pady=(0, 10))
+
+    photo_ref = None
+    if patch_img:
+        # Resize to fit in left frame (max 380x280)
+        orig_w, orig_h = patch_img.size
+        max_w, max_h = 380, 260
+        scale = min(max_w / orig_w, max_h / orig_h, 1.0)
+        disp_w, disp_h = max(1, int(orig_w * scale)), max(1, int(orig_h * scale))
+        resized_img = patch_img.resize((disp_w, disp_h), Image.Resampling.LANCZOS)
+        photo_ref = ImageTk.PhotoImage(resized_img)
+        img_lbl.config(image=photo_ref)
+    else:
+        img_lbl.config(text="[ไม่มีภาพชิ้นส่วน]", fg=TEXT_MUTED)
+
+    tk.Label(left_frame, text="📝 คำสั่ง / โน้ตจากลูกค้า:", 
+             font=("Sarabun", 11, "bold"), fg="#38bdf8", bg=BG_CARD).pack(anchor="w", pady=(4, 2))
+    
+    note_box = tk.Text(left_frame, height=4, font=("Sarabun", 10), bg="#0f172a", fg="#f1f5f9",
+                       wrap="word", relief="flat", padx=8, pady=8)
+    note_box.insert("1.0", note)
+    note_box.config(state="disabled")
+    note_box.pack(fill="x", pady=(0, 4))
+
+    # ── Right Column: Decisions (Quote or Reject) ──
+    right_frame = tk.Frame(content_frame, bg="#0b1120", width=360)
+    right_frame.pack(side="right", fill="both", expand=False)
+
+    # Box 1: Quote Price
+    quote_card = tk.LabelFrame(right_frame, text="  ✅ อนุมัติ & คิดราคา (ส่งสลิปให้ลูกค้าโอน)  ", 
+                               font=("Sarabun", 11, "bold"), fg="#34d399", bg=BG_CARD, padx=12, pady=10)
+    quote_card.pack(fill="x", pady=(0, 12))
+
+    tk.Label(quote_card, text="ระบุราคาที่ต้องการคิด (บาท):", font=("Sarabun", 10), fg=TEXT_MAIN, bg=BG_CARD).pack(anchor="w")
+
+    price_input_frame = tk.Frame(quote_card, bg=BG_CARD)
+    price_input_frame.pack(fill="x", pady=(4, 8))
+
+    tk.Label(price_input_frame, text="฿", font=("Sarabun", 14, "bold"), fg="#34d399", bg=BG_CARD).pack(side="left", padx=(0, 4))
+    price_var = tk.StringVar(value="100")
+    price_entry = tk.Entry(price_input_frame, textvariable=price_var, font=("Sarabun", 13, "bold"), 
+                           width=10, bg="#0f172a", fg="#f1f5f9", insertbackground="white")
+    price_entry.pack(side="left")
+
+    # Quick preset buttons
+    preset_frame = tk.Frame(quote_card, bg=BG_CARD)
+    preset_frame.pack(fill="x", pady=(0, 8))
+    for p in [50, 100, 150, 200]:
+        btn = tk.Button(preset_frame, text=f"฿{p}", font=("Sarabun", 9), bg="#334155", fg=TEXT_MAIN,
+                        relief="flat", padx=6, pady=2, command=lambda val=p: price_var.set(str(val)))
+        btn.pack(side="left", padx=2)
+
+    def on_submit_quote():
+        try:
+            val = float(price_var.get().strip())
+            if val <= 0:
+                messagebox.showerror("ผิดพลาด", "กรุณาระบุราคามากกว่า 0 บาท")
+                return
+            quote_patch(session_id, patch_id, val)
+            messagebox.showinfo("สำเร็จ", f"✅ ส่งราคา ฿{val} ให้ลูกค้าแล้ว!\n\nหน้าจอลูกค้าจะเด้งสลิป PromptPay ให้โอนเงินทันที")
+            root.destroy()
+        except ValueError:
+            messagebox.showerror("ผิดพลาด", "กรุณากรอกตัวเลขราคาที่ถูกต้อง")
+
+    btn_quote = tk.Button(quote_card, text="📤 ส่งราคาให้ลูกค้าโอนเงิน", font=("Sarabun", 11, "bold"),
+                          bg=ACCENT_GREEN, fg="#ffffff", activebackground="#059669",
+                          relief="flat", padx=12, pady=8, cursor="hand2", command=on_submit_quote)
+    btn_quote.pack(fill="x")
+
+    # Box 2: Reject Work
+    reject_card = tk.LabelFrame(right_frame, text="  ❌ ปฏิเสธงานนี้ (เลือกเหตุผล)  ", 
+                                font=("Sarabun", 11, "bold"), fg="#f87171", bg=BG_CARD, padx=12, pady=10)
+    reject_card.pack(fill="x")
+
+    reject_reason_var = tk.StringVar(value="เสี่ยงต่อกฎหมาย / เอกสารราชการ")
+
+    reasons = [
+        "เสี่ยงต่อกฎหมาย / เอกสารราชการ",
+        "มีลายเซ็นต์ติด",
+        "ติดตราครุฑ",
+        "ภาพไม่ชัดเจน ไม่สามารถแก้ไขได้",
+        "อื่นๆ (ระบุเอง)"
+    ]
+
+    custom_reason_entry = None
+
+    for r in reasons:
+        rb = tk.Radiobutton(reject_card, text=r, variable=reject_reason_var, value=r,
+                            font=("Sarabun", 9), fg=TEXT_MAIN, bg=BG_CARD, selectcolor="#0f172a",
+                            activebackground=BG_CARD, activeforeground=TEXT_MAIN)
+        rb.pack(anchor="w", pady=2)
+
+    custom_reason_var = tk.StringVar(value="")
+    custom_entry = tk.Entry(reject_card, textvariable=custom_reason_var, font=("Sarabun", 9),
+                            bg="#0f172a", fg="#f1f5f9", insertbackground="white")
+    custom_entry.pack(fill="x", pady=(2, 8))
+
+    def on_submit_reject():
+        selected = reject_reason_var.get()
+        if selected == "อื่นๆ (ระบุเอง)":
+            reason = custom_reason_var.get().strip() or "ไม่สามารถรับงานนี้ได้"
+        else:
+            reason = selected
+        
+        if messagebox.askyesno("ยืนยัน", f"ต้องการปฏิเสธงานนี้ใช่หรือไม่?\n\nเหตุผล: {reason}"):
+            reject_patch(session_id, patch_id, reason)
+            messagebox.showinfo("สำเร็จ", f"❌ ปฏิเสธงานเรียบร้อยแล้ว\n\nระบบจะแจ้งเหตุผลให้ลูกค้าทราบทันที")
+            root.destroy()
+
+    btn_reject = tk.Button(reject_card, text="⛔ ปฏิเสธงาน", font=("Sarabun", 10, "bold"),
+                           bg=ACCENT_RED, fg="#ffffff", activebackground="#dc2626",
+                           relief="flat", padx=12, pady=6, cursor="hand2", command=on_submit_reject)
+    btn_reject.pack(fill="x", pady=(4, 0))
+
+    root.mainloop()
 
 
+# ─────────────────────────────────────────────────────────────────
+#  2. ACTIONS: QUOTE / REJECT / PAID
+# ─────────────────────────────────────────────────────────────────
+def quote_patch(session_id, patch_id, price):
+    """แอดมินส่งราคา -> อัพเดท Firebase เป็น pending_payment เพื่อให้ลูกค้าเห็นสลิปโอน"""
+    print(f"[TextRetouch] 💰 เสนอราคาจุดที่ {patch_id}: ฿{price}")
+    fb_patch(f"text_retouch/{session_id}/patches/{patch_id}", {
+        "status": "pending_payment",
+        "price": float(price),
+        "quotedAt": int(time.time() * 1000)
+    })
+
+
+def reject_patch(session_id, patch_id, reason):
+    """แอดมินปฏิเสธงาน -> อัพเดท Firebase พร้อมเหตุผล (เสี่ยงกฎหมาย, มีลายเซ็นต์, ตราครุฑ)"""
+    print(f"[TextRetouch] ❌ ปฏิเสธจุดที่ {patch_id}: {reason}")
+    fb_patch(f"text_retouch/{session_id}/patches/{patch_id}", {
+        "status": "rejected",
+        "rejectReason": reason,
+        "rejectedAt": int(time.time() * 1000)
+    })
+
+
+def mark_patch_paid(session_id, patch_id):
+    """เมื่อลูกค้าโอนเงินสำเร็จ -> เปิดเข้า Photoshop ทันที"""
+    print(f"[TextRetouch] 💳 ลูกค้าชำระเงินแล้ว! กำลังส่งเข้า Photoshop: {patch_id}")
+    patch_data = fb_get(f"text_retouch/{session_id}/patches/{patch_id}") or {}
+    fb_patch(f"text_retouch/{session_id}/patches/{patch_id}", {
+        "status": "working",
+        "paidAt": int(time.time() * 1000)
+    })
+    open_patch_in_photoshop(session_id, patch_id, patch_data)
+
+
+# ─────────────────────────────────────────────────────────────────
+#  3. OPEN IN PHOTOSHOP — ส่งงานเข้า Photoshop
+# ─────────────────────────────────────────────────────────────────
 def open_patch_in_photoshop(session_id, patch_id, patch_data):
     """เปิด patch image เข้า Photoshop + สร้าง layer โน้ต"""
-
-    # 1. Decode base64 patch image → บันทึกเป็น PNG
     patch_path = os.path.join(CACHE_DIR, f"{patch_id}.png")
     result_path = os.path.join(CACHE_DIR, f"{patch_id}_result.png")
     note_path = os.path.join(CACHE_DIR, f"{patch_id}_note.txt")
 
     b64_data = patch_data.get("patchImage", "")
+    if not b64_data:
+        print("[TextRetouch] ⚠️ ไม่มี patchImage ในข้อมูล")
+        return
+
     img_bytes = base64.b64decode(b64_data)
     with open(patch_path, "wb") as f:
         f.write(img_bytes)
@@ -111,7 +315,7 @@ def open_patch_in_photoshop(session_id, patch_id, patch_data):
     with open(note_path, "w", encoding="utf-8") as f:
         f.write(note)
 
-    # 2. บันทึก active state
+    # บันทึก active state
     state = {
         "session_id": session_id,
         "patch_id": patch_id,
@@ -124,7 +328,7 @@ def open_patch_in_photoshop(session_id, patch_id, patch_data):
     with open(ACTIVE_STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
 
-    # 3. สร้าง JSX script สำหรับเปิด PS + layer text
+    # สร้าง JSX script สำหรับเปิด PS + layer text
     jsx_path = os.path.join(CACHE_DIR, "open_patch.jsx")
     patch_path_jsx = patch_path.replace("\\", "/")
     note_escaped = note.replace('"', '\\"').replace('\n', '\\n')
@@ -140,9 +344,9 @@ doc.resizeCanvas(doc.width, doc.height + 60, AnchorPosition.TOPCENTER);
 // Add note text layer
 var textLayer = doc.artLayers.add();
 textLayer.kind = LayerKind.TEXT;
-textLayer.name = "📝 โน้ต #" + {num};
+textLayer.name = "📝 โน้ต #{num}";
 var txt = textLayer.textItem;
-txt.contents = "#{num}: " + "{note_escaped}";
+txt.contents = "#{num}: {note_escaped}";
 txt.size = 18;
 txt.color.rgb.hexValue = "FFDD00";
 txt.position = [10, doc.height - 40];
@@ -156,32 +360,30 @@ var desc = new ActionDescriptor();
 desc.putString(app.stringIDToTypeID("resultPath"), "{result_path_jsx}");
 app.putCustomOptions("TextRetouchResultPath", desc, true);
 
-alert("✅ Text-Retouch #" + {num} + " โหลดแล้ว!\\n\\nโน้ต: {note_escaped}\\n\\nแก้ไขให้เสร็จแล้วกด F12 เพื่อส่งงาน");
+alert("✅ Text-Retouch #{num} โหลดแล้ว! (ลูกค้าโอนเงินแล้ว)\\n\\nโจทย์: {note_escaped}\\n\\nแก้ไขเสร็จแล้วกด F12 เพื่อส่งงานให้ลูกค้าทันที (ไม่มีลายน้ำ)");
 """
     with open(jsx_path, "w", encoding="utf-8") as f:
         f.write(jsx)
 
-    # 4. เปิด Photoshop + รัน script
+    # เปิด Photoshop + รัน script
     ps_path = get_photoshop_path()
     print(f"[TextRetouch] 🎨 เปิด Photoshop: patch #{num} — '{note}'")
     subprocess.Popen([ps_path, "-run", jsx_path], shell=False)
 
-    # 5. อัพเดท status Firebase → opened
     try:
-        fb_patch(f"text_retouch/{session_id}/patches/{patch_id}", {
-            "status": "working",
-            "openedAt": int(time.time() * 1000)
-        })
-    except Exception as e:
-        print(f"[TextRetouch] ⚠️ ไม่สามารถอัพเดท Firebase: {e}")
+        import winsound
+        winsound.PlaySound("SystemAsterisk", winsound.SND_ALIAS | winsound.SND_ASYNC)
+    except Exception:
+        pass
 
 
 # ─────────────────────────────────────────────────────────────────
-#  2. SUBMIT RESULT — Called when admin presses F12 in Photoshop
+#  4. SUBMIT RESULT FROM PHOTOSHOP (F12) — แบบไม่มีลายน้ำ
 # ─────────────────────────────────────────────────────────────────
 def submit_result_from_photoshop():
     """
-    อ่านไฟล์ผลลัพธ์จาก Photoshop แล้วส่งขึ้น Firebase พร้อมลายน้ำ
+    อ่านไฟล์ผลลัพธ์จาก Photoshop แล้วส่งขึ้น Firebase แบบ Clean (ไม่มีลายน้ำ)
+    เพราะลูกค้าได้ชำระเงินก่อนแล้ว
     """
     if not os.path.exists(ACTIVE_STATE_FILE):
         print("[TextRetouch] ❌ ไม่พบ active patch state")
@@ -196,54 +398,30 @@ def submit_result_from_photoshop():
     result_path = state["result_path"]
 
     if not os.path.exists(result_path):
-        # ลองหาไฟล์ที่ save จาก PS โดยตรง
         desktop = os.path.join(os.path.expanduser("~"), "Desktop")
         fallback = os.path.join(desktop, "text_retouch_result.png")
         if os.path.exists(fallback):
             result_path = fallback
         else:
             print(f"[TextRetouch] ❌ ไม่พบไฟล์ผลลัพธ์: {result_path}")
-            print(f"   กรุณา Save As → {result_path} แล้วลองใหม่")
             return False
 
     print(f"[TextRetouch] ✅ พบผลลัพธ์: {result_path}")
 
-    # 1. เพิ่มลายน้ำ
-    watermarked_path = result_path.replace(".png", "_wm.jpg")
-    watermarked_b64 = apply_watermark(result_path, watermarked_path, patch_num)
-
-    # 2. เข้ารหัส clean version
+    # เข้ารหัส Clean version โดยตรง (ไม่มีลายน้ำ)
     with open(result_path, "rb") as f:
         clean_b64 = base64.b64encode(f.read()).decode()
 
-    # 3. อ่านข้อมูล patch จาก Firebase สำหรับกำหนดราคา
-    try:
-        patch_data = fb_get(f"text_retouch/{session_id}/patches/{patch_id}") or {}
-        current_price = patch_data.get("price", 0)
-    except Exception:
-        current_price = 0
-
-    if current_price == 0:
-        # ถามราคา
-        try:
-            price_input = input(f"💰 กำหนดราคาสำหรับจุดที่ {patch_num} (บาท): ").strip()
-            current_price = float(price_input) if price_input else 0
-        except Exception:
-            current_price = 0
-
-    # 4. ส่งขึ้น Firebase
-    print(f"[TextRetouch] ☁️ ส่งผลลัพธ์ขึ้น Firebase...")
+    # ส่งขึ้น Firebase: status=done
+    print(f"[TextRetouch] 🚀 ส่งงานจุดที่ {patch_num} ให้ลูกค้า (แบบไม่มีลายน้ำ)...")
     fb_patch(f"text_retouch/{session_id}/patches/{patch_id}", {
-        "status": "preview",
-        "price": current_price,
-        "resultImage": watermarked_b64,       # มีลายน้ำ (ลูกค้าเห็น)
-        "resultImageClean": clean_b64,          # ไม่มีลายน้ำ (ปลดหลังชำระ)
-        "submittedAt": int(time.time() * 1000)
+        "status": "done",
+        "resultImage": clean_b64,
+        "completedAt": int(time.time() * 1000)
     })
 
-    print(f"[TextRetouch] 🚀 ส่งจุดที่ {patch_num} ให้ลูกค้าตรวจแล้ว! ราคา ฿{current_price}")
+    print(f"[TextRetouch] 🎉 สำเร็จ! จุดที่ {patch_num} ส่งถึงลูกค้าเรียบร้อย")
 
-    # 5. ลบ active state
     try:
         os.remove(ACTIVE_STATE_FILE)
     except Exception:
@@ -252,104 +430,62 @@ def submit_result_from_photoshop():
     return True
 
 
-def apply_watermark(input_path, output_path, patch_num):
-    """เพิ่มลายน้ำ PREVIEW บน result patch"""
-    img = Image.open(input_path).convert("RGBA")
-    W, H = img.size
-
-    overlay = Image.new("RGBA", (W, H), (255, 255, 255, 0))
-    draw = ImageDraw.Draw(overlay)
-
-    # เส้นทแยงมุม
-    step = max(12, min(W, H) // 8)
-    for offset in range(-H, W + H, step):
-        draw.line([(offset, 0), (offset + H, H)], fill=(255, 255, 255, 70), width=2)
-
-    # กรอบสีส้ม
-    draw.rectangle([0, 0, W-1, H-1], outline=(245, 158, 11, 200), width=3)
-
-    # ตัวหนังสือ PREVIEW
-    try:
-        font = ImageFont.truetype("C:/Windows/Fonts/arialbd.ttf", max(14, min(W, H) // 5))
-    except Exception:
-        font = ImageFont.load_default()
-
-    label = "PREVIEW"
-    bbox = draw.textbbox((0, 0), label, font=font)
-    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    tx, ty = (W - tw) // 2, (H - th) // 2
-    draw.rectangle([tx - 8, ty - 4, tx + tw + 8, ty + th + 4], fill=(15, 23, 42, 210))
-    draw.text((tx, ty), label, font=font, fill=(254, 240, 138, 255))
-
-    final = Image.alpha_composite(img, overlay).convert("RGB")
-    final.save(output_path, "JPEG", quality=90)
-
-    with open(output_path, "rb") as f:
-        return base64.b64encode(f.read()).decode()
-
-
 # ─────────────────────────────────────────────────────────────────
-#  3. CONFIRM PAYMENT — Called after payment verified
-# ─────────────────────────────────────────────────────────────────
-def confirm_payment(session_id, patch_id):
-    """ปลดลายน้ำ — อัพเดทสถานะเป็น 'done'"""
-    try:
-        patch_data = fb_get(f"text_retouch/{session_id}/patches/{patch_id}") or {}
-        fb_patch(f"text_retouch/{session_id}/patches/{patch_id}", {
-            "status": "done",
-            "paidAt": int(time.time() * 1000)
-        })
-        print(f"[TextRetouch] ✅ ยืนยันชำระเงิน patch {patch_id} เรียบร้อย")
-        return True
-    except Exception as e:
-        print(f"[TextRetouch] ❌ ยืนยันชำระเงินล้มเหลว: {e}")
-        return False
-
-
-# ─────────────────────────────────────────────────────────────────
-#  HTTP HANDLER — for auto_donate_watcher.py to call
+#  5. HTTP DISPATCHER — for auto_donate_watcher.py
 # ─────────────────────────────────────────────────────────────────
 def handle_request(action, post_data=None):
-    """
-    action = 'watch'      → ค้นหา + เปิด patch ใหม่
-    action = 'submit'     → ส่งผลลัพธ์หลัง PS บันทึก
-    action = 'confirm_payment' → ยืนยันชำระเงิน (post_data: {session_id, patch_id})
-    """
-    if action == "watch":
-        watch_and_open_next()
+    post_data = post_data or {}
+    sid = post_data.get("session_id", "")
+    pid = post_data.get("patch_id", "")
+
+    if action == "submit":
+        return {"ok": submit_result_from_photoshop()}
+
+    elif action == "quote":
+        price = float(post_data.get("price", 0))
+        quote_patch(sid, pid, price)
         return {"ok": True}
 
-    elif action == "submit":
-        success = submit_result_from_photoshop()
-        return {"ok": success}
+    elif action == "reject":
+        reason = post_data.get("reason", "ไม่สามารถรับงานนี้ได้")
+        reject_patch(sid, pid, reason)
+        return {"ok": True}
 
-    elif action == "confirm_payment":
-        data = post_data or {}
-        sid = data.get("session_id", "")
-        pid = data.get("patch_id", "")
-        success = confirm_payment(sid, pid)
-        return {"ok": success}
+    elif action == "mark_paid":
+        mark_patch_paid(sid, pid)
+        return {"ok": True}
 
-    return {"ok": False, "error": "Unknown action"}
+    elif action == "review":
+        # Launch GUI popup in a separate process
+        script_path = os.path.abspath(__file__)
+        subprocess.Popen([sys.executable, script_path, "--review", sid, pid], shell=False)
+        return {"ok": True}
+
+    return {"ok": False, "error": f"Unknown action: {action}"}
 
 
 # ─────────────────────────────────────────────────────────────────
-#  CLI ENTRYPOINT
+#  6. CLI ENTRYPOINT
 # ─────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         action = sys.argv[1]
-        if action == "--watch":
-            watch_and_open_next()
+        if action == "--review" and len(sys.argv) > 3:
+            show_review_popup(sys.argv[2], sys.argv[3])
+        elif action == "--quote" and len(sys.argv) > 4:
+            quote_patch(sys.argv[2], sys.argv[3], float(sys.argv[4]))
+        elif action == "--reject" and len(sys.argv) > 4:
+            reject_patch(sys.argv[2], sys.argv[3], sys.argv[4])
+        elif action == "--paid" and len(sys.argv) > 3:
+            mark_patch_paid(sys.argv[2], sys.argv[3])
         elif action == "--submit":
             submit_result_from_photoshop()
-        elif action == "--confirm" and len(sys.argv) > 3:
-            confirm_payment(sys.argv[2], sys.argv[3])
         else:
             print("Usage:")
-            print("  python text_retouch_engine.py --watch")
+            print("  python text_retouch_engine.py --review <session_id> <patch_id>")
+            print("  python text_retouch_engine.py --quote <session_id> <patch_id> <price>")
+            print("  python text_retouch_engine.py --reject <session_id> <patch_id> <reason>")
+            print("  python text_retouch_engine.py --paid <session_id> <patch_id>")
             print("  python text_retouch_engine.py --submit")
-            print("  python text_retouch_engine.py --confirm <session_id> <patch_id>")
     else:
-        print("Text-Retouch Engine v2 — Agent Style")
-        print("Run with --watch / --submit / --confirm")
+        print("Text-Retouch Engine v3 (New Pay-First Flow)")
