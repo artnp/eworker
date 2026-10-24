@@ -887,9 +887,13 @@
                     const imgUrl = patch.patchImage ? `data:image/jpeg;base64,${patch.patchImage}` : '';
                     const key = `${sid}_${pid}`;
 
-                    if (status === 'done') {
-                        hasDone = true;
-                        // เมื่อรายการเสร็จสมบูรณ์แล้ว ก็เอาออกเลยนะ ไม่ต้องแสดง
+                    if (status === 'done' || status === 'rejected') {
+                        if (status === 'done') hasDone = true;
+                        if (status === 'rejected') {
+                            // ลบรายการที่ปฏิเสธแล้วออกจากฐานข้อมูลระบบ
+                            db.ref(`text_retouch/${sid}/patches/${pid}`).remove().catch(() => { });
+                        }
+                        // เมื่อรายการเสร็จสมบูรณ์แล้ว หรือถูกปฏิเสธงาน ให้เอาออกจากระบบเลย ไม่ต้องแสดงในคิวงานอื่น
                         return;
                     }
 
@@ -1099,13 +1103,19 @@
             if (!confirmed) return;
 
             try {
+                // ส่งสถานะ rejected เพื่อแจ้งเตือนไปยังหน้าจอลูกค้า
                 await db.ref(`text_retouch/${sid}/patches/${pid}`).update({
                     status: 'rejected',
                     rejectReason: reason,
                     rejectedAt: Date.now(),
                     patchImage: null
                 });
-                toast('❌ ปฏิเสธงานและลบภาพออกจากระบบเรียบร้อย', 'info');
+                toast('❌ ปฏิเสธงานและลบรายการออกจากระบบเรียบร้อย', 'info');
+
+                // ลบออกจากระบบฐานข้อมูลถาวรหลังจากส่งสัญญาณแจ้งลูกค้า
+                setTimeout(() => {
+                    db.ref(`text_retouch/${sid}/patches/${pid}`).remove().catch(() => { });
+                }, 3000);
             } catch (e) {
                 toast('เกิดข้อผิดพลาด: ' + e.message, 'error');
             }
@@ -1114,10 +1124,10 @@
         async function deleteHistoryCard(sid, pid) {
             const confirmed = await showConfirmModal({
                 title: 'ยืนยันลบรายการนี้ออกจากระบบ?',
-                message: 'สถานะในหน้างานลูกค้าจะถูกอัพเดตเป็น:\n"ระบบขัดข้อง โปรดติดต่อ LINE: https://line.me/ti/p/gqIluRmdJ_"',
-                icon: 'fa-solid fa-triangle-exclamation',
+                message: 'รายการนี้จะถูกลบออกจากระบบทันที',
+                icon: 'fa-solid fa-trash-can',
                 iconType: 'danger',
-                confirmText: 'ลบและแจ้งลูกค้า',
+                confirmText: 'ลบออกจากระบบ',
                 cancelText: 'ยกเลิก',
                 danger: true
             });
@@ -1128,8 +1138,9 @@
                     status: 'system_error',
                     errorMessage: 'ระบบขัดข้อง โปรดติดต่อ LINE: https://line.me/ti/p/gqIluRmdJ_',
                     errorAt: Date.now()
-                });
-                toast('⚠️ อัพเดตหน้างานลูกค้าเป็น "ระบบขัดข้อง โปรดติดต่อ LINE" เรียบร้อย', 'info');
+                }).catch(() => { });
+                await db.ref(`text_retouch/${sid}/patches/${pid}`).remove();
+                toast('🗑️ ลบรายการนี้ออกจากระบบเรียบร้อย', 'info');
             } catch (e) {
                 toast('เกิดข้อผิดพลาด: ' + e.message, 'error');
             }
