@@ -458,8 +458,8 @@
 
             Object.entries(allSessions).forEach(([sid, session]) => {
                 if (!session || typeof session !== 'object') return;
-                // ถ้า session นี้จบงาน/ลูกค้าดาวน์โหลดไปแล้ว ให้ลบออกจากระบบ Firebase ทันที ไม่ให้รกหูรกตา
-                if (session.status === 'completed' || session.downloaded) {
+                // ถ้า session นี้จบงานและระบุว่าเสร็จสิ้นถาวรแล้ว
+                if (session.status === 'completed') {
                     db.ref(`text_retouch/${sid}`).remove().catch(()=>{});
                     return;
                 }
@@ -470,8 +470,8 @@
 
                 pEntries.forEach(([pid, patch]) => {
                     if (!patch || typeof patch !== 'object') return;
-                    // ถ้าจุดนี้เคลียร์แล้วหรือลูกค้ารับงานไปแล้ว ให้ลบออกจาก Firebase
-                    if (patch.cleaned || patch.downloaded) {
+                    // ถ้าจุดนี้ถูกล้างออกถาวร
+                    if (patch.cleaned) {
                         db.ref(`text_retouch/${sid}/patches/${pid}`).remove().catch(()=>{});
                         return;
                     }
@@ -490,7 +490,7 @@
                         }
                         pendingHtml += renderPendingCard(sid, pid, num, note, imgUrl);
                     } else {
-                        otherHtml += renderOtherCard(sid, pid, num, note, status, price, imgUrl, patch.resultImage);
+                        otherHtml += renderOtherCard(sid, pid, num, note, status, price, imgUrl, patch.resultImage, patch.revised);
                     }
                 });
             });
@@ -572,7 +572,7 @@
             </div>`;
         }
 
-        function renderOtherCard(sid, pid, num, note, status, price, imgUrl, resultImg) {
+        function renderOtherCard(sid, pid, num, note, status, price, imgUrl, resultImg, isRevised = false) {
             const badgeClass = status === 'paid' ? 'badge-paid' :
                                status === 'working' ? 'badge-working' :
                                status === 'done' ? 'badge-done' :
@@ -585,7 +585,10 @@
             return `
             <div class="job-card">
                 <div class="job-header">
-                    <span style="font-weight:700; font-size:0.95rem;">จุดที่ #${num} ${price > 0 && status !== 'system_error' ? `<span style="color:var(--success);margin-left:8px;">฿${price}</span>` : ''}</span>
+                    <span style="font-weight:700; font-size:0.95rem;">
+                        จุดที่ #${num} ${price > 0 && status !== 'system_error' ? `<span style="color:var(--success);margin-left:8px;">฿${price}</span>` : ''}
+                        ${isRevised ? `<span style="background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:6px;font-size:0.75rem;font-weight:700;margin-left:6px;"><i class="fa-solid fa-rotate-left"></i> สั่งแก้งาน (ฟรี)</span>` : ''}
+                    </span>
                     <span class="job-badge ${badgeClass}">${statusLabel}</span>
                 </div>
                 <div class="job-body">
