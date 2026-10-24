@@ -2600,6 +2600,8 @@
                         patchDataUrl: p.patchImage ? `data:image/jpeg;base64,${p.patchImage}` : (patches[pid] && patches[pid].patchDataUrl) || '',
                         resultDataUrl: p.resultImage ? `data:image/png;base64,${p.resultImage}` : (patches[pid] && patches[pid].resultDataUrl) || null,
                         rejectReason: p.rejectReason || '',
+                        revised: p.revised || (patches[pid] && patches[pid].revised) || false,
+                        revisionCount: p.revisionCount || (patches[pid] && patches[pid].revisionCount) || 0,
                         composited: p.status === 'done',
                         createdAt: p.createdAt || Date.now()
                     });
@@ -2929,8 +2931,27 @@
 
             // Add Patch button
             document.getElementById('btnAddPatch').addEventListener('click', () => {
-                if (isCropMode) exitCropMode();
-                else enterCropMode();
+                if (isCropMode) {
+                    exitCropMode();
+                } else {
+                    // หากมีรายการเดิมที่แก้เสร็จแล้ว (status === 'done') ให้ล้างการ์ดเดิมออกเพื่อขึ้นบิลงานใหม่ (ภาพบน Canvas ยังคงอยู่)
+                    const donePatches = Object.values(patches).filter(p => p.status === 'done');
+                    if (donePatches.length > 0) {
+                        donePatches.forEach(dp => {
+                            const card = document.getElementById(`card_${dp.id}`);
+                            if (card) card.remove();
+                            const ov = document.getElementById(`overlay_${dp.id}`);
+                            if (ov) ov.remove();
+                            try { db.ref(patchPath(dp.id)).remove(); } catch (e) { }
+                            delete patches[dp.id];
+                        });
+                        savePatchesToLocalStorage();
+                        updateEmpty();
+                        updateTotal();
+                        document.getElementById('btnDownloadFinal')?.classList.remove('visible');
+                    }
+                    enterCropMode();
+                }
             });
 
             // Esc key
@@ -3123,17 +3144,21 @@
         function updateAddPatchButton() {
             const btn = document.getElementById('btnAddPatch');
             if (!btn) return;
-            const count = Object.keys(patches).length;
-            if (count >= 1) {
+            const patchList = Object.values(patches);
+            const hasUnfinished = patchList.some(p => p.status !== 'done');
+
+            if (patchList.length >= 1 && hasUnfinished) {
+                // กำลังมีงานที่ยังไม่เสร็จ (รอประเมิน, รอโอน, หรือกำลังทำใน Photoshop)
                 btn.disabled = true;
                 btn.style.opacity = '0.5';
                 btn.style.cursor = 'not-allowed';
-                btn.title = 'จำกัด 1 จุดต่อครั้ง (ลบจุดเดิมก่อนหากต้องการเปลี่ยนตำแหน่ง)';
+                btn.title = 'จำกัด 1 จุดต่อครั้ง (รองานปัจจุบันเสร็จสิ้นก่อน หรือลบจุดเดิมหากต้องการเปลี่ยนตำแหน่ง)';
             } else {
+                // ไม่มีจุด หรือ จุดเดิมแก้เสร็จสมบูรณ์แล้ว (status === 'done') -> ปลดล็อคให้กดชี้จุดใหม่ได้ทันที
                 btn.disabled = false;
                 btn.style.opacity = '1';
                 btn.style.cursor = 'pointer';
-                btn.title = 'ชี้จุดที่จะแก้';
+                btn.title = patchList.length > 0 ? 'ชี้จุดที่จะแก้จุดใหม่ (ขึ้นบิลงานใหม่บนภาพเดิม)' : 'ชี้จุดที่จะแก้';
             }
         }
 
@@ -3335,6 +3360,8 @@
                                 resultDataUrl: fbPatch.resultImage ? `data:image/png;base64,${fbPatch.resultImage}` : null,
                                 rejectReason: fbPatch.rejectReason || '',
                                 errorMessage: fbPatch.errorMessage || '',
+                                revised: fbPatch.revised || false,
+                                revisionCount: fbPatch.revisionCount || 0,
                                 composited: fbPatch.status === 'done',
                                 createdAt: fbPatch.createdAt || Date.now()
                             };
@@ -3345,6 +3372,11 @@
                         }
 
                         const local = patches[pid];
+
+                        // Sync revision metadata & note
+                        if (fbPatch.revised !== undefined) local.revised = fbPatch.revised;
+                        if (fbPatch.revisionCount !== undefined) local.revisionCount = fbPatch.revisionCount;
+                        if (fbPatch.note && fbPatch.note !== local.note) local.note = fbPatch.note;
 
                         // 1. System error (Admin clicked "ลบรายการนี้ออกจากระบบ")
                         if (fbPatch.status === 'system_error' && local.status !== 'system_error') {
@@ -3414,15 +3446,22 @@
                         }
 
                         // 6. Result completed
-                        if (fbPatch.resultImage && fbPatch.status === 'done' && local.status !== 'done') {
+                        if (fbPatch.resultImage && fbPatch.status === 'done' && (local.status !== 'done' || !local.resultDataUrl || fbPatch.completedAt !== local.completedAt)) {
+                            const wasNotDone = local.status !== 'done';
                             local.status = 'done';
                             local.resultDataUrl = 'data:image/png;base64,' + fbPatch.resultImage;
+                            local.completedAt = fbPatch.completedAt || Date.now();
+                            if (fbPatch.revised !== undefined) local.revised = fbPatch.revised;
+                            if (fbPatch.revisionCount !== undefined) local.revisionCount = fbPatch.revisionCount;
                             patches[pid] = local;
                             renderPatchCard(pid);
                             renderPatchOverlays();
                             updateTotal();
                             updateWorkingTimers();
-                            toast(`🎉 จุดที่ ${local.num} ทำเสร็จแล้ว! กำลังประกอบร่าง...`, 'success');
+                            updateAddPatchButton();
+                            if (wasNotDone) {
+                                toast(`🎉 จุดที่ ${local.num} ทำเสร็จแล้ว! กำลังประกอบร่าง...`, 'success');
+                            }
                             applyPatchToCanvas(pid, true);
                             checkAllDone();
                         }
@@ -3435,6 +3474,8 @@
                             updateTotal();
                         }
                     });
+
+                    updateAddPatchButton();
 
                     // ตรวจสอบคิวที่ถูกลบออกจาก Firebase (แอดมินลบคิว หรือเซสชันถูกล้าง)
                     Object.keys(patches).forEach(pid => {
@@ -3599,13 +3640,32 @@
                     </div>
                 ` : ''}
                 ${patch.status === 'done' ? `
-                    <div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:8px;">
-                        <span style="color:var(--success);font-weight:700;font-size:0.85rem;display:flex;align-items:center;gap:6px;">
-                            <i class="fa-solid fa-circle-check"></i> ทำการแก้เสร็จแล้ว
-                        </span>
-                        <button class="btn-patch-action" onclick="downloadFinalFile()" style="background:var(--success);color:white;border:none;border-radius:8px;padding:7px 12px;font-weight:700;font-size:0.82rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(22,163,74,0.3);">
-                            <i class="fa-solid fa-download"></i> ดาวน์โหลดงาน
-                        </button>
+                    <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:8px;">
+                            <span style="color:var(--success);font-weight:700;font-size:0.85rem;display:flex;align-items:center;gap:6px;">
+                                <i class="fa-solid fa-circle-check"></i> ทำการแก้เสร็จแล้ว
+                            </span>
+                            <button class="btn-patch-action" onclick="downloadFinalFile()" style="background:var(--success);color:white;border:none;border-radius:8px;padding:7px 12px;font-weight:700;font-size:0.82rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(22,163,74,0.3);">
+                                <i class="fa-solid fa-download"></i> ดาวน์โหลดงาน
+                            </button>
+                        </div>
+                        ${(!patch.revised && (patch.revisionCount || 0) < 1) ? `
+                            <div id="revisionBox_${patchId}" style="display:none;background:#fffbeb;border:1px solid #fef3c7;border-radius:8px;padding:10px;margin-top:4px;">
+                                <div style="font-size:0.8rem;font-weight:700;color:#92400e;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+                                    <i class="fa-solid fa-pen-to-square"></i> ระบุสิ่งที่ต้องการให้แก้เพิ่มเติม (ฟรี 1 ครั้ง):
+                                </div>
+                                <textarea id="revisionNoteInput_${patchId}" class="patch-note-input" style="min-height:60px;margin-bottom:8px;background:#ffffff;border-color:#fcd34d;" placeholder="เช่น ขอฟอนต์หนาขึ้น, แก้ตัวเลขเป็น..."></textarea>
+                                <div style="display:flex;gap:6px;justify-content:flex-end;">
+                                    <button onclick="toggleRevisionBox('${patchId}', false)" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;padding:5px 10px;border-radius:6px;font-size:0.78rem;font-weight:600;cursor:pointer;">ยกเลิก</button>
+                                    <button onclick="submitRevision('${patchId}')" style="background:#d97706;color:white;border:none;padding:5px 12px;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
+                                        <i class="fa-solid fa-paper-plane"></i> ส่งแก้งานเข้า Photoshop
+                                    </button>
+                                </div>
+                            </div>
+                            <button id="btnOpenRev_${patchId}" class="btn-patch-action" onclick="toggleRevisionBox('${patchId}', true)" style="background:#fffbeb;color:#b45309;border:1.5px solid #fcd34d;border-radius:8px;padding:8px 12px;font-weight:700;font-size:0.83rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;width:100%;transition:all 0.2s;box-shadow:0 1px 3px rgba(180,83,9,0.1);">
+                                <i class="fa-solid fa-rotate-left"></i> สั่งแก้งาน (ฟรี 1 ครั้ง)
+                            </button>
+                        ` : ''}
                     </div>
                 ` : ''}
             </div>
@@ -3625,6 +3685,76 @@
 
             updateEmpty();
             updateTotal();
+            updateAddPatchButton();
+        }
+
+        function toggleRevisionBox(patchId, show) {
+            const box = document.getElementById(`revisionBox_${patchId}`);
+            const btnOpen = document.getElementById(`btnOpenRev_${patchId}`);
+            if (box) box.style.display = show ? 'block' : 'none';
+            if (btnOpen) btnOpen.style.display = show ? 'none' : 'inline-flex';
+            if (show) {
+                const input = document.getElementById(`revisionNoteInput_${patchId}`);
+                if (input) {
+                    input.focus();
+                    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+
+        async function submitRevision(patchId) {
+            const patch = patches[patchId];
+            if (!patch) return;
+
+            const input = document.getElementById(`revisionNoteInput_${patchId}`);
+            const revisionNote = input?.value?.trim() || '';
+
+            if (!revisionNote) {
+                toast('กรุณาระบุสิ่งที่ต้องการให้แก้เพิ่มเติมก่อนส่งครับ', 'error');
+                if (input) input.focus();
+                return;
+            }
+
+            // สั่งแก้งานฟรี (1 ครั้ง) -> อัพเดตสถานะเป็น paid ทันที เพื่อส่งเข้า Photoshop โดยไม่ต้องโอนเงินซ้ำ
+            patch.revised = true;
+            patch.revisionCount = (patch.revisionCount || 0) + 1;
+            patch.note = revisionNote;
+            patch.status = 'paid';
+            patch.paidAt = Date.now();
+            patch.updatedAt = Date.now();
+            patch.composited = false; // รีเซ็ตเพื่อรอรับภาพรอบใหม่
+
+            savePatchesToLocalStorage();
+            renderPatchCard(patchId);
+            renderPatchOverlays();
+            updateAddPatchButton();
+
+            try {
+                await db.ref(patchPath(patchId)).update({
+                    status: 'paid',
+                    note: patch.note,
+                    revised: true,
+                    revisionCount: patch.revisionCount,
+                    paidAt: patch.paidAt,
+                    updatedAt: patch.updatedAt
+                });
+
+                toast('🚀 ส่งคำสั่งแก้งานให้ช่างแล้ว! กำลังเปิดเข้า Photoshop ทันที...', 'success');
+
+                // เปิด/สลับไปที่หน้าแอดมิน Photoshop ทันที
+                try {
+                    window.open('http://127.0.0.1:5000/admin-text-retouch.html', 'admin_text_retouch_tab');
+                } catch (e) { }
+
+                // แจ้งเตือน local service (ถ้ามี)
+                fetch('http://127.0.0.1:5000/text-retouch-paid', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: sessionId, patch_id: patchId })
+                }).catch(() => {});
+            } catch (err) {
+                toast('❌ ส่งคำสั่งแก้งานไม่สำเร็จ: ' + err.message, 'error');
+            }
         }
 
         /* ======================================================
@@ -4155,6 +4285,14 @@
                     img.src = newUrl;
                     localFileUrl = newUrl;
                     await new Promise(r => { img.onload = r; });
+                    try {
+                        offscreen.toBlob(async blob => {
+                            if (blob) {
+                                localFile = blob;
+                                await saveFileToIndexedDB(sessionId, blob, 'image');
+                            }
+                        }, 'image/jpeg', 0.95);
+                    } catch (e) { }
                 } else if (localFileType === 'pdf') {
                     // วาดลงบน pdfCanvas ทันทีเพื่อให้แสดงผลประกอบร่างได้ตรงตำแหน่ง 100%
                     const pdfCanvas = document.getElementById('pdfCanvas');
@@ -4166,6 +4304,7 @@
                 patch.composited = true;
                 renderPatchCard(patchId);
                 renderPatchOverlays();
+                updateAddPatchButton();
 
                 if (showToast) toast(`✅ ประกอบร่างจุดที่ ${patch.num} เรียบร้อย!`, 'success');
                 checkAllDone();
@@ -4196,7 +4335,7 @@
                 a.click();
                 toast(`ดาวน์โหลดภาพหน้า ${currentPage} ที่แก้ไขเรียบร้อย!`, 'success');
                 try {
-                    await db.ref(`text_retouch/${sessionId}`).remove();
+                    await db.ref(`text_retouch/${sessionId}`).update({ downloaded: true, downloadedAt: Date.now() });
                 } catch (e) { }
                 return;
             }
@@ -4208,14 +4347,9 @@
             a.click();
             toast('ดาวน์โหลดไฟล์เรียบร้อย!', 'success');
 
-            // เมื่องานเสร็จและลูกค้าดาวน์โหลดแล้ว ถือว่างานจบ ลบรายการนี้ออกจากระบบ Firebase ทันที เพื่อไม่ให้รกหลังบ้าน
-            // แต่งานบนหน้าจอและ Canvas ของลูกค้ายังคงอยู่ปกติ
             try {
-                await db.ref(`text_retouch/${sessionId}`).remove();
-                console.log('[TextRetouch] ลูกค้าดาวน์โหลดงานแล้ว ลบรายการออกจาก Firebase เรียบร้อย');
-            } catch (e) {
-                console.warn('[TextRetouch] Firebase remove error:', e);
-            }
+                await db.ref(`text_retouch/${sessionId}`).update({ downloaded: true, downloadedAt: Date.now() });
+            } catch (e) { }
         }
 
         /* ======================================================
