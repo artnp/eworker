@@ -661,15 +661,30 @@
         }
 
         async function openInPhotoshop(sid, pid) {
+            const host = window.location.port ? window.location.origin : 'http://127.0.0.1:5000';
             try {
-                const res = await fetch(`http://127.0.0.1:37791/text-retouch-paid`, {
+                const res = await fetch(`${host}/text-retouch-paid`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ session_id: sid, patch_id: pid })
                 });
-                toast('🎨 สั่งเปิด Photoshop เรียบร้อย', 'success');
+                const data = await res.json().catch(() => ({}));
+                if (data && data.ok) {
+                    toast('🎨 สั่งเปิด Photoshop เรียบร้อยแล้ว', 'success');
+                } else {
+                    toast('🎨 ส่งงานเข้า Photoshop แล้ว: ' + (data.error || 'กำลังดำเนินการ...'), 'info');
+                }
             } catch(e) {
-                toast('เรียก server ล้มเหลว กรุณาตรวจสอบว่า auto_donate_watcher.py กำลังรันอยู่', 'error');
+                // Fallback: update Firebase directly so background watcher picks it up
+                try {
+                    await db.ref(`text_retouch/${sid}/patches/${pid}`).update({
+                        status: 'working',
+                        openedAt: Date.now()
+                    });
+                    toast('🎨 อัพเดตสถานะเป็นกำลังทำใน Photoshop แล้ว', 'success');
+                } catch(err) {
+                    toast('เรียก server ล้มเหลว: ' + e.message, 'error');
+                }
             }
         }
 
