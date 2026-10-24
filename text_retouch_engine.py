@@ -404,10 +404,21 @@ app.putCustomOptions("TextRetouchResultPath", desc, true);
     with open(jsx_path, "w", encoding="utf-8") as f:
         f.write(jsx)
 
-    # เปิด Photoshop + รัน script
-    ps_path = get_photoshop_path()
-    print(f"[TextRetouch] 🎨 เปิด Photoshop: patch #{num} — '{note}'")
-    subprocess.Popen([ps_path, "-run", jsx_path], shell=False)
+    # เปิด Photoshop + รัน script (ลองผ่าน COM ก่อนเพื่อให้เร็วเสี้ยววินาที ถ้าไม่สำเร็จค่อย subprocess)
+    print(f"[TextRetouch] 🎨 กำลังเปิดเข้า Photoshop: patch #{num} — '{note}'")
+    com_opened = False
+    try:
+        import win32com.client
+        ps = win32com.client.Dispatch("Photoshop.Application")
+        ps.DoJavaScriptFile(jsx_path)
+        com_opened = True
+        print(f"[TextRetouch] ⚡ เปิดเข้า Photoshop สำเร็จทันทีผ่าน COM Automation (เสี้ยววินาที)")
+    except Exception as e:
+        print(f"[TextRetouch] COM Automation ({e}) -> สลับเป็น subprocess")
+
+    if not com_opened:
+        ps_path = get_photoshop_path()
+        subprocess.Popen([ps_path, "-run", jsx_path], shell=False)
 
     try:
         import winsound
