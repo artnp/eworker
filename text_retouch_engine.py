@@ -371,23 +371,28 @@ def open_patch_in_photoshop(session_id, patch_id, patch_data):
     result_path_jsx = result_path.replace("\\", "/")
     num = patch_data.get("num", 1)
 
+    # เช็คว่าโจทย์คือการสั่งลบหรือไม่
+    is_delete_cmd = note.strip().lower() in ["ลบ", "delete", "remove", "ลบออก", "ลบข้อความ", "ลบคำ", "เอาออก"]
+    layer_name = f"📝 #{num}: {note_escaped}"
+
     jsx = f"""
 // Text-Retouch: Auto-open patch #{num}
 var patchFile = new File("{patch_path_jsx}");
 var doc = app.open(patchFile);
-doc.resizeCanvas(doc.width, doc.height + 60, AnchorPosition.TOPCENTER);
 
-// Add note text layer
+// สร้าง Text Layer แยกสำหรับข้อความที่จะแก้ (ขนาด Canvas คงเดิม 100% ไม่สร้างแถบสี)
 var textLayer = doc.artLayers.add();
 textLayer.kind = LayerKind.TEXT;
-textLayer.name = "📝 โน้ต #{num}";
+textLayer.name = "{layer_name}";
 var txt = textLayer.textItem;
-txt.contents = "#{num}: {note_escaped}";
-txt.size = 18;
-txt.color.rgb.hexValue = "FFDD00";
-txt.position = [10, doc.height - 40];
+txt.contents = "{note_escaped}";
+txt.size = Math.min(Math.max(doc.height * 0.4, 14), 60);
+txt.position = [10, Math.min(doc.height * 0.75, doc.height - 5)];
+txt.color.rgb.hexValue = "000000";
 
-// Active layer = Background (for editing)
+{"textLayer.visible = false;" if is_delete_cmd else ""}
+
+// Active layer = Background (สำหรับรีทัชภาพ)
 doc.activeLayer = doc.layers[doc.layers.length - 1];
 
 // Save result path for submit
