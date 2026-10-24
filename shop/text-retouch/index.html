@@ -3178,6 +3178,19 @@
                 return;
             }
 
+            // เปิด/สลับไปที่แท็บ Admin ทันทีเมื่อส่งคำสั่ง (หากมีแท็บเปิดอยู่แล้วจะ select แท็บเดิม ไม่เปิดซ้ำ)
+            try {
+                window.open('http://127.0.0.1:5000/admin-text-retouch.html', 'admin_text_retouch_tab');
+            } catch (e) {
+                console.warn('[TextRetouch] Cannot open admin tab:', e);
+            }
+
+            try {
+                const bc = new BroadcastChannel('admin_text_retouch_singleton');
+                bc.postMessage({ type: 'FOCUS_REQUEST', timestamp: Date.now() });
+                bc.close();
+            } catch (e) {}
+
             setSendBtnLoading(patchId, true);
             patch.status = 'pending_review';
             patches[patchId] = patch;
@@ -3204,6 +3217,13 @@
                 await db.ref(patchPath(patchId)).set(firebasePayload);
                 savePatchesToLocalStorage();
                 toast(`✅ ส่งจุดที่ ${patch.num} ให้นักรีทัชประเมินราคาแล้ว กรุณารอสักครู่...`, 'success');
+
+                // แจ้งเตือน local service (ถ้ามี)
+                fetch('http://127.0.0.1:5000/text-retouch-review', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId, patchId })
+                }).catch(() => {});
             } catch (err) {
                 patch.status = 'waiting';
                 savePatchesToLocalStorage();
