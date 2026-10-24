@@ -2053,7 +2053,7 @@
         </a>
         <div class="header-right">
             <button class="btn-new-file" id="btnNewFile" style="display:none;" onclick="startNewSession()">
-                <i class="fa-solid fa-plus"></i> เริ่มงานใหม่
+                <i class="fa-solid fa-plus"></i> จ้างงานใหม่
             </button>
             <div class="status-dot status-online" id="statusDot">
                 <span class="dot"></span>
@@ -2423,6 +2423,7 @@
                         const title = zone.querySelector('.upload-title');
                         if (title) title.textContent = '❌ ขณะนี้ร้านปิดรับงานชั่วคราว (ไม่สามารถส่งไฟล์ได้)';
                     }
+                    handleAdminOffline('ระบบขัดข้อง เนื่องจากช่างออฟไลน์ โปรดติดต่อ LINE: https://line.me/ti/p/gqIluRmdJ_');
                 } else if (shopStatus === 'away' || shopStatus === 'always') {
                     dot.classList.add('status-away');
                     text.textContent = 'กำลังงีบอยู่ Zzz';
@@ -2438,6 +2439,57 @@
                         zone.classList.remove('is-offline');
                         const title = zone.querySelector('.upload-title');
                         if (title) title.textContent = 'คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่';
+                    }
+                }
+            });
+        }
+
+        let offlineGraceTimer = null;
+
+        function handleAdminOffline(reason) {
+            let changed = false;
+            Object.keys(patches).forEach(pid => {
+                const p = patches[pid];
+                if (!p) return;
+                // Active patches waiting for review, waiting for payment, paid, or working in Photoshop
+                if (['pending_review', 'pending_payment', 'paid', 'working'].includes(p.status)) {
+                    p.status = 'system_error';
+                    p.errorMessage = reason || 'ระบบขัดข้อง เนื่องจากช่างออฟไลน์ โปรดติดต่อ LINE: https://line.me/ti/p/gqIluRmdJ_';
+                    renderPatchCard(pid);
+                    renderPatchOverlays();
+                    changed = true;
+                }
+            });
+
+            if (changed) {
+                updateTotal();
+                updateWorkingTimers();
+                const modal = document.getElementById('paymentModal');
+                if (modal && modal.classList.contains('open')) {
+                    modal.classList.remove('open');
+                }
+                savePatchesToLocalStorage();
+                toast('⚠️ ระบบขัดข้อง เนื่องจากช่างออฟไลน์ โปรดติดต่อ LINE เจ้าหน้าที่', 'error');
+            }
+        }
+
+        function initAdminPresenceListener() {
+            db.ref('text_retouch_admin_presence').on('value', snap => {
+                const presence = snap.val();
+                if (!presence) return;
+
+                if (presence.online === false) {
+                    // Admin disconnected -> wait 5s grace period (handles brief page reloads)
+                    if (!offlineGraceTimer) {
+                        offlineGraceTimer = setTimeout(() => {
+                            handleAdminOffline('ระบบขัดข้อง ช่างตัดการเชื่อมต่อ/ออฟไลน์ โปรดติดต่อ LINE: https://line.me/ti/p/gqIluRmdJ_');
+                        }, 5000);
+                    }
+                } else {
+                    // Admin is online
+                    if (offlineGraceTimer) {
+                        clearTimeout(offlineGraceTimer);
+                        offlineGraceTimer = null;
                     }
                 }
             });
@@ -2463,6 +2515,7 @@
         // ── INIT ──
         window.addEventListener('DOMContentLoaded', async () => {
             initShopStatus();
+            initAdminPresenceListener();
             initUploadZone();
             initCanvas();
 
@@ -3090,23 +3143,24 @@
         async function createPatchFromCrop(overlayX, overlayY, overlayW, overlayH, overlayRect) {
             if (Object.keys(patches).length >= 1) return;
 
-            const wrapper = document.getElementById('canvasWrapper');
-            const wrapperRect = wrapper.getBoundingClientRect();
-
-            const relX = (overlayX + overlayRect.left - wrapperRect.left) / scale;
-            const relY = (overlayY + overlayRect.top - wrapperRect.top) / scale;
-            const relW = overlayW / scale;
-            const relH = overlayH / scale;
-
             const content = document.getElementById('mainImage').style.display !== 'none'
                 ? document.getElementById('mainImage') : document.getElementById('pdfCanvas');
+            const contentRect = content.getBoundingClientRect();
             const nativeW = content.naturalWidth || content.width;
             const nativeH = content.naturalHeight || content.height;
 
-            const cx = Math.max(0, relX);
-            const cy = Math.max(0, relY);
-            const cw = Math.min(nativeW - cx, relW);
-            const ch = Math.min(nativeH - cy, relH);
+            // พิกัดขอบเขตที่ผู้ใช้ลากคลุมจริงบนหน้าจอ
+            const cropScreenX = overlayRect.left + overlayX;
+            const cropScreenY = overlayRect.top + overlayY;
+
+            // แปลงสเกลจากขนาดที่แสดงผลบนหน้าจอ เข้าสู่พิกัดความละเอียดจริงของรูปภาพต้นฉบับ 100% เป๊ะๆ
+            const scaleX = nativeW / contentRect.width;
+            const scaleY = nativeH / contentRect.height;
+
+            const cx = Math.max(0, Math.round((cropScreenX - contentRect.left) * scaleX));
+            const cy = Math.max(0, Math.round((cropScreenY - contentRect.top) * scaleY));
+            const cw = Math.min(nativeW - cx, Math.round(overlayW * scaleX));
+            const ch = Math.min(nativeH - cy, Math.round(overlayH * scaleY));
 
             if (cw < 10 || ch < 10) return;
 
@@ -3120,7 +3174,7 @@
                 ctx.drawImage(document.getElementById('pdfCanvas'), cx, cy, cw, ch, 0, 0, cw, ch);
             }
 
-            const patchDataUrl = patchCanvas.toDataURL('image/jpeg', 0.92);
+            const patchDataUrl = patchCanvas.toDataURL('image/jpeg', 0.95);
 
             const patchId = 'p_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4);
             const num = Object.keys(patches).length + 1;
@@ -3189,7 +3243,7 @@
                 const bc = new BroadcastChannel('admin_text_retouch_singleton');
                 bc.postMessage({ type: 'FOCUS_REQUEST', timestamp: Date.now() });
                 bc.close();
-            } catch (e) {}
+            } catch (e) { }
 
             setSendBtnLoading(patchId, true);
             patch.status = 'pending_review';
@@ -3223,7 +3277,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ sessionId, patchId })
-                }).catch(() => {});
+                }).catch(() => { });
             } catch (err) {
                 patch.status = 'waiting';
                 savePatchesToLocalStorage();
@@ -3379,6 +3433,30 @@
                             patches[pid] = local;
                             renderPatchCard(pid);
                             updateTotal();
+                        }
+                    });
+
+                    // ตรวจสอบคิวที่ถูกลบออกจาก Firebase (แอดมินลบคิว หรือเซสชันถูกล้าง)
+                    Object.keys(patches).forEach(pid => {
+                        const local = patches[pid];
+                        if (!local) return;
+                        // ถ้างานกำลังรอประเมิน, รอโอน, โอนแล้ว, หรือกำลังทำใน Photoshop แต่หายไปจากฐานข้อมูล -> แสดงระบบขัดข้องทันที
+                        if (['pending_review', 'pending_payment', 'paid', 'working'].includes(local.status)) {
+                            if (!fbPatches[pid]) {
+                                local.status = 'system_error';
+                                local.errorMessage = 'ระบบขัดข้อง หรือคิวงานถูกยกเลิก โปรดติดต่อ LINE: https://line.me/ti/p/gqIluRmdJ_';
+                                patches[pid] = local;
+                                renderPatchCard(pid);
+                                renderPatchOverlays();
+                                updateTotal();
+                                updateWorkingTimers();
+
+                                const modal = document.getElementById('paymentModal');
+                                if (modal && modal.classList.contains('open') && currentPayingPatchId === pid) {
+                                    modal.classList.remove('open');
+                                }
+                                toast(`⚠️ จุดที่ ${local.num} ถูกลบออกจากระบบ/เกิดเหตุขัดข้อง โปรดติดต่อ LINE เจ้าหน้าที่`, 'error');
+                            }
                         }
                     });
 
@@ -3799,10 +3877,10 @@
         function finalizeOverlayChange(patchId, div, nW, nH) {
             const patch = patches[patchId];
             if (!patch) return;
-            const curL = parseFloat(div.style.left) || 0;
-            const curT = parseFloat(div.style.top) || 0;
-            const curW = parseFloat(div.style.width) || 0;
-            const curH = parseFloat(div.style.height) || 0;
+            const curL = Math.max(0, Math.round(parseFloat(div.style.left) || 0));
+            const curT = Math.max(0, Math.round(parseFloat(div.style.top) || 0));
+            const curW = Math.min(nW - curL, Math.round(parseFloat(div.style.width) || 0));
+            const curH = Math.min(nH - curT, Math.round(parseFloat(div.style.height) || 0));
 
             patch.cropRect = {
                 x: (curL / nW) * 100,
