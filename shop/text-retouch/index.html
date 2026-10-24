@@ -4,14 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Text-Retouch | บริการแก้ไขข้อความ & ดีไซน์</title>
-    <meta name="description" content="บริการแก้ไขข้อความและดีไซน์ ส่งเฉพาะส่วนที่ต้องการแก้ ไฟล์ต้นฉบับไม่ออกจากเครื่องคุณ ตรวจงานก่อนจ่าย">
+    <title>Text-Retouch | แก้ไขข้อความ & ดีไซน์เฉพาะจุด</title>
+    <meta name="description" content="บริการแก้ไขข้อความและดีไซน์ ส่งเฉพาะจุดที่ต้องการแก้ ไฟล์ต้นฉบับไม่ออกจากเครื่องคุณ ปลอดภัย 100%">
     <link rel="icon" type="image/x-icon" href="../../favicon.ico">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
     <!-- Firebase SDK -->
@@ -20,22 +20,21 @@
 
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-glow: rgba(99,102,241,0.35);
-            --accent: #f59e0b;
-            --accent-glow: rgba(245,158,11,0.3);
-            --success: #10b981;
-            --danger: #ef4444;
-            --danger-glow: rgba(239,68,68,0.35);
-            --bg: #070b14;
-            --bg-card: #0f172a;
-            --bg-surface: #1e293b;
-            --bg-surface2: #162032;
-            --text: #f1f5f9;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --accent: #d97706;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --danger-hover: #b91c1c;
+            --bg: #ffffff;
+            --bg-canvas: #f1f5f9;
+            --bg-card: #ffffff;
+            --text: #0f172a;
             --text-muted: #64748b;
             --text-dim: #94a3b8;
-            --border: rgba(255,255,255,0.08);
-            --border-active: rgba(99,102,241,0.6);
+            --border: #e2e8f0;
+            --border-strong: #cbd5e1;
+            --border-active: #2563eb;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -48,152 +47,93 @@
             overflow-x: hidden;
         }
 
-        /* ===== ANIMATED BACKGROUND ===== */
-        .bg-orbs {
-            position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
-        }
-        .orb {
-            position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.12; animation: drift 18s ease-in-out infinite;
-        }
-        .orb-1 { width: 500px; height: 500px; background: #6366f1; top: -150px; left: -100px; animation-delay: 0s; }
-        .orb-2 { width: 400px; height: 400px; background: #a855f7; bottom: -100px; right: -80px; animation-delay: -6s; }
-        .orb-3 { width: 300px; height: 300px; background: #06b6d4; top: 40%; left: 40%; animation-delay: -12s; }
-
-        @keyframes drift {
-            0%, 100% { transform: translate(0,0) scale(1); }
-            33% { transform: translate(30px,-20px) scale(1.05); }
-            66% { transform: translate(-20px,15px) scale(0.95); }
-        }
-
         /* ===== HEADER ===== */
         .app-header {
             position: sticky; top: 0; z-index: 200;
-            background: rgba(7,11,20,0.85);
-            backdrop-filter: blur(20px);
+            background: #ffffff;
             border-bottom: 1px solid var(--border);
             display: flex; align-items: center; justify-content: space-between;
-            padding: 0 24px; height: 60px; gap: 16px;
+            padding: 0 24px; height: 56px; gap: 16px;
         }
 
         .brand {
-            display: flex; align-items: center; gap: 12px;
-            font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.15rem; letter-spacing: -0.3px;
+            display: flex; align-items: center; gap: 10px;
+            font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.15rem;
             text-decoration: none; color: var(--text);
         }
         .brand-icon {
-            width: 38px; height: 38px;
-            background: linear-gradient(135deg, #6366f1, #a855f7);
-            border-radius: 10px;
+            width: 34px; height: 34px;
+            background: var(--primary);
+            border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 1rem; color: white;
-            box-shadow: 0 4px 15px rgba(99,102,241,0.4);
+            font-size: 0.95rem; color: white;
         }
-        .brand-sub { font-size: 0.7rem; font-weight: 400; color: var(--text-muted); display: block; line-height: 1; }
+        .brand-sub { font-size: 0.72rem; font-weight: 400; color: var(--text-muted); display: block; line-height: 1; margin-top: 2px; }
 
         .header-right { display: flex; align-items: center; gap: 8px; }
 
         .status-dot {
             display: flex; align-items: center; gap: 6px;
-            font-size: 0.78rem; color: var(--text-muted); background: var(--bg-surface);
-            border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px;
+            font-size: 0.78rem; color: #059669; background: #ecfdf5;
+            border: 1px solid #a7f3d0; border-radius: 20px; padding: 4px 12px; font-weight: 600;
         }
-        .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 8px var(--success); animation: blink 2s infinite; }
+        .dot { width: 7px; height: 7px; border-radius: 50%; background: #10b981; animation: blink 2s infinite; }
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
         /* ===== MAIN LAYOUT ===== */
-        .main-wrap { position: relative; z-index: 1; }
+        .main-wrap { position: relative; }
 
-        /* ===== STEP FLOW (BEFORE UPLOAD) ===== */
+        /* ===== LANDING & UPLOAD VIEW ===== */
         .landing-section {
             display: flex; flex-direction: column; align-items: center;
-            padding: 60px 24px 40px; text-align: center;
-            transition: opacity 0.4s, transform 0.4s;
+            padding: 60px 20px 40px; text-align: center;
+            max-width: 680px; margin: 0 auto;
         }
 
         .hero-badge {
             display: inline-flex; align-items: center; gap: 6px;
-            background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3);
-            color: #a5b4fc; padding: 6px 16px; border-radius: 20px;
-            font-size: 0.8rem; font-weight: 600; margin-bottom: 24px;
+            background: #eff6ff; border: 1px solid #bfdbfe;
+            color: var(--primary); padding: 5px 14px; border-radius: 20px;
+            font-size: 0.8rem; font-weight: 600; margin-bottom: 20px;
         }
 
         .hero-title {
-            font-family: 'Outfit', sans-serif; font-size: clamp(2rem, 6vw, 3.5rem);
-            font-weight: 900; line-height: 1.1; margin-bottom: 16px;
-            background: linear-gradient(135deg, #f1f5f9 0%, #a5b4fc 50%, #c084fc 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            font-family: 'Outfit', 'Sarabun', sans-serif; font-size: clamp(1.8rem, 4vw, 2.6rem);
+            font-weight: 800; line-height: 1.2; margin-bottom: 12px;
+            color: #0f172a;
         }
 
         .hero-desc {
-            font-size: 1.05rem; color: var(--text-dim); max-width: 560px; line-height: 1.7;
-            margin-bottom: 40px;
+            font-size: 0.98rem; color: var(--text-muted); line-height: 1.6;
+            margin-bottom: 32px;
         }
 
-        /* How it works steps */
-        .steps-row {
-            display: flex; gap: 16px; flex-wrap: wrap; justify-content: center;
-            max-width: 800px; margin-bottom: 48px;
-        }
-
-        .step-card {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 16px; padding: 20px 18px; width: 160px; text-align: center;
-            transition: all 0.3s; position: relative; overflow: hidden;
-        }
-        .step-card::before {
-            content: ''; position: absolute; inset: 0;
-            background: linear-gradient(135deg, rgba(99,102,241,0.08), transparent);
-            opacity: 0; transition: opacity 0.3s;
-        }
-        .step-card:hover { border-color: rgba(99,102,241,0.4); transform: translateY(-2px); }
-        .step-card:hover::before { opacity: 1; }
-
-        .step-num {
-            width: 32px; height: 32px; background: linear-gradient(135deg, #6366f1, #a855f7);
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 0.85rem;
-            color: white; margin: 0 auto 12px;
-        }
-        .step-icon { font-size: 1.4rem; margin-bottom: 8px; display: block; }
-        .step-title { font-weight: 700; font-size: 0.88rem; margin-bottom: 4px; }
-        .step-desc { font-size: 0.75rem; color: var(--text-muted); line-height: 1.4; }
-
-        .step-arrow {
-            color: var(--text-muted); font-size: 1rem; align-self: center; display: flex;
-        }
-
-        /* ===== UPLOAD ZONE ===== */
+        /* Clean Upload Zone */
         .upload-zone {
-            width: 100%; max-width: 540px;
-            border: 2px dashed rgba(99,102,241,0.4);
-            border-radius: 20px; padding: 40px 24px;
+            width: 100%;
+            border: 2px dashed #cbd5e1;
+            border-radius: 16px; padding: 48px 24px;
             text-align: center; cursor: pointer;
-            background: rgba(99,102,241,0.04);
-            transition: all 0.3s; position: relative; overflow: hidden;
-        }
-        .upload-zone::before {
-            content: ''; position: absolute; inset: 0;
-            background: radial-gradient(circle at center, rgba(99,102,241,0.08), transparent 70%);
-            opacity: 0; transition: opacity 0.3s;
+            background: #f8fafc;
+            transition: all 0.2s; position: relative;
         }
         .upload-zone:hover, .upload-zone.dragover {
-            border-color: rgba(99,102,241,0.7);
-            background: rgba(99,102,241,0.08);
+            border-color: var(--primary);
+            background: #eff6ff;
         }
-        .upload-zone:hover::before, .upload-zone.dragover::before { opacity: 1; }
 
         .upload-icon {
-            width: 64px; height: 64px;
-            background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(168,85,247,0.2));
-            border-radius: 20px; display: flex; align-items: center; justify-content: center;
-            font-size: 1.6rem; color: #a5b4fc; margin: 0 auto 16px;
+            width: 56px; height: 56px;
+            background: #dbeafe;
+            border-radius: 14px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; color: var(--primary); margin: 0 auto 16px;
         }
-        .upload-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.1rem; margin-bottom: 6px; }
+        .upload-title { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.1rem; margin-bottom: 6px; color: #0f172a; }
         .upload-desc { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px; }
         .upload-types { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
         .type-badge {
-            background: var(--bg-surface); border: 1px solid var(--border);
-            border-radius: 8px; padding: 4px 10px; font-size: 0.75rem; color: var(--text-dim);
+            background: white; border: 1px solid var(--border);
+            border-radius: 6px; padding: 4px 10px; font-size: 0.75rem; color: #475569; font-weight: 600;
         }
         #fileInput { display: none; }
 
@@ -201,8 +141,8 @@
         #editorView { display: none; }
 
         .editor-layout {
-            display: grid; grid-template-columns: 1fr 340px;
-            height: calc(100vh - 60px); overflow: hidden;
+            display: grid; grid-template-columns: 1fr 390px;
+            height: calc(100vh - 56px); overflow: hidden;
         }
 
         @media (max-width: 900px) {
@@ -212,410 +152,440 @@
         /* ===== CANVAS AREA ===== */
         .canvas-panel {
             position: relative; overflow: hidden;
-            background: radial-gradient(ellipse at center, #0d1628, var(--bg));
+            background: var(--bg-canvas);
             border-right: 1px solid var(--border);
         }
 
         .canvas-toolbar {
-            position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+            position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
             display: flex; gap: 4px; z-index: 50;
-            background: rgba(15,23,42,0.9); backdrop-filter: blur(12px);
-            border: 1px solid var(--border); border-radius: 12px; padding: 5px;
+            background: #ffffff;
+            border: 1px solid var(--border-strong);
+            border-radius: 10px; padding: 4px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
         }
 
         .tool-btn {
-            width: 36px; height: 36px; border: none; border-radius: 8px;
+            width: 34px; height: 34px; border: none; border-radius: 6px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 0.9rem; cursor: pointer; transition: all 0.2s;
-            background: transparent; color: var(--text-dim);
+            font-size: 0.88rem; cursor: pointer; transition: all 0.15s;
+            background: transparent; color: #475569;
         }
-        .tool-btn:hover { background: var(--bg-surface); color: var(--text); }
-        .tool-btn.active { background: var(--primary); color: white; box-shadow: 0 2px 10px var(--primary-glow); }
+        .tool-btn:hover { background: #f1f5f9; color: #0f172a; }
+        .tool-btn.active { background: var(--primary); color: white; }
 
         .zoom-label {
-            display: flex; align-items: center; padding: 0 10px;
-            font-size: 0.78rem; color: var(--text-muted); font-family: 'Outfit', sans-serif;
-            font-weight: 600; min-width: 48px; justify-content: center;
+            display: flex; align-items: center; padding: 0 8px;
+            font-size: 0.75rem; color: var(--text-muted); font-family: 'Outfit', sans-serif;
+            font-weight: 700; min-width: 44px; justify-content: center;
         }
 
         .canvas-container {
             width: 100%; height: 100%; position: relative;
             overflow: hidden; cursor: grab;
+            user-select: none; -webkit-user-select: none;
         }
         .canvas-container.grabbing { cursor: grabbing; }
 
         .canvas-wrapper {
             position: absolute; top: 0; left: 0;
             transform-origin: top left;
-            user-select: none;
+            user-select: none; -webkit-user-select: none;
+            -webkit-user-drag: none;
         }
 
+        /* Crucial: Prevent image ghost drag */
         #mainImage, #pdfCanvas {
             display: block; max-width: none;
-            box-shadow: 0 8px 48px rgba(0,0,0,0.6);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-user-drag: none;
+            pointer-events: none;
+            background: white;
         }
 
         /* Crop selection overlay */
         #cropOverlay {
             position: absolute; inset: 0; display: none;
-            cursor: crosshair;
+            cursor: crosshair; z-index: 40;
         }
         #cropOverlay.active { display: block; }
 
         #cropRect {
             position: absolute;
-            border: 2px solid #ef4444;
-            background: rgba(239,68,68,0.12);
-            box-shadow: 0 0 0 9999px rgba(0,0,0,0.4), inset 0 0 0 2px rgba(239,68,68,0.6);
+            border: 2px solid var(--danger);
+            background: rgba(220,38,38,0.12);
+            box-shadow: 0 0 0 9999px rgba(0,0,0,0.35);
             display: none; pointer-events: none;
         }
 
-        /* Crop patches display (sent areas) */
+        /* Crop patches display on canvas */
         .patch-overlay {
             position: absolute;
             border: 2px solid;
             border-radius: 4px;
             cursor: pointer;
-            transition: box-shadow 0.2s;
+            transition: all 0.2s;
             display: flex; align-items: flex-start; justify-content: flex-end;
+            pointer-events: auto;
         }
-        .patch-overlay:hover { filter: brightness(1.2); }
+        .patch-overlay:hover { filter: brightness(1.1); transform: scale(1.01); }
 
         .patch-num-badge {
-            position: absolute; top: -10px; left: 4px;
-            width: 20px; height: 20px; border-radius: 50%;
-            font-size: 0.65rem; font-weight: 800;
+            position: absolute; top: -11px; left: -2px;
+            width: 22px; height: 22px; border-radius: 50%;
+            font-size: 0.7rem; font-weight: 800;
             display: flex; align-items: center; justify-content: center;
-            font-family: 'Outfit', sans-serif; color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+            font-family: 'Outfit', sans-serif; color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
-        /* Patch status colors */
-        .patch-status-waiting { border-color: #94a3b8; background: rgba(148,163,184,0.1); }
+        /* Patch status colors on canvas */
+        .patch-status-waiting { border-color: #64748b; background: rgba(100,116,139,0.15); }
         .patch-status-waiting .patch-num-badge { background: #475569; }
-        .patch-status-working { border-color: #38bdf8; background: rgba(56,189,248,0.1); box-shadow: 0 0 14px rgba(56,189,248,0.3); }
+        .patch-status-pending_review { border-color: #f59e0b; background: rgba(245,158,11,0.15); }
+        .patch-status-pending_review .patch-num-badge { background: #d97706; }
+        .patch-status-pending_payment { border-color: #2563eb; background: rgba(37,99,235,0.15); }
+        .patch-status-pending_payment .patch-num-badge { background: #2563eb; }
+        .patch-status-paid { border-color: #7c3aed; background: rgba(124,58,237,0.15); }
+        .patch-status-paid .patch-num-badge { background: #7c3aed; }
+        .patch-status-working { border-color: #0284c7; background: rgba(2,132,199,0.15); }
         .patch-status-working .patch-num-badge { background: #0284c7; }
-        .patch-status-preview { border-color: var(--accent); background: rgba(245,158,11,0.1); box-shadow: 0 0 14px var(--accent-glow); }
-        .patch-status-preview .patch-num-badge { background: #d97706; }
-        .patch-status-done { border-color: var(--success); background: rgba(16,185,129,0.1); box-shadow: 0 0 14px rgba(16,185,129,0.3); }
-        .patch-status-done .patch-num-badge { background: #059669; }
+        .patch-status-done { border-color: var(--success); background: rgba(22,163,74,0.15); }
+        .patch-status-done .patch-num-badge { background: var(--success); }
+        .patch-status-rejected { border-color: var(--danger); background: rgba(220,38,38,0.15); }
+        .patch-status-rejected .patch-num-badge { background: var(--danger); }
 
         /* Page nav */
         .page-nav {
             position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
             display: none; align-items: center; gap: 8px; z-index: 50;
-            background: rgba(15,23,42,0.9); backdrop-filter: blur(12px);
-            border: 1px solid var(--border); border-radius: 12px; padding: 6px 12px;
+            background: #ffffff;
+            border: 1px solid var(--border-strong); border-radius: 10px; padding: 6px 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
         }
         .page-nav.visible { display: flex; }
         .page-btn {
             width: 28px; height: 28px; border: none; border-radius: 6px;
-            background: var(--bg-surface); color: var(--text);
-            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+            background: #f1f5f9; color: var(--text);
+            cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center;
         }
-        .page-btn:hover { background: var(--primary); }
-        .page-info { font-size: 0.8rem; color: var(--text-dim); font-family: 'Outfit', sans-serif; }
+        .page-btn:hover { background: var(--primary); color: white; }
+        .page-info { font-size: 0.8rem; color: var(--text-muted); font-family: 'Outfit', sans-serif; }
         #pageInput {
-            width: 36px; text-align: center; background: var(--bg-surface);
-            border: 1px solid var(--border); border-radius: 6px; color: var(--text);
+            width: 36px; text-align: center; background: #f8fafc;
+            border: 1px solid var(--border-strong); border-radius: 6px; color: var(--text);
             font-size: 0.8rem; padding: 2px 4px; font-family: 'Outfit', sans-serif;
         }
 
-        /* ===== SIDEBAR ===== */
+        /* ===== SIDEBAR (PROMINENT PATCH LIST) ===== */
         .sidebar {
             display: flex; flex-direction: column;
-            background: var(--bg-card); overflow: hidden;
+            background: #ffffff;
+            border-left: 2px solid var(--border);
+            overflow: hidden;
+            box-shadow: -4px 0 16px rgba(0,0,0,0.03);
         }
 
         .sidebar-header {
-            padding: 16px; border-bottom: 1px solid var(--border);
+            padding: 16px;
+            border-bottom: 2px solid var(--border);
+            background: #ffffff;
             flex-shrink: 0;
         }
 
         .sidebar-title {
-            font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1rem;
-            margin-bottom: 12px;
+            font-family: 'Outfit', 'Sarabun', sans-serif; font-weight: 800; font-size: 1.05rem;
+            margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;
+            color: #0f172a;
         }
 
-        /* The RED add-patch button */
+        /* BOLD RED ADD-PATCH BUTTON */
         .btn-add-patch {
             width: 100%;
-            background: linear-gradient(135deg, #dc2626, #b91c1c);
-            border: none; border-radius: 12px; padding: 13px;
-            color: white; font-family: 'Outfit', sans-serif; font-weight: 800;
+            background: var(--danger);
+            border: none; border-radius: 10px; padding: 13px;
+            color: white; font-family: 'Outfit', 'Sarabun', sans-serif; font-weight: 800;
             font-size: 0.95rem; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            transition: all 0.2s; box-shadow: 0 4px 20px rgba(220,38,38,0.4);
-            position: relative; overflow: hidden;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: all 0.2s; box-shadow: 0 4px 12px rgba(220,38,38,0.3);
         }
-        .btn-add-patch::after {
-            content: ''; position: absolute; inset: 0;
-            background: linear-gradient(135deg, transparent, rgba(255,255,255,0.08), transparent);
-            transform: translateX(-100%); transition: transform 0.4s;
-        }
-        .btn-add-patch:hover { filter: brightness(1.12); transform: translateY(-1px); box-shadow: 0 6px 24px rgba(220,38,38,0.5); }
-        .btn-add-patch:hover::after { transform: translateX(100%); }
+        .btn-add-patch:hover { background: var(--danger-hover); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(220,38,38,0.4); }
         .btn-add-patch.active {
-            background: linear-gradient(135deg, #dc2626, #9b1c1c);
-            box-shadow: 0 0 0 3px rgba(239,68,68,0.4), 0 4px 20px rgba(220,38,38,0.5);
-            animation: pulseRed 1.5s ease-in-out infinite;
+            background: #991b1b;
+            box-shadow: 0 0 0 3px rgba(220,38,38,0.3);
+            animation: pulseRed 1.5s infinite;
         }
         @keyframes pulseRed {
-            0%,100% { box-shadow: 0 0 0 3px rgba(239,68,68,0.4), 0 4px 20px rgba(220,38,38,0.5); }
-            50% { box-shadow: 0 0 0 6px rgba(239,68,68,0.2), 0 6px 28px rgba(220,38,38,0.6); }
+            0%, 100% { box-shadow: 0 0 0 3px rgba(220,38,38,0.4); }
+            50% { box-shadow: 0 0 0 6px rgba(220,38,38,0.15); }
         }
 
         .crop-hint {
-            text-align: center; font-size: 0.78rem; color: var(--text-muted);
-            margin-top: 8px; display: none;
+            text-align: center; font-size: 0.78rem; color: var(--danger);
+            margin-top: 8px; display: none; font-weight: 600;
         }
         .crop-hint.visible { display: block; }
         .crop-hint-key {
-            display: inline-block; background: var(--bg-surface);
-            border: 1px solid var(--border); border-radius: 4px;
-            padding: 1px 5px; font-family: monospace; font-size: 0.72rem;
+            display: inline-block; background: #fee2e2;
+            border: 1px solid #fecaca; border-radius: 4px;
+            padding: 1px 5px; font-family: monospace; font-size: 0.72rem; color: #b91c1c;
         }
 
-        .sidebar-scroll { flex: 1; overflow-y: auto; padding: 12px; }
-        .sidebar-scroll::-webkit-scrollbar { width: 4px; }
-        .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
-        .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+        .sidebar-scroll {
+            flex: 1; overflow-y: auto; padding: 14px;
+            background: #f8fafc;
+        }
+        .sidebar-scroll::-webkit-scrollbar { width: 5px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 
         .patches-empty {
-            text-align: center; padding: 32px 16px; color: var(--text-muted);
+            text-align: center; padding: 48px 16px; color: var(--text-muted);
         }
-        .patches-empty-icon { font-size: 2rem; margin-bottom: 8px; opacity: 0.4; }
-        .patches-empty-text { font-size: 0.85rem; line-height: 1.5; }
+        .patches-empty-icon { font-size: 2.2rem; margin-bottom: 12px; color: #cbd5e1; }
+        .patches-empty-text { font-size: 0.88rem; line-height: 1.5; font-weight: 500; }
 
-        /* Patch Card */
+        /* PROMINENT PATCH CARD */
         .patch-card {
-            background: var(--bg-surface); border: 1px solid var(--border);
-            border-radius: 12px; margin-bottom: 10px; overflow: hidden;
-            transition: all 0.25s; cursor: pointer;
+            background: #ffffff;
+            border: 2px solid var(--border-strong);
+            border-radius: 14px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            transition: all 0.2s;
+            cursor: pointer;
         }
-        .patch-card:hover { border-color: rgba(99,102,241,0.3); }
-        .patch-card.active { border-color: var(--primary); box-shadow: 0 0 0 1px rgba(99,102,241,0.3); }
+        .patch-card:hover {
+            border-color: #94a3b8;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+        .patch-card.active {
+            border-color: var(--border-active);
+            background: #f0f7ff;
+            box-shadow: 0 4px 14px rgba(37,99,235,0.15);
+        }
 
         .patch-card-header {
-            display: flex; align-items: center; gap: 10px; padding: 10px 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+            background: #ffffff;
         }
+        .patch-card.active .patch-card-header { background: #eff6ff; }
 
         .patch-num-circle {
-            width: 28px; height: 28px; border-radius: 50%;
+            width: 32px; height: 32px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 0.82rem;
+            font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 0.9rem;
             flex-shrink: 0;
         }
 
-        .patch-num-circle.status-waiting { background: #1e293b; color: #94a3b8; }
-        .patch-num-circle.status-pending_review { background: rgba(245,158,11,0.2); color: #fbbf24; }
-        .patch-num-circle.status-rejected { background: rgba(239,68,68,0.2); color: #f87171; }
-        .patch-num-circle.status-pending_payment { background: rgba(245,158,11,0.2); color: #fbbf24; }
-        .patch-num-circle.status-paid { background: rgba(99,102,241,0.2); color: #a5b4fc; }
-        .patch-num-circle.status-working { background: rgba(56,189,248,0.2); color: #38bdf8; }
-        .patch-num-circle.status-done { background: rgba(16,185,129,0.2); color: #34d399; }
+        .patch-num-circle.status-waiting { background: #e2e8f0; color: #334155; }
+        .patch-num-circle.status-pending_review { background: #fef3c7; color: #b45309; }
+        .patch-num-circle.status-rejected { background: #fee2e2; color: #b91c1c; }
+        .patch-num-circle.status-pending_payment { background: #dbeafe; color: #1e40af; }
+        .patch-num-circle.status-paid { background: #ede9fe; color: #6d28d9; }
+        .patch-num-circle.status-working { background: #e0f2fe; color: #0369a1; }
+        .patch-num-circle.status-done { background: #dcfce7; color: #15803d; }
 
         .patch-card-meta { flex: 1; min-width: 0; }
-        .patch-card-title { font-weight: 700; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .patch-status-label { font-size: 0.72rem; color: var(--text-muted); margin-top: 1px; }
+        .patch-card-title { font-weight: 800; font-size: 0.92rem; color: #0f172a; }
+        .patch-status-label { font-size: 0.75rem; font-weight: 700; margin-top: 1px; }
 
-        .patch-status-label.status-pending_review { color: #fbbf24; }
-        .patch-status-label.status-rejected { color: #f87171; font-weight: 600; }
-        .patch-status-label.status-pending_payment { color: #fbbf24; font-weight: 600; }
-        .patch-status-label.status-paid { color: #a5b4fc; }
-        .patch-status-label.status-working { color: #38bdf8; }
-        .patch-status-label.status-done { color: #34d399; font-weight: 600; }
+        .patch-status-label.status-waiting { color: #64748b; }
+        .patch-status-label.status-pending_review { color: #b45309; }
+        .patch-status-label.status-rejected { color: #dc2626; }
+        .patch-status-label.status-pending_payment { color: #2563eb; }
+        .patch-status-label.status-paid { color: #7c3aed; }
+        .patch-status-label.status-working { color: #0284c7; }
+        .patch-status-label.status-done { color: var(--success); }
 
         .patch-rejected-box {
-            background: rgba(239, 68, 68, 0.12);
-            border: 1px solid rgba(239, 68, 68, 0.35);
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
             border-radius: 8px;
             padding: 8px 10px;
             margin-bottom: 8px;
             font-size: 0.78rem;
-            color: #fca5a5;
+            color: #991b1b;
             display: flex;
             align-items: flex-start;
             gap: 6px;
             line-height: 1.4;
         }
-        .patch-rejected-box i { color: #ef4444; margin-top: 2px; }
+        .patch-rejected-box i { color: #dc2626; margin-top: 2px; }
 
-        .patch-card-body { padding: 10px 12px; }
+        .patch-card-body { padding: 12px 14px; }
 
         .patch-thumb-row {
             display: flex; gap: 8px; margin-bottom: 10px;
         }
         .patch-thumb {
-            width: 72px; height: 52px; border-radius: 6px; object-fit: cover;
-            border: 1px solid var(--border); background: var(--bg-card);
+            width: 74px; height: 54px; border-radius: 6px; object-fit: cover;
+            border: 1px solid var(--border-strong); background: #f8fafc;
             flex-shrink: 0;
         }
         .patch-thumb-placeholder {
-            width: 72px; height: 52px; border-radius: 6px;
-            background: var(--bg-card); border: 1px dashed var(--border);
+            width: 74px; height: 54px; border-radius: 6px;
+            background: #f8fafc; border: 1px dashed var(--border-strong);
             display: flex; align-items: center; justify-content: center;
-            color: var(--text-muted); font-size: 0.65rem; text-align: center;
-            flex-shrink: 0;
+            color: var(--text-muted); font-size: 0.7rem; text-align: center;
+            flex-shrink: 0; font-weight: 600;
         }
         .patch-result-thumb {
             flex: 1; min-width: 0; position: relative; border-radius: 6px; overflow: hidden;
+            border: 1px solid #86efac;
         }
         .patch-result-img {
-            width: 100%; height: 52px; object-fit: cover; display: block;
-        }
-        .patch-result-wm {
-            position: absolute; inset: 0; background: rgba(239,68,68,0.3);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.6rem; font-weight: 700; color: rgba(255,255,255,0.8); letter-spacing: 1px;
+            width: 100%; height: 54px; object-fit: cover; display: block;
         }
 
         .patch-note-input {
-            width: 100%; background: rgba(15,23,42,0.5);
-            border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;
-            color: var(--text); padding: 7px 10px; font-size: 0.82rem;
-            font-family: inherit; resize: vertical; min-height: 50px;
+            width: 100%; background: #ffffff;
+            border: 1.5px solid var(--border-strong); border-radius: 8px;
+            color: var(--text); padding: 8px 10px; font-size: 0.85rem;
+            font-family: inherit; resize: vertical; min-height: 52px;
             outline: none; transition: border-color 0.2s;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
-        .patch-note-input:focus { border-color: rgba(99,102,241,0.5); }
-        .patch-note-input:disabled { opacity: 0.5; cursor: default; }
+        .patch-note-input:focus { border-color: var(--primary); }
+        .patch-note-input:disabled { background: #f1f5f9; color: #475569; cursor: default; }
 
         .patch-card-footer {
-            display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+            display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
         }
 
         .btn-patch-action {
-            flex: 1; min-width: 80px; padding: 7px 10px; border: none; border-radius: 8px;
-            font-size: 0.78rem; font-weight: 700; font-family: inherit; cursor: pointer;
-            transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px;
+            flex: 1; min-width: 80px; padding: 8px 12px; border: none; border-radius: 8px;
+            font-size: 0.82rem; font-weight: 700; font-family: inherit; cursor: pointer;
+            transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 6px;
         }
 
         .btn-send {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            color: white; box-shadow: 0 2px 10px rgba(99,102,241,0.3);
+            background: var(--primary);
+            color: white; box-shadow: 0 2px 6px rgba(37,99,235,0.25);
         }
-        .btn-send:hover { filter: brightness(1.1); transform: translateY(-1px); }
-        .btn-send:disabled { opacity: 0.4; cursor: default; transform: none; filter: none; }
+        .btn-send:hover { background: var(--primary-hover); transform: translateY(-1px); }
+        .btn-send:disabled { opacity: 0.5; cursor: default; transform: none; }
 
         .btn-pay {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: white; box-shadow: 0 2px 10px rgba(245,158,11,0.3);
+            background: #d97706;
+            color: white; box-shadow: 0 2px 8px rgba(217,119,6,0.25);
         }
-        .btn-pay:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        .btn-pay:hover { background: #b45309; transform: translateY(-1px); }
 
         .btn-apply {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white; box-shadow: 0 2px 10px rgba(16,185,129,0.3);
+            background: var(--success);
+            color: white; box-shadow: 0 2px 6px rgba(22,163,74,0.25);
         }
-        .btn-apply:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        .btn-apply:hover { background: #15803d; transform: translateY(-1px); }
 
         .btn-delete {
-            width: 30px; height: 30px; padding: 0;
-            background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.2);
-            color: #ef4444; border-radius: 6px; font-size: 0.75rem; flex: none;
-            display: flex; align-items: center; justify-content: center;
+            width: 32px; height: 32px; padding: 0;
+            background: #fee2e2; border: 1px solid #fecaca;
+            color: var(--danger); border-radius: 6px; font-size: 0.8rem; flex: none;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            transition: all 0.15s;
         }
-        .btn-delete:hover { background: rgba(239,68,68,0.25); }
+        .btn-delete:hover { background: #fca5a5; }
 
-        /* Price tag */
         .price-tag {
-            font-family: 'Outfit', sans-serif; font-weight: 700;
-            color: var(--accent); font-size: 0.85rem;
+            font-family: 'Outfit', sans-serif; font-weight: 800;
+            color: #d97706; font-size: 0.95rem;
             margin-left: auto; white-space: nowrap;
         }
 
         /* ===== SIDEBAR FOOTER ===== */
         .sidebar-footer {
-            padding: 12px 16px; border-top: 1px solid var(--border);
-            flex-shrink: 0;
+            padding: 14px 16px; border-top: 2px solid var(--border);
+            background: #ffffff; flex-shrink: 0;
         }
 
         .total-summary {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 12px;
-            background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2);
+            padding: 10px 14px;
+            background: #eff6ff; border: 1px solid #bfdbfe;
             border-radius: 10px; margin-bottom: 10px;
             font-family: 'Outfit', sans-serif;
         }
-        .total-label { font-size: 0.82rem; color: var(--text-muted); }
-        .total-amount { font-weight: 800; font-size: 1.1rem; color: var(--accent); }
+        .total-label { font-size: 0.85rem; color: #1e40af; font-weight: 600; }
+        .total-amount { font-weight: 900; font-size: 1.2rem; color: #1e40af; }
 
         .btn-download-final {
-            width: 100%; padding: 11px; border: none; border-radius: 10px;
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white; font-weight: 700; font-size: 0.9rem; font-family: 'Outfit', sans-serif;
-            cursor: pointer; transition: all 0.2s; display: none;
+            width: 100%; padding: 12px; border: none; border-radius: 10px;
+            background: var(--success);
+            color: white; font-weight: 800; font-size: 0.92rem; font-family: 'Outfit', 'Sarabun', sans-serif;
+            cursor: pointer; transition: all 0.15s; display: none;
             align-items: center; justify-content: center; gap: 8px;
-            box-shadow: 0 4px 16px rgba(16,185,129,0.4);
+            box-shadow: 0 4px 12px rgba(22,163,74,0.3);
         }
         .btn-download-final.visible { display: flex; }
-        .btn-download-final:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        .btn-download-final:hover { background: #15803d; transform: translateY(-1px); }
 
         /* ===== PAYMENT MODAL ===== */
         .modal-overlay {
             position: fixed; inset: 0; z-index: 500;
-            background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
+            background: rgba(15,23,42,0.6); backdrop-filter: blur(4px);
             display: none; align-items: center; justify-content: center; padding: 20px;
         }
         .modal-overlay.open { display: flex; }
 
         .modal-box {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 20px; width: 100%; max-width: 400px;
-            overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-            animation: modalIn 0.25s ease;
+            background: #ffffff; border: 1px solid var(--border);
+            border-radius: 18px; width: 100%; max-width: 380px;
+            overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            animation: modalIn 0.2s ease;
         }
-        @keyframes modalIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes modalIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
         .modal-header {
-            padding: 18px 20px; border-bottom: 1px solid var(--border);
+            padding: 16px 20px; border-bottom: 1px solid var(--border);
             display: flex; align-items: center; justify-content: space-between;
         }
-        .modal-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1rem; }
+        .modal-title { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.05rem; color: #0f172a; }
         .modal-close {
-            width: 30px; height: 30px; border: none; background: var(--bg-surface);
-            border-radius: 8px; color: var(--text-muted); cursor: pointer;
-            display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+            width: 28px; height: 28px; border: none; background: #f1f5f9;
+            border-radius: 6px; color: var(--text-muted); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
         }
-        .modal-close:hover { color: var(--text); }
+        .modal-close:hover { color: var(--text); background: #e2e8f0; }
 
         .modal-body { padding: 20px; }
 
         .qr-wrap {
-            background: white; border-radius: 16px; padding: 16px;
-            width: 200px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;
+            background: white; border: 1.5px solid var(--border); border-radius: 14px;
+            padding: 14px; width: 190px; margin: 0 auto 16px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
         }
-        #qrImage { width: 168px; height: 168px; object-fit: contain; }
+        #qrImage { width: 160px; height: 160px; object-fit: contain; }
 
-        .payment-amount {
-            text-align: center; margin-bottom: 16px;
-        }
-        .payment-amount-num {
-            font-family: 'Outfit', sans-serif; font-weight: 900; font-size: 2rem; color: var(--accent);
-        }
+        .payment-amount { text-align: center; margin-bottom: 14px; }
+        .payment-amount-num { font-family: 'Outfit', sans-serif; font-weight: 900; font-size: 2.2rem; color: #d97706; }
         .payment-amount-label { font-size: 0.82rem; color: var(--text-muted); }
 
         .payment-promptpay {
-            display: flex; align-items: center; gap: 8px;
-            background: var(--bg-surface); border: 1px solid var(--border);
-            border-radius: 10px; padding: 10px 14px; margin-bottom: 16px;
-            font-size: 0.85rem;
+            display: flex; align-items: center; gap: 8px; justify-content: center;
+            background: #f8fafc; border: 1px solid var(--border);
+            border-radius: 8px; padding: 8px 12px; margin-bottom: 14px;
+            font-size: 0.88rem; font-weight: 600; color: #334155;
         }
 
         .payment-instruction {
-            font-size: 0.8rem; color: var(--text-muted); line-height: 1.6;
+            font-size: 0.8rem; color: var(--text-muted); line-height: 1.5;
             text-align: center; margin-bottom: 16px;
         }
 
         .btn-confirm-paid {
             width: 100%; padding: 12px; border: none; border-radius: 10px;
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white; font-weight: 700; font-size: 0.95rem;
-            cursor: pointer; transition: all 0.2s;
-            font-family: 'Outfit', sans-serif;
+            background: var(--success);
+            color: white; font-weight: 800; font-size: 0.95rem;
+            cursor: pointer; transition: all 0.15s;
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+            box-shadow: 0 4px 10px rgba(22,163,74,0.25);
         }
-        .btn-confirm-paid:hover { filter: brightness(1.1); }
+        .btn-confirm-paid:hover { background: #15803d; }
 
         /* ===== TOAST NOTIFICATIONS ===== */
         #toastContainer {
@@ -624,33 +594,22 @@
             pointer-events: none; width: max-content; max-width: calc(100vw - 32px);
         }
         .toast {
-            background: var(--bg-card); border: 1px solid var(--border);
-            border-radius: 10px; padding: 10px 16px;
-            font-size: 0.85rem; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-            display: flex; align-items: center; gap: 8px;
-            animation: toastIn 0.3s ease; pointer-events: auto;
+            background: #ffffff; border: 1.5px solid var(--border-strong);
+            border-radius: 8px; padding: 10px 16px;
+            font-size: 0.88rem; box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            display: flex; align-items: center; gap: 8px; color: #0f172a;
+            animation: toastIn 0.25s ease; pointer-events: auto; font-weight: 500;
         }
-        @keyframes toastIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .toast.success { border-color: rgba(16,185,129,0.4); color: #34d399; }
-        .toast.error { border-color: rgba(239,68,68,0.4); color: #f87171; }
-        .toast.info { border-color: rgba(99,102,241,0.4); color: #a5b4fc; }
-
-        /* ===== PROGRESS BAR ===== */
-        .upload-progress {
-            position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
-            background: rgba(99,102,241,0.15); display: none;
-        }
-        .upload-progress.active { display: block; }
-        .upload-progress-bar {
-            height: 100%; background: linear-gradient(90deg, #6366f1, #a855f7);
-            transition: width 0.3s; border-radius: 0 2px 2px 0;
-        }
+        @keyframes toastIn { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .toast.success { border-color: #86efac; background: #f0fdf4; color: #166534; }
+        .toast.error { border-color: #fca5a5; background: #fef2f2; color: #991b1b; }
+        .toast.info { border-color: #bfdbfe; background: #eff6ff; color: #1e40af; }
 
         /* ===== LOADING SPINNER ===== */
         .spinner {
-            display: inline-block; width: 16px; height: 16px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: white; border-radius: 50%;
+            display: inline-block; width: 14px; height: 14px;
+            border: 2px solid rgba(0,0,0,0.15);
+            border-top-color: currentColor; border-radius: 50%;
             animation: spin 0.7s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -658,32 +617,32 @@
         /* ===== COMPOSITING INDICATOR ===== */
         .composite-indicator {
             position: absolute; inset: 0; display: none;
-            background: rgba(7,11,20,0.85); align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.85); align-items: center; justify-content: center;
             flex-direction: column; gap: 12px; z-index: 100;
         }
         .composite-indicator.active { display: flex; }
-        .composite-text { font-size: 0.9rem; color: var(--text-dim); }
+        .composite-text { font-size: 0.95rem; font-weight: 700; color: #0f172a; }
 
         /* ===== MOBILE TABS ===== */
         .mobile-tabs {
             display: none;
             position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-            background: rgba(7,11,20,0.95); backdrop-filter: blur(16px);
+            background: #ffffff;
             border-top: 1px solid var(--border);
-            padding: 8px 16px 12px;
+            padding: 8px 16px;
         }
         .mobile-tab-row { display: flex; gap: 8px; }
         .mobile-tab-btn {
-            flex: 1; padding: 10px; border: none; border-radius: 10px;
-            background: var(--bg-surface); color: var(--text-muted);
-            font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.82rem;
-            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
+            flex: 1; padding: 10px; border: none; border-radius: 8px;
+            background: #f1f5f9; color: var(--text-muted);
+            font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.85rem;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
         }
         .mobile-tab-btn.active { background: var(--primary); color: white; }
 
         @media (max-width: 900px) {
             .mobile-tabs { display: block; }
-            .editor-layout { height: calc(100vh - 60px - 68px); }
+            .editor-layout { height: calc(100vh - 56px - 60px); }
             .sidebar { display: none; }
             .sidebar.mobile-show { display: flex; }
             .canvas-panel.mobile-hide { display: none; }
@@ -692,11 +651,6 @@
 </head>
 
 <body>
-    <div class="bg-orbs">
-        <div class="orb orb-1"></div>
-        <div class="orb orb-2"></div>
-        <div class="orb orb-3"></div>
-    </div>
 
     <!-- HEADER -->
     <header class="app-header">
@@ -722,64 +676,22 @@
         <div id="landingView">
             <section class="landing-section">
                 <div class="hero-badge">
-                    <i class="fa-solid fa-robot"></i> Agent-Style · ส่งงานตรงถึงมนุษย์
+                    <i class="fa-solid fa-shield-halved"></i> ไฟล์ต้นฉบับปลอดภัย 100% ไม่ออกจากเครื่องคุณ
                 </div>
-                <h1 class="hero-title">แก้ไขข้อความ<br>& ดีไซน์แบบ Pro</h1>
+                <h1 class="hero-title">แก้ไขข้อความ & ดีไซน์เฉพาะจุด</h1>
                 <p class="hero-desc">
-                    อัพโหลดรูป/PDF → วาดกรอบส่วนที่จะแก้ → ได้ผลลัพธ์จากมนุษย์ผู้เชี่ยวชาญโดยตรง<br>
-                    <strong>ไฟล์ต้นฉบับไม่ออกจากเครื่องคุณ</strong> ปลอดภัย 100%
+                    อัพโหลดรูปภาพหรือ PDF → ตีกรอบเฉพาะส่วนที่ต้องการให้แก้ → ส่งตรงถึงช่างผู้เชี่ยวชาญแบบ Real-time
                 </p>
 
-                <!-- Steps -->
-                <div class="steps-row">
-                    <div class="step-card">
-                        <span class="step-num">1</span>
-                        <span class="step-icon">📁</span>
-                        <div class="step-title">เลือกไฟล์</div>
-                        <div class="step-desc">รูป/PDF เก็บใน Browser ปลอดภัย 100%</div>
-                    </div>
-                    <span class="step-arrow"><i class="fa-solid fa-chevron-right"></i></span>
-                    <div class="step-card">
-                        <span class="step-num">2</span>
-                        <span class="step-icon">✂️</span>
-                        <div class="step-title">Crop จุดแก้</div>
-                        <div class="step-desc">ตีกรอบเฉพาะส่วนที่แก้ + ใส่โน้ต</div>
-                    </div>
-                    <span class="step-arrow"><i class="fa-solid fa-chevron-right"></i></span>
-                    <div class="step-card">
-                        <span class="step-num">3</span>
-                        <span class="step-icon">⚖️</span>
-                        <div class="step-title">คิดราคา / ตรวจ</div>
-                        <div class="step-desc">ช่างประเมินราคา หรือแจ้งหากทำไม่ได้</div>
-                    </div>
-                    <span class="step-arrow"><i class="fa-solid fa-chevron-right"></i></span>
-                    <div class="step-card">
-                        <span class="step-num">4</span>
-                        <span class="step-icon">💳</span>
-                        <div class="step-title">โอนเริ่มทำ</div>
-                        <div class="step-desc">สแกน PromptPay → ส่งเข้า Photoshop</div>
-                    </div>
-                    <span class="step-arrow"><i class="fa-solid fa-chevron-right"></i></span>
-                    <div class="step-card">
-                        <span class="step-num">5</span>
-                        <span class="step-icon">✨</span>
-                        <div class="step-title">รับงานเสร็จ</div>
-                        <div class="step-desc">ภาพคมชัด ไม่มีลายน้ำ ประกอบร่างอัตโนมัติ</div>
-                    </div>
-                </div>
-
-                <!-- Upload Zone -->
+                <!-- Clean Upload Zone -->
                 <div class="upload-zone" id="uploadZone">
                     <div class="upload-icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
-                    <div class="upload-title">วางไฟล์ที่นี่ หรือคลิกเพื่อเลือก</div>
-                    <div class="upload-desc">ไฟล์จะเก็บอยู่ใน Browser ของคุณเท่านั้น</div>
+                    <div class="upload-title">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</div>
+                    <div class="upload-desc">รองรับไฟล์ภาพ JPG, PNG, WebP หรือ PDF</div>
                     <div class="upload-types">
                         <span class="type-badge"><i class="fa-solid fa-image"></i> JPG / PNG</span>
                         <span class="type-badge"><i class="fa-solid fa-file-pdf"></i> PDF</span>
-                        <span class="type-badge"><i class="fa-solid fa-file-image"></i> WebP / GIF</span>
-                    </div>
-                    <div class="upload-progress" id="uploadProgress">
-                        <div class="upload-progress-bar" id="uploadProgressBar"></div>
+                        <span class="type-badge"><i class="fa-solid fa-file-image"></i> WebP</span>
                     </div>
                 </div>
                 <input type="file" id="fileInput" accept="image/*,.pdf">
@@ -793,12 +705,12 @@
                 <!-- CANVAS PANEL -->
                 <div class="canvas-panel" id="canvasPanel">
 
-                    <!-- Toolbar -->
+                    <!-- Floating Toolbar -->
                     <div class="canvas-toolbar">
-                        <button class="tool-btn active" id="toolSelect" title="เลือก / แพน">
+                        <button class="tool-btn active" id="toolSelect" title="เลือก / แพนภาพ">
                             <i class="fa-solid fa-hand"></i>
                         </button>
-                        <div style="width:1px;background:var(--border);margin:4px 2px;"></div>
+                        <div style="width:1px;background:var(--border-strong);margin:4px 2px;"></div>
                         <button class="tool-btn" id="toolZoomIn" title="ซูมเข้า"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
                         <button class="tool-btn" id="toolZoomOut" title="ซูมออก"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
                         <button class="tool-btn" id="toolFit" title="Fit to screen"><i class="fa-solid fa-expand"></i></button>
@@ -808,7 +720,7 @@
                     <!-- Canvas Container -->
                     <div class="canvas-container" id="canvasContainer">
                         <div class="canvas-wrapper" id="canvasWrapper">
-                            <img id="mainImage" alt="" style="display:none;">
+                            <img id="mainImage" alt="" style="display:none;" draggable="false">
                             <canvas id="pdfCanvas" style="display:none;"></canvas>
                             <!-- Patch overlays are appended here -->
                         </div>
@@ -828,24 +740,23 @@
 
                     <!-- Compositing indicator -->
                     <div class="composite-indicator" id="compositeIndicator">
-                        <div class="spinner" style="width:32px;height:32px;border-width:3px;"></div>
-                        <div class="composite-text">กำลังประกอบร่างผลลัพธ์...</div>
+                        <div class="spinner" style="width:36px;height:36px;border-width:3px;color:var(--primary);"></div>
+                        <div class="composite-text">กำลังประกอบร่างผลลัพธ์ลงภาพต้นฉบับ...</div>
                     </div>
                 </div>
 
-                <!-- SIDEBAR -->
+                <!-- SIDEBAR (PROMINENT LIST) -->
                 <div class="sidebar" id="sidebar">
                     <div class="sidebar-header">
                         <div class="sidebar-title">
-                            <i class="fa-solid fa-list-check" style="color:var(--primary);margin-right:8px;"></i>
-                            รายการจุดแก้ไข
+                            <span><i class="fa-solid fa-list-check" style="color:var(--primary);margin-right:8px;"></i>รายการจุดแก้ไข</span>
                         </div>
                         <button class="btn-add-patch" id="btnAddPatch">
                             <i class="fa-solid fa-crosshairs"></i>
                             วาดกรอบจุดที่จะแก้
                         </button>
                         <p class="crop-hint" id="cropHint">
-                            ลากบนรูปเพื่อเลือกส่วนที่ต้องการแก้ไข · กด <span class="crop-hint-key">Esc</span> เพื่อยกเลิก
+                            คลิกลากบนรูปเพื่อเลือกส่วนที่ต้องการแก้ · กด <span class="crop-hint-key">Esc</span> เพื่อยกเลิก
                         </p>
                     </div>
 
@@ -853,7 +764,7 @@
                         <div class="patches-empty" id="patchesEmpty">
                             <div class="patches-empty-icon"><i class="fa-solid fa-crosshairs"></i></div>
                             <div class="patches-empty-text">
-                                กดปุ่มแดงด้านบน แล้วลาก<br>วาดกรอบส่วนที่ต้องการแก้ไข
+                                กดปุ่มสีแดงด้านบน<br>แล้วลากวาดกรอบจุดที่ต้องการแก้ไข
                             </div>
                         </div>
                     </div>
@@ -864,7 +775,7 @@
                             <span class="total-amount" id="totalAmount">฿0</span>
                         </div>
                         <button class="btn-download-final" id="btnDownloadFinal">
-                            <i class="fa-solid fa-download"></i> ดาวน์โหลดไฟล์เสร็จ
+                            <i class="fa-solid fa-download"></i> ดาวน์โหลดภาพที่เสร็จสมบูรณ์
                         </button>
                     </div>
                 </div>
@@ -877,8 +788,8 @@
                         <i class="fa-solid fa-image"></i> รูปภาพ
                     </button>
                     <button class="mobile-tab-btn" id="mobileTabPatches" onclick="switchMobileTab('patches')">
-                        <i class="fa-solid fa-list-check"></i> จุดแก้ไข
-                        <span id="mobilePatchCount" style="background:var(--danger);border-radius:10px;padding:1px 6px;font-size:0.7rem;display:none;"></span>
+                        <i class="fa-solid fa-list-check"></i> รายการจุดแก้
+                        <span id="mobilePatchCount" style="background:var(--danger);color:white;border-radius:10px;padding:1px 6px;font-size:0.7rem;display:none;"></span>
                     </button>
                 </div>
             </div>
@@ -906,8 +817,8 @@
                     <span id="paymentPhoneDisplay">PromptPay</span>
                 </div>
                 <div class="payment-instruction">
-                    โอนผ่าน Mobile Banking หรือ App ธนาคารใดก็ได้<br>
-                    ระบบจะตรวจสอบยอดโอนอัตโนมัติ
+                    สแกนโอนผ่าน App ธนาคารใดก็ได้<br>
+                    เมื่อโอนแล้ว กดปุ่มยืนยันด้านล่างเพื่อส่งงานเข้าช่างทันที
                 </div>
                 <button class="btn-confirm-paid" id="btnConfirmPaid">
                     <i class="fa-solid fa-check"></i> โอนเงินแล้ว (แจ้งช่างเปิดทำใน Photoshop ทันที)
@@ -931,22 +842,22 @@
        TEXT-RETOUCH v3 — Agent-Style Patch System (retouch-ebid)
        ========================================================= */
 
-    // ── FIREBASE CONFIG (retouch-ebid) ──
+    // ── FIREBASE CONFIG ──
     const FIREBASE_CONFIG = {
         databaseURL: "https://retouch-ebid-default-rtdb.asia-southeast1.firebasedatabase.app"
     };
     firebase.initializeApp(FIREBASE_CONFIG);
     const db = firebase.database();
 
-    // ── PROMPTPAY CONFIG (set phone number) ──
-    const PROMPTPAY_PHONE = '0988573074'; // PromptPay phone number
+    // ── PROMPTPAY CONFIG ──
+    const PROMPTPAY_PHONE = '0988573074';
 
     // ── STATE ──
     let sessionId = new URLSearchParams(window.location.search).get('id');
-    let localFile = null;       // The original File object (never sent to cloud)
-    let localFileUrl = null;    // Local object URL
-    let localFileType = null;   // 'image' | 'pdf'
-    let patches = {};           // { patchId: { id, num, note, status, cropRect, patchDataUrl, resultDataUrl, price } }
+    let localFile = null;
+    let localFileUrl = null;
+    let localFileType = null;
+    let patches = {};
     let activePatchId = null;
     let scale = 1, translateX = 0, translateY = 0, isPanning = false;
     let panStartX = 0, panStartY = 0;
@@ -954,9 +865,7 @@
     let isCropMode = false;
     let cropStartX = 0, cropStartY = 0;
     let isCropDragging = false;
-    let currentCropRect = null; // { x, y, width, height } in % of content
 
-    // ── FIREBASE SESSION PATH ──
     function sessionPath() { return `text_retouch/${sessionId}`; }
     function patchPath(pid) { return `text_retouch/${sessionId}/patches/${pid}`; }
 
@@ -1004,7 +913,6 @@
             await loadPdf(localFileUrl);
         }
 
-        // Announce session to Firebase (no file data - just metadata)
         await db.ref(sessionPath()).set({
             sessionId,
             fileName: file.name,
@@ -1014,7 +922,7 @@
             patches: {}
         });
 
-        toast('📁 โหลดไฟล์เรียบร้อย — ไฟล์อยู่ใน browser เท่านั้น', 'success');
+        toast('📁 โหลดไฟล์เรียบร้อย — ไฟล์อยู่ในเครื่องคุณเท่านั้น', 'success');
     }
 
     async function loadImage(url) {
@@ -1057,12 +965,15 @@
     }
 
     /* ======================================================
-       CANVAS / ZOOM / PAN
+       CANVAS / ZOOM / PAN (PREVENT GHOST DRAG)
     ====================================================== */
     function initCanvas() {
         const container = document.getElementById('canvasContainer');
         const overlay = document.getElementById('cropOverlay');
         const rect = document.getElementById('cropRect');
+
+        // Prevent native browser image drag
+        container.addEventListener('dragstart', e => e.preventDefault());
 
         // Toolbar buttons
         document.getElementById('toolSelect').addEventListener('click', () => exitCropMode());
@@ -1079,26 +990,33 @@
         // Esc key
         document.addEventListener('keydown', e => { if (e.key === 'Escape' && isCropMode) exitCropMode(); });
 
-        // Pan
-        let startMouseX = 0, startMouseY = 0;
+        // Pan Mousedown (Prevent default to stop ghost dragging)
         container.addEventListener('mousedown', e => {
             if (isCropMode || e.target.closest('.patch-overlay')) return;
+            e.preventDefault(); // Stop native drag and text selection
             isPanning = true;
             container.classList.add('grabbing');
             panStartX = e.clientX - translateX;
             panStartY = e.clientY - translateY;
-            startMouseX = e.clientX; startMouseY = e.clientY;
         });
+
         window.addEventListener('mousemove', e => {
             if (!isPanning) return;
             translateX = e.clientX - panStartX;
             translateY = e.clientY - panStartY;
             applyTransform();
         });
-        window.addEventListener('mouseup', () => {
-            isPanning = false;
-            container.classList.remove('grabbing');
-        });
+
+        const stopPan = () => {
+            if (isPanning) {
+                isPanning = false;
+                container.classList.remove('grabbing');
+            }
+        };
+
+        window.addEventListener('mouseup', stopPan);
+        window.addEventListener('mouseleave', stopPan);
+        window.addEventListener('blur', stopPan);
 
         // Wheel zoom
         container.addEventListener('wheel', e => {
@@ -1117,6 +1035,7 @@
         // ── CROP DRAW ──
         overlay.addEventListener('mousedown', e => {
             if (!isCropMode) return;
+            e.preventDefault();
             isCropDragging = true;
             const or = overlay.getBoundingClientRect();
             cropStartX = e.clientX - or.left;
@@ -1152,14 +1071,13 @@
             const rw = Math.abs(ex - cropStartX);
             const rh = Math.abs(ey - cropStartY);
 
-            if (rw < 20 || rh < 20) { exitCropMode(); return; }
+            if (rw < 15 || rh < 15) { exitCropMode(); return; }
 
-            // Convert overlay pixel coords → wrapper pixel coords → content % coords
             await createPatchFromCrop(rx, ry, rw, rh, or);
             exitCropMode();
         });
 
-        // Touch pan
+        // Touch pan & zoom
         let t1x = 0, t1y = 0, touchDist = 0;
         container.addEventListener('touchstart', e => {
             if (e.touches.length === 2) {
@@ -1170,6 +1088,7 @@
                 t1y = e.touches[0].clientY - translateY;
             }
         }, { passive: true });
+
         container.addEventListener('touchmove', e => {
             if (e.touches.length === 2) {
                 const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
@@ -1181,7 +1100,8 @@
                 applyTransform();
             }
         }, { passive: true });
-        container.addEventListener('touchend', () => { isPanning = false; });
+
+        container.addEventListener('touchend', stopPan);
 
         // PDF page buttons
         document.getElementById('prevPageBtn').addEventListener('click', async () => {
@@ -1246,24 +1166,19 @@
        CREATE PATCH FROM CROP
     ====================================================== */
     async function createPatchFromCrop(overlayX, overlayY, overlayW, overlayH, overlayRect) {
-        // Convert overlay coords → canvas content coords
         const wrapper = document.getElementById('canvasWrapper');
         const wrapperRect = wrapper.getBoundingClientRect();
 
-        // overlayRect is the full overlay (same size as canvasContainer)
-        // wrapperRect is the scaled+translated canvas content
         const relX = (overlayX + overlayRect.left - wrapperRect.left) / scale;
         const relY = (overlayY + overlayRect.top - wrapperRect.top) / scale;
         const relW = overlayW / scale;
         const relH = overlayH / scale;
 
-        // Get content native size
         const content = document.getElementById('mainImage').style.display !== 'none'
             ? document.getElementById('mainImage') : document.getElementById('pdfCanvas');
         const nativeW = content.naturalWidth || content.width;
         const nativeH = content.naturalHeight || content.height;
 
-        // Clamp to content bounds
         const cx = Math.max(0, relX);
         const cy = Math.max(0, relY);
         const cw = Math.min(nativeW - cx, relW);
@@ -1271,7 +1186,6 @@
 
         if (cw < 10 || ch < 10) return;
 
-        // Crop patch from canvas
         const patchCanvas = document.createElement('canvas');
         patchCanvas.width = cw; patchCanvas.height = ch;
         const ctx = patchCanvas.getContext('2d');
@@ -1284,7 +1198,6 @@
 
         const patchDataUrl = patchCanvas.toDataURL('image/jpeg', 0.92);
 
-        // Create patch record
         const patchId = 'p_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 4);
         const num = Object.keys(patches).length + 1;
 
@@ -1296,16 +1209,14 @@
             price: 0,
             status: 'waiting',
             page: currentPage,
-            // Store crop rect as % of native content size (for overlay positioning)
             cropRect: {
                 x: (cx / nativeW) * 100,
                 y: (cy / nativeH) * 100,
                 w: (cw / nativeW) * 100,
                 h: (ch / nativeH) * 100
             },
-            patchDataUrl,  // local only
+            patchDataUrl,
             resultDataUrl: null,
-            resultWatermarked: false,
             createdAt: Date.now()
         };
 
@@ -1315,7 +1226,6 @@
         updateEmpty();
         updateTotal();
 
-        // Focus note input
         setTimeout(() => {
             const noteEl = document.getElementById(`note_${patchId}`);
             if (noteEl) noteEl.focus();
@@ -1323,7 +1233,7 @@
     }
 
     /* ======================================================
-       SEND PATCH TO FIREBASE (Status: pending_review)
+       SEND PATCH TO FIREBASE
     ====================================================== */
     async function sendPatch(patchId) {
         const patch = patches[patchId];
@@ -1333,20 +1243,17 @@
         patch.note = note;
 
         if (!patch.note.trim()) {
-            toast('กรุณาพิมพ์โน้ตว่าต้องการแก้อะไรก่อน', 'error');
+            toast('กรุณาพิมพ์โน้ตระบุสิ่งที่ต้องการแก้ไขก่อนส่ง', 'error');
             return;
         }
 
-        // Update UI
         setSendBtnLoading(patchId, true);
         patch.status = 'pending_review';
         patches[patchId] = patch;
         renderPatchOverlays();
 
         try {
-            // Upload patch image as base64 to Firebase (only the small patch, not full file)
             const patchBase64 = patch.patchDataUrl.split(',')[1];
-
             const firebasePayload = {
                 id: patchId,
                 sessionId,
@@ -1356,14 +1263,14 @@
                 status: 'pending_review',
                 page: patch.page,
                 cropRect: patch.cropRect,
-                patchImage: patchBase64,  // เฉพาะส่วน crop เท่านั้น
+                patchImage: patchBase64,
                 resultImage: null,
                 createdAt: patch.createdAt,
                 updatedAt: Date.now()
             };
 
             await db.ref(patchPath(patchId)).set(firebasePayload);
-            toast(`✅ ส่งจุดที่ ${patch.num} ให้ช่างประเมินราคาเรียบร้อยแล้ว กรุณารอสักครู่...`, 'success');
+            toast(`✅ ส่งจุดที่ ${patch.num} ให้ช่างประเมินราคาแล้ว กรุณารอสักครู่...`, 'success');
         } catch (err) {
             patch.status = 'waiting';
             toast('❌ ส่งไม่สำเร็จ: ' + err.message, 'error');
@@ -1382,21 +1289,21 @@
             btn.innerHTML = '<span class="spinner"></span> กำลังส่ง...';
         } else {
             btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> ส่งประเมินราคา';
+            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> ส่งคิดราคา';
         }
     }
 
     /* ======================================================
-       FIREBASE LISTENER — Watch for status & result patches
+       FIREBASE REAL-TIME LISTENER
     ====================================================== */
     function listenToPatchUpdates() {
         db.ref(`text_retouch/${sessionId}/patches`).on('value', snap => {
             const fbPatches = snap.val() || {};
             Object.entries(fbPatches).forEach(([pid, fbPatch]) => {
-                if (!patches[pid]) return; // Patch not in local state
+                if (!patches[pid]) return;
                 const local = patches[pid];
 
-                // 1. Rejected by admin
+                // 1. Rejected
                 if (fbPatch.status === 'rejected' && local.status !== 'rejected') {
                     local.status = 'rejected';
                     local.rejectReason = fbPatch.rejectReason || 'ช่างปฏิเสธงานนี้';
@@ -1407,7 +1314,7 @@
                     toast(`❌ จุดที่ ${local.num} ถูกปฏิเสธ: ${local.rejectReason}`, 'error');
                 }
 
-                // 2. Admin quoted price -> Prompt customer to pay first!
+                // 2. Admin quoted price -> show payment
                 if (fbPatch.status === 'pending_payment' && local.status !== 'pending_payment' && local.status !== 'paid' && local.status !== 'working' && local.status !== 'done') {
                     local.status = 'pending_payment';
                     local.price = fbPatch.price || 0;
@@ -1415,11 +1322,11 @@
                     renderPatchCard(pid);
                     renderPatchOverlays();
                     updateTotal();
-                    toast(`💰 จุดที่ ${local.num} คิดราคา ฿${local.price} กรุณาสแกนโอนเงิน`, 'info');
+                    toast(`💰 ช่างประเมินราคาจุดที่ ${local.num}: ฿${local.price}`, 'info');
                     openPaymentModal(pid);
                 }
 
-                // 3. Payment confirmed
+                // 3. Paid
                 if (fbPatch.status === 'paid' && local.status !== 'paid' && local.status !== 'working' && local.status !== 'done') {
                     local.status = 'paid';
                     patches[pid] = local;
@@ -1436,24 +1343,23 @@
                     patches[pid] = local;
                     renderPatchCard(pid);
                     renderPatchOverlays();
-                    toast(`🎨 ช่างกำลังดำเนินการแก้ไขจุดที่ ${local.num} ใน Photoshop...`, 'info');
+                    toast(`🎨 ช่างกำลังดำเนินการจุดที่ ${local.num} ใน Photoshop...`, 'info');
                 }
 
-                // 5. Result completed (Clean - NO WATERMARK)
+                // 5. Result completed
                 if (fbPatch.resultImage && fbPatch.status === 'done' && local.status !== 'done') {
                     local.status = 'done';
                     local.resultDataUrl = 'data:image/png;base64,' + fbPatch.resultImage;
-                    local.resultWatermarked = false;
                     patches[pid] = local;
                     renderPatchCard(pid);
                     renderPatchOverlays();
                     updateTotal();
-                    toast(`🎉 จุดที่ ${local.num} เสร็จแล้ว! กำลังประกอบร่างลงภาพต้นฉบับ...`, 'success');
+                    toast(`🎉 จุดที่ ${local.num} ทำเสร็จแล้ว! กำลังประกอบร่าง...`, 'success');
                     applyPatchToCanvas(pid);
                     checkAllDone();
                 }
 
-                // Price update from admin
+                // Price update
                 if (fbPatch.price && fbPatch.price !== local.price) {
                     local.price = fbPatch.price;
                     patches[pid] = local;
@@ -1462,15 +1368,10 @@
                 }
             });
         });
-
-        // Request notification permission
-        if ('Notification' in window && Notification.permission === 'default') {
-            Notification.requestPermission();
-        }
     }
 
     /* ======================================================
-       PATCH CARD RENDERING
+       PATCH CARD RENDERING (PROMINENT UI)
     ====================================================== */
     function renderPatchCard(patchId) {
         const patch = patches[patchId];
@@ -1479,11 +1380,11 @@
 
         const statusLabels = {
             waiting: 'รอส่งประเมินราคา',
-            pending_review: '⏳ รอช่างคิดราคา',
-            rejected: '❌ ปฏิเสธงาน',
-            pending_payment: '💳 รอโอนเงิน',
-            paid: '⚡ โอนแล้ว ส่งเข้า PS',
-            working: '🎨 ช่างกำลังทำใน PS',
+            pending_review: '⏳ รอช่างคิดราคา...',
+            rejected: '❌ ช่างปฏิเสธงาน',
+            pending_payment: '💳 ช่างคิดราคาแล้ว (รอโอนเงิน)',
+            paid: '⚡ โอนแล้ว (กำลังเข้า PS)',
+            working: '🎨 กำลังทำใน Photoshop',
             done: '✅ เสร็จสมบูรณ์'
         };
 
@@ -1494,11 +1395,11 @@
                 <div class="patch-card-title">จุดที่ ${patch.num}</div>
                 <div class="patch-status-label status-${patch.status}">${statusLabels[patch.status] || patch.status}</div>
             </div>
+            ${patch.price > 0 ? `<span class="price-tag">฿${patch.price}</span>` : ''}
         </div>
         <div class="patch-card-body">
-            <!-- Thumb row: original patch + result -->
             <div class="patch-thumb-row">
-                <img class="patch-thumb" src="${patch.patchDataUrl}" alt="ต้นฉบับ" title="ส่วนที่จะแก้">
+                <img class="patch-thumb" src="${patch.patchDataUrl}" alt="ส่วนที่จะแก้" title="ส่วนที่จะแก้">
                 ${patch.resultDataUrl ? `
                 <div class="patch-result-thumb">
                     <img class="patch-result-img" src="${patch.resultDataUrl}" alt="ผลลัพธ์">
@@ -1508,21 +1409,18 @@
                 </div>`}
             </div>
 
-            <!-- Rejection reason if rejected -->
             ${patch.status === 'rejected' ? `
             <div class="patch-rejected-box">
                 <i class="fa-solid fa-triangle-exclamation"></i>
-                <div><strong>ช่างปฏิเสธงาน:</strong><br>${patch.rejectReason || 'เสี่ยงต่อกฎหมาย หรือมีลายเซ็นต์/ตราครุฑ'}</div>
+                <div><strong>ปฏิเสธงาน:</strong> ${patch.rejectReason || 'เสี่ยงต่อกฎหมาย หรือมีลายเซ็นต์/ตราครุฑ'}</div>
             </div>` : ''}
 
-            <!-- Note -->
             <textarea class="patch-note-input" id="note_${patchId}"
-                placeholder="บอกว่าต้องการแก้อะไร เช่น 'เปลี่ยนข้อความเป็น Hello' หรือ 'ลบตัวหนังสือออก'"
+                placeholder="บอกว่าต้องการแก้อะไร เช่น 'เปลี่ยนเลขเป็น 120' หรือ 'ลบตัวหนังสือออก'"
                 ${patch.status !== 'waiting' ? 'disabled' : ''}
                 onchange="patches['${patchId}'].note=this.value"
             >${patch.note}</textarea>
 
-            <!-- Actions -->
             <div class="patch-card-footer">
                 ${patch.status === 'waiting' ? `
                     <button class="btn-patch-action btn-send" id="btnSend_${patchId}" onclick="sendPatch('${patchId}')">
@@ -1533,28 +1431,27 @@
                     </button>
                 ` : ''}
                 ${patch.status === 'pending_review' ? `
-                    <span style="font-size:0.8rem;color:#fbbf24;display:flex;align-items:center;gap:6px;">
+                    <span style="font-size:0.82rem;color:#b45309;font-weight:700;display:flex;align-items:center;gap:6px;">
                         <span class="spinner"></span> รอช่างตรวจสอบ & คิดราคา...
                     </span>
                 ` : ''}
                 ${patch.status === 'rejected' ? `
-                    <button class="btn-delete" onclick="deletePatch('${patchId}')" title="ลบจุดนี้" style="width:100%;height:32px;display:flex;align-items:center;justify-content:center;gap:6px;">
+                    <button class="btn-delete" onclick="deletePatch('${patchId}')" title="ลบจุดนี้" style="width:100%;height:34px;display:flex;align-items:center;justify-content:center;gap:6px;">
                         <i class="fa-solid fa-trash"></i> ลบจุดนี้ออก
                     </button>
                 ` : ''}
                 ${patch.status === 'pending_payment' ? `
                     <button class="btn-patch-action btn-pay" onclick="openPaymentModal('${patchId}')">
-                        <i class="fa-solid fa-qrcode"></i> โอนเงิน ฿${patch.price}
+                        <i class="fa-solid fa-qrcode"></i> สแกนโอนเงิน ฿${patch.price}
                     </button>
-                    ${patch.price > 0 ? `<span class="price-tag">฿${patch.price}</span>` : ''}
                 ` : ''}
                 ${patch.status === 'paid' ? `
-                    <span style="font-size:0.8rem;color:#a5b4fc;display:flex;align-items:center;gap:6px;">
+                    <span style="font-size:0.82rem;color:#7c3aed;font-weight:700;display:flex;align-items:center;gap:6px;">
                         <span class="spinner"></span> โอนแล้ว ⚡ กำลังส่งเข้า PS...
                     </span>
                 ` : ''}
                 ${patch.status === 'working' ? `
-                    <span style="font-size:0.8rem;color:#38bdf8;display:flex;align-items:center;gap:6px;">
+                    <span style="font-size:0.82rem;color:#0284c7;font-weight:700;display:flex;align-items:center;gap:6px;">
                         <span class="spinner"></span> ช่างกำลังทำใน Photoshop...
                     </span>
                 ` : ''}
@@ -1562,14 +1459,13 @@
                     <button class="btn-patch-action btn-apply" onclick="applyPatchToCanvas('${patchId}')">
                         <i class="fa-solid fa-layer-group"></i> ประกอบร่างอีกครั้ง
                     </button>
-                    <span class="price-tag" style="color:var(--success);">✅ เสร็จแล้ว</span>
+                    <span style="color:var(--success);font-weight:700;font-size:0.85rem;margin-left:auto;">✅ เสร็จแล้ว</span>
                 ` : ''}
             </div>
         </div>`;
 
         if (!card) {
             card = document.createElement('div');
-            card.className = `patch-card status-${patch.status}`;
             card.id = `card_${patchId}`;
             list.insertBefore(card, document.getElementById('patchesEmpty'));
         }
@@ -1589,7 +1485,7 @@
     }
 
     function deletePatch(patchId) {
-        if (!confirm('ลบจุดแก้ไขนี้ออก?')) return;
+        if (!confirm('ยืนยันลบจุดแก้ไขนี้ออก?')) return;
         delete patches[patchId];
         const card = document.getElementById(`card_${patchId}`);
         if (card) card.remove();
@@ -1597,9 +1493,6 @@
         if (overlay) overlay.remove();
         updateEmpty();
         updateTotal();
-        // Renumber
-        let n = 1;
-        Object.values(patches).sort((a,b) => a.num - b.num).forEach(p => { p.num = n++; });
     }
 
     function updateEmpty() {
@@ -1629,7 +1522,6 @@
        PATCH OVERLAYS ON CANVAS
     ====================================================== */
     function renderPatchOverlays() {
-        // Remove old overlays
         document.querySelectorAll('.patch-overlay').forEach(el => el.remove());
 
         const content = document.getElementById('mainImage').style.display !== 'none'
@@ -1676,7 +1568,6 @@
         document.getElementById('paymentPatchNum').textContent = patch.num;
         document.getElementById('paymentPhoneDisplay').textContent = 'PromptPay: ' + PROMPTPAY_PHONE;
 
-        // Generate PromptPay QR
         const qrUrl = `https://promptpay.io/${PROMPTPAY_PHONE}/${patch.price}.png`;
         document.getElementById('qrImage').src = qrUrl;
 
@@ -1702,7 +1593,7 @@
             patch.status = 'paid';
             renderPatchCard(patchId);
             renderPatchOverlays();
-            toast('✅ แจ้งโอนเงินแล้ว! ระบบกำลังส่งงานเข้า Photoshop ของช่างทันที...', 'success');
+            toast('✅ แจ้งโอนเงินแล้ว! ส่งงานเข้า Photoshop ของช่างทันที...', 'success');
             document.getElementById('paymentModal').classList.remove('open');
         } catch(e) {
             toast('เกิดข้อผิดพลาด: ' + e.message, 'error');
@@ -1710,7 +1601,7 @@
     }
 
     /* ======================================================
-       COMPOSITE RESULT PATCH BACK INTO ORIGINAL
+       COMPOSITE RESULT BACK INTO CANVAS
     ====================================================== */
     async function applyPatchToCanvas(patchId) {
         const patch = patches[patchId];
@@ -1728,13 +1619,11 @@
             const nW = content.naturalWidth || content.width;
             const nH = content.naturalHeight || content.height;
 
-            // Create offscreen canvas of full image
             const offscreen = document.createElement('canvas');
             offscreen.width = nW; offscreen.height = nH;
             const ctx = offscreen.getContext('2d');
             ctx.drawImage(content, 0, 0);
 
-            // Draw result patch back at crop position
             const { x, y, w, h } = patch.cropRect;
             const px = (x / 100) * nW;
             const py = (y / 100) * nH;
@@ -1745,7 +1634,6 @@
             await new Promise(r => { resultImg.onload = r; resultImg.src = patch.resultDataUrl; });
             ctx.drawImage(resultImg, px, py, pw, ph);
 
-            // Update local display
             if (localFileType === 'image') {
                 const newUrl = offscreen.toDataURL('image/jpeg', 0.95);
                 const img = document.getElementById('mainImage');
@@ -1754,7 +1642,6 @@
                 await new Promise(r => { img.onload = r; });
             }
 
-            // Mark as composited
             patch.status = 'done';
             patch.composited = true;
             renderPatchCard(patchId);
@@ -1782,15 +1669,15 @@
 
     async function downloadFinalFile() {
         if (localFileType === 'pdf') {
-            toast('สำหรับ PDF กรุณากด "ประกอบร่าง" แต่ละจุดและบันทึกเอง', 'info');
+            toast('สำหรับ PDF กรุณากด "ประกอบร่าง" แต่ละจุดและบันทึก', 'info');
             return;
         }
         const img = document.getElementById('mainImage');
         const a = document.createElement('a');
         a.href = img.src;
-        a.download = 'text-retouch-final.jpg';
+        a.download = 'text-retouch-completed.jpg';
         a.click();
-        toast('ดาวน์โหลดไฟล์เสร็จเรียบร้อย!', 'success');
+        toast('ดาวน์โหลดไฟล์เรียบร้อย!', 'success');
     }
 
     /* ======================================================
@@ -1800,7 +1687,7 @@
         const tc = document.getElementById('toastContainer');
         const el = document.createElement('div');
         el.className = `toast ${type}`;
-        el.innerHTML = `<i class="fa-solid fa-${type==='success'?'check-circle':type==='error'?'circle-xmark':'circle-info'}"></i> ${msg}`;
+        el.innerHTML = `<i class="fa-solid fa-${type==='success'?'circle-check':type==='error'?'circle-xmark':'circle-info'}"></i> ${msg}`;
         tc.appendChild(el);
         setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, duration);
     }
