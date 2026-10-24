@@ -2795,8 +2795,8 @@ loadRules();
 
         # ===== TEXT-TOUCH SERVICE ENDPOINTS =====
         # ===== TEXT-RETOUCH AGENT ENDPOINTS =====
-        if parsed_url.path == '/text-retouch-submit':
-            """กด F12 ใน Photoshop → ส่งผลลัพธ์ patch กลับให้ลูกค้า"""
+        # ===== TEXT-RETOUCH AGENT ENDPOINTS (retouch-ebid) =====
+        if parsed_url.path in ('/text-retouch-submit', '/text-retouch-quote', '/text-retouch-reject', '/text-retouch-paid', '/text-retouch-review'):
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
             try:
@@ -2808,7 +2808,14 @@ loadRules();
                     spec = importlib.util.spec_from_file_location('text_retouch_engine', engine_path)
                     rte = importlib.util.module_from_spec(spec)
                     spec.loader.exec_module(rte)
-                    result = rte.handle_request('submit', req_data)
+                    action_map = {
+                        '/text-retouch-submit': 'submit',
+                        '/text-retouch-quote': 'quote',
+                        '/text-retouch-reject': 'reject',
+                        '/text-retouch-paid': 'mark_paid',
+                        '/text-retouch-review': 'review'
+                    }
+                    result = rte.handle_request(action_map.get(parsed_url.path, 'submit'), req_data)
                 else:
                     result = {'ok': False, 'error': 'text_retouch_engine.py not found'}
                 self.send_response(200)
@@ -2817,62 +2824,7 @@ loadRules();
                 self.end_headers()
                 self.wfile.write(json.dumps(result).encode())
             except Exception as e:
-                print(f'[TextRetouch] submit error: {e}')
-                self.send_response(500)
-                self.send_header('Content-type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
-                self.end_headers()
-                self.wfile.write(json.dumps({'ok': False, 'error': str(e)}).encode())
-            return
-
-        if parsed_url.path == '/text-retouch-confirm':
-            """ยืนยันการชำระเงิน → ปลดลายน้ำ patch"""
-            content_length = int(self.headers.get('Content-Length', 0))
-            post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
-            try:
-                req_data = json.loads(post_data.decode('utf-8')) if post_data else {}
-                script_dir = os.path.dirname(os.path.abspath(__file__))
-                import importlib.util
-                engine_path = os.path.join(script_dir, 'text_retouch_engine.py')
-                if os.path.exists(engine_path):
-                    spec = importlib.util.spec_from_file_location('text_retouch_engine', engine_path)
-                    rte = importlib.util.module_from_spec(spec)
-                    spec.loader.exec_module(rte)
-                    result = rte.handle_request('confirm_payment', req_data)
-                else:
-                    result = {'ok': False, 'error': 'engine not found'}
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
-                self.end_headers()
-                self.wfile.write(json.dumps(result).encode())
-            except Exception as e:
-                self.send_response(500)
-                self.send_header('Content-type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
-                self.end_headers()
-                self.wfile.write(json.dumps({'ok': False, 'error': str(e)}).encode())
-            return
-
-        if parsed_url.path == '/text-retouch-watch':
-            """ตรวจหา patch ใหม่ใน Firebase แล้วเปิดใน Photoshop"""
-            try:
-                script_dir = os.path.dirname(os.path.abspath(__file__))
-                import importlib.util
-                engine_path = os.path.join(script_dir, 'text_retouch_engine.py')
-                if os.path.exists(engine_path):
-                    spec = importlib.util.spec_from_file_location('text_retouch_engine', engine_path)
-                    rte = importlib.util.module_from_spec(spec)
-                    spec.loader.exec_module(rte)
-                    result = rte.handle_request('watch')
-                else:
-                    result = {'ok': False, 'error': 'engine not found'}
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
-                self.end_headers()
-                self.wfile.write(json.dumps(result).encode())
-            except Exception as e:
+                print(f'[TextRetouch] {parsed_url.path} error: {e}')
                 self.send_response(500)
                 self.send_header('Content-type', 'application/json')
                 self.send_header('Access-Control-Allow-Origin', '*')
@@ -3470,18 +3422,23 @@ if __name__ == "__main__":
                 pass
     threading.Thread(target=firebase_temp_cleanup_loop, daemon=True).start()
 
-    # Start Text-Retouch Agent Watcher (auto-opens patches from customers in Photoshop)
+    # Start Text-Retouch Agent Watcher (retouch-ebid)
     def text_retouch_agent_watcher_loop():
-        """ตรวจ Firebase ทุก 5 วินาที — เมื่อพบ patch ใหม่ (status=working) เปิดใน Photoshop อัตโนมัติ"""
+        """
+        ตรวจ Firebase ทุก 4 วินาที:
+        1. status == 'pending_review' -> เด้งหน้าต่าง Review Popup ให้คิดราคา หรือ ปฏิเสธงาน
+        2. status == 'paid'           -> เปิด patch เข้า Photoshop ทันที
+        """
         import importlib.util
         script_dir = os.path.dirname(os.path.abspath(__file__))
         engine_path = os.path.join(script_dir, 'text_retouch_engine.py')
-        seen_patches = set()
+        seen_reviews = set()
+        seen_paids = set()
         first_run = True
         while True:
             try:
-                time.sleep(5)
-                req_url = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/text_retouch.json?shallow=false"
+                time.sleep(4)
+                req_url = "https://retouch-ebid-default-rtdb.asia-southeast1.firebasedatabase.app/text_retouch.json?shallow=false"
                 req = urllib.request.Request(req_url, headers={'User-Agent': 'Mozilla/5.0'})
                 with urllib.request.urlopen(req, timeout=8) as resp:
                     all_sessions = json.loads(resp.read().decode('utf-8')) or {}
@@ -3491,28 +3448,53 @@ if __name__ == "__main__":
                     patches = session.get('patches', {}) or {}
                     for patch_id, patch in patches.items():
                         if not isinstance(patch, dict): continue
-                        if patch.get('status') == 'working' and patch_id not in seen_patches:
+                        status = patch.get('status')
+                        key = f"{session_id}_{patch_id}"
+
+                        # 1. โจทย์ใหม่รอประเมินราคา -> เด้งหน้าต่าง Review Popup
+                        if status == 'pending_review' and key not in seen_reviews:
                             if first_run:
-                                seen_patches.add(patch_id)
+                                seen_reviews.add(key)
                                 continue
-                            seen_patches.add(patch_id)
+                            seen_reviews.add(key)
                             num = patch.get('num', '?')
                             note = patch.get('note', '')[:40]
-                            print(f"\n[TextRetouch] 🔔 งานใหม่! จุดที่ {num} — '{note}' (session: {session_id})")
+                            print(f"\n[TextRetouch] 🔔 มีโจทย์ใหม่รอประเมินราคา! จุดที่ {num} — '{note}'")
                             try:
                                 import winsound
                                 winsound.PlaySound("SystemAsterisk", winsound.SND_ALIAS | winsound.SND_ASYNC)
                             except Exception:
                                 pass
-                            # Auto-open patch in Photoshop
+                            if os.path.exists(engine_path):
+                                try:
+                                    subprocess.Popen([sys.executable, engine_path, "--review", session_id, patch_id], shell=False)
+                                except Exception as pop_err:
+                                    print(f"[TextRetouch] เด้ง popup ล้มเหลว: {pop_err}")
+
+                        # 2. ลูกค้าโอนเงินแล้ว -> เปิดเข้า Photoshop ทันที
+                        elif status == 'paid' and key not in seen_paids:
+                            seen_paids.add(key)
+                            num = patch.get('num', '?')
+                            print(f"\n[TextRetouch] 💳 ลูกค้าโอนเงินแล้ว! จุดที่ {num} -> เปิด Photoshop ทันที")
+                            try:
+                                import winsound
+                                winsound.PlaySound("SystemAsterisk", winsound.SND_ALIAS | winsound.SND_ASYNC)
+                            except Exception:
+                                pass
                             if os.path.exists(engine_path):
                                 try:
                                     spec = importlib.util.spec_from_file_location('text_retouch_engine', engine_path)
                                     rte = importlib.util.module_from_spec(spec)
                                     spec.loader.exec_module(rte)
                                     rte.open_patch_in_photoshop(session_id, patch_id, patch)
+                                    # อัปเดต status เป็น working
+                                    rte.fb_patch(f"text_retouch/{session_id}/patches/{patch_id}", {
+                                        "status": "working",
+                                        "openedAt": int(time.time() * 1000)
+                                    })
                                 except Exception as pe:
                                     print(f"[TextRetouch] เปิด PS ล้มเหลว: {pe}")
+
                 first_run = False
             except Exception:
                 pass
