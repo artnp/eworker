@@ -1047,6 +1047,145 @@
             text-align: center;
             flex-shrink: 0;
             font-weight: 600;
+            position: relative;
+        }
+
+        /* 4. SHIMMER PULSE & LASER SCANNING FRAME */
+        .patch-thumb-placeholder.is-working {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0fdf4 100%);
+            border: 1px solid #7dd3fc;
+            color: #0284c7;
+            overflow: hidden;
+            flex-direction: column;
+            gap: 2px;
+            box-shadow: 0 0 12px rgba(2, 132, 199, 0.15);
+            animation: pulseGlow 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 4px rgba(2, 132, 199, 0.2); border-color: #7dd3fc; }
+            50% { box-shadow: 0 0 16px rgba(2, 132, 199, 0.45); border-color: #38bdf8; }
+        }
+
+        .patch-thumb-placeholder.is-working::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+            transform: skewX(-20deg);
+            animation: shimmerSweep 1.8s infinite linear;
+        }
+
+        @keyframes shimmerSweep {
+            0% { left: -100%; }
+            100% { left: 200%; }
+        }
+
+        .laser-scan-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #0284c7, #38bdf8, transparent);
+            box-shadow: 0 0 6px #0284c7;
+            animation: laserScan 2.2s infinite ease-in-out alternate;
+            z-index: 2;
+        }
+
+        @keyframes laserScan {
+            0% { top: 4%; }
+            100% { top: 92%; }
+        }
+
+        .shimmer-icon {
+            font-size: 0.92rem;
+            color: #0284c7;
+            animation: iconPulse 1.2s infinite ease-in-out;
+            z-index: 3;
+        }
+
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1); opacity: 0.85; }
+            50% { transform: scale(1.15); opacity: 1; }
+        }
+
+        .shimmer-label {
+            font-size: 0.62rem;
+            font-weight: 800;
+            color: #0369a1;
+            z-index: 3;
+            letter-spacing: 0.3px;
+        }
+
+        /* 2. LIVE WORKING TIMER BADGE */
+        .working-timer-badge {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 1px solid #bae6fd;
+            border-radius: 10px;
+            padding: 7px 12px;
+            box-shadow: 0 2px 6px rgba(2, 132, 199, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .working-timer-badge::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+            transform: skewX(-20deg);
+            animation: shimmerSweep 2.8s infinite linear;
+        }
+
+        .working-timer-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #0369a1;
+            z-index: 2;
+        }
+
+        .working-timer-dot {
+            width: 8px;
+            height: 8px;
+            background: #0284c7;
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7);
+            animation: timerDotPulse 1.5s infinite;
+        }
+
+        @keyframes timerDotPulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(2, 132, 199, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
+        }
+
+        .working-timer-clock {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-family: 'Outfit', monospace;
+            font-size: 0.88rem;
+            font-weight: 800;
+            color: #0284c7;
+            background: #ffffff;
+            border: 1px solid #7dd3fc;
+            padding: 2px 8px;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            z-index: 2;
         }
 
         .patch-result-thumb {
@@ -3013,9 +3152,11 @@
                     // 4. Working in Photoshop
                     if (fbPatch.status === 'working' && local.status !== 'working' && local.status !== 'done') {
                         local.status = 'working';
+                        local.workingStartedAt = fbPatch.openedAt || fbPatch.paidAt || Date.now();
                         patches[pid] = local;
                         renderPatchCard(pid);
                         renderPatchOverlays();
+                        ensureWorkingTimerRunning();
                         toast(`🎨 นักรีทัชกำลังดำเนินการจุดที่ ${local.num} ใน Photoshop...`, 'info');
                     }
 
@@ -3027,6 +3168,7 @@
                         renderPatchCard(pid);
                         renderPatchOverlays();
                         updateTotal();
+                        updateWorkingTimers();
                         toast(`🎉 จุดที่ ${local.num} ทำเสร็จแล้ว! กำลังประกอบร่าง...`, 'success');
                         applyPatchToCanvas(pid, true);
                         checkAllDone();
@@ -3062,6 +3204,18 @@
                 done: '✅ ทำการแก้เสร็จแล้ว'
             };
 
+            // Live clock text for working status
+            let initialClock = '00:00';
+            if (patch.status === 'working') {
+                if (!patch.workingStartedAt) {
+                    patch.workingStartedAt = patch.openedAt || patch.paidAt || Date.now();
+                }
+                const elapsedSec = Math.max(0, Math.floor((Date.now() - patch.workingStartedAt) / 1000));
+                const m = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+                const s = String(elapsedSec % 60).padStart(2, '0');
+                initialClock = `${m}:${s}`;
+            }
+
             const html = `
         <div class="patch-card-header" onclick="setActivePatch('${patchId}')">
             <div class="patch-num-circle status-${patch.status}">${patch.num}</div>
@@ -3076,10 +3230,13 @@
                 ${patch.resultDataUrl ? `
                 <div class="patch-result-thumb">
                     <img class="patch-result-img" src="${patch.resultDataUrl}" alt="ผลลัพธ์">
+                </div>` : patch.status === 'working' || patch.status === 'paid' ? `
+                <div class="patch-thumb-placeholder is-working" title="ระบบกำลังสแกนและรีทัชผลลัพธ์ใน Photoshop">
+                    <div class="laser-scan-line"></div>
+                    <i class="fa-solid fa-wand-magic-sparkles shimmer-icon"></i>
+                    <span class="shimmer-label">กำลังรีทัช</span>
                 </div>` : `
-                <div class="patch-thumb-placeholder">
-                    ${patch.status === 'working' || patch.status === 'paid' ? '<span class="spinner"></span>' : 'รอผลลัพธ์'}
-                </div>`}
+                <div class="patch-thumb-placeholder">รอผลลัพธ์</div>`}
             </div>
 
             ${patch.status === 'rejected' ? `
@@ -3124,9 +3281,17 @@
                     </span>
                 ` : ''}
                 ${patch.status === 'working' ? `
-                    <span style="font-size:0.82rem;color:#0284c7;font-weight:700;display:flex;align-items:center;gap:6px;">
-                        <span class="spinner"></span> นักรีทัชกำลังทำใน Photoshop...
-                    </span>
+                    <div class="working-timer-badge">
+                        <div class="working-timer-left">
+                            <span class="working-timer-dot"></span>
+                            <i class="fa-solid fa-paintbrush"></i>
+                            <span>นักรีทัชกำลังทำใน Photoshop</span>
+                        </div>
+                        <div class="working-timer-clock">
+                            <i class="fa-regular fa-clock"></i>
+                            <span id="workingClock_${patchId}">${initialClock}</span>
+                        </div>
+                    </div>
                 ` : ''}
                 ${patch.status === 'done' ? `
                     <div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:8px;">
@@ -3149,8 +3314,47 @@
             card.className = `patch-card ${activePatchId === patchId ? 'active' : ''}`;
             card.innerHTML = html;
 
+            if (patch.status === 'working') {
+                ensureWorkingTimerRunning();
+            }
+
             updateEmpty();
             updateTotal();
+        }
+
+        /* ======================================================
+           LIVE WORKING TIMER TRACKER
+        ====================================================== */
+        let workingTimerInterval = null;
+
+        function updateWorkingTimers() {
+            const workingPatches = Object.values(patches).filter(p => p.status === 'working');
+            if (workingPatches.length === 0) {
+                if (workingTimerInterval) {
+                    clearInterval(workingTimerInterval);
+                    workingTimerInterval = null;
+                }
+                return;
+            }
+
+            workingPatches.forEach(p => {
+                const clockEl = document.getElementById(`workingClock_${p.id}`);
+                if (!clockEl) return;
+                if (!p.workingStartedAt) {
+                    p.workingStartedAt = p.openedAt || p.paidAt || Date.now();
+                }
+                const elapsedSec = Math.max(0, Math.floor((Date.now() - p.workingStartedAt) / 1000));
+                const m = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+                const s = String(elapsedSec % 60).padStart(2, '0');
+                clockEl.textContent = `${m}:${s}`;
+            });
+        }
+
+        function ensureWorkingTimerRunning() {
+            if (!workingTimerInterval) {
+                workingTimerInterval = setInterval(updateWorkingTimers, 1000);
+            }
+            updateWorkingTimers();
         }
 
         function setActivePatch(patchId) {
