@@ -418,47 +418,68 @@ try {{
         f.write(jsx)
 
     print(f"[TextRetouch] 🎨 กำลังเปิดเข้า Photoshop: patch #{num} — '{note}'")
-    
-    # ตรวจสอบว่า Photoshop กำลังรันอยู่แล้วหรือไม่
-    ps_running = False
-    try:
-        import psutil
-        for p in psutil.process_iter(['name']):
-            if 'photoshop' in p.info.get('name', '').lower():
-                ps_running = True
-                break
-    except Exception:
-        pass
-
     ps_path = get_photoshop_path()
-    com_opened = False
 
-    if not ps_running and ps_path and os.path.exists(ps_path):
-        # หากยังไม่ได้เปิด Photoshop ไว้ ให้เปิดผ่าน Windows Shell แบบ Show Normal (หลีกเลี่ยง headless COM)
-        print(f"[TextRetouch] 🚀 เปิดโปรแกรม Photoshop ขึ้นมาใหม่ผ่าน Windows Shell...")
+    # ตรวจสอบและเปิด Photoshop อย่างปลอดภัย (กำจัด Zombie process <350MB อัตโนมัติ)
+    import psutil
+    zombies = []
+    has_healthy_ps = False
+
+    for p in psutil.process_iter(['pid', 'name', 'memory_info']):
+        try:
+            pname = p.info.get('name', '').lower()
+            if 'photoshop' in pname and 'launcher' not in pname:
+                mem_mb = p.info['memory_info'].rss / (1024 * 1024)
+                # หาก memory ต่ำกว่า 350 MB แสดงว่าเป็น Zombie headless ค้างจาก COM
+                if mem_mb < 350:
+                    zombies.append(p)
+                else:
+                    has_healthy_ps = True
+        except Exception:
+            pass
+
+    # เคลียร์ Zombie process
+    if zombies:
+        print(f"[TextRetouch] 🧹 ตรวจพบ Photoshop Zombie headless ({len(zombies)} ตัว) -> เคลียร์โปรเซสทันที...")
+        for z in zombies:
+            try:
+                z.kill()
+            except Exception:
+                pass
+        time.sleep(1)
+        has_healthy_ps = False
+
+    if not has_healthy_ps and ps_path and os.path.exists(ps_path):
+        print(f"[TextRetouch] 🚀 เปิดโปรแกรม Adobe Photoshop หน้าต่าง GUI ขึ้นมาใหม่ผ่าน Windows Shell...")
         try:
             import ctypes
             ctypes.windll.shell32.ShellExecuteW(None, "open", ps_path, f'"{jsx_path}"', None, 1)
-            com_opened = True
         except Exception as se:
-            print(f"[TextRetouch] ShellExecute error: {se}")
             subprocess.Popen([ps_path, jsx_path], shell=False)
-            com_opened = True
+
+        # รอให้ Photoshop โหลด UI เสร็จ (memory > 450 MB หรือ COM ตอบรับ)
+        for _ in range(12):
+            time.sleep(1)
+            try:
+                import win32com.client
+                ps = win32com.client.Dispatch("Photoshop.Application")
+                ps.DoJavaScriptFile(jsx_path)
+                print(f"[TextRetouch] ⚡ Photoshop โหลด UI เสร็จสมบูรณ์ และโหลดภาพเรียบร้อย")
+                break
+            except Exception:
+                pass
     else:
-        # หากเปิด Photoshop ทิ้งไว้อยู่แล้ว ให้ส่งเข้า DoJavaScriptFile ทันที (เร็วมากในเสี้ยววินาที)
+        # หากเปิดอยู่แล้ว ให้ส่ง JSX เข้า Photoshop ทันที
         try:
             import win32com.client
             ps = win32com.client.Dispatch("Photoshop.Application")
-            ps.Visible = True
             ps.DoJavaScriptFile(jsx_path)
-            com_opened = True
-            print(f"[TextRetouch] ⚡ ส่งเข้า Photoshop สำเร็จทันทีผ่าน COM Automation (เสี้ยววินาที)")
+            print(f"[TextRetouch] ⚡ ส่งเข้า Photoshop สำเร็จทันทีผ่าน COM Automation")
         except Exception as e:
-            print(f"[TextRetouch] COM Automation ({e}) -> สลับเป็น ShellExecute")
+            print(f"[TextRetouch] COM busy ({e}) -> สลับเป็น ShellExecute")
             try:
                 import ctypes
                 ctypes.windll.shell32.ShellExecuteW(None, "open", ps_path, f'"{jsx_path}"', None, 1)
-                com_opened = True
             except Exception:
                 subprocess.Popen([ps_path, jsx_path], shell=False)
 
@@ -467,6 +488,7 @@ try {{
         import win32com.client
         wsh = win32com.client.Dispatch("WScript.Shell")
         wsh.AppActivate("Adobe Photoshop")
+        wsh.AppActivate("Photoshop")
     except Exception:
         pass
 
