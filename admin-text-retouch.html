@@ -132,6 +132,7 @@
         .badge-working { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
         .badge-done { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
         .badge-rejected { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        .badge-system-error { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
 
         .job-body {
             padding: 18px;
@@ -375,6 +376,19 @@
             } catch(e) {}
         }
 
+        // Tab singleton guard: BroadcastChannel detects if another tab is already open
+        try {
+            const adminChannel = new BroadcastChannel('admin_text_retouch_singleton');
+            adminChannel.postMessage({ type: 'PING', tabId: Date.now() });
+            adminChannel.onmessage = (e) => {
+                if (e.data && e.data.type === 'PING') {
+                    adminChannel.postMessage({ type: 'PONG' });
+                } else if (e.data && e.data.type === 'PONG') {
+                    toast('ℹ️ มีแท็บแอดมินเปิดทำงานอยู่อีกหน้าต่างหนึ่งแล้ว', 'info');
+                }
+            };
+        } catch(e) {}
+
         // Listen to Shop Status
         db.ref('text_retouch_status').on('value', snap => {
             const val = snap.val() || 'online';
@@ -521,15 +535,17 @@
         function renderOtherCard(sid, pid, num, note, status, price, imgUrl, resultImg) {
             const badgeClass = status === 'paid' ? 'badge-paid' :
                                status === 'working' ? 'badge-working' :
-                               status === 'done' ? 'badge-done' : 'badge-rejected';
+                               status === 'done' ? 'badge-done' :
+                               status === 'system_error' ? 'badge-system-error' : 'badge-rejected';
             const statusLabel = status === 'paid' ? '💳 ชำระแล้ว (พร้อมทำ)' :
                                 status === 'working' ? '🎨 กำลังทำใน PS' :
-                                status === 'done' ? '✅ เสร็จสมบูรณ์' : '❌ ปฏิเสธงาน';
+                                status === 'done' ? '✅ เสร็จสมบูรณ์' :
+                                status === 'system_error' ? '⚠️ ระบบขัดข้อง' : '❌ ปฏิเสธงาน';
 
             return `
             <div class="job-card">
                 <div class="job-header">
-                    <span style="font-weight:700; font-size:0.95rem;">จุดที่ #${num} ${price > 0 ? `<span style="color:var(--success);margin-left:8px;">฿${price}</span>` : ''}</span>
+                    <span style="font-weight:700; font-size:0.95rem;">จุดที่ #${num} ${price > 0 && status !== 'system_error' ? `<span style="color:var(--success);margin-left:8px;">฿${price}</span>` : ''}</span>
                     <span class="job-badge ${badgeClass}">${statusLabel}</span>
                 </div>
                 <div class="job-body">
@@ -542,6 +558,13 @@
                         ${status === 'paid' ? `
                             <button class="btn-action btn-open-ps" onclick="openInPhotoshop('${sid}', '${pid}')">
                                 <i class="fa-solid fa-paintbrush"></i> เปิดเข้า Photoshop ทันที
+                            </button>
+                        ` : status === 'system_error' ? `
+                            <div style="font-size:0.78rem; color:#dc2626; margin-top:4px; line-height:1.4;">
+                                ⚠️ แจ้งหน้างานลูกค้าแล้วว่า <strong>ระบบขัดข้อง โปรดติดต่อ LINE</strong>
+                            </div>
+                            <button class="quick-btn" onclick="purgePatchPermanently('${sid}', '${pid}')" style="color:#64748b;margin-top:6px;width:max-content;border-color:#cbd5e1;background:#f8fafc;">
+                                <i class="fa-solid fa-trash-can"></i> ลบประวัตินี้ถาวร
                             </button>
                         ` : `
                             <button class="quick-btn" onclick="deleteHistoryCard('${sid}', '${pid}')" style="color:var(--danger);margin-top:6px;width:max-content;border-color:#fecaca;background:#fef2f2;">
@@ -606,19 +629,32 @@
 
         async function deleteHistoryCard(sid, pid) {
             const confirmed = await showConfirmModal({
-                title: 'ยืนยันลบรายการนี้?',
-                message: 'ข้อมูลจุดนี้จะถูกลบออกจากฐานข้อมูล Firebase ทันที',
-                icon: 'fa-solid fa-trash',
+                title: 'ยืนยันลบรายการนี้ออกจากระบบ?',
+                message: 'สถานะในหน้างานลูกค้าจะถูกอัพเดตเป็น:\n"ระบบขัดข้อง โปรดติดต่อ LINE: https://line.me/ti/p/gqIluRmdJ_"',
+                icon: 'fa-solid fa-triangle-exclamation',
                 iconType: 'danger',
-                confirmText: 'ลบรายการ',
+                confirmText: 'ลบและแจ้งลูกค้า',
                 cancelText: 'ยกเลิก',
                 danger: true
             });
             if (!confirmed) return;
 
             try {
+                await db.ref(`text_retouch/${sid}/patches/${pid}`).update({
+                    status: 'system_error',
+                    errorMessage: 'ระบบขัดข้อง โปรดติดต่อ LINE: https://line.me/ti/p/gqIluRmdJ_',
+                    errorAt: Date.now()
+                });
+                toast('⚠️ อัพเดตหน้างานลูกค้าเป็น "ระบบขัดข้อง โปรดติดต่อ LINE" เรียบร้อย', 'info');
+            } catch(e) {
+                toast('เกิดข้อผิดพลาด: ' + e.message, 'error');
+            }
+        }
+
+        async function purgePatchPermanently(sid, pid) {
+            try {
                 await db.ref(`text_retouch/${sid}/patches/${pid}`).remove();
-                toast('ลบรายการสำเร็จ', 'info');
+                toast('ลบออกจากฐานข้อมูลถาวรเรียบร้อย', 'info');
             } catch(e) {
                 toast('เกิดข้อผิดพลาด: ' + e.message, 'error');
             }
