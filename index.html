@@ -726,6 +726,16 @@
             color: var(--fh-blue);
         }
 
+        .price-badge-fh.custom-price-badge {
+            font-size: 1.05rem;
+            color: #d97706;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            padding: 3px 10px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
         /*  Famous Green Download Button */
         .btn-download-fh {
             background: var(--fh-green);
@@ -3360,6 +3370,24 @@
                 installSteps: [],
                 isRecommended: true,
                 createdAt: 1710000002000
+            },
+            {
+                id: 'service-text-retouch',
+                slug: 'text-retouch',
+                title: 'ตัดต่อแก้ไขข้อความ เนียนสมจริงเฉพาะจุด',
+                price: 0,
+                priceText: 'ประเมินเฉพาะจุด',
+                category: 'แรงงาน',
+                isService: true,
+                serviceUrl: 'shop/text-retouch/index.html',
+                payPerUse: true,
+                language: '',
+                coverImage: 'shop/images/textretouch_cover.svg',
+                description: 'บริการโดยแรงงานเซียน Photoshop',
+                hasInstallGuide: false,
+                installSteps: [],
+                isRecommended: true,
+                createdAt: 1710000004000
             }
         ];
 
@@ -3423,6 +3451,7 @@
             // Group products by category
             const catMap = {};
             catMap['บริการออนไลน์'] = 0; // ensure service category is always available
+            catMap['แรงงาน'] = 0; // ensure labor category is always available
 
             products.forEach(p => {
                 let c = (p.category || '').trim();
@@ -3441,19 +3470,22 @@
                 </li>
             `;
 
-            // Sort with 'บริการออนไลน์' first, then other categories alphabetically
+            // Sort with 'บริการออนไลน์' first, 'แรงงาน' second, then other categories alphabetically
             const cats = Object.keys(catMap).sort((a, b) => {
                 if (a === 'บริการออนไลน์' || a === 'บริการ') return -1;
                 if (b === 'บริการออนไลน์' || b === 'บริการ') return 1;
+                if (a === 'แรงงาน') return -1;
+                if (b === 'แรงงาน') return 1;
                 return a.localeCompare(b);
             });
 
             cats.forEach(cat => {
                 const count = catMap[cat];
-                if (count === 0 && cat !== 'บริการออนไลน์' && cat !== 'บริการ') return;
+                if (count === 0 && cat !== 'บริการออนไลน์' && cat !== 'บริการ' && cat !== 'แรงงาน') return;
                 const isActive = (activeCategory === cat || (activeCategory === 'บริการ' && cat === 'บริการออนไลน์') || (activeCategory === 'บริการออนไลน์' && cat === 'บริการ'));
                 const isServiceCat = (cat === 'บริการ' || cat === 'บริการออนไลน์');
-                const icon = isServiceCat ? '🛠️' : '📁';
+                const isLaborCat = (cat === 'แรงงาน');
+                const icon = isServiceCat ? '🛠️' : (isLaborCat ? '🔨' : '📁');
                 const label = isServiceCat ? 'บริการออนไลน์' : escapeHtml(cat);
                 html += `
                     <li>
@@ -3504,7 +3536,13 @@
             updatePageSEO(product);
 
             if (titleEl) titleEl.textContent = product.title || 'บริการออนไลน์';
-            if (subTitleEl) subTitleEl.textContent = product.description || `ค่าบริการ ฿${Number(product.price || 20).toFixed(2)} ต่อครั้ง (ทำงานเสร็จแล้วค่อยชำระเงิน)`;
+            if (subTitleEl) {
+                if (product.priceText) {
+                    subTitleEl.textContent = `${product.description || ''} (ค่าบริการ: ${product.priceText})`;
+                } else {
+                    subTitleEl.textContent = product.description || `ค่าบริการ ฿${Number(product.price || 20).toFixed(2)} ต่อครั้ง (ทำงานเสร็จแล้วค่อยชำระเงิน)`;
+                }
+            }
             if (extLink) extLink.href = product.serviceUrl;
 
             // Load iframe url if changed
@@ -3582,7 +3620,8 @@
                     (p.title && p.title.toLowerCase().includes(query)) ||
                     (p.description && p.description.toLowerCase().includes(query)) ||
                     (p.language && p.language.toLowerCase().includes(query)) ||
-                    (p.category && p.category.toLowerCase().includes(query));
+                    (p.category && p.category.toLowerCase().includes(query)) ||
+                    (p.priceText && p.priceText.toLowerCase().includes(query));
                 return matchCategory && matchSearch;
             });
 
@@ -3610,10 +3649,10 @@
 
             container.innerHTML = filtered.map(p => {
                 const priceFormatted = Number(p.price || 0).toFixed(2);
-                const isFree = p.price <= 0;
+                const isFree = (p.price <= 0) && !p.priceText;
                 const isUserPurchased = checkIsPurchased(p.id);
                 const langMeta = getLanguageMeta(p.language);
-                const isService = !!p.isService || p.category === 'บริการ' || p.category === 'บริการออนไลน์';
+                const isService = !!p.isService || p.category === 'บริการ' || p.category === 'บริการออนไลน์' || p.category === 'แรงงาน';
 
                 return `
                     <div class="program-card-fh" id="card-${p.id}">
@@ -3624,13 +3663,13 @@
                             <div class="program-details">
                                 <div class="program-title-row">
                                     <div class="program-name">${escapeHtml(p.title)}</div>
-                                    ${isService ? '<span class="badge-service-pill">🛠️ บริการออนไลน์</span>' : ''}
+                                    ${isService ? `<span class="badge-service-pill">${p.category === 'แรงงาน' ? '🔨 แรงงาน' : '🛠️ บริการออนไลน์'}</span>` : ''}
                                     ${p.isRecommended ? '<span class="badge-recommended">⭐ แนะนำ</span>' : ''}
                                 </div>
                                 <div class="program-excerpt">${formatCardExcerpt(p.description)}</div>
                                 <div class="program-meta-chips">
                                     ${isService ? `
-                                        <span>🌐 บริการออนไลน์</span>                                    ` : `
+                                        <span>${p.category === 'แรงงาน' ? '🔨 หมวดแรงงาน' : '🌐 บริการออนไลน์'}</span>                                    ` : `
                                         ${langMeta ? `<span style="background:${langMeta.bg}; color:${langMeta.color}; border:1px solid ${langMeta.border}; font-weight:700; padding:2px 8px; border-radius:4px; white-space:nowrap;">💻 เขียนด้วย: ${langMeta.icon} ${escapeHtml(langMeta.name)}</span>` : ''}
                                         ${p.category ? `<span>📁 ${escapeHtml(p.category)}</span>` : ''}
                                         ${p.hasInstallGuide ? '<span>🛠️ มีคู่มือติดตั้ง</span>' : ''}
@@ -3640,11 +3679,11 @@
                         </div>
 
                         <div class="card-right-action">
-                            <div class="price-badge-fh ${isFree ? 'free' : ''}">
-                                ${isService ? (isFree ? '🎁 ฟรี (Free)' : `฿ ${priceFormatted} <small style="font-size:0.75rem; color:var(--fh-muted); font-weight:500;">/ ครั้ง</small>`) : (isFree ? 'ฟรี (Free)' : `฿ ${priceFormatted}`)}
+                            <div class="price-badge-fh ${p.priceText ? 'custom-price-badge' : (isFree ? 'free' : '')}">
+                                ${p.priceText ? escapeHtml(p.priceText) : (isService ? (isFree ? '🎁 ฟรี (Free)' : `฿ ${priceFormatted} <small style="font-size:0.75rem; color:var(--fh-muted); font-weight:500;">/ ครั้ง</small>`) : (isFree ? 'ฟรี (Free)' : `฿ ${priceFormatted}`))}
                             </div>
                             ${isService ? `
-                                ${(!storeIsOnline && !isFree) ? `
+                                ${(!storeIsOnline && !isFree && !p.priceText) ? `
                                     <button class="btn-service-fh disabled" onclick="handleServiceClick('${p.id}', event)">
                                         ❌ตอนนี้ร้านปิด
                                     </button>
@@ -3804,7 +3843,7 @@
             if (!p) return;
 
             // For online services, open directly in popup modal
-            if (p.isService || p.category === 'บริการ' || p.category === 'บริการออนไลน์') {
+            if (p.isService || p.category === 'บริการ' || p.category === 'บริการออนไลน์' || p.category === 'แรงงาน') {
                 openServiceModal(p);
                 return;
             }
@@ -4129,9 +4168,9 @@
             if (pQuery) {
                 const matched = products.find(x => x.slug === pQuery || x.id === pQuery);
                 if (matched) {
-                    if (matched.isService || matched.category === 'บริการ' || matched.category === 'บริการออนไลน์') {
-                        const isFree = !matched.price || Number(matched.price) <= 0;
-                        if (!storeIsOnline && !isFree) {
+                    if (matched.isService || matched.category === 'บริการ' || matched.category === 'บริการออนไลน์' || matched.category === 'แรงงาน') {
+                        const isFree = (!matched.price || Number(matched.price) <= 0) && !matched.priceText;
+                        if (!storeIsOnline && !isFree && !matched.priceText) {
                             showToast('❌ ตอนนี้ร้านปิดให้บริการ เนื่องจากระบบต้องเชื่อมต่อเซิร์ฟเวอร์เพื่อตรวจสอบการโอนเงิน', 'warning');
                             return;
                         }
@@ -5682,7 +5721,7 @@
             if (!datalist && !chipsList) return;
 
             // Collect unique categories in the system
-            const catSet = new Set(['TradingView / สคริปต์', 'เครื่องมือ', 'บอท', 'โปรแกรม', 'บริการออนไลน์']);
+            const catSet = new Set(['TradingView / สคริปต์', 'เครื่องมือ', 'บอท', 'โปรแกรม', 'บริการออนไลน์', 'แรงงาน']);
             if (Array.isArray(products)) {
                 products.forEach(p => {
                     const c = (p.category || '').trim();
