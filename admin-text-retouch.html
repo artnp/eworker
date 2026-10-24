@@ -494,7 +494,11 @@
                             <button class="btn-action btn-open-ps" onclick="openInPhotoshop('${sid}', '${pid}')">
                                 <i class="fa-solid fa-paintbrush"></i> เปิดเข้า Photoshop ทันที
                             </button>
-                        ` : ''}
+                        ` : `
+                            <button class="quick-btn" onclick="deleteHistoryCard('${sid}', '${pid}')" style="color:var(--danger);margin-top:6px;width:max-content;border-color:#fecaca;background:#fef2f2;">
+                                <i class="fa-solid fa-trash"></i> ลบรายการนี้ออกจากระบบ
+                            </button>
+                        `}
                     </div>
                 </div>
             </div>`;
@@ -533,9 +537,19 @@
                 await db.ref(`text_retouch/${sid}/patches/${pid}`).update({
                     status: 'rejected',
                     rejectReason: reason,
-                    rejectedAt: Date.now()
+                    rejectedAt: Date.now(),
+                    patchImage: null
                 });
-                alert('❌ ปฏิเสธงานเรียบร้อย');
+                alert('❌ ปฏิเสธงานและลบภาพออกจากระบบเรียบร้อย');
+            } catch(e) {
+                alert('เกิดข้อผิดพลาด: ' + e.message);
+            }
+        }
+
+        async function deleteHistoryCard(sid, pid) {
+            if (!confirm('ยืนยันลบรายการนี้ออกจากระบบ Firebase?')) return;
+            try {
+                await db.ref(`text_retouch/${sid}/patches/${pid}`).remove();
             } catch(e) {
                 alert('เกิดข้อผิดพลาด: ' + e.message);
             }
