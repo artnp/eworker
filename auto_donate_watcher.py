@@ -3513,6 +3513,83 @@ if __name__ == "__main__":
                 pass
     threading.Thread(target=text_retouch_agent_watcher_loop, daemon=True).start()
 
+    # Auto Shop Status: 15-Minute Idle Detection (GetLastInputInfo)
+    def text_retouch_idle_status_loop():
+        """
+        ตรวจจับการเคลื่อนไหวของเครื่องคอมพิวเตอร์ (GetLastInputInfo):
+        - หากไม่มีการเคลื่อนไหว / หน้าจอดับ เกิน 15 นาที (900 วินาที) -> สลับสถานะเป็น 'away' (กำลังงีบอยู่ Zzz)
+        - เมื่อกลับมาเคลื่อนไหวเมาส์หรือคีย์บอร์ด -> สลับสถานะกลับเป็น 'online' (พร้อมรับงานทันที)
+        - อัพเดต heartbeat text_retouch_admin_presence เพื่อให้หน้าร้านรู้ว่าบอทพร้อมรับงาน
+        """
+        import ctypes
+        class LASTINPUTINFO(ctypes.Structure):
+            _fields_ = [('cbSize', ctypes.c_uint), ('dwTime', ctypes.c_uint)]
+
+        IDLE_AWAY_THRESHOLD = 15 * 60  # 15 นาที (900 วินาที)
+        auto_set_away = False
+        current_status = None
+        base_url = "https://retouch-ebid-default-rtdb.asia-southeast1.firebasedatabase.app/text_retouch"
+
+        while True:
+            try:
+                # 1. เช็ค Idle Time จาก Windows Kernel (เบาเครื่องมาก ไม่กิน CPU)
+                lii = LASTINPUTINFO()
+                lii.cbSize = ctypes.sizeof(LASTINPUTINFO)
+                idle_sec = 0.0
+                if ctypes.windll.user32.GetLastInputInfo(ctypes.byref(lii)):
+                    millis = ctypes.windll.kernel32.GetTickCount() - lii.dwTime
+                    idle_sec = max(0, millis / 1000.0)
+
+                # 2. ดึงสถานะปัจจุบันจาก Firebase
+                status_url = f"{base_url}/_shop_status.json"
+                try:
+                    req = urllib.request.Request(status_url, headers={'User-Agent': 'Mozilla/5.0'})
+                    with urllib.request.urlopen(req, timeout=6) as resp:
+                        raw = resp.read().decode('utf-8')
+                        server_status = json.loads(raw) if raw and raw != 'null' else 'online'
+                except Exception:
+                    server_status = current_status or 'online'
+
+                current_status = server_status
+
+                # 3. จัดการสลับสถานะอัตโนมัติ (เฉพาะเมื่อไม่ได้ปิดร้าน offline แบบ manual)
+                if current_status != 'offline':
+                    if idle_sec >= IDLE_AWAY_THRESHOLD and current_status != 'away':
+                        put_req = urllib.request.Request(
+                            status_url,
+                            data=json.dumps('away').encode('utf-8'),
+                            method='PUT',
+                            headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'}
+                        )
+                        urllib.request.urlopen(put_req, timeout=6)
+                        current_status = 'away'
+                        auto_set_away = True
+                        print(f"\n[TextRetouch] 🟡 เครื่องไม่ขยับเกิน 15 นาที ({int(idle_sec)}s) -> สลับเป็น 'กำลังงีบอยู่ Zzz' อัตโนมัติ")
+
+                    elif idle_sec < 60 and current_status == 'away' and auto_set_away:
+                        put_req = urllib.request.Request(
+                            status_url,
+                            data=json.dumps('online').encode('utf-8'),
+                            method='PUT',
+                            headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'}
+                        )
+                        urllib.request.urlopen(put_req, timeout=6)
+                        current_status = 'online'
+                        auto_set_away = False
+                        print(f"\n[TextRetouch] 🟢 ตรวจพบการเคลื่อนไหว -> สลับสถานะร้านกลับเป็น 'พร้อมรับงานทันที' อัตโนมัติ")
+
+                # 4. Heartbeat presence
+                pres_url = f"{base_url}/_admin_presence.json"
+                pres_data = json.dumps({"online": current_status != 'offline', "lastSeen": int(time.time() * 1000)}).encode('utf-8')
+                urllib.request.urlopen(urllib.request.Request(pres_url, data=pres_data, method='PUT', headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'}), timeout=6)
+
+            except Exception:
+                pass
+
+            time.sleep(10)
+
+    threading.Thread(target=text_retouch_idle_status_loop, daemon=True).start()
+
     # Launch floating status and loading progress bar widget (same as Facebook_Bot)
     write_status_file(0, 'idle', 'พร้อมทำงาน', task_type="idle")
     ensure_watcher_gui_running()
