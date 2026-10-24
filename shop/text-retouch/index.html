@@ -408,17 +408,38 @@
         }
 
         .patch-num-circle.status-waiting { background: #1e293b; color: #94a3b8; }
+        .patch-num-circle.status-pending_review { background: rgba(245,158,11,0.2); color: #fbbf24; }
+        .patch-num-circle.status-rejected { background: rgba(239,68,68,0.2); color: #f87171; }
+        .patch-num-circle.status-pending_payment { background: rgba(245,158,11,0.2); color: #fbbf24; }
+        .patch-num-circle.status-paid { background: rgba(99,102,241,0.2); color: #a5b4fc; }
         .patch-num-circle.status-working { background: rgba(56,189,248,0.2); color: #38bdf8; }
-        .patch-num-circle.status-preview { background: rgba(245,158,11,0.2); color: #fbbf24; }
         .patch-num-circle.status-done { background: rgba(16,185,129,0.2); color: #34d399; }
 
         .patch-card-meta { flex: 1; min-width: 0; }
         .patch-card-title { font-weight: 700; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .patch-status-label { font-size: 0.72rem; color: var(--text-muted); margin-top: 1px; }
 
+        .patch-status-label.status-pending_review { color: #fbbf24; }
+        .patch-status-label.status-rejected { color: #f87171; font-weight: 600; }
+        .patch-status-label.status-pending_payment { color: #fbbf24; font-weight: 600; }
+        .patch-status-label.status-paid { color: #a5b4fc; }
         .patch-status-label.status-working { color: #38bdf8; }
-        .patch-status-label.status-preview { color: #fbbf24; }
-        .patch-status-label.status-done { color: #34d399; }
+        .patch-status-label.status-done { color: #34d399; font-weight: 600; }
+
+        .patch-rejected-box {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            border-radius: 8px;
+            padding: 8px 10px;
+            margin-bottom: 8px;
+            font-size: 0.78rem;
+            color: #fca5a5;
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            line-height: 1.4;
+        }
+        .patch-rejected-box i { color: #ef4444; margin-top: 2px; }
 
         .patch-card-body { padding: 10px 12px; }
 
@@ -714,29 +735,36 @@
                     <div class="step-card">
                         <span class="step-num">1</span>
                         <span class="step-icon">📁</span>
-                        <div class="step-title">อัพโหลดไฟล์</div>
-                        <div class="step-desc">รูปภาพ หรือ PDF (เก็บใน browser เท่านั้น)</div>
+                        <div class="step-title">เลือกไฟล์</div>
+                        <div class="step-desc">รูป/PDF เก็บใน Browser ปลอดภัย 100%</div>
                     </div>
                     <span class="step-arrow"><i class="fa-solid fa-chevron-right"></i></span>
                     <div class="step-card">
                         <span class="step-num">2</span>
                         <span class="step-icon">✂️</span>
-                        <div class="step-title">วาดกรอบ Crop</div>
-                        <div class="step-desc">เลือกเฉพาะส่วนที่จะให้แก้ + ใส่โน้ต</div>
+                        <div class="step-title">Crop จุดแก้</div>
+                        <div class="step-desc">ตีกรอบเฉพาะส่วนที่แก้ + ใส่โน้ต</div>
                     </div>
                     <span class="step-arrow"><i class="fa-solid fa-chevron-right"></i></span>
                     <div class="step-card">
                         <span class="step-num">3</span>
-                        <span class="step-icon">⚡</span>
-                        <div class="step-title">ส่งงาน</div>
-                        <div class="step-desc">ช่างรับงานเข้า Photoshop ทันที</div>
+                        <span class="step-icon">⚖️</span>
+                        <div class="step-title">คิดราคา / ตรวจ</div>
+                        <div class="step-desc">ช่างประเมินราคา หรือแจ้งหากทำไม่ได้</div>
                     </div>
                     <span class="step-arrow"><i class="fa-solid fa-chevron-right"></i></span>
                     <div class="step-card">
                         <span class="step-num">4</span>
                         <span class="step-icon">💳</span>
-                        <div class="step-title">จ่าย-โหลด</div>
-                        <div class="step-desc">ตรวจงาน → โอน → ดาวน์โหลดไฟล์เสร็จ</div>
+                        <div class="step-title">โอนเริ่มทำ</div>
+                        <div class="step-desc">สแกน PromptPay → ส่งเข้า Photoshop</div>
+                    </div>
+                    <span class="step-arrow"><i class="fa-solid fa-chevron-right"></i></span>
+                    <div class="step-card">
+                        <span class="step-num">5</span>
+                        <span class="step-icon">✨</span>
+                        <div class="step-title">รับงานเสร็จ</div>
+                        <div class="step-desc">ภาพคมชัด ไม่มีลายน้ำ ประกอบร่างอัตโนมัติ</div>
                     </div>
                 </div>
 
@@ -882,7 +910,7 @@
                     ระบบจะตรวจสอบยอดโอนอัตโนมัติ
                 </div>
                 <button class="btn-confirm-paid" id="btnConfirmPaid">
-                    <i class="fa-solid fa-check"></i> แจ้งโอนแล้ว (รอตรวจสอบ)
+                    <i class="fa-solid fa-check"></i> โอนเงินแล้ว (แจ้งช่างเปิดทำใน Photoshop ทันที)
                 </button>
             </div>
         </div>
@@ -900,12 +928,12 @@
     </script>
     <script>
     /* =========================================================
-       TEXT-RETOUCH v2 — Agent-Style Patch System
+       TEXT-RETOUCH v3 — Agent-Style Patch System (retouch-ebid)
        ========================================================= */
 
-    // ── FIREBASE CONFIG (public project, rules restrict write) ──
+    // ── FIREBASE CONFIG (retouch-ebid) ──
     const FIREBASE_CONFIG = {
-        databaseURL: "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app"
+        databaseURL: "https://retouch-ebid-default-rtdb.asia-southeast1.firebasedatabase.app"
     };
     firebase.initializeApp(FIREBASE_CONFIG);
     const db = firebase.database();
@@ -1295,7 +1323,7 @@
     }
 
     /* ======================================================
-       SEND PATCH TO FIREBASE
+       SEND PATCH TO FIREBASE (Status: pending_review)
     ====================================================== */
     async function sendPatch(patchId) {
         const patch = patches[patchId];
@@ -1311,7 +1339,7 @@
 
         // Update UI
         setSendBtnLoading(patchId, true);
-        patch.status = 'working';
+        patch.status = 'pending_review';
         patches[patchId] = patch;
         renderPatchOverlays();
 
@@ -1324,18 +1352,18 @@
                 sessionId,
                 num: patch.num,
                 note: patch.note,
-                price: patch.price,
-                status: 'working',
+                price: 0,
+                status: 'pending_review',
                 page: patch.page,
                 cropRect: patch.cropRect,
-                patchImage: patchBase64,  // ← เฉพาะส่วน crop เท่านั้น
+                patchImage: patchBase64,  // เฉพาะส่วน crop เท่านั้น
                 resultImage: null,
                 createdAt: patch.createdAt,
                 updatedAt: Date.now()
             };
 
             await db.ref(patchPath(patchId)).set(firebasePayload);
-            toast(`✅ ส่งจุดที่ ${patch.num} ให้ช่างแล้ว! กำลังดำเนินการ...`, 'success');
+            toast(`✅ ส่งจุดที่ ${patch.num} ให้ช่างประเมินราคาเรียบร้อยแล้ว กรุณารอสักครู่...`, 'success');
         } catch (err) {
             patch.status = 'waiting';
             toast('❌ ส่งไม่สำเร็จ: ' + err.message, 'error');
@@ -1354,12 +1382,12 @@
             btn.innerHTML = '<span class="spinner"></span> กำลังส่ง...';
         } else {
             btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> ส่งงาน';
+            btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> ส่งประเมินราคา';
         }
     }
 
     /* ======================================================
-       FIREBASE LISTENER — Watch for result patches
+       FIREBASE LISTENER — Watch for status & result patches
     ====================================================== */
     function listenToPatchUpdates() {
         db.ref(`text_retouch/${sessionId}/patches`).on('value', snap => {
@@ -1368,36 +1396,60 @@
                 if (!patches[pid]) return; // Patch not in local state
                 const local = patches[pid];
 
-                // If admin sent back a result
-                if (fbPatch.resultImage && fbPatch.status === 'preview' && local.status !== 'preview' && local.status !== 'done') {
-                    local.status = 'preview';
-                    local.resultDataUrl = 'data:image/jpeg;base64,' + fbPatch.resultImage;
-                    local.resultWatermarked = true;
-                    local.price = fbPatch.price || local.price;
+                // 1. Rejected by admin
+                if (fbPatch.status === 'rejected' && local.status !== 'rejected') {
+                    local.status = 'rejected';
+                    local.rejectReason = fbPatch.rejectReason || 'ช่างปฏิเสธงานนี้';
                     patches[pid] = local;
                     renderPatchCard(pid);
                     renderPatchOverlays();
                     updateTotal();
-                    toast(`🎨 จุดที่ ${local.num} เสร็จแล้ว! กดดูตัวอย่างและชำระเงิน`, 'info');
-
-                    // Notification
-                    if ('Notification' in window && Notification.permission === 'granted') {
-                        new Notification('Text-Retouch', { body: `จุดที่ ${local.num} แก้ไขเสร็จแล้ว!`, icon: '/favicon.ico' });
-                    }
+                    toast(`❌ จุดที่ ${local.num} ถูกปฏิเสธ: ${local.rejectReason}`, 'error');
                 }
 
-                // If payment confirmed and result unlocked
-                if (fbPatch.status === 'done' && local.status !== 'done') {
-                    local.status = 'done';
-                    if (fbPatch.resultImageClean) {
-                        local.resultDataUrl = 'data:image/jpeg;base64,' + fbPatch.resultImageClean;
-                        local.resultWatermarked = false;
-                    }
+                // 2. Admin quoted price -> Prompt customer to pay first!
+                if (fbPatch.status === 'pending_payment' && local.status !== 'pending_payment' && local.status !== 'paid' && local.status !== 'working' && local.status !== 'done') {
+                    local.status = 'pending_payment';
+                    local.price = fbPatch.price || 0;
                     patches[pid] = local;
                     renderPatchCard(pid);
                     renderPatchOverlays();
                     updateTotal();
-                    toast(`✅ จุดที่ ${local.num} ชำระเงินเรียบร้อย!`, 'success');
+                    toast(`💰 จุดที่ ${local.num} คิดราคา ฿${local.price} กรุณาสแกนโอนเงิน`, 'info');
+                    openPaymentModal(pid);
+                }
+
+                // 3. Payment confirmed
+                if (fbPatch.status === 'paid' && local.status !== 'paid' && local.status !== 'working' && local.status !== 'done') {
+                    local.status = 'paid';
+                    patches[pid] = local;
+                    renderPatchCard(pid);
+                    renderPatchOverlays();
+                    toast(`💳 จุดที่ ${local.num} ยืนยันชำระเงินแล้ว! กำลังส่งเข้า Photoshop...`, 'success');
+                    const modal = document.getElementById('paymentModal');
+                    if (modal && modal.classList.contains('open')) modal.classList.remove('open');
+                }
+
+                // 4. Working in Photoshop
+                if (fbPatch.status === 'working' && local.status !== 'working' && local.status !== 'done') {
+                    local.status = 'working';
+                    patches[pid] = local;
+                    renderPatchCard(pid);
+                    renderPatchOverlays();
+                    toast(`🎨 ช่างกำลังดำเนินการแก้ไขจุดที่ ${local.num} ใน Photoshop...`, 'info');
+                }
+
+                // 5. Result completed (Clean - NO WATERMARK)
+                if (fbPatch.resultImage && fbPatch.status === 'done' && local.status !== 'done') {
+                    local.status = 'done';
+                    local.resultDataUrl = 'data:image/png;base64,' + fbPatch.resultImage;
+                    local.resultWatermarked = false;
+                    patches[pid] = local;
+                    renderPatchCard(pid);
+                    renderPatchOverlays();
+                    updateTotal();
+                    toast(`🎉 จุดที่ ${local.num} เสร็จแล้ว! กำลังประกอบร่างลงภาพต้นฉบับ...`, 'success');
+                    applyPatchToCanvas(pid);
                     checkAllDone();
                 }
 
@@ -1426,10 +1478,13 @@
         let card = document.getElementById(`card_${patchId}`);
 
         const statusLabels = {
-            waiting: 'รอส่งงาน',
-            working: '⚡ ช่างกำลังทำ...',
-            preview: '💰 รอชำระเงิน',
-            done: '✅ เสร็จแล้ว'
+            waiting: 'รอส่งประเมินราคา',
+            pending_review: '⏳ รอช่างคิดราคา',
+            rejected: '❌ ปฏิเสธงาน',
+            pending_payment: '💳 รอโอนเงิน',
+            paid: '⚡ โอนแล้ว ส่งเข้า PS',
+            working: '🎨 ช่างกำลังทำใน PS',
+            done: '✅ เสร็จสมบูรณ์'
         };
 
         const html = `
@@ -1447,12 +1502,18 @@
                 ${patch.resultDataUrl ? `
                 <div class="patch-result-thumb">
                     <img class="patch-result-img" src="${patch.resultDataUrl}" alt="ผลลัพธ์">
-                    ${patch.resultWatermarked ? '<div class="patch-result-wm">PREVIEW</div>' : ''}
                 </div>` : `
                 <div class="patch-thumb-placeholder">
-                    ${patch.status === 'working' ? '<span class="spinner"></span>' : 'รอผลลัพธ์'}
+                    ${patch.status === 'working' || patch.status === 'paid' ? '<span class="spinner"></span>' : 'รอผลลัพธ์'}
                 </div>`}
             </div>
+
+            <!-- Rejection reason if rejected -->
+            ${patch.status === 'rejected' ? `
+            <div class="patch-rejected-box">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <div><strong>ช่างปฏิเสธงาน:</strong><br>${patch.rejectReason || 'เสี่ยงต่อกฎหมาย หรือมีลายเซ็นต์/ตราครุฑ'}</div>
+            </div>` : ''}
 
             <!-- Note -->
             <textarea class="patch-note-input" id="note_${patchId}"
@@ -1465,28 +1526,43 @@
             <div class="patch-card-footer">
                 ${patch.status === 'waiting' ? `
                     <button class="btn-patch-action btn-send" id="btnSend_${patchId}" onclick="sendPatch('${patchId}')">
-                        <i class="fa-solid fa-paper-plane"></i> ส่งงาน
+                        <i class="fa-solid fa-paper-plane"></i> ส่งคิดราคา
                     </button>
                     <button class="btn-delete" onclick="deletePatch('${patchId}')" title="ลบจุดนี้">
                         <i class="fa-solid fa-trash"></i>
                     </button>
                 ` : ''}
-                ${patch.status === 'working' ? `
-                    <span style="font-size:0.8rem;color:var(--text-muted);display:flex;align-items:center;gap:6px;">
-                        <span class="spinner"></span> ช่างกำลังทำ...
+                ${patch.status === 'pending_review' ? `
+                    <span style="font-size:0.8rem;color:#fbbf24;display:flex;align-items:center;gap:6px;">
+                        <span class="spinner"></span> รอช่างตรวจสอบ & คิดราคา...
                     </span>
                 ` : ''}
-                ${patch.status === 'preview' ? `
+                ${patch.status === 'rejected' ? `
+                    <button class="btn-delete" onclick="deletePatch('${patchId}')" title="ลบจุดนี้" style="width:100%;height:32px;display:flex;align-items:center;justify-content:center;gap:6px;">
+                        <i class="fa-solid fa-trash"></i> ลบจุดนี้ออก
+                    </button>
+                ` : ''}
+                ${patch.status === 'pending_payment' ? `
                     <button class="btn-patch-action btn-pay" onclick="openPaymentModal('${patchId}')">
-                        <i class="fa-solid fa-qrcode"></i> ชำระ ฿${patch.price}
+                        <i class="fa-solid fa-qrcode"></i> โอนเงิน ฿${patch.price}
                     </button>
                     ${patch.price > 0 ? `<span class="price-tag">฿${patch.price}</span>` : ''}
                 ` : ''}
+                ${patch.status === 'paid' ? `
+                    <span style="font-size:0.8rem;color:#a5b4fc;display:flex;align-items:center;gap:6px;">
+                        <span class="spinner"></span> โอนแล้ว ⚡ กำลังส่งเข้า PS...
+                    </span>
+                ` : ''}
+                ${patch.status === 'working' ? `
+                    <span style="font-size:0.8rem;color:#38bdf8;display:flex;align-items:center;gap:6px;">
+                        <span class="spinner"></span> ช่างกำลังทำใน Photoshop...
+                    </span>
+                ` : ''}
                 ${patch.status === 'done' ? `
                     <button class="btn-patch-action btn-apply" onclick="applyPatchToCanvas('${patchId}')">
-                        <i class="fa-solid fa-layer-group"></i> ประกอบร่าง
+                        <i class="fa-solid fa-layer-group"></i> ประกอบร่างอีกครั้ง
                     </button>
-                    <span class="price-tag" style="color:var(--success);">✅ ชำระแล้ว</span>
+                    <span class="price-tag" style="color:var(--success);">✅ เสร็จแล้ว</span>
                 ` : ''}
             </div>
         </div>`;
@@ -1618,13 +1694,15 @@
         const patch = patches[patchId];
         if (!patch) return;
 
-        // Notify admin via Firebase
         try {
             await db.ref(patchPath(patchId)).update({
-                status: 'payment_claimed',
-                paymentClaimedAt: Date.now()
+                status: 'paid',
+                paidAt: Date.now()
             });
-            toast('แจ้งโอนเงินเรียบร้อย รอการยืนยัน...', 'info');
+            patch.status = 'paid';
+            renderPatchCard(patchId);
+            renderPatchOverlays();
+            toast('✅ แจ้งโอนเงินแล้ว! ระบบกำลังส่งงานเข้า Photoshop ของช่างทันที...', 'success');
             document.getElementById('paymentModal').classList.remove('open');
         } catch(e) {
             toast('เกิดข้อผิดพลาด: ' + e.message, 'error');
@@ -1636,8 +1714,8 @@
     ====================================================== */
     async function applyPatchToCanvas(patchId) {
         const patch = patches[patchId];
-        if (!patch || !patch.resultDataUrl || patch.resultWatermarked) {
-            toast('กรุณาชำระเงินก่อนเพื่อปลดลายน้ำ', 'error');
+        if (!patch || !patch.resultDataUrl) {
+            toast('ยังไม่มีผลลัพธ์จากช่าง', 'error');
             return;
         }
 
