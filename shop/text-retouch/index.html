@@ -70,7 +70,16 @@
         }
         .brand-sub { font-size: 0.72rem; font-weight: 400; color: var(--text-muted); display: block; line-height: 1; margin-top: 2px; }
 
-        .header-right { display: flex; align-items: center; gap: 8px; }
+        .header-right { display: flex; align-items: center; gap: 10px; }
+
+        .btn-new-file {
+            background: #f1f5f9; border: 1px solid var(--border-strong);
+            color: #334155; padding: 6px 12px; border-radius: 8px;
+            font-size: 0.8rem; font-weight: 700; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 6px;
+            transition: all 0.15s; font-family: inherit;
+        }
+        .btn-new-file:hover { background: #e2e8f0; color: #0f172a; }
 
         .status-dot {
             display: flex; align-items: center; gap: 6px;
@@ -194,7 +203,7 @@
             -webkit-user-drag: none;
         }
 
-        /* Crucial: Prevent image ghost drag */
+        /* Prevent image ghost drag */
         #mainImage, #pdfCanvas {
             display: block; max-width: none;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
@@ -662,6 +671,9 @@
             </div>
         </a>
         <div class="header-right">
+            <button class="btn-new-file" id="btnNewFile" style="display:none;" onclick="startNewSession()">
+                <i class="fa-solid fa-plus"></i> เริ่มไฟล์ใหม่
+            </button>
             <div class="status-dot">
                 <span class="dot"></span>
                 <span id="headerStatus">พร้อมรับงาน</span>
@@ -852,6 +864,62 @@
     // ── PROMPTPAY CONFIG ──
     const PROMPTPAY_PHONE = '0988573074';
 
+    // ── INDEXEDDB PERSISTENCE (Safe local browser storage) ──
+    const IDB_NAME = 'TextRetouchDB';
+    const IDB_STORE = 'sessions';
+
+    function openIDB() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open(IDB_NAME, 1);
+            req.onupgradeneeded = e => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(IDB_STORE)) {
+                    db.createObjectStore(IDB_STORE, { keyPath: 'sessionId' });
+                }
+            };
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    async function saveFileToIndexedDB(sid, file, fileType) {
+        try {
+            const idb = await openIDB();
+            const tx = idb.transaction(IDB_STORE, 'readwrite');
+            tx.objectStore(IDB_STORE).put({
+                sessionId: sid,
+                file: file,
+                fileType: fileType,
+                fileName: file.name,
+                savedAt: Date.now()
+            });
+        } catch(e) {
+            console.warn('IDB Save error:', e);
+        }
+    }
+
+    async function getFileFromIndexedDB(sid) {
+        try {
+            const idb = await openIDB();
+            return new Promise(resolve => {
+                const tx = idb.transaction(IDB_STORE, 'readonly');
+                const req = tx.objectStore(IDB_STORE).get(sid);
+                req.onsuccess = () => resolve(req.result || null);
+                req.onerror = () => resolve(null);
+            });
+        } catch(e) {
+            return null;
+        }
+    }
+
+    async function clearFileFromIndexedDB(sid) {
+        try {
+            const idb = await openIDB();
+            const tx = idb.transaction(IDB_STORE, 'readwrite');
+            tx.objectStore(IDB_STORE).delete(sid);
+        } catch(e) {}
+    }
+
     // ── STATE ──
     let sessionId = new URLSearchParams(window.location.search).get('id');
     let localFile = null;
@@ -870,17 +938,113 @@
     function patchPath(pid) { return `text_retouch/${sessionId}/patches/${pid}`; }
 
     // ── INIT ──
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
+        initUploadZone();
+        initCanvas();
+
+        // 1. Guard against accidental refresh/close
+        window.addEventListener('beforeunload', e => {
+            if (localFile) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
+        // 2. Try to restore session on page reload
+        if (sessionId) {
+            const saved = await getFileFromIndexedDB(sessionId);
+            if (saved && saved.file) {
+                await restoreSession(saved);
+                listenToPatchUpdates();
+                return;
+            }
+        }
+
+        // 3. New session if none exists
         if (!sessionId) {
             sessionId = 'tr_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
             const u = new URL(window.location);
             u.searchParams.set('id', sessionId);
             window.history.replaceState({}, '', u);
         }
-        initUploadZone();
-        initCanvas();
         listenToPatchUpdates();
     });
+
+    // ── RESTORE SESSION (AFTER REFRESH) ──
+    async function restoreSession(saved) {
+        localFile = saved.file;
+        localFileType = saved.fileType || (saved.file.type.includes('pdf') ? 'pdf' : 'image');
+        localFileUrl = URL.createObjectURL(saved.file);
+
+        document.getElementById('landingView').style.display = 'none';
+        document.getElementById('editorView').style.display = 'block';
+        document.getElementById('btnNewFile').style.display = 'inline-flex';
+
+        if (localFileType === 'image') {
+            await loadImage(localFileUrl);
+        } else {
+            await loadPdf(localFileUrl);
+        }
+
+        // Restore patches from Firebase
+        try {
+            const snap = await db.ref(`text_retouch/${sessionId}/patches`).once('value');
+            const fbPatches = snap.val() || {};
+            for (const [pid, p] of Object.entries(fbPatches)) {
+                patches[pid] = {
+                    id: pid,
+                    num: p.num || 1,
+                    sessionId,
+                    note: p.note || '',
+                    price: p.price || 0,
+                    status: p.status || 'waiting',
+                    page: p.page || 1,
+                    cropRect: p.cropRect || { x: 0, y: 0, w: 10, h: 10 },
+                    patchDataUrl: p.patchImage ? `data:image/jpeg;base64,${p.patchImage}` : '',
+                    resultDataUrl: p.resultImage ? `data:image/png;base64,${p.resultImage}` : null,
+                    rejectReason: p.rejectReason || '',
+                    composited: p.status === 'done',
+                    createdAt: p.createdAt || Date.now()
+                };
+                renderPatchCard(pid);
+
+                // If patch is done, composite it onto the restored image
+                if (p.status === 'done' && p.resultImage) {
+                    await applyPatchToCanvas(pid, false);
+                }
+            }
+            renderPatchOverlays();
+            updateEmpty();
+            updateTotal();
+            toast('🔄 กู้คืนไฟล์และรายการจุดแก้ไขเดิมของคุณเรียบร้อยแล้ว', 'info');
+        } catch(e) {
+            console.error('Error restoring patches:', e);
+        }
+    }
+
+    // ── START NEW SESSION ──
+    async function startNewSession() {
+        if (localFile && !confirm('ต้องการเริ่มไฟล์ใหม่หรือไม่?\n(งานปัจจุบันที่ยังไม่เสร็จสามารถกลับมาเปิดได้ทาง URL เดิม)')) {
+            return;
+        }
+        localFile = null;
+        localFileUrl = null;
+        patches = {};
+        sessionId = 'tr_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 6);
+        const u = new URL(window.location);
+        u.searchParams.set('id', sessionId);
+        window.history.replaceState({}, '', u);
+
+        document.getElementById('mainImage').src = '';
+        document.getElementById('editorView').style.display = 'none';
+        document.getElementById('landingView').style.display = 'block';
+        document.getElementById('btnNewFile').style.display = 'none';
+        document.querySelectorAll('.patch-card').forEach(c => c.remove());
+        document.querySelectorAll('.patch-overlay').forEach(o => o.remove());
+        updateEmpty();
+        updateTotal();
+        toast('พร้อมเลือกไฟล์ใหม่แล้ว', 'info');
+    }
 
     /* ======================================================
        UPLOAD ZONE
@@ -904,8 +1068,12 @@
         localFileType = file.type.includes('pdf') ? 'pdf' : 'image';
         localFileUrl = URL.createObjectURL(file);
 
+        // Save to IndexedDB so refresh won't lose the file
+        await saveFileToIndexedDB(sessionId, file, localFileType);
+
         document.getElementById('landingView').style.display = 'none';
         document.getElementById('editorView').style.display = 'block';
+        document.getElementById('btnNewFile').style.display = 'inline-flex';
 
         if (localFileType === 'image') {
             await loadImage(localFileUrl);
@@ -922,7 +1090,7 @@
             patches: {}
         });
 
-        toast('📁 โหลดไฟล์เรียบร้อย — ไฟล์อยู่ในเครื่องคุณเท่านั้น', 'success');
+        toast('📁 โหลดไฟล์เรียบร้อย — ปลอดภัย 100% บันทึกในเครื่องอัตโนมัติ', 'success');
     }
 
     async function loadImage(url) {
@@ -1300,7 +1468,29 @@
         db.ref(`text_retouch/${sessionId}/patches`).on('value', snap => {
             const fbPatches = snap.val() || {};
             Object.entries(fbPatches).forEach(([pid, fbPatch]) => {
-                if (!patches[pid]) return;
+                if (!patches[pid]) {
+                    // Patch from server not yet in memory -> add it
+                    patches[pid] = {
+                        id: pid,
+                        num: fbPatch.num || 1,
+                        sessionId,
+                        note: fbPatch.note || '',
+                        price: fbPatch.price || 0,
+                        status: fbPatch.status || 'waiting',
+                        page: fbPatch.page || 1,
+                        cropRect: fbPatch.cropRect || { x: 0, y: 0, w: 10, h: 10 },
+                        patchDataUrl: fbPatch.patchImage ? `data:image/jpeg;base64,${fbPatch.patchImage}` : '',
+                        resultDataUrl: fbPatch.resultImage ? `data:image/png;base64,${fbPatch.resultImage}` : null,
+                        rejectReason: fbPatch.rejectReason || '',
+                        composited: fbPatch.status === 'done',
+                        createdAt: fbPatch.createdAt || Date.now()
+                    };
+                    renderPatchCard(pid);
+                    renderPatchOverlays();
+                    updateEmpty();
+                    updateTotal();
+                }
+
                 const local = patches[pid];
 
                 // 1. Rejected
@@ -1355,7 +1545,7 @@
                     renderPatchOverlays();
                     updateTotal();
                     toast(`🎉 จุดที่ ${local.num} ทำเสร็จแล้ว! กำลังประกอบร่าง...`, 'success');
-                    applyPatchToCanvas(pid);
+                    applyPatchToCanvas(pid, true);
                     checkAllDone();
                 }
 
@@ -1456,7 +1646,7 @@
                     </span>
                 ` : ''}
                 ${patch.status === 'done' ? `
-                    <button class="btn-patch-action btn-apply" onclick="applyPatchToCanvas('${patchId}')">
+                    <button class="btn-patch-action btn-apply" onclick="applyPatchToCanvas('${patchId}', true)">
                         <i class="fa-solid fa-layer-group"></i> ประกอบร่างอีกครั้ง
                     </button>
                     <span style="color:var(--success);font-weight:700;font-size:0.85rem;margin-left:auto;">✅ เสร็จแล้ว</span>
@@ -1484,13 +1674,16 @@
         renderPatchOverlays();
     }
 
-    function deletePatch(patchId) {
+    async function deletePatch(patchId) {
         if (!confirm('ยืนยันลบจุดแก้ไขนี้ออก?')) return;
         delete patches[patchId];
         const card = document.getElementById(`card_${patchId}`);
         if (card) card.remove();
         const overlay = document.getElementById(`overlay_${patchId}`);
         if (overlay) overlay.remove();
+        try {
+            await db.ref(patchPath(patchId)).remove();
+        } catch(e) {}
         updateEmpty();
         updateTotal();
     }
@@ -1603,15 +1796,15 @@
     /* ======================================================
        COMPOSITE RESULT BACK INTO CANVAS
     ====================================================== */
-    async function applyPatchToCanvas(patchId) {
+    async function applyPatchToCanvas(patchId, showToast = true) {
         const patch = patches[patchId];
         if (!patch || !patch.resultDataUrl) {
-            toast('ยังไม่มีผลลัพธ์จากช่าง', 'error');
+            if (showToast) toast('ยังไม่มีผลลัพธ์จากช่าง', 'error');
             return;
         }
 
         const indicator = document.getElementById('compositeIndicator');
-        indicator.classList.add('active');
+        if (showToast) indicator.classList.add('active');
 
         try {
             const content = document.getElementById('mainImage').style.display !== 'none'
@@ -1647,12 +1840,12 @@
             renderPatchCard(patchId);
             renderPatchOverlays();
 
-            toast(`✅ ประกอบร่างจุดที่ ${patch.num} เรียบร้อย!`, 'success');
+            if (showToast) toast(`✅ ประกอบร่างจุดที่ ${patch.num} เรียบร้อย!`, 'success');
             checkAllDone();
         } catch (err) {
-            toast('เกิดข้อผิดพลาดในการประกอบร่าง: ' + err.message, 'error');
+            if (showToast) toast('เกิดข้อผิดพลาดในการประกอบร่าง: ' + err.message, 'error');
         } finally {
-            indicator.classList.remove('active');
+            if (showToast) indicator.classList.remove('active');
         }
     }
 
