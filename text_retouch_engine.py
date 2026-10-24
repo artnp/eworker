@@ -74,13 +74,13 @@ def ensure_photoshop_config():
 def get_photoshop_path():
     ensure_photoshop_config()
     candidates = [
-        r"C:\Program Files\Adobe\Adobe Photoshop 2023\PhotoshopLauncher.exe",
-        r"C:\Program Files\Adobe\Adobe Photoshop 2024\PhotoshopLauncher.exe",
-        r"C:\Program Files\Adobe\Adobe Photoshop 2025\PhotoshopLauncher.exe",
         r"C:\Program Files\Adobe\Adobe Photoshop 2023\Photoshop.exe",
         r"C:\Program Files\Adobe\Adobe Photoshop 2024\Photoshop.exe",
         r"C:\Program Files\Adobe\Adobe Photoshop 2025\Photoshop.exe",
         r"C:\Program Files\Adobe\Adobe Photoshop CC 2019\Photoshop.exe",
+        r"C:\Program Files\Adobe\Adobe Photoshop 2023\PhotoshopLauncher.exe",
+        r"C:\Program Files\Adobe\Adobe Photoshop 2024\PhotoshopLauncher.exe",
+        r"C:\Program Files\Adobe\Adobe Photoshop 2025\PhotoshopLauncher.exe",
     ]
     for c in candidates:
         if os.path.exists(c):
@@ -91,9 +91,6 @@ def get_photoshop_path():
                              r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\Photoshop.exe")
         path, _ = winreg.QueryValueEx(key, "")
         if path and os.path.exists(path):
-            launcher = os.path.join(os.path.dirname(path), "PhotoshopLauncher.exe")
-            if os.path.exists(launcher):
-                return launcher
             return path
     except Exception:
         pass
@@ -340,10 +337,128 @@ _last_opened_patch = {"id": None, "time": 0}
 # ─────────────────────────────────────────────────────────────────
 #  3. OPEN IN PHOTOSHOP — ส่งงานเข้า Photoshop
 # ─────────────────────────────────────────────────────────────────
+def launch_on_default_desktop(cmd, cwd=None):
+    """รันโปรเซสลงบน Interactive Desktop (WinSta0\\Default) ของผู้ใช้เสมอ ไม่ให้ติดใน background desktop"""
+    try:
+        import ctypes
+        import ctypes.wintypes
+
+        class STARTUPINFOW(ctypes.Structure):
+            _fields_ = [
+                ('cb', ctypes.wintypes.DWORD),
+                ('lpReserved', ctypes.c_wchar_p),
+                ('lpDesktop', ctypes.c_wchar_p),
+                ('lpTitle', ctypes.c_wchar_p),
+                ('dwX', ctypes.wintypes.DWORD),
+                ('dwY', ctypes.wintypes.DWORD),
+                ('dwXSize', ctypes.wintypes.DWORD),
+                ('dwYSize', ctypes.wintypes.DWORD),
+                ('dwXCountChars', ctypes.wintypes.DWORD),
+                ('dwYCountChars', ctypes.wintypes.DWORD),
+                ('dwFillAttribute', ctypes.wintypes.DWORD),
+                ('dwFlags', ctypes.wintypes.DWORD),
+                ('wShowWindow', ctypes.wintypes.WORD),
+                ('cbReserved2', ctypes.wintypes.WORD),
+                ('lpReserved2', ctypes.c_void_p),
+                ('hStdInput', ctypes.wintypes.HANDLE),
+                ('hStdOutput', ctypes.wintypes.HANDLE),
+                ('hStdError', ctypes.wintypes.HANDLE),
+            ]
+
+        class PROCESS_INFORMATION(ctypes.Structure):
+            _fields_ = [
+                ('hProcess', ctypes.wintypes.HANDLE),
+                ('hThread', ctypes.wintypes.HANDLE),
+                ('dwProcessId', ctypes.wintypes.DWORD),
+                ('dwThreadId', ctypes.wintypes.DWORD),
+            ]
+
+        si = STARTUPINFOW()
+        si.cb = ctypes.sizeof(STARTUPINFOW)
+        si.lpDesktop = 'WinSta0\\Default'
+        pi = PROCESS_INFORMATION()
+
+        ret = ctypes.windll.kernel32.CreateProcessW(
+            None, cmd, None, None, False, 0, None, cwd, ctypes.byref(si), ctypes.byref(pi)
+        )
+        if ret:
+            ctypes.windll.kernel32.CloseHandle(pi.hProcess)
+            ctypes.windll.kernel32.CloseHandle(pi.hThread)
+            return True
+    except Exception as e:
+        print(f"[TextRetouch] CreateProcessW failed, falling back: {e}")
+
+    try:
+        subprocess.Popen(cmd, cwd=cwd, shell=True)
+        return True
+    except Exception:
+        return False
+
+
+def force_photoshop_foreground():
+    """ดึงหน้าต่าง Photoshop ขึ้นหน้าจอหลักขั้นเด็ดขาด (ทะลุ Foreground Lock และขยายหน้าจอ)"""
+    def _do_activate():
+        time.sleep(0.3)
+        try:
+            import ctypes
+            import ctypes.wintypes
+            user32 = ctypes.windll.user32
+
+            # ปลดล็อค Windows Foreground Lock โดยจำลองกดปุ่ม ALT
+            user32.keybd_event(0x12, 0, 0, 0)
+            user32.keybd_event(0x12, 0, 2, 0)
+
+            hwnds = []
+            WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.wintypes.HWND, ctypes.wintypes.LPARAM)
+
+            def enum_cb(hwnd, _):
+                if user32.IsWindow(hwnd):
+                    tbuf = ctypes.create_unicode_buffer(512)
+                    user32.GetWindowTextW(hwnd, tbuf, 512)
+                    cbuf = ctypes.create_unicode_buffer(256)
+                    user32.GetClassNameW(hwnd, cbuf, 256)
+                    t = tbuf.value.lower()
+                    c = cbuf.value.lower()
+                    if "photoshop" in t or "photoshop" in c:
+                        hwnds.append(hwnd)
+                return True
+
+            user32.EnumWindows(WNDENUMPROC(enum_cb), 0)
+
+            for hwnd in hwnds:
+                try:
+                    # ถ้าถูก minimize อยู่ ให้ restore
+                    if user32.IsIconic(hwnd):
+                        user32.ShowWindow(hwnd, 9)  # SW_RESTORE
+                    else:
+                        user32.ShowWindow(hwnd, 3)  # SW_MAXIMIZE
+                    user32.SetForegroundWindow(hwnd)
+                    user32.BringWindowToTop(hwnd)
+                    # กระตุ้นให้ขึ้นบนสุดชั่วครู่เพื่อดึงความสนใจจอ
+                    user32.SetWindowPos(hwnd, -1, 0, 0, 0, 0, 3)  # HWND_TOPMOST, SWP_NOMOVE | SWP_NOSIZE
+                    user32.SetWindowPos(hwnd, -2, 0, 0, 0, 0, 3)  # HWND_NOTOPMOST
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        # สำรองด้วย WScript.Shell
+        try:
+            import win32com.client
+            wsh = win32com.client.Dispatch("WScript.Shell")
+            wsh.AppActivate("Adobe Photoshop")
+            wsh.AppActivate("Photoshop")
+        except Exception:
+            pass
+
+    import threading
+    threading.Thread(target=_do_activate, daemon=True).start()
+
+
 def open_patch_in_photoshop(session_id, patch_id, patch_data):
     """เปิด patch image เข้า Photoshop + สร้าง layer โน้ต (ป้องกันส่งซ้ำ)"""
     now = time.time()
-    if _last_opened_patch.get("id") == patch_id and (now - _last_opened_patch.get("time", 0)) < 8:
+    if _last_opened_patch.get("id") == patch_id and (now - _last_opened_patch.get("time", 0)) < 4:
         print(f"[TextRetouch] ⏩ งานจุดที่ {patch_data.get('num', 1)} เพิ่งถูกเปิดเข้า Photoshop เมื่อสักครู่ ข้ามเพื่อป้องกันการส่งซ้ำ")
         return
     _last_opened_patch["id"] = patch_id
@@ -354,15 +469,26 @@ def open_patch_in_photoshop(session_id, patch_id, patch_data):
     note_path = os.path.join(CACHE_DIR, f"{patch_id}_note.txt")
 
     b64_data = patch_data.get("patchImage", "")
-    if not b64_data:
-        print("[TextRetouch] ⚠️ ไม่มี patchImage ในข้อมูล")
+    if b64_data:
+        try:
+            img_bytes = base64.b64decode(b64_data)
+            with open(patch_path, "wb") as f:
+                f.write(img_bytes)
+        except Exception as e:
+            print(f"[TextRetouch] ⚠️ ถอดรหัสรูปภาพไม่สำเร็จ: {e}")
+
+    if not os.path.exists(patch_path):
+        print(f"[TextRetouch] ⚠️ ไม่พบไฟล์ภาพสำหรับ {patch_id} ทั้งบนดิสก์และในฐานข้อมูล")
         return
 
-    img_bytes = base64.b64decode(b64_data)
-    with open(patch_path, "wb") as f:
-        f.write(img_bytes)
-
     note = patch_data.get("note", "")
+    if not note and os.path.exists(note_path):
+        try:
+            with open(note_path, "r", encoding="utf-8") as f:
+                note = f.read()
+        except Exception:
+            pass
+
     with open(note_path, "w", encoding="utf-8") as f:
         f.write(note)
 
@@ -386,59 +512,59 @@ def open_patch_in_photoshop(session_id, patch_id, patch_data):
     result_path_jsx = result_path.replace("\\", "/")
     num = patch_data.get("num", 1)
 
-    # เช็คว่าโจทย์คือการสั่งลบหรือไม่
-    is_delete_cmd = note.strip().lower() in ["ลบ", "delete", "remove", "ลบออก", "ลบข้อความ", "ลบคำ", "เอาออก"]
     layer_name = f"📝 #{num}: {note_escaped}"
 
     jsx = f"""#target photoshop
 app.displayDialogs = DialogModes.NO;
 
 // Text-Retouch: Auto-open patch #{num}
-var patchFile = new File("{patch_path_jsx}");
-var doc = app.open(patchFile);
-
-// ลบเลเยอร์โน้ตเก่าที่อาจสร้างซ้ำออกก่อนเสมอ เพื่อให้เหลือเพียงเลเยอร์เดียว 100%
 try {{
-    for (var i = doc.artLayers.length - 1; i >= 0; i--) {{
-        var ly = doc.artLayers[i];
-        if (ly.kind == LayerKind.TEXT && (ly.name.indexOf("#{num}:") != -1 || ly.name == "{layer_name}")) {{
-            ly.remove();
+    var patchFile = new File("{patch_path_jsx}");
+    var doc = app.open(patchFile);
+
+    // ลบเลเยอร์โน้ตเก่าที่อาจสร้างซ้ำออกก่อนเสมอ เพื่อให้เหลือเพียงเลเยอร์เดียว 100%
+    try {{
+        for (var i = doc.artLayers.length - 1; i >= 0; i--) {{
+            var ly = doc.artLayers[i];
+            if (ly.kind == LayerKind.TEXT && (ly.name.indexOf("#{num}:") != -1 || ly.name == "{layer_name}")) {{
+                ly.remove();
+            }}
         }}
-    }}
-}} catch(errClean) {{}}
+    }} catch(errClean) {{}}
 
-// สร้าง Text Layer แยกสำหรับข้อความที่จะแก้เพียงอันเดียว
-try {{
-    var textLayer = doc.artLayers.add();
-    textLayer.kind = LayerKind.TEXT;
-    textLayer.name = "{layer_name}";
-    var txt = textLayer.textItem;
-    txt.contents = "{note_escaped}";
-    txt.size = Math.min(Math.max(doc.height * 0.4, 14), 60);
-    txt.position = [10, Math.min(doc.height * 0.75, doc.height - 5)];
-    txt.color.rgb.hexValue = "000000";
+    // สร้าง Text Layer แยกสำหรับข้อความที่จะแก้เพียงอันเดียว
+    try {{
+        var textLayer = doc.artLayers.add();
+        textLayer.kind = LayerKind.TEXT;
+        textLayer.name = "{layer_name}";
+        var txt = textLayer.textItem;
+        txt.contents = "{note_escaped}";
+        txt.size = Math.min(Math.max(doc.height * 0.4, 14), 60);
+        txt.position = [10, Math.min(doc.height * 0.75, doc.height - 5)];
+        txt.color.rgb.hexValue = "000000";
 
-    // ซ่อนเลเยอร์โน้ตไว้เสมอ เพื่อไม่ให้มีตัวหนังสือหรือสัญลักษณ์ส่วนเกินปรากฏบังภาพงาน
-    textLayer.visible = false;
-}} catch(e) {{}}
+        // ซ่อนเลเยอร์โน้ตไว้เสมอ เพื่อไม่ให้มีตัวหนังสือหรือสัญลักษณ์ส่วนเกินปรากฏบังภาพงาน
+        textLayer.visible = false;
+    }} catch(e) {{}}
 
-// Active layer = Background (สำหรับรีทัชภาพ)
-try {{
-    doc.activeLayer = doc.layers[doc.layers.length - 1];
-}} catch(e) {{}}
+    // Active layer = Background (สำหรับรีทัชภาพ)
+    try {{
+        doc.activeLayer = doc.layers[doc.layers.length - 1];
+    }} catch(e) {{}}
 
-// Save result path for submit
-try {{
-    app.putCustomOptions("TextRetouchResultPath", new ActionDescriptor(), true);
-    var desc = new ActionDescriptor();
-    desc.putString(app.stringIDToTypeID("resultPath"), "{result_path_jsx}");
-    app.putCustomOptions("TextRetouchResultPath", desc, true);
-}} catch(e) {{}}
+    // Save result path for submit
+    try {{
+        app.putCustomOptions("TextRetouchResultPath", new ActionDescriptor(), true);
+        var desc = new ActionDescriptor();
+        desc.putString(app.stringIDToTypeID("resultPath"), "{result_path_jsx}");
+        app.putCustomOptions("TextRetouchResultPath", desc, true);
+    }} catch(e) {{}}
 
-// ดึง Photoshop ขึ้นมาบนหน้าจอหลัก
-try {{
-    app.bringToFront();
-}} catch(e) {{}}
+    // ดึง Photoshop ขึ้นมาบนหน้าจอหลัก
+    try {{
+        app.bringToFront();
+    }} catch(e) {{}}
+}} catch(eDoc) {{}}
 """
     with open(jsx_path, "w", encoding="utf-8") as f:
         f.write(jsx)
@@ -459,24 +585,34 @@ try {{
         except Exception:
             pass
 
-    # หากยังไม่เปิด ให้รันผ่าน Launcher (พร้อม cwd ที่ถูกต้อง เพื่อให้โหลด GUI เต็มรูปแบบ)
+    # หากยังไม่เปิด ให้เปิดโปรแกรม Photoshop ลงบน Desktop หลักทันที
     if not has_ps_running and ps_path and os.path.exists(ps_path):
-        print(f"[TextRetouch] 🚀 เปิดโปรแกรม Photoshop ผ่าน Launcher: {ps_path}")
-        try:
-            subprocess.Popen([ps_path, jsx_path], cwd=ps_dir, shell=False)
-        except Exception:
-            try:
-                import ctypes
-                ctypes.windll.shell32.ShellExecuteW(None, "open", ps_path, f'"{jsx_path}"', ps_dir, 1)
-            except Exception:
-                pass
+        print(f"[TextRetouch] 🚀 เปิดโปรแกรม Photoshop ขึ้นหน้าจอหลัก: {ps_path}")
+        cmd_open = f'"{ps_path}" "{jsx_path}"'
+        launch_on_default_desktop(cmd_open, cwd=ps_dir)
+        # รอให้โปรแกรมเริ่มบูต
+        for _ in range(8):
+            time.sleep(1)
+            for p in psutil.process_iter(['name']):
+                try:
+                    if 'photoshop' in p.info.get('name', '').lower():
+                        has_ps_running = True
+                        break
+                except Exception:
+                    pass
+            if has_ps_running:
+                break
 
-    # ส่งคำสั่ง JSX ผ่าน COM Automation
+    # ส่งคำสั่ง JSX ผ่าน COM Automation (พร้อมบังคับ Visible = True)
     connected = False
-    for attempt in range(25):
+    for attempt in range(8):
         try:
             import win32com.client
             ps = win32com.client.Dispatch("Photoshop.Application")
+            try:
+                ps.Visible = True
+            except Exception:
+                pass
             ps.DoJavaScriptFile(jsx_path)
             print(f"[TextRetouch] ⚡ Photoshop โหลดภาพและเลเยอร์เรียบร้อยสมบูรณ์")
             connected = True
@@ -485,20 +621,12 @@ try {{
             time.sleep(1)
 
     if not connected and ps_path and os.path.exists(ps_path):
-        # Fallback สั่งเปิดไฟล์ JSX โดยตรง
-        try:
-            subprocess.Popen([ps_path, jsx_path], cwd=ps_dir, shell=False)
-        except Exception:
-            pass
+        # Fallback สั่งส่งไฟล์ JSX ตรงเข้าโปรเซส Photoshop
+        print(f"[TextRetouch] ⚡ ส่งคำสั่งเปิด JSX ผ่าน Native Process")
+        launch_on_default_desktop(f'"{ps_path}" "{jsx_path}"', cwd=ps_dir)
 
-    # ดึงหน้าต่าง Photoshop ขึ้นหน้าจอหลักทันที (Activate Foreground)
-    try:
-        import win32com.client
-        wsh = win32com.client.Dispatch("WScript.Shell")
-        wsh.AppActivate("Adobe Photoshop")
-        wsh.AppActivate("Photoshop")
-    except Exception:
-        pass
+    # ดึงหน้าต่าง Photoshop ขึ้นหน้าจอหลักทันที (Force Foreground)
+    force_photoshop_foreground()
 
     try:
         import winsound
