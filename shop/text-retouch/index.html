@@ -1065,8 +1065,17 @@
         }
 
         @keyframes pulseGlow {
-            0%, 100% { box-shadow: 0 0 4px rgba(2, 132, 199, 0.2); border-color: #7dd3fc; }
-            50% { box-shadow: 0 0 16px rgba(2, 132, 199, 0.45); border-color: #38bdf8; }
+
+            0%,
+            100% {
+                box-shadow: 0 0 4px rgba(2, 132, 199, 0.2);
+                border-color: #7dd3fc;
+            }
+
+            50% {
+                box-shadow: 0 0 16px rgba(2, 132, 199, 0.45);
+                border-color: #38bdf8;
+            }
         }
 
         .patch-thumb-placeholder.is-working::after {
@@ -1082,8 +1091,13 @@
         }
 
         @keyframes shimmerSweep {
-            0% { left: -100%; }
-            100% { left: 200%; }
+            0% {
+                left: -100%;
+            }
+
+            100% {
+                left: 200%;
+            }
         }
 
         .laser-scan-line {
@@ -1098,8 +1112,13 @@
         }
 
         @keyframes laserScan {
-            0% { top: 4%; }
-            100% { top: 92%; }
+            0% {
+                top: 4%;
+            }
+
+            100% {
+                top: 92%;
+            }
         }
 
         .shimmer-icon {
@@ -1110,8 +1129,17 @@
         }
 
         @keyframes iconPulse {
-            0%, 100% { transform: scale(1); opacity: 0.85; }
-            50% { transform: scale(1.15); opacity: 1; }
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.85;
+            }
+
+            50% {
+                transform: scale(1.15);
+                opacity: 1;
+            }
         }
 
         .shimmer-label {
@@ -1169,9 +1197,20 @@
         }
 
         @keyframes timerDotPulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(2, 132, 199, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(2, 132, 199, 0); }
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.7);
+            }
+
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 6px rgba(2, 132, 199, 0);
+            }
+
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(2, 132, 199, 0);
+            }
         }
 
         .working-timer-clock {
@@ -1529,8 +1568,15 @@
         }
 
         @keyframes modalPopIn {
-            0% { transform: scale(0.92) translateY(10px); opacity: 0; }
-            100% { transform: scale(1) translateY(0); opacity: 1; }
+            0% {
+                transform: scale(0.92) translateY(10px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
         }
 
         .confirm-modal-icon {
@@ -2163,7 +2209,7 @@
                 🎉 นักรีทัชตอบรับงานแล้ว
             </h4>
             <p style="font-size: 0.78rem; color: #64748b; margin: 0 0 8px 0;">
-                ✅ชำระแล้วงานจะถูกเริ่มทันที (ใช้เวลาไม่เกิน 30 นาที)
+                (ใช้เวลาทำงานไม่เกิน 30 นาที)
             </p>
 
             <!-- Countdown Box -->
@@ -2176,8 +2222,11 @@
 
             <!-- QR Code Card -->
             <div class="qr-clean-card">
-                <div id="qrCodeCanvasTarget" style="display:flex; justify-content:center; align-items:center; min-height:220px; width:220px; margin:0 auto;"></div>
-                <img id="qrImage" src="" alt="QR Code" style="display:none; width:220px; height:220px; object-fit:contain; margin:0 auto;">
+                <div id="qrCodeCanvasTarget"
+                    style="display:flex; justify-content:center; align-items:center; min-height:220px; width:220px; margin:0 auto;">
+                </div>
+                <img id="qrImage" src="" alt="QR Code"
+                    style="display:none; width:220px; height:220px; object-fit:contain; margin:0 auto;">
                 <div
                     style="font-size: 0.75rem; font-weight: 700; color: #0b1120; margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 5px;">
                     <img src="../../assets/promptpay_header_full.png"
@@ -2229,7 +2278,8 @@
                 <i class="fa-solid fa-arrows-rotate"></i>
             </div>
             <h3 class="confirm-modal-title" id="confirmModalTitle">ต้องการเริ่มไฟล์ใหม่หรือไม่?</h3>
-            <p class="confirm-modal-desc" id="confirmModalDesc">(งานปัจจุบันที่ยังไม่เสร็จสามารถกลับมาเปิดได้ทาง URL เดิม)</p>
+            <p class="confirm-modal-desc" id="confirmModalDesc">(งานปัจจุบันที่ยังไม่เสร็จสามารถกลับมาเปิดได้ทาง URL
+                เดิม)</p>
             <div class="confirm-modal-actions">
                 <button type="button" class="btn-confirm-cancel" id="btnConfirmCancel">ยกเลิก</button>
                 <button type="button" class="btn-confirm-ok" id="btnConfirmOk">ตกลง</button>
@@ -3442,7 +3492,7 @@
                         <div class="working-timer-left">
                             <span class="working-timer-dot"></span>
                             <i class="fa-solid fa-paintbrush"></i>
-                            <span>นักรีทัชกำลังทำใน Photoshop</span>
+                            <span>กำลังเริ่มงานใน Photoshop</span>
                         </div>
                         <div class="working-timer-clock">
                             <i class="fa-regular fa-clock"></i>
