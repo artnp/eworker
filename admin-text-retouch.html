@@ -235,6 +235,67 @@
             background: var(--card-bg); border: 1px dashed var(--border);
             border-radius: 14px; padding: 36px; text-align: center; color: var(--text-muted);
         }
+
+        /* Modal & Toast */
+        .modal-overlay {
+            position: fixed; inset: 0; z-index: 9999;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(4px);
+            display: none; align-items: center; justify-content: center; padding: 16px;
+        }
+        .modal-card {
+            background: #ffffff; border-radius: 18px; padding: 26px 22px 20px;
+            max-width: 400px; width: 100%; text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.35);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            animation: modalPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes modalPopIn {
+            0% { transform: scale(0.92) translateY(10px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        .modal-icon {
+            width: 54px; height: 54px; margin: 0 auto 14px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+            background: #eff6ff; color: #2563eb;
+        }
+        .modal-icon.icon-warning { background: #fef3c7; color: #d97706; }
+        .modal-icon.icon-danger { background: #fee2e2; color: #dc2626; }
+        .modal-icon.icon-success { background: #dcfce7; color: #16a34a; }
+        .modal-title { font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; }
+        .modal-desc { font-size: 0.85rem; color: #64748b; line-height: 1.5; margin: 0 0 20px 0; white-space: pre-line; }
+        .modal-actions { display: flex; gap: 10px; justify-content: center; }
+        .btn-modal-cancel {
+            flex: 1; padding: 10px 16px; border-radius: 10px; border: 1px solid #cbd5e1;
+            background: #f8fafc; color: #475569; font-weight: 700; cursor: pointer;
+        }
+        .btn-modal-cancel:hover { background: #e2e8f0; }
+        .btn-modal-ok {
+            flex: 1; padding: 10px 16px; border-radius: 10px; border: none;
+            background: var(--primary); color: white; font-weight: 800; cursor: pointer;
+        }
+        .btn-modal-ok:hover { background: var(--primary-hover); }
+        .btn-modal-ok.btn-danger { background: #dc2626; }
+        .btn-modal-ok.btn-danger:hover { background: #b91c1c; }
+
+        /* Toast notifications */
+        #toastContainer {
+            position: fixed; bottom: 24px; right: 24px; z-index: 10000;
+            display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+        }
+        .toast {
+            background: #0f172a; color: white; padding: 10px 16px; border-radius: 10px;
+            font-size: 0.88rem; font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+            display: flex; align-items: center; gap: 8px; pointer-events: auto;
+            animation: toastIn 0.25s ease forwards;
+        }
+        .toast.success { background: #16a34a; }
+        .toast.error { background: #dc2626; }
+        .toast.info { background: #2563eb; }
+        @keyframes toastIn {
+            0% { transform: translateY(12px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -324,8 +385,9 @@
         async function setShopStatus(val) {
             try {
                 await db.ref('text_retouch_status').set(val);
+                toast('บันทึกสถานะร้านเรียบร้อย', 'success');
             } catch(e) {
-                alert('เกิดข้อผิดพลาดในการเปลี่ยนสถานะ: ' + e.message);
+                toast('เกิดข้อผิดพลาดในการเปลี่ยนสถานะ: ' + e.message, 'error');
             }
         }
 
@@ -500,7 +562,7 @@
             const priceEl = document.getElementById(`price_${pid}`);
             const price = parseFloat(priceEl?.value || 0);
             if (price <= 0) {
-                alert('กรุณาระบุราคามากกว่า 0 บาท');
+                toast('กรุณาระบุราคามากกว่า 0 บาท', 'error');
                 return;
             }
             try {
@@ -509,16 +571,25 @@
                     price: price,
                     quotedAt: Date.now()
                 });
-                alert(`✅ ส่งราคา ฿${price} ให้ลูกค้าแล้ว!\n\nหน้าจอลูกค้าจะเด้ง PromptPay QR ให้โอนเงินทันที`);
+                toast(`✅ ส่งราคา ฿${price} ให้ลูกค้าแล้ว`, 'success');
             } catch(e) {
-                alert('เกิดข้อผิดพลาด: ' + e.message);
+                toast('เกิดข้อผิดพลาด: ' + e.message, 'error');
             }
         }
 
         async function submitReject(sid, pid) {
             const reasonEl = document.getElementById(`rejectReason_${pid}`);
             const reason = reasonEl?.value || 'ไม่สามารถรับงานนี้ได้';
-            if (!confirm(`ยืนยันปฏิเสธงานจุดนี้?\n\nเหตุผล: ${reason}`)) return;
+            const confirmed = await showConfirmModal({
+                title: 'ยืนยันปฏิเสธงานจุดนี้?',
+                message: `เหตุผล: ${reason}`,
+                icon: 'fa-solid fa-triangle-exclamation',
+                iconType: 'danger',
+                confirmText: 'ปฏิเสธงาน',
+                cancelText: 'ยกเลิก',
+                danger: true
+            });
+            if (!confirmed) return;
 
             try {
                 await db.ref(`text_retouch/${sid}/patches/${pid}`).update({
@@ -527,18 +598,29 @@
                     rejectedAt: Date.now(),
                     patchImage: null
                 });
-                alert('❌ ปฏิเสธงานและลบภาพออกจากระบบเรียบร้อย');
+                toast('❌ ปฏิเสธงานและลบภาพออกจากระบบเรียบร้อย', 'info');
             } catch(e) {
-                alert('เกิดข้อผิดพลาด: ' + e.message);
+                toast('เกิดข้อผิดพลาด: ' + e.message, 'error');
             }
         }
 
         async function deleteHistoryCard(sid, pid) {
-            if (!confirm('ยืนยันลบรายการนี้ออกจากระบบ Firebase?')) return;
+            const confirmed = await showConfirmModal({
+                title: 'ยืนยันลบรายการนี้?',
+                message: 'ข้อมูลจุดนี้จะถูกลบออกจากฐานข้อมูล Firebase ทันที',
+                icon: 'fa-solid fa-trash',
+                iconType: 'danger',
+                confirmText: 'ลบรายการ',
+                cancelText: 'ยกเลิก',
+                danger: true
+            });
+            if (!confirmed) return;
+
             try {
                 await db.ref(`text_retouch/${sid}/patches/${pid}`).remove();
+                toast('ลบรายการสำเร็จ', 'info');
             } catch(e) {
-                alert('เกิดข้อผิดพลาด: ' + e.message);
+                toast('เกิดข้อผิดพลาด: ' + e.message, 'error');
             }
         }
 
@@ -549,15 +631,107 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ session_id: sid, patch_id: pid })
                 });
-                alert('🎨 สั่งเปิด Photoshop เรียบร้อย');
+                toast('🎨 สั่งเปิด Photoshop เรียบร้อย', 'success');
             } catch(e) {
-                alert('เรียก server ล้มเหลว กรุณาตรวจสอบว่า auto_donate_watcher.py กำลังรันอยู่');
+                toast('เรียก server ล้มเหลว กรุณาตรวจสอบว่า auto_donate_watcher.py กำลังรันอยู่', 'error');
             }
         }
 
         function escapeHtml(str) {
             return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
+
+        /* ===== IN-PAGE MODAL & TOAST HELPERS ===== */
+        function toast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const el = document.createElement('div');
+            el.className = `toast ${type}`;
+            el.textContent = msg;
+            container.appendChild(el);
+            setTimeout(() => {
+                el.style.opacity = '0';
+                el.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => el.remove(), 300);
+            }, 3200);
+        }
+
+        function showConfirmModal({
+            title = 'ยืนยันการทำรายการ',
+            message = '',
+            icon = 'fa-solid fa-circle-question',
+            iconType = 'info',
+            confirmText = 'ตกลง',
+            cancelText = 'ยกเลิก',
+            danger = false
+        } = {}) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('adminConfirmModal');
+                const titleEl = document.getElementById('adminModalTitle');
+                const descEl = document.getElementById('adminModalDesc');
+                const iconContainer = document.getElementById('adminModalIcon');
+                const btnCancel = document.getElementById('btnAdminCancel');
+                const btnOk = document.getElementById('btnAdminOk');
+
+                titleEl.textContent = title;
+                descEl.textContent = message;
+                iconContainer.className = `modal-icon icon-${iconType}`;
+                iconContainer.innerHTML = `<i class="${icon}"></i>`;
+
+                btnCancel.style.display = cancelText ? 'block' : 'none';
+                btnCancel.textContent = cancelText;
+
+                btnOk.textContent = confirmText;
+                btnOk.className = danger ? 'btn-modal-ok btn-danger' : 'btn-modal-ok';
+
+                modal.style.display = 'flex';
+
+                function cleanup(result) {
+                    modal.style.display = 'none';
+                    btnCancel.onclick = null;
+                    btnOk.onclick = null;
+                    modal.onclick = null;
+                    resolve(result);
+                }
+
+                btnCancel.onclick = () => cleanup(false);
+                btnOk.onclick = () => cleanup(true);
+                modal.onclick = (e) => { if (e.target === modal) cleanup(false); };
+            });
+        }
+
+        function showAlertModal(message, title = 'แจ้งเตือน') {
+            return showConfirmModal({
+                title,
+                message,
+                icon: 'fa-solid fa-circle-info',
+                iconType: 'info',
+                confirmText: 'รับทราบ',
+                cancelText: null
+            });
+        }
+
+        window.alert = function (msg) {
+            showAlertModal(msg);
+        };
     </script>
+
+    <!-- Admin Confirm Modal -->
+    <div class="modal-overlay" id="adminConfirmModal">
+        <div class="modal-card">
+            <div class="modal-icon" id="adminModalIcon">
+                <i class="fa-solid fa-circle-question"></i>
+            </div>
+            <h3 class="modal-title" id="adminModalTitle">ยืนยันการทำรายการ</h3>
+            <p class="modal-desc" id="adminModalDesc"></p>
+            <div class="modal-actions">
+                <button type="button" class="btn-modal-cancel" id="btnAdminCancel">ยกเลิก</button>
+                <button type="button" class="btn-modal-ok" id="btnAdminOk">ตกลง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toastContainer"></div>
 </body>
 </html>
