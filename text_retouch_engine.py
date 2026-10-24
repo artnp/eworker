@@ -584,9 +584,22 @@ def handle_request(action, post_data=None):
         return {"ok": True}
 
     elif action == "review":
-        # Launch GUI popup in a separate process
-        script_path = os.path.abspath(__file__)
-        subprocess.Popen([sys.executable, script_path, "--review", sid, pid], shell=False)
+        # เปิดหน้าแอดมิน HTML ใน Chrome
+        admin_url = "http://127.0.0.1:5000/admin-text-retouch.html"
+        chrome_candidates = [
+            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+            os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe")
+        ]
+        opened = False
+        for cpath in chrome_candidates:
+            if os.path.exists(cpath):
+                subprocess.Popen([cpath, admin_url])
+                opened = True
+                break
+        if not opened:
+            import webbrowser
+            webbrowser.open(admin_url)
         return {"ok": True}
 
     return {"ok": False, "error": f"Unknown action: {action}"}
