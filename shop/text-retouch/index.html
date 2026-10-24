@@ -148,6 +148,7 @@
             background: #ecfdf5;
             border-color: #a7f3d0;
         }
+
         .status-dot.status-online .dot {
             background: #10b981;
             animation: blink 2s infinite;
@@ -158,6 +159,7 @@
             background: #fffbeb;
             border-color: #fde68a;
         }
+
         .status-dot.status-away .dot {
             background: #f59e0b;
             animation: blink 2.5s infinite;
@@ -168,6 +170,7 @@
             background: #fef2f2;
             border-color: #fecaca;
         }
+
         .status-dot.status-offline .dot {
             background: #ef4444;
             animation: none;
@@ -182,8 +185,15 @@
         }
 
         @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
         }
 
         /* ===== MAIN LAYOUT ===== */
@@ -235,7 +245,9 @@
         }
 
         @media (max-width: 768px) {
-            .hero-title, .hero-desc {
+
+            .hero-title,
+            .hero-desc {
                 white-space: normal;
             }
         }
@@ -255,14 +267,16 @@
             transition: opacity 0.2s;
             backdrop-filter: blur(2px);
         }
+
         .page-drag-overlay.active {
             opacity: 1;
         }
+
         .page-drag-card {
             background: white;
             padding: 24px 40px;
             border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
             text-align: center;
             border: 2px solid #3b82f6;
             display: flex;
@@ -280,9 +294,15 @@
             box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25) !important;
             animation: notePulse 1.5s ease-in-out infinite alternate;
         }
+
         @keyframes notePulse {
-            0% { box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
-            100% { box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.45); }
+            0% {
+                box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+            }
+
+            100% {
+                box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.45);
+            }
         }
 
         /* Send button highlight & bounce when note is filled */
@@ -292,9 +312,15 @@
             box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.35), 0 4px 12px rgba(22, 163, 74, 0.3) !important;
             animation: sendBtnBounce 1s infinite alternate;
         }
+
         @keyframes sendBtnBounce {
-            0% { transform: scale(1.0); }
-            100% { transform: scale(1.04); }
+            0% {
+                transform: scale(1.0);
+            }
+
+            100% {
+                transform: scale(1.04);
+            }
         }
 
         /* Clean Upload Zone */
@@ -308,6 +334,7 @@
             background: #f8fafc;
             transition: all 0.2s;
         }
+
         .upload-zone.is-offline {
             opacity: 0.65;
             border-color: #fca5a5;
@@ -513,16 +540,61 @@
             border: 2px solid;
             border-radius: 4px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: border-color 0.15s, background 0.15s;
             display: flex;
             align-items: flex-start;
             justify-content: flex-end;
             pointer-events: auto;
+            user-select: none;
+            box-sizing: border-box;
         }
 
-        .patch-overlay:hover {
-            filter: brightness(1.1);
+        .patch-overlay:not(.is-editable):hover {
+            filter: brightness(1.08);
             transform: scale(1.01);
+        }
+
+        .patch-overlay.is-editable {
+            cursor: move;
+            border: 2px dashed #2563eb !important;
+            background: rgba(37, 99, 235, 0.15) !important;
+        }
+
+        /* Resize Handles for Editable Overlay */
+        .crop-handle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #ffffff;
+            border: 2px solid #2563eb;
+            border-radius: 2px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+            z-index: 25;
+            pointer-events: auto;
+        }
+
+        .crop-handle.handle-nw {
+            top: -6px;
+            left: -6px;
+            cursor: nwse-resize;
+        }
+
+        .crop-handle.handle-ne {
+            top: -6px;
+            right: -6px;
+            cursor: nesw-resize;
+        }
+
+        .crop-handle.handle-se {
+            bottom: -6px;
+            right: -6px;
+            cursor: nwse-resize;
+        }
+
+        .crop-handle.handle-sw {
+            bottom: -6px;
+            left: -6px;
+            cursor: nesw-resize;
         }
 
         .patch-num-badge {
@@ -890,9 +962,8 @@
         }
 
         .patch-status-label {
-            font-size: 0.75rem;
+            font-size: 0.88rem;
             font-weight: 700;
-            margin-top: 1px;
         }
 
         .patch-status-label.status-waiting {
@@ -1586,7 +1657,7 @@
         </a>
         <div class="header-right">
             <button class="btn-new-file" id="btnNewFile" style="display:none;" onclick="startNewSession()">
-                <i class="fa-solid fa-plus"></i> เริ่มไฟล์ใหม่
+                <i class="fa-solid fa-plus"></i> เริ่มงานใหม่
             </button>
             <div class="status-dot status-online" id="statusDot">
                 <span class="dot"></span>
@@ -1689,7 +1760,8 @@
                             ชี้จุดที่จะแก้
                         </button>
                         <p class="crop-hint" id="cropHint">
-                            💡 แนะนำ: คลิกจุดที่จะแก้ หรือลากคลุมตำแหน่งให้เห็นครอบคลุมทั้งหมด · กด <span class="crop-hint-key">Esc</span> เพื่อยกเลิก
+                            💡 คลิกลากครอบส่วนที่ต้องการแก้ (สามารถดึงจุด 4 มุมเพื่อปรับขยายกรอบได้) · กด <span
+                                class="crop-hint-key">Esc</span> เพื่อยกเลิก
                         </p>
                     </div>
 
@@ -2086,7 +2158,7 @@
 
         // ── START NEW SESSION ──
         async function startNewSession() {
-            if (localFile && !confirm('ต้องการเริ่มไฟล์ใหม่หรือไม่?\n(งานปัจจุบันที่ยังไม่เสร็จสามารถกลับมาเปิดได้ทาง URL เดิม)')) {
+            if (localFile && !confirm('ต้องการเริ่มงานใหม่หรือไม่?\n(งานปัจจุบันที่ยังไม่เสร็จสามารถกลับมาเปิดได้ทาง URL เดิม)')) {
                 return;
             }
             if (sessionId) {
@@ -2227,7 +2299,7 @@
             let savedPage = 1;
             try {
                 savedPage = parseInt(localStorage.getItem('tr_pdf_page_' + sessionId) || '1', 10);
-            } catch (e) {}
+            } catch (e) { }
 
             currentPage = targetPage || Math.min(Math.max(1, savedPage), totalPages);
             await renderPdfPage(currentPage);
@@ -2243,7 +2315,7 @@
         async function renderPdfPage(pageNum) {
             currentPage = pageNum;
             if (sessionId) {
-                try { localStorage.setItem('tr_pdf_page_' + sessionId, pageNum); } catch(e) {}
+                try { localStorage.setItem('tr_pdf_page_' + sessionId, pageNum); } catch (e) { }
             }
             updatePageInput();
 
@@ -2268,7 +2340,7 @@
                         const rImg = new Image();
                         await new Promise(r => { rImg.onload = r; rImg.src = patch.resultDataUrl; });
                         pdfCtx.drawImage(rImg, px, py, pw, ph);
-                    } catch(err) {
+                    } catch (err) {
                         console.warn('PDF re-composite error:', err);
                     }
                 }
@@ -2383,24 +2455,18 @@
                 const rw = Math.abs(ex - cropStartX);
                 const rh = Math.abs(ey - cropStartY);
 
-                // หากลูกค้าแค่ "คลิกจิ้ม" ที่จุด (ไม่ได้ลากกล่อง หรือลากสั้นกว่า 15px)
-                // ให้สร้างกล่องขนาดมาตรฐานรอบจุดที่คลิกให้โดยอัตโนมัติ
-                let finalX, finalY, finalW, finalH;
-                if (rw < 15 || rh < 15) {
-                    finalW = Math.min(180, or.width * 0.4);
-                    finalH = Math.min(65, or.height * 0.2);
-                    finalX = Math.max(0, Math.min(or.width - finalW, cropStartX - finalW / 2));
-                    finalY = Math.max(0, Math.min(or.height - finalH, cropStartY - finalH / 2));
-                    toast('💡 สร้างกรอบรอบจุดที่คลิกแล้ว สามารถพิมพ์โน้ตแก้ไขได้ทันที', 'info');
-                } else {
-                    finalX = Math.min(cropStartX, ex);
-                    finalY = Math.min(cropStartY, ey);
-                    finalW = rw;
-                    finalH = rh;
+                // หากลากน้อยกว่า 10px (เผลอคลิกเฉยๆ) ให้เตือนให้ลากคลุมส่วนที่ต้องการ
+                if (rw < 10 || rh < 10) {
+                    toast('💡 กรุณาคลิกลากครอบข้อความที่ต้องการแก้ครับ', 'info');
+                    return;
                 }
 
-                await createPatchFromCrop(finalX, finalY, finalW, finalH, or);
+                const rx = Math.min(cropStartX, ex);
+                const ry = Math.min(cropStartY, ey);
+
+                await createPatchFromCrop(rx, ry, rw, rh, or);
                 exitCropMode();
+                toast('💡 ได้กรอบจุดแก้แล้ว สามารถคลิกลากจุด 4 มุมเพื่อปรับขยายกรอบ หรือลากย้ายตำแหน่งได้', 'success');
             });
 
             // Touch pan & zoom
@@ -2650,7 +2716,7 @@
                 btn.innerHTML = '<span class="spinner"></span> กำลังส่ง...';
             } else {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> ส่งคิดราคา';
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> ประเมินราคา';
             }
         }
 
@@ -2776,7 +2842,6 @@
         <div class="patch-card-header" onclick="setActivePatch('${patchId}')">
             <div class="patch-num-circle status-${patch.status}">${patch.num}</div>
             <div class="patch-card-meta">
-                <div class="patch-card-title">จุดที่ ${patch.num}</div>
                 <div class="patch-status-label status-${patch.status}">${statusLabels[patch.status] || patch.status}</div>
             </div>
             ${patch.price > 0 ? `<span class="price-tag">฿${patch.price}</span>` : ''}
@@ -2808,7 +2873,10 @@
             <div class="patch-card-footer">
                 ${patch.status === 'waiting' ? `
                     <button class="btn-patch-action btn-send" id="btnSend_${patchId}" onclick="sendPatch('${patchId}')">
-                        <i class="fa-solid fa-paper-plane"></i> ส่งคิดราคา
+                        <i class="fa-solid fa-paper-plane"></i> ประเมินราคา
+                    </button>
+                    <button class="btn-delete" onclick="reCropPatch('${patchId}')" title="ตีกรอบจุดนี้ใหม่" style="background:#f1f5f9;color:#2563eb;border:1px solid #cbd5e1;">
+                        <i class="fa-solid fa-crop-simple"></i>
                     </button>
                     <button class="btn-delete" onclick="deletePatch('${patchId}')" title="ลบจุดนี้">
                         <i class="fa-solid fa-trash"></i>
@@ -2959,8 +3027,181 @@
                 badge.textContent = patch.num;
                 div.appendChild(badge);
 
+                if (patch.status === 'waiting') {
+                    div.classList.add('is-editable');
+                    attachOverlayResizeAndDrag(div, patch.id, nW, nH);
+                }
+
                 wrapper.appendChild(div);
             });
+        }
+
+        /* Interactive Resize & Drag for waiting patch */
+        function attachOverlayResizeAndDrag(div, patchId, nW, nH) {
+            ['nw', 'ne', 'se', 'sw'].forEach(pos => {
+                const handle = document.createElement('div');
+                handle.className = `crop-handle handle-${pos}`;
+                handle.dataset.handle = pos;
+                div.appendChild(handle);
+
+                handle.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    startResize(pos, e);
+                });
+            });
+
+            let isDragging = false;
+            let startClientX = 0, startClientY = 0;
+            let startL = 0, startT = 0, startW = 0, startH = 0;
+
+            div.addEventListener('mousedown', (e) => {
+                if (e.target.classList.contains('crop-handle') || e.target.classList.contains('patch-num-badge')) return;
+                e.stopPropagation();
+                e.preventDefault();
+                setActivePatch(patchId);
+                isDragging = true;
+                startClientX = e.clientX;
+                startClientY = e.clientY;
+                startL = parseFloat(div.style.left) || 0;
+                startT = parseFloat(div.style.top) || 0;
+                startW = parseFloat(div.style.width) || 0;
+                startH = parseFloat(div.style.height) || 0;
+
+                function onMove(ev) {
+                    if (!isDragging) return;
+                    const dx = (ev.clientX - startClientX) / scale;
+                    const dy = (ev.clientY - startClientY) / scale;
+                    const maxL = Math.max(0, nW - startW);
+                    const maxT = Math.max(0, nH - startH);
+                    const curL = Math.max(0, Math.min(maxL, startL + dx));
+                    const curT = Math.max(0, Math.min(maxT, startT + dy));
+                    div.style.left = curL + 'px';
+                    div.style.top = curT + 'px';
+                }
+
+                function onUp() {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    window.removeEventListener('mousemove', onMove);
+                    window.removeEventListener('mouseup', onUp);
+                    finalizeOverlayChange(patchId, div, nW, nH);
+                }
+
+                window.addEventListener('mousemove', onMove);
+                window.addEventListener('mouseup', onUp);
+            });
+
+            function startResize(pos, e) {
+                setActivePatch(patchId);
+                const rStartX = e.clientX;
+                const rStartY = e.clientY;
+                const rL = parseFloat(div.style.left) || 0;
+                const rT = parseFloat(div.style.top) || 0;
+                const rW = parseFloat(div.style.width) || 0;
+                const rH = parseFloat(div.style.height) || 0;
+
+                function onResizeMove(ev) {
+                    const dx = (ev.clientX - rStartX) / scale;
+                    const dy = (ev.clientY - rStartY) / scale;
+                    let curL = rL, curT = rT, curW = rW, curH = rH;
+
+                    if (pos === 'se') {
+                        curW = Math.max(20, Math.min(nW - rL, rW + dx));
+                        curH = Math.max(20, Math.min(nH - rT, rH + dy));
+                    } else if (pos === 'sw') {
+                        const newL = Math.max(0, Math.min(rL + rW - 20, rL + dx));
+                        curW = (rL + rW) - newL;
+                        curL = newL;
+                        curH = Math.max(20, Math.min(nH - rT, rH + dy));
+                    } else if (pos === 'ne') {
+                        const newT = Math.max(0, Math.min(rT + rH - 20, rT + dy));
+                        curH = (rT + rH) - newT;
+                        curT = newT;
+                        curW = Math.max(20, Math.min(nW - rL, rW + dx));
+                    } else if (pos === 'nw') {
+                        const newL = Math.max(0, Math.min(rL + rW - 20, rL + dx));
+                        const newT = Math.max(0, Math.min(rT + rH - 20, rT + dy));
+                        curW = (rL + rW) - newL;
+                        curH = (rT + rH) - newT;
+                        curL = newL;
+                        curT = newT;
+                    }
+
+                    div.style.left = curL + 'px';
+                    div.style.top = curT + 'px';
+                    div.style.width = curW + 'px';
+                    div.style.height = curH + 'px';
+                }
+
+                function onResizeUp() {
+                    window.removeEventListener('mousemove', onResizeMove);
+                    window.removeEventListener('mouseup', onResizeUp);
+                    finalizeOverlayChange(patchId, div, nW, nH);
+                }
+
+                window.addEventListener('mousemove', onResizeMove);
+                window.addEventListener('mouseup', onResizeUp);
+            }
+        }
+
+        function finalizeOverlayChange(patchId, div, nW, nH) {
+            const patch = patches[patchId];
+            if (!patch) return;
+            const curL = parseFloat(div.style.left) || 0;
+            const curT = parseFloat(div.style.top) || 0;
+            const curW = parseFloat(div.style.width) || 0;
+            const curH = parseFloat(div.style.height) || 0;
+
+            patch.cropRect = {
+                x: (curL / nW) * 100,
+                y: (curT / nH) * 100,
+                w: (curW / nW) * 100,
+                h: (curH / nH) * 100
+            };
+
+            recropPatch(patchId, curL, curT, curW, curH);
+        }
+
+        function recropPatch(patchId, cx, cy, cw, ch) {
+            const patch = patches[patchId];
+            if (!patch) return;
+
+            const content = document.getElementById('mainImage').style.display !== 'none'
+                ? document.getElementById('mainImage') : document.getElementById('pdfCanvas');
+
+            const patchCanvas = document.createElement('canvas');
+            patchCanvas.width = cw;
+            patchCanvas.height = ch;
+            const ctx = patchCanvas.getContext('2d');
+
+            if (localFileType === 'image') {
+                ctx.drawImage(content, cx, cy, cw, ch, 0, 0, cw, ch);
+            } else {
+                ctx.drawImage(document.getElementById('pdfCanvas'), cx, cy, cw, ch, 0, 0, cw, ch);
+            }
+
+            patch.patchDataUrl = patchCanvas.toDataURL('image/jpeg', 0.92);
+            savePatchesToLocalStorage();
+
+            const card = document.getElementById(`card_${patchId}`);
+            if (card) {
+                const thumb = card.querySelector('.patch-thumb');
+                if (thumb) thumb.src = patch.patchDataUrl;
+            }
+        }
+
+        function reCropPatch(patchId) {
+            delete patches[patchId];
+            savePatchesToLocalStorage();
+            const card = document.getElementById(`card_${patchId}`);
+            if (card) card.remove();
+            const overlay = document.getElementById(`overlay_${patchId}`);
+            if (overlay) overlay.remove();
+            updateEmpty();
+            updateTotal();
+            updateAddPatchButton();
+            enterCropMode();
         }
 
         /* ======================================================
@@ -3174,7 +3415,7 @@
                 toast(`ดาวน์โหลดภาพหน้า ${currentPage} ที่แก้ไขเรียบร้อย!`, 'success');
                 try {
                     await db.ref(`text_retouch/${sessionId}`).remove();
-                } catch(e) {}
+                } catch (e) { }
                 return;
             }
 
