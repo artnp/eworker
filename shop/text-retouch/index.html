@@ -194,8 +194,8 @@
 
         .hero-title {
             font-family: 'Outfit', 'Sarabun', sans-serif;
-            font-size: clamp(1.8rem, 4vw, 2.6rem);
-            font-weight: 800;
+            font-size: clamp(1.rem, 2vw, 2.6rem);
+            font-weight: 00;
             line-height: 1.2;
             margin-bottom: 12px;
             color: #0f172a;
@@ -1116,6 +1116,7 @@
                 transform: scale(0.95);
                 opacity: 0;
             }
+
             to {
                 transform: scale(1);
                 opacity: 1;
@@ -1167,8 +1168,13 @@
         }
 
         @keyframes pulseUrgent {
-            from { opacity: 1; }
-            to { opacity: 0.6; }
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0.6;
+            }
         }
 
         .qr-clean-card {
@@ -1216,7 +1222,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .btn-download-slip {
@@ -1494,7 +1502,7 @@
                 <div class="hero-badge">
                     <i class="fa-solid fa-shield-halved"></i> ไฟล์ต้นฉบับปลอดภัย 100% ไม่ออกจากเครื่องคุณ
                 </div>
-                <h1 class="hero-title">แก้ไขข้อความ & ดีไซน์เฉพาะจุด</h1>
+                <h1 class="hero-title">บริการแก้ไขข้อความ เนียนเหมือนต้นฉบับ</h1>
                 <p class="hero-desc">
                     อัพโหลดรูปภาพหรือ PDF → ตีกรอบเฉพาะส่วนที่ต้องการให้แก้ → ส่งตรงถึงนักรีทัชผู้เชี่ยวชาญแบบ Real-time
                 </p>
@@ -1637,14 +1645,16 @@
             <!-- Countdown Box -->
             <div class="checkout-countdown-box" id="checkoutCountdownBox">
                 <span>⏱️ กรุณาชำระเงินภายใน:</span>
-                <strong id="checkoutCountdownTimer" style="font-family: monospace; font-size: 0.95rem; font-weight: 800;">15:00</strong>
+                <strong id="checkoutCountdownTimer"
+                    style="font-family: monospace; font-size: 0.95rem; font-weight: 800;">15:00</strong>
                 <span>นาที</span>
             </div>
 
             <!-- QR Code Card -->
             <div class="qr-clean-card">
                 <img id="qrImage" src="" alt="QR Code">
-                <div style="font-size: 0.75rem; font-weight: 700; color: #0b1120; margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                <div
+                    style="font-size: 0.75rem; font-weight: 700; color: #0b1120; margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 5px;">
                     <img src="../../assets/promptpay_header_full.png"
                         onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/100px-PromptPay-logo.png'; this.onerror=function(){this.style.display='none';};"
                         style="height: 16px; max-width: 75px; object-fit: contain;">
@@ -1653,7 +1663,8 @@
             </div>
 
             <!-- Amount -->
-            <div id="paymentAmountDisplay" style="font-size: 1.7rem; font-weight: 800; color: #16a34a; margin: 4px 0; line-height: 1.2;">
+            <div id="paymentAmountDisplay"
+                style="font-size: 1.7rem; font-weight: 800; color: #16a34a; margin: 4px 0; line-height: 1.2;">
                 ฿ <span id="paymentAmountNum">0</span>.00
             </div>
             <div style="font-size: 0.76rem; color: #64748b; margin-bottom: 6px;">
@@ -1674,10 +1685,12 @@
 
             <!-- Action row: Alert & LINE -->
             <div class="action-row-buttons">
-                <button type="button" class="btn-action-alert" id="btnManualConfirm" onclick="triggerManualPaymentAlert()" title="แจ้งโอนเงินแล้ว">
+                <button type="button" class="btn-action-alert" id="btnManualConfirm"
+                    onclick="triggerManualPaymentAlert()" title="แจ้งโอนเงินแล้ว">
                     🔔 แจ้งโอนแล้ว
                 </button>
-                <a href="https://line.me/ti/p/gqIluRmdJ_" target="_blank" rel="noopener noreferrer" class="btn-action-line" title="มีปัญหาชำระเงิน ติดต่อทาง LINE">
+                <a href="https://line.me/ti/p/gqIluRmdJ_" target="_blank" rel="noopener noreferrer"
+                    class="btn-action-line" title="มีปัญหาชำระเงิน ติดต่อทาง LINE">
                     💬 ติดต่อ LINE
                 </a>
             </div>
@@ -2879,20 +2892,13 @@
             a.click();
             toast('ดาวน์โหลดไฟล์เรียบร้อย!', 'success');
 
-            // ลบข้อมูลไฟล์ภาพ patchImage และ resultImage ใน Firebase ทิ้งเพื่อประหยัดพื้นที่
+            // เมื่องานเสร็จและลูกค้าดาวน์โหลดแล้ว ถือว่างานจบ ลบรายการนี้ออกจากระบบ Firebase ทันที เพื่อไม่ให้รกหลังบ้าน
             // แต่งานบนหน้าจอและ Canvas ของลูกค้ายังคงอยู่ปกติ
             try {
-                const updates = {};
-                Object.keys(patches).forEach(pid => {
-                    updates[`text_retouch/${sessionId}/patches/${pid}/patchImage`] = null;
-                    updates[`text_retouch/${sessionId}/patches/${pid}/resultImage`] = null;
-                    updates[`text_retouch/${sessionId}/patches/${pid}/cleaned`] = true;
-                });
-                updates[`text_retouch/${sessionId}/status`] = 'completed';
-                await db.ref().update(updates);
-                console.log('[TextRetouch] ลบไฟล์ภาพใน Firebase เรียบร้อย (งานฝั่งลูกค้ายังอยู่ครบ)');
+                await db.ref(`text_retouch/${sessionId}`).remove();
+                console.log('[TextRetouch] ลูกค้าดาวน์โหลดงานแล้ว ลบรายการออกจาก Firebase เรียบร้อย');
             } catch (e) {
-                console.warn('[TextRetouch] Firebase cleanup error:', e);
+                console.warn('[TextRetouch] Firebase remove error:', e);
             }
         }
 
