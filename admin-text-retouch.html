@@ -1042,6 +1042,13 @@
                             <button class="quick-btn" onclick="deleteHistoryCard('${sid}', '${pid}')" style="color:var(--danger);margin-top:6px;width:max-content;border-color:#fecaca;background:#fef2f2;">
                                 <i class="fa-solid fa-trash"></i> ลบรายการนี้ออกจากระบบ
                             </button>
+                        ` : status === 'working' ? `
+                            <button class="btn-action btn-open-ps" onclick="openInPhotoshop('${sid}', '${pid}')" style="background:#e0e7ff;color:#4338ca;border-color:#c7d2fe;">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดเข้า Photoshop อีกครั้ง
+                            </button>
+                            <button class="quick-btn" onclick="deleteHistoryCard('${sid}', '${pid}')" style="color:var(--danger);margin-top:6px;width:max-content;border-color:#fecaca;background:#fef2f2;">
+                                <i class="fa-solid fa-trash"></i> ลบรายการนี้ออกจากระบบ
+                            </button>
                         ` : status === 'system_error' ? `
                             <div style="font-size:0.78rem; color:#dc2626; margin-top:4px; line-height:1.4;">
                                 ⚠️ แจ้งหน้างานลูกค้าแล้วว่า <strong>ระบบขัดข้อง โปรดติดต่อ LINE</strong>
@@ -1161,7 +1168,7 @@
         }
 
         async function openInPhotoshop(sid, pid) {
-            const host = window.location.port ? window.location.origin : 'http://127.0.0.1:5000';
+            const host = (window.location.port === '5000') ? window.location.origin : 'http://127.0.0.1:5000';
             try {
                 const res = await fetch(`${host}/text-retouch-paid`, {
                     method: 'POST',
