@@ -273,13 +273,21 @@ def quote_patch(session_id, patch_id, price):
 
 
 def reject_patch(session_id, patch_id, reason):
-    """แอดมินปฏิเสธงาน -> อัพเดท Firebase พร้อมเหตุผล (เสี่ยงกฎหมาย, มีลายเซ็นต์, ตราครุฑ)"""
+    """แอดมินปฏิเสธงาน -> อัพเดท Firebase พร้อมเหตุผล และลบภาพออกจากระบบไม่ให้รก"""
     print(f"[TextRetouch] ❌ ปฏิเสธจุดที่ {patch_id}: {reason}")
     fb_patch(f"text_retouch/{session_id}/patches/{patch_id}", {
         "status": "rejected",
         "rejectReason": reason,
-        "rejectedAt": int(time.time() * 1000)
+        "rejectedAt": int(time.time() * 1000),
+        "patchImage": None
     })
+    for fname in [f"{patch_id}.png", f"{patch_id}_note.txt", f"{patch_id}_result.png"]:
+        fpath = os.path.join(CACHE_DIR, fname)
+        if os.path.exists(fpath):
+            try:
+                os.remove(fpath)
+            except Exception:
+                pass
 
 
 def mark_patch_paid(session_id, patch_id):
