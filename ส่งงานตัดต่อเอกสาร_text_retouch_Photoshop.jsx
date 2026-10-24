@@ -9,7 +9,17 @@ var doc = app.activeDocument;
 if (!doc) {
     alert("❌ ไม่มี document ที่เปิดอยู่!");
 } else {
-    // Flatten ก่อน save
+    // 1. ลบเลเยอร์ที่ถูกปิดตาไว้ (Hidden layers) ก่อน flatten เพื่อไม่ให้มี dialog เตือน
+    for (var i = doc.artLayers.length - 1; i >= 0; i--) {
+        try {
+            var l = doc.artLayers[i];
+            if (!l.visible) {
+                l.remove();
+            }
+        } catch(e) {}
+    }
+
+    // 2. Flatten ก่อน save
     doc.flatten();
 
     // หา result path จาก active state
