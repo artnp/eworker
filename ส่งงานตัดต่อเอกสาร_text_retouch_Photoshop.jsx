@@ -62,11 +62,17 @@ if (!doc) {
         var submitCode = app.system('cmd /c python "D:\\Github\\eworker\\text_retouch_engine.py" --submit');
         if (submitCode === 0) {
             alert("✅ ส่งงานจุดที่ " + (patchNum || "1") + " ให้ลูกค้าแล้ว!\n\nส่งผลลัพธ์แบบคมชัด (ไม่มีลายน้ำ) เรียบร้อย");
+            try {
+                doc.close(SaveOptions.DONOTSAVECHANGES);
+            } catch(eClose) {}
         } else {
             var submitBat = new File("D:/Github/eworker/auto_text_touch_submit.bat");
             if (submitBat.exists) {
                 submitBat.execute();
                 alert("🚀 กำลังส่งงานจุดที่ " + (patchNum || "1") + " ให้ลูกค้า...");
+                try {
+                    doc.close(SaveOptions.DONOTSAVECHANGES);
+                } catch(eClose) {}
             } else {
                 alert("⚠️ ส่งงานไม่สำเร็จ (Code: " + submitCode + ")");
             }
@@ -76,6 +82,9 @@ if (!doc) {
         if (submitBat2.exists) {
             submitBat2.execute();
             alert("🚀 กำลังส่งงานจุดที่ " + (patchNum || "1") + " ให้ลูกค้า...");
+            try {
+                doc.close(SaveOptions.DONOTSAVECHANGES);
+            } catch(eClose) {}
         } else {
             alert("❌ ส่งงานล้มเหลว: " + e.toString());
         }
