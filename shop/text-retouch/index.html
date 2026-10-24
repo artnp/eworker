@@ -1575,7 +1575,7 @@
                         </div>
                         <button class="btn-add-patch" id="btnAddPatch">
                             <i class="fa-solid fa-crosshairs"></i>
-                            วาดกรอบจุดที่จะแก้
+                            ชี้จุดที่จะแก้จุดต่อไป
                         </button>
                         <p class="crop-hint" id="cropHint">
                             คลิกลากบนรูปเพื่อเลือกส่วนที่ต้องการแก้ · กด <span class="crop-hint-key">Esc</span>
@@ -2210,7 +2210,7 @@
             isCropMode = true;
             const btn = document.getElementById('btnAddPatch');
             btn.classList.add('active');
-            btn.innerHTML = '<i class="fa-solid fa-xmark"></i> ยกเลิกวาดกรอบ';
+            btn.innerHTML = '<i class="fa-solid fa-xmark"></i> ยกเลิกการชี้จุด';
             document.getElementById('cropHint').classList.add('visible');
             document.getElementById('cropOverlay').classList.add('active');
             document.getElementById('canvasContainer').style.cursor = 'crosshair';
@@ -2221,7 +2221,7 @@
             isCropMode = false;
             const btn = document.getElementById('btnAddPatch');
             btn.classList.remove('active');
-            btn.innerHTML = '<i class="fa-solid fa-crosshairs"></i> วาดกรอบจุดที่จะแก้';
+            btn.innerHTML = '<i class="fa-solid fa-crosshairs"></i> ชี้จุดที่จะแก้จุดต่อไป';
             document.getElementById('cropHint').classList.remove('visible');
             document.getElementById('cropOverlay').classList.remove('active');
             document.getElementById('cropRect').style.display = 'none';
@@ -2479,7 +2479,7 @@
                 pending_payment: '💳 นักรีทัชคิดราคาแล้ว (รอโอนเงิน)',
                 paid: '⚡ โอนแล้ว (กำลังเข้า PS)',
                 working: '🎨 กำลังทำใน Photoshop',
-                done: '✅ เสร็จสมบูรณ์'
+                done: '✅ ทำการแก้เสร็จแล้ว'
             };
 
             const html = `
@@ -2550,10 +2550,14 @@
                     </span>
                 ` : ''}
                 ${patch.status === 'done' ? `
-                    <button class="btn-patch-action btn-apply" onclick="applyPatchToCanvas('${patchId}', true)">
-                        <i class="fa-solid fa-layer-group"></i> ประกอบร่างอีกครั้ง
-                    </button>
-                    <span style="color:var(--success);font-weight:700;font-size:0.85rem;margin-left:auto;">✅ เสร็จแล้ว</span>
+                    <div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:8px;">
+                        <span style="color:var(--success);font-weight:700;font-size:0.85rem;display:flex;align-items:center;gap:6px;">
+                            <i class="fa-solid fa-circle-check"></i> ทำการแก้เสร็จแล้ว
+                        </span>
+                        <button class="btn-patch-action" onclick="downloadFinalFile()" style="background:var(--success);color:white;border:none;border-radius:8px;padding:7px 12px;font-weight:700;font-size:0.82rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(22,163,74,0.3);">
+                            <i class="fa-solid fa-download"></i> ดาวน์โหลดงาน
+                        </button>
+                    </div>
                 ` : ''}
             </div>
         </div>`;
@@ -2606,7 +2610,11 @@
             let total = 0;
             let hasAny = false;
             Object.values(patches).forEach(p => {
-                if (p.price > 0) { total += p.price; hasAny = true; }
+                // แสดงเฉพาะยอดที่ยังค้างชำระ (pending_payment)
+                if (p.price > 0 && p.status === 'pending_payment') {
+                    total += p.price;
+                    hasAny = true;
+                }
             });
             if (hasAny) {
                 document.getElementById('totalSummary').style.display = 'flex';
