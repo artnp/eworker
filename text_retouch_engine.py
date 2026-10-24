@@ -335,11 +335,20 @@ def mark_patch_paid(session_id, patch_id):
     open_patch_in_photoshop(session_id, patch_id, patch_data)
 
 
+_last_opened_patch = {"id": None, "time": 0}
+
 # ─────────────────────────────────────────────────────────────────
 #  3. OPEN IN PHOTOSHOP — ส่งงานเข้า Photoshop
 # ─────────────────────────────────────────────────────────────────
 def open_patch_in_photoshop(session_id, patch_id, patch_data):
-    """เปิด patch image เข้า Photoshop + สร้าง layer โน้ต"""
+    """เปิด patch image เข้า Photoshop + สร้าง layer โน้ต (ป้องกันส่งซ้ำ)"""
+    now = time.time()
+    if _last_opened_patch.get("id") == patch_id and (now - _last_opened_patch.get("time", 0)) < 8:
+        print(f"[TextRetouch] ⏩ งานจุดที่ {patch_data.get('num', 1)} เพิ่งถูกเปิดเข้า Photoshop เมื่อสักครู่ ข้ามเพื่อป้องกันการส่งซ้ำ")
+        return
+    _last_opened_patch["id"] = patch_id
+    _last_opened_patch["time"] = now
+
     patch_path = os.path.join(CACHE_DIR, f"{patch_id}.png")
     result_path = os.path.join(CACHE_DIR, f"{patch_id}_result.png")
     note_path = os.path.join(CACHE_DIR, f"{patch_id}_note.txt")
@@ -388,7 +397,17 @@ app.displayDialogs = DialogModes.NO;
 var patchFile = new File("{patch_path_jsx}");
 var doc = app.open(patchFile);
 
-// สร้าง Text Layer แยกสำหรับข้อความที่จะแก้ (ขนาด Canvas คงเดิม 100% ไม่สร้างแถบสี)
+// ลบเลเยอร์โน้ตเก่าที่อาจสร้างซ้ำออกก่อนเสมอ เพื่อให้เหลือเพียงเลเยอร์เดียว 100%
+try {{
+    for (var i = doc.artLayers.length - 1; i >= 0; i--) {{
+        var ly = doc.artLayers[i];
+        if (ly.kind == LayerKind.TEXT && (ly.name.indexOf("#{num}:") != -1 || ly.name == "{layer_name}")) {{
+            ly.remove();
+        }}
+    }}
+}} catch(errClean) {{}}
+
+// สร้าง Text Layer แยกสำหรับข้อความที่จะแก้เพียงอันเดียว
 try {{
     var textLayer = doc.artLayers.add();
     textLayer.kind = LayerKind.TEXT;
