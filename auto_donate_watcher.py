@@ -3453,9 +3453,6 @@ if __name__ == "__main__":
 
                         # 1. โจทย์ใหม่รอประเมินราคา -> เด้งหน้าต่าง Review Popup
                         if status == 'pending_review' and key not in seen_reviews:
-                            if first_run:
-                                seen_reviews.add(key)
-                                continue
                             seen_reviews.add(key)
                             num = patch.get('num', '?')
                             note = patch.get('note', '')[:40]
@@ -3465,11 +3462,23 @@ if __name__ == "__main__":
                                 winsound.PlaySound("SystemAsterisk", winsound.SND_ALIAS | winsound.SND_ASYNC)
                             except Exception:
                                 pass
-                            if os.path.exists(engine_path):
-                                try:
-                                    subprocess.Popen([sys.executable, engine_path, "--review", session_id, patch_id], shell=False)
-                                except Exception as pop_err:
-                                    print(f"[TextRetouch] เด้ง popup ล้มเหลว: {pop_err}")
+                            try:
+                                admin_url = f"http://127.0.0.1:{PORT}/admin-text-retouch.html"
+                                chrome_candidates = [
+                                    r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+                                    r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+                                    os.path.expandvars(r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe")
+                                ]
+                                opened = False
+                                for cpath in chrome_candidates:
+                                    if os.path.exists(cpath):
+                                        subprocess.Popen([cpath, admin_url])
+                                        opened = True
+                                        break
+                                if not opened:
+                                    webbrowser.open(admin_url)
+                            except Exception as pop_err:
+                                print(f"[TextRetouch] เด้ง Chrome ล้มเหลว: {pop_err}")
 
                         # 2. ลูกค้าโอนเงินแล้ว -> เปิดเข้า Photoshop ทันที
                         elif status == 'paid' and key not in seen_paids:
