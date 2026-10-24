@@ -375,50 +375,100 @@ def open_patch_in_photoshop(session_id, patch_id, patch_data):
     is_delete_cmd = note.strip().lower() in ["ลบ", "delete", "remove", "ลบออก", "ลบข้อความ", "ลบคำ", "เอาออก"]
     layer_name = f"📝 #{num}: {note_escaped}"
 
-    jsx = f"""
+    jsx = f"""#target photoshop
+app.displayDialogs = DialogModes.NO;
+
 // Text-Retouch: Auto-open patch #{num}
 var patchFile = new File("{patch_path_jsx}");
 var doc = app.open(patchFile);
 
 // สร้าง Text Layer แยกสำหรับข้อความที่จะแก้ (ขนาด Canvas คงเดิม 100% ไม่สร้างแถบสี)
-var textLayer = doc.artLayers.add();
-textLayer.kind = LayerKind.TEXT;
-textLayer.name = "{layer_name}";
-var txt = textLayer.textItem;
-txt.contents = "{note_escaped}";
-txt.size = Math.min(Math.max(doc.height * 0.4, 14), 60);
-txt.position = [10, Math.min(doc.height * 0.75, doc.height - 5)];
-txt.color.rgb.hexValue = "000000";
+try {{
+    var textLayer = doc.artLayers.add();
+    textLayer.kind = LayerKind.TEXT;
+    textLayer.name = "{layer_name}";
+    var txt = textLayer.textItem;
+    txt.contents = "{note_escaped}";
+    txt.size = Math.min(Math.max(doc.height * 0.4, 14), 60);
+    txt.position = [10, Math.min(doc.height * 0.75, doc.height - 5)];
+    txt.color.rgb.hexValue = "000000";
 
-{"textLayer.visible = false;" if is_delete_cmd else ""}
+    {"textLayer.visible = false;" if is_delete_cmd else ""}
+}} catch(e) {{}}
 
 // Active layer = Background (สำหรับรีทัชภาพ)
-doc.activeLayer = doc.layers[doc.layers.length - 1];
+try {{
+    doc.activeLayer = doc.layers[doc.layers.length - 1];
+}} catch(e) {{}}
 
 // Save result path for submit
-app.putCustomOptions("TextRetouchResultPath", new ActionDescriptor(), true);
-var desc = new ActionDescriptor();
-desc.putString(app.stringIDToTypeID("resultPath"), "{result_path_jsx}");
-app.putCustomOptions("TextRetouchResultPath", desc, true);
+try {{
+    app.putCustomOptions("TextRetouchResultPath", new ActionDescriptor(), true);
+    var desc = new ActionDescriptor();
+    desc.putString(app.stringIDToTypeID("resultPath"), "{result_path_jsx}");
+    app.putCustomOptions("TextRetouchResultPath", desc, true);
+}} catch(e) {{}}
+
+// ดึง Photoshop ขึ้นมาบนหน้าจอหลัก
+try {{
+    app.bringToFront();
+}} catch(e) {{}}
 """
     with open(jsx_path, "w", encoding="utf-8") as f:
         f.write(jsx)
 
-    # เปิด Photoshop + รัน script (ลองผ่าน COM ก่อนเพื่อให้เร็วเสี้ยววินาที ถ้าไม่สำเร็จค่อย subprocess)
     print(f"[TextRetouch] 🎨 กำลังเปิดเข้า Photoshop: patch #{num} — '{note}'")
+    
+    # ตรวจสอบว่า Photoshop กำลังรันอยู่แล้วหรือไม่
+    ps_running = False
+    try:
+        import psutil
+        for p in psutil.process_iter(['name']):
+            if 'photoshop' in p.info.get('name', '').lower():
+                ps_running = True
+                break
+    except Exception:
+        pass
+
+    ps_path = get_photoshop_path()
     com_opened = False
+
+    if not ps_running and ps_path and os.path.exists(ps_path):
+        # หากยังไม่ได้เปิด Photoshop ไว้ ให้เปิดผ่าน Windows Shell แบบ Show Normal (หลีกเลี่ยง headless COM)
+        print(f"[TextRetouch] 🚀 เปิดโปรแกรม Photoshop ขึ้นมาใหม่ผ่าน Windows Shell...")
+        try:
+            import ctypes
+            ctypes.windll.shell32.ShellExecuteW(None, "open", ps_path, f'"{jsx_path}"', None, 1)
+            com_opened = True
+        except Exception as se:
+            print(f"[TextRetouch] ShellExecute error: {se}")
+            subprocess.Popen([ps_path, jsx_path], shell=False)
+            com_opened = True
+    else:
+        # หากเปิด Photoshop ทิ้งไว้อยู่แล้ว ให้ส่งเข้า DoJavaScriptFile ทันที (เร็วมากในเสี้ยววินาที)
+        try:
+            import win32com.client
+            ps = win32com.client.Dispatch("Photoshop.Application")
+            ps.Visible = True
+            ps.DoJavaScriptFile(jsx_path)
+            com_opened = True
+            print(f"[TextRetouch] ⚡ ส่งเข้า Photoshop สำเร็จทันทีผ่าน COM Automation (เสี้ยววินาที)")
+        except Exception as e:
+            print(f"[TextRetouch] COM Automation ({e}) -> สลับเป็น ShellExecute")
+            try:
+                import ctypes
+                ctypes.windll.shell32.ShellExecuteW(None, "open", ps_path, f'"{jsx_path}"', None, 1)
+                com_opened = True
+            except Exception:
+                subprocess.Popen([ps_path, jsx_path], shell=False)
+
+    # ดึงหน้าต่าง Photoshop ขึ้นหน้าจอหลักทันที (Activate Foreground)
     try:
         import win32com.client
-        ps = win32com.client.Dispatch("Photoshop.Application")
-        ps.DoJavaScriptFile(jsx_path)
-        com_opened = True
-        print(f"[TextRetouch] ⚡ เปิดเข้า Photoshop สำเร็จทันทีผ่าน COM Automation (เสี้ยววินาที)")
-    except Exception as e:
-        print(f"[TextRetouch] COM Automation ({e}) -> สลับเป็น subprocess")
-
-    if not com_opened:
-        ps_path = get_photoshop_path()
-        subprocess.Popen([ps_path, "-run", jsx_path], shell=False)
+        wsh = win32com.client.Dispatch("WScript.Shell")
+        wsh.AppActivate("Adobe Photoshop")
+    except Exception:
+        pass
 
     try:
         import winsound
