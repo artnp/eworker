@@ -2941,7 +2941,6 @@
         }
 
         async function deletePatch(patchId) {
-            if (!confirm('ยืนยันลบจุดแก้ไขนี้ออก?')) return;
             delete patches[patchId];
             savePatchesToLocalStorage();
             const card = document.getElementById(`card_${patchId}`);
