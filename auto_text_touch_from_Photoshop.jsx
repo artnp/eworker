@@ -62,7 +62,7 @@ if (!doc) {
         if (xhr.status === 200) {
             var resp = eval("(" + xhr.responseText + ")");
             if (resp.ok) {
-                alert("✅ ส่งงานจุดที่ " + (patchNum || "?") + " ให้ลูกค้าแล้ว!\n\nลูกค้าจะเห็นตัวอย่างพร้อม QR PromptPay ทันที");
+                alert("✅ ส่งงานจุดที่ " + (patchNum || "?") + " ให้ลูกค้าแล้ว!\n\nส่งผลลัพธ์แบบคมชัด (ไม่มีลายน้ำ) ตรงเข้าเครื่องลูกค้าเรียบร้อย");
             } else {
                 alert("❌ ส่งงานไม่สำเร็จ: " + (resp.error || "unknown error"));
             }
