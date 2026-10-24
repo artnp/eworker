@@ -1288,6 +1288,130 @@
             }
         }
 
+        /* ===== CUSTOM IN-PAGE DIALOG MODAL ===== */
+        .confirm-modal-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 28px 24px 22px;
+            max-width: 410px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.35);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            animation: modalPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            position: relative;
+        }
+
+        @keyframes modalPopIn {
+            0% { transform: scale(0.92) translateY(10px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .confirm-modal-icon {
+            width: 58px;
+            height: 58px;
+            margin: 0 auto 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.55rem;
+            background: #eff6ff;
+            color: #2563eb;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.15);
+        }
+
+        .confirm-modal-icon.icon-warning {
+            background: #fef3c7;
+            color: #d97706;
+            box-shadow: 0 4px 14px rgba(217, 119, 6, 0.15);
+        }
+
+        .confirm-modal-icon.icon-danger {
+            background: #fee2e2;
+            color: #dc2626;
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.15);
+        }
+
+        .confirm-modal-icon.icon-success {
+            background: #dcfce7;
+            color: #16a34a;
+            box-shadow: 0 4px 14px rgba(22, 163, 74, 0.15);
+        }
+
+        .confirm-modal-title {
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 8px 0;
+            line-height: 1.4;
+        }
+
+        .confirm-modal-desc {
+            font-size: 0.88rem;
+            color: #64748b;
+            line-height: 1.55;
+            margin: 0 0 22px 0;
+            white-space: pre-line;
+        }
+
+        .confirm-modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn-confirm-cancel {
+            flex: 1;
+            padding: 11px 18px;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #475569;
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+            font-size: 0.92rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-confirm-cancel:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .btn-confirm-ok {
+            flex: 1;
+            padding: 11px 18px;
+            border-radius: 12px;
+            border: none;
+            background: var(--primary);
+            color: #ffffff;
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+            font-size: 0.92rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+            transition: all 0.15s;
+        }
+
+        .btn-confirm-ok:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-confirm-ok.btn-danger {
+            background: #dc2626;
+            box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3);
+        }
+
+        .btn-confirm-ok.btn-danger:hover {
+            background: #b91c1c;
+            box-shadow: 0 6px 18px rgba(220, 38, 38, 0.4);
+        }
+
         .payment-modal-close {
             position: absolute;
             top: 14px;
@@ -1871,6 +1995,21 @@
         </div>
     </div>
 
+    <!-- CUSTOM IN-PAGE CONFIRM / ALERT MODAL -->
+    <div class="modal-overlay" id="appConfirmModal" style="display:none; z-index: 9999;">
+        <div class="confirm-modal-card">
+            <div class="confirm-modal-icon" id="confirmModalIcon">
+                <i class="fa-solid fa-arrows-rotate"></i>
+            </div>
+            <h3 class="confirm-modal-title" id="confirmModalTitle">ต้องการเริ่มไฟล์ใหม่หรือไม่?</h3>
+            <p class="confirm-modal-desc" id="confirmModalDesc">(งานปัจจุบันที่ยังไม่เสร็จสามารถกลับมาเปิดได้ทาง URL เดิม)</p>
+            <div class="confirm-modal-actions">
+                <button type="button" class="btn-confirm-cancel" id="btnConfirmCancel">ยกเลิก</button>
+                <button type="button" class="btn-confirm-ok" id="btnConfirmOk">ตกลง</button>
+            </div>
+        </div>
+    </div>
+
     <!-- TOAST CONTAINER -->
     <div id="toastContainer"></div>
 
@@ -2156,10 +2295,95 @@
             }
         }
 
+        /* ======================================================
+           CUSTOM IN-PAGE POPUP DIALOGS (REPLACING NATIVE ALERTS)
+        ====================================================== */
+        function showConfirmModal({
+            title = 'ยืนยันการทำรายการ',
+            message = '',
+            icon = 'fa-solid fa-arrows-rotate',
+            iconType = 'info',
+            confirmText = 'ตกลง',
+            cancelText = 'ยกเลิก',
+            danger = false
+        } = {}) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('appConfirmModal');
+                const titleEl = document.getElementById('confirmModalTitle');
+                const descEl = document.getElementById('confirmModalDesc');
+                const iconContainer = document.getElementById('confirmModalIcon');
+                const btnCancel = document.getElementById('btnConfirmCancel');
+                const btnOk = document.getElementById('btnConfirmOk');
+
+                titleEl.textContent = title;
+                descEl.textContent = message;
+                iconContainer.className = `confirm-modal-icon icon-${iconType}`;
+                iconContainer.innerHTML = `<i class="${icon}"></i>`;
+
+                btnCancel.style.display = cancelText ? 'block' : 'none';
+                btnCancel.textContent = cancelText;
+
+                btnOk.textContent = confirmText;
+                if (danger) {
+                    btnOk.className = 'btn-confirm-ok btn-danger';
+                } else {
+                    btnOk.className = 'btn-confirm-ok';
+                }
+
+                modal.style.display = 'flex';
+
+                function cleanup(result) {
+                    modal.style.display = 'none';
+                    btnCancel.onclick = null;
+                    btnOk.onclick = null;
+                    modal.onclick = null;
+                    document.removeEventListener('keydown', onKey);
+                    resolve(result);
+                }
+
+                btnCancel.onclick = () => cleanup(false);
+                btnOk.onclick = () => cleanup(true);
+
+                modal.onclick = (e) => {
+                    if (e.target === modal) cleanup(false);
+                };
+
+                function onKey(e) {
+                    if (e.key === 'Escape') cleanup(false);
+                    else if (e.key === 'Enter') cleanup(true);
+                }
+                document.addEventListener('keydown', onKey);
+            });
+        }
+
+        function showAlertModal(message, title = 'แจ้งเตือน', iconType = 'info') {
+            return showConfirmModal({
+                title,
+                message,
+                icon: iconType === 'danger' ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-circle-info',
+                iconType,
+                confirmText: 'รับทราบ',
+                cancelText: null
+            });
+        }
+
+        // Override native window.alert to always use in-page popup
+        window.alert = function (msg) {
+            showAlertModal(msg);
+        };
+
         // ── START NEW SESSION ──
         async function startNewSession() {
-            if (localFile && !confirm('ต้องการเริ่มงานใหม่หรือไม่?\n(งานปัจจุบันที่ยังไม่เสร็จสามารถกลับมาเปิดได้ทาง URL เดิม)')) {
-                return;
+            if (localFile) {
+                const confirmed = await showConfirmModal({
+                    title: 'ต้องการเริ่มไฟล์ใหม่หรือไม่?',
+                    message: '(งานปัจจุบันที่ยังไม่เสร็จสามารถกลับมาเปิดได้ทาง URL เดิม)',
+                    icon: 'fa-solid fa-arrows-rotate',
+                    iconType: 'info',
+                    confirmText: 'เริ่มไฟล์ใหม่',
+                    cancelText: 'ยกเลิก'
+                });
+                if (!confirmed) return;
             }
             if (sessionId) {
                 localStorage.removeItem('tr_patches_' + sessionId);
