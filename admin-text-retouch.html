@@ -87,26 +87,6 @@
         }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 28px;
-        }
-        .stat-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 18px 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        }
-        .stat-label { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; }
-        .stat-value { font-size: 1.8rem; font-weight: 800; font-family: 'Outfit', sans-serif; }
-        .stat-pending { color: var(--warning); }
-        .stat-paid { color: var(--primary); }
-        .stat-done { color: var(--success); }
-
         /* Section Title */
         .section-title {
             font-size: 1.1rem; font-weight: 700; margin-bottom: 16px;
@@ -277,26 +257,6 @@
             </div>
         </header>
 
-        <!-- Stats -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">⏳ รอประเมินราคา</div>
-                <div class="stat-value stat-pending" id="statPending">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">💳 ชำระแล้ว (พร้อมทำ)</div>
-                <div class="stat-value stat-paid" id="statPaid">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">🎨 กำลังทำใน Photoshop</div>
-                <div class="stat-value" style="color:#7c3aed;" id="statWorking">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">✅ ส่งงานสำเร็จแล้ว</div>
-                <div class="stat-value stat-done" id="statDone">0</div>
-            </div>
-        </div>
-
         <!-- Section: งานรอคิดราคา -->
         <div class="section-title">
             <i class="fa-solid fa-bell" style="color:var(--warning);"></i>
@@ -355,14 +315,28 @@
         function renderAll(allSessions) {
             let pendingHtml = '';
             let otherHtml = '';
-            let countPending = 0, countPaid = 0, countWorking = 0, countDone = 0;
             let hasNewPending = false;
 
             Object.entries(allSessions).forEach(([sid, session]) => {
                 if (!session || typeof session !== 'object') return;
+                // ถ้า session นี้จบงาน/ลูกค้าดาวน์โหลดไปแล้ว ให้ลบออกจากระบบ Firebase ทันที ไม่ให้รกหูรกตา
+                if (session.status === 'completed' || session.downloaded) {
+                    db.ref(`text_retouch/${sid}`).remove().catch(()=>{});
+                    return;
+                }
+
                 const patches = session.patches || {};
-                Object.entries(patches).forEach(([pid, patch]) => {
+                const pEntries = Object.entries(patches);
+                if (pEntries.length === 0) return;
+
+                pEntries.forEach(([pid, patch]) => {
                     if (!patch || typeof patch !== 'object') return;
+                    // ถ้าจุดนี้เคลียร์แล้วหรือลูกค้ารับงานไปแล้ว ให้ลบออกจาก Firebase
+                    if (patch.cleaned || patch.downloaded) {
+                        db.ref(`text_retouch/${sid}/patches/${pid}`).remove().catch(()=>{});
+                        return;
+                    }
+
                     const status = patch.status || 'waiting';
                     const num = patch.num || 1;
                     const note = patch.note || '(ไม่มีโน้ต)';
@@ -371,16 +345,12 @@
                     const key = `${sid}_${pid}`;
 
                     if (status === 'pending_review') {
-                        countPending++;
                         if (!knownPending.has(key)) {
                             knownPending.add(key);
                             hasNewPending = true;
                         }
                         pendingHtml += renderPendingCard(sid, pid, num, note, imgUrl);
                     } else {
-                        if (status === 'paid') countPaid++;
-                        else if (status === 'working') countWorking++;
-                        else if (status === 'done') countDone++;
                         otherHtml += renderOtherCard(sid, pid, num, note, status, price, imgUrl, patch.resultImage);
                     }
                 });
@@ -389,12 +359,6 @@
             if (hasNewPending) {
                 playChime();
             }
-
-            // Update stats
-            document.getElementById('statPending').textContent = countPending;
-            document.getElementById('statPaid').textContent = countPaid;
-            document.getElementById('statWorking').textContent = countWorking;
-            document.getElementById('statDone').textContent = countDone;
 
             // Render pending
             const pendingGrid = document.getElementById('pendingGrid');
