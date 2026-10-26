@@ -3030,14 +3030,33 @@ _last_deposit_event = {
 }
 
 def log_kbank(msg):
+    print(msg)
+
+    # บันทึกเฉพาะเหตุการณ์เงินเข้าจริง / การอนุมัติออโต้เพย์ (ไม่บันทึก startup หรือข้อความทั่วไป)
+    msg_lower = msg.lower()
+    deposit_keywords = ("deposit", "auto-approved", "match found", "auto-approving", "pending queue")
+    if not any(kw in msg_lower for kw in deposit_keywords):
+        return
+
     log_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "kbank_autopay.log")
     t_str = time.strftime('%Y-%m-%d %H:%M:%S')
     try:
+        # จำกัดขนาดไฟล์ไม่ให้เกิน 1 MB (ถ้าเกินจะตัดเก็บเฉพาะประวัติช่วงหลัง ~500 KB)
+        max_log_bytes = 1024 * 1024  # 1 MB
+        if os.path.exists(log_file) and os.path.getsize(log_file) > max_log_bytes:
+            try:
+                with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
+                    lines = f.readlines()
+                keep_lines = lines[len(lines) // 2:]
+                with open(log_file, "w", encoding="utf-8") as f:
+                    f.writelines(keep_lines)
+            except Exception:
+                pass
+
         with open(log_file, "a", encoding="utf-8") as f:
             f.write(f"[{t_str}] {msg}\n")
     except Exception:
         pass
-    print(msg)
 
 def handle_kbank_deposit_received(amount=None):
     """
