@@ -956,6 +956,137 @@
             color: #15803d;
         }
 
+        /* ===== COMPLETED PATCH CARD (SOFT GREEN THEME) ===== */
+        .patch-card.patch-card-done {
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 55%, #e6f9ed 100%);
+            border: 1.5px solid #86efac;
+            box-shadow: 0 4px 14px rgba(34, 197, 94, 0.12);
+            transition: all 0.25s ease;
+        }
+
+        .patch-card.patch-card-done:hover {
+            border-color: #4ade80;
+            box-shadow: 0 6px 18px rgba(34, 197, 94, 0.2);
+        }
+
+        .patch-card.patch-card-done.active {
+            border-color: #22c55e;
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #e6f9ed 100%);
+            box-shadow: 0 4px 16px rgba(34, 197, 94, 0.22);
+        }
+
+        .patch-card.patch-card-done .patch-card-header {
+            background: rgba(255, 255, 255, 0.55);
+            border-bottom: 1px solid #dcfce7;
+            padding: 12px 14px;
+        }
+
+        .patch-card.patch-card-done.active .patch-card-header {
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .patch-card.patch-card-done .patch-status-label.status-done {
+            color: #15803d;
+            font-weight: 800;
+            font-size: 0.95rem;
+            letter-spacing: -0.2px;
+        }
+
+        .patch-card-body-done {
+            padding: 12px 14px 14px 14px;
+            background: transparent;
+        }
+
+        .patch-footer-done {
+            display: flex;
+            width: 100%;
+        }
+
+        /* Animated Checkmark */
+        .patch-done-check-anim {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 0 0 3px #bbf7d0, 0 2px 6px rgba(34, 197, 94, 0.18);
+            animation: checkRingPulse 2.4s infinite ease-in-out;
+        }
+
+        @keyframes checkRingPulse {
+            0%, 100% {
+                box-shadow: 0 0 0 3px #bbf7d0, 0 2px 6px rgba(34, 197, 94, 0.18);
+            }
+            50% {
+                box-shadow: 0 0 0 5px #86efac, 0 3px 10px rgba(34, 197, 94, 0.32);
+            }
+        }
+
+        .done-svg-check {
+            width: 22px;
+            height: 22px;
+            display: block;
+        }
+
+        .done-svg-circle {
+            stroke: #22c55e;
+            stroke-width: 2.4;
+            stroke-dasharray: 90;
+            stroke-dashoffset: 90;
+            animation: drawCircle 0.55s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+
+        .done-svg-tick {
+            stroke: #16a34a;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-dasharray: 30;
+            stroke-dashoffset: 30;
+            animation: drawTick 0.4s cubic-bezier(0.65, 0, 0.45, 1) 0.35s forwards;
+        }
+
+        @keyframes drawCircle {
+            to { stroke-dashoffset: 0; }
+        }
+
+        @keyframes drawTick {
+            to { stroke-dashoffset: 0; }
+        }
+
+        .patch-card-done .btn-download-final {
+            display: flex;
+            width: 100%;
+            padding: 11px 16px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 0.92rem;
+            font-family: 'Outfit', 'Sarabun', sans-serif;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(22, 163, 74, 0.3);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .patch-card-done .btn-download-final:hover {
+            background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+            transform: translateY(-1.5px);
+            box-shadow: 0 6px 18px rgba(22, 163, 74, 0.4);
+        }
+
+        .patch-card-done .btn-download-final:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(22, 163, 74, 0.25);
+        }
+
         .patch-card-meta {
             flex: 1;
             min-width: 0;
@@ -2178,14 +2309,11 @@
                         </div>
                     </div>
 
-                    <div class="sidebar-footer">
+                    <div class="sidebar-footer" id="sidebarFooter" style="display:none;">
                         <div class="total-summary" id="totalSummary" style="display:none;">
                             <span class="total-label">ยอดรวมทั้งหมด</span>
                             <span class="total-amount" id="totalAmount">฿0</span>
                         </div>
-                        <button class="btn-download-final" id="btnDownloadFinal">
-                            <i class="fa-solid fa-download"></i> ดาวน์โหลดภาพที่เสร็จสมบูรณ์
-                        </button>
                     </div>
                 </div>
             </div>
@@ -3564,19 +3692,50 @@
             }
 
             const isDone = patch.status === 'done';
-            const canRevise = isDone && !patch.revised && (patch.revisionCount || 0) < 1;
 
-            const html = `
+            const downloadIcon = (localFileType === 'pdf') ? 'fa-solid fa-file-pdf' : 'fa-solid fa-download';
+            const downloadText = (localFileType === 'pdf') ? 'ดาวน์โหลดเอกสารสมบูรณ์' : 'ดาวน์โหลดภาพที่เสร็จสมบูรณ์';
+
+            const headerLeft = isDone
+                ? `<div class="patch-done-check-anim" title="แก้ไขเสร็จแล้ว">
+                    <svg class="done-svg-check" viewBox="0 0 32 32">
+                        <circle class="done-svg-circle" cx="16" cy="16" r="14" fill="none"/>
+                        <path class="done-svg-tick" fill="none" d="M9.5 16.5 L14 21 L22.5 11.5"/>
+                    </svg>
+                   </div>`
+                : `<div class="patch-num-circle status-${patch.status}">${patch.num}</div>`;
+
+            const headerMeta = isDone
+                ? `<div class="patch-card-meta">
+                    <div class="patch-status-label status-done">ทำการแก้เสร็จแล้ว</div>
+                   </div>`
+                : `<div class="patch-card-meta">
+                    <div class="patch-status-label status-${patch.status}">${statusLabels[patch.status] || patch.status}</div>
+                   </div>`;
+
+            const headerPrice = (!isDone && patch.price > 0 && patch.status !== 'system_error')
+                ? `<span class="price-tag">฿${patch.price}</span>`
+                : '';
+
+            const html = isDone ? `
         <div class="patch-card-header" onclick="setActivePatch('${patchId}')">
-            <div class="patch-num-circle status-${patch.status}">${patch.num}</div>
-            <div class="patch-card-meta">
-                <div class="patch-status-label status-${patch.status}">${statusLabels[patch.status] || patch.status}</div>
-            </div>
-            ${patch.price > 0 && patch.status !== 'system_error' ? `<span class="price-tag">฿${patch.price}</span>` : ''}
+            ${headerLeft}
+            ${headerMeta}
         </div>
-        ${(!isDone || canRevise) ? `
+        <div class="patch-card-body patch-card-body-done">
+            <div class="patch-footer-done">
+                <button class="btn-download-final visible" id="btnDownloadFinal" onclick="downloadFinalFile(this)">
+                    <i class="${downloadIcon}"></i> ${downloadText}
+                </button>
+            </div>
+        </div>
+            ` : `
+        <div class="patch-card-header" onclick="setActivePatch('${patchId}')">
+            ${headerLeft}
+            ${headerMeta}
+            ${headerPrice}
+        </div>
         <div class="patch-card-body">
-            ${!isDone ? `
             <div class="patch-thumb-row">
                 <img class="patch-thumb" src="${patch.patchDataUrl}" alt="ส่วนที่จะแก้" title="ส่วนที่จะแก้">
                 ${patch.resultDataUrl ? `
@@ -3617,7 +3776,6 @@
                 ${patch.status !== 'waiting' ? 'disabled' : ''}
                 oninput="updatePatchNote('${patchId}', this.value)"
             >${patch.note}</textarea>
-            ` : ''}
 
             <div class="patch-card-footer">
                 ${patch.status === 'waiting' ? `
@@ -3666,35 +3824,16 @@
                         </div>
                     </div>
                 ` : ''}
-                ${canRevise ? `
-                    <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
-                        <div id="revisionBox_${patchId}" style="display:none;background:#fffbeb;border:1px solid #fef3c7;border-radius:8px;padding:10px;margin-top:4px;">
-                            <div style="font-size:0.8rem;font-weight:700;color:#92400e;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
-                                <i class="fa-solid fa-pen-to-square"></i> ระบุสิ่งที่ต้องการให้แก้เพิ่มเติม (ฟรี 1 ครั้ง):
-                            </div>
-                            <textarea id="revisionNoteInput_${patchId}" class="patch-note-input" style="min-height:60px;margin-bottom:8px;background:#ffffff;border-color:#fcd34d;" placeholder="เช่น ขอฟอนต์หนาขึ้น, แก้ตัวเลขเป็น..."></textarea>
-                            <div style="display:flex;gap:6px;justify-content:flex-end;">
-                                <button onclick="toggleRevisionBox('${patchId}', false)" style="background:#f1f5f9;color:#64748b;border:1px solid #cbd5e1;padding:5px 10px;border-radius:6px;font-size:0.78rem;font-weight:600;cursor:pointer;">ยกเลิก</button>
-                                <button onclick="submitRevision('${patchId}')" style="background:#d97706;color:white;border:none;padding:5px 12px;border-radius:6px;font-size:0.78rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
-                                    <i class="fa-solid fa-paper-plane"></i> ส่งแก้งานเข้า Photoshop
-                                </button>
-                            </div>
-                        </div>
-                        <button id="btnOpenRev_${patchId}" class="btn-patch-action" onclick="toggleRevisionBox('${patchId}', true)" style="background:#fffbeb;color:#b45309;border:1.5px solid #fcd34d;border-radius:8px;padding:8px 12px;font-weight:700;font-size:0.83rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;width:100%;transition:all 0.2s;box-shadow:0 1px 3px rgba(180,83,9,0.1);">
-                            <i class="fa-solid fa-rotate-left"></i> สั่งแก้งาน (ได้ 1 ครั้ง)
-                        </button>
-                    </div>
-                ` : ''}
             </div>
         </div>
-        ` : ''}`;
+        `;
 
             if (!card) {
                 card = document.createElement('div');
                 card.id = `card_${patchId}`;
                 list.insertBefore(card, document.getElementById('patchesEmpty'));
             }
-            card.className = `patch-card ${activePatchId === patchId ? 'active' : ''}`;
+            card.className = `patch-card ${isDone ? 'patch-card-done' : ''} ${activePatchId === patchId ? 'active' : ''}`;
             card.innerHTML = html;
 
             if (patch.status === 'working') {
@@ -3853,11 +3992,14 @@
                     hasAny = true;
                 }
             });
+            const sidebarFooter = document.getElementById('sidebarFooter') || document.querySelector('.sidebar-footer');
             if (hasAny) {
                 document.getElementById('totalSummary').style.display = 'flex';
                 document.getElementById('totalAmount').textContent = '฿' + total;
+                if (sidebarFooter) sidebarFooter.style.display = 'block';
             } else {
                 document.getElementById('totalSummary').style.display = 'none';
+                if (sidebarFooter) sidebarFooter.style.display = 'none';
             }
         }
 
@@ -4343,29 +4485,32 @@
             if (allPatches.length === 0) return;
             const hasDone = allPatches.some(p => p.composited || p.status === 'done');
             const hasUnfinished = allPatches.some(p => p.status !== 'done');
-            const btn = document.getElementById('btnDownloadFinal');
-            if (!btn) return;
+            const btns = document.querySelectorAll('.btn-download-final');
+            if (!btns || btns.length === 0) return;
 
             // กำหนดข้อความปุ่มตามประเภทไฟล์
-            if (localFileType === 'pdf') {
-                btn.innerHTML = '<i class="fa-solid fa-file-pdf"></i> ดาวน์โหลดเอกสารสมบูรณ์';
-            } else {
-                btn.innerHTML = '<i class="fa-solid fa-download"></i> ดาวน์โหลดภาพที่เสร็จสมบูรณ์';
-            }
+            const btnHtml = (localFileType === 'pdf')
+                ? '<i class="fa-solid fa-file-pdf"></i> ดาวน์โหลดเอกสารสมบูรณ์'
+                : '<i class="fa-solid fa-download"></i> ดาวน์โหลดภาพที่เสร็จสมบูรณ์';
 
-            if (hasDone && !hasUnfinished) {
-                btn.classList.add('visible');
-            } else {
-                btn.classList.remove('visible');
-            }
+            btns.forEach(btn => {
+                btn.innerHTML = btnHtml;
+                if (hasDone && !hasUnfinished) {
+                    btn.classList.add('visible');
+                    btn.style.display = 'flex';
+                }
+            });
         }
 
-        document.getElementById('btnDownloadFinal').addEventListener('click', downloadFinalFile);
+        const existingBtnDownload = document.getElementById('btnDownloadFinal');
+        if (existingBtnDownload) {
+            existingBtnDownload.addEventListener('click', () => downloadFinalFile(existingBtnDownload));
+        }
 
-        async function downloadFinalFile() {
+        async function downloadFinalFile(btnEl) {
+            const btn = (btnEl instanceof HTMLElement) ? btnEl : (document.querySelector('.btn-download-final') || document.getElementById('btnDownloadFinal'));
+            const origHtml = btn ? btn.innerHTML : '';
             if (localFileType === 'pdf') {
-                const btn = document.getElementById('btnDownloadFinal');
-                const origHtml = btn ? btn.innerHTML : '';
                 if (btn) {
                     btn.disabled = true;
                     btn.innerHTML = '<span class="spinner"></span> กำลังรวมหน้าเอกสาร PDF...';
