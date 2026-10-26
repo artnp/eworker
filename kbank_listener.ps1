@@ -20,10 +20,8 @@ if ($status -ne [Windows.UI.Notifications.Management.UserNotificationListenerAcc
     exit 1
 }
 
-$logPath = Join-Path $PSScriptRoot "kbank_listener.log"
 function Log-Msg($msg) {
-    $time = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
-    Add-Content -Path $logPath -Value "[$time] $msg" -Encoding UTF8 -ErrorAction SilentlyContinue
+    # File logging disabled permanently
 }
 
 Log-Msg "=== KBank Notification Listener Started ==="
