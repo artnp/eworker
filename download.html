@@ -211,6 +211,8 @@
             cursor: pointer;
             margin-bottom: 8px;
             transition: background 0.2s ease;
+            position: relative;
+            overflow: hidden;
         }
 
         .mobile-preview-strip:active {
@@ -262,6 +264,9 @@
         .mobile-thumb-info .subtitle {
             font-size: 0.7rem;
             color: #94a3b8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .mobile-preview-strip-btn {
@@ -1525,30 +1530,122 @@
             }
         }
 
+        #loading-text {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 15px 10px;
+        }
+
+        #loading-text.hidden {
+            display: none !important;
+        }
+
         /* Progress Bar */
         .progress-container {
-            width: 170px;
-            background: rgba(255, 255, 255, 0.15);
-            height: 6px;
-            border-radius: 4px;
-            margin: 8px auto 4px;
+            width: 250px;
+            max-width: 90%;
+            background: rgba(255, 255, 255, 0.08);
+            height: 8px;
+            border-radius: 6px;
+            margin: 12px auto 6px;
             overflow: hidden;
             display: none;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            position: relative;
         }
 
         .progress-bar {
             width: 0%;
             height: 100%;
-            background: linear-gradient(90deg, var(--primary), #818cf8);
-            border-radius: 4px;
+            background: linear-gradient(90deg, #6366f1, #818cf8 60%, #10b981 100%);
+            border-radius: 6px;
             transition: width 0.15s ease-out;
+            box-shadow: 0 0 10px rgba(99, 102, 241, 0.6);
+            position: relative;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.35) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            animation: shimmerBar 1.5s infinite;
+        }
+
+        @keyframes shimmerBar {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .loading-stats {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            width: 250px;
+            max-width: 90%;
+            margin: 4px auto 0;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            gap: 8px;
         }
 
         .loading-percent {
-            font-size: 0.74rem;
-            color: var(--text-muted);
+            font-weight: 700;
+            color: #818cf8;
+            font-family: monospace;
+            font-size: 0.82rem;
+            display: inline-block;
+        }
+
+        .loading-speed {
             font-weight: 600;
+            color: #34d399;
+            font-family: monospace;
+            font-size: 0.76rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .loading-detail {
             display: none;
+            font-size: 0.72rem;
+            color: #94a3b8;
+            margin-top: 4px;
+            text-align: center;
+            font-family: monospace;
+        }
+
+        /* Mobile Progress Bar Wrap inside .mobile-preview-strip */
+        .mobile-progress-bar-wrap {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.08);
+            display: none;
+        }
+
+        .mobile-progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #6366f1, #34d399);
+            box-shadow: 0 0 6px #34d399;
+            transition: width 0.15s ease-out;
         }
 
         .error-state {
@@ -1606,6 +1703,9 @@
             <button class="mobile-preview-strip-btn" type="button">
                 🔍 ขยายดูงาน
             </button>
+            <div class="mobile-progress-bar-wrap" id="mobile-progress-wrap">
+                <div class="mobile-progress-bar" id="mobile-progress-bar"></div>
+            </div>
         </div>
 
         <!-- Main Content -->
@@ -1619,7 +1719,11 @@
                         <div class="progress-container" id="download-progress-container">
                             <div class="progress-bar" id="download-progress-bar"></div>
                         </div>
-                        <div class="loading-percent" id="download-percent-text">0%</div>
+                        <div class="loading-stats" id="download-stats-container">
+                            <span class="loading-percent" id="download-percent-text">0%</span>
+                            <span class="loading-speed" id="download-speed-text"></span>
+                        </div>
+                        <div class="loading-detail" id="download-detail-text"></div>
                     </div>
                     <div class="preview-wrapper" id="preview-wrapper">
                         <img id="preview-image" class="hidden" alt="Preview" onclick="handleImageClick()">
@@ -1984,6 +2088,8 @@
         let _pdfTotalPages = 1;
         let _pdfCleanPreviewUrl = null;
         let _isRenderingPage = false;
+        let _isDownloadingPreview = false;
+        let _currentProgressInfo = null;
 
         // Elements
         const imageContainer = document.getElementById('image-container');
@@ -2959,8 +3065,8 @@
         // ดึง Blob อย่างปลอดภัยผ่าน Direct XHR หรือ CORS Proxies
         async function fetchImageBlobWithFallbacks(url, isPdf = false) {
             try {
-                const blob = await downloadWithProgress(url, isPdf ? 'กำลังโหลดเอกสาร PDF...' : 'กำลังโหลดรูปภาพ...', (p) => {
-                    updateDownloadProgress(isPdf ? 'กำลังโหลดเอกสาร PDF...' : 'กำลังโหลดรูปภาพ...', p);
+                const blob = await downloadWithProgress(url, isPdf ? 'กำลังโหลดเอกสาร PDF...' : 'กำลังโหลดรูปภาพ...', (info) => {
+                    updateDownloadProgress(isPdf ? 'กำลังโหลดเอกสาร PDF...' : 'กำลังโหลดรูปภาพ...', info);
                 });
                 if (blob && blob.size > 0) return blob;
             } catch (err) {
@@ -2979,14 +3085,13 @@
 
             for (let i = 0; i < proxySources.length; i++) {
                 try {
-                    updateDownloadProgress('กำลังประมวลผลไฟล์...', 45 + (i * 20));
-                    const res = await fetch(proxySources[i]);
-                    if (res.ok) {
-                        const blob = await res.blob();
-                        if (blob && blob.size > 0 && !blob.type.includes('text/html')) {
-                            updateDownloadProgress('ประมวลผลเสร็จสิ้น', 100);
-                            return blob;
-                        }
+                    updateDownloadProgress('กำลังเชื่อมต่อเซิร์ฟเวอร์สำรอง...', 15);
+                    const blob = await downloadWithProgress(proxySources[i], 'กำลังโหลดรูปภาพ (Proxy)...', (info) => {
+                        updateDownloadProgress('กำลังโหลดรูปภาพ...', info);
+                    });
+                    if (blob && blob.size > 0 && !blob.type.includes('text/html')) {
+                        updateDownloadProgress('ประมวลผลเสร็จสิ้น', 100);
+                        return blob;
                     }
                 } catch (e) { }
             }
@@ -3265,6 +3370,7 @@
 
         // ซิงค์รูปภาพลงใน Mobile Thumbnail Strip
         function syncMobileThumb(url) {
+            hideDownloadProgress();
             const mobileThumb = document.getElementById('mobile-preview-thumb');
             const mobileSpinner = document.getElementById('mobile-thumb-spinner');
             if (mobileThumb) {
@@ -3323,6 +3429,16 @@
                 showToast('⏱️ หมดเวลาตรวจจับชำระเงิน กรุณากดขอสร้าง QR ใหม่ทางขวา');
                 return;
             }
+
+            // หากรูปภาพยังอยู่ระหว่างดาวน์โหลด ให้แจ้งเตือนผู้ใช้ชัดเจน
+            if (_isDownloadingPreview) {
+                const infoStr = _currentProgressInfo && _currentProgressInfo.speedFormatted
+                    ? ` (${_currentProgressInfo.percent}% • ${_currentProgressInfo.speedFormatted})`
+                    : '';
+                showToast(`⏳ กำลังดาวน์โหลดรูปภาพ${infoStr} โปรดรอสักครู่ครับ...`);
+                return;
+            }
+
             const isPaid = __isPaid || price === 0;
             const isFree = price === 0;
 
@@ -3754,17 +3870,118 @@
             }, 15000);
         }
 
-        function updateDownloadProgress(text, percent) {
+        function formatSpeed(bytesPerSec) {
+            if (!bytesPerSec || bytesPerSec <= 0) return '0 kbps';
+            const kbps = Math.round((bytesPerSec * 8) / 1000);
+            const kbs = (bytesPerSec / 1024).toFixed(0);
+            if (kbps >= 10000) {
+                const mbps = ((bytesPerSec * 8) / 1000000).toFixed(1);
+                return `${kbps.toLocaleString()} kbps (${mbps} Mbps)`;
+            }
+            return `${kbps.toLocaleString()} kbps (${kbs} KB/s)`;
+        }
+
+        function formatBytes(bytes) {
+            if (!bytes || bytes <= 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return (bytes / Math.pow(k, i)).toFixed(i === 0 ? 0 : 1) + ' ' + sizes[i];
+        }
+
+        function hideDownloadProgress() {
+            _isDownloadingPreview = false;
+            _currentProgressInfo = null;
+            const progressContainer = document.getElementById('download-progress-container');
+            const statsContainer = document.getElementById('download-stats-container');
+            const detailText = document.getElementById('download-detail-text');
+            const mobileProgressWrap = document.getElementById('mobile-progress-wrap');
+
+            if (progressContainer) progressContainer.style.display = 'none';
+            if (statsContainer) statsContainer.style.display = 'none';
+            if (detailText) detailText.style.display = 'none';
+            if (mobileProgressWrap) mobileProgressWrap.style.display = 'none';
+
+            const mobileSubtext = document.getElementById('mobile-preview-subtext');
+            if (mobileSubtext && mobileSubtext.textContent.includes('⏳')) {
+                const isPaid = __isPaid || price === 0;
+                mobileSubtext.textContent = isPaid ? '✅ พร้อมดาวน์โหลดงาน' : '🔒 ลายน้ำป้องกันก่อนชำระเงิน';
+            }
+        }
+
+        function updateDownloadProgress(text, progressOrPercent) {
+            _isDownloadingPreview = true;
             const stepText = document.getElementById('loading-step-text');
             const progressContainer = document.getElementById('download-progress-container');
             const progressBar = document.getElementById('download-progress-bar');
+            const statsContainer = document.getElementById('download-stats-container');
             const percentText = document.getElementById('download-percent-text');
+            const speedText = document.getElementById('download-speed-text');
+            const detailText = document.getElementById('download-detail-text');
 
-            if (stepText) stepText.textContent = text;
+            // Mobile elements
+            const mobileProgressWrap = document.getElementById('mobile-progress-wrap');
+            const mobileProgressBar = document.getElementById('mobile-progress-bar');
+            const mobileSubtext = document.getElementById('mobile-preview-subtext');
+
+            let percent = 0;
+            let speedStr = '';
+            let detailStr = '';
+
+            if (typeof progressOrPercent === 'number') {
+                percent = Math.min(100, Math.max(0, Math.round(progressOrPercent)));
+                _currentProgressInfo = { percent: percent, speedFormatted: '' };
+            } else if (progressOrPercent && typeof progressOrPercent === 'object') {
+                percent = Math.min(100, Math.max(0, Math.round(progressOrPercent.percent || 0)));
+                speedStr = progressOrPercent.speedFormatted || '';
+                if (progressOrPercent.lengthComputable && progressOrPercent.total > 0) {
+                    detailStr = `${progressOrPercent.loadedFormatted} / ${progressOrPercent.totalFormatted}`;
+                } else if (progressOrPercent.loaded > 0) {
+                    detailStr = `โหลดแล้ว ${progressOrPercent.loadedFormatted}`;
+                }
+                _currentProgressInfo = {
+                    percent: percent,
+                    speedFormatted: speedStr,
+                    detail: detailStr
+                };
+            }
+
+            if (stepText) stepText.textContent = text || 'กำลังโหลดรูปภาพ...';
+
             if (progressContainer) progressContainer.style.display = 'block';
-            if (percentText) percentText.style.display = 'block';
             if (progressBar) progressBar.style.width = percent + '%';
-            if (percentText) percentText.textContent = percent + '%';
+
+            if (statsContainer) statsContainer.style.display = 'flex';
+            if (percentText) {
+                percentText.style.display = 'inline-block';
+                percentText.textContent = percent + '%';
+            }
+
+            if (speedText) {
+                if (speedStr) {
+                    speedText.style.display = 'inline-flex';
+                    speedText.innerHTML = `⚡ ${speedStr}`;
+                } else {
+                    speedText.style.display = 'none';
+                }
+            }
+
+            if (detailText) {
+                if (detailStr) {
+                    detailText.style.display = 'block';
+                    detailText.textContent = detailStr;
+                } else {
+                    detailText.style.display = 'none';
+                }
+            }
+
+            // Mobile Preview Strip Sync
+            if (mobileProgressWrap) mobileProgressWrap.style.display = 'block';
+            if (mobileProgressBar) mobileProgressBar.style.width = percent + '%';
+            if (mobileSubtext) {
+                const speedPart = speedStr ? ` • ⚡ ${speedStr}` : '';
+                mobileSubtext.textContent = `⏳ กำลังโหลด ${percent}%${speedPart}`;
+            }
         }
 
         function downloadWithProgress(url, stepName, onProgress) {
@@ -3776,6 +3993,11 @@
                 if (!isFirebase) {
                     xhr.responseType = 'blob';
                 }
+
+                const startTime = performance.now();
+                let lastTime = startTime;
+                let lastLoaded = 0;
+                let smoothedSpeedBps = 0;
 
                 xhr.onload = function () {
                     if (this.status >= 200 && this.status < 300) {
@@ -3798,9 +4020,35 @@
                 };
 
                 xhr.onprogress = function (e) {
-                    if (e.lengthComputable) {
-                        const percent = Math.round((e.loaded / e.total) * 100);
-                        onProgress(percent);
+                    const now = performance.now();
+                    const deltaT = (now - lastTime) / 1000;
+
+                    if (deltaT >= 0.2 || (e.lengthComputable && e.loaded === e.total)) {
+                        const instantSpeed = deltaT > 0 ? ((e.loaded - lastLoaded) / deltaT) : 0;
+                        smoothedSpeedBps = smoothedSpeedBps === 0 ? instantSpeed : (smoothedSpeedBps * 0.4 + instantSpeed * 0.6);
+                        lastTime = now;
+                        lastLoaded = e.loaded;
+                    }
+
+                    const totalElapsed = (now - startTime) / 1000;
+                    const avgSpeed = totalElapsed > 0 ? (e.loaded / totalElapsed) : 0;
+                    const effectiveSpeed = smoothedSpeedBps > 0 ? smoothedSpeedBps : avgSpeed;
+
+                    const percent = e.lengthComputable && e.total > 0
+                        ? Math.round((e.loaded / e.total) * 100)
+                        : (e.loaded > 0 ? Math.min(95, Math.round(Math.log(e.loaded / 1024) * 10)) : 0);
+
+                    if (onProgress) {
+                        onProgress({
+                            percent: percent,
+                            loaded: e.loaded,
+                            total: e.lengthComputable ? e.total : 0,
+                            lengthComputable: e.lengthComputable,
+                            speedBps: effectiveSpeed,
+                            speedFormatted: formatSpeed(effectiveSpeed),
+                            loadedFormatted: formatBytes(e.loaded),
+                            totalFormatted: e.lengthComputable ? formatBytes(e.total) : ''
+                        });
                     }
                 };
 
@@ -3907,8 +4155,10 @@
             }
 
             // สำหรับไฟล์ภายนอกอื่นๆ ที่ต้องดึงผ่าน network
-            downloadWithProgress(downloadUrl, 'กำลังดาวน์โหลด...', (percent) => {
-                if (btn) btn.innerHTML = `⏳ กำลังดาวน์โหลด... (${percent}%)`;
+            downloadWithProgress(downloadUrl, 'กำลังดาวน์โหลด...', (info) => {
+                const pct = typeof info === 'object' ? info.percent : info;
+                const spd = typeof info === 'object' && info.speedFormatted ? ` • ${info.speedFormatted}` : '';
+                if (btn) btn.innerHTML = `⏳ กำลังดาวน์โหลด... (${pct}%${spd})`;
             })
                 .then(blob => {
                     const url = window.URL.createObjectURL(blob);
