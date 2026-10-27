@@ -1346,6 +1346,53 @@ window.confirmWorkPayment = async function (msgId, amount) {
     }
 };
 
+window.watermarkedWorkFiles = window.watermarkedWorkFiles || {};
+
+window.downloadWatermarkedWork = function (msgId) {
+    let work = window.watermarkedWorkFiles ? window.watermarkedWorkFiles[msgId] : null;
+    const card = document.getElementById(`workCard_${msgId}`);
+    if (!work && card && card._workData) work = card._workData;
+    if (!work && card) {
+        work = {
+            originalUrl: card.getAttribute('data-original-url') || card.getAttribute('data-preview-url') || '',
+            fileName: card.getAttribute('data-file-name') || 'complete.png',
+            isPdf: card.getAttribute('data-is-pdf') === 'true'
+        };
+    }
+    if (!work || !work.originalUrl) {
+        showDownloadToast("ไม่พบไฟล์งานที่ต้องการดาวน์โหลด", 3000);
+        return;
+    }
+    window.forceDownload(work.originalUrl, work.fileName || 'complete.png');
+};
+
+window.viewWatermarkedWork = function (msgId) {
+    let work = window.watermarkedWorkFiles ? window.watermarkedWorkFiles[msgId] : null;
+    const card = document.getElementById(`workCard_${msgId}`);
+    if (!work && card && card._workData) work = card._workData;
+    if (!work && card) {
+        work = {
+            originalUrl: card.getAttribute('data-original-url') || '',
+            previewUrl: card.getAttribute('data-preview-url') || '',
+            isPdf: card.getAttribute('data-is-pdf') === 'true',
+            fileName: card.getAttribute('data-file-name') || 'work_image.jpg'
+        };
+    }
+    const isPaid = card ? card.classList.contains('paid') : false;
+    if (work && work.isPdf) {
+        if (isPaid) {
+            window.forceDownload(work.originalUrl, work.fileName);
+        } else {
+            alert('เอกสาร PDF ติดรหัสล็อค กรุณาชำระเงินเพื่อดาวน์โหลด');
+        }
+        return;
+    }
+    const imgUrl = (isPaid && work && work.originalUrl) ? work.originalUrl : (work ? (work.previewUrl || work.originalUrl) : '');
+    if (imgUrl) {
+        window.openImagePopup(imgUrl, (work && isPaid) ? work.originalUrl : imgUrl);
+    }
+};
+
 window.updateWatermarkedWorkUI = function (msgId, data) {
     const cardEl = document.getElementById(`workCard_${msgId}`);
     if (!cardEl) return;
@@ -1363,10 +1410,14 @@ window.updateWatermarkedWorkUI = function (msgId, data) {
         if (lockOverlay) lockOverlay.remove();
 
         const fileObj = data.file || {};
-        const fileName = fileObj.name || cardEl.getAttribute('data-file-name') || (fileObj.isPdf ? 'document.pdf' : 'work_image.jpg');
-        const originalUrl = fileObj.originalData || cardEl.getAttribute('data-original-url') || fileObj.data || '';
-        const previewUrl = fileObj.data || cardEl.getAttribute('data-preview-url') || '';
-        const isPdf = !!fileObj.isPdf || cardEl.getAttribute('data-is-pdf') === 'true';
+        const fileName = fileObj.name || (cardEl._workData && cardEl._workData.fileName) || cardEl.getAttribute('data-file-name') || (fileObj.isPdf ? 'document.pdf' : 'work_image.jpg');
+        const originalUrl = fileObj.originalData || (cardEl._workData && cardEl._workData.originalUrl) || cardEl.getAttribute('data-original-url') || fileObj.data || '';
+        const previewUrl = fileObj.data || (cardEl._workData && cardEl._workData.previewUrl) || cardEl.getAttribute('data-preview-url') || '';
+        const isPdf = !!fileObj.isPdf || (cardEl._workData && cardEl._workData.isPdf) || cardEl.getAttribute('data-is-pdf') === 'true';
+
+        window.watermarkedWorkFiles = window.watermarkedWorkFiles || {};
+        window.watermarkedWorkFiles[msgId] = { originalUrl, previewUrl, fileName, isPdf };
+        cardEl._workData = window.watermarkedWorkFiles[msgId];
 
         // Update preview image to full clean unwatermarked original
         const img = cardEl.querySelector('.work-preview-img');
@@ -1377,16 +1428,14 @@ window.updateWatermarkedWorkUI = function (msgId, data) {
 
         // Update image click handler: clicking image opens clean original in lightbox!
         const wrapper = cardEl.querySelector('.work-image-wrapper');
-        if (wrapper && originalUrl) {
-            wrapper.onclick = isPdf
-                ? () => window.forceDownload(originalUrl, fileName)
-                : () => window.openImagePopup(originalUrl, originalUrl);
+        if (wrapper) {
+            wrapper.onclick = () => window.viewWatermarkedWork(msgId);
         }
 
         const actions = cardEl.querySelector('.work-actions');
-        if (actions && originalUrl) {
+        if (actions) {
             actions.innerHTML = `
-                <button type="button" class="work-download-btn unlocked" onclick="window.forceDownload('${originalUrl.replace(/'/g, "\\'")}', '${fileName.replace(/'/g, "\\'")}')">
+                <button type="button" class="work-download-btn unlocked" onclick="window.downloadWatermarkedWork('${msgId}')">
                     <i class="fa-solid fa-cloud-arrow-down"></i>
                     <span>ดาวน์โหลดไฟล์จริง (ไม่มีลายน้ำ)</span>
                 </button>
@@ -1409,8 +1458,8 @@ window.updateWatermarkedWorkUI = function (msgId, data) {
         if (lightbox && lightbox.classList.contains("active") && originalUrl && !isPdf) {
             if (lightboxImg && (lightboxImg.src === previewUrl || (typeof lbImgSrc !== 'undefined' && lbImgSrc === previewUrl))) {
                 lightboxImg.src = originalUrl;
-                if (typeof lbImgSrc !== 'undefined') lbImgSrc = originalUrl;
-                if (typeof lbDownloadUrl !== 'undefined') lbDownloadUrl = originalUrl;
+                lbImgSrc = originalUrl;
+                lbDownloadUrl = originalUrl;
             }
         }
     }
@@ -1759,6 +1808,9 @@ function renderMessage(data, id) {
 
     // Special handle for watermarked work delivery
     if (data.type === 'watermarked_work') {
+        if (typeof hideCustomerUploadPrompt === 'function') {
+            hideCustomerUploadPrompt(true);
+        }
         div.className = `message-bubble problem-center`;
         div.setAttribute('data-id', id);
         div.setAttribute('data-timestamp', data.timestamp);
@@ -1772,9 +1824,9 @@ function renderMessage(data, id) {
         const originalUrl = fileObj.originalData || previewUrl;
         const displayImgUrl = (isPaid && !isPdf && fileObj.originalData) ? originalUrl : previewUrl;
 
-        const wrapperClickAction = isPaid
-            ? (isPdf ? `window.forceDownload('${originalUrl.replace(/'/g, "\\'")}', '${fileName}')` : `window.openImagePopup('${originalUrl.replace(/'/g, "\\'")}', '${originalUrl.replace(/'/g, "\\'")}')`)
-            : `window.openImagePopup('${previewUrl.replace(/'/g, "\\'")}', '${previewUrl.replace(/'/g, "\\'")}')`;
+        // Cache in memory store so large base64 data URLs don't break HTML attributes
+        window.watermarkedWorkFiles = window.watermarkedWorkFiles || {};
+        window.watermarkedWorkFiles[id] = { originalUrl, previewUrl, fileName, isPdf };
 
         // PromptPay QR Bill for this work
         const qrUrl = getPromptPayQRUrl('0988573074', amount);
@@ -1784,13 +1836,13 @@ function renderMessage(data, id) {
         const isAdmin = isAdminUser();
 
         let contentHTML = `
-            <div class="watermarked-work-card ${isPaid ? 'paid' : 'unpaid'}" id="workCard_${id}" data-original-url="${originalUrl.replace(/"/g, '&quot;')}" data-preview-url="${previewUrl.replace(/"/g, '&quot;')}" data-file-name="${fileName.replace(/"/g, '&quot;')}" data-is-pdf="${isPdf}">
+            <div class="watermarked-work-card ${isPaid ? 'paid' : 'unpaid'}" id="workCard_${id}" data-file-name="${fileName.replace(/"/g, '&quot;')}" data-is-pdf="${isPdf}">
                 <div class="work-card-header">
                     <span class="work-status-badge ${isPaid ? 'badge-paid' : 'badge-unpaid'}"><i class="fa-solid ${isPaid ? 'fa-circle-check' : 'fa-lock'}"></i> <span>${isPaid ? 'ชำระเงินแล้ว • ปลดล็อคไฟล์แล้ว' : 'ส่งมอบงาน (ติดลายน้ำ) • รอชำระเงิน'}</span></span>
                 </div>
 
                 <div class="work-media-box">
-                    <div class="work-image-wrapper" onclick="${wrapperClickAction}">
+                    <div class="work-image-wrapper" onclick="window.viewWatermarkedWork('${id}')">
                         <img src="${displayImgUrl}" class="work-preview-img" alt="${fileName}">
                         ${!isPaid ? `
                             <div class="work-lock-overlay">
@@ -1804,7 +1856,7 @@ function renderMessage(data, id) {
                 <div class="work-file-info">
                     <div class="work-actions">
                         ${isPaid ? `
-                            <button type="button" class="work-download-btn unlocked" onclick="window.forceDownload('${originalUrl.replace(/'/g, "\\'")}', '${fileName}')">
+                            <button type="button" class="work-download-btn unlocked" onclick="window.downloadWatermarkedWork('${id}')">
                                 <i class="fa-solid fa-cloud-arrow-down"></i>
                                 <span>ดาวน์โหลดไฟล์เสร็จแล้ว</span>
                             </button>
@@ -1863,6 +1915,10 @@ function renderMessage(data, id) {
         `;
 
         div.innerHTML = contentHTML;
+        const cardEl = div.querySelector('.watermarked-work-card');
+        if (cardEl) {
+            cardEl._workData = window.watermarkedWorkFiles[id];
+        }
         messagesWrapper.appendChild(div);
         scrollToBottom();
         return;
@@ -2134,11 +2190,33 @@ function showDownloadToast(msg, duration) {
 function triggerDownload(href, filename) {
     const link = document.createElement("a");
     link.href = href;
-    link.download = filename;
+    link.download = filename || "download";
     link.style.display = "none";
     document.body.appendChild(link);
     link.click();
-    setTimeout(() => { document.body.removeChild(link); if (href.startsWith("blob:")) URL.revokeObjectURL(href); }, 1000);
+    setTimeout(() => {
+        if (link.parentNode) link.parentNode.removeChild(link);
+        if (href && href.startsWith("blob:")) URL.revokeObjectURL(href);
+    }, 10000);
+}
+
+function dataURLtoBlob(dataurl) {
+    try {
+        const parts = dataurl.split(',');
+        if (parts.length < 2) return null;
+        const mimeMatch = parts[0].match(/:(.*?);/);
+        const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+        const bstr = atob(parts[1].trim());
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new Blob([u8arr], { type: mime });
+    } catch (e) {
+        console.warn("dataURLtoBlob parse error:", e);
+        return null;
+    }
 }
 
 function isImageFile(filename) {
@@ -2184,37 +2262,11 @@ window.showLineSaveModal = function (url) {
 };
 
 window.forceDownload = async function (url, filename) {
+    if (!url) return;
+    filename = filename || 'download.png';
     const isInApp = isInAppBrowser();
 
-    // Helper: convert url (dataUrl, blobUrl, or http) into File object
-    async function getFileFromUrl(u, fname) {
-        try {
-            const res = await fetch(u);
-            const blob = await res.blob();
-            const type = blob.type || (isImageFile(fname) ? "image/jpeg" : "application/octet-stream");
-            return new File([blob], fname, { type });
-        } catch (_) {
-            return null;
-        }
-    }
-
-    // Strategy 1: Try Web Share API with file (works great on iOS / Android in-app browsers to save straight to Camera Roll / Device)
-    if (navigator.canShare) {
-        try {
-            const file = await getFileFromUrl(url, filename);
-            if (file && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: filename
-                });
-                return;
-            }
-        } catch (err) {
-            if (err.name === "AbortError") return;
-        }
-    }
-
-    // Strategy 2: If inside in-app browser (LINE, FB, IG) and image: show save modal with long-press instructions
+    // Strategy 1: If inside in-app browser (LINE, FB, IG) and image: show save modal with long-press instructions
     if (isInApp) {
         if (isImageFile(filename) || url.startsWith("data:image")) {
             window.showLineSaveModal(url);
@@ -2227,15 +2279,56 @@ window.forceDownload = async function (url, filename) {
         }
     }
 
-    // Strategy 3: data: URL -> direct download
+    // Strategy 2: data: URL -> convert to Blob URL for fast and reliable download across all browsers
     if (url.startsWith("data:")) {
+        showDownloadToast("กำลังเริ่มดาวน์โหลด...", 1500);
+        try {
+            let blob = null;
+            if (typeof fetch === 'function') {
+                try {
+                    const res = await fetch(url);
+                    if (res.ok) blob = await res.blob();
+                } catch (_) { }
+            }
+            if (!blob) {
+                blob = dataURLtoBlob(url);
+            }
+            if (blob) {
+                const blobUrl = URL.createObjectURL(blob);
+                triggerDownload(blobUrl, filename);
+                showDownloadToast("ดาวน์โหลดสำเร็จ ✓", 2500);
+                return;
+            }
+        } catch (err) {
+            console.error("dataURL to blob failed:", err);
+        }
+        // Fallback directly
         triggerDownload(url, filename);
+        return;
+    }
+
+    // Strategy 3: blob: URL -> already a Blob URL
+    if (url.startsWith("blob:")) {
+        triggerDownload(url, filename);
+        showDownloadToast("ดาวน์โหลดสำเร็จ ✓", 2000);
         return;
     }
 
     showDownloadToast("กำลังดาวน์โหลด...", 4000);
 
-    // Strategy 4: CORS proxy -> blob download
+    // Strategy 4: Try direct fetch with CORS (same origin or CORS enabled)
+    try {
+        const res = await fetch(url, { mode: 'cors' });
+        if (res.ok) {
+            const blob = await res.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            triggerDownload(blobUrl, filename);
+            showDownloadToast("ดาวน์โหลดสำเร็จ ✓", 2000);
+            return;
+        }
+    } catch (_) { }
+
+    // Strategy 5: CORS proxy -> blob download
     try {
         const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
         const res = await fetch(proxyUrl);
@@ -2248,7 +2341,7 @@ window.forceDownload = async function (url, filename) {
         }
     } catch (e) { }
 
-    // Strategy 5: For images, use canvas
+    // Strategy 6: For images, use canvas as fallback
     if (isImageFile(filename)) {
         try {
             const img = new Image();
@@ -2258,7 +2351,10 @@ window.forceDownload = async function (url, filename) {
             c.width = img.naturalWidth; c.height = img.naturalHeight;
             c.getContext("2d").drawImage(img, 0, 0);
             c.toBlob(blob => {
-                if (blob) { triggerDownload(URL.createObjectURL(blob), filename); showDownloadToast("ดาวน์โหลดสำเร็จ ✓", 2000); }
+                if (blob) {
+                    triggerDownload(URL.createObjectURL(blob), filename);
+                    showDownloadToast("ดาวน์โหลดสำเร็จ ✓", 2000);
+                }
             });
             return;
         } catch (e) { }
