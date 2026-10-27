@@ -1786,11 +1786,7 @@ function renderMessage(data, id) {
         let contentHTML = `
             <div class="watermarked-work-card ${isPaid ? 'paid' : 'unpaid'}" id="workCard_${id}" data-original-url="${originalUrl.replace(/"/g, '&quot;')}" data-preview-url="${previewUrl.replace(/"/g, '&quot;')}" data-file-name="${fileName.replace(/"/g, '&quot;')}" data-is-pdf="${isPdf}">
                 <div class="work-card-header">
-                    <span class="work-status-badge ${isPaid ? 'badge-paid' : 'badge-unpaid'}">
-                        <i class="fa-solid ${isPaid ? 'fa-circle-check' : 'fa-lock'}"></i>
-                        <span>${isPaid ? 'ชำระเงินแล้ว • ปลดล็อคไฟล์แล้ว' : 'ส่งมอบงาน (ติดลายน้ำ) • รอชำระเงิน'}</span>
-                    </span>
-                    <span class="work-amount-tag">฿ ${amount} บาท</span>
+                    <span class="work-status-badge ${isPaid ? 'badge-paid' : 'badge-unpaid'}"><i class="fa-solid ${isPaid ? 'fa-circle-check' : 'fa-lock'}"></i> <span>${isPaid ? 'ชำระเงินแล้ว • ปลดล็อคไฟล์แล้ว' : 'ส่งมอบงาน (ติดลายน้ำ) • รอชำระเงิน'}</span></span>
                 </div>
 
                 <div class="work-media-box">
@@ -1806,12 +1802,11 @@ function renderMessage(data, id) {
                 </div>
 
                 <div class="work-file-info">
-                    <span class="work-file-name"><i class="${isPdf ? 'fa-solid fa-file-pdf' : 'fa-solid fa-image'}"></i> ${fileName}</span>
                     <div class="work-actions">
                         ${isPaid ? `
                             <button type="button" class="work-download-btn unlocked" onclick="window.forceDownload('${originalUrl.replace(/'/g, "\\'")}', '${fileName}')">
                                 <i class="fa-solid fa-cloud-arrow-down"></i>
-                                <span>ดาวน์โหลดไฟล์จริง (ไม่มีลายน้ำ)</span>
+                                <span>ดาวน์โหลดไฟล์เสร็จแล้ว</span>
                             </button>
                         ` : `
                             <button type="button" class="work-download-btn locked" disabled title="กรุณาชำระเงินก่อนดาวน์โหลด">
@@ -1843,18 +1838,20 @@ function renderMessage(data, id) {
                                 <div style="font-size: 0.65rem; color: #666; font-weight: 500;">ID: <span class="copy-number">0988573074</span> (คลิกคัดลอก)</div>
                             </div>
 
-                            <div style="margin-top: 10px;">
-                                <button type="button" class="work-pay-confirm-btn" onclick="window.confirmWorkPayment('${id}', '${amount}')">
-                                    <i class="fa-solid fa-circle-check"></i>
-                                    <span>${isAdmin ? 'ปลดล็อคงานให้ลูกค้าทันที (Admin)' : 'โอนเงินแล้ว คลิกปลดล็อคทันที ✅'}</span>
-                                </button>
-                            </div>
+                            ${isAdmin ? `
+                                <div style="margin-top: 10px;">
+                                    <button type="button" class="work-pay-confirm-btn" onclick="window.confirmWorkPayment('${id}', '${amount}')">
+                                        <i class="fa-solid fa-circle-check"></i>
+                                        <span>ปลดล็อคงานให้ลูกค้าทันที (Admin)</span>
+                                    </button>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 ` : `
                     <div class="work-paid-footer">
                         <i class="fa-solid fa-circle-check" style="color: #10b981; font-size: 1.1rem;"></i>
-                        <span>ได้รับยอดชำระเงินเรียบร้อยแล้ว ไฟล์พร้อมใช้งานทันที</span>
+                        <span>ได้รับยอดชำระเงินเรียบร้อยแล้ว</span>
                     </div>
                 `}
             </div>
