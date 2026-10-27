@@ -91,8 +91,9 @@ function updateAdminButtonsVisibility() {
         if (latestPriceBadge) latestPriceBadge.style.display = isVisible ? 'flex' : 'none';
         if (adminPreviewUploadBtn) adminPreviewUploadBtn.style.display = isVisible ? 'inline-flex' : 'none';
         if (!isLocalHost && hasRoom) {
-            if (headerUploadGuideBtn) headerUploadGuideBtn.style.display = 'inline-flex';
-            if (customerUploadBanner) customerUploadBanner.style.display = 'flex';
+            const isWorkSubmitted = currentRoom && sessionStorage.getItem(`work_submitted_${currentRoom}`) === '1';
+            if (headerUploadGuideBtn) headerUploadGuideBtn.style.display = isWorkSubmitted ? 'none' : 'inline-flex';
+            if (customerUploadBanner) customerUploadBanner.style.display = isWorkSubmitted ? 'none' : 'flex';
         }
     } catch (e) {
         console.error('Error updating admin buttons visibility:', e);
@@ -594,7 +595,7 @@ async function triggerStartProcess() {
         await push(messagesRef, {
             sender: currentUser,
             type: 'process_task',
-            text: 'กำลังเริ่มงาน.. ใช้เวลา≈ 10-30 นาที',
+            text: 'กำลังเริ่มงาน.. ใช้เวลา ≈ 10-30 นาที',
             choice: null,
             timestamp: Date.now()
         });
@@ -1295,7 +1296,7 @@ window.handleWatermarkedWorkDelivery = async function (file) {
                 fileName: file.name,
                 createdAt: Date.now()
             });
-        } catch (_) {}
+        } catch (_) { }
 
         showDownloadToast('✅ ส่งงานติดลายน้ำพร้อมบิลเรียบร้อย!', 2500);
     } catch (err) {
@@ -1327,7 +1328,7 @@ window.confirmWorkPayment = async function (msgId, amount) {
                 approvedAt: Date.now(),
                 approvedBy: currentUser
             });
-        } catch (_) {}
+        } catch (_) { }
 
         const messagesRef = ref(database, `rooms/${currentRoom}/messages`);
         await push(messagesRef, {
@@ -1738,7 +1739,7 @@ function renderMessage(data, id) {
             <div class="process-task-card" id="processCard_${id}">
                 <div class="process-task-header">
                     <i class="fa-solid fa-gears fa-spin"></i>
-                    <div class="process-task-title">${sanitize(data.text || 'กำลังเริ่มงาน.. ใช้เวลา≈ 10-30 นาที')}</div>
+                    <div class="process-task-title">${sanitize(data.text || 'กำลังเริ่มงาน.. ใช้เวลา ≈ 10-30 นาที')}</div>
                 </div>
                 <div class="process-task-desc">${choice ? 'ช่องทางรับงาน:' : (isCustomer ? 'กรุณาเลือกช่องทางรับงานของคุณ:' : 'สถานะการเลือกช่องทางรับงาน:')}</div>
                 <div class="process-task-actions" id="processActions_${id}">
@@ -1871,6 +1872,11 @@ function renderMessage(data, id) {
     }
 
     const isMarkedImage = data.file && data.file.name && data.file.name.startsWith('marked_');
+    if (isMarkedImage || (data.file && (data.file.annotations || data.file.originalImage)) || data.type === 'estimate_price' || data.type === 'watermarked_work' || (data.file && data.file.type && data.file.type.startsWith('image/'))) {
+        if (typeof hideCustomerUploadPrompt === 'function') {
+            hideCustomerUploadPrompt(true);
+        }
+    }
     div.className = isMarkedImage ? 'message-bubble problem-center' : `message-bubble ${isMe ? 'me' : 'other'}`;
 
     div.setAttribute('data-id', id);
@@ -2372,6 +2378,9 @@ function handleFileUpload(file) {
     if (!currentRoom) {
         alert('กรุณาเข้าร่วมห้องแชทก่อน');
         return;
+    }
+    if (typeof hideCustomerUploadPrompt === 'function') {
+        hideCustomerUploadPrompt(true);
     }
 
     if (file.size <= SMALL_MAX_SIZE) {
@@ -4116,10 +4125,25 @@ function closeCustomerUploadModal(userInitiated = false) {
     if (userInitiated && currentRoom) {
         try {
             sessionStorage.setItem(`customer_upload_dismissed_${currentRoom}`, '1');
-        } catch (_) {}
+        } catch (_) { }
     }
 }
 window.closeCustomerUploadModal = closeCustomerUploadModal;
+
+function hideCustomerUploadPrompt(isPermanent = true) {
+    if (customerUploadBanner) customerUploadBanner.style.display = 'none';
+    if (headerUploadGuideBtn) headerUploadGuideBtn.style.display = 'none';
+    if (customerUploadModal && customerUploadModal.classList.contains('active')) {
+        closeCustomerUploadModal(false);
+    }
+    if (isPermanent && currentRoom) {
+        try {
+            sessionStorage.setItem(`work_submitted_${currentRoom}`, '1');
+            sessionStorage.setItem(`customer_upload_dismissed_${currentRoom}`, '1');
+        } catch (_) { }
+    }
+}
+window.hideCustomerUploadPrompt = hideCustomerUploadPrompt;
 
 function handleCustomerWorkImage(file) {
     if (!file) return;
@@ -4225,6 +4249,13 @@ function checkAndShowCustomerUploadPrompt(roomId) {
     const isCustomer = !isLocalHost;
     const urlParams = new URLSearchParams(window.location.search);
     const forceShow = urlParams.has('test_upload') || urlParams.has('preview') || urlParams.has('customer');
+
+    const isWorkSubmitted = roomId && sessionStorage.getItem(`work_submitted_${roomId}`) === '1';
+    if (isWorkSubmitted && !forceShow) {
+        if (customerUploadBanner) customerUploadBanner.style.display = 'none';
+        if (headerUploadGuideBtn) headerUploadGuideBtn.style.display = 'none';
+        return;
+    }
 
     if (isCustomer || forceShow) {
         if (customerUploadBanner) customerUploadBanner.style.display = 'flex';
@@ -4570,9 +4601,13 @@ annotateSendBtn.onclick = async () => {
         try {
             if (currentRoom) {
                 sessionStorage.setItem(`customer_upload_dismissed_${currentRoom}`, '1');
+                sessionStorage.setItem(`work_submitted_${currentRoom}`, '1');
             }
-        } catch (_) {}
+        } catch (_) { }
 
+        if (typeof hideCustomerUploadPrompt === 'function') {
+            hideCustomerUploadPrompt(true);
+        }
         closeAnnotateModal();
 
     } catch (err) {
