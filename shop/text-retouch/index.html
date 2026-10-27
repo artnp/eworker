@@ -400,6 +400,96 @@
             display: none;
         }
 
+        /* ===== SIDEBAR LEGAL TIP ===== */
+        .sidebar-legal-tip {
+            padding: 8px 12px 10px;
+            background: #f8fafc;
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+            line-height: 1.4;
+        }
+
+        .legal-tip-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+
+        .legal-tip-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 0.72rem;
+        }
+
+        .legal-tip-tag i {
+            color: var(--primary);
+            font-size: 0.74rem;
+        }
+
+        .legal-tip-tag strong {
+            color: var(--primary);
+            font-weight: 800;
+        }
+
+        .legal-tip-btn {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 0.70rem;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 1px 3px;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            font-family: inherit;
+        }
+
+        .legal-tip-btn:hover {
+            color: var(--primary-hover);
+        }
+
+        .legal-tip-desc {
+            margin: 0;
+            color: #64748b;
+            font-size: 0.68rem;
+            line-height: 1.4;
+        }
+
+        .btn-legal-toggle {
+            background: #f8fafc;
+            border: 1px solid var(--border-strong);
+            color: #334155;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+
+        .btn-legal-toggle:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        @media (max-width: 860px) {
+            .btn-legal-toggle span {
+                display: none;
+            }
+            .btn-legal-toggle {
+                padding: 6px 9px;
+            }
+        }
+
         /* ===== EDITOR LAYOUT ===== */
         #editorView {
             display: none;
@@ -2225,6 +2315,10 @@
             </div>
         </a>
         <div class="header-right">
+            <button class="btn-legal-toggle" id="btnLegalHeader" onclick="openLegalModal()" title="ข้อกำหนดและสถาปัตยกรรมความปลอดภัย">
+                <i class="fa-solid fa-shield-halved" style="color:var(--primary);"></i>
+                <span>ข้อกำหนด & ความปลอดภัย</span>
+            </button>
             <button class="btn-new-file" id="btnNewFile" style="display:none;" onclick="startNewSession()">
                 <i class="fa-solid fa-plus"></i> จ้างงานใหม่
             </button>
@@ -2242,8 +2336,7 @@
         <div id="landingView">
             <section class="landing-section">
                 <div class="hero-badge">
-                    <i class="fa-solid fa-shield-halved"></i> ไฟล์ต้นฉบับปลอดภัยสูงสุด
-                    //ไม่มีการรั่วไหลออกจากเครื่องของคุณ//
+                    <i class="fa-solid fa-shield-halved"></i> สถาปัตยกรรม Client-Side ปลอดภัยสูงสุด · ไฟล์ต้นฉบับไม่ออกจากเครื่องคุณ
                 </div>
                 <h1 class="hero-title">บริการแก้ไขข้อความ เนียนเหมือนต้นฉบับ</h1>
                 <p class="hero-desc">
@@ -2348,6 +2441,17 @@
                             <span class="total-label">ยอดรวมทั้งหมด</span>
                             <span class="total-amount" id="totalAmount">฿0</span>
                         </div>
+                    </div>
+
+                    <!-- LEGAL / PRIVACY TIP AT BOTTOM OF SIDEBAR -->
+                    <div class="sidebar-legal-tip" id="sidebarLegalTip">
+                        <div class="legal-tip-header">
+                            <span class="legal-tip-tag"><i class="fa-solid fa-shield-halved"></i> <strong>Tip:</strong> นโยบายความปลอดภัย</span>
+                            <button type="button" class="legal-tip-btn" onclick="openLegalModal()" title="อ่านรายละเอียดข้อกำหนด">อ่านข้อตกลง</button>
+                        </div>
+                        <p class="legal-tip-desc">
+                            งานนี้เป็นแคชจำในเครื่องฝั่งคุณ ตัวภาพเอกสารไม่ได้อยู่บนเว็บ ผู้ให้บริการไม่รับรู้เห็นไฟล์ภาพเต็มใบ (เห็นเฉพาะเศษภาพที่ตีกรอบส่ง) และไม่ขอรับผิดชอบต่อการนำไปใช้งานใดๆ ทั้งสิ้น
+                        </p>
                     </div>
                 </div>
             </div>
@@ -2500,6 +2604,64 @@
                 <button onclick="closeMobileDownloadModal()"
                     style="background:transparent; color:#64748b; border:none; padding:6px; font-size:0.82rem; cursor:pointer;">
                     ปิดหน้าต่างนี้
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LEGAL / PRIVACY MODAL -->
+    <div class="modal-overlay" id="legalModal" style="display:none; z-index: 9999;" onclick="if(event.target===this)closeLegalModal()">
+        <div class="confirm-modal-card" style="max-width: 580px; width: 92%; text-align: left; padding: 22px 24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="display:flex; align-items:center; justify-content:center; width:34px; height:34px; background:#eff6ff; color:#2563eb; border-radius:8px; font-size:1.05rem;">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </span>
+                    <div>
+                        <h3 style="font-size:1.02rem; font-weight:800; color:#0f172a; margin:0;">ข้อกำหนดและความปลอดภัยของข้อมูล</h3>
+                        <span style="font-size:0.75rem; color:#64748b;">Client-Side Privacy Architecture & Legal Terms</span>
+                    </div>
+                </div>
+                <button onclick="closeLegalModal()" style="background:none; border:none; color:#64748b; font-size:1.3rem; cursor:pointer; padding:4px 8px;" title="ปิด">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div style="display:flex; flex-direction:column; gap:11px; margin-bottom:18px;">
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px;">
+                    <div style="font-weight:700; font-size:0.86rem; color:#1e293b; margin-bottom:4px; display:flex; align-items:center; gap:8px;">
+                        <span style="color:#2563eb;"><i class="fa-solid fa-laptop-code"></i></span>
+                        <span>1. แคชจำในเครื่องฝั่งผู้ใช้งาน (Client-Side Storage)</span>
+                    </div>
+                    <p style="font-size:0.8rem; color:#475569; margin:0; line-height:1.55;">
+                        ไฟล์ภาพและเอกสารต้นฉบับจะถูกเปิด อ่าน และแคช (Local Cache) ในหน่วยความจำของอุปกรณ์ท่านเท่านั้น ตัวภาพ/เอกสารฉบับเต็มไม่ได้ถูกอัปโหลดหรือจัดเก็บบนเซิร์ฟเวอร์ส่วนกลางของเว็บไซต์
+                    </p>
+                </div>
+
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px;">
+                    <div style="font-weight:700; font-size:0.86rem; color:#1e293b; margin-bottom:4px; display:flex; align-items:center; gap:8px;">
+                        <span style="color:#a855f7;"><i class="fa-solid fa-eye-slash"></i></span>
+                        <span>2. ไม่รับรู้เห็นไฟล์ภาพและเอกสารเต็มใบ (Zero-Knowledge)</span>
+                    </div>
+                    <p style="font-size:0.8rem; color:#475569; margin:0; line-height:1.55;">
+                        ระบบจะส่งไปยังผู้ให้บริการเฉพาะชิ้นส่วนภาพขนาดเล็ก (Crop Patch) ที่ท่านตีกรอบเลือกส่งเพื่อแก้งานเท่านั้น ผู้ให้บริการจึงไม่มีส่วนรับรู้เห็น หรือครอบครองเอกสารฉบับสมบูรณ์ของท่าน
+                    </p>
+                </div>
+
+                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px;">
+                    <div style="font-weight:700; font-size:0.86rem; color:#1e293b; margin-bottom:4px; display:flex; align-items:center; gap:8px;">
+                        <span style="color:#d97706;"><i class="fa-solid fa-scale-balanced"></i></span>
+                        <span>3. ข้อกำหนดและขอบเขตความรับผิดชอบ (Legal Disclaimer)</span>
+                    </div>
+                    <p style="font-size:0.8rem; color:#475569; margin:0; line-height:1.55;">
+                        ผู้ใช้บริการต้องเป็นเจ้าของหรือผู้มีสิทธิ์ตามกฎหมายในเอกสารดังกล่าว และเป็นผู้รับผิดชอบต่อความถูกต้องรวมถึงการนำเอกสารไปใช้งานแต่เพียงผู้เดียว ทางเว็บไซต์ทำหน้าที่เฉพาะงานตกแต่งกราฟิกทางเทคนิคตามคำสั่ง ไม่รับรู้เห็น และไม่ขอรับผิดชอบต่อความเสียหายหรือการนำไปใช้ในทางที่ผิดกฎหมายใดๆ ทั้งสิ้น
+                    </p>
+                </div>
+            </div>
+
+            <div style="text-align:right;">
+                <button type="button" onclick="closeLegalModal()" style="background:var(--primary); color:white; border:none; padding:8px 20px; border-radius:8px; font-weight:700; font-size:0.84rem; cursor:pointer;">
+                    เข้าใจและรับทราบ
                 </button>
             </div>
         </div>
@@ -4881,6 +5043,19 @@
                 canvas.classList.add('mobile-hide');
                 sidebar.classList.add('mobile-show');
             }
+        }
+
+        /* ======================================================
+           LEGAL / PRIVACY MODAL CONTROLS
+        ====================================================== */
+        function openLegalModal() {
+            const m = document.getElementById('legalModal');
+            if (m) m.style.display = 'flex';
+        }
+
+        function closeLegalModal() {
+            const m = document.getElementById('legalModal');
+            if (m) m.style.display = 'none';
         }
 
     </script>
