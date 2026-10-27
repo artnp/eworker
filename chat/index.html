@@ -24,7 +24,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Kanit:wght@200;300;400&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=11">
+    <link rel="stylesheet" href="style.css?v=12">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 </head>
@@ -62,11 +62,11 @@
                         </div>
                     </div>
                     <div class="header-right-actions">
-                        <button id="headerUploadGuideBtn" class="header-upload-btn" style="display: none;" title="อัปโหลดงานและชี้จุดแก้">
-                            <i class="fa-solid fa-cloud-arrow-up"></i> <span>ส่งงาน/ชี้จุดแก้</span>
+                        <button id="headerUploadGuideBtn" class="header-upload-btn" style="display: none;" title="ส่งรูปงาน &amp; วงจุดแก้">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> <span>ส่งรูปแก้งาน</span>
                         </button>
-                        <button id="adminPreviewUploadBtn" class="admin-preview-btn" style="display: none;" title="ทดสอบมุมมองลูกค้า (กรอบส่งงาน)">
-                            <i class="fa-solid fa-eye"></i> <span>พรีวิวกรอบส่งงาน</span>
+                        <button id="adminPreviewUploadBtn" class="admin-preview-btn" style="display: none;" title="พรีวิวกรอบส่งงาน">
+                            <i class="fa-solid fa-eye"></i> <span>พรีวิวส่งงาน</span>
                         </button>
                     </div>
                 </header>
@@ -92,13 +92,8 @@
                     <!-- Customer Work Upload Guidance Banner -->
                     <div id="customerUploadBanner" class="customer-upload-banner" style="display: none;">
                         <div class="customer-upload-banner-left">
-                            <div class="customer-upload-banner-icon">
-                                <i class="fa-solid fa-wand-magic-sparkles"></i>
-                            </div>
-                            <div class="customer-upload-banner-text">
-                                <strong>อัปโหลดงานที่จะทำ &amp; ชี้จุดที่จะแก้</strong>
-                                <span>ส่งรูปภาพและวงจุดที่ต้องการให้แก้ไข เพื่อให้ประเมินราคาได้ทันที</span>
-                            </div>
+                            <i class="fa-solid fa-arrow-pointer customer-upload-banner-simple-icon"></i>
+                            <span>ส่งรูปงาน &amp; วงจุดที่จะแก้</span>
                         </div>
                         <button type="button" id="customerBannerUploadBtn" class="customer-banner-action-btn">
                             <i class="fa-solid fa-cloud-arrow-up"></i> <span>เลือกรูปภาพ</span>
@@ -230,68 +225,43 @@
     <div id="customerUploadModal" class="customer-upload-modal">
         <div class="customer-upload-backdrop" id="customerUploadBackdrop"></div>
         <div class="customer-upload-card">
-            <button type="button" class="customer-upload-close-btn" id="customerUploadCloseBtn" title="ปิดหน้าต่าง">&times;</button>
+            <button type="button" class="customer-upload-close-btn" id="customerUploadCloseBtn" title="ปิด">&times;</button>
             
             <div class="customer-upload-header">
                 <div class="customer-upload-badge-icon">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <i class="fa-solid fa-camera"></i>
                 </div>
-                <h2 class="customer-upload-title">ส่งงานที่จะทำ &amp; ชี้จุดที่จะแก้</h2>
+                <h2 class="customer-upload-title">ส่งรูปภาพงานที่จะทำ</h2>
                 <p class="customer-upload-subtitle">
-                    ยินดีต้อนรับ! ส่งรูปภาพงานของคุณ พร้อมวงจุดที่ต้องการให้แก้ไข เพื่อให้ช่างประเมินราคาและเริ่มงานได้ทันที
+                    เลือกรูปภาพ แล้ววงจุดที่ต้องการให้แก้ได้ทันที
                 </p>
             </div>
 
             <!-- Drag & Drop / Click Upload Area -->
-            <div class="customer-dropzone" id="customerDropzone" title="คลิกเพื่อเลือกภาพ หรือลากไฟล์มาวาง">
+            <div class="customer-dropzone" id="customerDropzone" title="แตะเพื่อเลือกรูปภาพ หรือลากรูปมาวาง">
                 <input type="file" id="customerWorkFileInput" accept="image/*" style="display: none;">
                 <div class="customer-dropzone-inner">
                     <div class="customer-dropzone-icon">
                         <i class="fa-solid fa-cloud-arrow-up"></i>
                     </div>
                     <div class="customer-dropzone-text">
-                        <strong>แตะที่นี่เพื่อเลือกภาพ</strong> หรือลากรูปมาวาง
+                        <strong>แตะเพื่อเลือกรูปภาพ</strong>
                     </div>
                     <div class="customer-dropzone-sub">
-                        รองรับภาพถ่ายจากมือถือ, แคปหน้าจอ, รูปภาพ (JPG, PNG, WEBP)
+                        หรือลากไฟล์ภาพมาวางที่นี่
                     </div>
-                    <button type="button" class="customer-dropzone-btn" id="customerSelectFileBtn">
-                        <i class="fa-solid fa-image"></i>
-                        <span>เลือกรูปภาพงาน</span>
-                    </button>
                 </div>
             </div>
 
-            <!-- Steps Guideline -->
-            <div class="customer-upload-steps">
-                <div class="customer-step-item">
-                    <div class="customer-step-num">1</div>
-                    <div class="customer-step-info">
-                        <strong>อัปโหลดภาพงาน</strong>
-                        <span>เลือกรูปภาพต้นฉบับที่ต้องการให้แก้ไข</span>
-                    </div>
-                </div>
-                <div class="customer-step-item">
-                    <div class="customer-step-num">2</div>
-                    <div class="customer-step-info">
-                        <strong>วงจุด &amp; บอกสิ่งที่แก้</strong>
-                        <span>ระบบจะเปิดหน้าจอให้วงจุดและพิมพ์บอกสิ่งที่ต้องการแก้</span>
-                    </div>
-                </div>
-                <div class="customer-step-item">
-                    <div class="customer-step-num">3</div>
-                    <div class="customer-step-info">
-                        <strong>รอรับการประเมินราคา</strong>
-                        <span>ช่างได้รับข้อมูลครบถ้วน และคิดราคาให้ทันทีโดยไม่ต้องถามซ้ำ</span>
-                    </div>
-                </div>
+            <div class="customer-quick-hint">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>ระบบจะเปิดหน้าจอให้วงจุดและพิมพ์ข้อความทันที</span>
             </div>
 
             <!-- Footer Action -->
             <div class="customer-upload-footer">
                 <button type="button" class="customer-upload-chat-btn" id="customerSkipToChatBtn">
-                    <i class="fa-regular fa-comment-dots"></i>
-                    <span>พิมพ์คุยแชทสอบถามก่อน / ข้าม</span>
+                    เข้าห้องแชทก่อน
                 </button>
             </div>
         </div>
@@ -555,7 +525,7 @@
     </div>
 
     <!-- Firebase SDK -->
-    <script type="module" src="app.js?v=20261027_05"></script>
+    <script type="module" src="app.js?v=20261027_07"></script>
 </body>
 
 </html>
