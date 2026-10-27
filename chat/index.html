@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบแชทปลอดภัย</title>
+
+    <!-- Meta Tags for Link Preview (Thumbnail) -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="ระบบแชทปลอดภัย">
+    <meta property="og:description" content="พื้นที่คุยส่วนตัว ข้อความหายไปใน 10 นาที">
+    <meta property="og:image" content="https://cdn-icons-png.flaticon.com/128/18675/18675812.png">
+
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="ระบบแชทปลอดภัย">
+    <meta name="twitter:description" content="พื้นที่คุยส่วนตัว ข้อความหายไปใน 10 นาที">
+    <meta name="twitter:image" content="https://cdn-icons-png.flaticon.com/128/18675/18675812.png">
+
+    <script>if (location.search.includes('mini=1')) document.title = 'MiniChat';</script>
+    <link rel="icon" type="image/x-icon" href="https://cdn-icons-png.flaticon.com/128/2058/2058065.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Kanit:wght@200;300;400&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=11">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+
+        <!-- Main Content: Chat Area (Supports <3MB Drop) -->
+        <main class="main-chat" id="chatDropZone">
+            <!-- Screen 1: Welcome / Passcode Lock -->
+            <div id="loginScreen" class="screen active">
+                <div class="welcome-box">
+                    <div class="passcode-container">
+                        <div class="passcode-card">
+                            <div class="passcode-icon">
+                                <i class="fa-solid fa-lock"></i>
+                            </div>
+                            <input type="password" id="roomPasscodeInput" class="passcode-input" autocomplete="off" autofocus aria-label="Passcode">
+                            <div class="passcode-dots" id="passcodeDots">
+                                <span></span><span></span><span></span><span></span><span></span><span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Screen 2: Chat Room -->
+            <div id="chatScreen" class="screen">
+                <header class="chat-header">
+                    <div class="room-status">
+                        <span class="dot"></span>
+                        <div id="shareLinkContainer" class="share-link-mini">
+                            <span id="shareLinkText">กำลังสร้างห้อง...</span>
+                            <button id="copyBtn">คัดลอก</button>
+                        </div>
+                    </div>
+                    <div class="header-right-actions">
+                        <button id="headerUploadGuideBtn" class="header-upload-btn" style="display: none;" title="อัปโหลดงานและชี้จุดแก้">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> <span>ส่งงาน/ชี้จุดแก้</span>
+                        </button>
+                        <button id="adminPreviewUploadBtn" class="admin-preview-btn" style="display: none;" title="ทดสอบมุมมองลูกค้า (กรอบส่งงาน)">
+                            <i class="fa-solid fa-eye"></i> <span>พรีวิวกรอบส่งงาน</span>
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Voice Broadcast Listener Bar -->
+                <div id="voiceListenerBar" class="voice-listener-bar hidden">
+                    <div class="voice-listener-inner">
+                        <div class="voice-wave-container">
+                            <span class="wave-bar"></span>
+                            <span class="wave-bar"></span>
+                            <span class="wave-bar"></span>
+                            <span class="wave-bar"></span>
+                            <span class="wave-bar"></span>
+                        </div>
+                        <span id="voiceListenerText" class="voice-listener-text">👽 กำลังรับเสียง...</span>
+                        <canvas id="voiceVisualizer" width="120" height="30" style="cursor:pointer;"
+                            title="คลิกเพื่อเปิดเสียง (หากไม่ได้ยิน)"></canvas>
+                    </div>
+                    <audio id="remoteAudio" autoplay></audio>
+                </div>
+
+                <div id="messagesContainer" class="messages-area">
+                    <!-- Customer Work Upload Guidance Banner -->
+                    <div id="customerUploadBanner" class="customer-upload-banner" style="display: none;">
+                        <div class="customer-upload-banner-left">
+                            <div class="customer-upload-banner-icon">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            </div>
+                            <div class="customer-upload-banner-text">
+                                <strong>อัปโหลดงานที่จะทำ &amp; ชี้จุดที่จะแก้</strong>
+                                <span>ส่งรูปภาพและวงจุดที่ต้องการให้แก้ไข เพื่อให้ประเมินราคาได้ทันที</span>
+                            </div>
+                        </div>
+                        <button type="button" id="customerBannerUploadBtn" class="customer-banner-action-btn">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> <span>เลือกรูปภาพ</span>
+                        </button>
+                    </div>
+
+                    <div id="messagesWrapper"></div>
+                    <div id="dropOverlay" class="drop-overlay">
+                        <div class="drop-dashed-box">
+                            <span class="icon">📥</span>
+                            <p>วางไฟล์เพื่อส่งทันที</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-area">
+                    <div class="input-container">
+                        <div id="latestPriceBadge" class="latest-price-badge" style="display: none;" title="ลากไฟล์ภาพ/PDF มาวางที่นี่เพื่อส่งงานติดลายน้ำพร้อมบิล PromptPay">
+                            <div class="latest-price-inner">
+                                <div class="latest-price-left-section">
+                                    <div class="latest-price-icon-box">
+                                        <span class="latest-price-icon">💰</span>
+                                    </div>
+                                    <div class="latest-price-info" id="latestPriceEditBox" title="คลิกเพื่อแก้ไขราคาค่าแรง">
+                                        <div class="latest-price-label-row">
+                                            <span class="latest-price-label">ค่าแรงล่าสุด</span>
+                                            <i class="fa-solid fa-pen-to-square latest-price-edit-icon" id="latestPriceEditIcon" title="คลิกเพื่อแก้ไขราคา"></i>
+                                        </div>
+                                        <div class="latest-price-val-wrap" id="latestPriceValWrap">
+                                            <span class="latest-price-val"><strong id="latestPriceVal">-</strong> <small>บาท</small></span>
+                                        </div>
+                                        <div class="latest-price-edit-form" id="latestPriceEditForm" style="display: none;">
+                                            <input type="number" id="latestPriceInput" class="latest-price-input" placeholder="ราคา..." min="1" step="1">
+                                            <button type="button" id="latestPriceSaveBtn" class="latest-price-btn-save" title="บันทึกราคา"><i class="fa-solid fa-check"></i></button>
+                                            <button type="button" id="latestPriceCancelBtn" class="latest-price-btn-cancel" title="ยกเลิก"><i class="fa-solid fa-xmark"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="latest-price-divider"></div>
+                                <div class="latest-price-drop-cue">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                                    <span>ลากไฟล์ส่งงาน</span>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="file" id="workDeliveryFileInput" accept="image/*,.pdf" style="display: none;">
+                        <div class="input-wrapper">
+                            <button id="inputAttachBtn" class="input-attach-btn" title="แนบไฟล์">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                    <path
+                                        d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                </svg>
+                            </button>
+                            <button id="screenshotBtn" class="input-attach-btn" title="แคปหน้าจอ (Win+Shift+S)"
+                                style="color:#ef4444;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path
+                                        d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                                    <circle cx="12" cy="13" r="4" />
+                                </svg>
+                            </button>
+                            <textarea id="messageInput" placeholder="พิมพ์ข้อความที่นี่..." rows="1"></textarea>
+                            <button id="micBtn" class="notify-btn voice-broadcast-btn" title="ถ่ายทอดเสียงสด"
+                                style="color:#8b5cf6;">
+                                <span style="font-size:18px; line-height:1;">📞</span>
+                            </button>
+                            <button id="notifyBtn" class="notify-btn" title="เรียกคู่สนทนา">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                </svg>
+                            </button>
+                            <button id="sendBtn" class="send-btn">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="roomActionButtons" class="room-action-buttons" style="display: none;">
+                            <button id="startProcessBtn" class="start-process-btn" title="เริ่มดำเนินการ" style="display: none;">
+                                <i class="fa-solid fa-play"></i>
+                                <span>เริ่มดำเนินการ</span>
+                            </button>
+                            <button id="cancelContactBtn" class="cancel-contact-btn" title="ยกเลิกการติดต่อและปิดห้อง" style="display: none;">
+                                <i class="fa-solid fa-ban"></i>
+                                <span>ยกเลิกการติดต่อ</span>
+                            </button>
+                            <button id="changeRoomBtn" class="change-room-btn-outer" title="เปลี่ยนห้อง" style="display: none;">
+                                <img src="https://cdn-icons-png.flaticon.com/128/6105/6105231.png" alt="เปลี่ยนห้อง">
+                                <span>พาเปลี่ยนห้อง</span>
+                            </button>
+                        </div>
+                    </div>
+                    <input type="file" id="mainFileInput" hidden>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Upload Progress Overlay -->
+    <div id="progressOverlay">
+        <div class="progress-card">
+            <h2 style="margin: 0 0 5px; font-size: 22px; color: #1e293b;">
+                <i class="fa-solid fa-cloud-arrow-up" style="color: #4f46e5;"></i>
+            </h2>
+            <h3 style="margin: 0 0 5px; font-size: 18px; color: #1e293b;" id="progress-title">กำลังอัปโหลด...</h3>
+            <p style="margin: 0; font-size: 13px; color: #94a3b8;" id="progress-subtitle">กรุณารอสักครู่</p>
+            <div class="progress-steps">
+                <div class="progress-step" id="step-file">
+                    <div class="progress-step-label active" id="step-file-label">
+                        <i class="fa-solid fa-image"></i> <span id="step-file-text">กำลังอัปโหลดภาพ...</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="bar-file"></div>
+                    </div>
+                    <div class="progress-percent" id="percent-file">0%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Customer Work Upload & Annotation Prompt Modal -->
+    <div id="customerUploadModal" class="customer-upload-modal">
+        <div class="customer-upload-backdrop" id="customerUploadBackdrop"></div>
+        <div class="customer-upload-card">
+            <button type="button" class="customer-upload-close-btn" id="customerUploadCloseBtn" title="ปิดหน้าต่าง">&times;</button>
+            
+            <div class="customer-upload-header">
+                <div class="customer-upload-badge-icon">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+                <h2 class="customer-upload-title">ส่งงานที่จะทำ &amp; ชี้จุดที่จะแก้</h2>
+                <p class="customer-upload-subtitle">
+                    ยินดีต้อนรับ! ส่งรูปภาพงานของคุณ พร้อมวงจุดที่ต้องการให้แก้ไข เพื่อให้ช่างประเมินราคาและเริ่มงานได้ทันที
+                </p>
+            </div>
+
+            <!-- Drag & Drop / Click Upload Area -->
+            <div class="customer-dropzone" id="customerDropzone" title="คลิกเพื่อเลือกภาพ หรือลากไฟล์มาวาง">
+                <input type="file" id="customerWorkFileInput" accept="image/*" style="display: none;">
+                <div class="customer-dropzone-inner">
+                    <div class="customer-dropzone-icon">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                    </div>
+                    <div class="customer-dropzone-text">
+                        <strong>แตะที่นี่เพื่อเลือกภาพ</strong> หรือลากรูปมาวาง
+                    </div>
+                    <div class="customer-dropzone-sub">
+                        รองรับภาพถ่ายจากมือถือ, แคปหน้าจอ, รูปภาพ (JPG, PNG, WEBP)
+                    </div>
+                    <button type="button" class="customer-dropzone-btn" id="customerSelectFileBtn">
+                        <i class="fa-solid fa-image"></i>
+                        <span>เลือกรูปภาพงาน</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Steps Guideline -->
+            <div class="customer-upload-steps">
+                <div class="customer-step-item">
+                    <div class="customer-step-num">1</div>
+                    <div class="customer-step-info">
+                        <strong>อัปโหลดภาพงาน</strong>
+                        <span>เลือกรูปภาพต้นฉบับที่ต้องการให้แก้ไข</span>
+                    </div>
+                </div>
+                <div class="customer-step-item">
+                    <div class="customer-step-num">2</div>
+                    <div class="customer-step-info">
+                        <strong>วงจุด &amp; บอกสิ่งที่แก้</strong>
+                        <span>ระบบจะเปิดหน้าจอให้วงจุดและพิมพ์บอกสิ่งที่ต้องการแก้</span>
+                    </div>
+                </div>
+                <div class="customer-step-item">
+                    <div class="customer-step-num">3</div>
+                    <div class="customer-step-info">
+                        <strong>รอรับการประเมินราคา</strong>
+                        <span>ช่างได้รับข้อมูลครบถ้วน และคิดราคาให้ทันทีโดยไม่ต้องถามซ้ำ</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Action -->
+            <div class="customer-upload-footer">
+                <button type="button" class="customer-upload-chat-btn" id="customerSkipToChatBtn">
+                    <i class="fa-regular fa-comment-dots"></i>
+                    <span>พิมพ์คุยแชทสอบถามก่อน / ข้าม</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Annotation Mark Modal — Split View -->
+    <div id="annotateModal" class="annotate-modal">
+        <!-- SVG Arrow Overlay (full modal, pointer-events: none) -->
+        <svg id="annArrowSvg" class="ann-arrow-svg"></svg>
+
+        <div class="annotate-modal-inner">
+            <!-- LEFT: Image canvas area -->
+            <div class="annotate-left">
+                <div class="annotate-left-header">
+                    <h3><i class="fa-solid fa-pen-to-square"></i> วงจุดแก้ไข</h3>
+                </div>
+                <div class="annotate-body" id="annotateBody">
+                    <!-- Floating zoom controls on image canvas -->
+                    <div class="annotate-zoom-controls-left">
+                        <button id="annotateZoomInBtn" title="ซูมเข้า"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+                        <button id="annotateZoomOutBtn" title="ซูมออก"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+                        <button id="annotateZoomResetBtn" title="รีเซ็ตขนาด"><i class="fa-solid fa-arrows-rotate"></i></button>
+                    </div>
+                    <div id="annotateCanvasContainer" class="annotate-canvas-container"></div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Problem list panel -->
+            <div class="annotate-right" id="annotateRight">
+                <div class="annotate-right-header">
+                    <div class="annotate-right-title">
+                        <i class="fa-solid fa-list-check"></i>
+                        รายการโจทย์
+                        <span class="ann-count-badge" id="annCountBadge">0</span>
+                    </div>
+                    <button class="annotate-btn-add-sm" id="annotateAddBoxBtn">
+                        <i class="fa-solid fa-plus"></i> เพิ่มจุด
+                    </button>
+                </div>
+                <div class="ann-cards-list" id="annCardsList">
+                    <div class="ann-empty-state" id="annEmptyState">
+                        <i class="fa-regular fa-circle-dot"></i>
+                        <p>ยังไม่มีจุดแก้ไข</p>
+                        <p>คลิก <strong>เพิ่มจุด</strong> หรือแตะบนรูปภาพ</p>
+                    </div>
+                    <div class="annotate-right-toolbar">
+                        <button type="button" class="annotate-btn annotate-btn-cancel" id="annotateCancelBtn" onclick="if(window.closeAnnotateModal){window.closeAnnotateModal();}else{const m=document.getElementById('annotateModal');if(m){m.classList.remove('active');m.style.display='none';}const c=document.getElementById('annotateCanvasContainer');if(c)c.innerHTML='';document.body.style.overflow='';}">
+                            <i class="fa-solid fa-xmark" style="color: #ef4444;"></i> <span>ยกเลิก</span>
+                        </button>
+                        <button type="button" class="annotate-btn annotate-btn-send" id="annotateSendBtn">
+                            <i class="fa-solid fa-paper-plane"></i> <span>ส่งในแชท</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Lightbox Popup with Zoom -->
+    <div id="imageLightbox" class="image-lightbox">
+        <div class="lightbox-topbar">
+            <span class="lightbox-zoom-level" id="lightboxZoomLevel">100%</span>
+            <div class="lightbox-topbar-right">
+                <button class="lightbox-zoom-btn" id="lightboxZoomOutBtn" title="ซูมออก"><i class="fa-solid fa-minus"></i></button>
+                <button class="lightbox-zoom-btn" id="lightboxZoomInBtn" title="ซูมเข้า"><i class="fa-solid fa-plus"></i></button>
+                <button class="lightbox-zoom-btn" id="lightboxZoomResetBtn" title="ปรับขนาดพอดี"><i class="fa-solid fa-arrows-to-circle"></i></button>
+            </div>
+        </div>
+        <div class="lightbox-body" id="lightboxBody">
+            <div class="lightbox-viewport" id="lightboxViewport">
+                <img id="lightboxImg" src="" alt="Preview" draggable="false">
+            </div>
+            <div class="lightbox-actions">
+                <button class="lb-action-btn lb-download" id="lightboxDownloadBtn">
+                    <i class="fa-solid fa-download"></i> ดาวน์โหลด
+                </button>
+                <button class="lb-action-btn lb-close" id="lightboxCloseBtn">
+                    <i class="fa-solid fa-times"></i> ปิด
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LINE / In-App Browser Save Image Modal -->
+    <div id="lineSaveModal" class="line-save-modal">
+        <div class="line-save-card">
+            <div class="line-save-header">
+                <h3><i class="fa-solid fa-download"></i> บันทึกรูปภาพ</h3>
+                <p>แตะค้างที่รูปภาพด้านล่าง แล้วเลือก <strong>"บันทึกรูปภาพ" (Save Image)</strong></p>
+            </div>
+            <div class="line-save-img-wrapper">
+                <img id="lineSaveImg" src="" alt="Save Image" draggable="false">
+            </div>
+            <div class="line-save-actions">
+                <button type="button" class="line-save-btn-browser" id="lineOpenBrowserBtn">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดในเบราว์เซอร์
+                </button>
+                <button type="button" class="line-save-btn-close" id="lineSaveCloseBtn">
+                    ปิด
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Contact (LINE) Modal -->
+    <div id="contactModal" class="upload-modal">
+        <div class="modal-content" style="max-width: 350px; padding: 25px; border-top: 5px solid #00C300;">
+            <div style="text-align: right;">
+                <button id="closeContactBtn"
+                    style="background:none; border:none; color:var(--text-dim); font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            <div style="text-align: center; margin-top: -15px;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/4/41/LINE_logo.svg" alt="LINE"
+                    style="width: 60px; height: 60px; margin-bottom: 10px;">
+                <h3 style="color:#00C300; margin: 0 0 15px 0;">ช่องทางการติดต่อฉัน</h3>
+            </div>
+
+            <div
+                style="background: #f8f9fa; border-radius: 12px; padding: 15px; margin-bottom: 15px; text-align: center; border: 1px solid #e9ecef;">
+                <div style="color: #666; font-size: 0.85rem; margin-bottom: 5px;">แอด LINE ID</div>
+                <div style="font-size: 1.1rem; font-weight: bold; color: #333; margin-bottom: 10px;">artap5321</div>
+                <a href="https://line.me/ti/p/gqIluRmdJ_" target="_blank"
+                    style="display: inline-block; background: #00C300; color: white; text-decoration: none; padding: 8px 15px; border-radius: 20px; font-size: 0.9rem; font-weight: 500; transition: all 0.3s;"><i
+                        class="fa-brands fa-line"></i> คลิกเพื่อเพิ่มเพื่อน</a>
+            </div>
+
+            <div
+                style="margin-top: 20px; font-size: 0.85rem; color: #ffffff; background: linear-gradient(135deg, #0062ff, #00a2ff); padding: 12px; border-radius: 10px; border: none; box-shadow: 0 4px 15px rgba(0, 162, 255, 0.3); text-align: center;">
+                <div
+                    style="font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>✅จ้างงานฉันแบบง่าย ๆ ผ่านทางนี้:</span>
+                </div>
+                <a href="https://artnp.github.io/eworker" target="_blank"
+                    style="color: #ffffff; text-decoration: underline; font-weight: 500; text-underline-offset: 3px;">https://artnp.github.io/eworker</a>
+            </div>
+
+            <div style="margin-top: 15px; text-align: center; color: #ef4444; font-size: 0.85rem; font-weight: 600;">
+                <i class="fa-regular fa-clock"></i> ข้อความนี้จะถูกทำลายใน: <span id="contactTimerDisplay"
+                    style="background: rgba(239, 68, 68, 0.1); padding: 2px 6px; border-radius: 4px;">--:--</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="copyToast" class="copy-toast">คัดลอกเรียบร้อย!</div>
+    <div id="downloadToast" class="copy-toast download-toast">กำลังดาวน์โหลด...</div>
+    
+    <!-- Cancel Contact Confirmation Modal -->
+    <div id="cancelConfirmModal" class="upload-modal">
+        <div class="modal-content cancel-confirm-card">
+            <div style="text-align: right; margin-top: -10px; margin-right: -10px;">
+                <button id="closeCancelModalBtn"
+                    style="background:none; border:none; color:var(--text-dim); font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            <div class="cancel-confirm-icon-wrap">
+                <span class="cancel-big-icon">🚫</span>
+            </div>
+            <h3 class="cancel-confirm-title">ยกเลิกการติดต่อ?</h3>
+            <p class="cancel-confirm-desc">
+                คุณแน่ใจหรือไม่ว่าต้องการยกเลิกการติดต่อและปิดห้องนี้?<br>
+                <span>เมื่อปิดแล้ว ทั้งสองฝ่ายจะไม่สามารถพิมพ์หรือส่งข้อความในห้องนี้ได้อีก</span>
+            </p>
+            <div class="cancel-confirm-actions">
+                <button id="cancelModalDismissBtn" class="cancel-modal-btn cancel-modal-btn-dismiss">
+                    กลับ
+                </button>
+                <button id="confirmCancelContactBtn" class="cancel-modal-btn cancel-modal-btn-confirm">
+                    <i class="fa-solid fa-ban"></i> ยืนยันปิดห้อง
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Facebook Browser Help Modal -->
+    <div id="facebookHelpModal" class="upload-modal">
+        <div class="modal-content" style="max-width: 500px; padding: 30px; border-top: 5px solid #4267B2;">
+            <div style="text-align: right;">
+                <button id="closeFacebookHelpBtn"
+                    style="background:none; border:none; color:var(--text-dim); font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            <div style="text-align: center; margin-top: -15px; margin-bottom: 20px;">
+                <div style="font-size: 2.5rem; color: #4267B2; margin-bottom: 10px;">⚠️</div>
+                <h3 style="color:#4267B2; margin: 0 0 15px 0;">ปัญหาเบราว์เซอร์ในแอป</h3>
+                <p style="color: #666; font-size: 0.9rem; margin: 0;">Facebook • Instagram • LINE</p>
+            </div>
+
+            <div style="background: rgba(66, 103, 178, 0.1); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                <h4 style="color: #4267B2; margin-top: 0; margin-bottom: 15px;">ปัญหาที่พบ:</h4>
+                <ul style="padding-left: 20px; margin: 0;">
+                    <li style="margin-bottom: 8px;">❌ ดาวน์โหลดรูปภาพไม่ได้</li>
+                    <li style="margin-bottom: 8px;">❌ ดูรูปภาพไม่ได้</li>
+                    <li style="margin-bottom: 8px;">❌ คัดลอกข้อความบางส่วนไม่ได้</li>
+                </ul>
+                <div style="margin-top: 15px; font-size: 0.85rem; color: #666; padding: 10px; background: rgba(255, 193, 7, 0.1); border-radius: 8px; border-left: 3px solid #FFC107;">
+                    <strong>📱 แอปที่มีปัญหา:</strong> Facebook, Instagram, LINE
+                </div>
+            </div>
+
+            <div style="background: rgba(34, 197, 94, 0.1); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                <h4 style="color: #22c55e; margin-top: 0; margin-bottom: 15px;">วิธีแก้ไข:</h4>
+                <ol style="padding-left: 20px; margin: 0;">
+                    <li style="margin-bottom: 10px;">
+                        <strong>เปิดในเบราว์เซอร์อื่น:</strong>
+                        <div style="margin-top: 5px; font-size: 0.9rem; color: #666;">
+                            คลิกปุ่มเมนู (⋮) → เลือก "เปิดในเบราว์เซอร์"
+                        </div>
+                    </li>
+                    <li style="margin-bottom: 10px;">
+                        <strong>คัดลอกลิงค์:</strong>
+                        <div style="margin-top: 5px; font-size: 0.9rem; color: #666;">
+                            คัดลอกลิงค์จากแถบที่อยู่ → วางใน Chrome, Safari, Edge
+                        </div>
+                    </li>
+                    <li style="margin-bottom: 10px;">
+                        <strong>ดาวน์โหลดรูป:</strong>
+                        <div style="margin-top: 5px; font-size: 0.9rem; color: #666;">
+                            ในเบราว์เซอร์อื่น: คลิกที่รูป → กดบันทึกภาพ
+                        </div>
+                    </li>
+                </ol>
+            </div>
+
+            <div style="text-align: center; margin-top: 25px;">
+                <button id="openExternalBtn" style="
+                    background: linear-gradient(135deg, #4267B2, #1877F2);
+                    color: white;
+                    border: none;
+                    padding: 12px 25px;
+                    border-radius: 100px;
+                    font-size: 1rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 10px;
+                    margin-right: 10px;
+                ">
+                    <span>🌐 เปิดในเบราว์เซอร์อื่น</span>
+                </button>
+                
+                <button id="copyCurrentUrlBtn" style="
+                    background: rgba(66, 103, 178, 0.1);
+                    color: #4267B2;
+                    border: 2px solid #4267B2;
+                    padding: 12px 25px;
+                    border-radius: 100px;
+                    font-size: 1rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 10px;
+                ">
+                    <span>📋 คัดลอกลิงค์นี้</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module" src="app.js?v=20261027_05"></script>
+</body>
+
+</html>
