@@ -1017,9 +1017,12 @@
         }
 
         @keyframes checkRingPulse {
-            0%, 100% {
+
+            0%,
+            100% {
                 box-shadow: 0 0 0 3px #bbf7d0, 0 2px 6px rgba(34, 197, 94, 0.18);
             }
+
             50% {
                 box-shadow: 0 0 0 5px #86efac, 0 3px 10px rgba(34, 197, 94, 0.32);
             }
@@ -1050,11 +1053,15 @@
         }
 
         @keyframes drawCircle {
-            to { stroke-dashoffset: 0; }
+            to {
+                stroke-dashoffset: 0;
+            }
         }
 
         @keyframes drawTick {
-            to { stroke-dashoffset: 0; }
+            to {
+                stroke-dashoffset: 0;
+            }
         }
 
         .patch-card-done .btn-download-final {
@@ -1362,6 +1369,33 @@
             border-radius: 6px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
             z-index: 2;
+        }
+
+        /* PAID CONFIRMATION BADGE */
+        .paid-status-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+            border: 1px solid #d8b4fe;
+            border-radius: 10px;
+            padding: 8px 12px;
+            box-shadow: 0 2px 6px rgba(124, 58, 237, 0.08);
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #6b21a8;
+        }
+
+        .paid-status-badge .spinner {
+            border: 2px solid #e9d5ff;
+            border-top: 2px solid #7c3aed;
+            width: 15px;
+            height: 15px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            display: inline-block;
+            animation: spin 0.8s linear infinite;
         }
 
         .patch-result-thumb {
@@ -2419,6 +2453,54 @@
             <div class="confirm-modal-actions">
                 <button type="button" class="btn-confirm-cancel" id="btnConfirmCancel">ยกเลิก</button>
                 <button type="button" class="btn-confirm-ok" id="btnConfirmOk">ตกลง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MOBILE IMAGE DOWNLOAD MODAL -->
+    <div class="modal-overlay" id="mobileDownloadModal" style="display:none; z-index: 10000;"
+        onclick="if(event.target===this)closeMobileDownloadModal()">
+        <div class="confirm-modal-card" style="max-width: 440px; width: 92%; padding: 18px 16px; margin: auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span
+                        style="display:flex; align-items:center; justify-content:center; width:28px; height:28px; background:#dcfce7; color:#15803d; border-radius:50%; font-size:0.95rem;">
+                        <i class="fa-solid fa-check"></i>
+                    </span>
+                    <span style="font-weight:800; font-size:1rem; color:#0f172a;">ภาพเสร็จสมบูรณ์แล้ว</span>
+                </div>
+                <button onclick="closeMobileDownloadModal()"
+                    style="background:none; border:none; color:#64748b; font-size:1.3rem; cursor:pointer; padding:4px 8px;"
+                    title="ปิด">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div
+                style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:9px 12px; margin-bottom:12px; display:flex; align-items:center; gap:8px; font-size:0.83rem; color:#1e40af; font-weight:600;">
+                <i class="fa-solid fa-hand-pointer" style="font-size:1.1rem; color:#2563eb;"></i>
+                <span>แตะค้างที่รูปภาพ แล้วเลือก <strong>"บันทึกรูปภาพ" (Save Image)</strong></span>
+            </div>
+
+            <div
+                style="text-align:center; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:8px; margin-bottom:14px; max-height:52vh; overflow:auto; display:flex; justify-content:center; align-items:center;">
+                <img id="mobileDownloadImg" src="" alt="ภาพที่เสร็จสมบูรณ์"
+                    style="max-width:100%; max-height:48vh; object-fit:contain; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,0.08); pointer-events:auto !important; user-select:auto !important; -webkit-user-select:auto !important; -webkit-touch-callout:default !important;">
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <button id="btnNativeShare" onclick="triggerNativeShare()"
+                    style="background:#16a34a; color:white; border:none; padding:10px 16px; border-radius:8px; font-weight:700; font-size:0.88rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+                    <i class="fa-solid fa-share-nodes"></i> บันทึกลงเครื่อง / แชร์ภาพ
+                </button>
+                <button onclick="openImageInNewTab()"
+                    style="background:#f1f5f9; color:#334155; border:1px solid #cbd5e1; padding:9px 16px; border-radius:8px; font-weight:600; font-size:0.84rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดรูปภาพขนาดเต็มในแท็บใหม่
+                </button>
+                <button onclick="closeMobileDownloadModal()"
+                    style="background:transparent; color:#64748b; border:none; padding:6px; font-size:0.82rem; cursor:pointer;">
+                    ปิดหน้าต่างนี้
+                </button>
             </div>
         </div>
     </div>
@@ -3578,7 +3660,7 @@
                             patches[pid] = local;
                             renderPatchCard(pid);
                             renderPatchOverlays();
-                            toast(`💳 จุดที่ ${local.num} ยืนยันชำระเงินแล้ว! กำลังส่งเข้า Photoshop...`, 'success');
+                            toast(`✅ จุดที่ ${local.num} ได้รับยอดชำระเงินเรียบร้อยแล้ว! กำลังส่งต่องานเข้าระบบ...`, 'success');
                             const modal = document.getElementById('paymentModal');
                             if (modal && modal.classList.contains('open')) modal.classList.remove('open');
                         }
@@ -3673,7 +3755,7 @@
                 pending_review: shopStatus === 'away' ? '⏳ โปรดรอนักรีทัชมาประเมินราคาให้' : '⏳ รอนักรีทัชคิดราคา...',
                 rejected: '❌ นักรีทัชปฏิเสธงาน',
                 pending_payment: '💳 นักรีทัชคิดราคาแล้ว (รอโอนเงิน)',
-                paid: '⚡ โอนแล้ว (กำลังเข้า PS)',
+                paid: 'ยืนยันการชำระเงินแล้ว',
                 working: '🎨 กำลังทำใน Photoshop',
                 done: '✅ ทำการแก้เสร็จแล้ว',
                 system_error: '⚠️ ระบบขัดข้อง'
@@ -3807,9 +3889,10 @@
                     </button>
                 ` : ''}
                 ${patch.status === 'paid' ? `
-                    <span style="font-size:0.82rem;color:#7c3aed;font-weight:700;display:flex;align-items:center;gap:6px;">
-                        <span class="spinner"></span> โอนแล้ว ⚡ กำลังส่งเข้า PS...
-                    </span>
+                    <div class="paid-status-badge">
+                        <span class="spinner"></span>
+                        <span>ยืนยันการชำระเงินเรียบร้อย · กำลังส่งต่องานเข้าระบบ...</span>
+                    </div>
                 ` : ''}
                 ${patch.status === 'working' ? `
                     <div class="working-timer-badge">
@@ -4490,8 +4573,8 @@
 
             // กำหนดข้อความปุ่มตามประเภทไฟล์
             const btnHtml = (localFileType === 'pdf')
-                ? '<i class="fa-solid fa-file-pdf"></i> ดาวน์โหลดเอกสารสมบูรณ์'
-                : '<i class="fa-solid fa-download"></i> ดาวน์โหลดภาพที่เสร็จสมบูรณ์';
+                ? '<i class="fa-solid fa-file-pdf"></i> ดาวน์โหลดเอกสาร'
+                : '<i class="fa-solid fa-download"></i> ดาวน์โหลดภาพ';
 
             btns.forEach(btn => {
                 btn.innerHTML = btnHtml;
@@ -4507,9 +4590,15 @@
             existingBtnDownload.addEventListener('click', () => downloadFinalFile(existingBtnDownload));
         }
 
+        let currentDownloadBlob = null;
+        let currentDownloadFileName = 'text-retouch-completed.jpg';
+
         async function downloadFinalFile(btnEl) {
             const btn = (btnEl instanceof HTMLElement) ? btnEl : (document.querySelector('.btn-download-final') || document.getElementById('btnDownloadFinal'));
             const origHtml = btn ? btn.innerHTML : '';
+            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const isLine = /Line\//i.test(navigator.userAgent);
+
             if (localFileType === 'pdf') {
                 if (btn) {
                     btn.disabled = true;
@@ -4577,7 +4666,44 @@
                     }
 
                     const baseName = (localFile && localFile.name) ? localFile.name.replace(/\.[^/.]+$/, '') : 'document';
-                    doc.save(`${baseName}-completed.pdf`);
+                    const pdfFileName = `${baseName}-completed.pdf`;
+                    const pdfBlob = doc.output('blob');
+
+                    // 1. Mobile Web Share for PDF
+                    if (isMobile && navigator.canShare) {
+                        try {
+                            const file = new File([pdfBlob], pdfFileName, { type: 'application/pdf' });
+                            if (navigator.canShare({ files: [file] })) {
+                                await navigator.share({
+                                    files: [file],
+                                    title: 'เอกสาร PDF สมบูรณ์'
+                                });
+                                toast('🎉 บันทึก/แชร์เอกสาร PDF เรียบร้อย!', 'success');
+                                try {
+                                    await db.ref(`text_retouch/${sessionId}`).update({ downloaded: true, downloadedAt: Date.now() });
+                                } catch (e) { }
+                                return;
+                            }
+                        } catch (shareErr) {
+                            if (shareErr.name === 'AbortError') return;
+                            console.warn('Share PDF fallback:', shareErr);
+                        }
+                    }
+
+                    // 2. Blob URL Download
+                    const blobUrl = URL.createObjectURL(pdfBlob);
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = pdfFileName;
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer';
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(blobUrl);
+                    }, 5000);
+
                     toast('🎉 ดาวน์โหลดเอกสาร PDF สมบูรณ์เรียบร้อย!', 'success');
 
                     try {
@@ -4595,16 +4721,137 @@
                 return;
             }
 
+            // --- IMAGE DOWNLOAD ---
             const img = document.getElementById('mainImage');
+            if (!img || !img.src) {
+                toast('⚠️ ไม่พบข้อมูลรูปภาพ กรุณารอสักครู่แล้วลองใหม่', 'error');
+                return;
+            }
+
+            const baseName = (localFile && localFile.name) ? localFile.name.replace(/\.[^/.]+$/, '') : 'text-retouch';
+            const fileName = `${baseName}-completed.jpg`;
+            currentDownloadFileName = fileName;
+
+            // Convert img.src (dataURL or URL) to Blob
+            let blob = null;
+            try {
+                if (img.src.startsWith('data:')) {
+                    const parts = img.src.split(',');
+                    const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+                    const binary = atob(parts[1]);
+                    const array = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) {
+                        array[i] = binary.charCodeAt(i);
+                    }
+                    blob = new Blob([array], { type: mime });
+                } else {
+                    const res = await fetch(img.src);
+                    blob = await res.blob();
+                }
+            } catch (err) {
+                console.warn('Blob creation error:', err);
+            }
+            currentDownloadBlob = blob;
+
+            // 1. Mobile Web Share (Direct Save to Photos / Camera Roll / LINE / Files)
+            if (isMobile && blob && navigator.canShare && !isLine) {
+                try {
+                    const file = new File([blob], fileName, { type: blob.type || 'image/jpeg' });
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: 'ภาพที่เสร็จสมบูรณ์'
+                        });
+                        toast('🎉 บันทึก/แชร์รูปภาพเรียบร้อย!', 'success');
+                        try {
+                            await db.ref(`text_retouch/${sessionId}`).update({ downloaded: true, downloadedAt: Date.now() });
+                        } catch (e) { }
+                        return;
+                    }
+                } catch (shareErr) {
+                    if (shareErr.name === 'AbortError') {
+                        return; // User cancelled share sheet
+                    }
+                    console.warn('Web Share failed, fallback to modal:', shareErr);
+                }
+            }
+
+            // 2. Mobile Modal (for LINE, iOS Safari, or devices where download is blocked)
+            if (isMobile) {
+                openMobileDownloadModal(img.src);
+                return;
+            }
+
+            // 3. Desktop browser download
+            const blobUrl = blob ? URL.createObjectURL(blob) : img.src;
             const a = document.createElement('a');
-            a.href = img.src;
-            a.download = 'text-retouch-completed.jpg';
+            a.href = blobUrl;
+            a.download = fileName;
+            a.style.display = 'none';
+            document.body.appendChild(a);
             a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                if (blob) URL.revokeObjectURL(blobUrl);
+            }, 5000);
             toast('ดาวน์โหลดไฟล์เรียบร้อย!', 'success');
 
             try {
                 await db.ref(`text_retouch/${sessionId}`).update({ downloaded: true, downloadedAt: Date.now() });
             } catch (e) { }
+        }
+
+        function openMobileDownloadModal(imgSrc) {
+            const modal = document.getElementById('mobileDownloadModal');
+            const imgEl = document.getElementById('mobileDownloadImg');
+            if (imgEl) imgEl.src = imgSrc;
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.classList.add('open');
+            }
+            try {
+                db.ref(`text_retouch/${sessionId}`).update({ downloaded: true, downloadedAt: Date.now() });
+            } catch (e) { }
+        }
+
+        function closeMobileDownloadModal() {
+            const modal = document.getElementById('mobileDownloadModal');
+            if (modal) {
+                modal.style.display = 'none';
+                modal.classList.remove('open');
+            }
+        }
+
+        async function triggerNativeShare() {
+            if (currentDownloadBlob && navigator.canShare) {
+                try {
+                    const file = new File([currentDownloadBlob], currentDownloadFileName, { type: currentDownloadBlob.type || 'image/jpeg' });
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: 'ภาพที่เสร็จสมบูรณ์'
+                        });
+                        toast('🎉 บันทึก/แชร์ภาพเรียบร้อย!', 'success');
+                        return;
+                    }
+                } catch (e) {
+                    if (e.name !== 'AbortError') {
+                        toast('อุปกรณ์ไม่รองรับการแชร์โดยตรง กรุณาแตะค้างที่รูปภาพเพื่อบันทึก', 'info');
+                    }
+                }
+            } else {
+                toast('กรุณาแตะค้างที่รูปภาพ แล้วเลือก "บันทึกรูปภาพ" (Save Image)', 'info');
+            }
+        }
+
+        function openImageInNewTab() {
+            if (currentDownloadBlob) {
+                const url = URL.createObjectURL(currentDownloadBlob);
+                window.open(url, '_blank');
+            } else {
+                const img = document.getElementById('mainImage');
+                if (img && img.src) window.open(img.src, '_blank');
+            }
         }
 
         /* ======================================================
