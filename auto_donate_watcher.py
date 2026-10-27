@@ -3143,14 +3143,35 @@ def handle_kbank_deposit_received(amount=None):
             with urllib.request.urlopen(patch_req, timeout=5) as patch_res:
                 pass
             
-            log_kbank(f"[KBank AutoPay] 🚀 AUTO-APPROVED successfully for Order {matched_key}! Client download is now unlocked.")
-            
-            # ส่งเสียงแจ้งเตือนสั้นๆ บน Windows
+            # If this payment request belongs to a chat room work, unlock it immediately in Firebase
             try:
-                import winsound
-                winsound.MessageBeep(winsound.MB_ICONASTERISK)
-            except Exception:
-                pass
+                matched_val = dict(pending_items).get(matched_key, {})
+                room_id = matched_val.get('roomId')
+                msg_id = matched_val.get('msgId')
+                if room_id and msg_id:
+                    # 1. Update message in room to paid = True
+                    chat_msg_url = f"https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/rooms/{room_id}/messages/{msg_id}.json"
+                    chat_msg_data = json.dumps({
+                        "paid": True,
+                        "paidAt": int(time.time() * 1000),
+                        "paidBy": "KBank_AutoPay"
+                    }).encode('utf-8')
+                    chat_msg_req = urllib.request.Request(chat_msg_url, data=chat_msg_data, method='PATCH', headers={"Content-Type": "application/json"})
+                    urllib.request.urlopen(chat_msg_req, timeout=5)
+
+                    # 2. Push automatic approval notification to chat
+                    notify_url = f"https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/rooms/{room_id}/messages.json"
+                    notify_data = json.dumps({
+                        "sender": "System",
+                        "type": "notification",
+                        "text": f"💸 ตรวจพบยอดเงินเข้า {final_paid_amount:.2f} บาท จาก KBank อัตโนมัติ! ปลดล็อคไฟล์ให้เรียบร้อยแล้ว ✅",
+                        "timestamp": int(time.time() * 1000)
+                    }).encode('utf-8')
+                    notify_req = urllib.request.Request(notify_url, data=notify_data, method='POST', headers={"Content-Type": "application/json"})
+                    urllib.request.urlopen(notify_req, timeout=5)
+                    log_kbank(f"[KBank AutoPay] 💬 Unlocked chat room {room_id} message {msg_id} automatically!")
+            except Exception as chat_err:
+                log_kbank(f"[KBank AutoPay] Error updating chat message: {chat_err}")
 
             # บันทึกสถานะ approved ค้างไว้ใน Firebase เพื่อให้ลูกค้าสามารถเปิดลิงก์ดาวน์โหลดได้ตลอดอายุลิงก์
         else:
