@@ -89,11 +89,17 @@ function updateAdminButtonsVisibility() {
         if (cancelContactBtn) cancelContactBtn.style.display = isVisible ? 'inline-flex' : 'none';
         if (changeRoomBtn) changeRoomBtn.style.display = isVisible ? 'flex' : 'none';
         if (latestPriceBadge) latestPriceBadge.style.display = isVisible ? 'flex' : 'none';
-        if (adminPreviewUploadBtn) adminPreviewUploadBtn.style.display = isVisible ? 'inline-flex' : 'none';
+        if (adminPreviewUploadBtn) adminPreviewUploadBtn.style.display = (isVisible && !isRoomClosed) ? 'inline-flex' : 'none';
         if (!isLocalHost && hasRoom) {
             const isWorkSubmitted = currentRoom && sessionStorage.getItem(`work_submitted_${currentRoom}`) === '1';
-            if (headerUploadGuideBtn) headerUploadGuideBtn.style.display = isWorkSubmitted ? 'none' : 'inline-flex';
-            if (customerUploadBanner) customerUploadBanner.style.display = isWorkSubmitted ? 'none' : 'flex';
+            const showUpload = !isWorkSubmitted && !isRoomClosed;
+            if (headerUploadGuideBtn) headerUploadGuideBtn.style.display = showUpload ? 'inline-flex' : 'none';
+            if (customerUploadBanner) customerUploadBanner.style.display = showUpload ? 'flex' : 'none';
+        }
+        if (isRoomClosed) {
+            if (headerUploadGuideBtn) headerUploadGuideBtn.style.display = 'none';
+            if (customerUploadBanner) customerUploadBanner.style.display = 'none';
+            if (adminPreviewUploadBtn) adminPreviewUploadBtn.style.display = 'none';
         }
     } catch (e) {
         console.error('Error updating admin buttons visibility:', e);
@@ -482,6 +488,16 @@ function applyRoomClosedUI() {
     if (contactModal) contactModal.classList.remove('active');
     const annotateModal = document.getElementById('annotateModal');
     if (annotateModal) annotateModal.classList.remove('active');
+    if (customerUploadModal) {
+        customerUploadModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    if (typeof hideCustomerUploadPrompt === 'function') {
+        hideCustomerUploadPrompt(false);
+    }
+    if (customerUploadBanner) customerUploadBanner.style.display = 'none';
+    if (headerUploadGuideBtn) headerUploadGuideBtn.style.display = 'none';
+    if (adminPreviewUploadBtn) adminPreviewUploadBtn.style.display = 'none';
 
     // 4. Stop voice broadcast if active
     if (typeof stopBroadcast === 'function' && typeof isBroadcasting !== 'undefined' && isBroadcasting) {
@@ -4205,7 +4221,7 @@ if (annotateCancelBtn) {
 
 // ===== Customer Work Upload & Annotation Prompt System =====
 function openCustomerUploadModal() {
-    if (!customerUploadModal) return;
+    if (!customerUploadModal || isRoomClosed) return;
     customerUploadModal.classList.add('active');
     document.body.style.overflow = 'hidden';
 }
@@ -4327,17 +4343,42 @@ if (customerBannerUploadBtn && customerWorkFileInput) {
 
 if (headerUploadGuideBtn) {
     headerUploadGuideBtn.addEventListener('click', () => {
+        if (isRoomClosed) return;
         openCustomerUploadModal();
     });
 }
 
 if (adminPreviewUploadBtn) {
     adminPreviewUploadBtn.addEventListener('click', () => {
+        if (isRoomClosed) return;
         openCustomerUploadModal();
     });
 }
 
-function checkAndShowCustomerUploadPrompt(roomId) {
+async function checkAndShowCustomerUploadPrompt(roomId) {
+    if (isRoomClosed) {
+        hideCustomerUploadPrompt(false);
+        return;
+    }
+
+    // Double check from Firebase if the room is closed
+    if (roomId && database) {
+        try {
+            const closedSnap = await get(ref(database, `rooms/${roomId}/closed`));
+            const closedData = closedSnap.val();
+            if (closedData && closedData.isClosed) {
+                applyRoomClosedUI();
+                hideCustomerUploadPrompt(false);
+                return;
+            }
+        } catch (_) { }
+    }
+
+    if (isRoomClosed) {
+        hideCustomerUploadPrompt(false);
+        return;
+    }
+
     const isLocalHost = isAdminUser();
     const isCustomer = !isLocalHost;
     const urlParams = new URLSearchParams(window.location.search);
@@ -4359,11 +4400,13 @@ function checkAndShowCustomerUploadPrompt(roomId) {
             const isDismissed = sessionStorage.getItem(`customer_upload_dismissed_${roomId}`) === '1';
             if (!isDismissed) {
                 setTimeout(() => {
+                    if (isRoomClosed) return;
                     openCustomerUploadModal();
                 }, 400);
             }
         } catch (_) {
             setTimeout(() => {
+                if (isRoomClosed) return;
                 openCustomerUploadModal();
             }, 400);
         }
