@@ -1984,9 +1984,19 @@ function renderMessage(data, id) {
 
                 const annJSONEscaped = JSON.stringify(annPoints).replace(/"/g, '&quot;');
                 const origImgUrl = (data.file.originalImage || fileUrl).replace(/'/g, "\\'");
-                const clickHandler = `window.openAnnotateModal('${origImgUrl}', JSON.parse(this.closest('.problem-card').getAttribute('data-annotations') || '[]'))`;
 
                 const isAdmin = isAdminUser();
+                // Admin เห็น lightbox ธรรมดา (ไม่ต้องวงจุด), ลูกค้าเห็น annotate modal
+                const clickHandler = isAdmin
+                    ? `window.openImagePopup('${fileUrl.replace(/'/g, "\\'")}', '${fileUrl.replace(/'/g, "\\'")}')`
+                    : `window.openAnnotateModal('${origImgUrl}', JSON.parse(this.closest('.problem-card').getAttribute('data-annotations') || '[]'))`;
+
+                // ปุ่มดาวน์โหลดต้นฉบับ (ไม่วงจุด) สำหรับ admin
+                const origFileName = (data.file.name || 'original.jpg').replace(/^marked_/, '');
+                const downloadOrigBtnHTML = isAdmin && data.file.originalImage
+                    ? `<button type="button" class="pricing-dl-orig-btn" onclick="event.stopPropagation(); window.forceDownload('${origImgUrl}', '${origFileName.replace(/'/g, "\\'")}')" title="ดาวน์โหลดต้นฉบับ (ไม่วงจุด)"><i class="fa-solid fa-file-image"></i> ต้นฉบับ</button>`
+                    : '';
+
                 let pricingBarHTML = '';
                 if (isAdmin) {
                     pricingBarHTML = `
@@ -2009,6 +2019,7 @@ function renderMessage(data, id) {
                                         <i class="fa-solid fa-paper-plane"></i>
                                     </button>
                                 </form>
+                                ${downloadOrigBtnHTML}
                             </div>
                         </div>
                     `;
@@ -2022,7 +2033,7 @@ function renderMessage(data, id) {
                         <div class="problem-card-body">
                             <svg class="problem-card-svg"></svg>
                             <div class="problem-image-col" onclick="${clickHandler}">
-                                <button class="thumb-download-btn" onclick="event.stopPropagation(); window.forceDownload('${fileUrl.replace(/'/g, "\\'")}','${data.file.name}')" title="ดาวน์โหลด"><i class="fa-solid fa-download"></i></button>
+                                <button class="thumb-download-btn" onclick="event.stopPropagation(); window.forceDownload('${fileUrl.replace(/'/g, "\\'")}','${data.file.name}')" title="ดาวน์โหลดรูปวงจุด"><i class="fa-solid fa-download"></i></button>
                                 <img src="${fileUrl}" class="message-img problem-img" alt="Marked Image" onload="setTimeout(() => window.drawProblemCardArrows(this.closest('.problem-card')), 60)">
                             </div>
                             ${annItemsHTML ? `<div class="problem-ann-col">${annItemsHTML}</div>` : ''}
@@ -2090,7 +2101,7 @@ function renderMessage(data, id) {
                 actionHTML = `
                     <button type="button" class="estimate-accept-btn" onclick="window.handleAcceptEstimate('${id}', '${amount}')">
                         <i class="fa-solid fa-check"></i>
-                        <span>ตกลง</span>
+                        <span>กดยอมรับง</span>
                     </button>
                 `;
             } else {
