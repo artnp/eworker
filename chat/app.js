@@ -1991,10 +1991,12 @@ function renderMessage(data, id) {
                     ? `window.openImagePopup('${fileUrl.replace(/'/g, "\\'")}', '${fileUrl.replace(/'/g, "\\'")}')`
                     : `window.openAnnotateModal('${origImgUrl}', JSON.parse(this.closest('.problem-card').getAttribute('data-annotations') || '[]'))`;
 
-                // ปุ่มดาวน์โหลดต้นฉบับ (ไม่วงจุด) สำหรับ admin
+                // ปุ่มดาวน์โหลดต้นฉบับ (ไม่วงจุด) สำหรับ admin — แสดงเสมอถ้าเป็น admin
                 const origFileName = (data.file.name || 'original.jpg').replace(/^marked_/, '');
-                const downloadOrigBtnHTML = isAdmin && data.file.originalImage
-                    ? `<button type="button" class="pricing-dl-orig-btn" onclick="event.stopPropagation(); window.forceDownload('${origImgUrl}', '${origFileName.replace(/'/g, "\\'")}')" title="ดาวน์โหลดต้นฉบับ (ไม่วงจุด)"><i class="fa-solid fa-file-image"></i> ต้นฉบับ</button>`
+                const downloadOrigBtnHTML = isAdmin
+                    ? (data.file.originalImage
+                        ? `<button type="button" class="pricing-dl-orig-btn" onclick="event.stopPropagation(); window.forceDownload('${origImgUrl}', '${origFileName.replace(/'/g, "\\'")}')" title="ดาวน์โหลดต้นฉบับ (ไม่วงจุด)"><i class="fa-solid fa-file-image"></i> ต้นฉบับ</button>`
+                        : `<button type="button" class="pricing-dl-orig-btn pricing-dl-orig-btn--na" disabled title="ไม่มีไฟล์ต้นฉบับในข้อความเก่า"><i class="fa-solid fa-file-image"></i> ต้นฉบับ</button>`)
                     : '';
 
                 let pricingBarHTML = '';
@@ -4732,10 +4734,43 @@ annotateSendBtn.onclick = async () => {
             applyZoomPan();
         }
 
-        // Avoid duplicating huge base64 strings in originalImage property
-        const origImg = (annotateImageSrc && annotateImageSrc.startsWith('http'))
-            ? annotateImageSrc
-            : (annotateImageSrc && annotateImageSrc.length < 500000 ? annotateImageSrc : null);
+        // Save originalImage: HTTP URL kept as-is, base64 compressed to JPEG to keep it small
+        let origImg = null;
+        if (annotateImageSrc) {
+            if (annotateImageSrc.startsWith('http')) {
+                // Cloud URL — save directly, no duplication
+                origImg = annotateImageSrc;
+            } else {
+                // Base64 original — compress to JPEG ≤ 800KB so it always fits in Firebase
+                try {
+                    const origCanvasEl = document.createElement('canvas');
+                    const origImgEl = new Image();
+                    await new Promise((res, rej) => {
+                        origImgEl.onload = res;
+                        origImgEl.onerror = rej;
+                        origImgEl.src = annotateImageSrc;
+                    });
+                    let ow = origImgEl.naturalWidth, oh = origImgEl.naturalHeight;
+                    const MAX_ORIG = 1600;
+                    if (ow > MAX_ORIG || oh > MAX_ORIG) {
+                        if (ow >= oh) { oh = Math.round(oh * MAX_ORIG / ow); ow = MAX_ORIG; }
+                        else { ow = Math.round(ow * MAX_ORIG / oh); oh = MAX_ORIG; }
+                    }
+                    origCanvasEl.width = ow; origCanvasEl.height = oh;
+                    const octx = origCanvasEl.getContext('2d');
+                    octx.drawImage(origImgEl, 0, 0, ow, oh);
+                    let oq = 0.82;
+                    origImg = origCanvasEl.toDataURL('image/jpeg', oq);
+                    // ลด quality จนอยู่ใน ~800KB base64
+                    while (origImg.length > 800000 && oq > 0.35) {
+                        oq -= 0.12;
+                        origImg = origCanvasEl.toDataURL('image/jpeg', oq);
+                    }
+                } catch (_) {
+                    origImg = null;
+                }
+            }
+        }
 
         await sendMessage(annotateText || null, {
             name: `marked_${Date.now()}.jpg`,
