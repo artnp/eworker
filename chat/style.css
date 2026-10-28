@@ -2343,6 +2343,41 @@ body {
     transform: scale(1.03);
 }
 
+/* ===== Download Original Button (Admin — ใน Pricing Bar) ===== */
+.pricing-dl-orig-btn {
+    height: 30px;
+    padding: 0 11px;
+    border-radius: 6px;
+    border: 1px solid rgba(99, 202, 255, 0.45);
+    background: rgba(56, 189, 248, 0.1);
+    color: #7dd3fc;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s ease-in-out;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    user-select: none;
+    margin-left: auto;
+    white-space: nowrap;
+}
+.pricing-dl-orig-btn i {
+    font-size: 0.82rem;
+}
+.pricing-dl-orig-btn:hover {
+    background: rgba(56, 189, 248, 0.25);
+    color: #bae6fd;
+    border-color: #38bdf8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+}
+.pricing-dl-orig-btn:active {
+    transform: translateY(1px);
+    box-shadow: none;
+}
+
 /* ===== Latest Estimated Price Box (Admin Modern Full-Space Drag-Drop Target) ===== */
 .latest-price-badge {
     height: 52px;
