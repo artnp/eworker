@@ -1819,18 +1819,7 @@
                             </button>
                         </div>
                     </div>
-                    <!-- เส้นแบ่งแยก -->
-                    <div class="manual-confirm-divider" id="manual-confirm-divider"></div>
-                    <div class="manual-confirm-box" id="manual-confirm-box">
-                        <button type="button" class="btn-manual-confirm" id="btn-manual-confirm"
-                            onclick="triggerManualPaymentAlert()">
-                            <span>✅ ฉันโอนแล้ว! แต่ยังดาวน์โหลดไม่ได้</span>
-                        </button>
-                        <p class="manual-confirm-hint" id="manual-confirm-hint">
-                            💡 หากโอนช่วงรอบดึก (23:00 - 02:00 น.) ระบบธนาคารอาจแจ้งเตือนล่าช้า
-                            กดปุ่มนี้เพื่อให้แอดมินอนุมัติทันที
-                        </p>
-                    </div>
+
 
                     <!-- Bank Icons -->
 
@@ -2201,21 +2190,9 @@
             showToast('📋 คัดลอกเบอร์พร้อมเพย์ 098-857-3074 สำเร็จแล้ว!');
         }
 
-        // ตรวจสอบสถานะเซิร์ฟเวอร์จาก Firebase store_status.json
+        // ตรวจสอบสถานะเซิร์ฟเวอร์ (Beam Checkout ทำงาน 24 ชม. ผ่าน Cloudflare Worker)
         async function checkServerStatus() {
-            try {
-                const res = await fetch(`${STATUS_ENDPOINT}?t=${Date.now()}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data && data.online === true && (Date.now() - (data.lastSeen || 0) < 45000)) {
-                        return true;
-                    }
-                }
-                return false;
-            } catch (e) {
-                console.warn('Check server status error:', e);
-                return false;
-            }
+            return true;
         }
 
         // อัปเดต UI ตามสถานะเซิร์ฟเวอร์ Online / Offline
@@ -2791,21 +2768,62 @@
             if (overlay) overlay.remove();
         }
 
-        // Generate QR Code for PromptPay
-        function generateQRCode() {
-            const payload = generatePromptPayPayload(promptPayId, price);
+        const BEAM_WORKER_URL = "https://eworker-beam-pay.moonverse69.workers.dev";
+
+        // Generate QR Code for PromptPay (BEAM Checkout Gateway)
+        async function generateQRCode() {
             const qrDisplay = document.getElementById('qrcode-display');
+            if (!qrDisplay) return;
+            const linkKey = getLinkKey();
 
-            qrDisplay.innerHTML = '';
+            qrDisplay.innerHTML = `
+                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;font-size:0.82rem;color:#94a3b8;gap:8px;">
+                    <div style="width:28px;height:28px;border:3px solid rgba(99,102,241,0.2);border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+                    <span>กำลังโหลด PromptPay QR จาก Beam...</span>
+                </div>
+            `;
 
-            new QRCode(qrDisplay, {
-                text: payload,
-                width: 240,
-                height: 240,
-                colorDark: "#000000",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.M
-            });
+            try {
+                const res = await fetch(`${BEAM_WORKER_URL}/create-charge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        linkKey: linkKey,
+                        amount: price
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.qrImageBase64) {
+                        qrDisplay.innerHTML = `<img src="data:image/png;base64,${data.qrImageBase64}" alt="Beam PromptPay QR" style="width:100%;height:100%;object-fit:contain;border-radius:8px;">`;
+                        return;
+                    }
+                }
+                throw new Error('Beam API response invalid');
+            } catch (err) {
+                console.warn('Beam QR fetch error, falling back to direct URL or local generator:', err);
+                const fallbackImg = new Image();
+                fallbackImg.src = `${BEAM_WORKER_URL}/qr-image?linkKey=${encodeURIComponent(linkKey)}&amount=${price}`;
+                fallbackImg.alt = "Beam PromptPay QR";
+                fallbackImg.style = "width:100%;height:100%;object-fit:contain;border-radius:8px;";
+                fallbackImg.onload = () => {
+                    qrDisplay.innerHTML = '';
+                    qrDisplay.appendChild(fallbackImg);
+                };
+                fallbackImg.onerror = () => {
+                    const payload = generatePromptPayPayload(promptPayId, price);
+                    qrDisplay.innerHTML = '';
+                    new QRCode(qrDisplay, {
+                        text: payload,
+                        width: 240,
+                        height: 240,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
+                };
+            }
         }
 
         // PromptPay Payload Generator
@@ -3555,6 +3573,7 @@
 
                 startPaymentCountdown(__paymentCreatedAt);
                 startPaymentPolling();
+                generateQRCode();
 
                 showToast('✨ ต่อเวลาตรวจจับยอดเงินเรียบร้อยแล้ว (10 นาที)', 'success');
             } catch (err) {
