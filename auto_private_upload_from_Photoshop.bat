@@ -11,7 +11,7 @@ if not exist "%target_file%" (
     exit /b
 )
 
-:: ส่งไฟล์ที่กำหนดไปยัง PowerShell script
-powershell -ExecutionPolicy Bypass -File "%~dp0PrivateSend.ps1" "%target_file%"
+:: มีห้องแชท local เปิดอยู่ให้ส่งเข้าห้อง มิฉะนั้นใช้ flow เดิมไป download.html
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0PrivateSend.ps1" "%target_file%"
 
 exit /b
