@@ -29,6 +29,24 @@ DOWNLOADS_PATH = os.path.join(os.path.expanduser("~"), "Downloads")
 DESKTOP_PATH = os.path.join(os.path.expanduser("~"), "Desktop")
 BACKUP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "สำรองงาน_example-complete")
 
+# ไฟล์ที่ Photoshop ส่งมาให้หน้าแชทฝั่งแอดมินหยิบไปเข้าระบบลายน้ำ/PromptPay
+# เก็บเฉพาะพาธในเครื่องและลบออกจากคิวเมื่อหน้าแชทยืนยันว่าประมวลผลสำเร็จ
+chat_delivery_queue = {}
+chat_delivery_lock = threading.Lock()
+active_local_chat = {'roomId': None, 'lastSeen': 0}
+CHAT_DELIVERY_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.gif', '.pdf'}
+
+def _is_local_request(handler):
+    return handler.client_address[0] in ('127.0.0.1', '::1')
+
+def _chat_delivery_mime(file_path):
+    ext = os.path.splitext(file_path)[1].lower()
+    return {
+        '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
+        '.webp': 'image/webp', '.bmp': 'image/bmp', '.gif': 'image/gif',
+        '.pdf': 'application/pdf'
+    }.get(ext, 'application/octet-stream')
+
 def _get_file_hash(target):
     import hashlib
     if isinstance(target, bytes):
@@ -1546,6 +1564,82 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             return
 
+        if parsed_url.path == '/chat-delivery/active':
+            if not _is_local_request(self):
+                self.send_error(403, 'Local requests only')
+                return
+            with chat_delivery_lock:
+                is_active = bool(active_local_chat['roomId'] and time.time() - active_local_chat['lastSeen'] <= 12)
+                room_id = active_local_chat['roomId'] if is_active else None
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', 'http://127.0.0.1:5000')
+            self.end_headers()
+            self.wfile.write(json.dumps({'active': is_active, 'roomId': room_id}).encode('utf-8'))
+            return
+
+        if parsed_url.path == '/chat-delivery/source':
+            if not _is_local_request(self):
+                self.send_error(403, 'Local requests only')
+                return
+            room_id = (parse_qs(parsed_url.query).get('room') or [''])[0].strip()
+            with chat_delivery_lock:
+                item = chat_delivery_queue.get(room_id)
+            source_path = item.get('filePath') if item else None
+            exists = bool(source_path and os.path.isfile(source_path))
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', 'http://127.0.0.1:5000')
+            self.end_headers()
+            self.wfile.write(json.dumps({'path': source_path if exists else None}).encode('utf-8'))
+            return
+
+        # Photoshop action -> local queue -> chat page.  จำกัดให้เรียกจากเครื่องเดียวเท่านั้น
+        if parsed_url.path == '/chat-delivery':
+            if not _is_local_request(self):
+                self.send_error(403, 'Local requests only')
+                return
+            room_id = (parse_qs(parsed_url.query).get('room') or [''])[0].strip()
+            with chat_delivery_lock:
+                item = chat_delivery_queue.get(room_id)
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json; charset=utf-8')
+            self.send_header('Access-Control-Allow-Origin', 'http://127.0.0.1:5000')
+            self.end_headers()
+            if not item or not os.path.isfile(item['filePath']):
+                self.wfile.write(b'{"item":null}')
+                return
+            self.wfile.write(json.dumps({
+                'item': {
+                    'id': item['id'], 'name': os.path.basename(item['filePath']),
+                    'type': _chat_delivery_mime(item['filePath']),
+                    'url': f"/chat-delivery-file?room={urllib.parse.quote(room_id)}&id={urllib.parse.quote(item['id'])}"
+                }
+            }).encode('utf-8'))
+            return
+
+        if parsed_url.path == '/chat-delivery-file':
+            if not _is_local_request(self):
+                self.send_error(403, 'Local requests only')
+                return
+            query = parse_qs(parsed_url.query)
+            room_id = (query.get('room') or [''])[0].strip()
+            item_id = (query.get('id') or [''])[0].strip()
+            with chat_delivery_lock:
+                item = chat_delivery_queue.get(room_id)
+            if not item or item['id'] != item_id or not os.path.isfile(item['filePath']):
+                self.send_error(404, 'Queued file not found')
+                return
+            file_path = item['filePath']
+            self.send_response(200)
+            self.send_header('Content-type', _chat_delivery_mime(file_path))
+            self.send_header('Content-Length', str(os.path.getsize(file_path)))
+            self.send_header('Access-Control-Allow-Origin', 'http://127.0.0.1:5000')
+            self.end_headers()
+            with open(file_path, 'rb') as queued_file:
+                shutil.copyfileobj(queued_file, self.wfile)
+            return
+
         if parsed_url.path == '/bigdata-progress':
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
@@ -1814,7 +1908,7 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
     <h1>ระบบสังเคราะห์เสียง & ฐานข้อมูลคำอ่านกลาง</h1>
     <p>แก้คำอ่านและกฎตัวเลข (เช่น <code>1:20</code> เป็น <code>1 ต่อ 20</code>) ที่จุดนี้จุดเดียว จะมีผลทันทีกับทั้ง Chrome Addon (Gemini), vdoAI และ ebookAI</p>
     <div style="display: flex; gap: 0.75rem; flex-direction: column;">
-      <input id="txt" type="text" value="อัตราส่วน 1:20 และ ยักษ์ใหญ่ หมุนเพลาเร็ว" placeholder="พิมพ์ข้อความที่ต้องการทดสอบเสียง..." />
+      <input id="txt" type="text" placeholder="พิมพ์ข้อความที่ต้องการทดสอบเสียง..." />
       <button id="btn" onclick="playTTS()">🔊 ทดสอบฟังเสียง (ผ่านระบบแปลงเสียงอัตโนมัติ)</button>
     </div>
     <div id="status"></div>
@@ -2046,6 +2140,121 @@ loadRules();
 
     def do_POST(self):
         parsed_url = urlparse(self.path)
+        if parsed_url.path == '/chat-delivery/active':
+            if not _is_local_request(self):
+                self.send_error(403, 'Local requests only')
+                return
+            try:
+                content_length = int(self.headers.get('Content-Length', 0))
+                payload = json.loads(self.rfile.read(content_length).decode('utf-8'))
+                room_id = str(payload.get('roomId', '')).strip()
+                if not re.fullmatch(r'[A-Z0-9]{8}', room_id):
+                    raise ValueError('รหัสห้องไม่ถูกต้อง')
+                with chat_delivery_lock:
+                    active_local_chat.update({'roomId': room_id, 'lastSeen': time.time()})
+                self.send_response(204)
+                self.end_headers()
+            except Exception:
+                self.send_error(400, 'Invalid active chat')
+            return
+
+        if parsed_url.path == '/open-in-photoshop':
+            if not _is_local_request(self):
+                self.send_error(403, 'Local requests only')
+                return
+            try:
+                content_length = int(self.headers.get('Content-Length', 0))
+                payload = json.loads(self.rfile.read(content_length).decode('utf-8'))
+                room_id = str(payload.get('roomId', '')).strip()
+                if not re.fullmatch(r'[A-Z0-9]{8}', room_id):
+                    raise ValueError('รหัสห้องไม่ถูกต้อง')
+                source = payload.get('source')
+                if not isinstance(source, str) or not source:
+                    raise ValueError('ไม่ได้รับข้อมูลภาพต้นฉบับจากห้องแชท')
+                file_name = os.path.basename(str(payload.get('fileName') or 'customer-work.jpg'))
+                ext = os.path.splitext(file_name)[1].lower()
+                if ext not in CHAT_DELIVERY_EXTENSIONS:
+                    ext = '.jpg'
+                if source.startswith('data:'):
+                    header, encoded = source.split(',', 1)
+                    if ';base64' not in header:
+                        raise ValueError('รูปแบบข้อมูลภาพไม่รองรับ')
+                    image_bytes = base64.b64decode(encoded, validate=True)
+                elif source.startswith(('http://', 'https://')):
+                    with urllib.request.urlopen(source, timeout=20) as image_response:
+                        image_bytes = image_response.read(20 * 1024 * 1024 + 1)
+                else:
+                    raise ValueError('รูปแบบแหล่งไฟล์ไม่รองรับ')
+                if not image_bytes or len(image_bytes) > 20 * 1024 * 1024:
+                    raise ValueError('ไฟล์ว่างหรือมีขนาดเกิน 20 MB')
+                source_dir = os.path.join(tempfile.gettempdir(), 'eworker-chat-originals')
+                os.makedirs(source_dir, exist_ok=True)
+                source_path = os.path.join(source_dir, f'{room_id}_{int(time.time() * 1000)}{ext}')
+                with open(source_path, 'wb') as image_file:
+                    image_file.write(image_bytes)
+                photoshop_path = r'C:\Program Files\Adobe\Adobe Photoshop 2023\Photoshop.exe'
+                if not os.path.isfile(photoshop_path):
+                    raise FileNotFoundError(f'ไม่พบ Photoshop ที่ {photoshop_path}')
+                subprocess.Popen([photoshop_path, source_path])
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json; charset=utf-8')
+                self.send_header('Access-Control-Allow-Origin', 'http://127.0.0.1:5000')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': True, 'path': source_path}).encode('utf-8'))
+            except Exception as exc:
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json; charset=utf-8')
+                self.send_header('Access-Control-Allow-Origin', 'http://127.0.0.1:5000')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': False, 'error': str(exc)}).encode('utf-8'))
+            return
+        if parsed_url.path == '/chat-delivery':
+            if not _is_local_request(self):
+                self.send_error(403, 'Local requests only')
+                return
+            try:
+                content_length = int(self.headers.get('Content-Length', 0))
+                payload = json.loads(self.rfile.read(content_length).decode('utf-8'))
+                room_id = str(payload.get('roomId', '')).strip()
+                file_path = os.path.abspath(str(payload.get('filePath', '')).strip())
+                ext = os.path.splitext(file_path)[1].lower()
+                if not room_id or not re.fullmatch(r'[A-Z0-9]{8}', room_id):
+                    raise ValueError('รหัสห้องไม่ถูกต้อง')
+                if ext not in CHAT_DELIVERY_EXTENSIONS or not os.path.isfile(file_path):
+                    raise ValueError('ไม่พบไฟล์ภาพหรือ PDF ที่รองรับ')
+                item = {'id': hashlib.sha256(f'{room_id}:{file_path}:{time.time_ns()}'.encode()).hexdigest()[:20], 'filePath': file_path}
+                with chat_delivery_lock:
+                    chat_delivery_queue[room_id] = item
+                print(f"[Chat delivery] Queued {os.path.basename(file_path)} for room {room_id}")
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json; charset=utf-8')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': True, 'id': item['id']}).encode('utf-8'))
+            except Exception as exc:
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json; charset=utf-8')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': False, 'error': str(exc)}).encode('utf-8'))
+            return
+
+        if parsed_url.path == '/chat-delivery-ack':
+            if not _is_local_request(self):
+                self.send_error(403, 'Local requests only')
+                return
+            try:
+                content_length = int(self.headers.get('Content-Length', 0))
+                payload = json.loads(self.rfile.read(content_length).decode('utf-8'))
+                room_id = str(payload.get('roomId', '')).strip()
+                item_id = str(payload.get('id', '')).strip()
+                with chat_delivery_lock:
+                    item = chat_delivery_queue.get(room_id)
+                    if item and item['id'] == item_id:
+                        del chat_delivery_queue[room_id]
+                self.send_response(204)
+                self.end_headers()
+            except Exception:
+                self.send_error(400, 'Invalid acknowledgement')
+            return
         if parsed_url.path == '/edge-tts/pronunciations':
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
@@ -2452,6 +2661,19 @@ loadRules();
                 if img_data and ',' in img_data and target:
                     header, encoded = img_data.split(',', 1)
                     binary_data = base64.b64decode(encoded)
+
+                    # Temporary exact PNG restore point used by dashboard crop recovery.
+                    is_crop_restore_point = target.lower().endswith('.before-bottom-crop.png')
+                    if is_crop_restore_point:
+                        os.makedirs(os.path.dirname(target), exist_ok=True)
+                        with open(target, 'wb') as f:
+                            f.write(binary_data)
+                        self.send_response(200)
+                        self.send_header('Content-type', 'application/json')
+                        self.send_header('Access-Control-Allow-Origin', '*')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"success": True, "path": target}).encode())
+                        return
 
                     # ถ้าบันทึก complete.png (ไม่ใช่ complete_bot.png) ให้ backup ไฟล์เดิมก่อนเขียนทับ
                     is_complete_png = (os.path.basename(target).lower() == 'complete.png') and ('bot' not in target.lower())
