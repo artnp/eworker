@@ -16,6 +16,24 @@ if (-not $filePath) {
     exit
 }
 
+# ถ้า Edge เปิดหน้าแชท local ที่ active ให้ส่งเข้า latestPriceBadge
+# มิฉะนั้นทำ flow PrivateSend เดิมต่อ: อัปโหลดพร้อมราคาไป download.html
+try {
+    $chatResponse = Invoke-RestMethod -Uri 'http://127.0.0.1:5000/chat-delivery/active' -Method Get -TimeoutSec 2 -ErrorAction Stop
+    if ($chatResponse.active -and $chatResponse.roomId) {
+        $chatPayload = @{
+            roomId = [string]$chatResponse.roomId
+            filePath = (Resolve-Path -LiteralPath $filePath).Path
+        } | ConvertTo-Json -Compress
+        Invoke-RestMethod -Uri 'http://127.0.0.1:5000/chat-delivery' -Method Post `
+            -ContentType 'application/json; charset=utf-8' -Body $chatPayload -TimeoutSec 10 -ErrorAction Stop | Out-Null
+        Write-Host "ส่งไฟล์เข้าแถบค่าแรงล่าสุดของห้อง $($chatResponse.roomId) แล้ว" -ForegroundColor Green
+        exit 0
+    }
+} catch {
+    # ไม่มีหน้าแชท local ที่ active: ทำระบบอัปโหลดไป download.html ต่อ
+}
+
 # 1. ตรวจสอบประเภทไฟล์
 $extension = [System.IO.Path]::GetExtension($filePath).ToLower()
 $isImage = $extension -match "\.(jpg|jpeg|png|gif|bmp|webp)"
@@ -99,6 +117,33 @@ if ($null -ne $givenPrice -and $givenPrice -ne "") {
 
 # 3. ตรวจสอบและอัปโหลด (ใช้ Python เพื่อความเสถียรสูงสุด)
 Write-Host "กำลังอัปโหลด (Uploading)..." -ForegroundColor Yellow
+
+# ใช้ runtime เดียวกับ local watcher เพื่อรักษา upload.py และ signature flow เดิม
+# endpoint นี้สร้างลิงก์ download.html พร้อมราคาและคัดลอกลง Clipboard ให้
+# โหมด -noPrice คงข้อความตัวอย่างแบบเดิมไว้ จึงข้าม endpoint นี้
+if (-not $noPrice) {
+    try {
+        $legacyPayload = @{
+            path = (Resolve-Path -LiteralPath $fileToUpload).Path
+            amount = $price
+        } | ConvertTo-Json -Compress
+        $legacyResult = Invoke-RestMethod -Uri 'http://127.0.0.1:5000/send-work-link' -Method Post `
+            -ContentType 'application/json; charset=utf-8' -Body $legacyPayload -TimeoutSec 120 -ErrorAction Stop
+        if ($legacyResult.success -and $legacyResult.url) {
+            Write-Host "อัปโหลดสำเร็จผ่าน $($legacyResult.source)" -ForegroundColor Green
+            Write-Host "คัดลอกลิงก์ download.html พร้อมราคา $($legacyResult.amount) บาท ลง Clipboard แล้ว" -ForegroundColor Cyan
+            Write-Host $legacyResult.url
+            exit 0
+        }
+        $legacyError = [string]$legacyResult.error
+        if ([string]::IsNullOrWhiteSpace($legacyError)) {
+            $legacyError = 'ไม่ได้รับลิงก์ download.html จากระบบอัปโหลด'
+        }
+        throw $legacyError
+    } catch {
+        Write-Host "ระบบอัปโหลดในเครื่องไม่พร้อม ใช้ตัวอัปโหลดสำรอง: $($_.Exception.Message)" -ForegroundColor DarkYellow
+    }
+}
 
 $expiryHours = 1
 $timestamp = [DateTimeOffset]::Now.AddHours($expiryHours).ToUnixTimeMilliseconds()
