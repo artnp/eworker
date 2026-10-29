@@ -42,7 +42,8 @@
                             <div class="passcode-icon">
                                 <i class="fa-solid fa-lock"></i>
                             </div>
-                            <input type="password" id="roomPasscodeInput" class="passcode-input" autocomplete="off" autofocus aria-label="Passcode">
+                            <input type="password" id="roomPasscodeInput" class="passcode-input" autocomplete="off"
+                                autofocus aria-label="Passcode">
                             <div class="passcode-dots" id="passcodeDots">
                                 <span></span><span></span><span></span><span></span><span></span><span></span>
                             </div>
@@ -60,14 +61,6 @@
                             <span id="shareLinkText">กำลังสร้างห้อง...</span>
                             <button id="copyBtn">คัดลอก</button>
                         </div>
-                    </div>
-                    <div class="header-right-actions">
-                        <button id="headerUploadGuideBtn" class="header-upload-btn" style="display: none;" title="ส่งรูปงาน &amp; วงจุดแก้">
-                            <i class="fa-solid fa-cloud-arrow-up"></i> <span>ส่งรูปแก้งาน</span>
-                        </button>
-                        <button id="adminPreviewUploadBtn" class="admin-preview-btn" style="display: none;" title="พรีวิวกรอบส่งงาน">
-                            <i class="fa-solid fa-eye"></i> <span>พรีวิวส่งงาน</span>
-                        </button>
                     </div>
                 </header>
 
@@ -111,24 +104,33 @@
 
                 <div class="input-area">
                     <div class="input-container">
-                        <div id="latestPriceBadge" class="latest-price-badge" style="display: none;" title="ลากไฟล์ภาพ/PDF มาวางที่นี่เพื่อส่งงานติดลายน้ำพร้อมบิล PromptPay">
+                        <div id="latestPriceBadge" class="latest-price-badge" style="display: none;"
+                            title="ลากไฟล์ภาพ/PDF มาวางที่นี่เพื่อส่งงานติดลายน้ำพร้อมบิล PromptPay">
                             <div class="latest-price-inner">
                                 <div class="latest-price-left-section">
                                     <div class="latest-price-icon-box">
                                         <span class="latest-price-icon">💰</span>
                                     </div>
-                                    <div class="latest-price-info" id="latestPriceEditBox" title="คลิกเพื่อแก้ไขราคาค่าแรง">
+                                    <div class="latest-price-info" id="latestPriceEditBox"
+                                        title="คลิกเพื่อแก้ไขราคาค่าแรง">
                                         <div class="latest-price-label-row">
                                             <span class="latest-price-label">ค่าแรงล่าสุด</span>
-                                            <i class="fa-solid fa-pen-to-square latest-price-edit-icon" id="latestPriceEditIcon" title="คลิกเพื่อแก้ไขราคา"></i>
+                                            <i class="fa-solid fa-pen-to-square latest-price-edit-icon"
+                                                id="latestPriceEditIcon" title="คลิกเพื่อแก้ไขราคา"></i>
                                         </div>
                                         <div class="latest-price-val-wrap" id="latestPriceValWrap">
-                                            <span class="latest-price-val"><strong id="latestPriceVal">-</strong> <small>บาท</small></span>
+                                            <span class="latest-price-val"><strong id="latestPriceVal">-</strong>
+                                                <small>บาท</small></span>
                                         </div>
-                                        <div class="latest-price-edit-form" id="latestPriceEditForm" style="display: none;">
-                                            <input type="number" id="latestPriceInput" class="latest-price-input" placeholder="ราคา..." min="1" step="1">
-                                            <button type="button" id="latestPriceSaveBtn" class="latest-price-btn-save" title="บันทึกราคา"><i class="fa-solid fa-check"></i></button>
-                                            <button type="button" id="latestPriceCancelBtn" class="latest-price-btn-cancel" title="ยกเลิก"><i class="fa-solid fa-xmark"></i></button>
+                                        <div class="latest-price-edit-form" id="latestPriceEditForm"
+                                            style="display: none;">
+                                            <input type="number" id="latestPriceInput" class="latest-price-input"
+                                                placeholder="ราคา..." min="1" step="1">
+                                            <button type="button" id="latestPriceSaveBtn" class="latest-price-btn-save"
+                                                title="บันทึกราคา"><i class="fa-solid fa-check"></i></button>
+                                            <button type="button" id="latestPriceCancelBtn"
+                                                class="latest-price-btn-cancel" title="ยกเลิก"><i
+                                                    class="fa-solid fa-xmark"></i></button>
                                         </div>
                                     </div>
                                 </div>
@@ -172,21 +174,24 @@
                             </button>
                             <button id="sendBtn" class="send-btn">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
                             </button>
                         </div>
                         <div id="roomActionButtons" class="room-action-buttons" style="display: none;">
-                            <button id="startProcessBtn" class="start-process-btn" title="เริ่มดำเนินการ" style="display: none;">
+                            <button id="startProcessBtn" class="start-process-btn" title="เริ่มดำเนินการ"
+                                style="display: none;">
                                 <i class="fa-solid fa-play"></i>
                                 <span>เริ่มดำเนินการ</span>
                             </button>
-                            <button id="cancelContactBtn" class="cancel-contact-btn" title="ยกเลิกการติดต่อและปิดห้อง" style="display: none;">
+                            <button id="cancelContactBtn" class="cancel-contact-btn" title="ยกเลิกการติดต่อและปิดห้อง"
+                                style="display: none;">
                                 <i class="fa-solid fa-ban"></i>
                                 <span>ยกเลิกการติดต่อ</span>
                             </button>
-                            <button id="changeRoomBtn" class="change-room-btn-outer" title="เปลี่ยนห้อง" style="display: none;">
+                            <button id="changeRoomBtn" class="change-room-btn-outer" title="เปลี่ยนห้อง"
+                                style="display: none;">
                                 <img src="https://cdn-icons-png.flaticon.com/128/6105/6105231.png" alt="เปลี่ยนห้อง">
                                 <span>พาเปลี่ยนห้อง</span>
                             </button>
@@ -225,8 +230,9 @@
     <div id="customerUploadModal" class="customer-upload-modal">
         <div class="customer-upload-backdrop" id="customerUploadBackdrop"></div>
         <div class="customer-upload-card">
-            <button type="button" class="customer-upload-close-btn" id="customerUploadCloseBtn" title="ปิด">&times;</button>
-            
+            <button type="button" class="customer-upload-close-btn" id="customerUploadCloseBtn"
+                title="ปิด">&times;</button>
+
             <div class="customer-upload-header">
                 <div class="customer-upload-badge-icon">
                     <i class="fa-solid fa-camera"></i>
@@ -282,9 +288,12 @@
                 <div class="annotate-body" id="annotateBody">
                     <!-- Floating zoom controls on image canvas -->
                     <div class="annotate-zoom-controls-left">
-                        <button id="annotateZoomInBtn" title="ซูมเข้า"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
-                        <button id="annotateZoomOutBtn" title="ซูมออก"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
-                        <button id="annotateZoomResetBtn" title="รีเซ็ตขนาด"><i class="fa-solid fa-arrows-rotate"></i></button>
+                        <button id="annotateZoomInBtn" title="ซูมเข้า"><i
+                                class="fa-solid fa-magnifying-glass-plus"></i></button>
+                        <button id="annotateZoomOutBtn" title="ซูมออก"><i
+                                class="fa-solid fa-magnifying-glass-minus"></i></button>
+                        <button id="annotateZoomResetBtn" title="รีเซ็ตขนาด"><i
+                                class="fa-solid fa-arrows-rotate"></i></button>
                     </div>
                     <div id="annotateCanvasContainer" class="annotate-canvas-container"></div>
                 </div>
@@ -309,7 +318,8 @@
                         <p>คลิก <strong>เพิ่มจุด</strong> หรือแตะบนรูปภาพ</p>
                     </div>
                     <div class="annotate-right-toolbar">
-                        <button type="button" class="annotate-btn annotate-btn-cancel" id="annotateCancelBtn" onclick="if(window.closeAnnotateModal){window.closeAnnotateModal();}else{const m=document.getElementById('annotateModal');if(m){m.classList.remove('active');m.style.display='none';}const c=document.getElementById('annotateCanvasContainer');if(c)c.innerHTML='';document.body.style.overflow='';}">
+                        <button type="button" class="annotate-btn annotate-btn-cancel" id="annotateCancelBtn"
+                            onclick="if(window.closeAnnotateModal){window.closeAnnotateModal();}else{const m=document.getElementById('annotateModal');if(m){m.classList.remove('active');m.style.display='none';}const c=document.getElementById('annotateCanvasContainer');if(c)c.innerHTML='';document.body.style.overflow='';}">
                             <i class="fa-solid fa-xmark" style="color: #ef4444;"></i> <span>ยกเลิก</span>
                         </button>
                         <button type="button" class="annotate-btn annotate-btn-send" id="annotateSendBtn">
@@ -326,9 +336,12 @@
         <div class="lightbox-topbar">
             <span class="lightbox-zoom-level" id="lightboxZoomLevel">100%</span>
             <div class="lightbox-topbar-right">
-                <button class="lightbox-zoom-btn" id="lightboxZoomOutBtn" title="ซูมออก"><i class="fa-solid fa-minus"></i></button>
-                <button class="lightbox-zoom-btn" id="lightboxZoomInBtn" title="ซูมเข้า"><i class="fa-solid fa-plus"></i></button>
-                <button class="lightbox-zoom-btn" id="lightboxZoomResetBtn" title="ปรับขนาดพอดี"><i class="fa-solid fa-arrows-to-circle"></i></button>
+                <button class="lightbox-zoom-btn" id="lightboxZoomOutBtn" title="ซูมออก"><i
+                        class="fa-solid fa-minus"></i></button>
+                <button class="lightbox-zoom-btn" id="lightboxZoomInBtn" title="ซูมเข้า"><i
+                        class="fa-solid fa-plus"></i></button>
+                <button class="lightbox-zoom-btn" id="lightboxZoomResetBtn" title="ปรับขนาดพอดี"><i
+                        class="fa-solid fa-arrows-to-circle"></i></button>
             </div>
         </div>
         <div class="lightbox-body" id="lightboxBody">
@@ -409,7 +422,7 @@
 
     <div id="copyToast" class="copy-toast">คัดลอกเรียบร้อย!</div>
     <div id="downloadToast" class="copy-toast download-toast">กำลังดาวน์โหลด...</div>
-    
+
     <!-- Cancel Contact Confirmation Modal -->
     <div id="cancelConfirmModal" class="upload-modal">
         <div class="modal-content cancel-confirm-card">
@@ -435,7 +448,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Facebook Browser Help Modal -->
     <div id="facebookHelpModal" class="upload-modal">
         <div class="modal-content" style="max-width: 500px; padding: 30px; border-top: 5px solid #4267B2;">
@@ -456,7 +469,8 @@
                     <li style="margin-bottom: 8px;">❌ ดูรูปภาพไม่ได้</li>
                     <li style="margin-bottom: 8px;">❌ คัดลอกข้อความบางส่วนไม่ได้</li>
                 </ul>
-                <div style="margin-top: 15px; font-size: 0.85rem; color: #666; padding: 10px; background: rgba(255, 193, 7, 0.1); border-radius: 8px; border-left: 3px solid #FFC107;">
+                <div
+                    style="margin-top: 15px; font-size: 0.85rem; color: #666; padding: 10px; background: rgba(255, 193, 7, 0.1); border-radius: 8px; border-left: 3px solid #FFC107;">
                     <strong>📱 แอปที่มีปัญหา:</strong> Facebook, Instagram, LINE
                 </div>
             </div>
@@ -503,7 +517,7 @@
                 ">
                     <span>🌐 เปิดในเบราว์เซอร์อื่น</span>
                 </button>
-                
+
                 <button id="copyCurrentUrlBtn" style="
                     background: rgba(66, 103, 178, 0.1);
                     color: #4267B2;
