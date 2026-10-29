@@ -980,9 +980,19 @@
         }
 
         @keyframes popupIconBounce {
-            0% { transform: scale(0.4); opacity: 0; }
-            60% { transform: scale(1.15); opacity: 1; }
-            100% { transform: scale(1); }
+            0% {
+                transform: scale(0.4);
+                opacity: 0;
+            }
+
+            60% {
+                transform: scale(1.15);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
 
         .popup-alert-icon-wrapper.warning {
@@ -1080,8 +1090,17 @@
         }
 
         @keyframes burnFireAnim {
-            0% { transform: scale(1) translateY(0); opacity: 0.85; filter: blur(2px); }
-            100% { transform: scale(1.03) translateY(-6px); opacity: 1; filter: blur(4px); }
+            0% {
+                transform: scale(1) translateY(0);
+                opacity: 0.85;
+                filter: blur(2px);
+            }
+
+            100% {
+                transform: scale(1.03) translateY(-6px);
+                opacity: 1;
+                filter: blur(4px);
+            }
         }
 
         .burn-badge {
@@ -1102,8 +1121,13 @@
         }
 
         @keyframes burnBadgePulse {
-            0% { transform: scale(0.97); }
-            100% { transform: scale(1.03); }
+            0% {
+                transform: scale(0.97);
+            }
+
+            100% {
+                transform: scale(1.03);
+            }
         }
 
         #slipImage.charred {
@@ -1116,15 +1140,18 @@
                 transform: scale(1);
                 opacity: 1;
             }
+
             30% {
                 filter: contrast(250%) brightness(0.7) sepia(1) hue-rotate(-30deg);
                 transform: scale(0.99);
             }
+
             70% {
                 filter: contrast(300%) brightness(0.2) grayscale(1) blur(2px);
                 transform: scale(0.96);
                 opacity: 0.6;
             }
+
             100% {
                 filter: brightness(0) blur(6px);
                 transform: scale(0.92);
@@ -3011,27 +3038,13 @@
                 <!-- Button Download QR Code Image -->
                 <button type="button" class="btn btn-primary" id="btnDownloadSlip" onclick="downloadPaymentQR()"
                     style="width: 100%; justify-content: center; padding: 7px 12px; font-size: 0.84rem; font-weight: 700; border-radius: 8px; margin: 2px 0 4px 0; gap: 6px; background: linear-gradient(135deg, #1d4ed8, #2563eb); border: none; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25);">
-                    <span>📥 บันทึกรูป QR Code (นำเข้าแอปธนาคาร)</span>
+                    <span>📥 บันทึกรูป QR Code</span>
                 </button>
 
                 <!-- Polling Status -->
                 <div class="polling-status-chip">
                     <div class="clean-spinner"></div>
-                    <span>ระบบ KBank กำลังรอรับยอดเงินอัตโนมัติ...</span>
-                </div>
-
-                <!-- Action row: Alert & LINE -->
-                <div style="display: flex; gap: 6px; width: 100%; margin-top: 3px;">
-                    <button type="button" class="btn btn-secondary" id="btnManualConfirm"
-                        style="flex: 1; justify-content: center; padding: 5px 6px; font-size: 0.74rem; font-weight: 600; border-radius: 6px; height: 32px;"
-                        onclick="triggerManualPaymentAlert()" title="แจ้งเตือนให้ระบบตรวจยอดซ้ำ">
-                        🔔 แจ้งโอนแล้ว
-                    </button>
-                    <a href="https://line.me/ti/p/gqIluRmdJ_" target="_blank" rel="noopener noreferrer"
-                        style="flex: 1; background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; font-size: 0.74rem; font-weight: 700; text-decoration: none; padding: 5px 6px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 32px; box-sizing: border-box;"
-                        title="มีปัญหาชำระเงิน ติดต่อทาง LINE">
-                        💬 ติดต่อ LINE
-                    </a>
+                    <span>ระบบกำลังรอรับยอดเงินอัตโนมัติ (PromptPay)...</span>
                 </div>
 
                 <!-- Admin Test Shortcut -->
