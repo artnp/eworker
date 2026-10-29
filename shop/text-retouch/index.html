@@ -485,6 +485,7 @@
             .btn-legal-toggle span {
                 display: none;
             }
+
             .btn-legal-toggle {
                 padding: 6px 9px;
             }
@@ -2315,7 +2316,8 @@
             </div>
         </a>
         <div class="header-right">
-            <button class="btn-legal-toggle" id="btnLegalHeader" onclick="openLegalModal()" title="ข้อกำหนดและสถาปัตยกรรมความปลอดภัย">
+            <button class="btn-legal-toggle" id="btnLegalHeader" onclick="openLegalModal()"
+                title="ข้อกำหนดและสถาปัตยกรรมความปลอดภัย">
                 <i class="fa-solid fa-shield-halved" style="color:var(--primary);"></i>
                 <span>ข้อกำหนด & ความปลอดภัย</span>
             </button>
@@ -2336,7 +2338,8 @@
         <div id="landingView">
             <section class="landing-section">
                 <div class="hero-badge">
-                    <i class="fa-solid fa-shield-halved"></i> สถาปัตยกรรม Client-Side ปลอดภัยสูงสุด · ไฟล์ต้นฉบับไม่ออกจากเครื่องคุณ
+                    <i class="fa-solid fa-shield-halved"></i> สถาปัตยกรรม Client-Side ปลอดภัยสูงสุด ·
+                    ไฟล์ต้นฉบับไม่ออกจากเครื่องคุณ
                 </div>
                 <h1 class="hero-title">บริการแก้ไขข้อความ เนียนเหมือนต้นฉบับ</h1>
                 <p class="hero-desc">
@@ -2446,11 +2449,15 @@
                     <!-- LEGAL / PRIVACY TIP AT BOTTOM OF SIDEBAR -->
                     <div class="sidebar-legal-tip" id="sidebarLegalTip">
                         <div class="legal-tip-header">
-                            <span class="legal-tip-tag"><i class="fa-solid fa-shield-halved"></i> <strong>Tip:</strong> นโยบายความปลอดภัย</span>
-                            <button type="button" class="legal-tip-btn" onclick="openLegalModal()" title="อ่านรายละเอียดข้อกำหนด">อ่านข้อตกลง</button>
+                            <span class="legal-tip-tag"><i class="fa-solid fa-shield-halved"></i> <strong>Tip:</strong>
+                                นโยบายความปลอดภัย</span>
+                            <button type="button" class="legal-tip-btn" onclick="openLegalModal()"
+                                title="อ่านรายละเอียดข้อกำหนด">อ่านข้อตกลง</button>
                         </div>
                         <p class="legal-tip-desc">
-                            งานนี้เป็นแคชจำในเครื่องฝั่งคุณ ตัวภาพเอกสารไม่ได้อยู่บนเว็บ ผู้ให้บริการไม่รับรู้เห็นไฟล์ภาพเต็มใบ (เห็นเฉพาะเศษภาพที่ตีกรอบส่ง) และไม่ขอรับผิดชอบต่อการนำไปใช้งานใดๆ ทั้งสิ้น
+                            งานนี้เป็นแคชจำในเครื่องฝั่งคุณ ตัวภาพเอกสารไม่ได้อยู่บนเว็บ
+                            ผู้ให้บริการไม่รับรู้เห็นไฟล์ภาพเต็มใบ (เห็นเฉพาะเศษภาพที่ตีกรอบส่ง)
+                            และไม่ขอรับผิดชอบต่อการนำไปใช้งานใดๆ ทั้งสิ้น
                         </p>
                     </div>
                 </div>
@@ -2528,19 +2535,7 @@
             <!-- Polling Status -->
             <div class="polling-status-chip">
                 <div class="clean-spinner"></div>
-                <span>ระบบ KBank กำลังรอรับยอดเงินอัตโนมัติ...</span>
-            </div>
-
-            <!-- Action row: Alert & LINE -->
-            <div class="action-row-buttons">
-                <button type="button" class="btn-action-alert" id="btnManualConfirm"
-                    onclick="triggerManualPaymentAlert()" title="แจ้งโอนเงินแล้ว">
-                    🔔 แจ้งโอนแล้ว
-                </button>
-                <a href="https://line.me/ti/p/gqIluRmdJ_" target="_blank" rel="noopener noreferrer"
-                    class="btn-action-line" title="มีปัญหาชำระเงิน ติดต่อทาง LINE">
-                    💬 ติดต่อ LINE
-                </a>
+                <span>ระบบตรวจจับยอดเงินเข้าอัตโนมัติ (PromptPay)...</span>
             </div>
         </div>
     </div>
@@ -2610,57 +2605,74 @@
     </div>
 
     <!-- LEGAL / PRIVACY MODAL -->
-    <div class="modal-overlay" id="legalModal" style="display:none; z-index: 9999;" onclick="if(event.target===this)closeLegalModal()">
+    <div class="modal-overlay" id="legalModal" style="display:none; z-index: 9999;"
+        onclick="if(event.target===this)closeLegalModal()">
         <div class="confirm-modal-card" style="max-width: 580px; width: 92%; text-align: left; padding: 22px 24px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
+            <div
+                style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <span style="display:flex; align-items:center; justify-content:center; width:34px; height:34px; background:#eff6ff; color:#2563eb; border-radius:8px; font-size:1.05rem;">
+                    <span
+                        style="display:flex; align-items:center; justify-content:center; width:34px; height:34px; background:#eff6ff; color:#2563eb; border-radius:8px; font-size:1.05rem;">
                         <i class="fa-solid fa-shield-halved"></i>
                     </span>
                     <div>
-                        <h3 style="font-size:1.02rem; font-weight:800; color:#0f172a; margin:0;">ข้อกำหนดและความปลอดภัยของข้อมูล</h3>
-                        <span style="font-size:0.75rem; color:#64748b;">Client-Side Privacy Architecture & Legal Terms</span>
+                        <h3 style="font-size:1.02rem; font-weight:800; color:#0f172a; margin:0;">
+                            ข้อกำหนดและความปลอดภัยของข้อมูล</h3>
+                        <span style="font-size:0.75rem; color:#64748b;">Client-Side Privacy Architecture & Legal
+                            Terms</span>
                     </div>
                 </div>
-                <button onclick="closeLegalModal()" style="background:none; border:none; color:#64748b; font-size:1.3rem; cursor:pointer; padding:4px 8px;" title="ปิด">
+                <button onclick="closeLegalModal()"
+                    style="background:none; border:none; color:#64748b; font-size:1.3rem; cursor:pointer; padding:4px 8px;"
+                    title="ปิด">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            
+
             <div style="display:flex; flex-direction:column; gap:11px; margin-bottom:18px;">
                 <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px;">
-                    <div style="font-weight:700; font-size:0.86rem; color:#1e293b; margin-bottom:4px; display:flex; align-items:center; gap:8px;">
+                    <div
+                        style="font-weight:700; font-size:0.86rem; color:#1e293b; margin-bottom:4px; display:flex; align-items:center; gap:8px;">
                         <span style="color:#2563eb;"><i class="fa-solid fa-laptop-code"></i></span>
                         <span>1. แคชจำในเครื่องฝั่งผู้ใช้งาน (Client-Side Storage)</span>
                     </div>
                     <p style="font-size:0.8rem; color:#475569; margin:0; line-height:1.55;">
-                        ไฟล์ภาพและเอกสารต้นฉบับจะถูกเปิด อ่าน และแคช (Local Cache) ในหน่วยความจำของอุปกรณ์ท่านเท่านั้น ตัวภาพ/เอกสารฉบับเต็มไม่ได้ถูกอัปโหลดหรือจัดเก็บบนเซิร์ฟเวอร์ส่วนกลางของเว็บไซต์
+                        ไฟล์ภาพและเอกสารต้นฉบับจะถูกเปิด อ่าน และแคช (Local Cache) ในหน่วยความจำของอุปกรณ์ท่านเท่านั้น
+                        ตัวภาพ/เอกสารฉบับเต็มไม่ได้ถูกอัปโหลดหรือจัดเก็บบนเซิร์ฟเวอร์ส่วนกลางของเว็บไซต์
                     </p>
                 </div>
 
                 <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px;">
-                    <div style="font-weight:700; font-size:0.86rem; color:#1e293b; margin-bottom:4px; display:flex; align-items:center; gap:8px;">
+                    <div
+                        style="font-weight:700; font-size:0.86rem; color:#1e293b; margin-bottom:4px; display:flex; align-items:center; gap:8px;">
                         <span style="color:#a855f7;"><i class="fa-solid fa-eye-slash"></i></span>
                         <span>2. ไม่รับรู้เห็นไฟล์ภาพและเอกสารเต็มใบ (Zero-Knowledge)</span>
                     </div>
                     <p style="font-size:0.8rem; color:#475569; margin:0; line-height:1.55;">
-                        ระบบจะส่งไปยังผู้ให้บริการเฉพาะชิ้นส่วนภาพขนาดเล็ก (Crop Patch) ที่ท่านตีกรอบเลือกส่งเพื่อแก้งานเท่านั้น ผู้ให้บริการจึงไม่มีส่วนรับรู้เห็น หรือครอบครองเอกสารฉบับสมบูรณ์ของท่าน
+                        ระบบจะส่งไปยังผู้ให้บริการเฉพาะชิ้นส่วนภาพขนาดเล็ก (Crop Patch)
+                        ที่ท่านตีกรอบเลือกส่งเพื่อแก้งานเท่านั้น ผู้ให้บริการจึงไม่มีส่วนรับรู้เห็น
+                        หรือครอบครองเอกสารฉบับสมบูรณ์ของท่าน
                     </p>
                 </div>
 
                 <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 14px;">
-                    <div style="font-weight:700; font-size:0.86rem; color:#1e293b; margin-bottom:4px; display:flex; align-items:center; gap:8px;">
+                    <div
+                        style="font-weight:700; font-size:0.86rem; color:#1e293b; margin-bottom:4px; display:flex; align-items:center; gap:8px;">
                         <span style="color:#d97706;"><i class="fa-solid fa-scale-balanced"></i></span>
                         <span>3. ข้อกำหนดและขอบเขตความรับผิดชอบ (Legal Disclaimer)</span>
                     </div>
                     <p style="font-size:0.8rem; color:#475569; margin:0; line-height:1.55;">
-                        ผู้ใช้บริการต้องเป็นเจ้าของหรือผู้มีสิทธิ์ตามกฎหมายในเอกสารดังกล่าว และเป็นผู้รับผิดชอบต่อความถูกต้องรวมถึงการนำเอกสารไปใช้งานแต่เพียงผู้เดียว ทางเว็บไซต์ทำหน้าที่เฉพาะงานตกแต่งกราฟิกทางเทคนิคตามคำสั่ง ไม่รับรู้เห็น และไม่ขอรับผิดชอบต่อความเสียหายหรือการนำไปใช้ในทางที่ผิดกฎหมายใดๆ ทั้งสิ้น
+                        ผู้ใช้บริการต้องเป็นเจ้าของหรือผู้มีสิทธิ์ตามกฎหมายในเอกสารดังกล่าว
+                        และเป็นผู้รับผิดชอบต่อความถูกต้องรวมถึงการนำเอกสารไปใช้งานแต่เพียงผู้เดียว
+                        ทางเว็บไซต์ทำหน้าที่เฉพาะงานตกแต่งกราฟิกทางเทคนิคตามคำสั่ง ไม่รับรู้เห็น
+                        และไม่ขอรับผิดชอบต่อความเสียหายหรือการนำไปใช้ในทางที่ผิดกฎหมายใดๆ ทั้งสิ้น
                     </p>
                 </div>
             </div>
 
             <div style="text-align:right;">
-                <button type="button" onclick="closeLegalModal()" style="background:var(--primary); color:white; border:none; padding:8px 20px; border-radius:8px; font-weight:700; font-size:0.84rem; cursor:pointer;">
+                <button type="button" onclick="closeLegalModal()"
+                    style="background:var(--primary); color:white; border:none; padding:8px 20px; border-radius:8px; font-weight:700; font-size:0.84rem; cursor:pointer;">
                     เข้าใจและรับทราบ
                 </button>
             </div>
@@ -2690,6 +2702,7 @@
         const db = firebase.database();
 
         // ── PROMPTPAY CONFIG ──
+        const BEAM_WORKER_URL = "https://eworker-beam-pay.moonverse69.workers.dev";
         const PROMPTPAY_PHONE = '0988573074';
 
         // ── INDEXEDDB PERSISTENCE (Safe local browser storage) ──
@@ -4475,9 +4488,9 @@
         let paymentCountdownInterval = null;
         let currentPayingPatchId = null;
 
-        function startPaymentCountdown(durationMinutes = 15) {
+        function startPaymentCountdownSeconds(seconds) {
             if (paymentCountdownInterval) clearInterval(paymentCountdownInterval);
-            let remainingSeconds = durationMinutes * 60;
+            let remainingSeconds = Math.max(0, Math.floor(seconds));
             const timerEl = document.getElementById('checkoutCountdownTimer');
             const boxEl = document.getElementById('checkoutCountdownBox');
 
@@ -4503,6 +4516,10 @@
 
             updateDisplay();
             paymentCountdownInterval = setInterval(updateDisplay, 1000);
+        }
+
+        function startPaymentCountdown(durationMinutes = 10) {
+            startPaymentCountdownSeconds(durationMinutes * 60);
         }
 
         function generatePromptPayPayload(phone, amount) {
@@ -4534,7 +4551,7 @@
             return payload + crc16(payload);
         }
 
-        function openPaymentModal(patchId) {
+        async function openPaymentModal(patchId) {
             const patch = patches[patchId];
             if (!patch) return;
             currentPayingPatchId = patchId;
@@ -4545,33 +4562,65 @@
             const qrTarget = document.getElementById('qrCodeCanvasTarget');
             const qrImg = document.getElementById('qrImage');
 
-            if (typeof QRCode !== 'undefined' && qrTarget) {
-                qrTarget.innerHTML = '';
+            const retouchLinkKey = `retouch_${patchId}`;
+
+            if (qrTarget) {
+                qrTarget.innerHTML = `
+                    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:220px;font-size:0.82rem;color:#94a3b8;gap:8px;">
+                        <div style="width:28px;height:28px;border:3px solid rgba(22,163,74,0.2);border-top-color:#16a34a;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+                        <span>กำลังสร้าง QR จาก Beam...</span>
+                    </div>
+                `;
                 qrTarget.style.display = 'flex';
                 if (qrImg) qrImg.style.display = 'none';
-                const payload = generatePromptPayPayload(PROMPTPAY_PHONE, patch.price);
-                new QRCode(qrTarget, {
-                    text: payload,
-                    width: 220,
-                    height: 220,
-                    colorDark: "#0f172a",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.M
-                });
-            } else if (qrImg) {
-                const qrUrl = `https://promptpay.io/${PROMPTPAY_PHONE}/${patch.price}.png`;
-                qrImg.src = qrUrl;
-                qrImg.style.display = 'block';
-                if (qrTarget) qrTarget.style.display = 'none';
             }
 
-            startPaymentCountdown(15);
+            startPaymentCountdown(10);
             document.getElementById('paymentModal').classList.add('open');
 
             document.getElementById('closePaymentModal').onclick = () => {
                 if (paymentCountdownInterval) clearInterval(paymentCountdownInterval);
                 document.getElementById('paymentModal').classList.remove('open');
             };
+
+            try {
+                const res = await fetch(`${BEAM_WORKER_URL}/create-charge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        linkKey: retouchLinkKey,
+                        amount: patch.price
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.qrImageBase64) {
+                        if (qrImg) {
+                            qrImg.src = `data:image/png;base64,${data.qrImageBase64}`;
+                            qrImg.style.display = 'block';
+                            if (qrTarget) qrTarget.style.display = 'none';
+                        }
+                        if (data.expiry) {
+                            const expiryMs = new Date(data.expiry).getTime();
+                            const remainSec = Math.max(0, Math.floor((expiryMs - Date.now()) / 1000));
+                            if (remainSec > 0) {
+                                startPaymentCountdownSeconds(remainSec);
+                            }
+                        }
+                        return;
+                    }
+                }
+                throw new Error('Beam API response invalid');
+            } catch (err) {
+                console.warn('Beam create-charge fallback:', err);
+                const beamQrUrl = `${BEAM_WORKER_URL}/qr-image?linkKey=${encodeURIComponent(retouchLinkKey)}&amount=${patch.price}`;
+                if (qrImg) {
+                    qrImg.src = beamQrUrl;
+                    qrImg.style.display = 'block';
+                    if (qrTarget) qrTarget.style.display = 'none';
+                }
+            }
         }
 
         function triggerManualPaymentAlert() {
