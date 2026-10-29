@@ -21,6 +21,8 @@ const DELETION_TIME_MS = 10 * 60 * 1000; // 10 minutes
 const SMALL_MAX_SIZE = 3 * 1024 * 1024; // 3MB
 let pendingImageData = null; // Store pasted image data
 let isRoomClosed = false;
+const BEAM_WORKER_URL = "https://eworker-beam-pay.moonverse69.workers.dev";
+window.BEAM_WORKER_URL = BEAM_WORKER_URL;
 
 // DOM Elements
 const loginScreen = document.getElementById('loginScreen');
@@ -346,7 +348,6 @@ window.addEventListener('load', () => {
     }
     updateAdminButtonsVisibility();
 
-    const BEAM_WORKER_URL = "https://eworker-beam-pay.moonverse69.workers.dev";
     // ===== PromptPay EMVCo Standard Payload & QR Generator =====
     function generatePromptPayPayload(target, amount) {
         target = String(target || '').replace(/[^0-9]/g, '');
@@ -964,31 +965,31 @@ async function openAcceptedCustomerFileInPhotoshop(messagesRef, roomId) {
     if (!isAdminUser() || !roomId || window.__photoshopOpenedRooms.has(roomId) || window.__photoshopOpeningRooms.has(roomId)) return;
     window.__photoshopOpeningRooms.add(roomId);
     try {
-    const snapshot = await get(messagesRef);
-    let source = null;
-    let sourceName = 'customer-work.jpg';
-    let newestTimestamp = -1;
-    snapshot.forEach((child) => {
-        const message = child.val() || {};
-        const file = message.file || {};
-        const isMarkedWork = (file.name || '').startsWith('marked_') || !!file.annotations;
-        const timestamp = Number(message.timestamp || 0);
-        if (isMarkedWork && timestamp >= newestTimestamp) {
-            newestTimestamp = timestamp;
-            source = file.originalImage || file.data || null;
-            sourceName = (file.name || sourceName).replace(/^marked_/, 'original_');
-        }
-    });
-    if (!source) throw new Error('ไม่พบไฟล์ต้นฉบับที่ลูกค้าส่งในห้องนี้');
+        const snapshot = await get(messagesRef);
+        let source = null;
+        let sourceName = 'customer-work.jpg';
+        let newestTimestamp = -1;
+        snapshot.forEach((child) => {
+            const message = child.val() || {};
+            const file = message.file || {};
+            const isMarkedWork = (file.name || '').startsWith('marked_') || !!file.annotations;
+            const timestamp = Number(message.timestamp || 0);
+            if (isMarkedWork && timestamp >= newestTimestamp) {
+                newestTimestamp = timestamp;
+                source = file.originalImage || file.data || null;
+                sourceName = (file.name || sourceName).replace(/^marked_/, 'original_');
+            }
+        });
+        if (!source) throw new Error('ไม่พบไฟล์ต้นฉบับที่ลูกค้าส่งในห้องนี้');
 
-    const response = await fetch('/open-in-photoshop', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomId, source, fileName: sourceName })
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) throw new Error(result.error || 'เปิดไฟล์ใน Photoshop ไม่สำเร็จ');
-    window.__photoshopOpenedRooms.add(roomId);
+        const response = await fetch('/open-in-photoshop', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomId, source, fileName: sourceName })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.error || 'เปิดไฟล์ใน Photoshop ไม่สำเร็จ');
+        window.__photoshopOpenedRooms.add(roomId);
     } finally {
         window.__photoshopOpeningRooms.delete(roomId);
     }
@@ -1377,7 +1378,7 @@ function startPhotoshopDeliveryPolling(roomId) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roomId })
-    }).catch(() => {});
+    }).catch(() => { });
     heartbeat();
     const heartbeatTimer = setInterval(heartbeat, 4000);
     window.addEventListener('beforeunload', () => clearInterval(heartbeatTimer), { once: true });
@@ -1555,7 +1556,7 @@ window.updateWatermarkedWorkUI = function (msgId, data) {
             billSection.outerHTML = `
                 <div class="work-paid-footer">
                     <i class="fa-solid fa-circle-check" style="color: #10b981; font-size: 1.1rem;"></i>
-                    <span>ได้รับยอดชำระเงินเรียบร้อยแล้ว ไฟล์พร้อมใช้งานทันที</span>
+                    <span>ได้รับยอดชำระเงินแล้ว (ปลดล็อคไฟล์)</span>
                 </div>
             `;
         }
@@ -1938,7 +1939,8 @@ function renderMessage(data, id) {
 
         // PromptPay QR Bill for this work (Beam Checkout Dynamic QR)
         const chatLinkKey = `chat_${currentRoom}_${id}`;
-        const beamQrUrl = `${BEAM_WORKER_URL}/qr-image?linkKey=${encodeURIComponent(chatLinkKey)}&amount=${amount}`;
+        const workerBase = (typeof BEAM_WORKER_URL !== "undefined" ? BEAM_WORKER_URL : (window.BEAM_WORKER_URL || "https://eworker-beam-pay.moonverse69.workers.dev"));
+        const beamQrUrl = `${workerBase}/qr-image?linkKey=${encodeURIComponent(chatLinkKey)}&amount=${amount}`;
         const qrUrl = beamQrUrl;
         const qrPayload = generatePromptPayPayload('0988573074', amount);
         const qrFb = 'https://quickchart.io/qr?size=300&margin=2&text=' + encodeURIComponent(qrPayload);
@@ -1989,16 +1991,14 @@ function renderMessage(data, id) {
                                 <span>💵 พร้อมเพย์ :</span> <span style="color: #0046b8; font-size: 1.05rem; font-weight: 700;">${amount} บาท</span>
                             </div>
                             <div class="qr-container" onclick="downloadQRCode('${qrUrl}', '${amount}')" title="คลิกเพื่อบันทึก QR Code">
-                                <img src="${qrUrl}" onerror="if(!this._fb){this._fb=true;this.src='${qrFb}';}" class="qr-image" style="width:160px; height:160px;" alt="PromptPay QR Code">
+                                <img src="${qrUrl}" onerror="if(!this._fb){this._fb=true;this.src='${qrFb}';}" class="qr-image" style="width:220px; height:220px; max-width:100%; object-fit:contain;" alt="PromptPay QR Code">
                                 <div class="qr-download-overlay">
                                     <div class="qr-download-icon">
                                         <img src="https://cdn-icons-png.flaticon.com/128/4196/4196713.png" style="width: 20px; height: 20px;" alt="Save">
                                     </div>
                                 </div>
                             </div>
-                            <div style="font-size: 0.72rem; color: #64748b; font-weight: 600; margin-top: 6px;">
-                                ⚡ สแกนได้ทุกธนาคาร • ปลดล็อคอัตโนมัติ
-                            </div>
+
 
                             ${isAdmin ? `
                                 <div style="margin-top: 10px;">
@@ -2229,7 +2229,8 @@ function renderMessage(data, id) {
                 const amount = strictPriceMatch[1];
                 updateLatestPriceDisplay(amount);
                 const chatLinkKey = `chat_${currentRoom}_${id}`;
-                const chatQrUrl = `${BEAM_WORKER_URL}/qr-image?linkKey=${encodeURIComponent(chatLinkKey)}&amount=${amount}`;
+                const workerBaseStrict = (typeof BEAM_WORKER_URL !== "undefined" ? BEAM_WORKER_URL : (window.BEAM_WORKER_URL || "https://eworker-beam-pay.moonverse69.workers.dev"));
+                const chatQrUrl = `${workerBaseStrict}/qr-image?linkKey=${encodeURIComponent(chatLinkKey)}&amount=${amount}`;
                 const chatQrPayload = generatePromptPayPayload('0988573074', amount);
                 const chatQrFb = 'https://quickchart.io/qr?size=300&margin=2&text=' + encodeURIComponent(chatQrPayload);
 
@@ -2239,16 +2240,14 @@ function renderMessage(data, id) {
                             <span>💵พร้อมเพย์ :</span><span style="color: #0046b8; font-size: 1rem;">${amount} บาท</span>
                         </div>
                         <div class="qr-container" onclick="downloadQRCode('${chatQrUrl}', '${amount}')" title="คลิกเพื่อบันทึก QR Code">
-                            <img src="${chatQrUrl}" onerror="if(!this._fb){this._fb=true;this.src='${chatQrFb}';}" class="qr-image" alt="PromptPay QR Code">
+                            <img src="${chatQrUrl}" onerror="if(!this._fb){this._fb=true;this.src='${chatQrFb}';}" class="qr-image" style="width:220px; height:220px; max-width:100%; object-fit:contain; margin:0 auto;" alt="PromptPay QR Code">
                             <div class="qr-download-overlay">
                                 <div class="qr-download-icon">
                                     <img src="https://cdn-icons-png.flaticon.com/128/4196/4196713.png" style="width: 24px; height: 24px;" alt="Save">
                                 </div>
                             </div>
                         </div>
-                        <div style="font-size: 0.72rem; color: #64748b; font-weight: 600; margin-top: 6px;">
-                            ⚡ สแกนได้ทุกธนาคาร • ปลดล็อคอัตโนมัติ
-                        </div>
+    
                         <div style="margin-top: 8px; font-size: 0.65rem; color: #666;">สแกนเพื่อชำระเงินได้ทันที</div>
                         <hr style="border: none; border-top: 1px solid #eee; margin: 12px 10px;">
                         <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; padding-bottom: 5px;">
