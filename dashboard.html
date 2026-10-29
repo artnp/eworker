@@ -1878,6 +1878,10 @@
                         <span style="font-size: 0.78rem; color: #64748b;">รอภาพงานเสร็จ</span>
                     </div>
                 </div>
+                <button id="restore-bottom-crop-btn" type="button" onclick="restoreBottomCrop()"
+                    style="display: none; margin-top: 8px; width: 100%; padding: 9px 12px; border: 1px solid #0ea5e9; border-radius: 9px; background: rgba(14,165,233,0.14); color: #7dd3fc; font-weight: 700; cursor: pointer;">
+                    ↕️ กู้ Crop คืน
+                </button>
             </div>
         </div>
 
@@ -5274,6 +5278,68 @@
 
         // --- Finished Work Preview Controller (พรีวิวรูปเต็มงานเสร็จ - แสดงเฉพาะภาพล้วนๆ) ---
         let currentFinishedPreviewUrl = '';
+        let currentFinishedPreviewPath = '';
+
+        function getBottomCropRestoreKey(targetPath) {
+            return `bottomCropRestore:${String(targetPath || '').toLowerCase()}`;
+        }
+
+        async function saveCurrentImageAsBottomCropRestorePoint(targetPath) {
+            const response = await fetch(`/get-img?path=${encodeURIComponent(targetPath)}&v=${Date.now()}`);
+            if (!response.ok) throw new Error('อ่านภาพต้นฉบับก่อนครอปไม่สำเร็จ');
+            const blob = await response.blob();
+            const dataUrl = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(reader.error || new Error('อ่าน PNG ไม่สำเร็จ'));
+                reader.readAsDataURL(blob);
+            });
+            const backupPath = `${targetPath}.before-bottom-crop.png`;
+            const saved = await fetch('/save-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: backupPath, dataUrl })
+            });
+            if (!saved.ok) throw new Error('สำรองภาพก่อนครอปไม่สำเร็จ');
+            localStorage.setItem(getBottomCropRestoreKey(targetPath), backupPath);
+        }
+
+        async function restoreBottomCrop() {
+            const targetPath = currentFinishedPreviewPath || currentWatermarkPath || 'C:\\Users\\artwh\\Desktop\\complete.png';
+            const btn = document.getElementById('restore-bottom-crop-btn');
+            const backupPath = localStorage.getItem(getBottomCropRestoreKey(targetPath));
+            try {
+                let response;
+                if (backupPath) {
+                    response = await fetch(`/get-img?path=${encodeURIComponent(backupPath)}&v=${Date.now()}`);
+                } else {
+                    // Fallback to the existing rotating backup made by the desktop image watcher.
+                    const historyPath = 'D:\\Github\\eworker\\สำรองงาน_example-complete\\complete_bak1.png';
+                    response = await fetch(`/get-img?path=${encodeURIComponent(historyPath)}&v=${Date.now()}`);
+                }
+                if (!response.ok) throw new Error('ไม่พบภาพก่อนครอปในสำรอง');
+                const blob = await response.blob();
+                const dataUrl = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = () => reject(reader.error || new Error('อ่านไฟล์สำรองไม่สำเร็จ'));
+                    reader.readAsDataURL(blob);
+                });
+                const saved = await fetch('/save-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: targetPath, dataUrl })
+                });
+                if (!saved.ok) throw new Error('บันทึกภาพที่กู้คืนไม่สำเร็จ');
+                showWatermarkCheck(`/get-img?path=${encodeURIComponent(targetPath)}&v=${Date.now()}`);
+                refreshFinishedWorkPreview();
+                if (typeof loadDownloads === 'function') loadDownloads();
+                showToast('✅ กู้คืนภาพก่อนครอปแล้ว (คงความโปร่งใส PNG)');
+            } catch (err) {
+                console.error('[BottomCropRestore]', err);
+                showToast(`⚠️ กู้คืนไม่ได้: ${err.message || err}`);
+            }
+        }
 
         async function refreshFinishedWorkPreview(forceToast = false) {
             const targetPath = currentWatermarkPath || 'C:\\Users\\artwh\\Desktop\\complete.png';
@@ -5292,6 +5358,13 @@
                         imgEl.style.display = 'block';
                     };
                     imgEl.src = checkUrl;
+                }
+                currentFinishedPreviewPath = targetPath;
+                const restoreBtn = document.getElementById('restore-bottom-crop-btn');
+                if (restoreBtn) {
+                    const hasRestorePoint = !!localStorage.getItem(getBottomCropRestoreKey(targetPath));
+                    const hasHistoryRestore = targetPath.toLowerCase().endsWith('complete.png');
+                    restoreBtn.style.display = (hasRestorePoint || hasHistoryRestore) ? 'block' : 'none';
                 }
                 if (forceToast) showToast('🔄 รีเฟรชภาพงานเสร็จเรียบร้อย');
             } catch (err) {
@@ -5420,7 +5493,7 @@
             canvas.width = sourceWidth;
             canvas.height = sourceHeight;
             canvas.getContext('2d').drawImage(imgEl, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, sourceWidth, sourceHeight);
-            saveCroppedImage(canvas.toDataURL('image/png', 1.0));
+            saveCroppedImage(canvas.toDataURL('image/png', 1.0), currentFinishedPreviewPath || currentWatermarkPath);
         }
 
         const finishedPreviewImage = document.getElementById('finished-work-preview-img');
@@ -5438,9 +5511,11 @@
             });
         }
 
-        async function saveCroppedImage(newDataUrl) {
+        async function saveCroppedImage(newDataUrl, requestedPath = null) {
             try {
-                const targetPath = 'C:\\Users\\artwh\\Desktop\\complete.png';
+                const targetPath = requestedPath || currentFinishedPreviewPath || currentWatermarkPath || 'C:\\Users\\artwh\\Desktop\\complete.png';
+                const sourcePath = targetPath;
+                await saveCurrentImageAsBottomCropRestorePoint(sourcePath);
                 const response = await fetch('/save-image', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -5451,11 +5526,17 @@
                 });
 
                 if (response.ok) {
-                    showToast('✅ ครอปและบันทึกทับ Desktop/complete.png สำเร็จ');
+                    showToast('✅ ครอปและบันทึกภาพสำเร็จ');
+                    currentFinishedPreviewPath = targetPath;
+                    localStorage.setItem(getBottomCropRestoreKey(targetPath), `${sourcePath}.before-bottom-crop.png`);
+                    const restoreBtn = document.getElementById('restore-bottom-crop-btn');
+                    if (restoreBtn) restoreBtn.style.display = 'block';
                     showWatermarkCheck(`/get-img?path=${encodeURIComponent(targetPath)}&v=${Date.now()}`);
                     refreshFinishedWorkPreview();
                     if (typeof loadDownloads === 'function') loadDownloads();
                 } else {
+                    const restoreBtn = document.getElementById('restore-bottom-crop-btn');
+                    if (restoreBtn && localStorage.getItem(getBottomCropRestoreKey(targetPath))) restoreBtn.style.display = 'block';
                     showToast('❌ ไม่สามารถบันทึกได้');
                 }
             } catch (err) {
