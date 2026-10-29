@@ -4238,7 +4238,6 @@
             document.getElementById('checkout-view-success').style.display = 'none';
             document.getElementById('checkout-product-title').textContent = product.title;
             document.getElementById('checkout-price-display').textContent = `฿ ${Number(product.price).toFixed(2)}`;
-            const orderIdValEl = document.getElementById('checkout-order-id-val'); if (orderIdValEl) orderIdValEl.textContent = orderId;
 
             generatePromptPayQR(PROMPTPAY_NUMBER, product.price);
 
@@ -4347,7 +4346,7 @@
             targetEl.innerHTML = `
                 <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:205px;font-size:0.8rem;color:#94a3b8;gap:8px;">
                     <div style="width:24px;height:24px;border:3px solid rgba(99,102,241,0.2);border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-                    <span>กำลังสร้าง PromptPay QR จาก Beam...</span>
+                    <span>กำลังสร้าง PromptPay QR...</span>
                 </div>
             `;
 
@@ -4526,8 +4525,7 @@
         async function triggerManualPaymentAlert() {
             if (!currentCheckoutOrder) return;
             const btn = document.getElementById('btn-manual-confirm');
-            btn.innerHTML = '⏳ กำลังตรวจสอบและส่งสัญญาณแจ้งเตือน...';
-            btn.disabled = true;
+            if (btn) { btn.innerHTML = '⏳ กำลังตรวจสอบและส่งสัญญาณแจ้งเตือน...'; btn.disabled = true; }
 
             const orderId = currentCheckoutOrder.orderId;
             const nowTs = Date.now();
