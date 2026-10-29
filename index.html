@@ -2496,37 +2496,18 @@
 
                 <div style="font-size: 1.55rem; font-weight: 800; color: #16a34a; margin: 2px 0 3px 0; line-height: 1.2;"
                     id="checkout-price-display">฿ 0.00</div>
-                <div style="font-size: 0.72rem; color: var(--fh-muted); margin-bottom: 4px;">
-                    Order: <strong id="checkout-order-id-val">-</strong>
-                    <button
-                        style="border: none; background: none; color: var(--fh-blue); font-weight: 600; cursor: pointer; margin-left: 4px;"
-                        onclick="copyOrderId()">คัดลอก</button>
-                </div>
+
 
                 <!-- Button Download QR Code Image -->
                 <button type="button" class="btn btn-primary" id="btn-download-slip" onclick="downloadCheckoutQRSlip()"
                     style="width: 100%; justify-content: center; padding: 8px 12px; font-size: 0.84rem; font-weight: 700; border-radius: 8px; margin: 2px 0 4px 0; gap: 6px; background: linear-gradient(135deg, #1d4ed8, #2563eb); border: none; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25); color: #fff; cursor: pointer; display: flex; align-items: center;">
-                    <span>📥 บันทึกรูป QR Code (นำเข้าแอปธนาคาร)</span>
+                    <span>📥 บันทึกรูป QR Code</span>
                 </button>
 
                 <!-- Polling Status -->
                 <div class="polling-status-chip">
                     <div class="clean-spinner"></div>
-                    <span>ระบบ KBank กำลังรอรับยอดเงินอัตโนมัติ...</span>
-                </div>
-
-                <!-- Action row: Alert & LINE -->
-                <div style="display: flex; gap: 6px; width: 100%; margin-top: 3px;">
-                    <button type="button" class="btn btn-secondary" id="btn-manual-confirm"
-                        style="flex: 1; justify-content: center; padding: 5px 6px; font-size: 0.74rem; font-weight: 600; border-radius: 6px; height: 32px; background: #f8fafc; border: 1px solid #cbd5e1; color: #334155; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"
-                        onclick="triggerManualPaymentAlert()" title="แจ้งเตือนให้ระบบตรวจยอดซ้ำ">
-                        🔔 แจ้งโอนแล้ว
-                    </button>
-                    <a href="https://line.me/ti/p/gqIluRmdJ_" target="_blank" rel="noopener noreferrer"
-                        style="flex: 1; background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; font-size: 0.74rem; font-weight: 700; text-decoration: none; padding: 5px 6px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; height: 32px; box-sizing: border-box;"
-                        title="มีปัญหาชำระเงิน ติดต่อทาง LINE">
-                        💬 ติดต่อ LINE
-                    </a>
+                    <span>ตรวจจับยอดเงินเข้าอัตโนมัติ (PromptPay)...</span>
                 </div>
 
                 <!-- Admin Test Shortcut -->
@@ -2539,7 +2520,7 @@
                 <div style="font-size: 3rem; margin-bottom: 8px;">🎉</div>
                 <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--fh-green);">ยืนยันยอดเงินสำเร็จแล้ว!</h3>
                 <p style="font-size: 0.88rem; color: var(--fh-muted); margin-top: 4px;" id="checkout-success-subtitle">
-                    ระบบตรวจจับยอดเงินเข้าเรียบร้อย
+                    ยอดเงินเข้าเรียบร้อย
                     รายการของคุณพร้อมใช้งานทันที</p>
 
                 <!-- Normal Dropbox Unlocked Box -->
@@ -4257,7 +4238,7 @@
             document.getElementById('checkout-view-success').style.display = 'none';
             document.getElementById('checkout-product-title').textContent = product.title;
             document.getElementById('checkout-price-display').textContent = `฿ ${Number(product.price).toFixed(2)}`;
-            document.getElementById('checkout-order-id-val').textContent = orderId;
+            const orderIdValEl = document.getElementById('checkout-order-id-val'); if (orderIdValEl) orderIdValEl.textContent = orderId;
 
             generatePromptPayQR(PROMPTPAY_NUMBER, product.price);
 
@@ -4358,7 +4339,7 @@
             checkoutCountdownTimer = setInterval(tick, 1000);
         }
 
-        function generatePromptPayQR(id, amount) {
+        async function generatePromptPayQR(id, amount) {
             const targetEl = document.getElementById('qr-code-target');
             if (!targetEl) return;
             const orderId = (typeof currentCheckoutOrder !== 'undefined' && currentCheckoutOrder) ? currentCheckoutOrder.id : id;
@@ -4370,27 +4351,54 @@
                 </div>
             `;
 
-            const img = new Image();
-            img.crossOrigin = "anonymous";
-            img.src = `${BEAM_WORKER_URL}/qr-image?linkKey=${encodeURIComponent(orderId)}&amount=${amount}`;
-            img.alt = "Beam PromptPay QR";
-            img.style = "width:205px;height:205px;object-fit:contain;border-radius:8px;";
-            img.onload = () => {
-                targetEl.innerHTML = '';
-                targetEl.appendChild(img);
-            };
-            img.onerror = () => {
-                targetEl.innerHTML = '';
-                const payload = generatePromptPayPayload(PROMPTPAY_NUMBER, amount);
-                new QRCode(targetEl, {
-                    text: payload,
-                    width: 205,
-                    height: 205,
-                    colorDark: "#0f172a",
-                    colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.M
+            try {
+                const res = await fetch(`${BEAM_WORKER_URL}/create-charge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        linkKey: orderId,
+                        amount: amount
+                    })
                 });
-            };
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.qrImageBase64) {
+                        targetEl.innerHTML = `<img src="data:image/png;base64,${data.qrImageBase64}" alt="Beam PromptPay QR" style="width:205px;height:205px;object-fit:contain;border-radius:8px;">`;
+                        if (data.expiry) {
+                            const expiryMs = new Date(data.expiry).getTime();
+                            if (expiryMs > Date.now()) {
+                                startCheckoutCountdown(orderId, expiryMs);
+                            }
+                        }
+                        return;
+                    }
+                }
+                throw new Error('Beam API response invalid');
+            } catch (err) {
+                console.warn('Beam QR create-charge fallback:', err);
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.src = `${BEAM_WORKER_URL}/qr-image?linkKey=${encodeURIComponent(orderId)}&amount=${amount}`;
+                img.alt = "Beam PromptPay QR";
+                img.style = "width:205px;height:205px;object-fit:contain;border-radius:8px;";
+                img.onload = () => {
+                    targetEl.innerHTML = '';
+                    targetEl.appendChild(img);
+                };
+                img.onerror = () => {
+                    targetEl.innerHTML = '';
+                    const payload = generatePromptPayPayload(PROMPTPAY_NUMBER, amount);
+                    new QRCode(targetEl, {
+                        text: payload,
+                        width: 205,
+                        height: 205,
+                        colorDark: "#0f172a",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
+                };
+            }
         }
 
         function downloadCheckoutQRSlip() {
