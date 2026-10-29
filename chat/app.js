@@ -223,6 +223,7 @@ function joinRoom(roomId) {
 
     updateAdminButtonsVisibility();
     initChatListeners();
+    startPhotoshopDeliveryPolling(roomId);
     checkAndShowCustomerUploadPrompt(roomId);
 
     // Check localStorage for saved latestPrice for this room
@@ -345,6 +346,7 @@ window.addEventListener('load', () => {
     }
     updateAdminButtonsVisibility();
 
+    const BEAM_WORKER_URL = "https://eworker-beam-pay.moonverse69.workers.dev";
     // ===== PromptPay EMVCo Standard Payload & QR Generator =====
     function generatePromptPayPayload(target, amount) {
         target = String(target || '').replace(/[^0-9]/g, '');
@@ -789,6 +791,11 @@ function initChatListeners() {
         }
         if (data && (data.type === 'estimate_price' || (data.text && data.text.startsWith('ประเมินค่าแรง:')))) {
             updateEstimatePriceUI(key, data);
+            if (data.accepted && isAdminUser()) {
+                openAcceptedCustomerFileInPhotoshop(messagesRef, currentRoom).catch((err) => {
+                    console.error('Could not open accepted customer file in Photoshop:', err);
+                });
+            }
         }
         if (data && data.type === 'watermarked_work') {
             updateWatermarkedWorkUI(key, data);
@@ -950,6 +957,42 @@ function updateEstimatePriceUI(msgId, data) {
     }
 }
 window.updateEstimatePriceUI = updateEstimatePriceUI;
+
+async function openAcceptedCustomerFileInPhotoshop(messagesRef, roomId) {
+    window.__photoshopOpenedRooms = window.__photoshopOpenedRooms || new Set();
+    window.__photoshopOpeningRooms = window.__photoshopOpeningRooms || new Set();
+    if (!isAdminUser() || !roomId || window.__photoshopOpenedRooms.has(roomId) || window.__photoshopOpeningRooms.has(roomId)) return;
+    window.__photoshopOpeningRooms.add(roomId);
+    try {
+    const snapshot = await get(messagesRef);
+    let source = null;
+    let sourceName = 'customer-work.jpg';
+    let newestTimestamp = -1;
+    snapshot.forEach((child) => {
+        const message = child.val() || {};
+        const file = message.file || {};
+        const isMarkedWork = (file.name || '').startsWith('marked_') || !!file.annotations;
+        const timestamp = Number(message.timestamp || 0);
+        if (isMarkedWork && timestamp >= newestTimestamp) {
+            newestTimestamp = timestamp;
+            source = file.originalImage || file.data || null;
+            sourceName = (file.name || sourceName).replace(/^marked_/, 'original_');
+        }
+    });
+    if (!source) throw new Error('ไม่พบไฟล์ต้นฉบับที่ลูกค้าส่งในห้องนี้');
+
+    const response = await fetch('/open-in-photoshop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId, source, fileName: sourceName })
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) throw new Error(result.error || 'เปิดไฟล์ใน Photoshop ไม่สำเร็จ');
+    window.__photoshopOpenedRooms.add(roomId);
+    } finally {
+        window.__photoshopOpeningRooms.delete(roomId);
+    }
+}
 
 window.handleCustomPriceSubmit = function (event, formEl) {
     if (event) event.preventDefault();
@@ -1315,11 +1358,60 @@ window.handleWatermarkedWorkDelivery = async function (file) {
         } catch (_) { }
 
         showDownloadToast('✅ ส่งงานติดลายน้ำพร้อมบิลเรียบร้อย!', 2500);
+        return true;
     } catch (err) {
         console.error('Failed to process watermarked work:', err);
         alert('เกิดข้อผิดพลาดในการประมวลผลไฟล์: ' + err.message);
+        return false;
     }
 };
+
+// Photoshop action วางไฟล์ไว้กับ local watcher; ดึงเป็น File แล้วส่งผ่าน handler เดียวกับการลากลง latestPriceBadge
+let photoshopDeliveryPoller = null;
+function startPhotoshopDeliveryPolling(roomId) {
+    if (!isAdminUser() || !roomId) return;
+    if (photoshopDeliveryPoller) clearInterval(photoshopDeliveryPoller);
+
+    let isPolling = false;
+    const heartbeat = () => fetch('/chat-delivery/active', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId })
+    }).catch(() => {});
+    heartbeat();
+    const heartbeatTimer = setInterval(heartbeat, 4000);
+    window.addEventListener('beforeunload', () => clearInterval(heartbeatTimer), { once: true });
+    const poll = async () => {
+        if (isPolling || isRoomClosed || currentRoom !== roomId) return;
+        isPolling = true;
+        try {
+            const response = await fetch(`/chat-delivery?room=${encodeURIComponent(roomId)}`, { cache: 'no-store' });
+            if (!response.ok) return;
+            const payload = await response.json();
+            const item = payload && payload.item;
+            if (!item) return;
+
+            const fileResponse = await fetch(item.url, { cache: 'no-store' });
+            if (!fileResponse.ok) throw new Error('ไม่สามารถอ่านไฟล์จาก Photoshop ได้');
+            const blob = await fileResponse.blob();
+            const workFile = new File([blob], item.name, { type: item.type || blob.type });
+            const delivered = await window.handleWatermarkedWorkDelivery(workFile);
+            if (delivered) {
+                await fetch('/chat-delivery-ack', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ roomId, id: item.id })
+                });
+            }
+        } catch (error) {
+            console.warn('Photoshop delivery queue unavailable:', error);
+        } finally {
+            isPolling = false;
+        }
+    };
+    poll();
+    photoshopDeliveryPoller = setInterval(poll, 1500);
+}
 
 window.confirmWorkPayment = async function (msgId, amount) {
     if (!currentRoom || isRoomClosed) return;
@@ -1844,8 +1936,10 @@ function renderMessage(data, id) {
         window.watermarkedWorkFiles = window.watermarkedWorkFiles || {};
         window.watermarkedWorkFiles[id] = { originalUrl, previewUrl, fileName, isPdf };
 
-        // PromptPay QR Bill for this work
-        const qrUrl = getPromptPayQRUrl('0988573074', amount);
+        // PromptPay QR Bill for this work (Beam Checkout Dynamic QR)
+        const chatLinkKey = `chat_${currentRoom}_${id}`;
+        const beamQrUrl = `${BEAM_WORKER_URL}/qr-image?linkKey=${encodeURIComponent(chatLinkKey)}&amount=${amount}`;
+        const qrUrl = beamQrUrl;
         const qrPayload = generatePromptPayPayload('0988573074', amount);
         const qrFb = 'https://quickchart.io/qr?size=300&margin=2&text=' + encodeURIComponent(qrPayload);
 
@@ -1902,8 +1996,8 @@ function renderMessage(data, id) {
                                     </div>
                                 </div>
                             </div>
-                            <div class="copyable-id" onclick="copyToClipboard('0988573074', event)" title="คลิกเพื่อคัดลอกเบอร์พร้อมเพย์" style="margin-top: 6px;">
-                                <div style="font-size: 0.65rem; color: #666; font-weight: 500;">ID: <span class="copy-number">0988573074</span> (คลิกคัดลอก)</div>
+                            <div style="font-size: 0.72rem; color: #64748b; font-weight: 600; margin-top: 6px;">
+                                ⚡ สแกนได้ทุกธนาคาร • ปลดล็อคอัตโนมัติ
                             </div>
 
                             ${isAdmin ? `
@@ -2103,7 +2197,7 @@ function renderMessage(data, id) {
                 actionHTML = `
                     <button type="button" class="estimate-accept-btn" onclick="window.handleAcceptEstimate('${id}', '${amount}')">
                         <i class="fa-solid fa-check"></i>
-                        <span>กดยอมรับง</span>
+                        <span>กดยอมรับ</span>
                     </button>
                 `;
             } else {
@@ -2134,7 +2228,8 @@ function renderMessage(data, id) {
                 // It's ONLY the price: Show only QR Code
                 const amount = strictPriceMatch[1];
                 updateLatestPriceDisplay(amount);
-                const chatQrUrl = getPromptPayQRUrl('0988573074', amount);
+                const chatLinkKey = `chat_${currentRoom}_${id}`;
+                const chatQrUrl = `${BEAM_WORKER_URL}/qr-image?linkKey=${encodeURIComponent(chatLinkKey)}&amount=${amount}`;
                 const chatQrPayload = generatePromptPayPayload('0988573074', amount);
                 const chatQrFb = 'https://quickchart.io/qr?size=300&margin=2&text=' + encodeURIComponent(chatQrPayload);
 
@@ -2151,8 +2246,8 @@ function renderMessage(data, id) {
                                 </div>
                             </div>
                         </div>
-                        <div class="copyable-id" onclick="copyToClipboard('0988573074', event)" title="คลิกเพื่อคัดลอกเบอร์พร้อมเพย์">
-                            <div style="font-size: 0.60rem; color: #666; font-weight: 500;">ID: <span class="copy-number">0988573074</span></div>
+                        <div style="font-size: 0.72rem; color: #64748b; font-weight: 600; margin-top: 6px;">
+                            ⚡ สแกนได้ทุกธนาคาร • ปลดล็อคอัตโนมัติ
                         </div>
                         <div style="margin-top: 8px; font-size: 0.65rem; color: #666;">สแกนเพื่อชำระเงินได้ทันที</div>
                         <hr style="border: none; border-top: 1px solid #eee; margin: 12px 10px;">
