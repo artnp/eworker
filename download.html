@@ -667,29 +667,29 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 195px;
-            min-width: 195px;
+            min-height: 230px;
+            min-width: 230px;
             border-radius: 8px;
             overflow: hidden;
         }
 
         #qrcode-display canvas,
         #qrcode-display img {
-            width: 195px !important;
-            height: 195px !important;
+            width: 230px !important;
+            height: 230px !important;
             display: block;
         }
 
         @media (min-width: 768px) {
             #qrcode-display {
-                min-height: 210px;
-                min-width: 210px;
+                min-height: 250px;
+                min-width: 250px;
             }
 
             #qrcode-display canvas,
             #qrcode-display img {
-                width: 210px !important;
-                height: 210px !important;
+                width: 250px !important;
+                height: 250px !important;
             }
         }
 
@@ -697,8 +697,8 @@
 
             #qrcode-display canvas,
             #qrcode-display img {
-                width: 165px !important;
-                height: 165px !important;
+                width: 195px !important;
+                height: 195px !important;
             }
         }
 
@@ -1027,10 +1027,13 @@
         }
 
         @keyframes pulseAlert {
-            0%, 100% {
+
+            0%,
+            100% {
                 box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
                 transform: scale(1);
             }
+
             50% {
                 box-shadow: 0 3px 14px rgba(239, 68, 68, 0.65);
                 transform: scale(1.02);
@@ -1038,9 +1041,12 @@
         }
 
         @keyframes pulseWarningBanner {
-            0%, 100% {
+
+            0%,
+            100% {
                 box-shadow: 0 4px 16px rgba(239, 68, 68, 0.5);
             }
+
             50% {
                 box-shadow: 0 4px 24px rgba(239, 68, 68, 0.8);
             }
@@ -1576,18 +1582,21 @@
             left: 0;
             bottom: 0;
             right: 0;
-            background: linear-gradient(
-                90deg,
-                rgba(255, 255, 255, 0) 0%,
-                rgba(255, 255, 255, 0.35) 50%,
-                rgba(255, 255, 255, 0) 100%
-            );
+            background: linear-gradient(90deg,
+                    rgba(255, 255, 255, 0) 0%,
+                    rgba(255, 255, 255, 0.35) 50%,
+                    rgba(255, 255, 255, 0) 100%);
             animation: shimmerBar 1.5s infinite;
         }
 
         @keyframes shimmerBar {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(100%); }
+            0% {
+                transform: translateX(-100%);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
         }
 
         .loading-stats {
@@ -1733,9 +1742,11 @@
 
                     <!-- PDF Page Navigation Controls -->
                     <div id="pdf-page-nav" class="pdf-page-nav hidden">
-                        <button type="button" class="pdf-nav-btn" id="pdf-prev-btn" onclick="changePdfPage(-1)" title="หน้าก่อนหน้า">◀</button>
+                        <button type="button" class="pdf-nav-btn" id="pdf-prev-btn" onclick="changePdfPage(-1)"
+                            title="หน้าก่อนหน้า">◀</button>
                         <span class="pdf-page-indicator" id="pdf-page-indicator">หน้า 1 / 1</span>
-                        <button type="button" class="pdf-nav-btn" id="pdf-next-btn" onclick="changePdfPage(1)" title="หน้าถัดไป">▶</button>
+                        <button type="button" class="pdf-nav-btn" id="pdf-next-btn" onclick="changePdfPage(1)"
+                            title="หน้าถัดไป">▶</button>
                     </div>
 
                     <!-- Protection Overlay -->
@@ -1835,7 +1846,8 @@
                     </div>
 
                     <!-- ภาพตัวอย่างผลงานที่ปลดล็อคแล้ว (เห็นชัดเจนทั้งบนมือถือและคอม) -->
-                    <div class="unlocked-preview-card" id="unlocked-preview-card" onclick="openLightbox()" title="แตะเพื่อขยายภาพเต็ม / แตะค้างเพื่อบันทึกรูป">
+                    <div class="unlocked-preview-card" id="unlocked-preview-card" onclick="openLightbox()"
+                        title="แตะเพื่อขยายภาพเต็ม / แตะค้างเพื่อบันทึกรูป">
                         <img id="unlocked-preview-img" alt="ภาพผลงานที่ปลดล็อค">
                         <div class="unlocked-preview-badge">🔍 แตะเพื่อดูภาพเต็ม (หรือแตะค้างเพื่อบันทึก)</div>
                     </div>
@@ -1862,7 +1874,8 @@
                     </div>
 
                     <!-- ภาพตัวอย่างผลงานฟรี (เห็นชัดเจนทั้งบนมือถือและคอม) -->
-                    <div class="unlocked-preview-card" id="unlocked-preview-card-free" onclick="openLightbox()" title="แตะเพื่อขยายภาพเต็ม / แตะค้างเพื่อบันทึกรูป">
+                    <div class="unlocked-preview-card" id="unlocked-preview-card-free" onclick="openLightbox()"
+                        title="แตะเพื่อขยายภาพเต็ม / แตะค้างเพื่อบันทึกรูป">
                         <img id="unlocked-preview-img-free" alt="ภาพผลงาน">
                         <div class="unlocked-preview-badge">🔍 แตะเพื่อดูภาพเต็ม (หรือแตะค้างเพื่อบันทึก)</div>
                     </div>
@@ -2779,7 +2792,7 @@
             qrDisplay.innerHTML = `
                 <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;font-size:0.82rem;color:#94a3b8;gap:8px;">
                     <div style="width:28px;height:28px;border:3px solid rgba(99,102,241,0.2);border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-                    <span>กำลังโหลด PromptPay QR จาก Beam...</span>
+                    <span>กำลังโหลด PromptPay QR...</span>
                 </div>
             `;
 
