@@ -16,23 +16,7 @@ if (-not $filePath) {
     exit
 }
 
-# ถ้า Edge เปิดหน้าแชท local ที่ active ให้ส่งเข้า latestPriceBadge
-# มิฉะนั้นทำ flow PrivateSend เดิมต่อ: อัปโหลดพร้อมราคาไป download.html
-try {
-    $chatResponse = Invoke-RestMethod -Uri 'http://127.0.0.1:5000/chat-delivery/active' -Method Get -TimeoutSec 2 -ErrorAction Stop
-    if ($chatResponse.active -and $chatResponse.roomId) {
-        $chatPayload = @{
-            roomId = [string]$chatResponse.roomId
-            filePath = (Resolve-Path -LiteralPath $filePath).Path
-        } | ConvertTo-Json -Compress
-        Invoke-RestMethod -Uri 'http://127.0.0.1:5000/chat-delivery' -Method Post `
-            -ContentType 'application/json; charset=utf-8' -Body $chatPayload -TimeoutSec 10 -ErrorAction Stop | Out-Null
-        Write-Host "ส่งไฟล์เข้าแถบค่าแรงล่าสุดของห้อง $($chatResponse.roomId) แล้ว" -ForegroundColor Green
-        exit 0
-    }
-} catch {
-    # ไม่มีหน้าแชท local ที่ active: ทำระบบอัปโหลดไป download.html ต่อ
-}
+# โหมด PrivateSend: ทำงานอัปโหลดส่งงานลับเพื่อสร้างลิงก์ download.html
 
 # 1. ตรวจสอบประเภทไฟล์
 $extension = [System.IO.Path]::GetExtension($filePath).ToLower()
