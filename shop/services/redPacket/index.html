@@ -1008,7 +1008,36 @@
             } catch (e) { }
         }
 
+        const STATUS_ENDPOINT = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/store_status.json";
+        let isServerOnline = true;
+
+        async function checkServerOnlineStatus(isManual = false) {
+            try {
+                const res = await fetch(`${STATUS_ENDPOINT}?t=${Date.now()}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const now = Date.now();
+                    // เซิร์ฟเวอร์ถือว่า Online เมื่อ data.online == true และ heartbeat ไม่เกิน 40 วินาที
+                    if (data && data.online && (now - (data.lastSeen || 0) < 40000)) {
+                        isServerOnline = true;
+                        const overlay = document.getElementById('server-offline-overlay');
+                        if (overlay) overlay.style.display = 'none';
+                        if (isManual && typeof showToast === 'function') showToast('🟢 เซิร์ฟเวอร์ออนไลน์แล้ว พร้อมใช้งาน!');
+                        return;
+                    }
+                }
+            } catch (e) { }
+
+            // หากต่อไม่ได้ หรือ heartbeat หมดอายุ
+            isServerOnline = false;
+            const overlay = document.getElementById('server-offline-overlay');
+            if (overlay) overlay.style.display = 'flex';
+            if (isManual && typeof showToast === 'function') showToast('🔴 เซิร์ฟเวอร์ยังออฟไลน์อยู่ โปรดรอสักครู่...');
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            checkServerOnlineStatus();
+            setInterval(checkServerOnlineStatus, 8000);
             initReferral();
             loadClaimedCodesForRound(new Date().getHours());
             loadCodes();
@@ -1280,6 +1309,19 @@
             }
         }
     </script>
+
+    <!-- Offline Guard Overlay -->
+    <div id="server-offline-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); z-index: 99999; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; color: #fff;">
+        <div style="font-size: 3.5rem; margin-bottom: 12px; animation: pulse 2s infinite;">🔴</div>
+        <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; color: #f87171;">เซิร์ฟเวอร์ออฟไลน์ (Server Offline)</h2>
+        <p style="font-size: 0.95rem; color: #cbd5e1; max-width: 420px; line-height: 1.5; margin-bottom: 20px;">
+            ขณะนี้ระบบแจกโค้ดปิดให้บริการชั่วคราว เนื่องจากเซิร์ฟเวอร์หลักไม่ได้ออนไลน์อยู่ โปรดกลับมาใหม่อีกครั้งเมื่อเซิร์ฟเวอร์เปิดทำการ
+        </p>
+        <button onclick="checkServerOnlineStatus(true)" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 0.9rem; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);">
+            🔄 ตรวจสอบสถานะอีกครั้ง
+        </button>
+    </div>
+
 </body>
 
 </html>
