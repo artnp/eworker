@@ -43,15 +43,43 @@ $publicDomain = "https://artnp.github.io/eworker/chat"
 $publicUrl = "$publicDomain/?room=$roomId"
 $localUrl = "http://127.0.0.1:5000/chat/?room=$roomId"
 
-$msg = "✅ส่งงานในนี้ ปลอดภัยกว่า!`r`n$publicUrl"
+$msg = $publicUrl
 
+# คัดลอกเฉพาะ URL เพื่อให้วางส่งลูกค้าได้ทันที
 Set-Clipboard -Value $msg
 
-Write-Host "เสร็จเรียบร้อย! คัดลอกข้อความลงคลิปบอร์ดแล้ว" -ForegroundColor Green
+# ให้ Photoshop action รู้ว่าต้องส่งงานกลับเข้าห้องไหน (ไฟล์นี้เป็นสถานะชั่วคราวในเครื่อง)
+$activeRoomPath = Join-Path $PSScriptRoot ".active-room.json"
+@{ roomId = $roomId; localUrl = $localUrl; createdAt = [DateTimeOffset]::Now.ToUnixTimeMilliseconds() } |
+    ConvertTo-Json -Compress | Set-Content -LiteralPath $activeRoomPath -Encoding UTF8
+
+Write-Host "เสร็จเรียบร้อย! คัดลอก URL ห้องลงคลิปบอร์ดแล้ว" -ForegroundColor Green
 Write-Host "คุณสามารถนำไปวาง (Ctrl+V) ให้ลูกค้าในแชทอื่นได้เลย: $publicUrl"
 Write-Host ""
-Write-Host "กำลังเปิดหน้าต่าง Edge ไปที่: $localUrl" -ForegroundColor Cyan
+Write-Host "กำลังรอลูกค้าส่งรูปพร้อมชี้จุด ก่อนเปิดแชทใน Edge..." -ForegroundColor Yellow
 
-Start-Process "msedge.exe" $localUrl
-
-Start-Sleep -Seconds 3
+# เปิด Edge เมื่อมีข้อความ marked_* เท่านั้น เพื่อไม่ให้หน้าฝั่งแอดมินเปิดก่อนลูกค้าส่งโจทย์
+while ($true) {
+    try {
+        $messages = Invoke-RestMethod -Uri "$baseUrl/rooms/$roomId/messages.json" -Method Get -TimeoutSec 8 -ErrorAction Stop
+        $hasMarkedWork = $false
+        if ($messages) {
+            foreach ($entry in $messages.PSObject.Properties) {
+                $fileName = [string]$entry.Value.file.name
+                $hasAnnotations = $null -ne $entry.Value.file.annotations
+                if ($fileName -like 'marked_*' -or $hasAnnotations) {
+                    $hasMarkedWork = $true
+                    break
+                }
+            }
+        }
+        if ($hasMarkedWork) {
+            Write-Host "ได้รับงานชี้จุดแล้ว กำลังเปิด Edge: $localUrl" -ForegroundColor Cyan
+            Start-Process "msedge.exe" $localUrl
+            break
+        }
+    } catch {
+        Write-Host "⚠️ ตรวจสอบสถานะห้องไม่สำเร็จ จะลองใหม่..." -ForegroundColor DarkYellow
+    }
+    Start-Sleep -Seconds 2
+}
