@@ -3487,8 +3487,9 @@
             const p = products.find(x => x.id === id);
             if (!p) return;
             const isFree = !p.price || Number(p.price) <= 0;
-            if (!storeIsOnline && !isFree) {
-                showToast('❌ ตอนนี้ร้านปิดให้บริการ เนื่องจากระบบต้องเชื่อมต่อเซิร์ฟเวอร์เพื่อตรวจสอบการโอนเงิน', 'warning');
+            const requiresOnline = (!isFree) || (p.id === 'service-red-packet');
+            if (!storeIsOnline && requiresOnline) {
+                showToast('❌ ตอนนี้ร้านปิดให้บริการ (เซิร์ฟเวอร์ Offline) โปรดรอเปิดเซิร์ฟเวอร์ก่อนใช้งาน', 'warning');
                 return;
             }
             if (p.serviceUrl) {
@@ -3500,8 +3501,9 @@
 
         function openServiceModal(product) {
             const isFree = !product.price || Number(product.price) <= 0;
-            if (!storeIsOnline && !isFree) {
-                showToast('❌ ตอนนี้ร้านปิดให้บริการ เนื่องจากระบบต้องเชื่อมต่อเซิร์ฟเวอร์เพื่อตรวจสอบการโอนเงิน', 'warning');
+            const requiresOnline = (!isFree) || (product.id === 'service-red-packet');
+            if (!storeIsOnline && requiresOnline) {
+                showToast('❌ ตอนนี้ร้านปิดให้บริการ (เซิร์ฟเวอร์ Offline) โปรดรอเปิดเซิร์ฟเวอร์ก่อนใช้งาน', 'warning');
                 return;
             }
 
@@ -3665,7 +3667,7 @@
                                 ${p.priceText ? escapeHtml(p.priceText) : (isService ? (isFree ? '🎁 ฟรี (Free)' : `฿ ${priceFormatted} <small style="font-size:0.75rem; color:var(--fh-muted); font-weight:500;">/ ครั้ง</small>`) : (isFree ? 'ฟรี (Free)' : `฿ ${priceFormatted}`))}
                             </div>
                             ${isService ? `
-                                ${(!storeIsOnline && !isFree && !p.priceText) ? `
+                                ${(!storeIsOnline && (!isFree || p.id === 'service-red-packet') && !p.priceText) ? `
                                     <button class="btn-service-fh disabled" onclick="handleServiceClick('${p.id}', event)">
                                         ❌ตอนนี้ร้านปิด
                                     </button>
@@ -4015,12 +4017,13 @@
 
             if (activeDetailProduct.isService) {
                 const isFree = !activeDetailProduct.price || Number(activeDetailProduct.price) <= 0;
-                if (!storeIsOnline && !isFree) {
+                const requiresOnline = (!isFree) || (activeDetailProduct.id === 'service-red-packet');
+                if (!storeIsOnline && requiresOnline) {
                     if (btn) {
                         btn.className = 'btn-big-download disabled';
                         btn.style.background = '#94a3b8';
                         btn.innerHTML = `<span>❌ตอนนี้ร้านปิด</span>`;
-                        btn.onclick = () => showToast('❌ ตอนนี้ร้านปิดให้บริการ เนื่องจากระบบต้องเชื่อมต่อเซิร์ฟเวอร์เพื่อตรวจสอบการโอนเงิน', 'warning');
+                        btn.onclick = () => showToast('❌ ตอนนี้ร้านปิดให้บริการ (เซิร์ฟเวอร์ Offline) โปรดรอเปิดเซิร์ฟเวอร์ก่อนใช้งาน', 'warning');
                     }
                     return;
                 }
