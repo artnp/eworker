@@ -2398,6 +2398,14 @@
                     <div class="detail-overview-content" id="detail-description">รายละเอียด...</div>
                 </div>
 
+                <!-- Installation Guide Box (Shown if product hasInstallGuide) -->
+                <div id="detail-install-guide-box" class="install-guide-fh" style="display: none; margin-bottom: 20px;">
+                    <div class="install-guide-title">
+                        <span>📌 วิธีการติดตั้งและคู่มือใช้งาน</span>
+                    </div>
+                    <div class="install-steps-list-fh" id="detail-install-steps-list"></div>
+                </div>
+
                 <!-- Screenshots Gallery -->
                 <div id="detail-gallery-box" style="display: none; margin-bottom: 20px;">
                     <h3 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 8px;">ภาพตัวอย่างโปรแกรม
@@ -2535,6 +2543,14 @@
                             style="color: var(--fh-slate); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: monospace;">--</span>
                         <button type="button" class="btn-tool-sm" onclick="copyUnlockedLink()"
                             style="flex-shrink: 0; padding: 4px 10px; cursor: pointer;">📋 คัดลอกลิงก์</button>
+                    </div>
+
+                    <!-- Unlocked Install Steps (if any) -->
+                    <div id="unlocked-install-guide-box" class="install-guide-fh" style="display: none; margin-top: 14px; text-align: left; background: #ffffff;">
+                        <div class="install-guide-title" style="font-size: 0.95rem; margin-bottom: 10px;">
+                            <span>📌 วิธีการติดตั้งและคู่มือใช้งาน</span>
+                        </div>
+                        <div class="install-steps-list-fh" id="unlocked-install-steps-list"></div>
                     </div>
                 </div>
 
@@ -2783,9 +2799,10 @@
                                     หรือพิมพ์เองได้</span>
                             </div>
                             <input type="text" id="admin-category-input" list="admin-category-datalist"
-                                class="form-control-clean" placeholder="เช่น TradingView / สคริปต์, เครื่องมือ, บอท..."
+                                class="form-control-clean" placeholder="เช่น Chrome Addon, TradingView / สคริปต์, เครื่องมือ, บอท..."
                                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-                                oninput="updateAdminCategoryChipsActive(this.value)">
+                                oninput="handleAdminCategoryInputChange(this.value)"
+                                onchange="handleAdminCategoryInputChange(this.value)">
                             <datalist id="admin-category-datalist"></datalist>
                             <div id="admin-category-chips-container" style="margin-top: 6px;">
                                 <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
@@ -2801,6 +2818,8 @@
                             <label class="form-label-clean">ภาษาที่ใช้พัฒนา (Programming Language) *</label>
                             <select id="admin-language-select" class="form-control-clean"
                                 onchange="handleAdminLanguageChange(this.value)" required autocomplete="off">
+                                <option value="" disabled selected>-- เลือกภาษา / ประเภทของสินค้า --</option>
+                                <option value="chrome_addon">🧩 Chrome Addon / Extension (.zip)</option>
                                 <option value="pinescript">🌲 Pine Script</option>
                                 <option value="php">🐘 PHP (.php)</option>
                                 <option value="exe">⚡ EXE (.exe / โปรแกรมสำเร็จรูป)</option>
@@ -2938,7 +2957,9 @@
                             <input type="url" id="admin-dropbox-url" class="form-control-clean" required
                                 placeholder="https://www.dropbox.com/scl/fi/..." autocomplete="off" autocorrect="off"
                                 autocapitalize="off" spellcheck="false"
-                                style="font-family: monospace; font-size: 0.82rem; background: #ffffff;">
+                                style="font-family: monospace; font-size: 0.82rem; background: #ffffff;"
+                                oninput="autoFixDropboxUrl(this)"
+                                onpaste="setTimeout(() => autoFixDropboxUrl(this), 50)">
                             <span style="font-size: 0.72rem; color: #0284c7; margin-top: 3px; display: block;">
                                 🛡️ เก็บในตู้นิรภัยความปลอดภัยสูง (Vault)
                                 ซ่อนจากผู้ใช้ทั่วไปจนกว่าจะชำระเงินและบอทอนุมัติสำเร็จ
@@ -3121,8 +3142,15 @@
                     <div id="admin-steps-container"
                         style="display: none; background: #f8fafc; border: 1px dashed var(--fh-border); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
                         <div id="admin-steps-list"></div>
-                        <button type="button" class="btn-header-clean" style="margin-top: 8px;"
-                            onclick="addAdminStepRow()">+ เพิ่มขั้นตอน</button>
+                        <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; align-items: center;">
+                            <button type="button" class="btn-header-clean" onclick="addAdminStepRow()">+ เพิ่มขั้นตอน</button>
+                            <button type="button" class="btn-tool-sm"
+                                style="color: #0284c7; background: #e0f2fe; border: 1px solid #bae6fd; padding: 5px 12px; border-radius: 5px; font-weight: 600; cursor: pointer;"
+                                onclick="loadDefaultChromeAddonSteps()">🧩 โหลดคู่มือ Chrome Addon</button>
+                            <button type="button" class="btn-tool-sm"
+                                style="color: #059669; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 5px 12px; border-radius: 5px; font-weight: 600; cursor: pointer;"
+                                onclick="loadDefaultTradingViewSteps()">🌲 โหลดคู่มือ TradingView</button>
+                        </div>
                     </div>
 
                     <div
@@ -3429,6 +3457,7 @@
 
         const LANG_MAP = {
             pinescript: { name: 'Pine Script', icon: '🌲', ext: '.pine', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
+            chrome_addon: { name: 'Chrome Addon / Extension', icon: '🧩', ext: '.zip', color: '#0284c7', bg: '#e0f2fe', border: '#7dd3fc' },
             php: { name: 'PHP', icon: '🐘', ext: '.php', color: '#8b5cf6', bg: '#f5f3ff', border: '#ddd6fe' },
             exe: { name: 'EXE', icon: '⚡', ext: '.exe', color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
             python: { name: 'Python', icon: '🐍', ext: '.py', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
@@ -3455,6 +3484,7 @@
 
             // Group products by category
             const catMap = {};
+            catMap['Chrome Addon'] = 0; // ensure Chrome Addon is always available
             catMap['บริการออนไลน์'] = 0; // ensure service category is always available
             catMap['แรงงาน'] = 0; // ensure labor category is always available
 
@@ -3475,8 +3505,10 @@
                 </li>
             `;
 
-            // Sort with 'บริการออนไลน์' first, 'แรงงาน' second, then other categories alphabetically
+            // Sort with 'Chrome Addon' prominent, then 'บริการออนไลน์', 'แรงงาน', then other categories alphabetically
             const cats = Object.keys(catMap).sort((a, b) => {
+                if (a === 'Chrome Addon') return -1;
+                if (b === 'Chrome Addon') return 1;
                 if (a === 'บริการออนไลน์' || a === 'บริการ') return -1;
                 if (b === 'บริการออนไลน์' || b === 'บริการ') return 1;
                 if (a === 'แรงงาน') return -1;
@@ -3486,11 +3518,12 @@
 
             cats.forEach(cat => {
                 const count = catMap[cat];
-                if (count === 0 && cat !== 'บริการออนไลน์' && cat !== 'บริการ' && cat !== 'แรงงาน') return;
+                if (count === 0 && cat !== 'บริการออนไลน์' && cat !== 'บริการ' && cat !== 'แรงงาน' && cat !== 'Chrome Addon') return;
                 const isActive = (activeCategory === cat || (activeCategory === 'บริการ' && cat === 'บริการออนไลน์') || (activeCategory === 'บริการออนไลน์' && cat === 'บริการ'));
+                const isChromeAddon = (cat === 'Chrome Addon' || cat === 'Chrome Extension');
                 const isServiceCat = (cat === 'บริการ' || cat === 'บริการออนไลน์');
                 const isLaborCat = (cat === 'แรงงาน');
-                const icon = isServiceCat ? '🛠️' : (isLaborCat ? '🔨' : '📁');
+                const icon = isChromeAddon ? '🧩' : (isServiceCat ? '🛠️' : (isLaborCat ? '🔨' : '📁'));
                 const label = isServiceCat ? 'บริการออนไลน์' : escapeHtml(cat);
                 html += `
                     <li>
@@ -3981,6 +4014,8 @@
             if (specDelivery) {
                 if (p.language === 'pinescript') {
                     specDelivery.textContent = '🌲 ปลดล็อคโค้ดสคริปต์สำหรับคัดลอกลง Pine Editor ทันที';
+                } else if (p.category === 'Chrome Addon' || p.language === 'chrome_addon') {
+                    specDelivery.textContent = '🧩 รับไฟล์ส่วนขยาย (.zip) พร้อมคู่มือติดตั้งทันที';
                 } else {
                     specDelivery.textContent = 'รับลิงก์ดาวน์โหลดทันทีหลังชำระเงิน';
                 }
@@ -3988,6 +4023,24 @@
 
             document.getElementById('detail-price-tag').textContent = p.price <= 0 ? 'ฟรี (Free)' : `฿ ${Number(p.price).toFixed(2)}`;
             document.getElementById('detail-description').innerHTML = formatProductDescription(p.description, p.features);
+
+            // Installation Guide (if configured)
+            const guideBox = document.getElementById('detail-install-guide-box');
+            const stepsList = document.getElementById('detail-install-steps-list');
+            if (guideBox && stepsList) {
+                if (p.hasInstallGuide && Array.isArray(p.installSteps) && p.installSteps.length > 0) {
+                    guideBox.style.display = 'block';
+                    stepsList.innerHTML = p.installSteps.map((step, idx) => `
+                        <div class="step-row-fh">
+                            <div class="step-bubble">${idx + 1}</div>
+                            <div style="flex: 1; line-height: 1.55; color: #334155;">${formatInstallStep(step)}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    guideBox.style.display = 'none';
+                    stepsList.innerHTML = '';
+                }
+            }
 
             updateDetailCTAState();
             const modalEl = document.getElementById('detail-modal');
@@ -4787,6 +4840,24 @@
                 if (urlTextEl) {
                     urlTextEl.textContent = directDropboxUrl;
                 }
+
+                // Unlocked Install Guide for normal download products
+                const unlGuideBox = document.getElementById('unlocked-install-guide-box');
+                const unlStepsList = document.getElementById('unlocked-install-steps-list');
+                if (unlGuideBox && unlStepsList) {
+                    if (product.hasInstallGuide && Array.isArray(product.installSteps) && product.installSteps.length > 0) {
+                        unlGuideBox.style.display = 'block';
+                        unlStepsList.innerHTML = product.installSteps.map((step, idx) => `
+                            <div class="step-row-fh">
+                                <div class="step-bubble">${idx + 1}</div>
+                                <div style="flex: 1; line-height: 1.55; color: #334155;">${formatInstallStep(step)}</div>
+                            </div>
+                        `).join('');
+                    } else {
+                        unlGuideBox.style.display = 'none';
+                        unlStepsList.innerHTML = '';
+                    }
+                }
             }
 
             updateDetailCTAState();
@@ -5069,6 +5140,25 @@
         }
 
         // --- DROPBOX TOKEN & UPLOAD HANDLERS ---
+        function autoFixDropboxUrl(inputEl) {
+            if (!inputEl || !inputEl.value) return;
+            let val = inputEl.value.trim();
+            if (val.includes('dropbox.com')) {
+                let fixed = val;
+                if (fixed.includes('dl=0')) {
+                    fixed = fixed.replace('dl=0', 'dl=1');
+                } else if (!fixed.includes('dl=1')) {
+                    fixed += (fixed.includes('?') ? '&dl=1' : '?dl=1');
+                }
+                if (fixed !== val) {
+                    inputEl.value = fixed;
+                    if (typeof showToast === 'function') {
+                        showToast('⚡ แปลงลิงก์ Dropbox เป็น Direct Download (&dl=1) อัตโนมัติแล้ว', 'info');
+                    }
+                }
+            }
+        }
+
         async function checkDropboxTokenStatus() {
             try {
                 const res = await fetch('/get-dropbox-token');
@@ -5077,12 +5167,22 @@
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.token) {
-                        if (st) {
-                            st.innerHTML = '✅ เชื่อมต่อ Dropbox Token แล้ว (พร้อมอัปโหลด)';
-                            st.style.color = '#16a34a';
-                        }
                         if (inp && !inp.value) inp.value = data.token;
-                        return true;
+                        if (data.isValid) {
+                            if (st) {
+                                st.innerHTML = '✅ เชื่อมต่อ Dropbox Token แล้ว (พร้อมอัปโหลด)';
+                                st.style.color = '#16a34a';
+                            }
+                            return true;
+                        } else if (data.errorReason === 'expired' || data.isValid === false) {
+                            if (st) {
+                                st.innerHTML = '⚠️ Dropbox Token หมดอายุแล้ว (คลิก "รับ Token จาก Dropbox Console" ด้านล่างแล้วนำมาวางใหม่)';
+                                st.style.color = '#dc2626';
+                            }
+                            const panel = document.getElementById('dropbox-token-panel');
+                            if (panel) panel.style.display = 'block';
+                            return false;
+                        }
                     }
                 }
                 if (st) {
@@ -5198,8 +5298,9 @@
                             statusEl.style.color = '#dc2626';
                         }
                         showToast(`⚠️ ${errMsg}`, 'warning');
-                        if (errMsg.includes('Token')) {
-                            document.getElementById('dropbox-token-panel').style.display = 'block';
+                        if (errMsg.includes('Token') || errMsg.includes('401') || errMsg.includes('Unauthorized')) {
+                            const panel = document.getElementById('dropbox-token-panel');
+                            if (panel) panel.style.display = 'block';
                         }
                     }
                 } catch (err) {
@@ -5751,6 +5852,39 @@
             showToast('🎉 ซิงค์คุณสมบัติ (ตัวหนา) เรียบร้อยแล้ว', 'success');
         }
 
+        function formatInstallStep(text) {
+            if (!text) return '';
+            let s = escapeHtml(text);
+            // Replace chrome://extensions with stylish pill badge like screenshot
+            s = s.replace(/chrome:\/\/extensions/g, '<code class="url-code-pill" style="display:inline-block; background:#0f172a; color:#38bdf8; font-family:Consolas, monospace; font-size:0.86rem; font-weight:700; padding:2px 8px; border-radius:5px; border:1px solid #1e293b; box-shadow:0 1px 3px rgba(0,0,0,0.2); vertical-align:middle; margin:0 3px;">chrome://extensions</code>');
+            // Bold key terms
+            s = s.replace(/Developer mode/g, '<b>Developer mode</b>');
+            s = s.replace(/Load unpacked/g, '<b>Load unpacked</b>');
+            s = s.replace(/\.zip/gi, '<b style="color:#0284c7;">.zip</b>');
+            s = s.replace(/\n/g, '<br>');
+            return s;
+        }
+
+        // --- CHROME ADDON DEFAULT STEPS & HANDLERS ---
+        const CHROME_ADDON_DEFAULT_STEPS = [
+            "เปิดหน้าจัดการส่วนขยายใน Chrome โดยเปิด Google Chrome แล้วพิมพ์ URL ดังนี้ลงในช่องใส่ที่อยู่เว็บด้านบน: chrome://extensions แล้วกด Enter",
+            "มองที่มุมขวาบน เปิดสวิตช์ Developer mode (โหมดนักพัฒนา) ให้เป็นสีฟ้า",
+            "กดปุ่ม Load unpacked (โหลดส่วนขยายที่ยังไม่ได้แพ็ก) ที่มุมซ้ายบน",
+            "อัปโหลด ไฟล์ .zip (หรือเลือกโฟลเดอร์ไฟล์ส่วนขยายที่แตกจาก .zip) เพื่อติดตั้งและเริ่มใช้งานทันที"
+        ];
+
+        function loadDefaultChromeAddonSteps() {
+            const list = document.getElementById('admin-steps-list');
+            if (!list) return;
+            list.innerHTML = '';
+            CHROME_ADDON_DEFAULT_STEPS.forEach(s => addAdminStepRow(s));
+            const guideCb = document.getElementById('admin-has-install-guide');
+            if (guideCb) guideCb.checked = true;
+            const container = document.getElementById('admin-steps-container');
+            if (container) container.style.display = 'block';
+            showToast('✅ โหลดคู่มือการติดตั้ง Chrome Addon เริ่มต้นเรียบร้อย', 'info');
+        }
+
         // --- TRADINGVIEW DEFAULT STEPS & HANDLERS ---
         const TRADINGVIEW_DEFAULT_STEPS = [
             "เข้าสู่เว็บไซต์ TradingView.com แล้วเข้าสู่ระบบ เปิดหน้าต่างกราฟ (Chart) คู่เหรียญหรือหุ้นที่ต้องการใช้งาน",
@@ -5791,7 +5925,7 @@
             if (!datalist && !chipsList) return;
 
             // Collect unique categories in the system
-            const catSet = new Set(['TradingView / สคริปต์', 'เครื่องมือ', 'บอท', 'โปรแกรม', 'บริการออนไลน์', 'แรงงาน']);
+            const catSet = new Set(['Chrome Addon', 'TradingView / สคริปต์', 'เครื่องมือ', 'บอท', 'โปรแกรม', 'บริการออนไลน์', 'แรงงาน']);
             if (Array.isArray(products)) {
                 products.forEach(p => {
                     const c = (p.category || '').trim();
@@ -5814,11 +5948,86 @@
             }
         }
 
+        function areCurrentStepsTradingView() {
+            const rows = document.querySelectorAll('.admin-step-item-val');
+            for (let r of rows) {
+                const val = r.value || '';
+                if (val.includes('TradingView') || val.includes('Pine Editor') || val.includes('สคริปต์')) return true;
+            }
+            return false;
+        }
+
+        function areCurrentStepsChromeAddon() {
+            const rows = document.querySelectorAll('.admin-step-item-val');
+            for (let r of rows) {
+                const val = r.value || '';
+                if (val.includes('chrome://extensions') || val.includes('Developer mode') || val.includes('Load unpacked') || val.includes('ส่วนขยาย')) return true;
+            }
+            return false;
+        }
+
         function selectAdminCategory(cat) {
             const input = document.getElementById('admin-category-input');
             if (input) {
                 input.value = cat;
                 updateAdminCategoryChipsActive(cat);
+            }
+            applyCategorySelection(cat);
+        }
+
+        function handleAdminCategoryInputChange(val) {
+            updateAdminCategoryChipsActive(val);
+            applyCategorySelection(val);
+        }
+
+        function applyCategorySelection(rawCat) {
+            const cat = (rawCat || '').trim();
+            const catLower = cat.toLowerCase();
+
+            // Check if Chrome Addon / Extension (handles typos like "cheom addon")
+            const isChrome = catLower.includes('chrome') || catLower.includes('cheom') || catLower.includes('addon') || catLower.includes('extension');
+            const isTV = catLower.includes('tradingview') || catLower.includes('pine') || catLower.includes('สคริปต์');
+
+            if (isChrome) {
+                // Set Language to Chrome Addon
+                const langSel = document.getElementById('admin-language-select');
+                if (langSel && langSel.value !== 'chrome_addon') {
+                    langSel.value = 'chrome_addon';
+                }
+                handleAdminLanguageChange('chrome_addon', false, true);
+
+                // ALWAYS load Chrome Addon steps! Do NOT keep TradingView steps! "เอาของใครของมัน"
+                loadDefaultChromeAddonSteps();
+            } else if (isTV) {
+                // Set Language to Pine Script
+                const langSel = document.getElementById('admin-language-select');
+                if (langSel && langSel.value !== 'pinescript') {
+                    langSel.value = 'pinescript';
+                }
+                handleAdminLanguageChange('pinescript', false, true);
+
+                // ALWAYS load TradingView steps!
+                loadDefaultTradingViewSteps();
+            } else {
+                // Other categories: clear steps if they were TV or Chrome Addon
+                if (areCurrentStepsTradingView() || areCurrentStepsChromeAddon()) {
+                    const list = document.getElementById('admin-steps-list');
+                    if (list) list.innerHTML = '';
+                    const guideCb = document.getElementById('admin-has-install-guide');
+                    if (guideCb) guideCb.checked = false;
+                    const container = document.getElementById('admin-steps-container');
+                    if (container) container.style.display = 'none';
+                }
+                const dropboxBox = document.getElementById('admin-dropbox-box');
+                const dropboxUrl = document.getElementById('admin-dropbox-url');
+                const pineBox = document.getElementById('admin-pinescript-box');
+                const langSel = document.getElementById('admin-language-select');
+                if (langSel && langSel.value === 'pinescript') {
+                    langSel.value = '';
+                    if (dropboxBox) dropboxBox.style.display = 'block';
+                    if (dropboxUrl) dropboxUrl.required = true;
+                    if (pineBox) pineBox.style.display = 'none';
+                }
             }
         }
 
@@ -5862,12 +6071,21 @@
             if (dbxProg) dbxProg.style.display = 'none';
             checkDropboxTokenStatus();
 
+            // Reset language & upload boxes cleanly
             const langSel = document.getElementById('admin-language-select');
             if (langSel) {
-                handleAdminLanguageChange(langSel.value, false);
+                langSel.value = '';
             }
+            const dropboxBox = document.getElementById('admin-dropbox-box');
+            const dropboxUrl = document.getElementById('admin-dropbox-url');
+            const pineBox = document.getElementById('admin-pinescript-box');
+            if (dropboxBox) dropboxBox.style.display = 'block';
+            if (dropboxUrl) dropboxUrl.required = true;
+            if (pineBox) pineBox.style.display = 'none';
 
-            renderAdminCategoryOptions(document.getElementById('admin-category-input').value);
+            const catInp = document.getElementById('admin-category-input');
+            if (catInp) catInp.value = '';
+            renderAdminCategoryOptions('');
 
             const featList = document.getElementById('admin-features-list');
             if (featList) featList.innerHTML = '';
@@ -6012,7 +6230,7 @@
             }
         }
 
-        function handleAdminLanguageChange(val, isEditing = false) {
+        function handleAdminLanguageChange(val, isEditing = false, fromCategory = false) {
             const custom = document.getElementById('admin-language-custom');
             if (custom) custom.style.display = (val === '__custom__') ? 'block' : 'none';
 
@@ -6026,20 +6244,40 @@
                 if (dropboxUrl) dropboxUrl.required = false;
                 if (pineBox) pineBox.style.display = 'block';
 
-                if (!isEditing) {
-                    if (catInput && !catInput.value) {
+                if (!isEditing && !fromCategory) {
+                    if (catInput && (!catInput.value || catInput.value.toLowerCase().includes('chrome'))) {
                         catInput.value = 'TradingView / สคริปต์';
                         updateAdminCategoryChipsActive('TradingView / สคริปต์');
                     }
-                    const currentRows = document.querySelectorAll('.admin-step-input-row');
-                    if (currentRows.length === 0) {
-                        loadDefaultTradingViewSteps();
+                    loadDefaultTradingViewSteps();
+                }
+            } else if (val === 'chrome_addon') {
+                if (dropboxBox) dropboxBox.style.display = 'block';
+                if (dropboxUrl) dropboxUrl.required = true;
+                if (pineBox) pineBox.style.display = 'none';
+
+                if (!isEditing && !fromCategory) {
+                    if (catInput && (!catInput.value || catInput.value.toLowerCase().includes('tradingview'))) {
+                        catInput.value = 'Chrome Addon';
+                        updateAdminCategoryChipsActive('Chrome Addon');
                     }
+                    loadDefaultChromeAddonSteps();
                 }
             } else {
                 if (dropboxBox) dropboxBox.style.display = 'block';
                 if (dropboxUrl) dropboxUrl.required = true;
                 if (pineBox) pineBox.style.display = 'none';
+
+                if (!isEditing && !fromCategory) {
+                    if (areCurrentStepsTradingView() || areCurrentStepsChromeAddon()) {
+                        const list = document.getElementById('admin-steps-list');
+                        if (list) list.innerHTML = '';
+                        const guideCb = document.getElementById('admin-has-install-guide');
+                        if (guideCb) guideCb.checked = false;
+                        const container = document.getElementById('admin-steps-container');
+                        if (container) container.style.display = 'none';
+                    }
+                }
             }
         }
 
@@ -6047,7 +6285,16 @@
             document.getElementById('admin-steps-container').style.display = checked ? 'block' : 'none';
             if (checked && document.querySelectorAll('.admin-step-input-row').length === 0) {
                 const langSel = document.getElementById('admin-language-select');
-                if (langSel && langSel.value === 'pinescript') {
+                const catInput = document.getElementById('admin-category-input');
+                const catVal = (catInput ? catInput.value.trim().toLowerCase() : '');
+                const langVal = (langSel ? langSel.value : '');
+
+                const isChrome = (langVal === 'chrome_addon') || catVal.includes('chrome') || catVal.includes('cheom') || catVal.includes('addon') || catVal.includes('extension');
+                const isTV = (langVal === 'pinescript') || catVal.includes('tradingview') || catVal.includes('pine') || catVal.includes('สคริปต์');
+
+                if (isChrome) {
+                    loadDefaultChromeAddonSteps();
+                } else if (isTV) {
                     loadDefaultTradingViewSteps();
                 } else {
                     addAdminStepRow();
@@ -6094,7 +6341,14 @@
                 return;
             }
 
-            const dropboxUrl = document.getElementById('admin-dropbox-url').value.trim();
+            let dropboxUrl = document.getElementById('admin-dropbox-url').value.trim();
+            if (dropboxUrl && dropboxUrl.includes('dropbox.com')) {
+                if (dropboxUrl.includes('dl=0')) {
+                    dropboxUrl = dropboxUrl.replace('dl=0', 'dl=1');
+                } else if (!dropboxUrl.includes('dl=1')) {
+                    dropboxUrl += (dropboxUrl.includes('?') ? '&dl=1' : '?dl=1');
+                }
+            }
             const category = document.getElementById('admin-category-input').value.trim();
 
             const langSelect = document.getElementById('admin-language-select').value;
