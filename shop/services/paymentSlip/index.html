@@ -280,12 +280,16 @@
         }
 
         .card-content {
+            position: relative;
+            z-index: 1;
             margin-top: -18px;
             padding: 0 12px 14px;
             text-align: center;
         }
 
         .qr-box {
+            position: relative;
+            z-index: 2;
             background: #fff;
             padding: 8px;
             border-radius: 10px;
@@ -676,30 +680,27 @@
                     correctLevel: QRCode.CorrectLevel.L
                 });
 
-                // Convert Canvas to Image for reliable html2canvas capture
-                setTimeout(() => {
-                    const canvas = qrContainer.querySelector('canvas');
-                    if (canvas) {
-                        const img = document.createElement('img');
-                        img.src = canvas.toDataURL('image/png');
-                        img.style.width = '100%';
-                        img.style.height = '100%';
-                        qrContainer.innerHTML = ''; // Clear canvas
-                        qrContainer.appendChild(img);
-                    }
-                }, 50);
+                // Convert Canvas to Image immediately for reliable html2canvas capture
+                const canvas = qrContainer.querySelector('canvas');
+                if (canvas) {
+                    const img = document.createElement('img');
+                    img.src = canvas.toDataURL('image/png');
+                    img.style.width = '120px';
+                    img.style.height = '120px';
+                    img.style.display = 'block';
+                    qrContainer.innerHTML = ''; // Clear canvas
+                    qrContainer.appendChild(img);
+                }
             }
         }
 
         // Action Buttons
         async function getCardBlob() {
             const card = document.getElementById('pay-card');
-            // useCORS needs proper crossorigin attributes on images
             const canvas = await html2canvas(card, {
                 scale: 2,
                 backgroundColor: null,
-                useCORS: true,
-                allowTaint: true
+                useCORS: true
             });
             return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
         }
