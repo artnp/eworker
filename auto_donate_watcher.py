@@ -1836,11 +1836,37 @@ class HubHandler(http.server.SimpleHTTPRequestHandler):
                             tok = m.group(1).strip()
                 except Exception:
                     pass
+
+            is_valid = False
+            error_reason = ""
+            if tok:
+                try:
+                    check_req = urllib.request.Request(
+                        'https://api.dropboxapi.com/2/users/get_current_account',
+                        data=b'null',
+                        headers={'Authorization': f'Bearer {tok}', 'Content-Type': 'application/json'}
+                    )
+                    with urllib.request.urlopen(check_req, timeout=4) as chk_res:
+                        if chk_res.status == 200:
+                            is_valid = True
+                except urllib.error.HTTPError as he:
+                    if he.code == 401:
+                        error_reason = "expired"
+                    else:
+                        error_reason = f"HTTP {he.code}"
+                except Exception as ex:
+                    error_reason = str(ex)
+
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            self.wfile.write(json.dumps({"hasToken": bool(tok), "token": tok}).encode())
+            self.wfile.write(json.dumps({
+                "hasToken": bool(tok),
+                "token": tok,
+                "isValid": is_valid,
+                "errorReason": error_reason
+            }).encode())
             return
 
         if parsed_url.path == '/edge-tts/pronunciations':
@@ -2644,11 +2670,20 @@ loadRules();
                 else:
                     raise RuntimeError("ไม่สามารถสร้างลิงก์ดาวน์โหลด Dropbox ได้")
             except Exception as d_err:
+                err_text = str(d_err)
+                if isinstance(d_err, urllib.error.HTTPError):
+                    try:
+                        err_body = d_err.read().decode('utf-8', errors='ignore')
+                        if 'expired_access_token' in err_body or d_err.code == 401:
+                            err_text = "Dropbox Access Token หมดอายุแล้ว (401 Unauthorized) กรุณากดปุ่ม '⚙️ ตั้งค่า Token' แล้วนำ Token ใหม่มาวาง"
+                    except Exception:
+                        if getattr(d_err, 'code', None) == 401:
+                            err_text = "Dropbox Access Token หมดอายุแล้ว (401 Unauthorized) กรุณากดปุ่ม '⚙️ ตั้งค่า Token' แล้วนำ Token ใหม่มาวาง"
                 self.send_response(500)
                 self.send_header('Content-type', 'application/json')
                 self.send_header('Access-Control-Allow-Origin', '*')
                 self.end_headers()
-                self.wfile.write(json.dumps({"error": str(d_err)}).encode())
+                self.wfile.write(json.dumps({"error": err_text}).encode())
                 return
 
         if parsed_url.path == '/save-image':
