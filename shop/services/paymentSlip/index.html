@@ -27,9 +27,12 @@
             --text: #FFFFFF;
         }
 
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
-        html, body {
+        html,
+        body {
             height: 100%;
             margin: 0;
             padding: 0;
@@ -65,7 +68,11 @@
             flex-shrink: 0;
             letter-spacing: 0.2px;
         }
-        .type-hint strong { color: #7c8b9e; font-weight: 600; }
+
+        .type-hint strong {
+            color: #7c8b9e;
+            font-weight: 600;
+        }
 
         /* ===== TWO-COLUMN BODY ===== */
         .main-body {
@@ -86,7 +93,6 @@
             flex-shrink: 0;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
             gap: 0;
         }
 
@@ -128,7 +134,8 @@
         }
 
         /* ==== WHITE INPUTS ==== */
-        input[type="text"], input[type="number"] {
+        input[type="text"],
+        input[type="number"] {
             width: 100%;
             padding: 7px 10px;
             background: #ffffff;
@@ -149,7 +156,7 @@
         input[type="number"]:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(141,235,45,0.15);
+            box-shadow: 0 0 0 3px rgba(141, 235, 45, 0.15);
         }
 
         /* Amount input — bigger & highlighted */
@@ -160,7 +167,7 @@
             padding: 8px 10px;
             background: #fff;
             border: 2px solid var(--primary);
-            box-shadow: 0 0 0 3px rgba(141,235,45,0.12);
+            box-shadow: 0 0 0 3px rgba(141, 235, 45, 0.12);
             letter-spacing: -0.5px;
         }
 
@@ -188,6 +195,7 @@
             display: flex;
             gap: 6px;
             flex-wrap: wrap;
+            justify-content: center;
         }
 
         .color-dot {
@@ -220,8 +228,13 @@
             transition: opacity 0.15s, transform 0.1s;
         }
 
-        .btn-action:hover { opacity: 0.88; }
-        .btn-action:active { transform: scale(0.98); }
+        .btn-action:hover {
+            opacity: 0.88;
+        }
+
+        .btn-action:active {
+            transform: scale(0.98);
+        }
 
         /* ==== RIGHT: Preview Area ==== */
         .preview-area {
@@ -241,7 +254,7 @@
             background: #fff;
             border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 10px 36px rgba(0,0,0,0.6);
+            box-shadow: 0 10px 36px rgba(0, 0, 0, 0.6);
         }
 
         .card-top {
@@ -277,7 +290,7 @@
             padding: 8px;
             border-radius: 10px;
             display: inline-block;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
         }
 
         .qr-box img,
@@ -359,7 +372,9 @@
             transition: background 0.15s;
         }
 
-        .btn-sm:hover { background: #252a33; }
+        .btn-sm:hover {
+            background: #252a33;
+        }
 
         .btn-primary {
             background: #ffffff;
@@ -368,7 +383,9 @@
             border: none;
         }
 
-        .btn-primary:hover { background: #ededf0; }
+        .btn-primary:hover {
+            background: #ededf0;
+        }
 
         /* Status text */
         #msg-status {
@@ -393,9 +410,9 @@
             pointer-events: none;
             opacity: 0;
             transition: all 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 16px 40px rgba(0,0,0,0.55);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
             text-align: center;
-            border: 1px solid rgba(255,255,255,0.08);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(12px);
             display: flex;
             flex-direction: column;
@@ -408,7 +425,9 @@
             transform: translate(-50%, -50%) scale(1);
         }
 
-        .toast-icon { font-size: 2.6rem; }
+        .toast-icon {
+            font-size: 2.6rem;
+        }
     </style>
 </head>
 
@@ -417,56 +436,57 @@
 
         <!-- Title + hint row -->
         <div class="page-title">💳 ระบบสร้างสลิปพร้อมเพย์</div>
-        <div class="type-hint">⌨️ <strong>พิมพ์ยอดได้เลยทุกที่บนหน้านี้</strong> — ระบบจะอัปเดต QR และคัดลอกให้อัตโนมัติ</div>
+        <div class="type-hint">⌨️ <strong>พิมพ์ยอดได้เลยทุกที่บนหน้านี้</strong> — ระบบจะอัปเดต QR และคัดลอกให้อัตโนมัติ
+        </div>
 
         <div class="main-body">
 
             <!-- FORM (Left) -->
             <div class="input-panel">
-                <div class="fields-group">
-                    <div class="header-section">
-                        <h3>ตั้งค่าบัญชีรับเงิน</h3>
-                        <p>ข้อมูลจะถูกจำไว้ในเครื่องอัตโนมัติ</p>
-                    </div>
-
-                    <div class="form-group">
-                        <label>ชื่อร้าน (Shop Name)</label>
-                        <input type="text" id="inp-shop" placeholder="ชื่อร้านของคุณ">
-                    </div>
-                    <div class="form-group">
-                        <label>พร้อมเพย์ (PromptPay ID)</label>
-                        <input type="text" id="inp-pp" placeholder="เบอร์โทร หรือ เลขบัตร ปชช." maxlength="13">
-                    </div>
-                    <div class="form-group">
-                        <label>ชื่อบัญชี (Account Name)</label>
-                        <input type="text" id="inp-acc" placeholder="ชื่อ-นามสกุล">
-                    </div>
-
-                    <hr class="divider">
-
-                    <div class="form-group">
-                        <div class="amount-label-row">
-                            <label>⚡ ยอดที่ต้องชำระ (Amount)</label>
-                        </div>
-                        <input type="number" id="inp-amount" placeholder="0.00">
-                    </div>
-
-                    <div class="form-group">
-                        <label>ธีมสี (Theme)</label>
-                        <div class="theme-options">
-                            <div class="color-dot active" style="background:#8DEB2D" onclick="setTheme('#8DEB2D', this)"></div>
-                            <div class="color-dot" style="background:#fab1a0" onclick="setTheme('#fab1a0', this)"></div>
-                            <div class="color-dot" style="background:#74b9ff" onclick="setTheme('#74b9ff', this)"></div>
-                            <div class="color-dot" style="background:#a29bfe" onclick="setTheme('#a29bfe', this)"></div>
-                            <div class="color-dot" style="background:#ff7675" onclick="setTheme('#ff7675', this)"></div>
-                            <div class="color-dot" style="background:#ffeaa7" onclick="setTheme('#ffeaa7', this)"></div>
-                            <div class="color-dot" style="background:#55efc4" onclick="setTheme('#55efc4', this)"></div>
-                            <div class="color-dot" style="background:#fd79a8" onclick="setTheme('#fd79a8', this)"></div>
-                        </div>
-                    </div>
+                <div class="header-section">
+                    <h3>ตั้งค่าบัญชีรับเงิน</h3>
+                    <p>ข้อมูลจะถูกจำไว้ในเครื่องอัตโนมัติ</p>
                 </div>
 
+                <div class="form-group">
+                    <label>ชื่อร้าน (Shop Name)</label>
+                    <input type="text" id="inp-shop" placeholder="ชื่อร้านของคุณ">
+                </div>
+                <div class="form-group">
+                    <label>พร้อมเพย์ (PromptPay ID)</label>
+                    <input type="text" id="inp-pp" placeholder="เบอร์โทร หรือ เลขบัตร ปชช." maxlength="13">
+                </div>
+                <div class="form-group">
+                    <label>ชื่อบัญชี (Account Name)</label>
+                    <input type="text" id="inp-acc" placeholder="ชื่อ-นามสกุล">
+                </div>
+
+                <hr class="divider">
+
+                <div class="form-group">
+                    <div class="amount-label-row">
+                        <label>⚡ ยอดที่ต้องชำระ (Amount)</label>
+                    </div>
+                    <input type="number" id="inp-amount" placeholder="0.00">
+                </div>
+                <br>
+                <div class="form-group">
+                    <label>ธีมสี (Theme)</label>
+                    <div class="theme-options">
+                        <div class="color-dot active" style="background:#8DEB2D" onclick="setTheme('#8DEB2D', this)">
+                        </div>
+                        <div class="color-dot" style="background:#fab1a0" onclick="setTheme('#fab1a0', this)"></div>
+                        <div class="color-dot" style="background:#74b9ff" onclick="setTheme('#74b9ff', this)"></div>
+                        <div class="color-dot" style="background:#a29bfe" onclick="setTheme('#a29bfe', this)"></div>
+                        <div class="color-dot" style="background:#ff7675" onclick="setTheme('#ff7675', this)"></div>
+                        <div class="color-dot" style="background:#ffeaa7" onclick="setTheme('#ffeaa7', this)"></div>
+                        <div class="color-dot" style="background:#55efc4" onclick="setTheme('#55efc4', this)"></div>
+                        <div class="color-dot" style="background:#fd79a8" onclick="setTheme('#fd79a8', this)"></div>
+                    </div>
+                </div>
+                <br>
                 <button class="btn-action" onclick="updatePreview()">🔄 อัปเดตข้อมูล</button>
+
             </div>
 
             <!-- PREVIEW (Right) -->
@@ -493,13 +513,20 @@
                         <div class="scan-hint">
                             <div>สแกนจ่ายได้ทุกธนาคาร</div>
                             <div class="bank-logos">
-                                <img src="https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/KBANK.png" class="bank-icon" crossorigin="anonymous">
-                                <img src="https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/SCB.png" class="bank-icon" crossorigin="anonymous">
-                                <img src="https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/KTB.png" class="bank-icon" crossorigin="anonymous">
-                                <img src="https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/BBL.png" class="bank-icon" crossorigin="anonymous">
-                                <img src="https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/BAY.png" class="bank-icon" crossorigin="anonymous">
-                                <img src="https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/TTB.png" class="bank-icon" crossorigin="anonymous">
-                                <img src="https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/GSB.png" class="bank-icon" crossorigin="anonymous">
+                                <img src="https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/KBANK.png"
+                                    class="bank-icon" crossorigin="anonymous">
+                                <img src="https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/SCB.png"
+                                    class="bank-icon" crossorigin="anonymous">
+                                <img src="https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/KTB.png"
+                                    class="bank-icon" crossorigin="anonymous">
+                                <img src="https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/BBL.png"
+                                    class="bank-icon" crossorigin="anonymous">
+                                <img src="https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/BAY.png"
+                                    class="bank-icon" crossorigin="anonymous">
+                                <img src="https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/TTB.png"
+                                    class="bank-icon" crossorigin="anonymous">
+                                <img src="https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/GSB.png"
+                                    class="bank-icon" crossorigin="anonymous">
                             </div>
                         </div>
                     </div>
@@ -515,7 +542,7 @@
         </div>
     </div>
 
-        <!-- Toast Overlay -->
+    <!-- Toast Overlay -->
     <div id="toast-overlay" class="toast-overlay">
         <div class="toast-icon">✅</div>
         <div id="toast-text">คัดลอกสำเร็จ!</div>
@@ -722,6 +749,8 @@
         window.addEventListener('DOMContentLoaded', () => {
             loadData();
             updatePreview();
+            // Auto-focus amount field เมื่อเปิดหน้า (ใช้ได้ใน iframe)
+            setTimeout(() => { els.amt.focus(); }, 100);
 
             // Auto update on amount change
             els.amt.addEventListener('input', () => {
@@ -729,15 +758,40 @@
                 handleAutoCopy();
             });
 
-            // Global Key Listener
+            // Global Key Listener — พิมพ์ตัวเลขทุกที่ = focus + ใส่ตัวเลขนั้น + ต่อได้เลย
+            let fromGlobalKey = false; // flag: focus มาจาก global keydown
+
             document.addEventListener('keydown', (e) => {
-                if (!['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
-                    // If number key
-                    if (/^[0-9]$/.test(e.key)) {
-                        els.amt.focus();
-                    }
+                const active = document.activeElement;
+                const isInInput = ['INPUT', 'TEXTAREA'].includes(active.tagName);
+
+                if (/^[0-9]$/.test(e.key) && !isInInput) {
+                    // ล้างค่าเดิม + ใส่ตัวเลขแรก + focus (ไม่ preventDefault เพื่อให้ browser พิมพ์ต่อ)
+                    els.amt.value = '';
+                    fromGlobalKey = true;
+                    els.amt.focus();
+                    // ปล่อยให้ browser พิมพ์ตัวเลขนี้เองผ่าน keydown ปกติ
+                }
+
+                // Backspace / Delete ทุกที่ → ล้าง + focus
+                if ((e.key === 'Backspace' || e.key === 'Delete') && !isInInput) {
+                    e.preventDefault();
+                    els.amt.value = '';
+                    els.amt.focus();
+                    updatePreview();
                 }
             });
+
+            // เมื่อ focus: ถ้ามาจาก globalKey → cursor ท้าย; ถ้า click เอง → select all
+            els.amt.addEventListener('focus', () => {
+                if (fromGlobalKey) {
+                    fromGlobalKey = false;
+                    // ไม่ select — cursor อยู่ท้าย พร้อมพิมพ์ต่อ
+                } else {
+                    setTimeout(() => els.amt.select(), 0);
+                }
+            });
+
 
             // Auto Copy Logic
             let copyTimer = null;
@@ -754,14 +808,15 @@
 
             async function executeAutoCopy() {
                 try {
+                    // รอให้ QR img render เสร็จก่อน capture
+                    await new Promise(r => setTimeout(r, 120));
                     const blob = await getCardBlob();
                     await navigator.clipboard.write([
                         new ClipboardItem({ 'image/png': blob })
                     ]);
-                    // Show "Copied slip!" message
-                    showMsg("✅ คัดลอกสลิปแล้ว!");
+                    showMsg('✅ คัดลอกสลิปแล้ว!');
                 } catch (err) {
-                    console.error("Auto copy failed", err);
+                    console.error('Auto copy failed', err);
                 }
             }
         });
