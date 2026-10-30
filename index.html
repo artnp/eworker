@@ -2546,7 +2546,8 @@
                     </div>
 
                     <!-- Unlocked Install Steps (if any) -->
-                    <div id="unlocked-install-guide-box" class="install-guide-fh" style="display: none; margin-top: 14px; text-align: left; background: #ffffff;">
+                    <div id="unlocked-install-guide-box" class="install-guide-fh"
+                        style="display: none; margin-top: 14px; text-align: left; background: #ffffff;">
                         <div class="install-guide-title" style="font-size: 0.95rem; margin-bottom: 10px;">
                             <span>📌 วิธีการติดตั้งและคู่มือใช้งาน</span>
                         </div>
@@ -2659,16 +2660,25 @@
                 <p style="font-size: 0.84rem; color: var(--fh-muted); margin-bottom: 18px;">
                     รายการดิจิทัลโปรดักส์และซอฟต์แวร์ที่คุณเคยชำระเงินสำเร็จแล้ว</p>
                 <!-- แถบสำรอง/กู้คืนกุญแจสิทธิ์ เฉพาะสินค้าและโค้ดถาวร -->
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; padding: 6px 12px; border: 1.5px dashed #cbd5e1; border-radius: var(--radius-sm);">
-                    <span style="font-size: 0.74rem; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">💾 สำรองไว้กู้คืนสิทธิ์เมื่อเปลี่ยนเครื่องหรือล้างเบราว์เซอร์</span>
+                <div
+                    style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; padding: 6px 12px; border: 1.5px dashed #cbd5e1; border-radius: var(--radius-sm);">
+                    <span
+                        style="font-size: 0.74rem; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">💾
+                        สำรองไว้กู้คืนสิทธิ์เมื่อเปลี่ยนเครื่องหรือล้างเบราว์เซอร์</span>
                     <div style="display: flex; gap: 5px; flex-shrink: 0;">
-                        <button type="button" class="btn-header-clean" style="padding: 3px 9px; font-size: 0.73rem; display: inline-flex; align-items: center; gap: 3px; cursor: pointer;" onclick="exportPurchasesToTxt()" title="บันทึกไฟล์สิทธิ์สินค้าทั้งหมดลงเครื่องเป็น .txt">
+                        <button type="button" class="btn-header-clean"
+                            style="padding: 3px 9px; font-size: 0.73rem; display: inline-flex; align-items: center; gap: 3px; cursor: pointer;"
+                            onclick="exportPurchasesToTxt()" title="บันทึกไฟล์สิทธิ์สินค้าทั้งหมดลงเครื่องเป็น .txt">
                             💾 สำรอง
                         </button>
-                        <button type="button" class="btn-header-clean" style="padding: 3px 9px; font-size: 0.73rem; display: inline-flex; align-items: center; gap: 3px; cursor: pointer;" onclick="document.getElementById('import-orders-file').click()" title="นำเข้าไฟล์ .txt เพื่อกู้คืนสิทธิ์">
+                        <button type="button" class="btn-header-clean"
+                            style="padding: 3px 9px; font-size: 0.73rem; display: inline-flex; align-items: center; gap: 3px; cursor: pointer;"
+                            onclick="document.getElementById('import-orders-file').click()"
+                            title="นำเข้าไฟล์ .txt เพื่อกู้คืนสิทธิ์">
                             📂 กู้คืน
                         </button>
-                        <input type="file" id="import-orders-file" accept=".txt,.json" style="display: none;" onchange="handleImportLicenseFile(event)">
+                        <input type="file" id="import-orders-file" accept=".txt,.json" style="display: none;"
+                            onchange="handleImportLicenseFile(event)">
                     </div>
                 </div>
 
@@ -2813,7 +2823,8 @@
                                     หรือพิมพ์เองได้</span>
                             </div>
                             <input type="text" id="admin-category-input" list="admin-category-datalist"
-                                class="form-control-clean" placeholder="เช่น Chrome Addon, TradingView / สคริปต์, เครื่องมือ, บอท..."
+                                class="form-control-clean"
+                                placeholder="เช่น Chrome Addon, TradingView / สคริปต์, เครื่องมือ, บอท..."
                                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
                                 oninput="handleAdminCategoryInputChange(this.value)"
                                 onchange="handleAdminCategoryInputChange(this.value)">
@@ -3157,7 +3168,8 @@
                         style="display: none; background: #f8fafc; border: 1px dashed var(--fh-border); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
                         <div id="admin-steps-list"></div>
                         <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; align-items: center;">
-                            <button type="button" class="btn-header-clean" onclick="addAdminStepRow()">+ เพิ่มขั้นตอน</button>
+                            <button type="button" class="btn-header-clean" onclick="addAdminStepRow()">+
+                                เพิ่มขั้นตอน</button>
                             <button type="button" class="btn-tool-sm"
                                 style="color: #0284c7; background: #e0f2fe; border: 1px solid #bae6fd; padding: 5px 12px; border-radius: 5px; font-weight: 600; cursor: pointer;"
                                 onclick="loadDefaultChromeAddonSteps()">🧩 โหลดคู่มือ Chrome Addon</button>
@@ -4029,7 +4041,7 @@
                 if (p.language === 'pinescript') {
                     specDelivery.textContent = '🌲 ปลดล็อคโค้ดสคริปต์สำหรับคัดลอกลง Pine Editor ทันที';
                 } else if (p.category === 'Chrome Addon' || p.language === 'chrome_addon') {
-                    specDelivery.textContent = '🧩 รับไฟล์ส่วนขยาย (.zip) พร้อมคู่มือติดตั้งทันที';
+                    specDelivery.textContent = '🧩 รับไฟล์ส่วนขยาย (.zip)';
                 } else {
                     specDelivery.textContent = 'รับลิงก์ดาวน์โหลดทันทีหลังชำระเงิน';
                 }
@@ -5095,8 +5107,8 @@
                 return `${idx + 1}. [${item.productId || '-'}] ${item.productTitle || '-'} (Order: ${item.orderId || '-'}, ซื้อเมื่อ: ${dateStr})`;
             }).join('\n');
 
-            const fileContent = 
-`======================================================================
+            const fileContent =
+                `======================================================================
   EWORKER - BACKUP LICENSE KEYS (ไฟล์กุญแจสิทธิ์สำรอง)
   สร้างเมื่อ: ${new Date().toLocaleString('th-TH')}
   จำนวนรายการที่บันทึก: ${backupList.length} รายการ
@@ -5118,7 +5130,7 @@ ${encodedToken}
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             const now = new Date();
-            const dateSuffix = `${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}`;
+            const dateSuffix = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}`;
             a.href = url;
             a.download = `eworker_keys_${dateSuffix}.txt`;
             document.body.appendChild(a);
@@ -5133,7 +5145,7 @@ ${encodedToken}
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 try {
                     const text = e.target.result;
                     let token = '';
@@ -5189,7 +5201,7 @@ ${encodedToken}
                     event.target.value = '';
                 }
             };
-            reader.onerror = function() {
+            reader.onerror = function () {
                 showToast('❌ เกิดข้อผิดพลาดในการอ่านไฟล์', 'error');
                 event.target.value = '';
             };
