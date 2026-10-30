@@ -1546,7 +1546,7 @@ window.updateWatermarkedWorkUI = function (msgId, data) {
             actions.innerHTML = `
                 <button type="button" class="work-download-btn unlocked" onclick="window.downloadWatermarkedWork('${msgId}')">
                     <i class="fa-solid fa-cloud-arrow-down"></i>
-                    <span>ดาวน์โหลดไฟล์จริง (ไม่มีลายน้ำ)</span>
+                    <span>ดาวน์โหลดไฟล์ได้เลย</span>
                 </button>
             `;
         }
@@ -1556,7 +1556,7 @@ window.updateWatermarkedWorkUI = function (msgId, data) {
             billSection.outerHTML = `
                 <div class="work-paid-footer">
                     <i class="fa-solid fa-circle-check" style="color: #10b981; font-size: 1.1rem;"></i>
-                    <span>ได้รับยอดชำระเงินแล้ว (ปลดล็อคไฟล์)</span>
+                    <span>ได้รับยอดชำระเงินแล้ว</span>
                 </div>
             `;
         }
