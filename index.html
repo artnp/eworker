@@ -2658,6 +2658,20 @@
                 <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 6px;">📥 คลังดาวน์โหลดของฉัน</h3>
                 <p style="font-size: 0.84rem; color: var(--fh-muted); margin-bottom: 18px;">
                     รายการดิจิทัลโปรดักส์และซอฟต์แวร์ที่คุณเคยชำระเงินสำเร็จแล้ว</p>
+                <!-- แถบสำรอง/กู้คืนกุญแจสิทธิ์ เฉพาะสินค้าและโค้ดถาวร -->
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; padding: 6px 12px; border: 1.5px dashed #cbd5e1; border-radius: var(--radius-sm);">
+                    <span style="font-size: 0.74rem; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">💾 สำรองไว้กู้คืนสิทธิ์เมื่อเปลี่ยนเครื่องหรือล้างเบราว์เซอร์</span>
+                    <div style="display: flex; gap: 5px; flex-shrink: 0;">
+                        <button type="button" class="btn-header-clean" style="padding: 3px 9px; font-size: 0.73rem; display: inline-flex; align-items: center; gap: 3px; cursor: pointer;" onclick="exportPurchasesToTxt()" title="บันทึกไฟล์สิทธิ์สินค้าทั้งหมดลงเครื่องเป็น .txt">
+                            💾 สำรอง
+                        </button>
+                        <button type="button" class="btn-header-clean" style="padding: 3px 9px; font-size: 0.73rem; display: inline-flex; align-items: center; gap: 3px; cursor: pointer;" onclick="document.getElementById('import-orders-file').click()" title="นำเข้าไฟล์ .txt เพื่อกู้คืนสิทธิ์">
+                            📂 กู้คืน
+                        </button>
+                        <input type="file" id="import-orders-file" accept=".txt,.json" style="display: none;" onchange="handleImportLicenseFile(event)">
+                    </div>
+                </div>
+
                 <div id="my-orders-list"
                     style="display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto;"></div>
             </div>
@@ -5000,27 +5014,28 @@
                         <div style="font-size: 2.5rem; margin-bottom: 8px;">📭</div>
                         <h4 style="color: var(--fh-dark);">ยังไม่มีประวัติการซื้อในอุปกรณ์นี้</h4>
                         <p style="font-size: 0.82rem; margin-top: 4px;">เมื่อชำระเงินสำเร็จ รายการจะถูกบันทึกไว้ที่นี่อัตโนมัติ</p>
+                        <p style="font-size: 0.78rem; margin-top: 8px; color: var(--fh-muted);">💡 หากเคยสำรองไฟล์ไว้ สามารถกดปุ่ม <b>"นำเข้า .txt"</b> ด้านบนเพื่อกู้คืนสิทธิ์ได้ทันที</p>
                     </div>
                 `;
             } else {
                 container.innerHTML = list.map(item => {
                     const isPine = (item.language === 'pinescript' || !!item.sourceCode);
                     return `
-                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid var(--fh-border); border-radius: var(--radius-sm); background: #f8fafc;">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <img src="${escapeHtml(item.coverImage || 'shop/images/tradingview_install_guide.svg')}" style="width: 44px; height: 44px; border-radius: 4px; object-fit: cover;">
-                                <div>
-                                    <h4 style="font-size: 0.92rem; font-weight: 700; color: var(--fh-dark);">${escapeHtml(item.productTitle)}</h4>
-                                    <div style="font-size: 0.76rem; color: var(--fh-muted);">ID: ${item.orderId || '-'} • ฿${Number(item.price || 0).toFixed(2)} ${isPine ? '• 🌲 Pine Script' : ''}</div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 1px solid var(--fh-border); border-radius: var(--radius-sm); background: #f8fafc;">
+                            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                                <img src="${escapeHtml(item.coverImage || 'shop/images/tradingview_install_guide.svg')}" style="width: 38px; height: 38px; border-radius: 4px; object-fit: cover; flex-shrink: 0;">
+                                <div style="min-width: 0;">
+                                    <h4 style="font-size: 0.88rem; font-weight: 700; color: var(--fh-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px;">${escapeHtml(item.productTitle)}</h4>
+                                    <div style="font-size: 0.72rem; color: var(--fh-muted);">฿${Number(item.price || 0).toFixed(0)} ${isPine ? '• 🌲 Pine Script' : ''}</div>
                                 </div>
                             </div>
-                            <div style="display: flex; gap: 6px;">
+                            <div style="flex-shrink: 0;">
                                 ${isPine ? `
-                                    <button type="button" class="btn-download-fh" style="padding: 7px 14px; font-size: 0.82rem; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-color: #059669;" onclick="openPurchasedCodeModal('${item.productId}')">
+                                    <button type="button" class="btn-download-fh" style="padding: 6px 12px; font-size: 0.78rem; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-color: #059669; white-space: nowrap;" onclick="openPurchasedCodeModal('${item.productId}')">
                                         🌲 รับโค้ด
                                     </button>
                                 ` : `
-                                    <a href="${item.downloadUrl || '#'}" target="_blank" class="btn-download-fh" style="padding: 7px 16px; font-size: 0.82rem; text-decoration: none;">
+                                    <a href="${item.downloadUrl || '#'}" target="_blank" class="btn-download-fh" style="padding: 6px 12px; font-size: 0.78rem; text-decoration: none; white-space: nowrap;">
                                         📥 ดาวน์โหลด
                                     </a>
                                 `}
@@ -5044,6 +5059,141 @@
             if (e && e.target === document.getElementById('my-orders-modal')) {
                 closeMyOrdersModal(e);
             }
+        }
+
+        // --- BACKUP & RESTORE LICENSE KEYS (.TXT) ---
+        // ไม่รวมบริการออนไลน์ และ หมวดหมู่แรงงาน (เพราะเป็นบริการที่จ่ายรายครั้ง)
+        function isExcludedFromBackup(item) {
+            if (!item) return true;
+            const cat = String(item.category || '').trim();
+            const pid = String(item.productId || item.id || '').trim();
+            if (item.isService === true || item.payPerUse === true) return true;
+            if (cat === 'บริการออนไลน์' || cat === 'บริการ' || cat === 'แรงงาน') return true;
+            if (pid.startsWith('service-')) return true;
+            return false;
+        }
+
+        function exportPurchasesToTxt() {
+            const allRecords = getPurchasedRecords();
+            // กรองเฉพาะสินค้าดิจิทัล / สคริปต์ / ซอฟต์แวร์ถาวร (ตัดบริการออนไลน์ และ งานแรงงาน ออก)
+            const backupList = allRecords.filter(item => !isExcludedFromBackup(item));
+
+            if (!backupList || backupList.length === 0) {
+                showToast('⚠️ ไม่มีรายการสินค้าดิจิทัลถาวรที่ต้องสำรอง (บริการออนไลน์และแรงงานจ่ายรายครั้งจึงไม่มีสำรอง)', 'warning');
+                return;
+            }
+
+            // แปลงข้อมูลเป็น JSON และเข้ารหัส Base64 UTF-8 เพื่อความปลอดภัยและรองรับภาษาไทย
+            const rawJson = JSON.stringify(backupList, null, 2);
+            const encodedToken = btoa(encodeURIComponent(rawJson).replace(/%([0-9A-F]{2})/g, (match, p1) => {
+                return String.fromCharCode(parseInt(p1, 16));
+            }));
+
+            // สร้างสรุปรายการอ่านง่ายในไฟล์
+            const summaryLines = backupList.map((item, idx) => {
+                const dateStr = item.purchasedAt ? new Date(item.purchasedAt).toLocaleString('th-TH') : '-';
+                return `${idx + 1}. [${item.productId || '-'}] ${item.productTitle || '-'} (Order: ${item.orderId || '-'}, ซื้อเมื่อ: ${dateStr})`;
+            }).join('\n');
+
+            const fileContent = 
+`======================================================================
+  EWORKER - BACKUP LICENSE KEYS (ไฟล์กุญแจสิทธิ์สำรอง)
+  สร้างเมื่อ: ${new Date().toLocaleString('th-TH')}
+  จำนวนรายการที่บันทึก: ${backupList.length} รายการ
+  * เก็บรักษาไฟล์นี้ไว้สำหรับกู้คืนสิทธิ์ดาวน์โหลดและซอร์สโค้ด *
+  * กู้คืนได้ที่เมนู "ซื้อไปแล้ว" > "นำเข้า .txt" บนเบราว์เซอร์หรืออุปกรณ์ใดก็ได้ *
+  * (หมายเหตุ: ไม่รวมบริการออนไลน์และแรงงานเนื่องจากเป็นบริการรายครั้ง) *
+======================================================================
+
+รายการสินค้าที่ได้รับสิทธิ์:
+${summaryLines}
+
+======================================================================
+[EWORKER_LICENSE_TOKEN]
+${encodedToken}
+[END_TOKEN]
+======================================================================`;
+
+            const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const now = new Date();
+            const dateSuffix = `${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}`;
+            a.href = url;
+            a.download = `eworker_keys_${dateSuffix}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast(`💾 สำรองกุญแจสิทธิ์ ${backupList.length} รายการเป็นไฟล์ .txt เรียบร้อยแล้ว`, 'success');
+        }
+
+        function handleImportLicenseFile(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const text = e.target.result;
+                    let token = '';
+
+                    if (text.includes('[EWORKER_LICENSE_TOKEN]') && text.includes('[END_TOKEN]')) {
+                        token = text.split('[EWORKER_LICENSE_TOKEN]')[1].split('[END_TOKEN]')[0].trim();
+                    } else {
+                        token = text.trim();
+                    }
+
+                    let parsedList = null;
+                    if (token.startsWith('[') || token.startsWith('{')) {
+                        parsedList = JSON.parse(token);
+                        if (!Array.isArray(parsedList)) parsedList = [parsedList];
+                    } else {
+                        // ถอดรหัส Base64 UTF-8
+                        const decodedJson = decodeURIComponent(Array.prototype.map.call(atob(token), c => {
+                            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                        }).join(''));
+                        parsedList = JSON.parse(decodedJson);
+                    }
+
+                    if (!Array.isArray(parsedList) || parsedList.length === 0) {
+                        throw new Error('ไม่พบข้อมูลรายการสินค้าในไฟล์');
+                    }
+
+                    // ผสานเข้ากับ LocalStorage เดิมของเครื่อง (กรองบริการออนไลน์และแรงงานออก)
+                    const currentList = getPurchasedRecords();
+                    let importedCount = 0;
+                    let updatedCount = 0;
+
+                    parsedList.forEach(item => {
+                        if (!item || !item.productId || isExcludedFromBackup(item)) return;
+                        const existIdx = currentList.findIndex(x => String(x.productId) === String(item.productId));
+                        if (existIdx >= 0) {
+                            currentList[existIdx] = { ...currentList[existIdx], ...item };
+                            updatedCount++;
+                        } else {
+                            currentList.unshift(item);
+                            importedCount++;
+                        }
+                    });
+
+                    localStorage.setItem('EWORKER_purchases', JSON.stringify(currentList));
+                    showToast(`🎉 กู้คืนสำเร็จ! เพิ่มใหม่ ${importedCount} รายการ (อัปเดต ${updatedCount})`, 'success');
+
+                    // รีเฟรช Modal ทันที
+                    openMyOrdersModal();
+                } catch (err) {
+                    console.error('Import error:', err);
+                    showToast('❌ นำเข้าไฟล์ไม่สำเร็จ: รูปแบบไฟล์ไม่ถูกต้องหรือข้อมูลเสียหาย', 'error');
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.onerror = function() {
+                showToast('❌ เกิดข้อผิดพลาดในการอ่านไฟล์', 'error');
+                event.target.value = '';
+            };
+            reader.readAsText(file, 'utf-8');
         }
 
         // --- CODE VIEWER MODAL LOGIC ---
