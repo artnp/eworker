@@ -185,7 +185,8 @@
         /* Offline Alert Bar */
         .offline-alert-strip {
             display: none;
-            background: #b91c1c;
+            background: linear-gradient(90deg, #1e293b, #0f172a);
+            border-bottom: 2px solid #38bdf8;
             color: #ffffff;
             padding: 10px 16px;
             text-align: center;
@@ -2225,9 +2226,7 @@
     </div>
 
     <!-- OFFLINE ALERT STRIP -->
-    <div class="offline-alert-strip" id="offline-banner">
-        ⚠️ ขณะนี้ร้านค้าปิดทำการชั่วคราว (เซิร์ฟเวอร์ Offline) — ระบบจะเปิดให้บริการในเร็วๆ นี้...
-    </div>
+    <div class="offline-alert-strip" id="offline-banner"></div>
 
     <!-- MAIN HEADER -->
     <header class="site-header">
@@ -3268,13 +3267,20 @@
                     if (data && data.online && (Date.now() - (data.lastSeen || 0) < 40000)) {
                         storeIsOnline = true;
                         badge.className = 'store-status-pill online';
-                        text.textContent = '🟢 พร้อมให้บริการ';
+                        text.textContent = '🟢 พร้อมให้บริการทุกระบบ';
                         banner.classList.remove('active');
+                        banner.innerHTML = '';
                     } else {
                         storeIsOnline = false;
                         badge.className = 'store-status-pill offline';
-                        text.textContent = '🔴 ร้านค้าปิด (Offline)';
+                        text.textContent = '⚡ บริการเว็บเปิดปกติ (เซิร์ฟเวอร์ออฟไลน์)';
                         banner.classList.add('active');
+                        banner.innerHTML = `
+                            <div style="display:inline-flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;">
+                                <span>🌐 <strong>เซิร์ฟเวอร์หลักออฟไลน์ชั่วคราว:</strong> บริการเว็บอัตโนมัติ (แก้ QR Code, จัดรูปติดบัตร, มาร์คจุด PDF) <strong>ยังเปิดใช้งานได้ตามปกติ 24 ชม.</strong></span>
+                                <span style="background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); padding:2px 8px; border-radius:12px; font-size:0.78rem;">ยกเว้นแจกเหรียญ Red Packet & รีทัชข้อความ ที่ต้องรอเซิร์ฟเวอร์ออนไลน์</span>
+                            </div>
+                        `;
                     }
                     updateDetailCTAState();
                     if (prevOnline !== storeIsOnline && products && products.length > 0) {
@@ -3482,14 +3488,21 @@
             sidebarList.innerHTML = html;
         }
 
+        function isServiceRequiringServer(p) {
+            if (!p) return false;
+            return (p.id === 'service-red-packet' || p.id === 'service-text-retouch' || p.slug === 'red-packet' || p.slug === 'text-retouch');
+        }
+
         function handleServiceClick(id, event) {
             if (event) event.stopPropagation();
             const p = products.find(x => x.id === id);
             if (!p) return;
-            const isFree = !p.price || Number(p.price) <= 0;
-            const requiresOnline = (!isFree) || (p.id === 'service-red-packet');
-            if (!storeIsOnline && requiresOnline) {
-                showToast('❌ ตอนนี้ร้านปิดให้บริการ (เซิร์ฟเวอร์ Offline) โปรดรอเปิดเซิร์ฟเวอร์ก่อนใช้งาน', 'warning');
+            if (!storeIsOnline && isServiceRequiringServer(p)) {
+                if (p.id === 'service-red-packet' || p.slug === 'red-packet') {
+                    showToast('⚠️ บริการแจกเหรียญ Binance Red Packet ปิดให้บริการชั่วคราว เนื่องจากเซิร์ฟเวอร์หลักออฟไลน์', 'warning');
+                } else {
+                    showToast('⚠️ บริการตัดต่อรีทัชข้อความปิดรับงานชั่วคราว เนื่องจากช่าง/เซิร์ฟเวอร์ออฟไลน์', 'warning');
+                }
                 return;
             }
             if (p.serviceUrl) {
@@ -3500,10 +3513,12 @@
         }
 
         function openServiceModal(product) {
-            const isFree = !product.price || Number(product.price) <= 0;
-            const requiresOnline = (!isFree) || (product.id === 'service-red-packet');
-            if (!storeIsOnline && requiresOnline) {
-                showToast('❌ ตอนนี้ร้านปิดให้บริการ (เซิร์ฟเวอร์ Offline) โปรดรอเปิดเซิร์ฟเวอร์ก่อนใช้งาน', 'warning');
+            if (!storeIsOnline && isServiceRequiringServer(product)) {
+                if (product.id === 'service-red-packet' || product.slug === 'red-packet') {
+                    showToast('⚠️ บริการแจกเหรียญ Binance Red Packet ปิดให้บริการชั่วคราว เนื่องจากเซิร์ฟเวอร์หลักออฟไลน์', 'warning');
+                } else {
+                    showToast('⚠️ บริการตัดต่อรีทัชข้อความปิดรับงานชั่วคราว เนื่องจากช่าง/เซิร์ฟเวอร์ออฟไลน์', 'warning');
+                }
                 return;
             }
 
@@ -3653,7 +3668,13 @@
                                 <div class="program-excerpt">${formatCardExcerpt(p.description)}</div>
                                 <div class="program-meta-chips">
                                     ${isService ? `
-                                        <span>${p.category === 'แรงงาน' ? '🔨 หมวดแรงงาน' : '🌐 บริการออนไลน์'}</span>                                    ` : `
+                                        <span>${p.category === 'แรงงาน' ? '🔨 หมวดแรงงาน' : '🌐 บริการออนไลน์'}</span>
+                                        ${(!storeIsOnline && isServiceRequiringServer(p)) ? `
+                                            <span style="background:#fee2e2; color:#dc2626; border:1px solid #fca5a5; font-size:0.73rem; padding:1px 7px; border-radius:4px; font-weight:700;">🔴 ออฟไลน์ตามเซิร์ฟเวอร์</span>
+                                        ` : (isService && !storeIsOnline ? `
+                                            <span style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-size:0.73rem; padding:1px 7px; border-radius:4px; font-weight:700;">🟢 เว็บอัตโนมัติ 24 ชม.</span>
+                                        ` : '')}
+                                    ` : `
                                         ${langMeta ? `<span style="background:${langMeta.bg}; color:${langMeta.color}; border:1px solid ${langMeta.border}; font-weight:700; padding:2px 8px; border-radius:4px; white-space:nowrap;">💻 เขียนด้วย: ${langMeta.icon} ${escapeHtml(langMeta.name)}</span>` : ''}
                                         ${p.category ? `<span>📁 ${escapeHtml(p.category)}</span>` : ''}
                                         ${p.hasInstallGuide ? '<span>🛠️ มีคู่มือติดตั้ง</span>' : ''}
@@ -3667,9 +3688,9 @@
                                 ${p.priceText ? escapeHtml(p.priceText) : (isService ? (isFree ? '🎁 ฟรี (Free)' : `฿ ${priceFormatted} <small style="font-size:0.75rem; color:var(--fh-muted); font-weight:500;">/ ครั้ง</small>`) : (isFree ? 'ฟรี (Free)' : `฿ ${priceFormatted}`))}
                             </div>
                             ${isService ? `
-                                ${(!storeIsOnline && (!isFree || p.id === 'service-red-packet') && !p.priceText) ? `
+                                ${(!storeIsOnline && isServiceRequiringServer(p)) ? `
                                     <button class="btn-service-fh disabled" onclick="handleServiceClick('${p.id}', event)">
-                                        ❌ตอนนี้ร้านปิด
+                                        ${p.id === 'service-red-packet' ? '🔴 เซิร์ฟเวอร์ออฟไลน์' : '🔴 ช่างออฟไลน์'}
                                     </button>
                                 ` : `
                                     <button class="btn-service-fh" onclick="handleServiceClick('${p.id}', event)">
@@ -4016,21 +4037,20 @@
             if (bottomPrice) bottomPrice.textContent = priceFormatted;
 
             if (activeDetailProduct.isService) {
-                const isFree = !activeDetailProduct.price || Number(activeDetailProduct.price) <= 0;
-                const requiresOnline = (!isFree) || (activeDetailProduct.id === 'service-red-packet');
-                if (!storeIsOnline && requiresOnline) {
+                const isOfflineTarget = isServiceRequiringServer(activeDetailProduct);
+                if (!storeIsOnline && isOfflineTarget) {
                     if (btn) {
                         btn.className = 'btn-big-download disabled';
                         btn.style.background = '#94a3b8';
-                        btn.innerHTML = `<span>❌ตอนนี้ร้านปิด</span>`;
-                        btn.onclick = () => showToast('❌ ตอนนี้ร้านปิดให้บริการ (เซิร์ฟเวอร์ Offline) โปรดรอเปิดเซิร์ฟเวอร์ก่อนใช้งาน', 'warning');
+                        btn.innerHTML = `<span>🔴 ${activeDetailProduct.id === 'service-red-packet' ? 'เซิร์ฟเวอร์ออฟไลน์ (ปิดชั่วคราว)' : 'ช่างออฟไลน์ (ปิดรับงาน)'}</span>`;
+                        btn.onclick = () => showToast(`⚠️ บริการนี้ปิดให้บริการชั่วคราว เนื่องจากเซิร์ฟเวอร์หลักออฟไลน์ โปรดรอเปิดเซิร์ฟเวอร์`, 'warning');
                     }
                     return;
                 }
                 if (btn) {
                     btn.className = 'btn-big-download btn-service-fh';
                     btn.style.background = '';
-                    btn.innerHTML = `<span>🚀 เริ่มต้นใช้งาน</span>`;
+                    btn.innerHTML = `<span>🚀 เริ่มต้นใช้งาน ${!storeIsOnline ? '(เว็บอัตโนมัติ 24 ชม.)' : ''}</span>`;
                     btn.onclick = () => {
                         const svc = activeDetailProduct;
                         closeDetailModal();
@@ -4057,18 +4077,18 @@
                     }
                 }
             } else if (!storeIsOnline) {
-                if (bottomNote) bottomNote.textContent = 'ระบบแอดมินออฟไลน์';
+                if (bottomNote) bottomNote.textContent = 'ระบบชำระเงินต้องใช้เซิร์ฟเวอร์ออนไลน์';
                 if (btn) {
                     btn.className = 'btn-big-download disabled';
                     btn.style.background = '#94a3b8';
-                    btn.innerHTML = '<span>🔴 ร้านค้าปิดทำการ (ไม่สามารถสแกนได้)</span>';
-                    btn.onclick = () => showToast('⚠️ คอมพิวเตอร์แอดมิน Offline อยู่ โปรดเข้ามาใหม่ในเวลาทำการครับ', 'warning');
+                    btn.innerHTML = '<span>🔴 ชำระเงินไม่ได้ (เซิร์ฟเวอร์ออฟไลน์)</span>';
+                    btn.onclick = () => showToast('⚠️ ระบบชำระเงิน/ดาวน์โหลดต้องใช้เซิร์ฟเวอร์ออนไลน์ โปรดรอเปิดระบบ', 'warning');
                 }
                 if (btnBottom) {
                     btnBottom.className = 'btn-big-download disabled';
                     btnBottom.style.background = '#94a3b8';
-                    btnBottom.innerHTML = '<span>🔴 ร้านค้าปิดทำการ</span>';
-                    btnBottom.onclick = () => showToast('⚠️ คอมพิวเตอร์แอดมิน Offline อยู่ โปรดเข้ามาใหม่ในเวลาทำการครับ', 'warning');
+                    btnBottom.innerHTML = '<span>🔴 เซิร์ฟเวอร์ออฟไลน์</span>';
+                    btnBottom.onclick = () => showToast('⚠️ ระบบชำระเงิน/ดาวน์โหลดต้องใช้เซิร์ฟเวอร์ออนไลน์ โปรดรอเปิดระบบ', 'warning');
                 }
             } else {
                 const topPriceTxt = activeDetailProduct.price <= 0 ? 'ดาวน์โหลดฟรี 1-Click' : `สแกนพร้อมเพย์ ( ${priceNum.toFixed(2)} ฿)`;
@@ -4094,7 +4114,7 @@
 
         function handleDetailCheckoutClick() {
             if (!storeIsOnline) {
-                showToast('⚠️ ร้านค้ายังไม่เปิดทำการ (Offline) โปรดเข้ามาใหม่รอบหน้านะท่าน', 'warning');
+                showToast('⚠️ ระบบชำระเงินต้องใช้เซิร์ฟเวอร์ออนไลน์ โปรดรอเปิดระบบ', 'warning');
                 return;
             }
             if (!activeDetailProduct) return;
@@ -4154,9 +4174,12 @@
                 const matched = products.find(x => x.slug === pQuery || x.id === pQuery);
                 if (matched) {
                     if (matched.isService || matched.category === 'บริการ' || matched.category === 'บริการออนไลน์' || matched.category === 'แรงงาน') {
-                        const isFree = (!matched.price || Number(matched.price) <= 0) && !matched.priceText;
-                        if (!storeIsOnline && !isFree && !matched.priceText) {
-                            showToast('❌ ตอนนี้ร้านปิดให้บริการ เนื่องจากระบบต้องเชื่อมต่อเซิร์ฟเวอร์เพื่อตรวจสอบการโอนเงิน', 'warning');
+                        if (!storeIsOnline && isServiceRequiringServer(matched)) {
+                            if (matched.id === 'service-red-packet' || matched.slug === 'red-packet') {
+                                showToast('⚠️ บริการแจกเหรียญ Binance Red Packet ปิดให้บริการชั่วคราว เนื่องจากเซิร์ฟเวอร์หลักออฟไลน์', 'warning');
+                            } else {
+                                showToast('⚠️ บริการตัดต่อรีทัชข้อความปิดรับงานชั่วคราว เนื่องจากช่าง/เซิร์ฟเวอร์ออฟไลน์', 'warning');
+                            }
                             return;
                         }
                         openServiceModal(matched);
