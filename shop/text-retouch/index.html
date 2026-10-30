@@ -2797,10 +2797,41 @@
         }
 
         let shopStatus = 'online';
+        const SERVER_STATUS_ENDPOINT = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/store_status.json";
+        let isMainServerOnline = true;
+        let lastRetouchDbStatus = 'online';
+        let applyRetouchStatusFn = null;
+
+        async function checkServerOnlineStatus() {
+            try {
+                const res = await fetch(`${SERVER_STATUS_ENDPOINT}?t=${Date.now()}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const now = Date.now();
+                    if (data && data.online && (now - (data.lastSeen || 0) < 40000)) {
+                        isMainServerOnline = true;
+                        if (applyRetouchStatusFn) applyRetouchStatusFn(lastRetouchDbStatus);
+                        return;
+                    }
+                }
+            } catch (e) { }
+            isMainServerOnline = false;
+            if (applyRetouchStatusFn) applyRetouchStatusFn('offline');
+        }
 
         function initShopStatus() {
             const applyStatus = (val) => {
-                shopStatus = val || 'online';
+                if (val && val !== 'offline') {
+                    lastRetouchDbStatus = val;
+                }
+                
+                // If the main server is offline, text-retouch MUST go offline as well
+                if (!isMainServerOnline) {
+                    shopStatus = 'offline';
+                } else {
+                    shopStatus = val || lastRetouchDbStatus || 'online';
+                }
+
                 const dot = document.getElementById('statusDot');
                 const text = document.getElementById('headerStatus');
                 const zone = document.getElementById('uploadZone');
@@ -2810,13 +2841,15 @@
 
                 if (shopStatus === 'offline') {
                     dot.classList.add('status-offline');
-                    text.textContent = 'ร้านปิด';
+                    text.textContent = !isMainServerOnline ? 'เซิร์ฟเวอร์ออฟไลน์ (ร้านปิด)' : 'ร้านปิด';
                     if (zone) {
                         zone.classList.add('is-offline');
                         const title = zone.querySelector('.upload-title');
-                        if (title) title.textContent = '❌ ขณะนี้ร้านปิดรับงานชั่วคราว (ไม่สามารถส่งไฟล์ได้)';
+                        if (title) title.textContent = !isMainServerOnline 
+                            ? '❌ ขณะนี้เซิร์ฟเวอร์หลัก/ช่างออฟไลน์ (ปิดรับงานชั่วคราว — โปรดรอเปิดระบบ)' 
+                            : '❌ ขณะนี้ร้านปิดรับงานชั่วคราว (ไม่สามารถส่งไฟล์ได้)';
                     }
-                    handleAdminOffline('ระบบขัดข้อง เนื่องจากช่างออฟไลน์ โปรดติดต่อ LINE: https://line.me/ti/p/gqIluRmdJ_');
+                    handleAdminOffline(!isMainServerOnline ? 'ระบบขัดข้อง เซิร์ฟเวอร์หลักหรือช่างออฟไลน์ โปรดติดต่อ LINE: https://line.me/ti/p/gqIluRmdJ_' : 'ระบบขัดข้อง เนื่องจากช่างออฟไลน์ โปรดติดต่อ LINE: https://line.me/ti/p/gqIluRmdJ_');
                 } else if (shopStatus === 'away' || shopStatus === 'always') {
                     dot.classList.add('status-away');
                     text.textContent = 'กำลังงีบอยู่ Zzz';
@@ -2843,12 +2876,17 @@
                 });
             };
 
+            applyRetouchStatusFn = applyStatus;
+
             db.ref('text_retouch/_shop_status').on('value', snap => {
                 if (snap.val()) applyStatus(snap.val());
             });
             db.ref('text_retouch_status').on('value', snap => {
                 if (snap.val()) applyStatus(snap.val());
             });
+
+            checkServerOnlineStatus();
+            setInterval(checkServerOnlineStatus, 8000);
         }
 
         let offlineGraceTimer = null;
