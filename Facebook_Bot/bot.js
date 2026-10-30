@@ -481,6 +481,9 @@ async function shouldFilterPost(article, botProfileName) {
 
       // Check if a valid Comment button or comment icon is present in the post
       let hasCommentBtn = false;
+      if (node.querySelector('[data-ad-rendering-role="comment_button"]')) {
+        hasCommentBtn = true;
+      }
       const candidates = node.querySelectorAll('[role="button"], button, div[aria-label], span[aria-label]');
       for (const el of candidates) {
         const label = (el.getAttribute('aria-label') || '').trim();
@@ -1368,6 +1371,10 @@ async function postComment(article, imagePath, postUrl) {
             if (found) return found;
           }
         }
+        // 2.5 ตรวจสอบ activeElement ถ้าเป็น textbox
+        if (document.activeElement && document.activeElement.getAttribute('role') === 'textbox' && document.activeElement.getAttribute('contenteditable') === 'true') {
+          return document.activeElement;
+        }
         // 3. fallback หาทั่วหน้าเฉพาะกรณีที่เป็นหน้า permalink (มีโพสต์เดียว) หรือไม่มี articleEl
         const isPermalink = window.location.href.includes('/permalink/') || window.location.href.includes('/posts/') || window.location.href.includes('story_fbid=');
         if (isPermalink || !articleEl) {
@@ -1394,6 +1401,25 @@ async function postComment(article, imagePath, postUrl) {
         if (!articleEl) return null;
 
         const clickBtn = (root) => {
+          const triggerClick = (target) => {
+            if (!target) return;
+            try { target.focus(); } catch (e) { }
+            try { target.click(); } catch (e) { }
+            try {
+              target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+              target.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
+              target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+            } catch (e) { }
+          };
+
+          // 1. ตรวจสอบ attribute data-ad-rendering-role="comment_button" โดยตรงก่อนเลย (ทนทานต่อการเปลี่ยน class และภาษา)
+          const adBtn = root.querySelector('div[data-ad-rendering-role="comment_button"], [data-ad-rendering-role="comment_button"]');
+          if (adBtn) {
+            const btn = adBtn.closest('[role="button"]') || adBtn.closest('button') || adBtn;
+            triggerClick(btn);
+            return 'data-ad-rendering-role="comment_button"';
+          }
+
           const candidates = root.querySelectorAll('[role="button"], button, div[aria-label], span[aria-label]');
           for (const el of candidates) {
             const label = (el.getAttribute('aria-label') || '').trim();
@@ -1407,29 +1433,37 @@ async function postComment(article, imagePath, postUrl) {
               lowerLabel.includes('เรียง') ||
               lowerLabel.includes('ซ่อน') ||
               lowerLabel.includes('เกี่ยวข้องมากที่สุด') ||
-              lowerLabel.includes('most relevant')
+              lowerLabel.includes('most relevant') ||
+              lowerLabel.includes('ดูความคิดเห็นก่อนหน้า') ||
+              lowerLabel.includes('view previous comments') ||
+              lowerLabel.includes('ดูความคิดเห็นเพิ่มเติม') ||
+              lowerLabel.includes('view more comments')
             ) {
               continue;
             }
 
-            // ตรวจสอบว่าตรงกับคีย์เวิร์ดของปุ่มแสดงความคิดเห็นหรือไม่ (ใช้การจับคู่แบบแม่นยำเพื่อป้องกันการคลิกแจ้งเตือนมั่ว)
+            // ตรวจสอบว่าตรงกับคีย์เวิร์ดของปุ่มแสดงความคิดเห็นหรือไม่
             const matchesComment = (
               lowerLabel === 'แสดงความคิดเห็น' ||
+              lowerLabel.startsWith('แสดงความคิดเห็น') ||
               lowerLabel === 'เขียนความคิดเห็น' ||
+              lowerLabel.startsWith('เขียนความคิดเห็น') ||
+              lowerLabel.includes('แสดงความคิดเห็นต่อโพสต์') ||
               lowerLabel === 'comment' ||
-              lowerLabel === 'write a comment' ||
-              lowerLabel === 'leave a comment' ||
-              lowerLabel.startsWith('แสดงความคิดเห็นในชื่อ') ||
-              lowerLabel.startsWith('comment as') ||
-              lowerLabel.startsWith('write a comment as') ||
-              lowerLabel.startsWith('leave a comment as') ||
+              lowerLabel.startsWith('comment') ||
+              lowerLabel.startsWith('write a comment') ||
+              lowerLabel.startsWith('leave a comment') ||
+              lowerLabel.includes('comment as') ||
+              lowerLabel.includes('comment on') ||
+              lowerLabel.includes('แสดงความคิดเห็นในชื่อ') ||
+              lowerLabel.includes('แสดงความคิดเห็นในฐานะ') ||
               lowerText === 'แสดงความคิดเห็น' ||
               lowerText === 'เขียนความคิดเห็น' ||
               lowerText === 'comment'
             );
 
             if (matchesComment) {
-              el.click();
+              triggerClick(el);
               return `label: "${label}", text: "${innerText}"`;
             }
           }
@@ -1461,6 +1495,28 @@ async function postComment(article, imagePath, postUrl) {
         console.log(`Clicked comment button via DOM: ${clicked}`);
         await sleep(2000);
         composer = await findComposer();
+      }
+
+      // Fallback: ใช้ Playwright locator คลิกถ้ายังหา composer ไม่เจอ
+      if (!composer) {
+        try {
+          const commentLocators = [
+            article.locator('[data-ad-rendering-role="comment_button"]').locator('xpath=ancestor-or-self::*[@role="button"]'),
+            article.locator('[role="button"][aria-label*="แสดงความคิดเห็น"]'),
+            article.locator('[role="button"][aria-label*="comment" i]'),
+          ];
+          for (const loc of commentLocators) {
+            if (await loc.first().count() > 0) {
+              await loc.first().click({ force: true, timeout: 2000 }).catch(() => { });
+              await sleep(1500);
+              composer = await findComposer();
+              if (composer) {
+                console.log('Clicked comment button via Playwright locator successfully.');
+                break;
+              }
+            }
+          }
+        } catch (e) { }
       }
     }
 
@@ -1501,6 +1557,25 @@ async function postComment(article, imagePath, postUrl) {
           await page.evaluate((articleEl) => {
             if (!articleEl) return;
             const clickBtn = (root) => {
+              const triggerClick = (target) => {
+                if (!target) return;
+                try { target.focus(); } catch (e) { }
+                try { target.click(); } catch (e) { }
+                try {
+                  target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, view: window }));
+                  target.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true, view: window }));
+                  target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+                } catch (e) { }
+              };
+
+              // 1. ตรวจสอบ attribute data-ad-rendering-role="comment_button"
+              const adBtn = root.querySelector('div[data-ad-rendering-role="comment_button"], [data-ad-rendering-role="comment_button"]');
+              if (adBtn) {
+                const btn = adBtn.closest('[role="button"]') || adBtn.closest('button') || adBtn;
+                triggerClick(btn);
+                return true;
+              }
+
               const candidates = root.querySelectorAll('[role="button"], button, div[aria-label], span[aria-label]');
               for (const el of candidates) {
                 const label = (el.getAttribute('aria-label') || '').toLowerCase().trim();
@@ -1508,24 +1583,34 @@ async function postComment(article, imagePath, postUrl) {
                 if (
                   label.includes('ปิดการแสดงความคิดเห็น') ||
                   label.includes('เรียง') ||
-                  label.includes('ซ่อน')
+                  label.includes('ซ่อน') ||
+                  label.includes('เกี่ยวข้องมากที่สุด') ||
+                  label.includes('most relevant') ||
+                  label.includes('ดูความคิดเห็นก่อนหน้า') ||
+                  label.includes('view previous comments') ||
+                  label.includes('ดูความคิดเห็นเพิ่มเติม') ||
+                  label.includes('view more comments')
                 ) continue;
 
                 if (
                   label === 'แสดงความคิดเห็น' ||
+                  label.startsWith('แสดงความคิดเห็น') ||
                   label === 'เขียนความคิดเห็น' ||
+                  label.startsWith('เขียนความคิดเห็น') ||
+                  label.includes('แสดงความคิดเห็นต่อโพสต์') ||
                   label === 'comment' ||
-                  label === 'write a comment' ||
-                  label === 'leave a comment' ||
-                  label.startsWith('แสดงความคิดเห็นในชื่อ') ||
-                  label.startsWith('comment as') ||
-                  label.startsWith('write a comment as') ||
-                  label.startsWith('leave a comment as') ||
+                  label.startsWith('comment') ||
+                  label.startsWith('write a comment') ||
+                  label.startsWith('leave a comment') ||
+                  label.includes('comment as') ||
+                  label.includes('comment on') ||
+                  label.includes('แสดงความคิดเห็นในชื่อ') ||
+                  label.includes('แสดงความคิดเห็นในฐานะ') ||
                   text === 'แสดงความคิดเห็น' ||
                   text === 'เขียนความคิดเห็น' ||
                   text === 'comment'
                 ) {
-                  el.click();
+                  triggerClick(el);
                   return true;
                 }
               }
