@@ -485,8 +485,6 @@
                     </div>
                 </div>
                 <br>
-                <button class="btn-action" onclick="updatePreview()">🔄 อัปเดตข้อมูล</button>
-
             </div>
 
             <!-- PREVIEW (Right) -->
@@ -752,7 +750,10 @@
             // Auto-focus amount field เมื่อเปิดหน้า (ใช้ได้ใน iframe)
             setTimeout(() => { els.amt.focus(); }, 100);
 
-            // Auto update on amount change
+            // Auto-update ทุก field เมื่อพิมพ์
+            [els.shop, els.pp, els.acc].forEach(el => {
+                el.addEventListener('input', () => updatePreview());
+            });
             els.amt.addEventListener('input', () => {
                 updatePreview();
                 handleAutoCopy();
