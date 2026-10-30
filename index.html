@@ -4831,9 +4831,7 @@
                 if (dlBtn) {
                     dlBtn.href = directDropboxUrl;
                     dlBtn.setAttribute('target', '_blank');
-                    dlBtn.onclick = () => {
-                        window.open(directDropboxUrl, '_blank');
-                    };
+                    dlBtn.onclick = null; // Do not call window.open again, href already opens it once
                 }
 
                 const urlTextEl = document.getElementById('unlocked-direct-link-url');
