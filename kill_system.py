@@ -19,6 +19,19 @@ try:
 except Exception:
     pass
 
+try:
+    retouch_url = "https://retouch-ebid-default-rtdb.asia-southeast1.firebasedatabase.app/text_retouch/_shop_status.json"
+    req_retouch = urllib.request.Request(retouch_url, data=json.dumps("offline").encode('utf-8'), method='PUT', headers={"Content-Type": "application/json"})
+    urllib.request.urlopen(req_retouch, timeout=3)
+    
+    retouch_pres_url = "https://retouch-ebid-default-rtdb.asia-southeast1.firebasedatabase.app/text_retouch/_admin_presence.json"
+    pres_data = json.dumps({"online": False, "lastSeen": 0}).encode('utf-8')
+    req_rp = urllib.request.Request(retouch_pres_url, data=pres_data, method='PUT', headers={"Content-Type": "application/json"})
+    urllib.request.urlopen(req_rp, timeout=3)
+    print("📡 ส่งสัญญาณแจ้ง Firebase Retouch: ปิดสถานะร้านรีทัช (Offline) เรียบร้อย")
+except Exception:
+    pass
+
 killed_count = 0
 
 # 1. Kill any python processes running auto_donate_watcher.py
