@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Favicon & Web App Icon -->
+    <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg">
+    <link rel="icon" type="image/png" sizes="192x192" href="../../assets/images/favicon.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="../../assets/images/favicon.png">
+    <link rel="shortcut icon" href="../../favicon.ico">
+    <title>Smart QR Payment - สร้างสลิปแจ้งยอด</title>
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Noto+Sans+Thai:wght@300;400;600&display=swap"
+        rel="stylesheet">
+    <!-- QR Code & Screenshot Libs (CDN) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+        <style>
+        :root {
+            --primary: #8DEB2D;
+            --bg: #0F1115;
+            --surface: #1A1D24;
+            --border: #2D3748;
+            --text: #FFFFFF;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Outfit', 'Noto Sans Thai', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+        }
+
+        /* ===== PAGE SHELL — fills the iframe exactly ===== */
+        .page-shell {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 8px 12px 6px;
+            gap: 6px;
+        }
+
+        /* ===== COMPACT TITLE ===== */
+        .page-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-align: center;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+
+        /* ===== TWO-COLUMN BODY ===== */
+        .main-body {
+            display: flex;
+            gap: 12px;
+            flex: 1;
+            min-height: 0;
+            align-items: stretch;
+        }
+
+        /* --- Input Panel (Left) --- */
+        .input-panel {
+            background: var(--surface);
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            width: 100%;
+            max-width: 320px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #333 transparent;
+        }
+
+        .header-section {
+            padding-bottom: 7px;
+            border-bottom: 1px solid #333;
+        }
+
+        .header-section h3 {
+            margin: 0;
+            color: #fff;
+            font-size: 0.88rem;
+        }
+
+        .header-section p {
+            margin: 2px 0 0;
+            color: #777;
+            font-size: 0.73rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        label {
+            font-size: 0.75rem;
+            color: #aaa;
+        }
+
+        input {
+            width: 100%;
+            padding: 7px 9px;
+            background: #0d0f12;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            color: #fff;
+            font-size: 0.88rem;
+            font-family: inherit;
+            transition: border 0.2s;
+        }
+
+        #inp-amount {
+            font-size: 1.3rem;
+            font-weight: 700;
+            padding: 7px 9px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .divider {
+            border: 0;
+            border-top: 1px solid #333;
+            margin: 2px 0;
+        }
+
+        .btn-action {
+            background: var(--primary);
+            color: #000;
+            border: none;
+            padding: 9px;
+            border-radius: 50px;
+            width: 100%;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+            transition: transform 0.1s, opacity 0.1s;
+            margin-top: 2px;
+        }
+
+        .btn-action:hover { opacity: 0.9; }
+        .btn-action:active { transform: scale(0.98); }
+
+        /* Theme Selector */
+        .theme-options {
+            display: flex;
+            gap: 6px;
+            margin-top: 2px;
+        }
+
+        .color-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.15s;
+        }
+
+        .color-dot.active {
+            border-color: #fff;
+            transform: scale(1.15);
+        }
+
+        /* --- Preview Area (Right) --- */
+        .preview-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        /* The slip card */
+        #pay-card {
+            width: 250px;
+            background: #fff;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.55);
+        }
+
+        .card-top {
+            background: var(--primary);
+            padding: 14px 14px 26px;
+            text-align: center;
+            border-bottom-left-radius: 30px;
+            border-bottom-right-radius: 30px;
+            color: #000;
+        }
+
+        .card-top h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+        }
+
+        .card-top p {
+            margin: 2px 0 0;
+            opacity: 0.75;
+            font-size: 0.75rem;
+        }
+
+        .card-content {
+            margin-top: -20px;
+            padding: 0 14px 14px;
+            text-align: center;
+        }
+
+        .qr-box {
+            background: #fff;
+            padding: 8px;
+            border-radius: 10px;
+            display: inline-block;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+
+        .qr-box img,
+        .qr-box canvas {
+            display: block;
+            width: 120px !important;
+            height: 120px !important;
+        }
+
+        .amount-text {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #2d3436;
+            margin: 8px 0 2px;
+            letter-spacing: -0.5px;
+        }
+
+        .amount-upload-label {
+            font-size: 0.72rem;
+            color: #636e72;
+        }
+
+        .acc-details {
+            margin-top: 8px;
+            color: #2d3436;
+            font-size: 0.78rem;
+        }
+
+        .acc-number {
+            font-weight: 700;
+            font-size: 0.95rem;
+            letter-spacing: 0.8px;
+            color: #000;
+            margin: 2px 0;
+        }
+
+        .scan-hint {
+            margin-top: 8px;
+            font-size: 0.64rem;
+            color: #b2bec3;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .bank-logos {
+            margin-top: 4px;
+            display: flex;
+            justify-content: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .bank-icon {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #ddd;
+            background: #fff;
+        }
+
+        /* Action Buttons Row */
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            width: 250px;
+        }
+
+        .btn-sm {
+            flex: 1;
+            padding: 8px 6px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-family: inherit;
+            transition: background 0.15s;
+        }
+
+        .btn-sm:hover { background: #252830; }
+
+        .btn-primary {
+            background: #fff;
+            color: #000;
+            font-weight: 700;
+            border: none;
+        }
+
+        .btn-primary:hover { background: #eee; }
+
+        /* --- Toast Notification --- */
+        .toast-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: rgba(15, 17, 21, 0.95);
+            color: #fff;
+            padding: 24px 44px;
+            border-radius: 18px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            z-index: 9999;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toast-overlay.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .toast-icon { font-size: 2.8rem; }
+    </style>
+</head>
+
+<body>
+    <div class="page-shell">
+        <div class="page-title">💳 ระบบสร้างสลิปพร้อมเพย์</div>
+
+        <div class="main-body">
+            <!-- FORM (Left) -->
+            <div class="input-panel">
+                <div class="header-section">
+                    <h3>ตั้งค่าบัญชีรับเงิน</h3>
+                    <p>ข้อมูลจะถูกจำไว้ในเครื่องอัตโนมัติ</p>
+                </div>
+
+                <div class="form-group">
+                    <label>ชื่อร้าน (Shop Name)</label>
+                    <input type="text" id="inp-shop" placeholder="ชื่อร้านของคุณ">
+                </div>
+                <div class="form-group">
+                    <label>พร้อมเพย์ (PromptPay ID)</label>
+                    <input type="text" id="inp-pp" placeholder="เบอร์โทร หรือ เลขบัตร ปชช." maxlength="13">
+                </div>
+                <div class="form-group">
+                    <label>ชื่อบัญชี (Account Name)</label>
+                    <input type="text" id="inp-acc" placeholder="ชื่อ-นามสกุล">
+                </div>
+
+                <hr class="divider">
+
+                <div class="form-group">
+                    <label style="color:var(--primary);">ยอดที่ต้องชำระ (Amount)</label>
+                    <input type="number" id="inp-amount" placeholder="0.00">
+                </div>
+
+                <div class="form-group">
+                    <label>ธีมสี (Theme)</label>
+                    <div class="theme-options">
+                        <div class="color-dot active" style="background:#8DEB2D" onclick="setTheme('#8DEB2D', this)"></div>
+                        <div class="color-dot" style="background:#fab1a0" onclick="setTheme('#fab1a0', this)"></div>
+                        <div class="color-dot" style="background:#74b9ff" onclick="setTheme('#74b9ff', this)"></div>
+                        <div class="color-dot" style="background:#a29bfe" onclick="setTheme('#a29bfe', this)"></div>
+                        <div class="color-dot" style="background:#ff7675" onclick="setTheme('#ff7675', this)"></div>
+                    </div>
+                </div>
+
+                <button class="btn-action" onclick="updatePreview()">🔄 อัปเดตข้อมูล</button>
+            </div>
+
+            <!-- PREVIEW (Right) -->
+            <div class="preview-area">
+                <div id="pay-card">
+                    <div class="card-top" id="card-bg">
+                        <h2 id="txt-shop">MY SHOP</h2>
+                        <p>สลิปชำระเงิน</p>
+                    </div>
+                    <div class="card-content">
+                        <div class="qr-box">
+                            <div id="qrcode"></div>
+                        </div>
+
+                        <div class="amount-text" id="txt-amount">0.00</div>
+                        <div class="amount-upload-label">ยอดที่ต้องชำระ (Total)</div>
+
+                        <div class="acc-details">
+                            <div>โอนเข้าบัญชีพร้อมเพย์</div>
+                            <div class="acc-number" id="txt-pp">000-000-0000</div>
+                            <div id="txt-acc">ชื่อบัญชี...</div>
+                        </div>
+
+                        <div class="scan-hint">
+                            <div>สแกนจ่ายได้ทุกธนาคาร</div>
+                            <div class="bank-logos">
+                                <img src="https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/KBANK.png" class="bank-icon" crossorigin="anonymous">
+                                <img src="https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/SCB.png" class="bank-icon" crossorigin="anonymous">
+                                <img src="https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/KTB.png" class="bank-icon" crossorigin="anonymous">
+                                <img src="https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/BBL.png" class="bank-icon" crossorigin="anonymous">
+                                <img src="https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/BAY.png" class="bank-icon" crossorigin="anonymous">
+                                <img src="https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/TTB.png" class="bank-icon" crossorigin="anonymous">
+                                <img src="https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/GSB.png" class="bank-icon" crossorigin="anonymous">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-sm" onclick="downloadCard()">⬇️ บันทึกรูป</button>
+                    <button class="btn-sm btn-primary" onclick="copyCard()">📋 คัดลอกรูป</button>
+                </div>
+                <p id="msg-status" style="margin:0; color:#aaa; font-size:0.78rem;"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Overlay -->
+    <div id="toast-overlay" class="toast-overlay">
+        <div class="toast-icon">✅</div>
+        <div id="toast-text">คัดลอกสำเร็จ!</div>
+    </div>
+
+    <script>
+        // --- PromptPay CRC Logic ---
+        // --- PromptPay CRC Logic (CCITT-FALSE) ---
+        function crc16(data) {
+            let crc = 0xFFFF;
+            for (let i = 0; i < data.length; i++) {
+                crc ^= data.charCodeAt(i) << 8;
+                for (let j = 0; j < 8; j++) {
+                    if ((crc & 0x8000) > 0) crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
+                    else crc = (crc << 1) & 0xFFFF;
+                }
+            }
+            return crc.toString(16).toUpperCase().padStart(4, '0');
+        }
+
+        function generatePayload(id, amount) {
+            // Fallback for testing with non-digit inputs
+            let target = id.replace(/[^0-9]/g, '');
+            if (target.length === 0) target = '0000000000'; // Dummy ID
+
+            if (!target) return "";
+
+            // Check if it is a Mobile Phone (10 digits starting with 0) -> Format to 0066...
+            // Citizen ID (13 digits) or E-Wallet (15 digits) should be kept as is.
+            if (target.length === 10 && target.startsWith('0')) {
+                target = '0066' + target.substring(1);
+            }
+
+            // Construct Tag 29 (Merchant Account Information)
+            // ID Application: A000000677010111 (PromptPay)
+            let merchantInfo =
+                '0016A000000677010111' +
+                '01' + ('00' + target.length).slice(-2) + target;
+            let merchantInfoLen = ('00' + merchantInfo.length).slice(-2);
+
+            let payload =
+                '000201' +
+                '010212' + // 12=Dynamic (One-time use)
+                '29' + merchantInfoLen + merchantInfo +
+                '5802TH' +
+                '5303764';
+
+            // Tag 54: Amount (Optional - Include only if > 0)
+            let amtVal = parseFloat(amount);
+            if (!isNaN(amtVal) && amtVal > 0) {
+                let amtStr = amtVal.toFixed(2);
+                payload += '54' + ('00' + amtStr.length).slice(-2) + amtStr;
+            }
+
+            payload += '6304'; // CRC Tag
+
+            return payload + crc16(payload);
+        }
+
+        // --- Main Logic ---
+        const els = {
+            shop: document.getElementById('inp-shop'),
+            pp: document.getElementById('inp-pp'),
+            acc: document.getElementById('inp-acc'),
+            amt: document.getElementById('inp-amount')
+        };
+
+        // Load / Save LocalStorage
+        function loadData() {
+            if (localStorage.getItem('smart_shop')) els.shop.value = localStorage.getItem('smart_shop');
+            if (localStorage.getItem('smart_pp')) els.pp.value = localStorage.getItem('smart_pp');
+            if (localStorage.getItem('smart_acc')) els.acc.value = localStorage.getItem('smart_acc');
+
+            // Load Theme
+            const savedTheme = localStorage.getItem('smart_theme');
+            if (savedTheme) {
+                // Find the matching element to set 'active' class
+                const themeEl = Array.from(document.querySelectorAll('.color-dot')).find(el =>
+                    el.getAttribute('onclick').includes(savedTheme)
+                );
+                setTheme(savedTheme, themeEl);
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('smart_shop', els.shop.value);
+            localStorage.setItem('smart_pp', els.pp.value);
+            localStorage.setItem('smart_acc', els.acc.value);
+        }
+
+        function setTheme(color, el) {
+            document.documentElement.style.setProperty('--primary', color);
+            document.getElementById('card-bg').style.backgroundColor = color;
+            document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+            if (el) el.classList.add('active');
+
+            // Save Theme
+            localStorage.setItem('smart_theme', color);
+        }
+
+        function updatePreview() {
+            saveData();
+
+            // Text Updates
+            document.getElementById('txt-shop').innerText = els.shop.value || "MY SHOP";
+            document.getElementById('txt-acc').innerText = els.acc.value || "Account Name";
+
+            // Amount
+            let val = parseFloat(els.amt.value) || 0;
+            document.getElementById('txt-amount').innerText = val.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+            // Format PP
+            let rawPP = els.pp.value;
+            let fmtPP = rawPP;
+            if (rawPP.length === 10) fmtPP = `${rawPP.substring(0, 3)}-${rawPP.substring(3, 6)}-${rawPP.substring(6)}`;
+            else if (rawPP.length === 13) fmtPP = `${rawPP.substring(0, 1)}-${rawPP.substring(1, 5)}-${rawPP.substring(5, 10)}-${rawPP.substring(10)}`;
+            document.getElementById('txt-pp').innerText = fmtPP || "000-000-0000";
+
+            // QR Generation
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = "";
+
+            // Always generate a QR. If rawPP is missing, generatePayload handles fallback
+            const payload = generatePayload(rawPP || '0000000000', val);
+
+            if (payload) {
+                new QRCode(qrContainer, {
+                    text: payload,
+                    width: 120,
+                    height: 120,
+                    colorDark: "#000",
+                    colorLight: "#fff",
+                    correctLevel: QRCode.CorrectLevel.L
+                });
+
+                // Convert Canvas to Image for reliable html2canvas capture
+                setTimeout(() => {
+                    const canvas = qrContainer.querySelector('canvas');
+                    if (canvas) {
+                        const img = document.createElement('img');
+                        img.src = canvas.toDataURL('image/png');
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        qrContainer.innerHTML = ''; // Clear canvas
+                        qrContainer.appendChild(img);
+                    }
+                }, 50);
+            }
+        }
+
+        // Action Buttons
+        async function getCardBlob() {
+            const card = document.getElementById('pay-card');
+            // useCORS needs proper crossorigin attributes on images
+            const canvas = await html2canvas(card, {
+                scale: 2,
+                backgroundColor: null,
+                useCORS: true,
+                allowTaint: true
+            });
+            return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+        }
+
+        async function downloadCard() {
+            const blob = await getCardBlob();
+            const link = document.createElement('a');
+            link.download = `SmartPay_${Date.now()}.png`;
+            link.href = URL.createObjectURL(blob);
+            link.click();
+            showMsg("✅ บันทึกรูปแล้ว!");
+        }
+
+        async function copyCard() {
+            try {
+                const blob = await getCardBlob();
+                await navigator.clipboard.write([
+                    new ClipboardItem({ 'image/png': blob })
+                ]);
+                showMsg("✅ คัดลอกสลิปแล้ว!");
+            } catch (err) {
+                console.error(err);
+                showMsg("❌ Browser นี้ไม่รองรับการ Copy รูป (ใช้ปุ่มบันทึกแทน)");
+            }
+        }
+
+        function showMsg(text) {
+            const el = document.getElementById('toast-overlay');
+            const txt = document.getElementById('toast-text');
+            const icon = el.querySelector('.toast-icon');
+
+            txt.innerText = text;
+            icon.innerText = text.includes('ไม่') || text.includes('Error') ? '❌' : '';
+
+            el.classList.add('show');
+
+            // Auto hide after 2 seconds
+            if (window.toastTimer) clearTimeout(window.toastTimer);
+            window.toastTimer = setTimeout(() => {
+                el.classList.remove('show');
+            }, 2500);
+        }
+
+        // Init
+        window.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            updatePreview();
+
+            // Auto update on amount change
+            els.amt.addEventListener('input', () => {
+                updatePreview();
+                handleAutoCopy();
+            });
+
+            // Global Key Listener
+            document.addEventListener('keydown', (e) => {
+                if (!['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+                    // If number key
+                    if (/^[0-9]$/.test(e.key)) {
+                        els.amt.focus();
+                    }
+                }
+            });
+
+            // Auto Copy Logic
+            let copyTimer = null;
+            function handleAutoCopy() {
+                if (copyTimer) clearTimeout(copyTimer);
+                // Reset status if user is typing
+                const toast = document.getElementById('toast-overlay');
+                if (toast) toast.classList.remove('show');
+
+                copyTimer = setTimeout(() => {
+                    executeAutoCopy();
+                }, 1500);
+            }
+
+            async function executeAutoCopy() {
+                try {
+                    const blob = await getCardBlob();
+                    await navigator.clipboard.write([
+                        new ClipboardItem({ 'image/png': blob })
+                    ]);
+                    // Show "Copied slip!" message
+                    showMsg("✅ คัดลอกสลิปแล้ว!");
+                } catch (err) {
+                    console.error("Auto copy failed", err);
+                }
+            }
+        });
+
+    </script>
+</body>
+
+</html>
