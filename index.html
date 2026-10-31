@@ -868,6 +868,70 @@
             margin-bottom: 12px;
         }
 
+        /* Catalog Pagination Controls */
+        .catalog-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 28px;
+            padding: 16px 0 8px;
+            flex-wrap: wrap;
+        }
+
+        .pagination-btn {
+            min-width: 38px;
+            height: 38px;
+            padding: 0 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--fh-border);
+            background: #ffffff;
+            color: var(--fh-dark);
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            user-select: none;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: var(--fh-blue);
+            transform: translateY(-1px);
+        }
+
+        .pagination-btn.active {
+            background: var(--fh-blue);
+            color: #ffffff;
+            border-color: var(--fh-blue);
+            box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .pagination-ellipsis {
+            padding: 0 4px;
+            color: var(--fh-muted);
+            font-weight: 700;
+        }
+
+        .pagination-info {
+            width: 100%;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--fh-muted);
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
         /* ===== MODAL BASE STYLES ===== */
         .modal-overlay {
             position: fixed;
@@ -2323,6 +2387,8 @@
                 <div class="program-list" id="program-list-container">
                     <!-- Dynamic Program Cards Rendered Here -->
                 </div>
+                <!-- Catalog Pagination -->
+                <div id="catalog-pagination" class="catalog-pagination" style="display: none;"></div>
             </section>
         </div>
     </main>
@@ -3280,6 +3346,8 @@
         let activeCategory = 'all';
         let searchQuery = '';
         let currentSort = 'newest';
+        let currentCatalogPage = 1;
+        const ITEMS_PER_PAGE = 6;
         let storeIsOnline = false;
         let activeDetailProduct = null;
         let currentCheckoutOrder = null;
@@ -3736,10 +3804,23 @@
                         <p style="font-size: 0.85rem; margin-top: 4px;">${products.length === 0 ? (isLocalAdmin ? 'คลิกปุ่ม "👑 โพสต์/จัดการสินค้า" ด้านบน เพื่อเพิ่มสินค้าของคุณ' : 'โปรดติดตามรายการสินค้าใหม่เร็วๆ นี้') : 'ลองค้นหาด้วยคำค้นอื่น'}</p>
                     </div>
                 `;
+                const pagEl = document.getElementById('catalog-pagination');
+                if (pagEl) {
+                    pagEl.innerHTML = '';
+                    pagEl.style.display = 'none';
+                }
                 return;
             }
 
-            container.innerHTML = filtered.map(p => {
+            // Pagination calculation (6 items per page)
+            const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE) || 1;
+            if (currentCatalogPage > totalPages) currentCatalogPage = totalPages;
+            if (currentCatalogPage < 1) currentCatalogPage = 1;
+
+            const startIndex = (currentCatalogPage - 1) * ITEMS_PER_PAGE;
+            const pageItems = filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+            container.innerHTML = pageItems.map(p => {
                 const priceFormatted = Number(p.price || 0).toFixed(2);
                 const isFree = (p.price <= 0) && !p.priceText;
                 const isUserPurchased = checkIsPurchased(p.id);
@@ -3805,11 +3886,76 @@
                     </div>
                 `;
             }).join('');
+
+            renderCatalogPagination(totalPages, filtered.length);
+        }
+
+        function renderCatalogPagination(totalPages, totalItems) {
+            const pagEl = document.getElementById('catalog-pagination');
+            if (!pagEl) return;
+
+            if (totalPages <= 1) {
+                pagEl.innerHTML = '';
+                pagEl.style.display = 'none';
+                return;
+            }
+
+            pagEl.style.display = 'flex';
+            let html = '';
+
+            // Prev Button
+            html += `<button class="pagination-btn" onclick="changeCatalogPage(${currentCatalogPage - 1})" ${currentCatalogPage === 1 ? 'disabled' : ''} title="หน้าก่อนหน้า">‹ ก่อนหน้า</button>`;
+
+            // Page numbers
+            if (totalPages <= 7) {
+                for (let i = 1; i <= totalPages; i++) {
+                    html += `<button class="pagination-btn ${i === currentCatalogPage ? 'active' : ''}" onclick="changeCatalogPage(${i})">${i}</button>`;
+                }
+            } else {
+                html += `<button class="pagination-btn ${currentCatalogPage === 1 ? 'active' : ''}" onclick="changeCatalogPage(1)">1</button>`;
+
+                if (currentCatalogPage > 3) {
+                    html += `<span class="pagination-ellipsis">...</span>`;
+                }
+
+                let start = Math.max(2, currentCatalogPage - 1);
+                let end = Math.min(totalPages - 1, currentCatalogPage + 1);
+
+                for (let i = start; i <= end; i++) {
+                    html += `<button class="pagination-btn ${i === currentCatalogPage ? 'active' : ''}" onclick="changeCatalogPage(${i})">${i}</button>`;
+                }
+
+                if (currentCatalogPage < totalPages - 2) {
+                    html += `<span class="pagination-ellipsis">...</span>`;
+                }
+
+                html += `<button class="pagination-btn ${currentCatalogPage === totalPages ? 'active' : ''}" onclick="changeCatalogPage(${totalPages})">${totalPages}</button>`;
+            }
+
+            // Next Button
+            html += `<button class="pagination-btn" onclick="changeCatalogPage(${currentCatalogPage + 1})" ${currentCatalogPage === totalPages ? 'disabled' : ''} title="หน้าถัดไป">ถัดไป ›</button>`;
+
+            // Info summary
+            const startItem = (currentCatalogPage - 1) * ITEMS_PER_PAGE + 1;
+            const endItem = Math.min(currentCatalogPage * ITEMS_PER_PAGE, totalItems);
+            html += `<div class="pagination-info">แสดงรายการที่ ${startItem} - ${endItem} จากทั้งหมด ${totalItems} รายการ (หน้า ${currentCatalogPage}/${totalPages})</div>`;
+
+            pagEl.innerHTML = html;
+        }
+
+        function changeCatalogPage(page) {
+            currentCatalogPage = page;
+            renderCatalog();
+            const topTarget = document.getElementById('program-list-container') || document.querySelector('.content-header');
+            if (topTarget) {
+                topTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
 
         // --- Category & Search Handlers ---
         function filterCategory(cat, updateUrl = true) {
             activeCategory = cat || 'all';
+            currentCatalogPage = 1;
             const titleEl = document.getElementById('content-header-title');
             if (titleEl) {
                 let displayCat = activeCategory;
@@ -3832,6 +3978,7 @@
 
         function handleSearch(val) {
             searchQuery = val;
+            currentCatalogPage = 1;
             renderCatalog();
         }
 
@@ -3842,12 +3989,14 @@
 
         function handleSortChange(sortVal) {
             currentSort = sortVal;
+            currentCatalogPage = 1;
             renderCatalog();
         }
 
         function resetToHome() {
             activeCategory = 'all';
             searchQuery = '';
+            currentCatalogPage = 1;
             const searchInput = document.getElementById('main-search-input');
             if (searchInput) searchInput.value = '';
             const titleEl = document.getElementById('content-header-title');
