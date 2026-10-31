@@ -3872,7 +3872,8 @@
                                 *</label>
                             <input type="text" id="admin-title" class="form-control-clean" required
                                 placeholder="เช่น Windows 11 Extreme Optimizer" autocomplete="off" autocorrect="off"
-                                autocapitalize="off" spellcheck="false" oninput="handleAdminTitleAutoSlug(this.value)">
+                                autocapitalize="off" spellcheck="false"
+                                oninput="handleAdminTitleAutoSlug(this.value); saveCourseDraft();">
                         </div>
 
                         <div class="form-group-clean">
@@ -3887,7 +3888,7 @@
                                         title="ดึงคำอังกฤษจากชื่อสินค้ามาสร้างใหม่อัตโนมัติ">🔄 ดึงจากชื่อ</button>
                                 </div>
                             </div>
-                            <input type="text" id="admin-slug" class="form-control-clean"
+                            <input type="text" id="admin-slug" class="form-control-clean" oninput="saveCourseDraft();"
                                 placeholder="สร้างให้อัตโนมัติจากคำอังกฤษในชื่อ (หรือพิมพ์กำหนดเองได้)"
                                 autocomplete="off"
                                 oninput="this.dataset.userEdited = this.value.trim() ? 'true' : 'false'">
@@ -3897,7 +3898,7 @@
                             <label class="form-label-clean" id="admin-price-label">ราคาสินค้า (บาท THB) * (0 =
                                 ฟรี)</label>
                             <input type="number" step="0.01" min="0" id="admin-price" class="form-control-clean"
-                                required placeholder="190.00" autocomplete="off">
+                                oninput="saveCourseDraft();" required placeholder="190.00" autocomplete="off">
                         </div>
                     </div>
 
@@ -4080,11 +4081,13 @@
                     </div>
 
                     <!-- GITHUB IMAGE UPLOADER (MULTI-IMAGE & DRAG & DROP SUPPORTED) -->
-                    <div class="github-uploader-box admin-general-only" id="github-uploader-dropzone">
-                        <label class="form-label-clean" style="display: block; margin-bottom: 2px;">
+                    <div class="github-uploader-box" id="github-uploader-dropzone">
+                        <label class="form-label-clean" id="admin-images-box-label"
+                            style="display: block; margin-bottom: 2px;">
                             🖼️ รูปภาพโฆษณาสินค้า (เพิ่มได้หลายรูป / ลากและวางรูปภาพที่นี่ได้ทันที)
                         </label>
-                        <p style="font-size: 0.78rem; color: var(--fh-muted); margin-bottom: 8px;">
+                        <p id="admin-images-box-sub"
+                            style="font-size: 0.78rem; color: var(--fh-muted); margin-bottom: 8px;">
                             ลากรูปภาพมาปล่อยที่นี่ หรือเลือกไฟล์ (เลือกได้หลายรูปพร้อมกัน)
                             ระบบจะบันทึกและอัปโหลดขึ้นโฟลเดอร์
                             <strong>shop/images/</strong> ใน GitHub อัตโนมัติ
@@ -4098,14 +4101,19 @@
                         </button>
 
                         <div style="margin-top: 10px; display: flex; gap: 6px;">
-                            <input type="url" id="admin-add-image-url" class="form-control-clean"
-                                placeholder="หรือวาง Image URL เช่น https://... หรือ shop/images/... แล้วกดเพิ่ม"
-                                autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                            <input type="url" id="admin-add-image-url" class="form-control-clean" autocomplete="off"
+                                autocorrect="off" autocapitalize="off" spellcheck="false"
                                 onkeydown="if(event.key==='Enter'){event.preventDefault(); addAdminImageUrlFromInput();}"
                                 style="font-size: 0.82rem; margin: 0;">
                             <button type="button" class="btn-tool-sm" onclick="addAdminImageUrlFromInput()"
                                 style="padding: 7px 16px; font-weight: 700; background: #0284c7; color: #fff; border-color: #0284c7; white-space: nowrap; cursor: pointer; border-radius: var(--radius-sm);">
                                 ➕ เพิ่มรูป
+                            </button>
+                            <button type="button" class="btn-tool-sm admin-course-only"
+                                onclick="setCourseDefaultCover()"
+                                style="padding: 7px 14px; font-weight: 600; background: #fefce8; color: #854d0e; border: 1.5px solid #fef08a; cursor: pointer; border-radius: var(--radius-sm); white-space: nowrap;"
+                                title="ตั้งรูปปกเป็นใบประกาศนียบัตรสวมหมวกรับปริญญาเริ่มต้น">
+                                🎓 ใช้ภาพปกคอร์สเริ่มต้น
                             </button>
                         </div>
                         <input type="hidden" id="admin-cover-image" value="">
@@ -4219,18 +4227,25 @@
                                             บทเรียน</span>
                                     </h4>
                                     <p style="margin: 4px 0 0 0; font-size: 0.78rem; color: #64748b;">
-                                        เพิ่มบทเรียนได้ไม่จำกัด แยกการ์ดช่องใครช่องมัน สลับตำแหน่งได้ • 4 บทแรกจะเป็น
+                                        4 บทแรกจะเป็น
                                         <strong>✨ ตัวอย่างฟรี (Preview)</strong>
-                                        และบทเรียนที่เหลือจะล็อกรอผู้ซื้อปลดล็อก
                                     </p>
                                 </div>
-                                <div style="display: flex; gap: 8px; align-items: center;">
+                                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                    <span id="course-draft-time-pill"
+                                        style="font-size: 0.73rem; color: #166534; background: #dcfce7; padding: 3px 8px; border-radius: 6px; display: none; font-weight: 600;"></span>
+                                    <button type="button" class="btn-tool-sm" onclick="manualSaveCourseDraft()"
+                                        style="font-size: 0.76rem; font-weight: 700; color: #15803d; background: #dcfce7; border: 1px solid #86efac; cursor: pointer; padding: 5px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;"
+                                        title="บันทึกแบบร่างไว้ในเครื่อง (Shortcut: Ctrl+S)">
+                                        📝 บันทึกแบบร่าง (Ctrl+S)
+                                    </button>
                                     <button type="button" class="btn-download-fh" onclick="addCourseLessonRow()"
                                         style="padding: 6px 14px; font-size: 0.8rem; background: #0284c7; border-color: #0284c7; white-space: nowrap;">
                                         ➕ เพิ่มบทเรียนใหม่
                                     </button>
                                     <button type="button" class="btn-tool-sm" onclick="clearCourseDraft()"
-                                        style="font-size: 0.74rem; color: #64748b; background: #f1f5f9; cursor: pointer;">
+                                        style="font-size: 0.74rem; color: #ef4444; background: #fff5f5; border: 1px solid #fecaca; cursor: pointer; padding: 5px 10px; border-radius: 6px;"
+                                        title="ล้างแบบร่างทั้งหมด">
                                         🗑️ ล้างร่าง
                                     </button>
                                 </div>
@@ -4251,10 +4266,6 @@
 
                         <div
                             style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; flex-wrap: wrap; gap: 6px;">
-                            <span style="font-size: 0.73rem; color: #64748b;">
-                                💡 คลุมดำข้อความแล้วกด <strong>"𝐁 ตัวหนา"</strong> หรือกด <code>Ctrl + B</code>
-                                ข้อความจะหนาทันที • เส้นแบ่งจะไม่แสดงในการ์ดหน้าแรก
-                            </span>
                             <button type="button" class="btn-tool-sm admin-general-only" id="btn-toggle-feature-builder"
                                 onclick="toggleFeatureBuilder()"
                                 style="font-size: 0.74rem; color: var(--fh-blue); cursor: pointer;">
@@ -4321,6 +4332,12 @@
                             🗑️ ลบสินค้านี้
                         </button>
                         <div style="display: flex; gap: 10px; margin-left: auto;">
+                            <button type="button" class="btn-header-clean admin-course-only" id="btn-save-course-draft"
+                                onclick="manualSaveCourseDraft()"
+                                style="background: #f0fdf4; border: 1.5px solid #86efac; color: #166534; font-weight: 700; padding: 9px 18px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;"
+                                title="บันทึกแบบร่างไว้ในเครื่อง (Shortcut: Ctrl+S)">
+                                📝 บันทึกแบบร่าง (Ctrl+S)
+                            </button>
                             <button type="button" class="btn-header-clean" onclick="closeAdminModal()">ยกเลิก</button>
                             <button type="submit" class="btn-download-fh" style="padding: 9px 22px;">💾
                                 บันทึกและซิงค์ขึ้นโฮสต์</button>
@@ -4393,8 +4410,7 @@
                         ปิด</button>
                 </div>
                 <div style="display: flex; gap: 8px; margin-top: 4px;">
-                    <input type="text" id="bigdata-search-input" class="form-control-clean"
-                        placeholder="พิมพ์คำค้นหา เช่น หุ่นยนต์, arduino, จิตสำนึก, หายใจ, catbox, youtube..."
+                    <input type="text" id="bigdata-search-input" class="form-control-clean" placeholder="พิมพ์คำค้นหา"
                         autocomplete="off" oninput="handleBigdataSearchInput(this.value)"
                         style="background: #0d1117; color: #f0f6fc; border-color: #30363d; font-size: 0.88rem;">
                     <button type="button" class="btn-download-fh" onclick="triggerBigdataSearch()"
@@ -4434,7 +4450,7 @@
             <!-- Top Header Bar with Cute Progress Bar -->
             <div class="course-viewer-header">
                 <div style="display: flex; align-items: center; gap: 10px; overflow: hidden;">
-                    <span class="badge-course-cat">🎓 ทักษะเรียนรู้</span>
+                    <span class="badge-course-cat">🎓</span>
                     <span id="course-viewer-top-title"
                         style="font-weight: 700; font-size: 0.95rem; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;">คอร์สเรียน</span>
                 </div>
@@ -4451,7 +4467,7 @@
 
                     <button type="button" class="btn-share-clean-url"
                         onclick="copyCleanShareUrl(currentActiveCourse ? currentActiveCourse.id : null, event)"
-                        title="คัดลอกลิงก์แชร์แบบสั้นสำหรับโพสต์โซเชียล">🔗 แชร์คอร์ส</button>
+                        title="คัดลอกลิงก์แชร์แบบสั้นสำหรับโพสต์โซเชียล">🔗 แชร์</button>
                     <button type="button" class="modal-close-fh" onclick="closeCourseViewer(event)" title="ปิดหน้าต่าง"
                         aria-label="ปิด" style="position: static; width: 32px; height: 32px;">✕</button>
                 </div>
@@ -4460,21 +4476,38 @@
             <!-- Main Scrollable Reading Feed -->
             <div class="course-viewer-body" id="course-viewer-body" onscroll="handleCourseViewerScroll(event)">
                 <!-- Course Hero Card -->
-                <div class="course-hero-card" id="course-hero-card">
-                    <div class="course-hero-badge-row">
-                        <span class="badge-course-cat">🎓 ทักษะเรียนรู้</span>
-                        <span class="badge-gold-preview" id="course-hero-preview-badge">✨ ตัวอย่างฟรี 4 บทเรียน</span>
-                        <span id="course-hero-unlocked-badge" class="badge-course-unlocked" style="display: none;">🛡️
-                            ซื้อขาดแล้ว • ดูได้ตลอดชีพ</span>
-                        <span id="course-hero-posts-count-badge"
-                            style="font-size: 0.72rem; color: #475569; font-weight: 600;">📚 ทั้งหมด 0 บทเรียน</span>
+                <div class="course-hero-card" id="course-hero-card" style="padding: 20px;">
+                    <div style="display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap;">
+                        <!-- Course Cover Image Wrap -->
+                        <div id="course-hero-cover-wrap"
+                            style="flex-shrink: 0; width: 140px; border-radius: 12px; overflow: hidden; border: 1.5px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.06); background: #f8fafc;">
+                            <img id="course-hero-cover-img" src="shop/images/learning_course_cover.svg"
+                                alt="Course Cover"
+                                style="width: 100%; height: 110px; object-fit: cover; display: block;"
+                                onerror="this.src='shop/images/learning_course_cover.svg'">
+                        </div>
+
+                        <!-- Course Info -->
+                        <div style="flex: 1; min-width: 260px;">
+                            <div class="course-hero-badge-row" style="margin-bottom: 8px;">
+                                <span class="badge-course-cat">🎓 ทักษะเรียนรู้</span>
+                                <span class="badge-gold-preview" id="course-hero-preview-badge">✨ ตัวอย่างฟรี 4
+                                    บทเรียน</span>
+                                <span id="course-hero-unlocked-badge" class="badge-course-unlocked"
+                                    style="display: none;">🛡️
+                                    ซื้อขาดแล้ว • ดูได้ตลอดชีพ</span>
+                                <span id="course-hero-posts-count-badge"
+                                    style="font-size: 0.72rem; color: #475569; font-weight: 600;">📚 ทั้งหมด 0
+                                    บทเรียน</span>
+                            </div>
+                            <h2 id="course-hero-title"
+                                style="font-size: 1.4rem; font-weight: 800; color: #0f172a; margin: 0 0 8px 0; line-height: 1.35;">
+                                ชื่อคอร์สเรียน</h2>
+                            <div id="course-hero-desc"
+                                style="font-size: 0.92rem; color: #475569; margin: 0; line-height: 1.7; white-space: pre-line;">
+                                คำอธิบายคอร์ส</div>
+                        </div>
                     </div>
-                    <h2 id="course-hero-title"
-                        style="font-size: 1.45rem; font-weight: 800; color: #0f172a; margin: 0 0 10px 0;">ชื่อคอร์สเรียน
-                    </h2>
-                    <p id="course-hero-desc"
-                        style="font-size: 0.92rem; color: #475569; margin: 0; line-height: 1.6; white-space: pre-wrap;">
-                        คำอธิบายคอร์ส</p>
                 </div>
 
                 <!-- Lessons Feed -->
@@ -7145,6 +7178,9 @@ ${encodedToken}
             if (badge) {
                 badge.textContent = `รูปภาพโฆษณาทั้งหมด (${adminProductImages.length} รูป)`;
             }
+            if (typeof saveCourseDraft === 'function') {
+                saveCourseDraft();
+            }
 
             if (!container) return;
 
@@ -7206,6 +7242,24 @@ ${encodedToken}
             showToast('🗑️ ลบรูปภาพเรียบร้อยแล้ว', 'info');
         }
 
+        function setCourseDefaultCover() {
+            const defaultCover = 'shop/images/learning_course_cover.svg';
+            if (!adminProductImages.includes(defaultCover)) {
+                adminProductImages.unshift(defaultCover);
+            } else {
+                const idx = adminProductImages.indexOf(defaultCover);
+                if (idx > 0) {
+                    adminProductImages.splice(idx, 1);
+                    adminProductImages.unshift(defaultCover);
+                }
+            }
+            const coverInput = document.getElementById('admin-cover-image');
+            if (coverInput) coverInput.value = defaultCover;
+            renderAdminImagesGallery();
+            if (typeof saveCourseDraft === 'function') saveCourseDraft();
+            showToast('🎓 ตั้งภาพปกคอร์สเริ่มต้น (ใบประกาศนียบัตร) เรียบร้อยแล้ว', 'success');
+        }
+
         function addAdminImageUrlFromInput() {
             const inp = document.getElementById('admin-add-image-url');
             if (!inp) return;
@@ -7253,6 +7307,79 @@ ${encodedToken}
                 reader.onerror = () => reject(new Error('อ่านไฟล์ล้มเหลว'));
                 reader.readAsDataURL(file);
             });
+        }
+
+        // --- Lesson Card Image Upload & Drag-and-Drop ---
+        async function handleLessonImageUpload(inputEl, idx) {
+            if (!inputEl || !inputEl.files || !inputEl.files[0]) return;
+            const file = inputEl.files[0];
+            if (file.type && !file.type.startsWith('image/')) {
+                showToast('⚠️ โปรดเลือกไฟล์ที่เป็นรูปภาพเท่านั้น (PNG, JPG, WebP, SVG)', 'warning');
+                return;
+            }
+
+            showToast('⏳ กำลังอัปโหลดภาพประกอบบทเรียน...', 'info');
+            try {
+                const finalUrl = await uploadSingleImageToGithub(file);
+                if (adminCourseLessons[idx]) {
+                    adminCourseLessons[idx].imageUrl = finalUrl;
+                    renderCourseLessons();
+                    saveCourseDraft();
+                    showToast('✅ อัปโหลดรูปภาพประกอบบทเรียนสำเร็จ!', 'success');
+                }
+            } catch (err) {
+                console.warn('Upload to server failed, falling back to local dataUrl:', err);
+                try {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        if (adminCourseLessons[idx]) {
+                            adminCourseLessons[idx].imageUrl = e.target.result;
+                            renderCourseLessons();
+                            saveCourseDraft();
+                            showToast('✅ ใส่รูปภาพประกอบบทเรียนสำเร็จ!', 'success');
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                } catch (e2) {
+                    showToast('❌ ไม่สามารถอ่านไฟล์รูปภาพได้', 'warning');
+                }
+            }
+        }
+
+        async function handleLessonImageDrop(e, idx) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            const files = e.dataTransfer ? e.dataTransfer.files : null;
+            if (!files || !files[0]) return;
+            const file = files[0];
+            if (file.type && !file.type.startsWith('image/')) {
+                showToast('⚠️ โปรดลากไฟล์ที่เป็นรูปภาพเท่านั้น', 'warning');
+                return;
+            }
+
+            showToast('⏳ กำลังอัปโหลดภาพประกอบบทเรียน...', 'info');
+            try {
+                const finalUrl = await uploadSingleImageToGithub(file);
+                if (adminCourseLessons[idx]) {
+                    adminCourseLessons[idx].imageUrl = finalUrl;
+                    renderCourseLessons();
+                    saveCourseDraft();
+                    showToast('✅ ใส่รูปภาพประกอบบทเรียนสำเร็จ!', 'success');
+                }
+            } catch (err) {
+                const reader = new FileReader();
+                reader.onload = function (ev) {
+                    if (adminCourseLessons[idx]) {
+                        adminCourseLessons[idx].imageUrl = ev.target.result;
+                        renderCourseLessons();
+                        saveCourseDraft();
+                        showToast('✅ ใส่รูปภาพประกอบบทเรียนสำเร็จ!', 'success');
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
         }
 
         async function uploadMultipleImagesToGithub(files) {
@@ -7329,7 +7456,7 @@ ${encodedToken}
                 if (!textOnly && !editor.querySelector('img, hr')) {
                     hidden.value = '';
                 } else {
-                    hidden.value = editor.innerHTML.replace(/&nbsp;/gi, ' ').trim();
+                    hidden.value = formatCourseDescriptionHtml(editor.innerHTML);
                 }
             }
         }
@@ -7844,6 +7971,11 @@ ${encodedToken}
             if (headerText) headerText.textContent = courseId ? '🎓 แก้ไขบทเรียนคอร์ส (ทักษะเรียนรู้)' : '🎓 เพิ่ม/สร้างคอร์สเรียนใหม่ (ทักษะเรียนรู้)';
             if (headerSub) headerSub.textContent = 'สร้างระบบการเรียนรู้แบบ Brilliant.org • เพิ่มบทเรียนแยกการ์ด • ฝังวิดีโอ BigData / Shorts • บันทึกร่างอัตโนมัติ';
 
+            const imgLabel = document.getElementById('admin-images-box-label');
+            if (imgLabel) imgLabel.textContent = '🖼️ ภาพปกคอร์สเรียน)';
+            const imgSub = document.getElementById('admin-images-box-sub');
+            if (imgSub) imgSub.innerHTML = 'ลากรูปภาพมาปล่อยที่นี่';
+
             const titleLabel = document.getElementById('admin-title-label');
             if (titleLabel) titleLabel.textContent = 'ชื่อคอร์สเรียน / Course Title *';
             const titleInput = document.getElementById('admin-title');
@@ -7909,7 +8041,7 @@ ${encodedToken}
                 }
             }
 
-            loadBigdataVideos(); // Preload bigdata database in background
+            // Bigdata loaded on-demand when user clicks search button
             if (modal) modal.classList.add('active');
         }
 
@@ -8369,7 +8501,15 @@ ${encodedToken}
                     body: JSON.stringify(vaultData)
                 });
 
-                showToast('🎉 บันทึกสินค้าขึ้นโฮสต์เรียบร้อยแล้ว!', 'success');
+                if (isCourseCategory) {
+                    // ลบแบบร่างออกเมื่อ publish ขึ้นโฮสต์สำเร็จ
+                    localStorage.removeItem('EWORKER_course_draft');
+                    adminCourseLessons = [];
+                    const pill = document.getElementById('course-draft-time-pill');
+                    if (pill) pill.style.display = 'none';
+                }
+
+                showToast(isCourseCategory ? '🎉 เผยแพร่คอร์สเรียนขึ้นโฮสต์เรียบร้อยแล้ว! (ลบแบบร่างเดิมแล้ว)' : '🎉 บันทึกสินค้าขึ้นโฮสต์เรียบร้อยแล้ว!', 'success');
                 closeAdminModal();
                 await loadProducts();
             } catch (err) {
@@ -8489,6 +8629,17 @@ ${encodedToken}
         }
 
         window.addEventListener('keydown', (e) => {
+            // Shortcut: Ctrl+S or Cmd+S to Save Course Draft
+            if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+                const adminModal = document.getElementById('admin-modal');
+                if (adminModal && adminModal.classList.contains('active') && adminModal.classList.contains('mode-course')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    manualSaveCourseDraft();
+                    return;
+                }
+            }
+
             if (e.key === 'Escape') {
                 closeDetailModal();
                 closeCheckoutModal();
@@ -9062,7 +9213,22 @@ ${encodedToken}
 
             document.getElementById('course-viewer-top-title').textContent = p.title || 'คอร์สทักษะเรียนรู้';
             document.getElementById('course-hero-title').textContent = p.title || 'คอร์สทักษะเรียนรู้';
-            document.getElementById('course-hero-desc').textContent = p.description || '';
+
+            // Clean description: format line breaks and eliminate raw <div> tags
+            const descEl = document.getElementById('course-hero-desc');
+            if (descEl) {
+                descEl.innerHTML = formatCourseDescriptionHtml(p.description || '');
+            }
+
+            // Set Course Cover Image in Course Viewer Hero Card
+            const coverImgEl = document.getElementById('course-hero-cover-img');
+            const coverWrapEl = document.getElementById('course-hero-cover-wrap');
+            const coverSrc = p.coverImage || (Array.isArray(p.images) && p.images[0]) || 'shop/images/learning_course_cover.svg';
+
+            if (coverImgEl) {
+                coverImgEl.src = coverSrc;
+                if (coverWrapEl) coverWrapEl.style.display = 'block';
+            }
 
             const isPurchased = checkIsPurchased(p.id) || (p.price <= 0);
             const unlockedBadge = document.getElementById('course-hero-unlocked-badge');
@@ -9305,6 +9471,41 @@ ${encodedToken}
             renderCourseRecommendations(p.id);
         }
 
+        function formatCourseDescriptionHtml(raw) {
+            if (!raw) return '';
+            let str = String(raw).trim();
+
+            // 1. Decode double-escaped or escaped entities
+            str = str.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+
+            // 2. Convert block boundaries to newlines
+            str = str.replace(/<(div|p)[^>]*>\s*<br\s*\/?>\s*<\/(div|p)>/gi, '\n');
+            str = str.replace(/<(div|p)[^>]*>/gi, '\n');
+            str = str.replace(/<\/(div|p)>/gi, '');
+            str = str.replace(/<br\s*\/?>/gi, '\n');
+
+            // 3. Completely remove all span, font, style, header, section tags
+            str = str.replace(/<\/?(span|font|header|section|article)[^>]*>/gi, '');
+
+            // 4. Strip any inline style, class, or id attributes from any remaining tags
+            str = str.replace(/\s+(style|class|id|dir)=["'][^"']*["']/gi, '');
+
+            // 5. Compress multiple consecutive newlines (max 2)
+            str = str.replace(/\n{3,}/g, '\n\n');
+
+            // 6. Split lines and build clean readable HTML
+            const lines = str.split('\n');
+            return lines.map(line => {
+                let l = line.trim();
+                // Strip empty tags
+                l = l.replace(/<([a-z0-9]+)[^>]*><\/\1>/gi, '');
+                return l;
+            }).filter((line, i, arr) => {
+                if ((i === 0 || i === arr.length - 1) && !line) return false;
+                return true;
+            }).join('<br>');
+        }
+
         function formatCourseLessonContent(text) {
             if (!text) return '';
             let safe = escapeHtml(text);
@@ -9522,36 +9723,27 @@ ${encodedToken}
         // BIGDATA VIDEO SEARCH & EMBED SYSTEM
         // --------------------------------------------------------------------------
         async function loadBigdataVideos() {
-            if (_bigdataCache.length > 0) return _bigdataCache;
+            if (_bigdataCache && _bigdataCache.length > 0) return _bigdataCache;
+            if (_bigdataIsLoading) return [];
             _bigdataIsLoading = true;
 
             const loadingEl = document.getElementById('bigdata-loading-state');
-            if (loadingEl) loadingEl.style.display = 'block';
+            if (loadingEl) {
+                loadingEl.style.display = 'block';
+                loadingEl.textContent = '⏳ กำลังเชื่อมต่อคลัง BigData จาก GitHub...';
+            }
 
             const itemsCollected = [];
             const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/artnp/bigdata/refs/heads/main';
             // Files 10 to 18 contain all rich video / shorts / catbox records
-            const targetFiles = [10, 11, 12, 13, 14, 15, 16, 17, 18, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+            const targetFiles = [10, 11, 12, 13, 14, 15, 16, 17, 18];
 
             for (const n of targetFiles) {
                 try {
-                    let resp;
-                    const urlsToTry = [
-                        `http://127.0.0.1/bigdata/bigdata${n}.json?t=${Date.now()}`,
-                        `./bigdata/bigdata${n}.json?t=${Date.now()}`,
-                        `${GITHUB_RAW_BASE}/bigdata${n}.json?t=${Date.now()}`,
-                        `https://raw.githubusercontent.com/artnp/bigdata/main/bigdata${n}.json`
-                    ];
-
-                    for (const u of urlsToTry) {
-                        try {
-                            resp = await fetch(u);
-                            if (resp && resp.ok) break;
-                        } catch (err) { }
-                    }
-
+                    const u = `${GITHUB_RAW_BASE}/bigdata${n}.json`;
+                    const resp = await fetch(u).catch(() => null);
                     if (resp && resp.ok) {
-                        const json = await resp.json();
+                        const json = await resp.json().catch(() => null);
                         if (Array.isArray(json)) {
                             json.forEach(item => {
                                 if (item && (item.url || item.data || item.comment)) {
@@ -9560,17 +9752,18 @@ ${encodedToken}
                             });
                         }
                     }
+                    if (loadingEl && itemsCollected.length > 0) {
+                        loadingEl.textContent = `⏳ กำลังโหลดคลิป BigData (${itemsCollected.length.toLocaleString()} รายการ)...`;
+                    }
                 } catch (e) { }
-
-                // Enable instant search as soon as first file is loaded!
-                if (itemsCollected.length >= 200 && _bigdataCache.length === 0) {
-                    _bigdataCache = [...itemsCollected];
-                }
             }
 
             _bigdataCache = itemsCollected;
             _bigdataIsLoading = false;
             if (loadingEl) loadingEl.style.display = 'none';
+
+            // Auto-trigger search after loading
+            triggerBigdataSearch();
             return _bigdataCache;
         }
 
@@ -9698,7 +9891,7 @@ ${encodedToken}
                 resultsPanel.innerHTML = `
                     <div style="padding: 16px; text-align: center; color: #8b949e; font-size: 0.82rem;">
                         🔍 ไม่พบวิดีโอที่ตรงกับ "<b>${escapeHtml(query)}</b>" ใน BigData<br>
-                        <span style="font-size: 0.74rem; color: #6e7681; margin-top: 4px; display: block;">ลองค้นด้วยคำหลักอื่น เช่น หุ่นยนต์, arduino, จิตสำนึก, สมอง, catbox, shorts</span>
+                        <span style="font-size: 0.74rem; color: #6e7681; margin-top: 4px; display: block;">ลองค้นด้วยคำหลักอื่น</span>
                     </div>
                 `;
                 return;
@@ -9713,14 +9906,14 @@ ${encodedToken}
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 6px;">
                     ${matches.map((item, mIdx) => {
-                        const type = detectMediaType(item.url);
-                        let typeBadge = '<span style="background:#fee2e2; color:#b91c1c; padding:2px 6px; border-radius:3px; font-size:0.68rem; font-weight:700;">🎬 YouTube</span>';
-                        if (type === 'shorts') typeBadge = '<span style="background:#fef3c7; color:#b45309; padding:2px 6px; border-radius:3px; font-size:0.68rem; font-weight:700;">📱 Shorts</span>';
-                        else if (type === 'catbox') typeBadge = '<span style="background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:3px; font-size:0.68rem; font-weight:700;">🐱 Catbox (.mp4)</span>';
-                        else if (type === 'filegarden') typeBadge = '<span style="background:#dcfce7; color:#15803d; padding:2px 6px; border-radius:3px; font-size:0.68rem; font-weight:700;">🌿 File Garden</span>';
-                        
-                        const titleText = item.data || item.comment || 'วิดีโอ BigData';
-                        return `
+                const type = detectMediaType(item.url);
+                let typeBadge = '<span style="background:#fee2e2; color:#b91c1c; padding:2px 6px; border-radius:3px; font-size:0.68rem; font-weight:700;">🎬 YouTube</span>';
+                if (type === 'shorts') typeBadge = '<span style="background:#fef3c7; color:#b45309; padding:2px 6px; border-radius:3px; font-size:0.68rem; font-weight:700;">📱 Shorts</span>';
+                else if (type === 'catbox') typeBadge = '<span style="background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:3px; font-size:0.68rem; font-weight:700;">🐱 Catbox (.mp4)</span>';
+                else if (type === 'filegarden') typeBadge = '<span style="background:#dcfce7; color:#15803d; padding:2px 6px; border-radius:3px; font-size:0.68rem; font-weight:700;">🌿 File Garden</span>';
+
+                const titleText = item.data || item.comment || 'วิดีโอ BigData';
+                return `
                             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; background: #161b22; border: 1px solid #30363d; border-radius: 6px; transition: background 0.15s ease;">
                                 <div style="flex: 1; overflow: hidden;">
                                     <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
@@ -9739,18 +9932,19 @@ ${encodedToken}
                                 </button>
                             </div>
                         `;
-                    }).join('')}
+            }).join('')}
                 </div>
             `;
         }
 
         function selectBigdataVideoForLesson(idx, encodedJson) {
+            closeBigdataSearchModal();
             try {
                 const item = JSON.parse(decodeURIComponent(encodedJson));
                 if (!adminCourseLessons[idx]) return;
 
                 adminCourseLessons[idx].mediaUrl = item.url || '';
-                
+
                 // Auto fill title if empty or default
                 if (!adminCourseLessons[idx].title || adminCourseLessons[idx].title.startsWith(`บทเรียนที่ ${idx + 1}:`)) {
                     const cleanTitle = (item.data || item.comment || '').substring(0, 70);
@@ -9778,8 +9972,14 @@ ${encodedToken}
 
             const input = document.getElementById('bigdata-search-input');
             if (input) {
-                input.value = '';
-                input.focus();
+                // If the lesson already has a title or topic, prefill search
+                const currentLesson = adminCourseLessons[targetLessonIdx];
+                let initialQuery = '';
+                if (currentLesson && currentLesson.title) {
+                    initialQuery = currentLesson.title.replace(/^บทเรียนที่\s*\d+[:\s]*/, '').trim();
+                }
+                input.value = initialQuery;
+                setTimeout(() => input.focus(), 100);
             }
 
             loadBigdataVideos();
@@ -9787,7 +9987,11 @@ ${encodedToken}
 
         function closeBigdataSearchModal() {
             const modal = document.getElementById('bigdata-search-modal');
-            if (modal) modal.classList.remove('active');
+            if (modal) {
+                modal.querySelectorAll('video').forEach(v => { try { v.pause(); } catch (e) { } });
+                modal.querySelectorAll('iframe').forEach(ifr => { try { ifr.src = ''; } catch (e) { } });
+                modal.classList.remove('active');
+            }
             currentTargetLessonIdx = null;
         }
 
@@ -9813,8 +10017,65 @@ ${encodedToken}
             triggerBigdataSearch();
         }
 
+
+        function renderBigdataItemPreview(url) {
+            if (!url) return '';
+            let cleanUrl = String(url).trim();
+            if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+                cleanUrl = 'https://' + cleanUrl;
+            }
+
+            const type = detectMediaType(cleanUrl);
+
+            // 1. YouTube or Shorts
+            if (type === 'youtube' || type === 'shorts' || cleanUrl.includes('youtube.com') || cleanUrl.includes('youtu.be')) {
+                let ytId = '';
+                const m1 = cleanUrl.match(/(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*)/);
+                if (m1 && m1[1] && m1[1].length === 11) ytId = m1[1];
+                if (!ytId) {
+                    const m2 = cleanUrl.match(/\/shorts\/([a-zA-Z0-9_-]{11})/);
+                    if (m2 && m2[1]) ytId = m2[1];
+                }
+
+                if (ytId) {
+                    return `
+                        <div class="bigdata-video-preview-wrap" style="position: relative; width: 170px; height: 105px; border-radius: 8px; overflow: hidden; background: #000; border: 1px solid #30363d; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.4);" onclick="embedBigdataYoutubePlayer(this, '${ytId}')" title="คลิกเพื่อเปิดเล่นตัวอย่าง YouTube">
+                            <img src="https://img.youtube.com/vi/${ytId}/mqdefault.jpg" alt="Preview" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.src='https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png'">
+                            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.35); transition: background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.15)'" onmouseout="this.style.background='rgba(0,0,0,0.35)'">
+                                <div style="width: 36px; height: 36px; border-radius: 50%; background: #dc2626; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.6);">▶</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            // 2. Direct MP4 (Catbox, File Garden, or any .mp4)
+            if (cleanUrl.includes('.mp4') || type === 'catbox' || type === 'filegarden') {
+                return `
+                    <div style="position: relative; width: 170px; height: 105px; border-radius: 8px; overflow: hidden; background: #000; border: 1px solid #30363d; box-shadow: 0 2px 8px rgba(0,0,0,0.4);">
+                        <video src="${escapeHtml(cleanUrl)}" preload="metadata" controls playsinline style="width: 100%; height: 100%; object-fit: contain; background: #000; display: block;"></video>
+                    </div>
+                `;
+            }
+
+            // 3. Fallback preview
+            return `
+                <div style="width: 170px; height: 105px; border-radius: 8px; background: #21262d; border: 1px solid #30363d; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #8b949e; font-size: 0.72rem; gap: 4px;">
+                    <span style="font-size: 1.5rem;">🎬</span>
+                    <span>วิดีโอคลิป</span>
+                </div>
+            `;
+        }
+
+        function embedBigdataYoutubePlayer(container, ytId) {
+            if (!container || !ytId) return;
+            container.innerHTML = `
+                <iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            `;
+        }
+
         function triggerBigdataSearch() {
-            const q = (document.getElementById('bigdata-search-input')?.value || '').toLowerCase().trim();
+            const q = (document.getElementById('bigdata-search-input')?.value || '').trim();
             const listEl = document.getElementById('bigdata-results-list');
             const loadingEl = document.getElementById('bigdata-loading-state');
             if (!listEl) return;
@@ -9825,55 +10086,74 @@ ${encodedToken}
             }
             if (loadingEl) loadingEl.style.display = 'none';
 
-            let filtered = _bigdataCache.filter(item => {
-                const u = String(item.url || '').toLowerCase();
-                const d = String(item.data || '').toLowerCase();
+            let results = [];
+            if (q) {
+                results = searchBigdataQuery(q, 40);
+            } else {
+                results = _bigdataCache.slice(0, 30);
+            }
 
-                // Category filter
-                if (_activeBigdataFilter === 'youtube' && (!u.includes('youtube.com') && !u.includes('youtu.be') && (u.includes('catbox') || u.includes('file.garden')))) return false;
-                if (_activeBigdataFilter === 'shorts' && !u.includes('shorts')) return false;
-                if (_activeBigdataFilter === 'catbox' && !u.includes('catbox')) return false;
-                if (_activeBigdataFilter === 'filegarden' && !u.includes('file.garden')) return false;
+            // Category filter
+            if (_activeBigdataFilter && _activeBigdataFilter !== 'all') {
+                results = results.filter(item => {
+                    const u = String(item.url || '').toLowerCase();
+                    if (_activeBigdataFilter === 'youtube' && (!u.includes('youtube.com') && !u.includes('youtu.be') && (u.includes('catbox') || u.includes('file.garden')))) return false;
+                    if (_activeBigdataFilter === 'shorts' && !u.includes('shorts')) return false;
+                    if (_activeBigdataFilter === 'catbox' && !u.includes('catbox')) return false;
+                    if (_activeBigdataFilter === 'filegarden' && !u.includes('file.garden')) return false;
+                    return true;
+                });
+            }
 
-                if (!q) return true;
-                return d.includes(q) || u.includes(q);
-            });
-
-            // Limit to 30 results for crisp rendering
-            const sliced = filtered.slice(0, 30);
+            const sliced = results.slice(0, 30);
 
             if (sliced.length === 0) {
                 listEl.innerHTML = `
                     <div style="text-align: center; padding: 40px 20px; color: #8b949e;">
                         <div style="font-size: 2rem; margin-bottom: 8px;">🔍</div>
                         <h4 style="color: #c9d1d9; margin: 0 0 4px 0;">ไม่พบวิดีโอที่ตรงกับคำค้นหา</h4>
-                        <p style="font-size: 0.8rem; margin: 0;">ลองค้นหาด้วยคำอื่น เช่น หุ่นยนต์, arduino, จิตสำนึก, หายใจ, catbox</p>
+                        <p style="font-size: 0.8rem; margin: 0;">ลองค้นหาด้วยคำอื่น</p>
                     </div>
                 `;
                 return;
             }
 
             listEl.innerHTML = sliced.map((item, idx) => {
-                const type = detectMediaType(item.url);
+                const cleanUrl = String(item.url || '').trim();
+                const fullUrl = cleanUrl.startsWith('http') ? cleanUrl : 'https://' + cleanUrl;
+                const type = detectMediaType(cleanUrl);
+
                 let badge = '<span style="background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:700;">🎬 YouTube</span>';
                 if (type === 'shorts') badge = '<span style="background:#fef2f2; color:#ef4444; border:1px solid #fecaca; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:700;">📱 Shorts</span>';
                 if (type === 'catbox') badge = '<span style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:700;">🐱 Catbox (.mp4)</span>';
                 if (type === 'filegarden') badge = '<span style="background:#ecfdf5; color:#047857; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:700;">🌿 File Garden (.mp4)</span>';
 
-                const safeDataStr = escapeHtml(item.data || '');
-                const safeUrlStr = escapeHtml(item.url || '');
+                const safeDataStr = escapeHtml(item.data || item.comment || '');
+                const safeUrlStr = escapeHtml(cleanUrl);
 
                 return `
-                    <div class="bigdata-result-card">
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                            ${badge}
-                            <span style="font-size: 0.7rem; color: #8b949e; font-family: monospace;">${safeUrlStr.substring(0, 40)}...</span>
+                    <div class="bigdata-result-card" style="display: flex; gap: 14px; align-items: flex-start; padding: 14px; margin-bottom: 12px; flex-wrap: wrap;">
+                        <!-- Video Preview (Thumbnail / HTML5 Player) -->
+                        <div class="bigdata-preview-col" style="flex-shrink: 0; width: 170px;">
+                            ${renderBigdataItemPreview(cleanUrl)}
                         </div>
-                        <p style="font-size: 0.88rem; color: #f0f6fc; margin: 0 0 10px 0; line-height: 1.5;">${safeDataStr}</p>
-                        <div style="display: flex; justify-content: flex-end; gap: 8px;">
-                            <button type="button" class="btn-tool-sm" onclick="importBigdataVideo(${idx})" style="padding: 5px 14px; font-size: 0.78rem; font-weight: 700; color: #ffffff; background: #238636; border-color: #238636; cursor: pointer;">
-                                ➕ นำเข้าลงในบทเรียนนี้
-                            </button>
+
+                        <!-- Card Info & Import Action -->
+                        <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; justify-content: space-between; min-height: 105px;">
+                            <div>
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
+                                    ${badge}
+                                    <a href="${escapeHtml(fullUrl)}" target="_blank" rel="noopener noreferrer" style="font-size: 0.72rem; color: #58a6ff; text-decoration: none; font-family: monospace; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="เปิดดูคลิปต้นฉบับ">
+                                        🔗 ${safeUrlStr}
+                                    </a>
+                                </div>
+                                <p style="font-size: 0.88rem; color: #f0f6fc; margin: 0 0 10px 0; line-height: 1.55; word-break: break-word;">${safeDataStr}</p>
+                            </div>
+                            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: auto;">
+                                <button type="button" class="btn-tool-sm" onclick="importBigdataVideo(${idx})" style="padding: 6px 16px; font-size: 0.8rem; font-weight: 700; color: #ffffff; background: #238636; border: 1px solid #2ea043; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
+                                    ➕ นำเข้าลงในบทเรียนนี้
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -9963,6 +10243,14 @@ ${encodedToken}
             if (adminCourseLessons[idx]) {
                 adminCourseLessons[idx][field] = val;
                 saveCourseDraft();
+            }
+        }
+
+
+        function updateLessonMediaBadge(idx, val) {
+            const badgeEl = document.getElementById(`lesson-media-badge-${idx}`);
+            if (badgeEl) {
+                badgeEl.innerHTML = renderLessonMediaPreviewBadge(val);
             }
         }
 
@@ -10106,44 +10394,33 @@ ${encodedToken}
                             <input type="text" class="form-control-clean admin-lesson-title-inp" value="${escapeHtml(lesson.title || '')}" placeholder="เช่น บทที่ ${idx + 1}: การเคลื่อนที่ของแขนกลและองศาอิสระ..." oninput="handleLessonFieldChange(${idx}, 'title', this.value)" style="font-size: 0.92rem; font-weight: 600;">
                         </div>
 
-                        <!-- 2. Video / Media & Instant BigData Search -->
-                        <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px; margin-bottom: 12px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
-                                <label class="form-label-clean" style="font-size: 0.8rem; margin: 0; color: #1e40af; font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                                    <span>🎬 วิดีโอบทเรียน (ค้นหา BigData อัตโนมัติ หรือวาง URL วิดีโอ/Shorts)</span>
+                        <!-- 2. Video & Media Embed (Dedicated BigData Button) -->
+                        <div class="form-group-clean" style="margin-bottom: 12px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                                <label class="form-label-clean" style="font-size: 0.82rem; margin: 0; color: #1e293b; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                                    <span>🎬 วิดีโอ)</span>
                                 </label>
-                                <div style="display: flex; align-items: center; gap: 6px;">
-                                    <span style="font-size: 0.72rem; color: #64748b;">
-                                        💡 พิมพ์คำค้นหาได้ทันที เช่น หุ่นยนต์, arduino, จิตสำนึก
-                                    </span>
-                                    <button type="button" class="btn-tool-sm" onclick="openBigdataSearchModal(${idx})" style="font-size: 0.72rem; background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px; cursor: pointer;">
-                                        🔍 คลังใหญ่
-                                    </button>
-                                </div>
+                                <button type="button" class="btn-tool-sm" onclick="openBigdataSearchModal(${idx})"
+                                    style="padding: 5px 14px; font-size: 0.78rem; background: #eff6ff; color: #1d4ed8; border: 1.5px solid #bfdbfe; font-weight: 700; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;"
+                                    >
+                                    🔍 ค้นหาวิดีโอใน BigData
+                                </button>
                             </div>
-                            <div style="position: relative;">
-                                <div style="display: flex; gap: 6px;">
-                                    <input type="text" id="lesson-media-inp-${idx}" class="form-control-clean admin-lesson-media-inp"
-                                        value="${escapeHtml(lesson.mediaUrl || '')}"
-                                        placeholder="🔍 พิมพ์คำค้นหาใน BigData ได้ทันที (เช่น หุ่นยนต์, arduino, สมอง, catbox) หรือวาง URL..."
-                                        oninput="handleLessonMediaInput(${idx}, this.value)"
-                                        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-                                        style="font-size: 0.86rem; background: #ffffff; font-family: inherit;">
-                                    ${lesson.mediaUrl ? `
-                                        <button type="button" class="btn-tool-sm" onclick="clearLessonMedia(${idx})" title="ล้างลิงก์วิดีโอ" style="color: #dc2626; border-color: #fecaca; background: #ffffff; white-space: nowrap; padding: 6px 12px;">
-                                            ✕ ล้าง
-                                        </button>
-                                    ` : ''}
-                                </div>
-
-                                <div id="lesson-media-badge-${idx}" style="margin-top: 6px;">
-                                    ${renderLessonMediaPreviewBadge(lesson.mediaUrl)}
-                                </div>
-
-                                <!-- Instant BigData Dropdown Results Container -->
-                                <div id="lesson-bigdata-results-${idx}" class="lesson-bigdata-results-panel"
-                                    style="display: none; margin-top: 8px; max-height: 290px; overflow-y: auto; background: #0d1117; color: #c9d1d9; border: 1.5px solid #38bdf8; border-radius: 8px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25); padding: 8px;">
-                                </div>
+                            <div style="display: flex; gap: 6px;">
+                                <input type="text" id="lesson-media-inp-${idx}" class="form-control-clean admin-lesson-media-inp"
+                                    value="${escapeHtml(lesson.mediaUrl || '')}"
+                                    
+                                    oninput="handleLessonFieldChange(${idx}, 'mediaUrl', this.value); updateLessonMediaBadge(${idx}, this.value);"
+                                    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                                    style="font-size: 0.86rem; background: #ffffff; font-family: inherit;">
+                                ${lesson.mediaUrl ? `
+                                    <button type="button" class="btn-tool-sm" onclick="handleLessonFieldChange(${idx}, 'mediaUrl', ''); renderCourseLessons();" title="ลบวิดีโอ" style="color: #dc2626; border-color: #fecaca; background: #ffffff; white-space: nowrap; padding: 6px 12px;">
+                                        ✕ ลบ
+                                    </button>
+                                ` : ''}
+                            </div>
+                            <div id="lesson-media-badge-${idx}" style="margin-top: 6px;">
+                                ${renderLessonMediaPreviewBadge(lesson.mediaUrl)}
                             </div>
                         </div>
 
@@ -10154,7 +10431,7 @@ ${encodedToken}
                             ondrop="handleLessonCardDrop(event, ${idx})">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
                                 <label class="form-label-clean" style="font-size: 0.8rem; margin: 0; font-weight: 700; color: #475569;">
-                                    🖼️ รูปภาพประกอบบทเรียน (ลากไฟล์ภาพมาปล่อยที่นี่ หรือเลือกไฟล์)
+                                    🖼️ รูปภาพประกอบบทเรียน
                                 </label>
                                 ${lesson.imageUrl ? `<button type="button" class="btn-tool-sm" onclick="handleLessonFieldChange(${idx}, 'imageUrl', ''); renderCourseLessons();" style="font-size: 0.72rem; color: #dc2626; background: #fee2e2; border-color: #fca5a5;">✕ ลบรูป</button>` : ''}
                             </div>
@@ -10163,7 +10440,7 @@ ${encodedToken}
                                 <button type="button" class="btn-tool-sm" onclick="document.getElementById('lesson-file-inp-${idx}').click()" style="padding: 6px 14px; font-size: 0.78rem; background: #f1f5f9; cursor: pointer; white-space: nowrap; border-radius: 6px; font-weight: 600;">
                                     📁 เลือกไฟล์รูป
                                 </button>
-                                <input type="text" class="form-control-clean" value="${escapeHtml(lesson.imageUrl || '')}" placeholder="หรือวาง Image URL https://..." oninput="handleLessonFieldChange(${idx}, 'imageUrl', this.value); renderCourseLessons();" style="font-size: 0.84rem; margin: 0;">
+                                <input type="text" class="form-control-clean" value="${escapeHtml(lesson.imageUrl || '')}"  oninput="handleLessonFieldChange(${idx}, 'imageUrl', this.value); renderCourseLessons();" style="font-size: 0.84rem; margin: 0;">
                             </div>
                             ${lesson.imageUrl ? `
                                 <div style="margin-top: 8px;">
@@ -10171,7 +10448,7 @@ ${encodedToken}
                                 </div>
                             ` : `
                                 <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 4px;">
-                                    💡 ลากไฟล์ภาพ (.png, .jpg, .webp) จากเครื่องมาปล่อยลงในการ์ดนี้ได้ทันที
+                                    💡 ลากไฟล์ภาพ
                                 </div>
                             `}
                         </div>
@@ -10191,34 +10468,76 @@ ${encodedToken}
                                     <button type="button" class="btn-fmt" onclick="applyLessonFormatting(${idx}, 'bullet')" title="แทรกหัวข้อย่อย">• หัวข้อย่อย</button>
                                 </div>
                             </div>
-                            <textarea id="lesson-content-inp-${idx}" class="form-control-clean admin-lesson-content-inp" rows="5" placeholder="พิมพ์เนื้อหาบทเรียน อธิบายความรู้ ข้อคิด หรือคำบรรยายประกอบวิดีโอ... (คลุมดำแล้วกดปุ่มจัดรูปแบบด้านบนได้ทันที)" oninput="handleLessonFieldChange(${idx}, 'content', this.value)" style="font-size: 0.9rem; line-height: 1.65; resize: vertical; min-height: 110px; font-family: inherit;">${escapeHtml(lesson.content || '')}</textarea>
+                            <textarea id="lesson-content-inp-${idx}" class="form-control-clean admin-lesson-content-inp" rows="5" oninput="handleLessonFieldChange(${idx}, 'content', this.value)" style="font-size: 0.9rem; line-height: 1.65; resize: vertical; min-height: 110px; font-family: inherit;">${escapeHtml(lesson.content || '')}</textarea>
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
-        // Auto-save Course Draft (localStorage)
+        // Course Draft Management (localStorage)
+        function getCourseDraftData() {
+            const title = (document.getElementById('admin-title')?.value || '').trim();
+            const slug = (document.getElementById('admin-slug')?.value || '').trim();
+            const price = (document.getElementById('admin-price')?.value || '').trim();
+            const coverImage = (document.getElementById('admin-cover-image')?.value || '').trim() || (adminProductImages[0] || 'shop/images/learning_course_cover.svg');
+            const images = Array.isArray(adminProductImages) ? [...adminProductImages] : [];
+            const description = (document.getElementById('admin-description')?.value || '').trim();
+            const descriptionHtml = (document.getElementById('admin-description-editor')?.innerHTML || '').trim();
+
+            return {
+                title,
+                slug,
+                price,
+                coverImage,
+                images,
+                description,
+                descriptionHtml,
+                lessons: Array.isArray(adminCourseLessons) ? JSON.parse(JSON.stringify(adminCourseLessons)) : [],
+                updatedAt: Date.now()
+            };
+        }
+
         let _courseDraftDebounce = null;
         function saveCourseDraft() {
+            const modal = document.getElementById('admin-modal');
+            if (!modal || !modal.classList.contains('mode-course')) return;
+
             clearTimeout(_courseDraftDebounce);
             _courseDraftDebounce = setTimeout(() => {
-                try {
-                    const draftData = {
-                        title: document.getElementById('admin-title')?.value || '',
-                        price: document.getElementById('admin-price')?.value || '',
-                        description: document.getElementById('admin-description-editor')?.innerHTML || '',
-                        lessons: adminCourseLessons,
-                        updatedAt: Date.now()
-                    };
-                    localStorage.setItem('EWORKER_course_draft', JSON.stringify(draftData));
-                    const notice = document.getElementById('admin-draft-saved-notice');
-                    if (notice) {
-                        notice.style.display = 'inline-block';
-                        setTimeout(() => { if (notice) notice.style.display = 'none'; }, 2000);
-                    }
-                } catch (e) { }
-            }, 400);
+                manualSaveCourseDraft(true);
+            }, 600);
+        }
+
+        function manualSaveCourseDraft(silent = false) {
+            try {
+                const draft = getCourseDraftData();
+                localStorage.setItem('EWORKER_course_draft', JSON.stringify(draft));
+
+                const timeStr = new Date(draft.updatedAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                const pill = document.getElementById('course-draft-time-pill');
+                if (pill) {
+                    pill.textContent = `💾 บันทึกร่างล่าสุด ${timeStr} น.`;
+                    pill.style.display = 'inline-block';
+                }
+
+                const footerBtn = document.getElementById('btn-save-course-draft');
+                if (footerBtn) {
+                    footerBtn.innerHTML = `✅ บันทึกร่างแล้ว (${timeStr})`;
+                    setTimeout(() => {
+                        if (footerBtn) footerBtn.innerHTML = `📝 บันทึกแบบร่าง (Ctrl+S)`;
+                    }, 2500);
+                }
+
+                if (!silent) {
+                    showToast('📝 บันทึกแบบร่างคอร์สเรียนเรียบร้อยแล้ว (Ctrl+S)', 'success');
+                }
+                return true;
+            } catch (e) {
+                console.error('Save course draft failed:', e);
+                if (!silent) showToast('❌ บันทึกแบบร่างไม่สำเร็จ', 'warning');
+                return false;
+            }
         }
 
         function restoreCourseDraft() {
@@ -10226,30 +10545,101 @@ ${encodedToken}
                 const raw = localStorage.getItem('EWORKER_course_draft');
                 if (!raw) return false;
                 const draft = JSON.parse(raw);
-                if (draft && Array.isArray(draft.lessons) && draft.lessons.length > 0) {
-                    adminCourseLessons = draft.lessons;
-                    renderCourseLessons();
+                if (!draft || typeof draft !== 'object') return false;
 
-                    const titleInp = document.getElementById('admin-title');
-                    if (titleInp && !titleInp.value && draft.title) titleInp.value = draft.title;
+                const hasLessons = Array.isArray(draft.lessons) && draft.lessons.length > 0;
+                const hasInfo = Boolean(draft.title || draft.price || draft.slug || (draft.images && draft.images.length > 0));
 
-                    const priceInp = document.getElementById('admin-price');
-                    if (priceInp && !priceInp.value && draft.price) priceInp.value = draft.price;
+                if (!hasLessons && !hasInfo) return false;
 
-                    showToast('🔄 ดึงแบบร่างบทเรียนที่บันทึกไว้อัตโนมัติกลับมาให้แล้ว!', 'info');
-                    return true;
+                // 1. Title
+                const titleInp = document.getElementById('admin-title');
+                if (titleInp && draft.title) titleInp.value = draft.title;
+
+                // 2. Slug
+                const slugInp = document.getElementById('admin-slug');
+                if (slugInp && draft.slug) {
+                    slugInp.value = draft.slug;
+                    slugInp.dataset.userEdited = 'true';
                 }
-            } catch (e) { }
-            return false;
+
+                // 3. Price
+                const priceInp = document.getElementById('admin-price');
+                if (priceInp && draft.price !== undefined) priceInp.value = draft.price;
+
+                // 4. Images & Cover
+                if (Array.isArray(draft.images) && draft.images.length > 0) {
+                    adminProductImages = [...draft.images];
+                } else if (draft.coverImage) {
+                    adminProductImages = [draft.coverImage];
+                } else {
+                    adminProductImages = ['shop/images/learning_course_cover.svg'];
+                }
+                const coverInput = document.getElementById('admin-cover-image');
+                if (coverInput) coverInput.value = draft.coverImage || adminProductImages[0] || 'shop/images/learning_course_cover.svg';
+                renderAdminImagesGallery();
+
+                // 5. Description
+                if (draft.description || draft.descriptionHtml) {
+                    const descInp = document.getElementById('admin-description');
+                    if (descInp) descInp.value = draft.description || '';
+                    const editorEl = document.getElementById('admin-description-editor');
+                    if (editorEl) editorEl.innerHTML = draft.descriptionHtml || (draft.description || '').replace(/\n/g, '<br>');
+                }
+
+                // 6. Lessons
+                if (hasLessons) {
+                    adminCourseLessons = JSON.parse(JSON.stringify(draft.lessons));
+                }
+                renderCourseLessons();
+
+                // 7. Time pill
+                if (draft.updatedAt) {
+                    const timeStr = new Date(draft.updatedAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                    const pill = document.getElementById('course-draft-time-pill');
+                    if (pill) {
+                        pill.textContent = `💾 กู้คืนร่างเมื่อ ${timeStr} น.`;
+                        pill.style.display = 'inline-block';
+                    }
+                }
+
+                showToast('🔄 ดึงแบบร่างคอร์สเรียนล่าสุด (ชื่อ, ราคา, รูปภาพ, บทเรียน) กลับมาให้แล้ว!', 'info');
+                return true;
+            } catch (e) {
+                console.error('Restore draft error:', e);
+                return false;
+            }
         }
 
         function clearCourseDraft(confirmPrompt = true) {
-            if (confirmPrompt && !confirm('คุณต้องการล้างแบบร่างบทเรียนทั้งหมดใช่หรือไม่?')) return;
+            if (confirmPrompt && !confirm('คุณต้องการล้างแบบร่างทั้งหมด (ชื่อ, ราคา, รูปภาพ, เนื้อหาบทเรียน) ใช่หรือไม่?')) return;
             try {
                 localStorage.removeItem('EWORKER_course_draft');
                 adminCourseLessons = [];
+                adminProductImages = ['shop/images/learning_course_cover.svg'];
+                renderAdminImagesGallery();
                 renderCourseLessons();
-                showToast('🗑️ ล้างแบบร่างบทเรียนเรียบร้อย', 'info');
+
+                const titleInp = document.getElementById('admin-title');
+                if (titleInp) titleInp.value = '';
+                const slugInp = document.getElementById('admin-slug');
+                if (slugInp) {
+                    slugInp.value = '';
+                    slugInp.dataset.userEdited = 'false';
+                }
+                const priceInp = document.getElementById('admin-price');
+                if (priceInp) priceInp.value = '';
+                const descInp = document.getElementById('admin-description');
+                if (descInp) descInp.value = '';
+                const editorEl = document.getElementById('admin-description-editor');
+                if (editorEl) editorEl.innerHTML = '';
+                const coverInput = document.getElementById('admin-cover-image');
+                if (coverInput) coverInput.value = 'shop/images/learning_course_cover.svg';
+
+                const pill = document.getElementById('course-draft-time-pill');
+                if (pill) pill.style.display = 'none';
+
+                if (confirmPrompt) showToast('🗑️ ล้างแบบร่างคอร์สเรียนเรียบร้อย', 'info');
             } catch (e) { }
         }
     </script>
