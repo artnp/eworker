@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 440" width="100%" height="100%">
+  <defs>
+    <linearGradient id="tvBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+    <linearGradient id="editorGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#131722" />
+      <stop offset="100%" stop-color="#0b0e14" />
+    </linearGradient>
+    <filter id="badgeGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Base Card -->
+  <rect width="840" height="440" rx="14" fill="url(#tvBgGrad)" stroke="#334155" stroke-width="1.5" />
+
+  <!-- Top Window Header -->
+  <rect x="0" y="0" width="840" height="42" rx="14" fill="#0b0e14" />
+  <rect x="0" y="28" width="840" height="14" fill="#0b0e14" />
+  <line x1="0" y1="42" x2="840" y2="42" stroke="#1e293b" stroke-width="1" />
+
+  <!-- Window Dots -->
+  <circle cx="22" cy="21" r="5" fill="#ef4444" />
+  <circle cx="38" cy="21" r="5" fill="#f59e0b" />
+  <circle cx="54" cy="21" r="5" fill="#10b981" />
+
+  <!-- Title / Logo -->
+  <text x="76" y="26" fill="#38bdf8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="700">TradingView</text>
+  <text x="160" y="26" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12">BTC/USDT • 1D • SuperChart</text>
+
+  <!-- Step 1 Callout Top -->
+  <g transform="translate(620, 10)">
+    <rect width="200" height="24" rx="12" fill="#0284c7" filter="url(#badgeGlow)" />
+    <text x="100" y="16" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11" font-weight="700" text-anchor="middle">Step 1: เข้าชาร์ต TradingView</text>
+  </g>
+
+  <!-- Upper Chart Area -->
+  <g transform="translate(16, 52)">
+    <!-- Chart Box -->
+    <rect width="808" height="180" rx="8" fill="#131722" stroke="#1e222d" stroke-width="1" />
+
+    <!-- Grid lines -->
+    <line x1="0" y1="45" x2="808" y2="45" stroke="#1e293b" stroke-width="0.7" stroke-dasharray="4 4" />
+    <line x1="0" y1="90" x2="808" y2="90" stroke="#1e293b" stroke-width="0.7" stroke-dasharray="4 4" />
+    <line x1="0" y1="135" x2="808" y2="135" stroke="#1e293b" stroke-width="0.7" stroke-dasharray="4 4" />
+    <line x1="200" y1="0" x2="200" y2="180" stroke="#1e293b" stroke-width="0.7" stroke-dasharray="4 4" />
+    <line x1="400" y1="0" x2="400" y2="180" stroke="#1e293b" stroke-width="0.7" stroke-dasharray="4 4" />
+    <line x1="600" y1="0" x2="600" y2="180" stroke="#1e293b" stroke-width="0.7" stroke-dasharray="4 4" />
+
+    <!-- Candlesticks Sample -->
+    <!-- Green Candle 1 -->
+    <line x1="60" y1="80" x2="60" y2="140" stroke="#26a69a" stroke-width="1.5" />
+    <rect x="54" y="95" width="12" height="35" fill="#26a69a" rx="1" />
+    <!-- Red Candle 2 -->
+    <line x1="100" y1="70" x2="100" y2="130" stroke="#ef5350" stroke-width="1.5" />
+    <rect x="94" y="85" width="12" height="30" fill="#ef5350" rx="1" />
+    <!-- Green Candle 3 -->
+    <line x1="140" y1="60" x2="140" y2="120" stroke="#26a69a" stroke-width="1.5" />
+    <rect x="134" y="70" width="12" height="40" fill="#26a69a" rx="1" />
+    <!-- Green Candle 4 -->
+    <line x1="180" y1="40" x2="180" y2="110" stroke="#26a69a" stroke-width="1.5" />
+    <rect x="174" y="50" width="12" height="45" fill="#26a69a" rx="1" />
+    <!-- Red Candle 5 -->
+    <line x1="220" y1="45" x2="220" y2="95" stroke="#ef5350" stroke-width="1.5" />
+    <rect x="214" y="55" width="12" height="25" fill="#ef5350" rx="1" />
+
+    <!-- Indicator Line (Curve) -->
+    <path d="M 40,130 Q 120,80 200,60 T 360,50 T 520,70 T 680,40 T 780,30" fill="none" stroke="#f59e0b" stroke-width="2.5" />
+    <path d="M 40,140 Q 120,95 200,75 T 360,65 T 520,85 T 680,55 T 780,45" fill="none" stroke="#38bdf8" stroke-width="1.8" stroke-dasharray="3 3" />
+
+    <!-- Indicator Label On Chart -->
+    <rect x="14" y="12" width="170" height="22" rx="4" fill="rgba(15, 23, 42, 0.85)" stroke="#38bdf8" stroke-width="0.8" />
+    <circle cx="24" cy="23" r="3.5" fill="#10b981" />
+    <text x="34" y="27" fill="#f8fafc" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10.5" font-weight="600">Indicator Status: ACTIVE</text>
+  </g>
+
+  <!-- Bottom Panel Tabs (Step 2 Highlight) -->
+  <g transform="translate(16, 238)">
+    <rect width="808" height="32" rx="4" fill="#1e222d" />
+    <!-- Inactive Tab -->
+    <text x="24" y="21" fill="#64748b" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11">Stock Screener</text>
+    
+    <!-- Active Pine Editor Tab (Highlighted) -->
+    <rect x="130" y="2" width="140" height="28" rx="4" fill="#0284c7" />
+    <text x="200" y="20" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11.5" font-weight="700" text-anchor="middle">🌲 Pine Editor ⚡</text>
+
+    <!-- Inactive Tabs -->
+    <text x="295" y="21" fill="#64748b" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11">Strategy Tester</text>
+    <text x="410" y="21" fill="#64748b" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11">Trading Panel</text>
+
+    <!-- Step 2 Badge -->
+    <g transform="translate(560, 4)">
+      <rect width="235" height="24" rx="12" fill="#0d9488" filter="url(#badgeGlow)" />
+      <text x="117" y="16" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11" font-weight="700" text-anchor="middle">Step 2: คลิกเปิดแท็บ "Pine Editor"</text>
+    </g>
+  </g>
+
+  <!-- Lower Pine Editor Workspace (Steps 3 & 4) -->
+  <g transform="translate(16, 274)">
+    <rect width="808" height="150" rx="6" fill="url(#editorGrad)" stroke="#334155" stroke-width="1" />
+
+    <!-- Editor Toolbar -->
+    <rect width="808" height="30" fill="#1e222d" />
+    <text x="14" y="19" fill="#94a3b8" font-family="monospace" font-size="11">Script: MyIndicator.pine</text>
+
+    <!-- Step 4 Action Buttons on Toolbar -->
+    <!-- Save Button -->
+    <rect x="520" y="5" width="90" height="20" rx="4" fill="#334155" stroke="#64748b" stroke-width="0.8" />
+    <text x="565" y="19" fill="#f8fafc" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10.5" font-weight="600" text-anchor="middle">💾 บันทึก (Save)</text>
+
+    <!-- Add To Chart Button (Green glowing) -->
+    <rect x="620" y="5" width="175" height="20" rx="4" fill="#10b981" filter="url(#badgeGlow)" />
+    <text x="707" y="19" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10.5" font-weight="700" text-anchor="middle">➕ เพิ่มลงในชาร์ต (Add to chart)</text>
+
+    <!-- Editor Code Area (Step 3) -->
+    <!-- Line numbers -->
+    <text x="20" y="55" fill="#475569" font-family="monospace" font-size="11.5">1</text>
+    <text x="20" y="75" fill="#475569" font-family="monospace" font-size="11.5">2</text>
+    <text x="20" y="95" fill="#475569" font-family="monospace" font-size="11.5">3</text>
+    <text x="20" y="115" fill="#475569" font-family="monospace" font-size="11.5">4</text>
+    <text x="20" y="135" fill="#475569" font-family="monospace" font-size="11.5">5</text>
+
+    <line x1="38" y1="36" x2="38" y2="145" stroke="#1e293b" stroke-width="1" />
+
+    <!-- Code text -->
+    <text x="50" y="55" fill="#e06c75" font-family="monospace" font-size="11.5">//@version=5</text>
+    <text x="50" y="75" fill="#61afef" font-family="monospace" font-size="11.5">indicator<tspan fill="#abb2bf">(</tspan><tspan fill="#98c379">"Custom Strategy Indicator"</tspan><tspan fill="#abb2bf">, overlay=</tspan><tspan fill="#d19a66">true</tspan><tspan fill="#abb2bf">)</tspan></text>
+    <text x="50" y="95" fill="#7f848e" font-family="monospace" font-size="11.5" font-style="italic">// 👉 Step 3: วางโค้ด (Ctrl + V) ทั้งหมดที่คัดลอกมาลงตรงนี้</text>
+    <text x="50" y="115" fill="#61afef" font-family="monospace" font-size="11.5">plot<tspan fill="#abb2bf">(</tspan><tspan fill="#e5c07b">ta.sma</tspan><tspan fill="#abb2bf">(close, 20), color=</tspan><tspan fill="#e5c07b">color.yellow</tspan><tspan fill="#abb2bf">, linewidth=2)</tspan></text>
+    <text x="50" y="135" fill="#61afef" font-family="monospace" font-size="11.5">plot<tspan fill="#abb2bf">(</tspan><tspan fill="#e5c07b">ta.ema</tspan><tspan fill="#abb2bf">(close, 50), color=</tspan><tspan fill="#38bdf8">color.blue</tspan><tspan fill="#abb2bf">, linewidth=2)</tspan></text>
+
+    <!-- Paste Box Callout -->
+    <g transform="translate(480, 50)">
+      <rect width="310" height="42" rx="6" fill="#0f172a" stroke="#f59e0b" stroke-width="1.2" stroke-dasharray="4 3" />
+      <text x="14" y="20" fill="#f59e0b" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11" font-weight="700">Step 3: กด Ctrl + A แล้วลบออก</text>
+      <text x="14" y="34" fill="#cbd5e1" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10.5">จากนั้นกด Ctrl + V วางโค้ดสคริปต์ลงไป</text>
+    </g>
+
+    <g transform="translate(480, 98)">
+      <rect width="310" height="42" rx="6" fill="#0f172a" stroke="#10b981" stroke-width="1.2" />
+      <text x="14" y="20" fill="#10b981" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11" font-weight="700">Step 4: กด Save และ Add to chart</text>
+      <text x="14" y="34" fill="#94a3b8" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="10.5">กราฟจะอัปเดตและเริ่มแสดงผลบนชาร์ตทันที!</text>
+    </g>
+  </g>
+</svg>
