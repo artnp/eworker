@@ -584,7 +584,7 @@
             background: #ffffff;
             border: 1px solid var(--fh-border);
             border-radius: var(--radius-md);
-            padding: 18px;
+            padding: 18px 24px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -592,6 +592,8 @@
             box-shadow: var(--shadow-sm);
             transition: var(--transition);
             position: relative;
+            box-sizing: border-box;
+            overflow: hidden;
         }
 
         .program-card-fh:hover {
@@ -604,8 +606,10 @@
             display: flex;
             align-items: flex-start;
             gap: 16px;
-            flex: 1;
+            flex: 1 1 auto;
+            min-width: 0;
             cursor: pointer;
+            overflow: hidden;
         }
 
         .program-icon-box {
@@ -713,8 +717,32 @@
             display: flex;
             flex-direction: column;
             align-items: flex-end;
+            justify-content: center;
             gap: 8px;
             flex-shrink: 0;
+            min-width: 175px;
+            text-align: right;
+            box-sizing: border-box;
+        }
+
+        .card-right-action .price-badge-fh {
+            width: 100%;
+            text-align: right;
+        }
+
+        .card-right-action .btn-download-fh,
+        .card-right-action .btn-service-fh {
+            min-width: 165px;
+            max-width: 205px;
+            justify-content: center;
+            text-align: center;
+            white-space: nowrap;
+            box-sizing: border-box;
+        }
+
+        .card-right-action .card-admin-tools {
+            width: 100%;
+            justify-content: flex-end;
         }
 
         .price-badge-fh {
@@ -3000,24 +3028,26 @@
         }
 
         .course-paywall-btn {
-            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            background: #16a34a;
             color: #ffffff;
             border: none;
-            padding: 13px 32px;
-            border-radius: 12px;
+            padding: 12px 24px;
+            border-radius: 10px;
             font-size: 1.05rem;
-            font-weight: 800;
+            font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+            box-shadow: 0 4px 14px rgba(22, 163, 74, 0.3);
             transition: all 0.2s ease;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
         }
 
         .course-paywall-btn:hover {
+            background: #15803d !important;
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.45);
+            box-shadow: 0 6px 20px rgba(22, 163, 74, 0.45) !important;
         }
 
         /* ===== ADMIN COURSE MODE VS GENERAL PRODUCT MODE ===== */
@@ -3162,6 +3192,77 @@
             border-color: #3b82f6;
             background: #eff6ff;
             transform: translateY(-2px);
+        }
+
+        /* Course Admin Compact Mini Live Preview (Floating, Non-intrusive) */
+        .admin-course-live-preview {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            bottom: 24px;
+            width: 360px;
+            max-width: calc(100vw - 48px);
+            height: calc(100vh - 48px);
+            max-height: 860px;
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1.5px solid #cbd5e1;
+            box-shadow: -8px 16px 40px rgba(0, 0, 0, 0.35);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: fadeInMiniPreview 0.2s ease-out;
+            text-align: left;
+            box-sizing: border-box;
+            z-index: 1050;
+        }
+
+        @keyframes fadeInMiniPreview {
+            from {
+                opacity: 0;
+                transform: translateX(20px) scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+
+        .admin-preview-header {
+            padding: 10px 14px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .admin-preview-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            background: #f8fafc;
+        }
+
+        .admin-course-live-preview video,
+        .admin-course-live-preview .course-html5-video {
+            max-height: 180px !important;
+            width: 100% !important;
+            background: #000;
+            border-radius: 8px;
+        }
+
+        .admin-course-live-preview iframe {
+            max-height: 180px !important;
+            border-radius: 8px;
+        }
+
+        .admin-course-live-preview .course-shorts-container {
+            max-width: 160px !important;
+            height: 280px !important;
+            margin: 0 auto;
         }
 
         /* BigData Video Search Modal */
@@ -3856,10 +3957,25 @@
                 aria-label="ปิดหน้าต่าง">✕</button>
 
             <div class="admin-form-header">
-                <h3 id="admin-form-header-text">👑 เพิ่มสินค้าดิจิทัลใหม่ (โพสต์ขึ้นโฮสต์)</h3>
-                <p id="admin-form-header-sub" style="font-size: 0.82rem; color: var(--fh-muted); margin-top: 2px;">
-                    ทำงานผ่าน http://127.0.0.1:5000/ ข้อมูลจะซิงค์ขึ้น Firebase Cloud และฝากภาพขึ้น GitHub แท้ 100%
-                </p>
+                <div
+                    style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap;">
+                    <div>
+                        <h3 id="admin-form-header-text">👑 เพิ่มสินค้าดิจิทัลใหม่ (โพสต์ขึ้นโฮสต์)</h3>
+                        <p id="admin-form-header-sub"
+                            style="font-size: 0.82rem; color: var(--fh-muted); margin-top: 2px;">
+                            ทำงานผ่าน http://127.0.0.1:5000/ ข้อมูลจะซิงค์ขึ้น Firebase Cloud และฝากภาพขึ้น GitHub แท้
+                            100%
+                        </p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <button type="button" class="btn-tool-sm admin-course-only" id="btn-toggle-course-preview"
+                            onclick="toggleCourseLivePreview()"
+                            style="font-weight: 700; background: #f0fdf4; color: #166534; border: 1.5px solid #bbf7d0; cursor: pointer; padding: 5px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;"
+                            title="เปิด/ปิด แผงพรีวิวดูผลลัพธ์จริงด้านข้าง">
+                            👁️ พรีวิวด้านข้าง
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div class="admin-form-body">
@@ -4239,6 +4355,12 @@
                                         title="บันทึกแบบร่างไว้ในเครื่อง (Shortcut: Ctrl+S)">
                                         📝 บันทึกแบบร่าง (Ctrl+S)
                                     </button>
+                                    <button type="button" class="btn-tool-sm" id="btn-toggle-course-preview-bar"
+                                        onclick="toggleCourseLivePreview()"
+                                        style="font-size: 0.76rem; font-weight: 700; color: #0369a1; background: #e0f2fe; border: 1px solid #7dd3fc; cursor: pointer; padding: 5px 12px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;"
+                                        title="เปิด/ปิด แผงพรีวิวดูผลลัพธ์จริงด้านข้าง">
+                                        👁️ พรีวิวด้านข้าง
+                                    </button>
                                     <button type="button" class="btn-download-fh" onclick="addCourseLessonRow()"
                                         style="padding: 6px 14px; font-size: 0.8rem; background: #0284c7; border-color: #0284c7; white-space: nowrap;">
                                         ➕ เพิ่มบทเรียนใหม่
@@ -4338,6 +4460,12 @@
                                 title="บันทึกแบบร่างไว้ในเครื่อง (Shortcut: Ctrl+S)">
                                 📝 บันทึกแบบร่าง (Ctrl+S)
                             </button>
+                            <button type="button" class="btn-header-clean admin-course-only"
+                                id="btn-toggle-course-preview-footer" onclick="toggleCourseLivePreview()"
+                                style="background: #e0f2fe; border: 1.5px solid #7dd3fc; color: #0369a1; font-weight: 700; padding: 9px 18px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;"
+                                title="เปิด/ปิด แผงพรีวิวดูผลลัพธ์จริงด้านข้าง">
+                                👁️ พรีวิวด้านข้าง
+                            </button>
                             <button type="button" class="btn-header-clean" onclick="closeAdminModal()">ยกเลิก</button>
                             <button type="submit" class="btn-download-fh" style="padding: 9px 22px;">💾
                                 บันทึกและซิงค์ขึ้นโฮสต์</button>
@@ -4346,6 +4474,42 @@
                 </form>
             </div>
         </div>
+
+        <!-- Live Preview Panel (Right Side for Course Mode) -->
+        <aside class="admin-course-live-preview" id="admin-course-live-preview" style="display: none;"
+            onclick="event.stopPropagation()">
+            <div class="admin-preview-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.15rem;">👁️</span>
+                    <div>
+                        <div style="font-weight: 800; font-size: 0.88rem; color: #0f172a;">📱 พรีวิวโพสต์จริง (Mini
+                            Preview)</div>
+                        <div style="font-size: 0.7rem; color: #64748b;">ผลลัพธ์เมื่อโพสต์เสร็จ</div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <span
+                        style="font-size: 0.68rem; font-weight: 700; color: #15803d; background: #dcfce7; padding: 2px 8px; border-radius: 99px;">
+                        ✨ ซิงค์สด
+                    </span>
+                    <button type="button" class="btn-tool-sm" onclick="toggleCourseLivePreview(false)"
+                        title="ซ่อนหน้าต่างพรีวิว"
+                        style="padding: 3px 8px; font-size: 0.76rem; background: #f1f5f9; cursor: pointer; border-radius: 4px;">
+                        ✕ ซ่อน
+                    </button>
+                </div>
+            </div>
+
+            <!-- Scrollable Content of Live Preview -->
+            <div class="admin-preview-content" id="admin-preview-content">
+                <!-- Course Hero Card Preview -->
+                <div id="admin-preview-hero-card" class="course-hero-card" style="margin-bottom: 16px; padding: 18px;">
+                </div>
+
+                <!-- Lessons Feed Preview -->
+                <div id="admin-preview-lessons-feed"></div>
+            </div>
+        </aside>
     </div>
 
     <!-- ===== ONLINE SERVICE POPUP MODAL (In-Page Studio Box) ===== -->
@@ -4465,6 +4629,10 @@
 
                 <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
 
+                    <button type="button" class="btn-share-clean-url admin-course-only"
+                        onclick="closeCourseViewer(event); openAdminCourseModal(currentActiveCourse ? currentActiveCourse.id : null);"
+                        style="background: #eff6ff; color: #1d4ed8; border: 1.5px solid #bfdbfe; font-weight: 700; cursor: pointer;"
+                        title="เปิดหน้าต่างแก้ไขบทเรียนคอร์สนี้">✏️ แก้ไขคอร์ส</button>
                     <button type="button" class="btn-share-clean-url"
                         onclick="copyCleanShareUrl(currentActiveCourse ? currentActiveCourse.id : null, event)"
                         title="คัดลอกลิงก์แชร์แบบสั้นสำหรับโพสต์โซเชียล">🔗 แชร์</button>
@@ -4519,7 +4687,7 @@
                     <div class="course-paywall-icon">💎</div>
                     <h3 class="course-paywall-title" id="course-paywall-title"
                         style="font-size: 1.3rem; margin: 0 0 6px 0;">
-                        🔒 ปลดล็อกบทเรียนทั้งหมดที่เหลือ
+                        🔒 ปลดล็อกบทเรียนที่เหลือ
                     </h3>
                     <p class="course-paywall-desc" id="course-paywall-desc"
                         style="font-size: 0.88rem; color: #475569; margin: 0 auto 16px auto;">
@@ -4529,11 +4697,103 @@
                     <!-- Clean Teaser List for remaining locked lessons -->
                     <div id="course-teaser-list-wrap" style="max-width: 500px; margin: 0 auto 18px auto;"></div>
 
-                    <!-- Instant Checkout Trigger Button -->
-                    <button type="button" class="course-paywall-btn" id="btn-course-unlock-now"
-                        onclick="triggerCoursePurchaseFromViewer()" style="margin: 0 auto; display: inline-flex;">
-                        <span id="course-paywall-btn-text">⚡ สแกนพร้อมเพย์ ปลดล็อกทั้งคอร์สทันที</span>
-                    </button>
+                    <!-- PromptPay Payment Card (Transforms into QR in place) -->
+                    <div class="course-promptpay-box" id="course-promptpay-box"
+                        style="background: #ffffff; border: 1.5px solid #86efac; border-radius: 14px; padding: 20px 22px; max-width: 350px; margin: 14px auto 0 auto; box-shadow: 0 4px 18px rgba(22, 163, 74, 0.08); text-align: center; transition: all 0.25s ease;">
+
+                        <!-- VIEW 1: Button View -->
+                        <div id="course-paywall-btn-view">
+                            <div
+                                style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
+                                <span
+                                    style="background: #f0fdf4; border: 1px solid #86efac; color: #166534; font-weight: 700; font-size: 0.84rem; padding: 3px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                                    <span style="color: #ea580c;">⚡</span> PromptPay
+                                </span>
+                                <span
+                                    style="color: #64748b; font-size: 0.82rem; font-weight: 500;">สแกนผ่านทุกแอปธนาคาร</span>
+                            </div>
+
+                            <div id="course-paywall-price-display"
+                                style="font-size: 2.35rem; font-weight: 800; color: #16a34a; margin: 8px 0 14px 0; letter-spacing: -0.5px; line-height: 1.15;">
+                                ฿ 20.00
+                            </div>
+
+                            <button type="button" class="course-paywall-btn" id="btn-course-unlock-now"
+                                onclick="startCourseInlineCheckout()"
+                                style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; background: #16a34a; color: #ffffff; font-size: 1.05rem; font-weight: 700; padding: 12px 20px; border-radius: 10px; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.3); transition: all 0.2s ease;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                                    style="flex-shrink: 0;">
+                                    <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                                    <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                                    <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                                    <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                                </svg>
+                                <span id="course-paywall-btn-text">สแกนพร้อมเพย์</span>
+                            </button>
+                        </div>
+
+                        <!-- VIEW 2: Transformed Inline QR View (Exact Match to Original Checkout Design) -->
+                        <div id="course-paywall-qr-view" style="display: none; width: 100%; box-sizing: border-box;">
+
+                            <!-- 1. Countdown Box -->
+                            <div class="checkout-countdown-box" id="course-qr-countdown-box"
+                                style="margin: 0 auto 12px auto; width: 100%; box-sizing: border-box; justify-content: center; padding: 6px 14px; border-radius: 8px;">
+                                <span>⏱️ กรุณาชำระเงินภายใน:</span>
+                                <strong class="countdown-digits" id="course-qr-countdown">10 : 00</strong>
+                                <span>นาที</span>
+                            </div>
+
+                            <!-- 2. Clean QR Code Card -->
+                            <div class="qr-clean-card"
+                                style="margin: 0 auto 12px auto; width: 100%; max-width: 270px; padding: 12px 14px 10px 14px; box-sizing: border-box; border-radius: 14px; border: 1.5px solid #e2e8f0; background: #ffffff;">
+                                <div id="course-qr-image-target"
+                                    style="display: flex; align-items: center; justify-content: center; width: 100%; min-height: 205px;">
+                                </div>
+                                <div
+                                    style="font-size: 0.8rem; font-weight: 700; color: #0b1120; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <img src="assets/promptpay_header_full.png"
+                                        onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/100px-PromptPay-logo.png'; this.onerror=function(){this.style.display='none';};"
+                                        style="height: 18px; max-width: 80px; object-fit: contain;">
+                                    <span>สแกนผ่านทุกแอปธนาคาร</span>
+                                </div>
+                            </div>
+
+                            <!-- 3. Price Display -->
+                            <div id="course-qr-price-text"
+                                style="font-size: 2.1rem; font-weight: 800; color: #16a34a; margin: 4px 0 12px 0; letter-spacing: -0.5px; line-height: 1.2;">
+                                ฿ 20.00
+                            </div>
+
+                            <!-- 4. Blue Download Button -->
+                            <button type="button" class="btn btn-primary" id="btn-course-download-slip"
+                                onclick="downloadCourseQRSlip()"
+                                style="width: 100%; justify-content: center; padding: 10px 16px; font-size: 0.92rem; font-weight: 700; border-radius: 8px; margin: 0 0 10px 0; gap: 8px; background: linear-gradient(135deg, #1d4ed8, #2563eb); border: none; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25); color: #fff; cursor: pointer; display: flex; align-items: center;">
+                                <span>📥 บันทึกรูป QR Code</span>
+                            </button>
+
+                            <!-- 5. Polling Status Chip -->
+                            <div class="polling-status-chip"
+                                style="width: 100%; box-sizing: border-box; justify-content: center; padding: 10px 14px; border-radius: 12px; font-size: 0.82rem; margin: 0 0 10px 0;">
+                                <div class="clean-spinner"></div>
+                                <span>ตรวจจับยอดเงินเข้าอัตโนมัติ (PromptPay)...</span>
+                            </div>
+
+                            <!-- 6. Cancel & Admin Test Controls -->
+                            <div
+                                style="display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 4px;">
+                                <button type="button" onclick="cancelCourseInlineCheckout()"
+                                    style="background: none; border: none; color: #64748b; font-size: 0.78rem; font-weight: 600; cursor: pointer; text-decoration: underline; padding: 4px;">
+                                    ✕ ยกเลิก / กลับไปปุ่มเดิม
+                                </button>
+                                <button type="button" class="btn-tool-sm" id="btn-admin-sim-course-pay"
+                                    style="display: none; font-size: 0.72rem; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 4px 10px; border-radius: 6px; cursor: pointer;">
+                                    ⚡ จำลองโอนเงิน (Admin Test)
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
 
                     <div style="font-size: 0.74rem; color: #64748b; margin-top: 12px;">
                         🛡️ สแกนจ่ายผ่านพร้อมเพย์ทุกธนาคาร • ระบบปลดล็อกให้อัตโนมัติทันทีหลังโอน
@@ -4615,6 +4875,7 @@
         let _inlineDetailPollingTimer = null;
         let _activeInlineCourseOrder = null;
         let _inlineCoursePollingTimer = null;
+        let _courseInlineCountdownTimer = null;
 
         async function initStore() {
             if (isLocalAdmin) {
@@ -5200,7 +5461,7 @@
                             </div>
                             ${isCourse ? `
                                 <button class="btn-service-fh" style="${isUserPurchased ? 'background:linear-gradient(135deg, #059669 0%, #10b981 100%); border-color:#059669;' : 'background:linear-gradient(135deg, #d97706 0%, #f59e0b 100%); border-color:#d97706;'}" onclick="openCourseViewer('${p.id}', event)">
-                                    ${isUserPurchased ? '🎓 เข้าเรียน (ปลดล็อกแล้ว)' : '🎓 เริ่มเรียน / ดูตัวอย่าง'}
+                                    ${isUserPurchased ? '🎓 ซื้อคอร์สแล้ว' : '🎓 เริ่มเรียน / ดูตัวอย่าง'}
                                 </button>
                             ` : (isService ? `
                                 ${(!storeIsOnline && isServiceRequiringServer(p)) ? `
@@ -5887,6 +6148,32 @@
                     }
                 }
             }
+
+            // 3. Edit Route (?edit=... or ?edit_course=...)
+            const editQuery = params.get('edit') || params.get('edit_course');
+            if (editQuery) {
+                const decodedEdit = decodeURIComponent(editQuery).trim();
+                if (decodedEdit === 'course' || decodedEdit === 'new' || decodedEdit === 'new-course') {
+                    openAdminCourseModal(null);
+                } else {
+                    const matched = products.find(x =>
+                        x.id === editQuery ||
+                        x.slug === editQuery ||
+                        (x.slug && decodeURIComponent(x.slug) === decodedEdit) ||
+                        (x.id && x.id.replace(/^prod_/, '') === editQuery) ||
+                        (typeof getCleanProductSlug === 'function' && getCleanProductSlug(x) === decodedEdit)
+                    );
+                    if (matched) {
+                        if (matched.category === 'ทักษะเรียนรู้' || !!matched.isCourse) {
+                            openAdminCourseModal(matched.id);
+                        } else {
+                            openAdminEditProduct(matched.id);
+                        }
+                    } else {
+                        openAdminCourseModal(editQuery);
+                    }
+                }
+            }
         }
 
         window.addEventListener('popstate', () => {
@@ -5908,6 +6195,16 @@
                 if (detailModal && detailModal.classList.contains('active')) {
                     closeDetailModal();
                 }
+            }
+
+            const editQuery = params.get('edit') || params.get('edit_course');
+            if (!editQuery) {
+                const adminModal = document.getElementById('admin-modal');
+                if (adminModal && adminModal.classList.contains('active')) {
+                    adminModal.classList.remove('active');
+                }
+            } else {
+                checkUrlRoute();
             }
 
             if (cQuery) {
@@ -6659,26 +6956,36 @@
                 `;
             } else {
                 container.innerHTML = list.map(item => {
-                    const isPine = (item.language === 'pinescript' || !!item.sourceCode);
+                    const origProd = products.find(x => String(x.id) === String(item.productId));
+                    const isCourse = Boolean(item.isCourse || (origProd && (origProd.category === 'ทักษะเรียนรู้' || !!origProd.isCourse || (Array.isArray(origProd.lessons) && origProd.lessons.length > 0))));
+                    const isPine = !isCourse && (item.language === 'pinescript' || !!item.sourceCode || (origProd && origProd.language === 'pinescript'));
+                    const coverImg = (isCourse && (!item.coverImage || item.coverImage.includes('tradingview_install_guide.svg')))
+                        ? 'shop/images/learning_course_cover.svg'
+                        : (item.coverImage || (origProd && origProd.coverImage) || 'shop/images/tradingview_install_guide.svg');
+
                     return `
-                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 1px solid var(--fh-border); border-radius: var(--radius-sm); background: #f8fafc;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--fh-border); border-radius: var(--radius-sm); background: #f8fafc; margin-bottom: 8px;">
                             <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                                <img src="${escapeHtml(item.coverImage || 'shop/images/tradingview_install_guide.svg')}" style="width: 38px; height: 38px; border-radius: 4px; object-fit: cover; flex-shrink: 0;">
+                                <img src="${escapeHtml(coverImg)}" style="width: 42px; height: 42px; border-radius: 6px; object-fit: cover; flex-shrink: 0;" onerror="this.src='shop/images/learning_course_cover.svg'">
                                 <div style="min-width: 0;">
-                                    <h4 style="font-size: 0.88rem; font-weight: 700; color: var(--fh-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 240px;">${escapeHtml(item.productTitle)}</h4>
-                                    <div style="font-size: 0.72rem; color: var(--fh-muted);">฿${Number(item.price || 0).toFixed(0)} ${isPine ? '• 🌲 Pine Script' : ''}</div>
+                                    <h4 style="font-size: 0.88rem; font-weight: 700; color: var(--fh-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;">${escapeHtml(item.productTitle)}</h4>
+                                    <div style="font-size: 0.72rem; color: var(--fh-muted); margin-top: 2px;">฿${Number(item.price || 0).toFixed(0)} ${isCourse ? '• 🎓 ทักษะเรียนรู้' : (isPine ? '• 🌲 Pine Script' : '')}</div>
                                 </div>
                             </div>
                             <div style="flex-shrink: 0;">
-                                ${isPine ? `
-                                    <button type="button" class="btn-download-fh" style="padding: 6px 12px; font-size: 0.78rem; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-color: #059669; white-space: nowrap;" onclick="openPurchasedCodeModal('${item.productId}')">
+                                ${isCourse ? `
+                                    <button type="button" class="btn-download-fh" style="padding: 7px 14px; font-size: 0.8rem; font-weight: 700; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border: none; white-space: nowrap; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);" onclick="closeMyOrdersModal(); openCourseViewer('${item.productId}')">
+                                        🎓 เข้าเรียน
+                                    </button>
+                                ` : (isPine ? `
+                                    <button type="button" class="btn-download-fh" style="padding: 7px 12px; font-size: 0.78rem; background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-color: #059669; white-space: nowrap;" onclick="openPurchasedCodeModal('${item.productId}')">
                                         🌲 รับโค้ด
                                     </button>
                                 ` : `
-                                    <a href="${item.downloadUrl || '#'}" target="_blank" class="btn-download-fh" style="padding: 6px 12px; font-size: 0.78rem; text-decoration: none; white-space: nowrap;">
+                                    <a href="${item.downloadUrl || '#'}" target="_blank" class="btn-download-fh" style="padding: 7px 12px; font-size: 0.78rem; text-decoration: none; white-space: nowrap;">
                                         📥 ดาวน์โหลด
                                     </a>
-                                `}
+                                `)}
                             </div>
                         </div>
                     `;
@@ -8141,8 +8448,27 @@ ${encodedToken}
                 }
             }
 
+            // Update URL in browser address bar (?edit=...) for easy reopening/refreshing
+            try {
+                let editSlugOrId = '';
+                if (targetCourse) {
+                    editSlugOrId = getCleanProductSlug(targetCourse) || targetCourse.slug || targetCourse.id;
+                } else if (courseId) {
+                    editSlugOrId = courseId;
+                } else {
+                    editSlugOrId = 'new-course';
+                }
+                const newQuery = `?edit=${encodeURIComponent(editSlugOrId)}`;
+                if (window.location.search !== newQuery) {
+                    window.history.pushState({ editCourse: editSlugOrId }, '', newQuery);
+                }
+            } catch (e) { }
+
             // Bigdata loaded on-demand when user clicks search button
-            if (modal) modal.classList.add('active');
+            if (modal) {
+                modal.classList.add('active');
+                toggleCourseLivePreview(false);
+            }
         }
 
         function openAdminPostModal(keepCourseMode = false) {
@@ -8362,6 +8688,16 @@ ${encodedToken}
             checkDropboxTokenStatus();
 
             document.getElementById('btn-admin-delete').style.display = 'inline-flex';
+
+            // Update URL in browser address bar (?edit=...)
+            try {
+                const editSlugOrId = getCleanProductSlug(p) || p.slug || p.id;
+                const newQuery = `?edit=${encodeURIComponent(editSlugOrId)}`;
+                if (window.location.search !== newQuery) {
+                    window.history.pushState({ editProduct: editSlugOrId }, '', newQuery);
+                }
+            } catch (e) { }
+
             document.getElementById('admin-modal').classList.add('active');
         }
 
@@ -8371,6 +8707,20 @@ ${encodedToken}
                 if (typeof e.stopPropagation === 'function') e.stopPropagation();
             }
             document.getElementById('admin-modal').classList.remove('active');
+            document.getElementById('admin-modal').classList.remove('show-live-preview');
+            const previewEl = document.getElementById('admin-course-live-preview');
+            if (previewEl) previewEl.style.display = 'none';
+
+            // Clean ?edit= parameter from URL when modal is closed
+            try {
+                const params = new URLSearchParams(window.location.search);
+                if (params.has('edit') || params.has('edit_course')) {
+                    params.delete('edit');
+                    params.delete('edit_course');
+                    const newQuery = params.toString() ? ('?' + params.toString()) : window.location.pathname;
+                    window.history.pushState({}, '', newQuery);
+                }
+            } catch (err) { }
             const previewIframe = document.getElementById('admin-youtube-preview-iframe');
             if (previewIframe) {
                 previewIframe.dataset.currId = '';
@@ -8606,6 +8956,7 @@ ${encodedToken}
                     // ลบแบบร่างออกเมื่อ publish ขึ้นโฮสต์สำเร็จ
                     localStorage.removeItem('EWORKER_course_draft');
                     adminCourseLessons = [];
+                    updateCourseLivePreview();
                     const pill = document.getElementById('course-draft-time-pill');
                     if (pill) pill.style.display = 'none';
                 }
@@ -9337,6 +9688,7 @@ ${encodedToken}
             if (unlockedBadge) unlockedBadge.style.display = isPurchased ? 'inline-flex' : 'none';
             if (previewBadge) previewBadge.style.display = isPurchased ? 'none' : 'inline-flex';
 
+            cancelCourseInlineCheckout();
             renderCourseViewer(false);
             setupCourseLessonIntersectionObserver();
 
@@ -9376,6 +9728,8 @@ ${encodedToken}
             // 1. สั่งหยุดเล่นวิดีโอทั้งหมดทันทีที่ปิดหน้าต่าง
             stopAllCourseVideos();
             if (_inlineCoursePollingTimer) { clearInterval(_inlineCoursePollingTimer); _inlineCoursePollingTimer = null; }
+            if (_courseInlineCountdownTimer) { clearInterval(_courseInlineCountdownTimer); _courseInlineCountdownTimer = null; }
+            cancelCourseInlineCheckout();
             if (_courseLessonObserver) {
                 _courseLessonObserver.disconnect();
             }
@@ -9555,11 +9909,14 @@ ${encodedToken}
                         `;
                     }).join('');
 
-                    document.getElementById('course-paywall-title').textContent = `🔒 ปลดล็อกบทเรียนทั้งหมดที่เหลืออีก ${remainingCount} บทเรียน`;
+                    document.getElementById('course-paywall-title').textContent = `🔒 ปลดล็อกบทเรียนที่เหลืออีก ${remainingCount} บทเรียน`;
                     document.getElementById('course-paywall-desc').innerHTML = `
-                        ชำระเพียง <strong>฿ ${priceFormatted}</strong> ครั้งเดียว เพื่อปลดล็อกเนื้อหาทั้งหมด ดูได้ตลอดชีพ
+                        ซื้อขาดครั้งเดียว <u>ดูได้ตลอดชีพ</u>
                     `;
-                    document.getElementById('course-paywall-btn-text').textContent = `⚡ สแกนจ่าย ปลดล็อกทั้งคอร์สทันที (฿ ${priceFormatted})`;
+                    const priceDisp = document.getElementById('course-paywall-price-display');
+                    if (priceDisp) priceDisp.textContent = `฿ ${priceFormatted}`;
+                    const btnText = document.getElementById('course-paywall-btn-text');
+                    if (btnText) btnText.textContent = `สแกนพร้อมเพย์`;
 
                     let teaserWrap = document.getElementById('course-teaser-list-wrap');
                     if (teaserWrap) teaserWrap.innerHTML = teaserHtml;
@@ -9779,9 +10136,308 @@ ${encodedToken}
         }
 
         function triggerCoursePurchaseFromViewer() {
+            startCourseInlineCheckout();
+        }
+
+        async function startCourseInlineCheckout() {
             if (!currentActiveCourse) return;
-            // เปิดหน้าต่างชำระเงิน PromptPay สำหรับคอร์สนี้โดยตรงทันที ไม่ต้องสลับหน้าไปมา
-            openCheckoutModal(currentActiveCourse);
+            const product = currentActiveCourse;
+            const amount = parseFloat(product.price) || 0;
+            if (amount <= 0) return;
+
+            // Switch to QR view inside the card
+            const btnView = document.getElementById('course-paywall-btn-view');
+            const qrView = document.getElementById('course-paywall-qr-view');
+            if (btnView && qrView) {
+                btnView.style.display = 'none';
+                qrView.style.display = 'block';
+            }
+
+            const priceTextEl = document.getElementById('course-qr-price-text');
+            if (priceTextEl) priceTextEl.textContent = `฿ ${amount.toFixed(2)}`;
+
+            const qrTarget = document.getElementById('course-qr-image-target');
+            if (qrTarget) {
+                qrTarget.innerHTML = `
+                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; font-size:0.78rem; color:#64748b;">
+                        <div style="width:28px; height:28px; border:3px solid #bbf7d0; border-top-color:#16a34a; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+                        <span>กำลังสร้าง QR Code...</span>
+                    </div>
+                `;
+            }
+
+            const orderId = `ORD-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 899 + 100)}`;
+            const secretToken = `sec_${Math.random().toString(36).substring(2)}_${Date.now()}`;
+            const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+            const orderObj = {
+                id: orderId,
+                orderId: orderId,
+                linkKey: orderId,
+                productId: product.id,
+                productTitle: product.title,
+                price: amount,
+                previewUrl: product.coverImage || '',
+                status: 'pending',
+                secretToken: secretToken,
+                createdAt: Date.now(),
+                expiresAt: expiresAt,
+                timeStr: new Date().toLocaleTimeString('th-TH'),
+                dateStr: new Date().toLocaleDateString('th-TH'),
+                manualConfirmed: false
+            };
+            _activeInlineCourseOrder = orderObj;
+
+            // Save order to Firebase
+            try {
+                await fetch(`${PAYMENT_ENDPOINT}/${orderId}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderObj)
+                });
+            } catch (e) { }
+
+            // Request QR image from Beam API with fallback
+            try {
+                const res = await fetch(`${BEAM_WORKER_URL}/create-charge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        linkKey: orderId,
+                        amount: amount
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.qrImageBase64) {
+                        if (qrTarget) {
+                            qrTarget.innerHTML = `<img src="data:image/png;base64,${data.qrImageBase64}" alt="PromptPay QR" style="width:205px; height:205px; object-fit:contain; border-radius:8px; display:block;">`;
+                        }
+                    } else {
+                        throw new Error('Invalid Beam response');
+                    }
+                } else {
+                    throw new Error('Beam API error ' + res.status);
+                }
+            } catch (err) {
+                console.warn('Beam QR create-charge fallback to direct QR image:', err);
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.src = `${BEAM_WORKER_URL}/qr-image?linkKey=${encodeURIComponent(orderId)}&amount=${amount}`;
+                img.alt = "PromptPay QR";
+                img.style = "width:205px; height:205px; object-fit:contain; border-radius:8px; display:block;";
+                img.onload = () => {
+                    if (qrTarget) {
+                        qrTarget.innerHTML = '';
+                        qrTarget.appendChild(img);
+                    }
+                };
+                img.onerror = () => {
+                    if (qrTarget) {
+                        qrTarget.innerHTML = `
+                            <div style="padding:16px; text-align:center; color:#b91c1c; font-size:0.75rem;">
+                                ⚠️ สร้าง QR ไม่สำเร็จ<br>
+                                <button type="button" class="btn-tool-sm" onclick="startCourseInlineCheckout()" style="margin-top:6px; font-size:0.72rem; padding:4px 8px;">🔄 ลองใหม่</button>
+                            </div>
+                        `;
+                    }
+                };
+            }
+
+            // Start 10-Minute Countdown
+            const timerBox = document.getElementById('course-qr-countdown-box');
+            const timerEl = document.getElementById('course-qr-countdown');
+            if (_courseInlineCountdownTimer) clearInterval(_courseInlineCountdownTimer);
+            function updateTimer() {
+                const remaining = Math.max(0, expiresAt - Date.now());
+                if (remaining <= 0) {
+                    clearInterval(_courseInlineCountdownTimer);
+                    _courseInlineCountdownTimer = null;
+                    cancelCourseInlineCheckout(true); // Expired -> switch back to button!
+                    return;
+                }
+                const mins = Math.floor(remaining / 60000);
+                const secs = Math.floor((remaining % 60000) / 1000);
+                if (timerEl) {
+                    timerEl.textContent = `${mins.toString().padStart(2, '0')} : ${secs.toString().padStart(2, '0')}`;
+                }
+                if (timerBox) {
+                    if (remaining <= 60000) {
+                        timerBox.className = 'checkout-countdown-box urgent';
+                    } else if (remaining <= 120000) {
+                        timerBox.className = 'checkout-countdown-box warning';
+                    } else {
+                        timerBox.className = 'checkout-countdown-box';
+                    }
+                }
+            }
+            updateTimer();
+            _courseInlineCountdownTimer = setInterval(updateTimer, 1000);
+
+            // Start Polling Firebase for Approval
+            if (_inlineCoursePollingTimer) clearInterval(_inlineCoursePollingTimer);
+            _inlineCoursePollingTimer = setInterval(async () => {
+                try {
+                    const res = await fetch(`${PAYMENT_ENDPOINT}/${orderId}.json?t=${Date.now()}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.status === 'approved') {
+                            clearInterval(_inlineCoursePollingTimer);
+                            _inlineCoursePollingTimer = null;
+                            if (_courseInlineCountdownTimer) {
+                                clearInterval(_courseInlineCountdownTimer);
+                                _courseInlineCountdownTimer = null;
+                            }
+                            handleCoursePaymentSuccess(orderId, product, data);
+                        }
+                    }
+                } catch (e) { }
+            }, 1500);
+
+            // Admin test button
+            const simBtn = document.getElementById('btn-admin-sim-course-pay');
+            if (simBtn) {
+                if (isLocalAdmin) {
+                    simBtn.style.display = 'inline-block';
+                    simBtn.onclick = () => simulateCoursePaymentApproval(orderId);
+                } else {
+                    simBtn.style.display = 'none';
+                }
+            }
+        }
+
+        function downloadCourseQRSlip() {
+            const qrTarget = document.getElementById('course-qr-image-target');
+            const img = qrTarget ? qrTarget.querySelector('img') : null;
+            if (!img || !img.src) {
+                showToast('ไม่พบรูปภาพ QR Code สำหรับดาวน์โหลด', 'warning');
+                return;
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 400;
+            canvas.height = 490;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, 400, 490);
+
+            ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 20px Prompt, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('พร้อมเพย์ (PromptPay)', 200, 40);
+
+            const titleText = currentActiveCourse ? currentActiveCourse.title : 'ชำระค่าคอร์สเรียน';
+            ctx.font = '13px Prompt, sans-serif';
+            ctx.fillStyle = '#64748b';
+            const displayTitle = titleText.length > 32 ? titleText.substring(0, 32) + '...' : titleText;
+            ctx.fillText(displayTitle, 200, 66);
+
+            const qrImg = new Image();
+            qrImg.crossOrigin = 'anonymous';
+            qrImg.onload = () => {
+                ctx.drawImage(qrImg, 75, 85, 250, 250);
+
+                const priceVal = currentActiveCourse ? Number(currentActiveCourse.price) : 0;
+                ctx.fillStyle = '#16a34a';
+                ctx.font = 'bold 28px Prompt, sans-serif';
+                ctx.fillText(`฿ ${priceVal.toFixed(2)}`, 200, 375);
+
+                ctx.fillStyle = '#475569';
+                ctx.font = '13px Prompt, sans-serif';
+                ctx.fillText('สแกนผ่านแอปธนาคารทุกแห่งเพื่อปลดล็อก', 200, 410);
+
+                const link = document.createElement('a');
+                link.download = `PromptPay_QR_Course_${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                showToast('📥 บันทึกรูปภาพ QR Code เรียบร้อยแล้ว', 'success');
+            };
+            qrImg.onerror = () => {
+                const link = document.createElement('a');
+                link.download = `PromptPay_QR_Course_${Date.now()}.png`;
+                link.href = img.src;
+                link.click();
+                showToast('📥 บันทึกรูปภาพ QR Code เรียบร้อยแล้ว', 'success');
+            };
+            qrImg.src = img.src;
+        }
+
+        function cancelCourseInlineCheckout(isExpired = false) {
+            if (_courseInlineCountdownTimer) {
+                clearInterval(_courseInlineCountdownTimer);
+                _courseInlineCountdownTimer = null;
+            }
+            if (_inlineCoursePollingTimer) {
+                clearInterval(_inlineCoursePollingTimer);
+                _inlineCoursePollingTimer = null;
+            }
+            const btnView = document.getElementById('course-paywall-btn-view');
+            const qrView = document.getElementById('course-paywall-qr-view');
+            if (btnView && qrView) {
+                btnView.style.display = 'block';
+                qrView.style.display = 'none';
+            }
+            if (isExpired) {
+                showToast('⏳ QR Code หมดอายุแล้ว กดใหม่อีกครั้งเพื่อสแกนจ่าย', 'warning');
+            }
+        }
+
+        async function simulateCoursePaymentApproval(orderId) {
+            try {
+                await fetch(`${PAYMENT_ENDPOINT}/${orderId}.json`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 'approved',
+                        approvedAt: Date.now(),
+                        approvedBy: 'admin_simulate'
+                    })
+                });
+                showToast('⚡ แอดมินจำลองชำระเงินสำเร็จ (Admin Simulator)', 'success');
+            } catch (e) {
+                showToast('จำลองไม่สำเร็จ: ' + e.message, 'error');
+            }
+        }
+
+        function handleCoursePaymentSuccess(orderId, product, paymentData = null) {
+            triggerConfettiEffect();
+            playSuccessChimeSound();
+
+            savePurchaseRecord({
+                orderId: orderId,
+                productId: product.id,
+                productTitle: product.title,
+                price: product.price,
+                language: product.language,
+                coverImage: product.coverImage,
+                downloadUrl: product.downloadUrl || '',
+                sourceCode: product.sourceCode || '',
+                installSteps: product.installSteps || [],
+                purchasedAt: Date.now()
+            });
+
+            const qrTarget = document.getElementById('course-qr-image-target');
+            if (qrTarget) {
+                qrTarget.innerHTML = `
+                    <div style="text-align:center; padding:18px 10px; color:#15803d;">
+                        <div style="font-size:2.8rem; margin-bottom:4px;">🎉</div>
+                        <div style="font-weight:800; font-size:1.1rem; margin-bottom:4px;">ชำระเงินสำเร็จแล้ว!</div>
+                        <div style="font-size:0.8rem; color:#475569;">กำลังปลดล็อกบทเรียนทั้งหมด...</div>
+                    </div>
+                `;
+            }
+
+            setTimeout(() => {
+                cancelCourseInlineCheckout();
+                const unlockedBadge = document.getElementById('course-hero-unlocked-badge');
+                const previewBadge = document.getElementById('course-hero-preview-badge');
+                if (unlockedBadge) unlockedBadge.style.display = 'inline-flex';
+                if (previewBadge) previewBadge.style.display = 'none';
+
+                renderCourseViewer(false);
+                showToast('🎉 ปลดล็อกคอร์สเรียนเรียบร้อยแล้ว ขอให้มีความสุขกับการเรียนรู้!', 'success');
+            }, 1200);
         }
 
         // Recommendations at Course Bottom (แนะนำเฉพาะคอร์สเรียนทักษะเรียนรู้)
@@ -10064,21 +10720,13 @@ ${encodedToken}
 
                 let videoUrl = String(item.url || '').trim();
                 if (videoUrl.startsWith('//')) videoUrl = 'https:' + videoUrl;
+
+                // Set ONLY video URL - NEVER overwrite lesson title or content!
                 adminCourseLessons[idx].mediaUrl = videoUrl;
-
-                // Auto fill title if empty or default
-                if (!adminCourseLessons[idx].title || adminCourseLessons[idx].title.startsWith(`บทเรียนที่ ${idx + 1}:`)) {
-                    const cleanTitle = (item.data || item.comment || '').substring(0, 70);
-                    adminCourseLessons[idx].title = `บทเรียนที่ ${idx + 1}: ${cleanTitle}`;
-                }
-
-                // Auto fill content if empty
-                if (!adminCourseLessons[idx].content && (item.data || item.comment)) {
-                    adminCourseLessons[idx].content = item.data || item.comment;
-                }
 
                 renderCourseLessons();
                 saveCourseDraft();
+                updateCourseLivePreview();
                 showToast('✅ นำเข้าวิดีโอจาก BigData ลงในบทเรียนเรียบร้อย!', 'success');
             } catch (e) {
                 console.error('Error selecting video:', e);
@@ -10297,25 +10945,20 @@ ${encodedToken}
             if (currentTargetLessonIdx === null || currentTargetLessonIdx >= adminCourseLessons.length) {
                 // If not pointing to an existing lesson, add a new one
                 addCourseLessonRow({
-                    title: `บทเรียนที่ ${adminCourseLessons.length + 1}: ${(item.data || item.comment || '').substring(0, 50)}...`,
-                    content: item.data || item.comment || '',
+                    title: `บทเรียนที่ ${adminCourseLessons.length + 1}`,
+                    content: '',
                     mediaUrl: videoUrl,
                     imageUrl: ''
                 });
             } else {
+                // Set ONLY video URL - NEVER overwrite lesson title or content!
                 const lesson = adminCourseLessons[currentTargetLessonIdx];
                 lesson.mediaUrl = videoUrl;
-                if (!lesson.content) lesson.content = item.data || item.comment || '';
-                if (!lesson.title || lesson.title.startsWith(`บทเรียนที่ ${currentTargetLessonIdx + 1}:`)) {
-                    const cleanTitle = (item.data || item.comment || '').substring(0, 60);
-                    if (cleanTitle) {
-                        lesson.title = `บทเรียนที่ ${currentTargetLessonIdx + 1}: ${cleanTitle}`;
-                    }
-                }
                 renderCourseLessons();
             }
 
             saveCourseDraft();
+            updateCourseLivePreview();
             closeBigdataSearchModal();
             showToast('✅ นำเข้าวิดีโอจาก BigData ลงในบทเรียนเรียบร้อย!', 'success');
         }
@@ -10389,21 +11032,106 @@ ${encodedToken}
             }
         }
 
-        function renderLessonMediaPreviewBadge(url) {
-            if (!url) return '';
-            const type = detectMediaType(url);
-            if (type === 'shorts') {
-                return '<span style="font-size: 0.74rem; background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 4px; font-weight: 700;">📱 ตรวจพบ: YouTube Shorts (ฝังแนวตั้ง)</span>';
-            } else if (type === 'youtube') {
-                return '<span style="font-size: 0.74rem; background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 4px; font-weight: 700;">🎬 ตรวจพบ: YouTube Video</span>';
-            } else if (type === 'catbox') {
-                return '<span style="font-size: 0.74rem; background: #e0f2fe; color: #0284c7; padding: 2px 8px; border-radius: 4px; font-weight: 700;">🐱 ตรวจพบ: Catbox MP4</span>';
-            } else if (type === 'filegarden') {
-                return '<span style="font-size: 0.74rem; background: #dcfce7; color: #16a34a; padding: 2px 8px; border-radius: 4px; font-weight: 700;">🌿 ตรวจพบ: File Garden MP4</span>';
-            } else if (type === 'mp4') {
-                return '<span style="font-size: 0.74rem; background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 4px; font-weight: 700;">🎬 ตรวจพบ: ไฟล์วิดีโอ MP4</span>';
+        function getYoutubeEmbedUrl(rawUrl) {
+            if (!rawUrl) return "";
+            let trimmed = String(rawUrl).trim();
+            if (trimmed.startsWith("//")) trimmed = "https:" + trimmed;
+            const type = detectMediaType(trimmed);
+
+            if (type === "shorts") {
+                let videoId = "";
+                const m = trimmed.match(/\/shorts\/([a-zA-Z0-9_-]+)/);
+                if (m) videoId = m[1];
+                if (!videoId) {
+                    const m2 = trimmed.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})/);
+                    if (m2) videoId = m2[1];
+                }
+                if (!videoId) videoId = trimmed;
+                return `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?rel=0`;
             }
-            return '';
+
+            let videoId = "";
+            const m = trimmed.match(/(?:v=|\/embed\/|youtu\.be\/|\/v\/|^)([a-zA-Z0-9_-]{11})(?:[?&]|$)/);
+            if (m) videoId = m[1];
+            if (!videoId) {
+                if (/^[a-zA-Z0-9_-]{11}/.test(trimmed)) {
+                    videoId = trimmed.substring(0, 11);
+                }
+            }
+
+            if (videoId) {
+                let extraParams = [];
+                const startMatch = trimmed.match(/[?&]start=(\d+)/);
+                if (startMatch) extraParams.push(`start=${startMatch[1]}`);
+                const endMatch = trimmed.match(/[?&]end=(\d+)/);
+                if (endMatch) extraParams.push(`end=${endMatch[1]}`);
+                const tMatch = trimmed.match(/[?&]t=(\d+)/);
+                if (tMatch && !startMatch) extraParams.push(`start=${tMatch[1]}`);
+
+                extraParams.push("rel=0");
+                return `https://www.youtube.com/embed/${videoId}?${extraParams.join("&")}`;
+            }
+
+            return trimmed.startsWith("http") ? trimmed : `https://www.youtube.com/embed/${trimmed}`;
+        }
+
+        function renderLessonMediaPreviewBadge(url) {
+            if (!url) {
+                return '<div style="font-size: 0.74rem; color: #94a3b8; margin-top: 6px;">💡 รองรับ YouTube, Shorts, Catbox (.mp4) หรือค้นหาคลิปจาก BigData</div>';
+            }
+            const cleanUrl = String(url).trim();
+            const type = detectMediaType(cleanUrl);
+
+            // 1. YouTube or Shorts (Full Embed Iframe Player)
+            if (type === "youtube" || type === "shorts") {
+                const embedUrl = getYoutubeEmbedUrl(cleanUrl);
+                const isShorts = (type === "shorts");
+                const rawYtId = (cleanUrl.match(/(?:v=|\/embed\/|youtu\.be\/|\/shorts\/|^)([a-zA-Z0-9_-]{11})/) || [])[1] || cleanUrl;
+                const externalLink = cleanUrl.startsWith("http") ? cleanUrl : `https://www.youtube.com/watch?v=${rawYtId}`;
+
+                return `
+                    <div style="margin-top: 8px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
+                            <span style="font-size: 0.74rem; background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                ${isShorts ? "📱 YouTube Shorts" : "🎬 YouTube Video"} (Embed)
+                            </span>
+                            <a href="${escapeHtml(externalLink)}" target="_blank" rel="noopener noreferrer" style="font-size: 0.72rem; color: #0284c7; text-decoration: none;" title="เปิดดูบน YouTube">
+                                เปิดดูบน YouTube ↗
+                            </a>
+                        </div>
+                        <div style="position: relative; width: 100%; aspect-ratio: 16/9; max-height: 140px; border-radius: 8px; overflow: hidden; background: #000; border: 1px solid #cbd5e1; box-shadow: 0 1px 4px rgba(0,0,0,0.15);">
+                            <iframe src="${escapeHtml(embedUrl)}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 2. Direct MP4 (Catbox, File Garden, or any HTML5 video)
+            if (type === "catbox" || type === "filegarden" || type === "mp4" || cleanUrl.includes(".mp4")) {
+                let safeUrl = cleanUrl;
+                if (!safeUrl.startsWith("http://") && !safeUrl.startsWith("https://")) {
+                    safeUrl = "https://" + safeUrl;
+                }
+                const badgeLabel = type === "catbox" ? "🐱 Catbox (.mp4)" : (type === "filegarden" ? "🌿 File Garden (.mp4)" : "🎬 วิดีโอ MP4");
+
+                return `
+                    <div style="margin-top: 8px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
+                            <span style="font-size: 0.74rem; background: #e0f2fe; color: #0284c7; padding: 2px 8px; border-radius: 4px; font-weight: 700;">
+                                ${badgeLabel}
+                            </span>
+                            <a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer" style="font-size: 0.72rem; color: #0284c7; text-decoration: none;">
+                                เปิดไฟล์ตรง ↗
+                            </a>
+                        </div>
+                        <div style="position: relative; width: 100%; max-height: 140px; border-radius: 8px; overflow: hidden; background: #000; border: 1px solid #cbd5e1; box-shadow: 0 1px 4px rgba(0,0,0,0.15);">
+                            <video src="${escapeHtml(safeUrl)}" preload="metadata" controls playsinline style="width: 100%; max-height: 140px; display: block; object-fit: contain; background: #000;"></video>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return `<div style="font-size: 0.74rem; color: #64748b; margin-top: 6px;">🎬 ตรวจพบ: ${escapeHtml(cleanUrl)}</div>`;
         }
 
         function applyLessonFormatting(idx, type) {
@@ -10632,9 +11360,156 @@ ${encodedToken}
                     </div>
                 `;
             }).join('');
+
+            if (typeof updateCourseLivePreview === 'function') {
+                updateCourseLivePreview();
+            }
         }
 
         // Course Draft Management (localStorage)
+        let _courseLivePreviewActive = false;
+
+        function toggleCourseLivePreview(forceState = null) {
+            const previewEl = document.getElementById('admin-course-live-preview');
+            const toggleBtn = document.getElementById('btn-toggle-course-preview');
+            const toolbarBtn = document.getElementById('btn-toggle-course-preview-bar');
+            const footerBtn = document.getElementById('btn-toggle-course-preview-footer');
+            if (!previewEl) return;
+
+            if (forceState !== null) {
+                _courseLivePreviewActive = Boolean(forceState);
+            } else {
+                _courseLivePreviewActive = !_courseLivePreviewActive;
+            }
+
+            if (_courseLivePreviewActive) {
+                previewEl.style.display = 'flex';
+                const onText = '👁️ พรีวิวเล็ก (เปิดอยู่)';
+                if (toggleBtn) {
+                    toggleBtn.innerHTML = onText;
+                    toggleBtn.style.background = '#dcfce7';
+                }
+                if (toolbarBtn) {
+                    toolbarBtn.innerHTML = onText;
+                    toolbarBtn.style.background = '#dcfce7';
+                    toolbarBtn.style.color = '#15803d';
+                }
+                if (footerBtn) {
+                    footerBtn.innerHTML = '👁️ ปิดพรีวิวเล็ก';
+                    footerBtn.style.background = '#dcfce7';
+                }
+                updateCourseLivePreview();
+            } else {
+                previewEl.style.display = 'none';
+                const offText = '👁️ พรีวิวเล็ก';
+                if (toggleBtn) {
+                    toggleBtn.innerHTML = offText;
+                    toggleBtn.style.background = '#ffffff';
+                }
+                if (toolbarBtn) {
+                    toolbarBtn.innerHTML = offText;
+                    toolbarBtn.style.background = '#e0f2fe';
+                    toolbarBtn.style.color = '#0369a1';
+                }
+                if (footerBtn) {
+                    footerBtn.innerHTML = '👁️ ดูพรีวิวเล็ก';
+                    footerBtn.style.background = '#e0f2fe';
+                }
+            }
+        }
+
+        function updateCourseLivePreview() {
+            const previewEl = document.getElementById('admin-course-live-preview');
+            if (!previewEl || previewEl.style.display === 'none') return;
+
+            syncLessonsFromDOM();
+
+            const title = (document.getElementById('admin-title')?.value || '').trim() || 'ชื่อคอร์สเรียน';
+            const price = parseFloat(document.getElementById('admin-price')?.value) || 0;
+            const priceText = (price <= 0) ? '✨ ฟรีตลอดชีพ' : `฿${price.toFixed(2)}`;
+            const coverSrc = (adminProductImages && adminProductImages[0]) || document.getElementById('admin-cover-image')?.value || 'shop/images/learning_course_cover.svg';
+            const rawDesc = document.getElementById('admin-description-editor')?.innerHTML || document.getElementById('admin-description')?.value || '';
+            const descHtml = formatCourseDescriptionHtml(rawDesc);
+            const totalLessons = adminCourseLessons.length;
+
+            // 1. Render Hero Card Preview
+            const heroCard = document.getElementById('admin-preview-hero-card');
+            if (heroCard) {
+                heroCard.innerHTML = `
+                    <div style="display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap;">
+                        <div style="width: 80px; height: 80px; border-radius: 12px; overflow: hidden; background: #0f172a; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                            <img src="${escapeHtml(coverSrc)}" alt="Cover" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.src='shop/images/learning_course_cover.svg'">
+                        </div>
+                        <div style="flex: 1; min-width: 200px;">
+                            <div class="course-hero-badge-row" style="margin-bottom: 6px;">
+                                <span class="badge-course-cat">🎓 ทักษะเรียนรู้</span>
+                                <span class="badge-gold-preview">✨ ตัวอย่างฟรี 4 บทเรียน</span>
+                                <span style="font-size: 0.72rem; color: #475569; font-weight: 700;">📚 ${totalLessons} บทเรียน</span>
+                                <span style="margin-left: auto; font-size: 0.88rem; font-weight: 800; color: #16a34a;">${priceText}</span>
+                            </div>
+                            <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; line-height: 1.35;">
+                                ${escapeHtml(title)}
+                            </h3>
+                            <div style="font-size: 0.82rem; color: #475569; line-height: 1.6; max-height: 100px; overflow-y: auto;">
+                                ${descHtml || '<span style="color:#94a3b8;">(ยังไม่ได้พิมพ์คำอธิบายคอร์ส)</span>'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 2. Render Lessons Feed Preview
+            const lessonsFeed = document.getElementById('admin-preview-lessons-feed');
+            if (lessonsFeed) {
+                if (adminCourseLessons.length === 0) {
+                    lessonsFeed.innerHTML = `
+                        <div style="text-align: center; padding: 30px 14px; color: #94a3b8; background: #ffffff; border-radius: 12px; border: 1px dashed #cbd5e1;">
+                            <div style="font-size: 1.8rem; margin-bottom: 6px;">🎓</div>
+                            <div style="font-size: 0.84rem; font-weight: 600; color: #64748b;">ยังไม่มีบทเรียนในคอร์สนี้</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                lessonsFeed.innerHTML = adminCourseLessons.map((lesson, idx) => {
+                    const isPreviewGold = (idx < 4);
+                    const titleText = (lesson.title || `บทเรียนที่ ${idx + 1}`).trim();
+                    const contentHtml = formatCourseLessonContent(lesson.content || '');
+
+                    return `
+                        <div class="course-lesson-card ${isPreviewGold ? 'is-preview-gold' : ''}" style="margin-bottom: 16px; padding: 16px 18px;">
+                            <div class="course-lesson-header" style="margin-bottom: 8px;">
+                                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                    <span class="course-step-tag ${isPreviewGold ? 'gold' : ''}">บทเรียนที่ ${(idx + 1).toString().padStart(2, '0')}</span>
+                                    ${isPreviewGold ? '<span class="badge-gold-preview">✨ โพสต์ตัวอย่างฟรี</span>' : '<span style="font-size: 0.68rem; color: #dc2626; background: #fee2e2; padding: 2px 6px; border-radius: 4px; font-weight: 700;">🔒 ปลดล็อกด้วยการซื้อ</span>'}
+                                </div>
+                                <span style="font-size: 0.72rem; color: #94a3b8;">🔖 บทเรียน</span>
+                            </div>
+                            <h4 style="font-size: 1rem; font-weight: 800; color: #0f172a; margin: 0 0 10px 0; line-height: 1.4;">
+                                ${escapeHtml(titleText)}
+                            </h4>
+
+                            ${lesson.mediaUrl ? `
+                                <div style="margin-bottom: 12px;">
+                                    ${buildMediaEmbedHtml(lesson.mediaUrl, titleText)}
+                                </div>
+                            ` : ''}
+
+                            ${lesson.imageUrl ? `
+                                <div style="margin-bottom: 12px; border-radius: 10px; overflow: hidden; background: #0f172a; border: 1px solid #e2e8f0;">
+                                    <img src="${escapeHtml(lesson.imageUrl)}" alt="Illustration" style="max-height: 220px; width: 100%; object-fit: contain; display: block;" onerror="this.style.display='none'">
+                                </div>
+                            ` : ''}
+
+                            <div class="course-lesson-content" style="font-size: 0.88rem; line-height: 1.65; color: #334155;">
+                                ${contentHtml || '<span style="color:#94a3b8; font-style:italic;">(ยังไม่มีเนื้อหาในบทเรียนนี้)</span>'}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
         function getCourseDraftData() {
             syncLessonsFromDOM();
             const courseId = (document.getElementById('admin-edit-product-id')?.value || '').trim();
@@ -10668,6 +11543,7 @@ ${encodedToken}
             clearTimeout(_courseDraftDebounce);
             _courseDraftDebounce = setTimeout(() => {
                 manualSaveCourseDraft(true);
+                updateCourseLivePreview();
             }, 600);
         }
 
@@ -10692,8 +11568,13 @@ ${encodedToken}
                     }, 2500);
                 }
 
+                // Update live preview only if user already has it open
+                if (_courseLivePreviewActive) {
+                    updateCourseLivePreview();
+                }
+
                 if (!silent) {
-                    showToast('📝 บันทึกแบบร่างคอร์สเรียนเรียบร้อยแล้ว (Ctrl+S)', 'success');
+                    showToast('📝 บันทึกแบบร่างเรียบร้อยแล้ว (Ctrl+S)', 'success');
                 }
                 return true;
             } catch (e) {
