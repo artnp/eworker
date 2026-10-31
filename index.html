@@ -1560,7 +1560,7 @@
             display: grid;
             grid-template-columns: 1fr 340px;
             gap: 22px;
-            align-items: stretch;
+            align-items: start;
             margin-top: 24px;
             margin-bottom: 20px;
         }
@@ -1571,19 +1571,21 @@
 
         .detail-bottom-checkout-card {
             background: #ffffff;
-            border: 1.5px solid #bbf7d0;
-            border-radius: var(--radius-sm);
-            padding: 18px 20px;
+            border: 1.5px solid #86efac;
+            border-radius: 14px;
+            padding: 14px 16px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            box-shadow: 0 4px 16px rgba(22, 163, 74, 0.08);
-            transition: var(--transition);
+            box-shadow: 0 4px 18px rgba(22, 163, 74, 0.08);
+            transition: all 0.25s ease;
+            box-sizing: border-box;
+            width: 100%;
         }
 
         .detail-bottom-checkout-card:hover {
-            border-color: #86efac;
-            box-shadow: 0 6px 20px rgba(22, 163, 74, 0.14);
+            border-color: #4ade80;
+            box-shadow: 0 6px 22px rgba(22, 163, 74, 0.14);
         }
 
         .detail-bottom-checkout-header {
@@ -1629,6 +1631,11 @@
             .detail-bottom-grid {
                 grid-template-columns: 1fr;
                 gap: 18px;
+            }
+
+            .detail-bottom-checkout-card {
+                max-width: 350px;
+                margin: 0 auto;
             }
         }
 
@@ -3611,30 +3618,116 @@
                         </table>
                     </div>
 
-                    <!-- Right: Bottom PromptPay Price & Scan Card -->
+                    <!-- Right: Bottom PromptPay Price & Scan Card (Transforms into QR in place) -->
                     <div class="detail-bottom-checkout-card" id="detail-bottom-checkout-card">
-                        <div>
-                            <div class="detail-bottom-checkout-header">
-                                <span class="detail-bottom-promptpay-badge">
-                                    <span>⚡ PromptPay</span>
-                                </span>
-                                <span style="font-size: 0.76rem; color: var(--fh-muted);"
-                                    id="detail-bottom-status-note">
-                                    สแกนผ่านทุกแอปธนาคาร
-                                </span>
+
+                        <!-- VIEW 1: Button View -->
+                        <div id="detail-bottom-btn-view"
+                            style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; min-height: 155px; width: 100%; box-sizing: border-box;">
+                            <div>
+                                <div class="detail-bottom-checkout-header">
+                                    <span class="detail-bottom-promptpay-badge">
+                                        <span>⚡ PromptPay</span>
+                                    </span>
+                                    <span style="font-size: 0.76rem; color: var(--fh-muted);"
+                                        id="detail-bottom-status-note">
+                                        สแกนผ่านทุกแอปธนาคาร
+                                    </span>
+                                </div>
+                                <div
+                                    style="display: flex; align-items: center; justify-content: center; margin: 10px 0 16px 0; text-align: center;">
+                                    <div class="detail-bottom-price-val" id="detail-bottom-price-tag">฿ 45.00</div>
+                                </div>
                             </div>
-                            <div
-                                style="display: flex; align-items: center; justify-content: center; margin: 10px 0 16px 0; text-align: center;">
-                                <div class="detail-bottom-price-val" id="detail-bottom-price-tag">฿ 45.00</div>
+
+                            <div>
+                                <button class="btn-big-download" id="btn-detail-checkout-bottom"
+                                    onclick="handleDetailCheckoutClick()">
+                                    <span>⛶ สแกนพร้อมเพย์</span>
+                                </button>
                             </div>
                         </div>
 
-                        <div>
-                            <button class="btn-big-download" id="btn-detail-checkout-bottom"
-                                onclick="handleDetailCheckoutClick()">
-                                <span>⛶ สแกนพร้อมเพย์</span>
-                            </button>
+                        <!-- VIEW 2: Transformed Inline QR View (Compact & Balanced) -->
+                        <div id="detail-bottom-qr-view"
+                            style="display: none; width: 100%; box-sizing: border-box; text-align: center;">
+
+                            <!-- 1. Sleek Compact Header: PromptPay Badge + Countdown Timer -->
+                            <div
+                                style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; width: 100%; gap: 6px;">
+                                <span class="detail-bottom-promptpay-badge"
+                                    style="font-size: 0.7rem; padding: 2px 7px;">
+                                    <span>⚡ PromptPay</span>
+                                </span>
+                                <div class="checkout-countdown-box" id="detail-qr-countdown-box"
+                                    style="margin: 0; padding: 2px 7px; border-radius: 5px; font-size: 0.72rem; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;">
+                                    <span>⏱️</span>
+                                    <strong class="countdown-digits" id="detail-qr-countdown">10:00</strong>
+                                    <span>นาที</span>
+                                </div>
+                            </div>
+
+                            <!-- 2. Clean QR Code Card (Click to save slip, keeps QR exact 195px size) -->
+                            <div class="qr-clean-card" onclick="downloadDetailQRSlip()" title="คลิกเพื่อบันทึกรูป QR Code"
+                                style="margin: 0 auto 6px auto; width: 100%; max-width: 240px; padding: 6px 8px 6px 8px; box-sizing: border-box; border-radius: 12px; border: 1.5px solid #e2e8f0; background: #ffffff; cursor: pointer; transition: all 0.2s ease;">
+                                <div id="detail-qr-image-target"
+                                    style="display: flex; align-items: center; justify-content: center; width: 100%; min-height: 195px;">
+                                </div>
+                                <div
+                                    style="font-size: 0.72rem; font-weight: 700; color: #0b1120; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                                    <img src="assets/promptpay_header_full.png"
+                                        onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/100px-PromptPay-logo.png'; this.onerror=function(){this.style.display='none';};"
+                                        style="height: 14px; max-width: 65px; object-fit: contain;">
+                                    <span>สแกนผ่านทุกแอปธนาคาร</span>
+                                </div>
+                                <div style="font-size: 0.68rem; color: #2563eb; font-weight: 600; margin-top: 2px; display: flex; align-items: center; justify-content: center; gap: 3px;">
+                                    <span>📥 แตะ/คลิกรูปเพื่อบันทึก QR</span>
+                                </div>
+                            </div>
+
+                            <!-- 3. Centered Price Display -->
+                            <div id="detail-qr-price-text"
+                                style="font-size: 1.55rem; font-weight: 800; color: #16a34a; letter-spacing: -0.5px; line-height: 1.1; margin: 2px 0 6px 0; text-align: center;">
+                                ฿ 45.00
+                            </div>
+
+                            <!-- 4. Single-line Slim Polling Status Chip -->
+                            <div class="polling-status-chip"
+                                style="width: 100%; box-sizing: border-box; justify-content: center; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; margin: 0; gap: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center;">
+                                <div class="clean-spinner" style="width: 10px; height: 10px; border-width: 1.5px; flex-shrink: 0;">
+                                </div>
+                                <span style="white-space: nowrap;">ตรวจจับยอดเงินเข้าอัตโนมัติ (PromptPay)</span>
+                            </div>
+
+                            <!-- 5. Admin Simulator Only -->
+                            <div id="wrap-admin-sim-detail-pay" style="margin-top: 4px; text-align: center;">
+                                <button type="button" class="btn-tool-sm" id="btn-admin-sim-detail-pay"
+                                    style="display: none; font-size: 0.68rem; background: rgb(239, 246, 255); color: rgb(29, 78, 216); border: 1px solid rgb(191, 219, 254); padding: 2px 7px; border-radius: 5px; cursor: pointer;">
+                                    ⚡ จำลองโอนเงิน (Admin Test)
+                                </button>
+                            </div>
                         </div>
+
+                        <!-- VIEW 3: Success View -->
+                        <div id="detail-bottom-success-view"
+                            style="display: none; width: 100%; box-sizing: border-box; text-align: center; padding: 12px 6px;">
+                            <div style="font-size: 2.2rem; margin-bottom: 6px;">🎉</div>
+                            <div style="font-size: 1.12rem; font-weight: 800; color: #16a34a; margin-bottom: 4px;">
+                                ชำระเงินสำเร็จเรียบร้อย!
+                            </div>
+                            <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 12px;">
+                                ระบบตรวจจับยอดเงินเข้าอัตโนมัติ
+                            </div>
+                            <a id="btn-detail-success-download" href="#" target="_blank"
+                                class="btn-big-download unlocked"
+                                style="width: 100%; text-decoration: none; justify-content: center; display: inline-flex; margin-bottom: 8px; font-size: 0.95rem; padding: 12px 16px;">
+                                <span>📥 ดาวน์โหลดไฟล์ของคุณ</span>
+                            </a>
+                            <div style="font-size: 0.72rem; color: #94a3b8;">
+                                สามารถดูรายการสั่งซื้อย้อนหลังได้ที่เมนู "คำสั่งซื้อของฉัน"
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -4054,6 +4147,7 @@
                             <select id="admin-language-select" class="form-control-clean"
                                 onchange="handleAdminLanguageChange(this.value)" required autocomplete="off">
                                 <option value="" disabled selected>-- เลือกภาษา / ประเภทของสินค้า --</option>
+                                <option value="digital_download">🔗 Digital Download</option>
                                 <option value="chrome_addon">🧩 Chrome Addon / Extension (.zip)</option>
                                 <option value="pinescript">🌲 Pine Script</option>
                                 <option value="php">🐘 PHP (.php)</option>
@@ -4433,7 +4527,7 @@
                             style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 12px; font-size: 0.88rem; font-weight: 600;">
                             <input type="checkbox" id="admin-has-install-guide"
                                 onchange="toggleInstallStepsInput(this.checked)">
-                            <span>📌 มีวิธีการติดตั้งและคู่มือใช้งาน (ระบุขั้นตอน 1 2 3)</span>
+                            <span>📌 มีวิธีการติดตั้งและคู่มือใช้งาน</span>
                         </label>
 
                         <div id="admin-steps-container"
@@ -4747,7 +4841,8 @@
                             <div class="checkout-countdown-box" id="course-qr-countdown-box"
                                 style="margin: 0 auto 12px auto; width: 100%; box-sizing: border-box; justify-content: center; padding: 6px 12px; border-radius: 8px; white-space: nowrap;">
                                 <span style="white-space: nowrap;">⏱️ กรุณาชำระเงินภายใน:</span>
-                                <strong class="countdown-digits" id="course-qr-countdown" style="white-space: nowrap;">10:00</strong>
+                                <strong class="countdown-digits" id="course-qr-countdown"
+                                    style="white-space: nowrap;">10:00</strong>
                                 <span style="white-space: nowrap;">นาที</span>
                             </div>
 
@@ -4879,6 +4974,7 @@
         let checkoutPollingTimer = null;
         let _activeInlineDetailOrder = null;
         let _inlineDetailPollingTimer = null;
+        let _detailInlineCountdownTimer = null;
         let _activeInlineCourseOrder = null;
         let _inlineCoursePollingTimer = null;
         let _courseInlineCountdownTimer = null;
@@ -5160,6 +5256,7 @@
         }
 
         const LANG_MAP = {
+            digital_download: { name: 'Digital Download / Extension', icon: '🔗', ext: '', color: '#0284c7', bg: '#e0f2fe', border: '#7dd3fc' },
             pinescript: { name: 'Pine Script', icon: '🌲', ext: '.pine', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
             chrome_addon: { name: 'Chrome Addon / Extension', icon: '🧩', ext: '.zip', color: '#0284c7', bg: '#e0f2fe', border: '#7dd3fc' },
             php: { name: 'PHP', icon: '🐘', ext: '.php', color: '#8b5cf6', bg: '#f5f3ff', border: '#ddd6fe' },
@@ -5174,7 +5271,10 @@
 
         function getLanguageMeta(langKey) {
             if (!langKey) return null;
-            const lk = String(langKey).toLowerCase();
+            const lk = String(langKey).toLowerCase().replace(/^🔗\s*/, '').trim();
+            if (lk === 'digital_download' || lk === 'digital download' || lk === 'digital download / extension' || lk === 'download') {
+                return LANG_MAP.digital_download;
+            }
             return LANG_MAP[lk] || { name: langKey, icon: '💻', ext: '', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' };
         }
 
@@ -5453,7 +5553,9 @@
                                             <span style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-size:0.73rem; padding:1px 7px; border-radius:4px; font-weight:700;">🟢 เว็บอัตโนมัติ 24 ชม.</span>
                                         ` : '')}
                                     ` : `
-                                        ${langMeta ? `<span style="background:${langMeta.bg}; color:${langMeta.color}; border:1px solid ${langMeta.border}; font-weight:700; padding:2px 8px; border-radius:4px; white-space:nowrap;">💻 เขียนด้วย: ${langMeta.icon} ${escapeHtml(langMeta.name)}</span>` : ''}
+                                        ${(p.language === 'digital_download' || p.category === 'ขายไฟล์' || (langMeta && (langMeta.name === 'Digital Download / Extension' || langMeta.name === 'Digital Download'))) ? `
+                                            <span style="background:#e0f2fe; color:#0284c7; border:1px solid #7dd3fc; font-weight:700; padding:2px 8px; border-radius:4px; white-space:nowrap;">🔗Digital Download / Extension</span>
+                                        ` : (langMeta ? `<span style="background:${langMeta.bg}; color:${langMeta.color}; border:1px solid ${langMeta.border}; font-weight:700; padding:2px 8px; border-radius:4px; white-space:nowrap;">💻 เขียนด้วย: ${langMeta.icon} ${escapeHtml(langMeta.name)}</span>` : '')}
                                         ${p.category ? `<span>📁 ${escapeHtml(p.category)}</span>` : ''}
                                         ${p.hasInstallGuide ? '<span>🛠️ มีคู่มือติดตั้ง</span>' : ''}
                                     `}
@@ -5703,6 +5805,8 @@
             const p = products.find(x => x.id === productId);
             if (!p) return;
 
+            cancelDetailInlineCheckout(false);
+
             // For online services, open directly in popup modal
             if (p.isService || p.category === 'บริการ' || p.category === 'บริการออนไลน์' || p.category === 'แรงงาน') {
                 openServiceModal(p);
@@ -5785,10 +5889,22 @@
             }
 
             const langMeta = getLanguageMeta(p.language);
+            const isDigitalDownload = (p.language === 'digital_download' || p.category === 'ขายไฟล์' || (langMeta && (langMeta.name === 'Digital Download / Extension' || langMeta.name === 'Digital Download')));
             const langBadge = document.getElementById('detail-language-badge');
             if (langBadge) {
                 if (p.isService) {
                     langBadge.style.display = 'none';
+                } else if (isDigitalDownload) {
+                    langBadge.style.display = 'inline-flex';
+                    langBadge.style.alignItems = 'center';
+                    langBadge.textContent = '🔗Digital Download / Extension';
+                    langBadge.style.background = '#e0f2fe';
+                    langBadge.style.color = '#0284c7';
+                    langBadge.style.border = '1px solid #7dd3fc';
+                    langBadge.style.fontWeight = '700';
+                    langBadge.style.padding = '2px 8px';
+                    langBadge.style.borderRadius = '4px';
+                    langBadge.style.whiteSpace = 'nowrap';
                 } else if (langMeta) {
                     langBadge.style.display = 'inline-flex';
                     langBadge.style.alignItems = 'center';
@@ -5806,6 +5922,8 @@
                     specLang.textContent = '🌐 บริการออนไลน์ (Web Service / ไม่ต้องติดตั้ง)';
                 } else if (p.language === 'pinescript') {
                     specLang.textContent = '🌲 Pine Script';
+                } else if (isDigitalDownload) {
+                    specLang.textContent = '🔗 Digital Download / Extension';
                 } else {
                     specLang.textContent = langMeta ? `${langMeta.icon} ${langMeta.name}` : (p.language || '-');
                 }
@@ -5822,6 +5940,8 @@
                     specDelivery.textContent = '🌲 ปลดล็อคโค้ดสคริปต์สำหรับคัดลอกลง Pine Editor ทันที';
                 } else if (p.category === 'Chrome Addon' || p.language === 'chrome_addon') {
                     specDelivery.textContent = '🧩 รับไฟล์ส่วนขยาย (.zip)';
+                } else if (isDigitalDownload) {
+                    specDelivery.textContent = '🔗 รับลิงก์ดาวน์โหลดไฟล์ทันทีหลังชำระเงิน';
                 } else {
                     specDelivery.textContent = 'รับลิงก์ดาวน์โหลดทันทีหลังชำระเงิน';
                 }
@@ -5869,7 +5989,7 @@
                 videoIframe.src = '';
             }
             activeDetailProduct = null;
-            if (_inlineDetailPollingTimer) { clearInterval(_inlineDetailPollingTimer); _inlineDetailPollingTimer = null; }
+            cancelDetailInlineCheckout(false);
             try {
                 if (activeCategory && activeCategory !== 'all') {
                     window.history.pushState({ category: activeCategory }, '', `?c=${encodeURIComponent(activeCategory)}`);
@@ -6033,7 +6153,343 @@
                 return;
             }
 
-            openCheckoutModal(activeDetailProduct);
+            startDetailInlineCheckout();
+            const bottomCard = document.getElementById('detail-bottom-checkout-card');
+            if (bottomCard) {
+                bottomCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        async function startDetailInlineCheckout() {
+            if (!activeDetailProduct) return;
+            const product = activeDetailProduct;
+            const amount = parseFloat(product.price) || 0;
+            if (amount <= 0) return;
+
+            // Switch to QR view inside the card
+            const btnView = document.getElementById('detail-bottom-btn-view');
+            const qrView = document.getElementById('detail-bottom-qr-view');
+            const successView = document.getElementById('detail-bottom-success-view');
+
+            if (btnView) btnView.style.display = 'none';
+            if (successView) successView.style.display = 'none';
+            if (qrView) qrView.style.display = 'block';
+
+            const priceTextEl = document.getElementById('detail-qr-price-text');
+            if (priceTextEl) priceTextEl.textContent = `฿ ${amount.toFixed(2)}`;
+
+            const qrTarget = document.getElementById('detail-qr-image-target');
+            if (qrTarget) {
+                qrTarget.innerHTML = `
+                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; font-size:0.78rem; color:#64748b;">
+                        <div style="width:28px; height:28px; border:3px solid #bbf7d0; border-top-color:#16a34a; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+                        <span>กำลังสร้าง QR Code...</span>
+                    </div>
+                `;
+            }
+
+            const orderId = `ORD-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 899 + 100)}`;
+            const secretToken = `sec_${Math.random().toString(36).substring(2)}_${Date.now()}`;
+            const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+            const orderObj = {
+                id: orderId,
+                orderId: orderId,
+                linkKey: orderId,
+                productId: product.id,
+                productTitle: product.title,
+                price: amount,
+                previewUrl: product.coverImage || '',
+                status: 'pending',
+                secretToken: secretToken,
+                createdAt: Date.now(),
+                expiresAt: expiresAt,
+                timeStr: new Date().toLocaleTimeString('th-TH'),
+                dateStr: new Date().toLocaleDateString('th-TH'),
+                manualConfirmed: false
+            };
+            _activeInlineDetailOrder = orderObj;
+            currentCheckoutOrder = orderObj;
+
+            // Save order to Firebase
+            try {
+                await fetch(`${PAYMENT_ENDPOINT}/${orderId}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderObj)
+                });
+            } catch (e) { }
+
+            // Request QR image from Beam API with fallback
+            try {
+                const res = await fetch(`${BEAM_WORKER_URL}/create-charge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        linkKey: orderId,
+                        amount: amount
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.qrImageBase64) {
+                        if (qrTarget) {
+                            qrTarget.innerHTML = `<img src="data:image/png;base64,${data.qrImageBase64}" alt="PromptPay QR" style="width:195px; height:195px; object-fit:contain; border-radius:8px; display:block;">`;
+                        }
+                    } else {
+                        throw new Error('Invalid Beam response');
+                    }
+                } else {
+                    throw new Error('Beam API error ' + res.status);
+                }
+            } catch (err) {
+                console.warn('Beam QR create-charge fallback to direct QR image:', err);
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.src = `${BEAM_WORKER_URL}/qr-image?linkKey=${encodeURIComponent(orderId)}&amount=${amount}`;
+                img.alt = "PromptPay QR";
+                img.style = "width:195px; height:195px; object-fit:contain; border-radius:8px; display:block;";
+                img.onload = () => {
+                    if (qrTarget) {
+                        qrTarget.innerHTML = '';
+                        qrTarget.appendChild(img);
+                    }
+                };
+                img.onerror = () => {
+                    if (qrTarget) {
+                        qrTarget.innerHTML = `
+                            <div style="padding:16px; text-align:center; color:#b91c1c; font-size:0.75rem;">
+                                ⚠️ สร้าง QR ไม่สำเร็จ<br>
+                                <button type="button" class="btn-tool-sm" onclick="startDetailInlineCheckout()" style="margin-top:6px; font-size:0.72rem; padding:4px 8px;">🔄 ลองใหม่</button>
+                            </div>
+                        `;
+                    }
+                };
+            }
+
+            // Start 10-Minute Countdown
+            const timerBox = document.getElementById('detail-qr-countdown-box');
+            const timerEl = document.getElementById('detail-qr-countdown');
+            if (_detailInlineCountdownTimer) clearInterval(_detailInlineCountdownTimer);
+            function updateTimer() {
+                const remaining = Math.max(0, expiresAt - Date.now());
+                if (remaining <= 0) {
+                    clearInterval(_detailInlineCountdownTimer);
+                    _detailInlineCountdownTimer = null;
+                    cancelDetailInlineCheckout(true);
+                    return;
+                }
+                const mins = Math.floor(remaining / 60000);
+                const secs = Math.floor((remaining % 60000) / 1000);
+                if (timerEl) {
+                    timerEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                }
+                if (timerBox) {
+                    if (remaining <= 60000) {
+                        timerBox.className = 'checkout-countdown-box urgent';
+                    } else if (remaining <= 120000) {
+                        timerBox.className = 'checkout-countdown-box warning';
+                    } else {
+                        timerBox.className = 'checkout-countdown-box';
+                    }
+                }
+            }
+            updateTimer();
+            _detailInlineCountdownTimer = setInterval(updateTimer, 1000);
+
+            // Start Polling Firebase for Approval
+            if (_inlineDetailPollingTimer) clearInterval(_inlineDetailPollingTimer);
+            _inlineDetailPollingTimer = setInterval(async () => {
+                try {
+                    const res = await fetch(`${PAYMENT_ENDPOINT}/${orderId}.json?t=${Date.now()}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.status === 'approved') {
+                            clearInterval(_inlineDetailPollingTimer);
+                            _inlineDetailPollingTimer = null;
+                            if (_detailInlineCountdownTimer) {
+                                clearInterval(_detailInlineCountdownTimer);
+                                _detailInlineCountdownTimer = null;
+                            }
+                            handleDetailPaymentSuccess(orderId, product, data);
+                        }
+                    }
+                } catch (e) { }
+            }, 1500);
+
+            // Admin test button
+            const simBtn = document.getElementById('btn-admin-sim-detail-pay');
+            if (simBtn) {
+                if (isLocalAdmin) {
+                    simBtn.style.display = 'inline-block';
+                    simBtn.onclick = () => simulateDetailPaymentApproval(orderId);
+                } else {
+                    simBtn.style.display = 'none';
+                }
+            }
+        }
+
+        function downloadDetailQRSlip() {
+            const qrTarget = document.getElementById('detail-qr-image-target');
+            const img = qrTarget ? qrTarget.querySelector('img') : null;
+            if (!img || !img.src) {
+                showToast('ไม่พบรูปภาพ QR Code สำหรับดาวน์โหลด', 'warning');
+                return;
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 400;
+            canvas.height = 490;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, 400, 490);
+
+            ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 20px Prompt, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('พร้อมเพย์ (PromptPay)', 200, 40);
+
+            const titleText = activeDetailProduct ? activeDetailProduct.title : 'ชำระค่าสินค้าดิจิทัล';
+            ctx.font = '13px Prompt, sans-serif';
+            ctx.fillStyle = '#64748b';
+            const displayTitle = titleText.length > 32 ? titleText.substring(0, 32) + '...' : titleText;
+            ctx.fillText(displayTitle, 200, 66);
+
+            const qrImg = new Image();
+            qrImg.crossOrigin = 'anonymous';
+            qrImg.onload = () => {
+                ctx.drawImage(qrImg, 75, 85, 250, 250);
+
+                const priceVal = activeDetailProduct ? Number(activeDetailProduct.price) : 0;
+                ctx.fillStyle = '#16a34a';
+                ctx.font = 'bold 28px Prompt, sans-serif';
+                ctx.fillText(`฿ ${priceVal.toFixed(2)}`, 200, 375);
+
+                ctx.fillStyle = '#475569';
+                ctx.font = '13px Prompt, sans-serif';
+                ctx.fillText('สแกนผ่านแอปธนาคารทุกแห่งเพื่อปลดล็อก', 200, 410);
+
+                const link = document.createElement('a');
+                link.download = `PromptPay_QR_${activeDetailProduct ? activeDetailProduct.id : 'order'}_${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                showToast('📥 บันทึกรูปภาพ QR Code เรียบร้อยแล้ว', 'success');
+            };
+            qrImg.onerror = () => {
+                const link = document.createElement('a');
+                link.download = `PromptPay_QR_${activeDetailProduct ? activeDetailProduct.id : 'order'}_${Date.now()}.png`;
+                link.href = img.src;
+                link.click();
+                showToast('📥 บันทึกรูปภาพ QR Code เรียบร้อยแล้ว', 'success');
+            };
+            qrImg.src = img.src;
+        }
+
+        function cancelDetailInlineCheckout(isExpired = false) {
+            if (_detailInlineCountdownTimer) {
+                clearInterval(_detailInlineCountdownTimer);
+                _detailInlineCountdownTimer = null;
+            }
+            if (_inlineDetailPollingTimer) {
+                clearInterval(_inlineDetailPollingTimer);
+                _inlineDetailPollingTimer = null;
+            }
+            _activeInlineDetailOrder = null;
+
+            const btnView = document.getElementById('detail-bottom-btn-view');
+            const qrView = document.getElementById('detail-bottom-qr-view');
+            const successView = document.getElementById('detail-bottom-success-view');
+
+            if (btnView) btnView.style.display = 'flex';
+            if (qrView) qrView.style.display = 'none';
+            if (successView) successView.style.display = 'none';
+
+            if (isExpired) {
+                showToast('⏳ QR Code หมดอายุแล้ว กดใหม่อีกครั้งเพื่อสแกนจ่าย', 'warning');
+            }
+        }
+
+        async function simulateDetailPaymentApproval(orderId) {
+            try {
+                await fetch(`${PAYMENT_ENDPOINT}/${orderId}.json`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 'approved',
+                        approvedAt: Date.now(),
+                        approvedBy: 'admin_simulate'
+                    })
+                });
+                showToast('⚡ แอดมินจำลองชำระเงินสำเร็จ (Admin Simulator)', 'success');
+            } catch (e) {
+                showToast('จำลองไม่สำเร็จ: ' + e.message, 'error');
+            }
+        }
+
+        async function handleDetailPaymentSuccess(orderId, product, paymentData = null) {
+            if (_detailInlineCountdownTimer) {
+                clearInterval(_detailInlineCountdownTimer);
+                _detailInlineCountdownTimer = null;
+            }
+            if (_inlineDetailPollingTimer) {
+                clearInterval(_inlineDetailPollingTimer);
+                _inlineDetailPollingTimer = null;
+            }
+
+            // Call global payment success handler (confetti, sound, savePurchaseRecord, etc.)
+            await handlePaymentApprovedSuccess(orderId, product, paymentData);
+
+            // Switch to success view inside bottom card
+            const btnView = document.getElementById('detail-bottom-btn-view');
+            const qrView = document.getElementById('detail-bottom-qr-view');
+            const successView = document.getElementById('detail-bottom-success-view');
+
+            if (btnView) btnView.style.display = 'none';
+            if (qrView) qrView.style.display = 'none';
+            if (successView) {
+                successView.style.display = 'block';
+
+                const isPineScript = (product?.language === 'pinescript' || !!product?.isCodeProduct);
+                const downloadBtn = document.getElementById('btn-detail-success-download');
+                if (downloadBtn) {
+                    if (isPineScript) {
+                        downloadBtn.className = 'btn-big-download unlocked';
+                        downloadBtn.style.background = 'linear-gradient(135deg, #059669 0%, #10b981 100%)';
+                        downloadBtn.innerHTML = '<span>🌲 ดูและคัดลอกโค้ด Pine Script</span>';
+                        downloadBtn.removeAttribute('href');
+                        downloadBtn.onclick = (e) => {
+                            e.preventDefault();
+                            openPurchasedCodeModal(product.id);
+                        };
+                    } else {
+                        let dlUrl = product?.downloadUrl || '';
+                        if (paymentData && (paymentData.downloadUrl || paymentData.fileUrl)) {
+                            dlUrl = paymentData.downloadUrl || paymentData.fileUrl;
+                        }
+                        if (dlUrl && dlUrl.includes('dropbox.com')) {
+                            dlUrl = dlUrl.replace('dl=0', 'dl=1');
+                            if (!dlUrl.includes('dl=1')) dlUrl += (dlUrl.includes('?') ? '&dl=1' : '?dl=1');
+                        }
+                        downloadBtn.className = 'btn-big-download unlocked';
+                        downloadBtn.style.background = '';
+                        downloadBtn.innerHTML = '<span>📥 ดาวน์โหลดไฟล์ของคุณทันที</span>';
+                        if (dlUrl) {
+                            downloadBtn.href = dlUrl;
+                            downloadBtn.setAttribute('target', '_blank');
+                            downloadBtn.onclick = null;
+                        } else {
+                            downloadBtn.href = '#';
+                            downloadBtn.onclick = (e) => {
+                                e.preventDefault();
+                                downloadPurchasedProduct(product.id);
+                            };
+                        }
+                    }
+                }
+            }
+
+            updateDetailCTAState();
         }
 
         // --- SEO Updater (Dynamic Meta, OpenGraph & Schema.org JSON-LD for Google Index) ---
@@ -8204,7 +8660,7 @@ ${encodedToken}
             if (!datalist && !chipsList) return;
 
             // Collect unique categories in the system
-            const catSet = new Set(['Chrome Addon', 'TradingView / สคริปต์', 'เครื่องมือ', 'บอท', 'โปรแกรม', 'บริการออนไลน์', 'แรงงาน']);
+            const catSet = new Set(['ขายไฟล์', 'Chrome Addon', 'TradingView / สคริปต์', 'เครื่องมือ', 'บอท', 'โปรแกรม', 'บริการออนไลน์', 'แรงงาน']);
             if (Array.isArray(products)) {
                 products.forEach(p => {
                     const c = (p.category || '').trim();
@@ -8266,6 +8722,7 @@ ${encodedToken}
             const isSkills = catLower.includes('ทักษะ') || catLower.includes('เรียนรู้') || catLower.includes('คอร์ส') || catLower.includes('course');
             const isChrome = catLower.includes('chrome') || catLower.includes('cheom') || catLower.includes('addon') || catLower.includes('extension');
             const isTV = catLower.includes('tradingview') || catLower.includes('pine') || catLower.includes('สคริปต์');
+            const isFile = catLower.includes('ขายไฟล์') || catLower === 'ไฟล์' || catLower.startsWith('ไฟล์') || catLower.includes('download') || catLower.includes('ดาวน์โหลด');
 
             const courseSection = document.getElementById('admin-course-builder-section');
             const dropboxBox = document.getElementById('admin-dropbox-box');
@@ -8313,6 +8770,22 @@ ${encodedToken}
 
                 // ALWAYS load TradingView steps!
                 loadDefaultTradingViewSteps();
+            } else if (isFile) {
+                // Set Language to Digital Download
+                const langSel = document.getElementById('admin-language-select');
+                if (langSel && langSel.value !== 'digital_download') {
+                    langSel.value = 'digital_download';
+                }
+                handleAdminLanguageChange('digital_download', false, true);
+
+                if (areCurrentStepsTradingView()) {
+                    const list = document.getElementById('admin-steps-list');
+                    if (list) list.innerHTML = '';
+                    const guideCb = document.getElementById('admin-has-install-guide');
+                    if (guideCb) guideCb.checked = false;
+                    const container = document.getElementById('admin-steps-container');
+                    if (container) container.style.display = 'none';
+                }
             } else {
                 // Other categories: clear steps if they were TV or Chrome Addon
                 if (areCurrentStepsTradingView() || areCurrentStepsChromeAddon()) {
@@ -8669,11 +9142,12 @@ ${encodedToken}
 
             const langSel = document.getElementById('admin-language-select');
             const langCustom = document.getElementById('admin-language-custom');
-            const currentLang = (p.language || 'pinescript').toLowerCase();
+            const currentLang = (p.language || 'pinescript').toLowerCase().replace(/^🔗\s*/, '').trim();
             let langFound = false;
             if (langSel) {
                 for (let opt of langSel.options) {
-                    if (opt.value.toLowerCase() === currentLang) {
+                    const optVal = opt.value.toLowerCase().replace(/^🔗\s*/, '').trim();
+                    if (optVal === currentLang || (currentLang.includes('digital') && optVal === 'digital_download')) {
                         langSel.value = opt.value;
                         langFound = true;
                         break;
@@ -8797,6 +9271,25 @@ ${encodedToken}
                         updateAdminCategoryChipsActive('Chrome Addon');
                     }
                     loadDefaultChromeAddonSteps();
+                }
+            } else if (val === 'digital_download') {
+                if (dropboxBox) dropboxBox.style.display = 'block';
+                if (dropboxUrl) dropboxUrl.required = true;
+                if (pineBox) pineBox.style.display = 'none';
+
+                if (!isEditing && !fromCategory) {
+                    if (catInput && (!catInput.value || catInput.value.toLowerCase().includes('tradingview') || catInput.value.toLowerCase().includes('chrome'))) {
+                        catInput.value = 'ขายไฟล์';
+                        updateAdminCategoryChipsActive('ขายไฟล์');
+                    }
+                    if (areCurrentStepsTradingView() || areCurrentStepsChromeAddon()) {
+                        const list = document.getElementById('admin-steps-list');
+                        if (list) list.innerHTML = '';
+                        const guideCb = document.getElementById('admin-has-install-guide');
+                        if (guideCb) guideCb.checked = false;
+                        const container = document.getElementById('admin-steps-container');
+                        if (container) container.style.display = 'none';
+                    }
                 }
             } else {
                 if (dropboxBox) dropboxBox.style.display = 'block';
@@ -9878,9 +10371,7 @@ ${encodedToken}
             const allLessons = Array.isArray(p.lessons) && p.lessons.length > 0 ? p.lessons : [
                 {
                     title: 'บทเรียนที่ 1: แนะนำเนื้อหาหลัก',
-                    content: p.description || 'เริ่มต้นทำความเข้าใจภาพรวมและเนื้อหาหลักของคอร์สเรียนนี้',
-                    mediaUrl: p.youtubeUrl || '',
-                    imageUrl: p.coverImage || ''
+
                 }
             ];
 
