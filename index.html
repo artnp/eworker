@@ -2560,7 +2560,7 @@
             border-radius: 20px;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow: visible;
             box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.4);
             position: relative;
         }
@@ -2575,6 +2575,8 @@
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid #e2e8f0;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
             flex-shrink: 0;
             z-index: 20;
         }
@@ -2625,6 +2627,8 @@
             padding: 24px 22px 60px 22px;
             scroll-behavior: smooth;
             position: relative;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
         }
 
         .course-hero-card {
@@ -4605,6 +4609,9 @@
     <!-- ===== BRILLIANT.ORG STYLE COURSE LEARNING VIEWER ===== -->
     <div class="modal-overlay" id="course-viewer-modal" onclick="handleCourseModalOverlayClick(event)">
         <div class="course-viewer-container" id="course-viewer-container">
+            <button type="button" class="modal-close-fh" onclick="closeCourseViewer(event)" title="ปิดหน้าต่าง"
+                aria-label="ปิดหน้าต่าง">✕</button>
+
             <!-- Floating Reading Position Indicator Toast -->
             <div id="course-pos-toast" class="course-pos-toast">
                 <span>📍</span>
@@ -4629,15 +4636,13 @@
 
                 <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
 
-                    <button type="button" class="btn-share-clean-url admin-course-only"
+                    <button type="button" class="btn-share-clean-url" id="btn-course-admin-edit"
                         onclick="closeCourseViewer(event); openAdminCourseModal(currentActiveCourse ? currentActiveCourse.id : null);"
-                        style="background: #eff6ff; color: #1d4ed8; border: 1.5px solid #bfdbfe; font-weight: 700; cursor: pointer;"
+                        style="display: none; background: #eff6ff; color: #1d4ed8; border: 1.5px solid #bfdbfe; font-weight: 700; cursor: pointer;"
                         title="เปิดหน้าต่างแก้ไขบทเรียนคอร์สนี้">✏️ แก้ไขคอร์ส</button>
                     <button type="button" class="btn-share-clean-url"
                         onclick="copyCleanShareUrl(currentActiveCourse ? currentActiveCourse.id : null, event)"
                         title="คัดลอกลิงก์แชร์แบบสั้นสำหรับโพสต์โซเชียล">🔗 แชร์</button>
-                    <button type="button" class="modal-close-fh" onclick="closeCourseViewer(event)" title="ปิดหน้าต่าง"
-                        aria-label="ปิด" style="position: static; width: 32px; height: 32px;">✕</button>
                 </div>
             </div>
 
@@ -4784,7 +4789,7 @@
                                 style="display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 4px;">
                                 <button type="button" onclick="cancelCourseInlineCheckout()"
                                     style="background: none; border: none; color: #64748b; font-size: 0.78rem; font-weight: 600; cursor: pointer; text-decoration: underline; padding: 4px;">
-                                    ✕ ยกเลิก / กลับไปปุ่มเดิม
+                                    ✕ ยกเลิก
                                 </button>
                                 <button type="button" class="btn-tool-sm" id="btn-admin-sim-course-pay"
                                     style="display: none; font-size: 0.72rem; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 4px 10px; border-radius: 6px; cursor: pointer;">
@@ -4857,8 +4862,7 @@
         const isLocalAdmin = (
             window.location.hostname === '127.0.0.1' ||
             window.location.hostname === 'localhost' ||
-            window.location.protocol === 'file:' ||
-            new URLSearchParams(window.location.search).get('admin') === 'true'
+            window.location.protocol === 'file:'
         );
 
         let products = [];
@@ -6149,9 +6153,9 @@
                 }
             }
 
-            // 3. Edit Route (?edit=... or ?edit_course=...)
+            // 3. Edit Route (?edit=... or ?edit_course=...) — อนุญาตเฉพาะแอดมินบน localhost เท่านั้น
             const editQuery = params.get('edit') || params.get('edit_course');
-            if (editQuery) {
+            if (editQuery && isLocalAdmin) {
                 const decodedEdit = decodeURIComponent(editQuery).trim();
                 if (decodedEdit === 'course' || decodedEdit === 'new' || decodedEdit === 'new-course') {
                     openAdminCourseModal(null);
@@ -6689,11 +6693,12 @@
             }
 
             // 3. ตรวจสอบจาก Firebase VAULT_ENDPOINT
+            let vaultData = null;
             if (product && product.id) {
                 try {
                     const vaultRes = await fetch(`${VAULT_ENDPOINT}/${product.id}.json`);
                     if (vaultRes.ok) {
-                        const vaultData = await vaultRes.json();
+                        vaultData = await vaultRes.json();
                         if (vaultData) {
                             if (!downloadUrl && vaultData.downloadUrl) {
                                 downloadUrl = vaultData.downloadUrl;
@@ -6701,9 +6706,21 @@
                             if (!sourceCode && (vaultData.sourceCode || vaultData.pinescriptCode)) {
                                 sourceCode = vaultData.sourceCode || vaultData.pinescriptCode;
                             }
+                            if (vaultData.lessons && Array.isArray(vaultData.lessons) && product) {
+                                product.lessons = vaultData.lessons;
+                                product._fullLessonsLoaded = true;
+                            }
                         }
                     }
                 } catch (e) { }
+            }
+
+            if (currentActiveCourse && product && (currentActiveCourse.id === product.id || String(currentActiveCourse.id) === String(product.id))) {
+                if (vaultData && Array.isArray(vaultData.lessons) && vaultData.lessons.length > 0) {
+                    currentActiveCourse.lessons = vaultData.lessons;
+                    currentActiveCourse._fullLessonsLoaded = true;
+                }
+                renderCourseViewer(false);
             }
 
             const isPineScriptProduct = (product?.language === 'pinescript' || !!product?.isCodeProduct || !!sourceCode);
@@ -8334,6 +8351,10 @@ ${encodedToken}
 
         // --- ADMIN COURSE & LESSONS MANAGER (หมวดทักษะเรียนรู้) ---
         function openAdminCourseModal(courseId = null) {
+            if (!isLocalAdmin) {
+                showToast('🔒 สงวนสิทธิ์สำหรับผู้ดูแลระบบบนเครื่อง localhost เท่านั้น', 'warning');
+                return;
+            }
             const modal = document.getElementById('admin-modal');
             if (modal) {
                 modal.classList.add('mode-course');
@@ -8472,6 +8493,10 @@ ${encodedToken}
         }
 
         function openAdminPostModal(keepCourseMode = false) {
+            if (!isLocalAdmin) {
+                showToast('🔒 สงวนสิทธิ์สำหรับผู้ดูแลระบบบนเครื่อง localhost เท่านั้น', 'warning');
+                return;
+            }
             const modal = document.getElementById('admin-modal');
             if (!keepCourseMode && modal) {
                 modal.classList.remove('mode-course');
@@ -8562,6 +8587,10 @@ ${encodedToken}
         }
 
         async function openAdminEditProduct(productId, event) {
+            if (!isLocalAdmin) {
+                showToast('🔒 สงวนสิทธิ์สำหรับผู้ดูแลระบบบนเครื่อง localhost เท่านั้น', 'warning');
+                return;
+            }
             if (event) {
                 event.preventDefault();
                 event.stopPropagation();
@@ -8830,6 +8859,10 @@ ${encodedToken}
 
         async function handleAdminFormSubmit(e) {
             e.preventDefault();
+            if (!isLocalAdmin) {
+                showToast('🔒 สงวนสิทธิ์สำหรับผู้ดูแลระบบบนเครื่อง localhost เท่านั้น', 'warning');
+                return;
+            }
             syncAdminEditorToHiddenField();
             syncLessonsFromDOM();
 
@@ -8906,6 +8939,22 @@ ${encodedToken}
                 if (inp.value.trim()) features.push(inp.value.trim());
             });
 
+            // สำหรับคอร์สเรียนที่มีค่าบริการ (price > 0):
+            // ทำการ Sanitize บทเรียนที่ต้องชำระเงิน (บทเรียนที่ 5 เป็นต้นไป หรือ index >= 4)
+            // เพื่อไม่ให้ URL วิดีโอ Catbox, ข้อความเนื้อหา หรือรูปภาพ รั่วไหลไปสู่ public API
+            let publicLessons = [];
+            if (isCourseCategory && Array.isArray(adminCourseLessons)) {
+                publicLessons = adminCourseLessons.map((l, idx) => {
+                    if (price <= 0 || idx < 4) {
+                        return { ...l, isLocked: false };
+                    }
+                    return {
+                        title: l.title || `บทเรียนที่ ${idx + 1}`,
+                        isLocked: true
+                    };
+                });
+            }
+
             const publicProductData = {
                 id: id,
                 title: title,
@@ -8923,7 +8972,7 @@ ${encodedToken}
                 isCodeProduct: isPineScript,
                 isCourse: isCourseCategory,
                 totalLessons: isCourseCategory ? adminCourseLessons.length : 0,
-                lessons: isCourseCategory ? adminCourseLessons : [],
+                lessons: isCourseCategory ? publicLessons : [],
                 isRecommended: isRecommended,
                 isBestSeller: isBestSeller,
                 updatedAt: Date.now(),
@@ -8970,6 +9019,10 @@ ${encodedToken}
         }
 
         async function handleAdminDeleteProduct() {
+            if (!isLocalAdmin) {
+                showToast('🔒 สงวนสิทธิ์สำหรับผู้ดูแลระบบบนเครื่อง localhost เท่านั้น', 'warning');
+                return;
+            }
             const editId = document.getElementById('admin-edit-product-id').value;
             if (!editId || !confirm('ยืนยันลบสินค้านี้ออกจากร้านค้าหรือไม่?')) return;
 
@@ -8999,6 +9052,10 @@ ${encodedToken}
         }
 
         async function handleQuickDeleteProduct(productId, event) {
+            if (!isLocalAdmin) {
+                showToast('🔒 สงวนสิทธิ์สำหรับผู้ดูแลระบบบนเครื่อง localhost เท่านั้น', 'warning');
+                return;
+            }
             if (event) {
                 event.preventDefault();
                 event.stopPropagation();
@@ -9687,6 +9744,26 @@ ${encodedToken}
             const previewBadge = document.getElementById('course-hero-preview-badge');
             if (unlockedBadge) unlockedBadge.style.display = isPurchased ? 'inline-flex' : 'none';
             if (previewBadge) previewBadge.style.display = isPurchased ? 'none' : 'inline-flex';
+
+            // ปุ่มแก้ไขคอร์สเรียน: แสดงเฉพาะแอดมินบน localhost/127.0.0.1 เท่านั้น
+            const editBtn = document.getElementById('btn-course-admin-edit');
+            if (editBtn) {
+                editBtn.style.display = isLocalAdmin ? 'inline-flex' : 'none';
+            }
+
+            // ถ้าชำระเงินแล้ว ให้ดึงบทเรียนตัวเต็มจาก VAULT_ENDPOINT มาแสดง
+            if (isPurchased && !p._fullLessonsLoaded) {
+                fetch(`${VAULT_ENDPOINT}/${p.id}.json`)
+                    .then(res => res.ok ? res.json() : null)
+                    .then(vaultData => {
+                        if (vaultData && Array.isArray(vaultData.lessons) && vaultData.lessons.length > 0) {
+                            p.lessons = vaultData.lessons;
+                            p._fullLessonsLoaded = true;
+                            renderCourseViewer(false);
+                        }
+                    })
+                    .catch(err => console.warn('Vault lessons fetch:', err));
+            }
 
             cancelCourseInlineCheckout();
             renderCourseViewer(false);
