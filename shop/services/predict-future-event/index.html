@@ -3,518 +3,534 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Fractal Time Calculator - ถอดรหัสวัฏจักรเวลาจากหนังสือ Gregg Braden</title>
     <meta name="description"
         content="เครื่องคำนวณวัฏจักรเวลา (Fractal Time Calculator) อ้างอิงตามทฤษฎีของ Gregg Braden เพื่อค้นหาเหตุการณ์วนซ้ำในอดีตและอนาคต">
-    <meta name="keywords"
-        content="Fractal Time, Gregg Braden, เครื่องคำนวณเวลา, วัฏจักรเวลา, ทำนายอนาคต, ประวัติศาสตร์ซ้ำรอย">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body {
+        *, *::before, *::after { box-sizing: border-box; }
+
+        html, body {
+            margin: 0; padding: 0;
+            height: 100%; height: 100dvh;
+            overflow: hidden;
             font-family: 'Prompt', sans-serif;
             background: linear-gradient(135deg, #1e3c72, #2a5298, #1a2a6c);
             color: #ffffff;
-            min-height: 100vh;
+        }
+
+        /* Full-viewport flex wrapper */
+        #app {
             display: flex;
+            flex-direction: row;
             align-items: center;
             justify-content: center;
-            margin: 0;
-            padding: 20px;
+            height: 100dvh;
+            width: 100%;
+            padding: 16px;
+            gap: 32px;
         }
 
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.08);
+        /* Book sidebar – shown only on wide screens */
+        #book-sidebar {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            width: 140px;
+            flex-shrink: 0;
+        }
+        @media (min-width: 900px) {
+            #book-sidebar { display: flex; }
+        }
+
+        /* Main glass panel fills available height, never overflows */
+        #main-panel {
+            background: rgba(255,255,255,0.08);
             backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            border-radius: 1rem;
+            /* Flexible sizing */
+            flex: 1 1 auto;
+            max-width: 480px;
+            height: 100%;
+            max-height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
         }
 
+        /* Decorative glows (non-interactive) */
+        .glow-tl {
+            pointer-events: none;
+            position: absolute; top: -40px; right: -40px;
+            width: 100px; height: 100px; border-radius: 50%;
+            background: #60a5fa; opacity: 0.25; filter: blur(30px);
+        }
+        .glow-br {
+            pointer-events: none;
+            position: absolute; bottom: -40px; left: -40px;
+            width: 100px; height: 100px; border-radius: 50%;
+            background: #2dd4bf; opacity: 0.25; filter: blur(30px);
+        }
+
+        /* Scrollable content area inside panel */
+        #panel-scroll {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 16px 20px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.2) transparent;
+        }
+        #panel-scroll::-webkit-scrollbar { width: 4px; }
+        #panel-scroll::-webkit-scrollbar-track { background: transparent; }
+        #panel-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+        /* Title area (fixed top inside panel) */
+        #panel-header {
+            flex-shrink: 0;
+            text-align: center;
+            padding: 14px 20px 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        /* Tab bar */
         .tab-btn.active {
             background-color: #3b82f6;
-            /* bg-blue-500 */
             color: white;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);
         }
 
+        /* Compact inputs */
+        .inp {
+            width: 100%;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid #6b7280;
+            border-radius: 0.5rem;
+            padding: 8px 14px;
+            color: #fff;
+            font-family: 'Prompt', sans-serif;
+            font-size: 0.85rem;
+            outline: none;
+        }
+        .inp:focus { border-color: #60a5fa; }
+
+        label { font-size: 0.8rem; color: #d1d5db; display: block; margin-bottom: 4px; }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(to right, #3b82f6, #2dd4bf);
+            color: #fff;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            padding: 10px 16px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: none;
+            transition: transform 0.15s;
+        }
+        .btn-primary:hover { transform: scale(1.015); }
+
+        .info-box {
+            background: rgba(30,58,138,0.3);
+            border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 0.5rem;
+            padding: 10px 12px;
+            font-size: 0.8rem;
+            color: #bfdbfe;
+            margin-bottom: 12px;
+        }
+        .info-box .formula {
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px solid rgba(59,130,246,0.2);
+            font-family: monospace;
+            font-size: 0.73rem;
+            opacity: 0.85;
+        }
+
+        /* Field group spacing */
+        .field-group { margin-bottom: 10px; }
+
+        /* Result box */
+        #resultBox {
+            margin-top: 12px;
+            background: rgba(0,0,0,0.45);
+            border: 1px solid rgba(45,212,191,0.3);
+            border-radius: 0.75rem;
+            padding: 14px;
+            box-shadow: 0 0 15px rgba(45,212,191,0.15);
+        }
+
+        /* Round items */
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
+        .round-item { animation: fadeIn 0.4s ease-out forwards; }
 
-        .animate-fade-in {
-            animation: fadeIn 0.5s ease-out forwards;
+        .search-btn {
+            flex-shrink: 0;
+            background: rgba(37,99,235,0.4);
+            border: 1px solid rgba(96,165,250,0.3);
+            color: #fff;
+            border-radius: 0.5rem;
+            padding: 8px 10px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background 0.2s;
         }
+        .search-btn:hover { background: rgba(37,99,235,0.65); }
 
-        .round-item {
-            opacity: 0;
-            animation: fadeIn 0.5s ease-out forwards;
-        }
+        .divider { width: 100%; height: 1px; background: rgba(255,255,255,0.12); margin: 10px 0; }
     </style>
 </head>
 
 <body>
+<div id="app">
 
-    <div class="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-20 lg:gap-32 max-w-7xl w-full">
-        <!-- กรอบรูปหนังสือและคำอธิบาย -->
-        <div class="hidden md:flex flex-col items-center gap-4 w-48">
-            <div
-                class="bg-white p-3 rounded-[2rem] shadow-[0_20px_40px_rgba(0,0,0,0.4)] transform -rotate-3 hover:rotate-0 transition-all duration-700 cursor-pointer">
-                <div class="overflow-hidden rounded-[1.5rem]">
-                    <img src="book.jpg" alt="Fractal Time Book"
-                        class="w-full h-auto object-cover hover:scale-110 transition-transform duration-700">
-                </div>
-            </div>
-            <p class="text-xs text-center text-blue-100/70 font-light leading-relaxed">
-                สคริปต์คำนวณรูปแบบเวลาและวัฏจักรเหตุการณ์<br>
-                อ้างอิงจากหนังสือ:<br>
-                <span class="italic font-normal text-blue-200">Fractal Time: The Secret of 2012 and a New World
-                    Age</span>
-            </p>
-        </div>
-
-        <div class="glass-panel w-full max-w-lg rounded-2xl p-8 relative overflow-hidden shadow-2xl">
-            <div class="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 rounded-full bg-blue-400 opacity-30 blur-3xl">
-            </div>
-            <div class="absolute bottom-0 left-0 -ml-16 -mb-16 w-32 h-32 rounded-full bg-teal-400 opacity-30 blur-3xl">
-            </div>
-
-            <div class="relative z-10 text-center">
-                <h1
-                    class="text-3xl font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-teal-200">
-                    Fractal Time Calculator
-                </h1>
-                <p class="text-gray-300 text-sm mb-6">ถอดรหัสวัฏจักรแห่งกาลเวลา</p>
-
-                <div class="flex space-x-2 mb-6 bg-black/30 p-1 rounded-xl">
-                    <button onclick="switchTab(1)" id="btnTab1"
-                        class="tab-btn active flex-1 py-2 rounded-lg font-medium transition duration-300">Mode
-                        1<br><span class="text-xs font-normal opacity-80">อดีต-อนาคต</span></button>
-                    <button onclick="switchTab(2)" id="btnTab2"
-                        class="tab-btn flex-1 py-2 rounded-lg text-gray-400 font-medium hover:text-white transition duration-300">Mode
-                        2<br><span class="text-xs font-normal opacity-80">อนาคตหาอดีต</span></button>
-                    <button onclick="switchTab(3)" id="btnTab3"
-                        class="tab-btn flex-1 py-2 rounded-lg text-gray-400 font-medium hover:text-white transition duration-300">Mode
-                        3<br><span class="text-xs font-normal opacity-80">ชีวิตส่วนตัว</span></button>
-                </div>
-
-                <div id="mode1" class="space-y-4 text-left block animate-fade-in">
-                    <div class="bg-blue-900/30 p-3 rounded-lg border border-blue-500/30 mb-4 text-sm text-blue-200">
-                        <strong>วิธีใช้:</strong>
-                        ใส่วันที่ของเหตุการณ์เพื่อหาว่าสภาวะเดิมจะเกิดขึ้นซ้ำอีกครั้งในอนาคตเมื่อใด
-                        และเคยเกิดมาแล้วในอดีตเมื่อใด
-                        <div class="mt-2 pt-2 border-t border-blue-500/20 text-xs font-mono opacity-80">
-                            สูตร: Future = S + ((5125 - A) * (A / 5125) * 0.618)
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm text-gray-300 mb-1">ชื่อเหตุการณ์ (ถ้ามี)</label>
-                        <div class="flex space-x-2">
-                            <input type="text" id="m1EventName" placeholder="เช่น สงครามโลก, วิกฤตเศรษฐกิจ"
-                                class="flex-1 bg-black/40 border border-gray-500 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-400">
-                            <button onclick="searchEventInfo('m1EventName')"
-                                class="bg-blue-600/50 hover:bg-blue-500/70 border border-blue-400/30 text-white rounded-lg px-3 py-2 text-sm transition-colors">
-                                🔍 ค้นหาเหตุการณ์
-                            </button>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm text-gray-300 mb-1">ปีที่เกิดเหตุการณ์ (ค.ศ.)</label>
-                        <input type="number" id="m1Year" placeholder="เช่น 1941 หรือ 2014"
-                            class="w-full bg-black/40 border border-gray-500 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-400">
-                    </div>
-                    <div>
-                        <label class="block text-sm text-gray-300 mb-1">เดือนที่เกิดเหตุการณ์ (1-12)</label>
-                        <input type="number" id="m1Month" placeholder="เช่น 12" min="1" max="12"
-                            class="w-full bg-black/40 border border-gray-500 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-400">
-                    </div>
-                    <button onclick="calcMode1()"
-                        class="w-full bg-gradient-to-r from-blue-500 to-teal-400 hover:scale-[1.02] text-white font-semibold rounded-lg px-4 py-3 mt-4 transition-transform shadow-lg">คำนวณจุดวนซ้ำ
-                        (Mode 1)</button>
-                </div>
-
-                <div id="mode2" class="space-y-4 text-left hidden">
-                    <div class="bg-blue-900/30 p-3 rounded-lg border border-blue-500/30 mb-4 text-sm text-blue-200">
-                        <strong>วิธีใช้:</strong> ระบุปีในอนาคตที่สนใจ
-                        เพื่อย้อนกลับไปดูว่าสภาวะแบบนั้นเคยเกิดขึ้นครั้งสุดท้ายเมื่อใดในประวัติศาสตร์
-                        <div class="mt-2 pt-2 border-t border-blue-500/20 text-xs font-mono opacity-80">
-                            สูตร: Past = Future - (Cycle * 0.618)
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm text-gray-300 mb-1">ชื่อเหตุการณ์ (ถ้ามี)</label>
-                        <div class="flex space-x-2">
-                            <input type="text" id="m2EventName" placeholder="เช่น การก่อตั้งอาณาจักร, การเปลี่ยนยุค"
-                                class="flex-1 bg-black/40 border border-gray-500 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-400">
-                            <button onclick="searchEventInfo('m2EventName')"
-                                class="bg-blue-600/50 hover:bg-blue-500/70 border border-blue-400/30 text-white rounded-lg px-3 py-2 text-sm transition-colors">
-                                🔍 ค้นหาเหตุการณ์
-                            </button>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm text-gray-300 mb-1">ปีเหตุการณ์ (ค.ศ.)</label>
-                        <input type="number" id="m2Year" value="2012"
-                            class="w-full bg-black/40 border border-gray-500 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-400">
-                    </div>
-
-                    <button onclick="calcMode2()"
-                        class="w-full bg-gradient-to-r from-blue-500 to-teal-400 hover:scale-[1.02] text-white font-semibold rounded-lg px-4 py-3 mt-4 transition-transform shadow-lg">ค้นหาอดีต
-                        (Mode 2)</button>
-                </div>
-
-                <div id="mode3" class="space-y-4 text-left hidden">
-                    <div class="bg-blue-900/30 p-3 rounded-lg border border-blue-500/30 mb-4 text-sm text-blue-200">
-                        <strong>วิธีใช้:</strong> ใส่ปีเกิดและปีที่เกิดเรื่องฝังใจ
-                        เพื่อหาว่าเมื่อไหร่สภาวะหรือความรู้สึกรูปแบบเดิมจะวนกลับมาในชีวิตคุณอีกครั้ง
-                        <div class="mt-2 pt-2 border-t border-blue-500/20 text-xs font-mono opacity-80">
-                            สูตร: Past = Birth + ((Event-Birth) * 0.618) | Next = Birth + ((Event-Birth) * 1.618)
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm text-gray-300 mb-1">ปีเกิดของคุณ (ค.ศ.)</label>
-                        <input type="number" id="m3Birth" placeholder="เช่น 1990"
-                            class="w-full bg-black/40 border border-gray-500 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-400">
-                    </div>
-                    <div>
-                        <label class="block text-sm text-gray-300 mb-1">ปี(ค.ศ.) เหตุการณ์ฝังใจ / จุดย่ำแย่ในชีวิต /
-                            จุดพีคในชีวิต
-                        </label>
-                        <input type="number" id="m3Seed" placeholder="เช่น 2015"
-                            class="w-full bg-black/40 border border-gray-500 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-400">
-                    </div>
-                    <button onclick="calcMode3()"
-                        class="w-full bg-gradient-to-r from-blue-500 to-teal-400 hover:scale-[1.02] text-white font-semibold rounded-lg px-4 py-3 mt-4 transition-transform shadow-lg">ประเมินวัฏจักรชีวิต
-                        (Mode 3)</button>
-                </div>
-
-                <div id="resultBox" class="mt-8 hidden transition-all duration-500">
-                    <div
-                        class="bg-black/50 rounded-xl p-6 border border-teal-400/30 shadow-[0_0_15px_rgba(45,212,191,0.2)]">
-                        <p id="resultLabel" class="text-sm text-teal-200 mb-2 font-semibold"></p>
-                        <div id="predictResult" class="text-white"></div>
-                    </div>
-                </div>
-
+    <!-- Book sidebar -->
+    <div id="book-sidebar">
+        <div style="background:#fff;padding:10px;border-radius:1.5rem;box-shadow:0 15px 35px rgba(0,0,0,0.4);transform:rotate(-3deg);">
+            <div style="overflow:hidden;border-radius:1rem;">
+                <img src="book.jpg" alt="Fractal Time Book" style="width:100%;height:auto;object-fit:cover;">
             </div>
         </div>
+        <p style="font-size:0.7rem;text-align:center;color:rgba(191,219,254,0.65);line-height:1.5;">
+            สคริปต์คำนวณรูปแบบเวลาและวัฏจักรเหตุการณ์<br>
+            อ้างอิงจากหนังสือ:<br>
+            <span style="font-style:italic;color:#bfdbfe;">Fractal Time: The Secret of 2012 and a New World Age</span>
+        </p>
     </div>
 
-    <script>
-        // ฟังก์ชันสลับการแสดงผลโหมด
-        function switchTab(tabId) {
-            document.getElementById('mode1').classList.add('hidden');
-            document.getElementById('mode2').classList.add('hidden');
-            document.getElementById('mode3').classList.add('hidden');
-            document.getElementById('resultBox').classList.add('hidden');
+    <!-- Main panel -->
+    <div id="main-panel">
+        <div class="glow-tl"></div>
+        <div class="glow-br"></div>
 
-            for (let i = 1; i <= 3; i++) {
-                let btn = document.getElementById('btnTab' + i);
-                btn.classList.remove('active', 'text-white');
-                btn.classList.add('text-gray-400');
-            }
+        <!-- Fixed header -->
+        <div id="panel-header">
+            <h1 style="font-size:1.35rem;font-weight:600;background:linear-gradient(to right,#93c5fd,#5eead4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:0 0 2px;">
+                Fractal Time Calculator
+            </h1>
+            <p style="font-size:0.78rem;color:#9ca3af;margin:0 0 10px;">ถอดรหัสวัฏจักรแห่งกาลเวลา</p>
 
-            document.getElementById('mode' + tabId).classList.remove('hidden');
-            let activeBtn = document.getElementById('btnTab' + tabId);
-            activeBtn.classList.remove('text-gray-400');
-            activeBtn.classList.add('active', 'text-white');
-        }
-
-        // ฟังก์ชันเปิด popup ChatGPT
-        function openGptPopup(prompt) {
-            const url = "https://chatgpt.com/?prompt=" + encodeURIComponent(prompt);
-            window.open(url, 'chatgpt_popup', 'width=600,height=600,resizable=yes,scrollbars=yes');
-        }
-
-        // ฟังก์ชันค้นหาข้อมูลเหตุการณ์จาก input
-        function searchEventInfo(id) {
-            let eventName = document.getElementById(id).value;
-            if (!eventName) return alert("กรุณาระบุชื่อเหตุการณ์ที่ต้องการค้นหา");
-            let prompt = (id === 'm2EventName')
-                ? `จงบอกปีค.ศ. เหตุการณ์${eventName} **ตอบแต่ตัวเลขเท่านั้น`
-                : `จงบอกปีค.ศ./เดือน เหตุการณ์${eventName} **ตอบแต่ตัวเลขเท่านั้น`;
-            openGptPopup(prompt);
-        }
-
-        // ฟังก์ชันแสดงกล่องผลลัพธ์ (รองรับการแสดงผล HTML)
-        function showResult(label, htmlValue) {
-            document.getElementById('resultLabel').innerText = label;
-            document.getElementById('predictResult').innerHTML = htmlValue;
-            document.getElementById('resultBox').classList.remove('hidden');
-        }
-
-        let mode1State = {
-            pastDate: 0,
-            nextDate: 0,
-            pastIteration: 1,
-            nextIteration: 1
-        };
-
-        // 🟢 การคำนวณ Mode 1: คำนวณรอบถัดไปและรอบก่อนหน้า
-        function calculateFractalNode(S1) {
-            let A1, B1, resultDateNext;
-            let isNewAge = (S1 > 2012.99);
-
-            if (!isNewAge) {
-                A1 = S1 + 3113;
-                let L1 = A1 / 5125;
-                let L1phi = 0.618 * L1;
-                B1 = 5125 - A1;
-                let I1 = B1 * L1phi;
-                resultDateNext = (A1 + I1) - 3113;
-            } else {
-                A1 = S1 - 2012;
-                let L1 = A1 / 5125;
-                let L1phi = 0.618 * L1;
-                B1 = 5125 - A1;
-                let I1 = B1 * L1phi;
-                resultDateNext = 2012 + A1 + I1;
-            }
-
-            let nextYear = Math.floor(resultDateNext);
-            let nextMonth = Math.round((resultDateNext - nextYear) * 12);
-            if (nextMonth === 0) nextMonth = 1;
-            if (nextMonth > 12) nextMonth = 12;
-
-            let Anext = isNewAge ? (S1 - 2012) : (S1 + 3113);
-            let a = 0.618 / 5125;
-            let b = -1.618;
-            let c = Anext;
-
-            let discriminant = (b * b) - (4 * a * c);
-            let prevAbsolute = (-b - Math.sqrt(discriminant)) / (2 * a);
-
-            let resultDatePast = isNewAge ? (prevAbsolute + 2012) : (prevAbsolute - 3113);
-
-            let prevYear = Math.floor(resultDatePast);
-            let prevMonth = Math.round((resultDatePast - prevYear) * 12);
-            if (prevMonth === 0) prevMonth = 1;
-            if (prevMonth > 12) prevMonth = 12;
-
-            return {
-                pastYear: prevYear, pastMonth: prevMonth, pastDate: resultDatePast,
-                nextYear, nextMonth, nextDate: resultDateNext
-            };
-        }
-
-        function renderFractalBlock(titlePrefix, data) {
-            const monthsTh = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            let eventName = document.getElementById('m1EventName').value || "เหตุการณ์นี้";
-            
-            let promptPast = `จงค้นหาเหตุการณ์${eventName} ช่วง${monthsTh[data.pastMonth - 1]} ${data.pastYear} ว่ามีเหตุการณ์คล้ายคลึงกันเกิดขึ้นไหม`;
-            let promptNext = `จงค้นหาเหตุการณ์${eventName} ช่วง${monthsTh[data.nextMonth - 1]} ${data.nextYear} ว่ามีเหตุการณ์คล้ายคลึงกันเกิดขึ้นไหม`;
-
-            return `
-                <div class="round-item mb-4 p-4 bg-white/5 rounded-xl border border-white/10 relative">
-                    <div class="absolute top-0 right-0 px-3 py-1 bg-blue-500/20 text-xs rounded-bl-xl rounded-tr-xl text-blue-200">${titlePrefix}</div>
-                    
-                    <div class="mt-4">
-                        <div class="text-xs text-gray-400 font-normal mb-1">รอบอดีต (-0.618):</div>
-                        <div class="text-xl font-bold text-blue-300 mb-2">⏳ ${monthsTh[data.pastMonth - 1]} ค.ศ. ${data.pastYear}</div>
-                        <button onclick="openGptPopup('${promptPast}')" class="w-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg py-2 px-3 text-xs text-blue-100 mb-4 transition-colors">
-                            🔍 ค้นหาเหตุการณ์อดีตนี้
-                        </button>
-                    </div>
-
-                    <div class="w-full h-px bg-white/10 my-3"></div>
-                    
-                    <div>
-                        <div class="text-xs text-gray-400 font-normal mb-1">รอบอนาคต (+0.618):</div>
-                        <div class="text-xl font-bold text-teal-300 mb-2">✨ ${monthsTh[data.nextMonth - 1]} ค.ศ. ${data.nextYear}</div>
-                        <button onclick="openGptPopup('${promptNext}')" class="w-full bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg py-2 px-3 text-xs text-teal-100 mb-2 transition-colors">
-                            🔍 ค้นหาเหตุการณ์อนาคตนี้
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        function calcMode1() {
-            let y = parseInt(document.getElementById('m1Year').value);
-            let m = parseInt(document.getElementById('m1Month').value) || 1;
-            if (!y) return alert("กรุณากรอกปี ค.ศ. ให้ถูกต้อง");
-
-            let S1 = y + (m / 12);
-            let data = calculateFractalNode(S1);
-
-            mode1State.pastDate = data.pastDate;
-            mode1State.nextDate = data.nextDate;
-            mode1State.pastIteration = 1;
-            mode1State.nextIteration = 1;
-
-            let blockHtml = renderFractalBlock("Seed เริ่มต้น 🌿", data);
-
-            let finalOutput = `
-                <div id="m1MainContainer">
-                    ${blockHtml}
-                </div>
-
-                <div class="w-full h-px bg-white/20 my-6"></div>
-
-                <div class="flex flex-col md:flex-row gap-4 mb-2">
-                    <div class="flex-1 border border-blue-500/30 rounded-xl p-3 bg-blue-900/10">
-                        <div class="text-blue-200 text-sm font-semibold mb-3 text-center">ฝั่งอดีต</div>
-                        <div id="m1PastContainer"></div>
-                        <button onclick="addMode1PastRound()" class="w-full bg-blue-500/20 hover:bg-blue-500/40 border border-blue-400/30 text-blue-200 rounded-xl py-3 px-2 flex flex-col items-center justify-center gap-1 transition-all duration-300 group">
-                            <span class="text-xl group-hover:scale-125 transition-transform">+</span>
-                            <span class="text-xs">แตกหน่อรอบอดีตก่อนหน้า</span>
-                        </button>
-                    </div>
-                    
-                    <div class="flex-1 border border-teal-500/30 rounded-xl p-3 bg-teal-900/10">
-                        <div class="text-teal-200 text-sm font-semibold mb-3 text-center">ฝั่งอนาคต</div>
-                        <div id="m1FutureContainer"></div>
-                        <button onclick="addMode1Round()" class="w-full bg-teal-500/20 hover:bg-teal-500/40 border border-teal-400/30 text-teal-200 rounded-xl py-3 px-2 flex flex-col items-center justify-center gap-1 transition-all duration-300 group">
-                            <span class="text-xl group-hover:scale-125 transition-transform">+</span>
-                            <span class="text-xs">แตกหน่อรอบอนาคตถัดไป</span>
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            showResult("ผลการคำนวณวัฏจักร (Mode 1):", finalOutput);
-        }
-
-        function addMode1PastRound() {
-            mode1State.pastIteration++;
-            let S1 = mode1State.pastDate;
-            let data = calculateFractalNode(S1);
-            mode1State.pastDate = data.pastDate;
-
-            const container = document.getElementById('m1PastContainer');
-            const newRound = document.createElement('div');
-            newRound.innerHTML = renderFractalBlock(`แตกหน่ออดีต #${mode1State.pastIteration}`, data);
-            container.appendChild(newRound);
-        }
-
-        function addMode1Round() {
-            mode1State.nextIteration++;
-            let S1 = mode1State.nextDate;
-            let data = calculateFractalNode(S1);
-            mode1State.nextDate = data.nextDate;
-
-            const container = document.getElementById('m1FutureContainer');
-            const newRound = document.createElement('div');
-            newRound.innerHTML = renderFractalBlock(`แตกหน่ออนาคต #${mode1State.nextIteration}`, data);
-            container.appendChild(newRound);
-
-            const resultBox = document.getElementById('resultBox');
-            resultBox.scrollTop = resultBox.scrollHeight;
-        }
-
-        // 🟡 การคำนวณ Mode 2: อนาคตหาอดีต
-        function calcMode2() {
-            let targetYear = parseFloat(document.getElementById('m2Year').value);
-            let cycleLength = 5125; // ค่าคงที่วัฏจักรยุคโลก
-            let eventName = document.getElementById('m2EventName').value || "เหตุการณ์นี้";
-
-            if (!targetYear) return alert("กรุณากรอกปีเหตุการณ์");
-
-            let phiPoint = cycleLength * 0.618;
-            let resultYear = targetYear - phiPoint;
-
-            let finalOutputStr = "";
-            if (resultYear < 0) {
-                let bcYear = Math.abs(Math.round(resultYear));
-                finalOutputStr = bcYear + " B.C. (ก่อนคริสตกาล)";
-            } else {
-                let adYear = Math.round(resultYear);
-                finalOutputStr = "ค.ศ. " + adYear;
-            }
-
-            let promptManual = `จงข้อมูลในประวัติศาสตร์ที่เคยมีบันทึกไว้ ${eventName} ${finalOutputStr}`;
-
-            let htmlValue = `
-                <div class="text-3xl font-bold text-teal-300 mb-2">✨ ${finalOutputStr}</div>
-                <button onclick="openGptPopup('${promptManual}')" class="w-full bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg py-2 px-3 text-xs text-teal-100 transition-colors">
-                    🔍 ค้นหาเหตุการณ์โบราณใน Chatgpt
+            <!-- Tabs -->
+            <div style="display:flex;gap:6px;background:rgba(0,0,0,0.3);padding:4px;border-radius:0.75rem;">
+                <button onclick="switchTab(1)" id="btnTab1"
+                    class="tab-btn active"
+                    style="flex:1;padding:6px 4px;border-radius:0.5rem;font-weight:500;font-size:0.8rem;border:none;cursor:pointer;color:#fff;background:transparent;font-family:'Prompt',sans-serif;transition:all 0.2s;">
+                    Mode 1<br><span style="font-size:0.68rem;opacity:0.8;">อดีต-อนาคต</span>
                 </button>
-            `;
-            showResult("สภาวะนี้เคยเกิดครั้งสุดท้ายใน:", htmlValue);
-        }
+                <button onclick="switchTab(2)" id="btnTab2"
+                    class="tab-btn"
+                    style="flex:1;padding:6px 4px;border-radius:0.5rem;font-weight:500;font-size:0.8rem;border:none;cursor:pointer;color:#9ca3af;background:transparent;font-family:'Prompt',sans-serif;transition:all 0.2s;">
+                    Mode 2<br><span style="font-size:0.68rem;opacity:0.8;">อนาคตหาอดีต</span>
+                </button>
+                <button onclick="switchTab(3)" id="btnTab3"
+                    class="tab-btn"
+                    style="flex:1;padding:6px 4px;border-radius:0.5rem;font-weight:500;font-size:0.8rem;border:none;cursor:pointer;color:#9ca3af;background:transparent;font-family:'Prompt',sans-serif;transition:all 0.2s;">
+                    Mode 3<br><span style="font-size:0.68rem;opacity:0.8;">ชีวิตส่วนตัว</span>
+                </button>
+            </div>
+        </div>
 
-        // 🔴 การคำนวณ Mode 3: วัฏจักรชีวิตส่วนตัว
-        let mode3State = {
-            birth: 0,
-            ageAtEvent: 0,
-            currentIteration: 1
-        };
+        <!-- Scrollable body -->
+        <div id="panel-scroll">
 
-        function calcMode3() {
-            let birth = parseInt(document.getElementById('m3Birth').value);
-            let seed = parseInt(document.getElementById('m3Seed').value);
-            let eventName = "ความรู้สึกนี้";
-
-            if (!birth || !seed) return alert("กรุณากรอกข้อมูลปีให้ครบถ้วน");
-            if (seed <= birth) return alert("ปีที่เกิดเหตุการณ์ ต้องมากกว่าปีเกิดของคุณครับ");
-
-            let ageAtEvent = seed - birth;
-
-            // เก็บสถานะสำหรับการคำนวณรอบถัดไป
-            mode3State.birth = birth;
-            mode3State.ageAtEvent = ageAtEvent;
-            mode3State.currentIteration = 1;
-
-            // คำนวณรอบอดีต (จุดเริ่มของวงรอบ)
-            let pastAge = Math.round(ageAtEvent * 0.618);
-            let pastYear = birth + pastAge;
-
-            // คำนวณรอบอนาคต (จุดวนซ้ำ)
-            let nextAge = Math.round(ageAtEvent * 1.618);
-            let nextYear = birth + nextAge;
-
-            let htmlValue = `
-                <div class="text-sm text-gray-300 font-normal mb-1 mt-2">รอบอดีต (จุดเริ่มของสภาวะนี้):</div>
-                <div class="text-2xl font-bold text-blue-300 mb-4">⏳ ปี ค.ศ. ${pastYear} (อายุ ${pastAge} ปี)</div>
-                
-                <div class="w-full h-px bg-white/20 my-4"></div>
-
-                <div id="m3FutureContainer">
-                    <div class="round-item mb-4">
-                        <div class="text-sm text-gray-300 font-normal mb-1">รอบอนาคตที่ 1 (เมื่อวัฏจักรเวียนกลับมา):</div>
-                        <div class="text-2xl font-bold text-teal-400">✨ ปี ค.ศ. ${nextYear} (อายุ ${nextAge} ปี)</div>
+            <!-- Mode 1 -->
+            <div id="mode1" style="display:block;">
+                <div class="info-box">
+                    <strong>วิธีใช้:</strong> ใส่วันที่ของเหตุการณ์เพื่อหาว่าสภาวะเดิมจะเกิดขึ้นซ้ำอีกครั้งในอนาคตเมื่อใด
+                    และเคยเกิดมาแล้วในอดีตเมื่อใด
+                    <div class="formula">สูตร: Future = S + ((5125 - A) * (A / 5125) * 0.618)</div>
+                </div>
+                <div class="field-group">
+                    <label>ชื่อเหตุการณ์ (ถ้ามี)</label>
+                    <div style="display:flex;gap:6px;">
+                        <input type="text" id="m1EventName" placeholder="เช่น สงครามโลก, วิกฤตเศรษฐกิจ" class="inp" style="flex:1;">
+                        <button onclick="searchEventInfo('m1EventName')" class="search-btn">🔍 ค้นหา</button>
                     </div>
                 </div>
+                <div class="field-group">
+                    <label>ปีที่เกิดเหตุการณ์ (ค.ศ.)</label>
+                    <input type="number" id="m1Year" placeholder="เช่น 1941 หรือ 2014" class="inp">
+                </div>
+                <div class="field-group">
+                    <label>เดือนที่เกิดเหตุการณ์ (1-12)</label>
+                    <input type="number" id="m1Month" placeholder="เช่น 12" min="1" max="12" class="inp">
+                </div>
+                <button onclick="calcMode1()" class="btn-primary">คำนวณจุดวนซ้ำ (Mode 1)</button>
+            </div>
 
-                <button onclick="addMode3Round()" class="w-full mt-2 bg-teal-500/20 hover:bg-teal-500/40 border border-teal-400/30 text-teal-200 rounded-xl py-3 px-4 flex items-center justify-center gap-2 transition-all duration-300 group">
-                    <span class="text-xl group-hover:scale-125 transition-transform">+</span>
-                    <span>คำนวณรอบถัดไป</span>
-                </button>
-            `;
+            <!-- Mode 2 -->
+            <div id="mode2" style="display:none;">
+                <div class="info-box">
+                    <strong>วิธีใช้:</strong> ระบุปีในอนาคตที่สนใจ เพื่อย้อนกลับไปดูว่าสภาวะแบบนั้นเคยเกิดขึ้นครั้งสุดท้ายเมื่อใดในประวัติศาสตร์
+                    <div class="formula">สูตร: Past = Future - (Cycle * 0.618)</div>
+                </div>
+                <div class="field-group">
+                    <label>ชื่อเหตุการณ์ (ถ้ามี)</label>
+                    <div style="display:flex;gap:6px;">
+                        <input type="text" id="m2EventName" placeholder="เช่น การก่อตั้งอาณาจักร, การเปลี่ยนยุค" class="inp" style="flex:1;">
+                        <button onclick="searchEventInfo('m2EventName')" class="search-btn">🔍 ค้นหา</button>
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label>ปีเหตุการณ์ (ค.ศ.)</label>
+                    <input type="number" id="m2Year" value="2012" class="inp">
+                </div>
+                <button onclick="calcMode2()" class="btn-primary">ค้นหาอดีต (Mode 2)</button>
+            </div>
 
-            showResult("ประเมินวัฏจักรชีวิต (Mode 3):", htmlValue);
+            <!-- Mode 3 -->
+            <div id="mode3" style="display:none;">
+                <div class="info-box">
+                    <strong>วิธีใช้:</strong> ใส่ปีเกิดและปีที่เกิดเรื่องฝังใจ เพื่อหาว่าเมื่อไหร่สภาวะหรือความรู้สึกรูปแบบเดิมจะวนกลับมาในชีวิตคุณอีกครั้ง
+                    <div class="formula">สูตร: Past = Birth + ((Event-Birth) * 0.618) | Next = Birth + ((Event-Birth) * 1.618)</div>
+                </div>
+                <div class="field-group">
+                    <label>ปีเกิดของคุณ (ค.ศ.)</label>
+                    <input type="number" id="m3Birth" placeholder="เช่น 1990" class="inp">
+                </div>
+                <div class="field-group">
+                    <label>ปี (ค.ศ.) เหตุการณ์ฝังใจ / จุดย่ำแย่ / จุดพีคในชีวิต</label>
+                    <input type="number" id="m3Seed" placeholder="เช่น 2015" class="inp">
+                </div>
+                <button onclick="calcMode3()" class="btn-primary">ประเมินวัฏจักรชีวิต (Mode 3)</button>
+            </div>
+
+            <!-- Result box -->
+            <div id="resultBox" style="display:none;">
+                <p id="resultLabel" style="font-size:0.8rem;color:#5eead4;margin:0 0 8px;font-weight:600;"></p>
+                <div id="predictResult" style="color:#fff;"></div>
+            </div>
+
+        </div><!-- /panel-scroll -->
+    </div><!-- /main-panel -->
+
+</div><!-- /app -->
+
+<script>
+    function switchTab(tabId) {
+        [1,2,3].forEach(i => {
+            document.getElementById('mode'+i).style.display = 'none';
+            const btn = document.getElementById('btnTab'+i);
+            btn.classList.remove('active');
+            btn.style.color = '#9ca3af';
+        });
+        document.getElementById('mode'+tabId).style.display = 'block';
+        const activeBtn = document.getElementById('btnTab'+tabId);
+        activeBtn.classList.add('active');
+        activeBtn.style.color = '#fff';
+        document.getElementById('resultBox').style.display = 'none';
+    }
+
+    function openGptPopup(prompt) {
+        const url = "https://chatgpt.com/?prompt=" + encodeURIComponent(prompt);
+        window.open(url, 'chatgpt_popup', 'width=600,height=600,resizable=yes,scrollbars=yes');
+    }
+
+    function searchEventInfo(id) {
+        let eventName = document.getElementById(id).value;
+        if (!eventName) return alert("กรุณาระบุชื่อเหตุการณ์ที่ต้องการค้นหา");
+        let prompt = (id === 'm2EventName')
+            ? `จงบอกปีค.ศ. เหตุการณ์${eventName} **ตอบแต่ตัวเลขเท่านั้น`
+            : `จงบอกปีค.ศ./เดือน เหตุการณ์${eventName} **ตอบแต่ตัวเลขเท่านั้น`;
+        openGptPopup(prompt);
+    }
+
+    function showResult(label, htmlValue) {
+        document.getElementById('resultLabel').innerText = label;
+        document.getElementById('predictResult').innerHTML = htmlValue;
+        const rb = document.getElementById('resultBox');
+        rb.style.display = 'block';
+        // scroll result into view inside panel-scroll
+        setTimeout(() => rb.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+    }
+
+    let mode1State = { pastDate: 0, nextDate: 0, pastIteration: 1, nextIteration: 1 };
+
+    function calculateFractalNode(S1) {
+        let A1, B1, resultDateNext;
+        let isNewAge = (S1 > 2012.99);
+
+        if (!isNewAge) {
+            A1 = S1 + 3113;
+            let L1 = A1 / 5125;
+            let L1phi = 0.618 * L1;
+            B1 = 5125 - A1;
+            let I1 = B1 * L1phi;
+            resultDateNext = (A1 + I1) - 3113;
+        } else {
+            A1 = S1 - 2012;
+            let L1 = A1 / 5125;
+            let L1phi = 0.618 * L1;
+            B1 = 5125 - A1;
+            let I1 = B1 * L1phi;
+            resultDateNext = 2012 + A1 + I1;
         }
 
-        function addMode3Round() {
-            mode3State.currentIteration++;
+        let nextYear = Math.floor(resultDateNext);
+        let nextMonth = Math.round((resultDateNext - nextYear) * 12);
+        if (nextMonth === 0) nextMonth = 1;
+        if (nextMonth > 12) nextMonth = 12;
 
-            // สูตร Fractal: SeedAge * (1.618 ^ iteration)
-            let nextAge = Math.round(mode3State.ageAtEvent * Math.pow(1.618, mode3State.currentIteration));
-            let nextYear = mode3State.birth + nextAge;
+        let Anext = isNewAge ? (S1 - 2012) : (S1 + 3113);
+        let a = 0.618 / 5125, b = -1.618, c = Anext;
+        let discriminant = (b*b) - (4*a*c);
+        let prevAbsolute = (-b - Math.sqrt(discriminant)) / (2*a);
+        let resultDatePast = isNewAge ? (prevAbsolute + 2012) : (prevAbsolute - 3113);
 
-            const container = document.getElementById('m3FutureContainer');
-            const newRound = document.createElement('div');
-            newRound.className = "round-item mb-4 pt-4 border-t border-white/10";
-            newRound.innerHTML = `
-                <div class="text-sm text-gray-300 font-normal mb-1">รอบอนาคตที่ ${mode3State.currentIteration}:</div>
-                <div class="text-2xl font-bold text-teal-300">✨ ปี ค.ศ. ${nextYear} (อายุ ${nextAge} ปี)</div>
-            `;
-            container.appendChild(newRound);
+        let prevYear = Math.floor(resultDatePast);
+        let prevMonth = Math.round((resultDatePast - prevYear) * 12);
+        if (prevMonth === 0) prevMonth = 1;
+        if (prevMonth > 12) prevMonth = 12;
 
-            // Scroll to bottom of result box if it grows
-            const resultBox = document.getElementById('resultBox');
-            resultBox.scrollTop = resultBox.scrollHeight;
-        }
-    </script>
+        return { pastYear: prevYear, pastMonth: prevMonth, pastDate: resultDatePast, nextYear, nextMonth, nextDate: resultDateNext };
+    }
+
+    function renderFractalBlock(titlePrefix, data) {
+        const monthsTh = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        let eventName = document.getElementById('m1EventName').value || "เหตุการณ์นี้";
+        let promptPast = `จงค้นหาเหตุการณ์${eventName} ช่วง${monthsTh[data.pastMonth-1]} ${data.pastYear} ว่ามีเหตุการณ์คล้ายคลึงกันเกิดขึ้นไหม`;
+        let promptNext = `จงค้นหาเหตุการณ์${eventName} ช่วง${monthsTh[data.nextMonth-1]} ${data.nextYear} ว่ามีเหตุการณ์คล้ายคลึงกันเกิดขึ้นไหม`;
+        return `
+            <div class="round-item" style="margin-bottom:10px;padding:12px;background:rgba(255,255,255,0.05);border-radius:0.75rem;border:1px solid rgba(255,255,255,0.1);position:relative;">
+                <div style="position:absolute;top:0;right:0;padding:2px 10px;background:rgba(59,130,246,0.2);font-size:0.7rem;border-radius:0 0.75rem 0 0.75rem;color:#bfdbfe;">${titlePrefix}</div>
+                <div style="margin-top:14px;">
+                    <div style="font-size:0.73rem;color:#9ca3af;margin-bottom:2px;">รอบอดีต (-0.618):</div>
+                    <div style="font-size:1.1rem;font-weight:700;color:#93c5fd;margin-bottom:6px;">⏳ ${monthsTh[data.pastMonth-1]} ค.ศ. ${data.pastYear}</div>
+                    <button onclick="openGptPopup('${promptPast}')" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:0.5rem;padding:6px;font-size:0.72rem;color:#bfdbfe;cursor:pointer;margin-bottom:8px;">🔍 ค้นหาเหตุการณ์อดีตนี้</button>
+                </div>
+                <div style="width:100%;height:1px;background:rgba(255,255,255,0.1);margin:6px 0;"></div>
+                <div>
+                    <div style="font-size:0.73rem;color:#9ca3af;margin-bottom:2px;">รอบอนาคต (+0.618):</div>
+                    <div style="font-size:1.1rem;font-weight:700;color:#5eead4;margin-bottom:6px;">✨ ${monthsTh[data.nextMonth-1]} ค.ศ. ${data.nextYear}</div>
+                    <button onclick="openGptPopup('${promptNext}')" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:0.5rem;padding:6px;font-size:0.72rem;color:#ccfbf1;cursor:pointer;">🔍 ค้นหาเหตุการณ์อนาคตนี้</button>
+                </div>
+            </div>`;
+    }
+
+    function calcMode1() {
+        let y = parseInt(document.getElementById('m1Year').value);
+        let m = parseInt(document.getElementById('m1Month').value) || 1;
+        if (!y) return alert("กรุณากรอกปี ค.ศ. ให้ถูกต้อง");
+
+        let S1 = y + (m / 12);
+        let data = calculateFractalNode(S1);
+        mode1State.pastDate = data.pastDate;
+        mode1State.nextDate = data.nextDate;
+        mode1State.pastIteration = 1;
+        mode1State.nextIteration = 1;
+
+        let finalOutput = `
+            <div id="m1MainContainer">${renderFractalBlock("Seed เริ่มต้น 🌿", data)}</div>
+            <div style="width:100%;height:1px;background:rgba(255,255,255,0.15);margin:10px 0;"></div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="border:1px solid rgba(59,130,246,0.3);border-radius:0.75rem;padding:10px;background:rgba(30,58,138,0.12);">
+                    <div style="color:#bfdbfe;font-size:0.8rem;font-weight:600;margin-bottom:6px;text-align:center;">ฝั่งอดีต</div>
+                    <div id="m1PastContainer"></div>
+                    <button onclick="addMode1PastRound()" style="width:100%;background:rgba(59,130,246,0.2);border:1px solid rgba(96,165,250,0.3);color:#bfdbfe;border-radius:0.75rem;padding:8px;font-size:0.78rem;cursor:pointer;">+ แตกหน่อรอบอดีตก่อนหน้า</button>
+                </div>
+                <div style="border:1px solid rgba(20,184,166,0.3);border-radius:0.75rem;padding:10px;background:rgba(19,78,74,0.12);">
+                    <div style="color:#5eead4;font-size:0.8rem;font-weight:600;margin-bottom:6px;text-align:center;">ฝั่งอนาคต</div>
+                    <div id="m1FutureContainer"></div>
+                    <button onclick="addMode1Round()" style="width:100%;background:rgba(20,184,166,0.2);border:1px solid rgba(45,212,191,0.3);color:#5eead4;border-radius:0.75rem;padding:8px;font-size:0.78rem;cursor:pointer;">+ แตกหน่อรอบอนาคตถัดไป</button>
+                </div>
+            </div>`;
+        showResult("ผลการคำนวณวัฏจักร (Mode 1):", finalOutput);
+    }
+
+    function addMode1PastRound() {
+        mode1State.pastIteration++;
+        let data = calculateFractalNode(mode1State.pastDate);
+        mode1State.pastDate = data.pastDate;
+        const el = document.createElement('div');
+        el.innerHTML = renderFractalBlock(`แตกหน่ออดีต #${mode1State.pastIteration}`, data);
+        document.getElementById('m1PastContainer').appendChild(el);
+    }
+
+    function addMode1Round() {
+        mode1State.nextIteration++;
+        let data = calculateFractalNode(mode1State.nextDate);
+        mode1State.nextDate = data.nextDate;
+        const el = document.createElement('div');
+        el.innerHTML = renderFractalBlock(`แตกหน่ออนาคต #${mode1State.nextIteration}`, data);
+        document.getElementById('m1FutureContainer').appendChild(el);
+        const ps = document.getElementById('panel-scroll');
+        setTimeout(() => ps.scrollTop = ps.scrollHeight, 50);
+    }
+
+    function calcMode2() {
+        let targetYear = parseFloat(document.getElementById('m2Year').value);
+        let eventName = document.getElementById('m2EventName').value || "เหตุการณ์นี้";
+        if (!targetYear) return alert("กรุณากรอกปีเหตุการณ์");
+
+        let resultYear = targetYear - (5125 * 0.618);
+        let finalOutputStr = resultYear < 0
+            ? Math.abs(Math.round(resultYear)) + " B.C. (ก่อนคริสตกาล)"
+            : "ค.ศ. " + Math.round(resultYear);
+
+        let promptManual = `จงข้อมูลในประวัติศาสตร์ที่เคยมีบันทึกไว้ ${eventName} ${finalOutputStr}`;
+        let htmlValue = `
+            <div style="font-size:1.5rem;font-weight:700;color:#5eead4;margin-bottom:8px;">✨ ${finalOutputStr}</div>
+            <button onclick="openGptPopup('${promptManual}')" style="width:100%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:0.5rem;padding:8px;font-size:0.78rem;color:#ccfbf1;cursor:pointer;">🔍 ค้นหาเหตุการณ์โบราณใน ChatGPT</button>`;
+        showResult("สภาวะนี้เคยเกิดครั้งสุดท้ายใน:", htmlValue);
+    }
+
+    let mode3State = { birth: 0, ageAtEvent: 0, currentIteration: 1 };
+
+    function calcMode3() {
+        let birth = parseInt(document.getElementById('m3Birth').value);
+        let seed = parseInt(document.getElementById('m3Seed').value);
+        if (!birth || !seed) return alert("กรุณากรอกข้อมูลปีให้ครบถ้วน");
+        if (seed <= birth) return alert("ปีที่เกิดเหตุการณ์ ต้องมากกว่าปีเกิดของคุณครับ");
+
+        let ageAtEvent = seed - birth;
+        mode3State.birth = birth;
+        mode3State.ageAtEvent = ageAtEvent;
+        mode3State.currentIteration = 1;
+
+        let pastAge  = Math.round(ageAtEvent * 0.618);
+        let pastYear = birth + pastAge;
+        let nextAge  = Math.round(ageAtEvent * 1.618);
+        let nextYear = birth + nextAge;
+
+        let htmlValue = `
+            <div style="font-size:0.8rem;color:#d1d5db;margin-bottom:4px;">รอบอดีต (จุดเริ่มของสภาวะนี้):</div>
+            <div style="font-size:1.3rem;font-weight:700;color:#93c5fd;margin-bottom:10px;">⏳ ปี ค.ศ. ${pastYear} (อายุ ${pastAge} ปี)</div>
+            <div style="width:100%;height:1px;background:rgba(255,255,255,0.15);margin:8px 0;"></div>
+            <div id="m3FutureContainer">
+                <div class="round-item" style="margin-bottom:8px;">
+                    <div style="font-size:0.8rem;color:#d1d5db;margin-bottom:4px;">รอบอนาคตที่ 1 (เมื่อวัฏจักรเวียนกลับมา):</div>
+                    <div style="font-size:1.3rem;font-weight:700;color:#5eead4;">✨ ปี ค.ศ. ${nextYear} (อายุ ${nextAge} ปี)</div>
+                </div>
+            </div>
+            <button onclick="addMode3Round()" style="width:100%;margin-top:8px;background:rgba(20,184,166,0.2);border:1px solid rgba(45,212,191,0.3);color:#5eead4;border-radius:0.75rem;padding:8px;font-size:0.8rem;cursor:pointer;">+ คำนวณรอบถัดไป</button>`;
+        showResult("ประเมินวัฏจักรชีวิต (Mode 3):", htmlValue);
+    }
+
+    function addMode3Round() {
+        mode3State.currentIteration++;
+        let nextAge  = Math.round(mode3State.ageAtEvent * Math.pow(1.618, mode3State.currentIteration));
+        let nextYear = mode3State.birth + nextAge;
+        const el = document.createElement('div');
+        el.className = "round-item";
+        el.style.cssText = "margin-bottom:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.1);";
+        el.innerHTML = `
+            <div style="font-size:0.8rem;color:#d1d5db;margin-bottom:4px;">รอบอนาคตที่ ${mode3State.currentIteration}:</div>
+            <div style="font-size:1.3rem;font-weight:700;color:#5eead4;">✨ ปี ค.ศ. ${nextYear} (อายุ ${nextAge} ปี)</div>`;
+        document.getElementById('m3FutureContainer').appendChild(el);
+        const ps = document.getElementById('panel-scroll');
+        setTimeout(() => ps.scrollTop = ps.scrollHeight, 50);
+    }
+</script>
 </body>
-
 </html>
