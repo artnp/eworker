@@ -5465,7 +5465,7 @@
                             </div>
                             ${isCourse ? `
                                 <button class="btn-service-fh" style="${isUserPurchased ? 'background:linear-gradient(135deg, #059669 0%, #10b981 100%); border-color:#059669;' : 'background:linear-gradient(135deg, #d97706 0%, #f59e0b 100%); border-color:#d97706;'}" onclick="openCourseViewer('${p.id}', event)">
-                                    ${isUserPurchased ? '🎓 ซื้อคอร์สแล้ว' : '🎓 เริ่มเรียน / ดูตัวอย่าง'}
+                                    ${isUserPurchased ? '🎓 ซื้อคอร์สแล้ว' : '🎓 ดูตัวอย่าง'}
                                 </button>
                             ` : (isService ? `
                                 ${(!storeIsOnline && isServiceRequiringServer(p)) ? `
