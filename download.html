@@ -2825,16 +2825,16 @@
                     qrDisplay.appendChild(fallbackImg);
                 };
                 fallbackImg.onerror = () => {
-                    const payload = generatePromptPayPayload(promptPayId, price);
-                    qrDisplay.innerHTML = '';
-                    new QRCode(qrDisplay, {
-                        text: payload,
-                        width: 240,
-                        height: 240,
-                        colorDark: "#000000",
-                        colorLight: "#ffffff",
-                        correctLevel: QRCode.CorrectLevel.M
-                    });
+                    qrDisplay.innerHTML = `
+                        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px 14px; text-align:center; height:100%; min-height:220px; background:#fff5f5; border:1px solid #fed7d7; border-radius:12px; box-sizing:border-box;">
+                            <div style="font-size: 2.2rem; margin-bottom: 6px;">⚠️</div>
+                            <div style="font-size: 0.98rem; font-weight: 800; color: #b91c1c; margin-bottom: 4px;">ระบบชำระเงินขัดข้องชั่วคราว</div>
+                            <div style="font-size: 0.78rem; color: #7f1d1d; line-height: 1.5; margin-bottom: 14px;">
+                                ไม่สามารถสร้าง QR Code ชำระเงินได้ในขณะนี้ ขออภัยในความไม่สะดวก กรุณาลองใหม่อีกครั้ง หรือติดต่อผู้ดูแลระบบ
+                            </div>
+                            <button type="button" class="btn" onclick="initiatePaymentPrompt()" style="padding:6px 16px; font-size:0.82rem; background:#fff; color:#b91c1c; border:1px solid #fca5a5; cursor:pointer;">🔄 ลองใหม่อีกครั้ง</button>
+                        </div>
+                    `;
                 };
             }
         }
