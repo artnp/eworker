@@ -1329,7 +1329,7 @@
             </div>
 
             <!-- Bottom Right Floating Download/Payment Action Button (Hidden until image uploaded) -->
-            <div class="floating-action-box" id="floatingActionBox" style="display: none;">
+            <div class="floating-action-box" id="floatingActionBox" style="display: none; display: flex; gap: 8px; align-items: center;">
                 <button class="btn btn-primary" id="downloadPdfBtn" type="button">
                     <div class="btn-title-row">
                         <svg style="width:18px;height:18px;flex-shrink:0;" fill="none" stroke="currentColor"
@@ -1340,6 +1340,13 @@
                         </svg>
                         <span id="btnPdfText">⚡ ชำระเงิน & ดาวน์โหลด PDF</span>
                     </div>
+                </button>
+                <button class="btn" id="downloadJpgBtn" type="button" onclick="triggerJpgDownload()"
+                    style="display: none; background: #0284c7; color: #ffffff; border: none; font-weight: 700; padding: 10px 16px; border-radius: 8px; box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35); cursor: pointer; align-items: center; gap: 6px;">
+                    <svg style="width:18px;height:18px;flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                    </svg>
+                    <span>🖼️ ดาวน์โหลด JPG</span>
                 </button>
             </div>
 
@@ -1411,18 +1418,31 @@
                 <h3 style="font-size: 1.4rem; font-weight: 800; color: #16a34a; margin: 0;">ชำระเงิน 5 บาท สำเร็จแล้ว!
                 </h3>
                 <p style="font-size: 0.86rem; color: #64748b; margin-top: 4px;">
-                    ปลดล็อคเรียบร้อย กำลังดาวน์โหลดไฟล์ PDF คุณภาพสูง..
+                    ปลดล็อคเรียบร้อย พร้อมดาวน์โหลดไฟล์คุณภาพสูง ไร้ลายน้ำ 100%
                 </p>
 
                 <div
-                    style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-md); padding: 18px; margin: 18px 0;">
+                    style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-md); padding: 16px; margin: 16px 0; display: flex; flex-direction: column; gap: 10px;">
                     <button type="button" id="btnDownloadClean" onclick="triggerDownload()" class="btn btn-success"
-                        style="width: 100%; justify-content: center; font-size: 1.05rem; font-weight: 800; padding: 14px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);">
+                        style="width: 100%; justify-content: center; font-size: 1.05rem; font-weight: 800; padding: 13px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);">
                         📥 ดาวน์โหลดไฟล์ PDF ทันที
                     </button>
+                    <button type="button" id="btnDownloadJpg" onclick="triggerJpgDownload()" class="btn"
+                        style="width: 100%; justify-content: center; font-size: 1.02rem; font-weight: 800; padding: 13px; background: #0284c7; color: #ffffff; border: none; border-radius: var(--radius-md); box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        🖼️ ดาวน์โหลดไฟล์ JPG ทันที (300 DPI คมชัดสูง)
+                    </button>
                 </div>
+
+                <!-- Mobile Fallback Preview Box -->
+                <div id="mobileInchJpgPreviewBox" style="display: none; margin-top: 10px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 10px; text-align: center;">
+                    <p style="font-size: 0.78rem; color: #475569; margin: 0 0 8px 0; font-weight: 600;">
+                        💡 สำหรับมือถือ: หากระบบไม่ดาวน์โหลดอัตโนมัติ ให้ <u>แตะค้างที่รูปภาพด้านล่าง</u> แล้วเลือก <b>"บันทึกรูปภาพ"</b>
+                    </p>
+                    <img id="mobileInchJpgPreviewImg" src="" alt="ภาพติดบัตร" style="max-width: 100%; max-height: 220px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: inline-block;">
+                </div>
+
                 <button type="button" onclick="closePaymentModal()" class="btn btn-secondary"
-                    style="width: 100%; font-size: 0.85rem;">
+                    style="width: 100%; font-size: 0.85rem; margin-top: 6px;">
                     ปิดหน้าต่าง
                 </button>
             </div>
@@ -1519,6 +1539,18 @@
         const gapInput = document.getElementById('gapInput');
         const gapVal = document.getElementById('gapVal');
         const cropMarksToggle = document.getElementById('cropMarksToggle');
+
+        // Restore payment on reload if customer already paid within 24 hours (prevents losing money on mobile reload)
+        try {
+            const rawPaid = localStorage.getItem('eworker_inch_paid');
+            if (rawPaid) {
+                const paidData = JSON.parse(rawPaid);
+                if (Date.now() - paidData.paidAt < 24 * 60 * 60 * 1000) {
+                    isPaymentApproved = true;
+                    currentOrderId = paidData.orderId;
+                }
+            }
+        } catch (e) { }
 
         // State variables (Restore from localStorage)
         let uploadedImage = null;
@@ -1930,7 +1962,27 @@
 
             const sizeLabel = PHOTO_SIZES[selectedPhotoSize].label;
             const paperLabel = selectedPaperSize;
-            pdf.save(`eWorker_Photo_${sizeLabel}_on_${paperLabel}.pdf`);
+            const fileName = `eWorker_Photo_${sizeLabel}_on_${paperLabel}.pdf`;
+
+            // Mobile-Friendly PDF Download
+            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1);
+            if (isMobile && navigator.share && navigator.canShare) {
+                try {
+                    const pdfBlob = pdf.output('blob');
+                    const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+                    if (navigator.canShare({ files: [file] })) {
+                        navigator.share({
+                            files: [file],
+                            title: fileName,
+                            text: 'ไฟล์ PDF จัดรูปถ่ายติดบัตร eWorker'
+                        }).catch(() => {
+                            pdf.save(fileName);
+                        });
+                        return;
+                    }
+                } catch (e) { }
+            }
+            pdf.save(fileName);
         }
 
         // ===== TRIGGER DOWNLOAD OR CHECKOUT FLOW =====
@@ -1947,6 +1999,21 @@
             }
 
             performRealPdfDownload();
+        }
+
+        function triggerJpgDownload() {
+            if (!uploadedImage) {
+                showPopupAlert('กรุณาอัปโหลดรูปภาพก่อนดาวน์โหลด', 'warning');
+                fileInput.click();
+                return;
+            }
+
+            if (!isPaymentApproved) {
+                openPaymentFlow();
+                return;
+            }
+
+            performRealJpgDownload();
         }
 
         function performRealPdfDownload() {
@@ -1972,6 +2039,156 @@
 
             const grid = calculateGridFit(paperW, paperH, photoW, photoH, margin, gap);
             generatePDF(paperW, paperH, photoW, photoH, grid, false);
+        }
+
+        // ===== HIGH RESOLUTION 300 DPI JPG GENERATOR =====
+        function performRealJpgDownload() {
+            const rawPaper = PAPER_SIZES[selectedPaperSize] || PAPER_SIZES['A4'];
+            let paperW = paperOrientation === 'landscape' ? Math.max(rawPaper.w, rawPaper.h) : Math.min(rawPaper.w, rawPaper.h);
+            let paperH = paperOrientation === 'landscape' ? Math.min(rawPaper.w, rawPaper.h) : Math.max(rawPaper.w, rawPaper.h);
+
+            const photoSpec = PHOTO_SIZES[selectedPhotoSize] || PHOTO_SIZES['1.5inch'];
+            let photoW = photoSpec.w;
+            let photoH = photoSpec.h;
+
+            const fitNormal = calculateGridFit(paperW, paperH, photoW, photoH, margin, gap);
+            const fitRotated = calculateGridFit(paperW, paperH, photoH, photoW, margin, gap);
+            let optimalOrient = fitRotated.count > fitNormal.count ? 'landscape' : 'portrait';
+
+            if (optimalOrient === 'landscape') {
+                photoW = Math.max(photoSpec.w, photoSpec.h);
+                photoH = Math.min(photoSpec.w, photoSpec.h);
+            } else {
+                photoW = Math.min(photoSpec.w, photoSpec.h);
+                photoH = Math.max(photoSpec.w, photoSpec.h);
+            }
+
+            const grid = calculateGridFit(paperW, paperH, photoW, photoH, margin, gap);
+            if (!uploadedImage || grid.count === 0) return;
+
+            // 300 DPI calculation (print standard)
+            const dpi = 300;
+            const mmToPx = dpi / 25.4;
+            const canvasW = Math.round(paperW * mmToPx);
+            const canvasH = Math.round(paperH * mmToPx);
+
+            const offCanvas = document.createElement('canvas');
+            offCanvas.width = canvasW;
+            offCanvas.height = canvasH;
+            const ctx = offCanvas.getContext('2d');
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvasW, canvasH);
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+
+            const targetRatio = photoW / photoH;
+            const sourceRatio = uploadedImage.width / uploadedImage.height;
+            let sx, sy, sw, sh;
+
+            if (sourceRatio > targetRatio) {
+                sh = uploadedImage.height;
+                sw = sh * targetRatio;
+                sx = (uploadedImage.width - sw) / 2;
+                sy = 0;
+            } else {
+                sw = uploadedImage.width;
+                sh = sw / targetRatio;
+                sx = 0;
+                sy = (uploadedImage.height - sh) / 2;
+            }
+
+            const pW_px = photoW * mmToPx;
+            const pH_px = photoH * mmToPx;
+            const gap_px = gap * mmToPx;
+
+            for (let r = 0; r < grid.rows; r++) {
+                for (let c = 0; c < grid.cols; c++) {
+                    const x = (grid.startX * mmToPx) + (c * (pW_px + gap_px));
+                    const y = (grid.startY * mmToPx) + (r * (pH_px + gap_px));
+
+                    ctx.drawImage(uploadedImage, sx, sy, sw, sh, x, y, pW_px, pH_px);
+
+                    if (showCropMarks) {
+                        ctx.strokeStyle = '#ef4444';
+                        ctx.lineWidth = Math.max(2, Math.round(mmToPx * 0.2));
+                        const markLength = 4 * mmToPx;
+
+                        if (c === 0) {
+                            ctx.beginPath(); ctx.moveTo(x - markLength, y); ctx.lineTo(x, y); ctx.stroke();
+                        }
+                        if (r === 0) {
+                            ctx.beginPath(); ctx.moveTo(x, y - markLength); ctx.lineTo(x, y); ctx.stroke();
+                        }
+                        if (c === grid.cols - 1) {
+                            ctx.beginPath(); ctx.moveTo(x + pW_px, y); ctx.lineTo(x + pW_px + markLength, y); ctx.stroke();
+                        }
+                        if (r === 0) {
+                            ctx.beginPath(); ctx.moveTo(x + pW_px, y - markLength); ctx.lineTo(x + pW_px, y); ctx.stroke();
+                        }
+                        if (c === 0) {
+                            ctx.beginPath(); ctx.moveTo(x - markLength, y + pH_px); ctx.lineTo(x, y + pH_px); ctx.stroke();
+                        }
+                        if (r === grid.rows - 1) {
+                            ctx.beginPath(); ctx.moveTo(x, y + pH_px); ctx.lineTo(x, y + pH_px + markLength); ctx.stroke();
+                        }
+                        if (c === grid.cols - 1) {
+                            ctx.beginPath(); ctx.moveTo(x + pW_px, y + pH_px); ctx.lineTo(x + pW_px + markLength, y + pH_px); ctx.stroke();
+                        }
+                        if (r === grid.rows - 1) {
+                            ctx.beginPath(); ctx.moveTo(x + pW_px, y + pH_px); ctx.lineTo(x + pW_px, y + pH_px + markLength); ctx.stroke();
+                        }
+                    }
+                }
+            }
+
+            const sizeLabel = PHOTO_SIZES[selectedPhotoSize].label;
+            const paperLabel = selectedPaperSize;
+            const fileName = `eWorker_Photo_${sizeLabel}_on_${paperLabel}_300DPI_${Date.now()}.jpg`;
+
+            offCanvas.toBlob(async (blob) => {
+                if (!blob) return;
+
+                const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1);
+
+                // Show preview inside modal for easy mobile long-press save
+                const prevBox = document.getElementById('mobileInchJpgPreviewBox');
+                const prevImg = document.getElementById('mobileInchJpgPreviewImg');
+                if (prevBox && prevImg) {
+                    prevImg.src = URL.createObjectURL(blob);
+                    prevBox.style.display = 'block';
+                }
+
+                // 1. Try Web Share API for mobile devices
+                let shared = false;
+                if (isMobile && navigator.share && navigator.canShare) {
+                    try {
+                        const file = new File([blob], fileName, { type: 'image/jpeg' });
+                        if (navigator.canShare({ files: [file] })) {
+                            await navigator.share({
+                                files: [file],
+                                title: 'รูปถ่ายติดบัตร (300 DPI)',
+                                text: 'บันทึกรูปภาพติดบัตรจัดหน้ากระดาษคุณภาพสูง'
+                            });
+                            shared = true;
+                        }
+                    } catch (e) { }
+                }
+
+                // 2. Direct anchor click fallback
+                if (!shared) {
+                    const blobUrl = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.download = fileName;
+                    link.href = blobUrl;
+                    document.body.appendChild(link);
+                    link.click();
+                    setTimeout(() => {
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(blobUrl);
+                    }, 4000);
+                }
+            }, 'image/jpeg', 0.96);
         }
 
         downloadPdfBtn.addEventListener('click', triggerDownload);
@@ -2159,6 +2376,13 @@
             if (previewWatermark) previewWatermark.style.display = 'none';
             if (securityBackdrop) securityBackdrop.classList.remove('active');
 
+            try {
+                localStorage.setItem('eworker_inch_paid', JSON.stringify({
+                    orderId: currentOrderId,
+                    paidAt: Date.now()
+                }));
+            } catch (e) { }
+
             if (downloadPdfBtn) {
                 downloadPdfBtn.innerHTML = `
                     <div class="btn-title-row">
@@ -2171,6 +2395,9 @@
                 `;
                 downloadPdfBtn.className = 'btn btn-success';
             }
+
+            const downloadJpgBtn = document.getElementById('downloadJpgBtn');
+            if (downloadJpgBtn) downloadJpgBtn.style.display = 'inline-flex';
 
             updateLayout(false);
             performRealPdfDownload();
