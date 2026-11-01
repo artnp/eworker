@@ -1243,10 +1243,12 @@
 
                     <!-- Action Buttons -->
                     <div style="display: flex; gap: 6px; margin-top: 1px;">
-                        <button class="btn btn-secondary btn-sm" id="randomizeBtn" type="button" style="flex: 1; padding: 4px 6px; font-size: 0.76rem;">
+                        <button class="btn btn-secondary btn-sm" id="randomizeBtn" type="button"
+                            style="flex: 1; padding: 4px 6px; font-size: 0.76rem;">
                             🎲 สุ่มลายใหม่
                         </button>
-                        <button class="btn btn-secondary btn-sm" id="autoDetectBtn" type="button" style="flex: 1.2; padding: 4px 6px; font-size: 0.76rem;">
+                        <button class="btn btn-secondary btn-sm" id="autoDetectBtn" type="button"
+                            style="flex: 1.2; padding: 4px 6px; font-size: 0.76rem;">
                             🔍 ลบ QR เดิมซ้ำ
                         </button>
                     </div>
@@ -1263,7 +1265,8 @@
                             </button>
                         </div>
                         <div>
-                            <span id="verifyBadge" class="status-badge status-success" style="font-size:0.7rem; padding: 2px 6px;">✅ สแกนไม่ติด 100% (ปลอดภัย)</span>
+                            <span id="verifyBadge" class="status-badge status-success"
+                                style="font-size:0.7rem; padding: 2px 6px;">✅ สแกนไม่ติด 100% (ปลอดภัย)</span>
                         </div>
                     </div>
                 </div>
@@ -1279,14 +1282,19 @@
                             QR Code ต้นฉบับ
                         </h4>
                         <div class="info-grid">
-                            <div class="info-row"><span class="info-label">รุ่น:</span> <span class="info-val" id="detVersion">-</span></div>
-                            <div class="info-row"><span class="info-label">ขนาดสลิป:</span> <span class="info-val" id="detSize">-</span></div>
-                            <div class="info-row"><span class="info-label">ตาราง:</span> <span class="info-val" id="detModules">-</span></div>
-                            <div class="info-row"><span class="info-label">ประเภท:</span> <span class="info-val" id="detType">-</span></div>
+                            <div class="info-row"><span class="info-label">รุ่น:</span> <span class="info-val"
+                                    id="detVersion">-</span></div>
+                            <div class="info-row"><span class="info-label">ขนาดสลิป:</span> <span class="info-val"
+                                    id="detSize">-</span></div>
+                            <div class="info-row"><span class="info-label">ตาราง:</span> <span class="info-val"
+                                    id="detModules">-</span></div>
+                            <div class="info-row"><span class="info-label">ประเภท:</span> <span class="info-val"
+                                    id="detType">-</span></div>
                         </div>
                         <div id="detPayloadWrap"
                             style="display:none; margin-top:2px; padding-top:2px; border-top:1px dashed #cbd5e1;">
-                            <span class="info-label" style="display:block; margin-bottom:1px; font-size:0.7rem;">ข้อมูลใน QR:</span>
+                            <span class="info-label"
+                                style="display:block; margin-bottom:1px; font-size:0.7rem;">ข้อมูลใน QR:</span>
                             <div class="info-val" id="detPayload"
                                 style="text-align:left; font-family:monospace; font-size:0.68rem; background:#f8fafc; padding:2px 4px; border-radius:4px; border:1px solid #e2e8f0; max-height:36px; overflow-y:auto; word-break:break-all;">
                             </div>
@@ -3096,20 +3104,23 @@
                     style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-md); padding: 14px; margin: 14px 0; display: flex; flex-direction: column; gap: 8px;">
                     <button type="button" id="btnDownloadClean" class="btn btn-success"
                         style="width: 100%; justify-content: center; font-size: 1.02rem; font-weight: 800; padding: 13px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);">
-                        📥 ดาวน์โหลดไฟล์รูปภาพทันที
+                        📥 ดาวน์โหลดไฟล์
                     </button>
                     <button type="button" id="btnMobileShareClean" onclick="generateAndDownloadCleanImage()" class="btn"
                         style="width: 100%; justify-content: center; font-size: 0.95rem; font-weight: 700; padding: 11px; background: #0284c7; color: #ffffff; border: none; border-radius: 8px; cursor: pointer;">
-                        📱 บันทึกเข้าคลังภาพ / แชร์ (สำหรับมือถือ)
+                        📱 บันทึกภาพ (สำหรับมือถือ)
                     </button>
                 </div>
 
                 <!-- Mobile Fallback Preview -->
-                <div id="mobileFakeQrPreviewBox" style="display: none; margin-top: 10px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 10px; text-align: center;">
+                <div id="mobileFakeQrPreviewBox"
+                    style="display: none; margin-top: 10px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 10px; text-align: center;">
                     <p style="font-size: 0.78rem; color: #475569; margin: 0 0 8px 0; font-weight: 600;">
-                        💡 สำหรับมือถือ: หากระบบไม่ดาวน์โหลดอัตโนมัติ ให้ <u>แตะค้างที่รูปภาพด้านล่าง</u> แล้วเลือก <b>"บันทึกรูปภาพ"</b>
+                        💡 สำหรับมือถือ: หากระบบไม่ดาวน์โหลดอัตโนมัติ ให้ <u>แตะค้างที่รูปภาพด้านล่าง</u> แล้วเลือก
+                        <b>"บันทึกรูปภาพ"</b>
                     </p>
-                    <img id="mobileFakeQrPreviewImg" src="" alt="สลิปที่สำเร็จ" style="max-width: 100%; max-height: 220px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: inline-block;">
+                    <img id="mobileFakeQrPreviewImg" src="" alt="สลิปที่สำเร็จ"
+                        style="max-width: 100%; max-height: 220px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: inline-block;">
                 </div>
 
                 <button type="button" onclick="closePaymentModal()" class="btn btn-secondary"
