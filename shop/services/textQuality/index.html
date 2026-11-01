@@ -32,14 +32,14 @@
             --primary-hover: #b45309;
             --primary-light: #fef3c7;
             --accent: #2563eb;
-            --bg-page: #0f172a;
-            --bg-surface: #1e293b;
-            --bg-card: #182234;
-            --bg-input: #0b1120;
-            --border: #334155;
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --success: #10b981;
+            --bg-page: #f8fafc;
+            --bg-surface: #ffffff;
+            --bg-card: #ffffff;
+            --bg-input: #ffffff;
+            --border: #e2e8f0;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --success: #16a34a;
             --radius-sm: 6px;
             --radius-md: 10px;
             --radius-lg: 14px;
@@ -67,7 +67,7 @@
         /* ===== TOP NAVBAR ===== */
         .app-navbar {
             height: 52px;
-            background: #111827;
+            background: #ffffff;
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
@@ -75,6 +75,7 @@
             padding: 0 16px;
             z-index: 50;
             flex-shrink: 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         .brand-group {
@@ -87,34 +88,36 @@
             display: inline-flex;
             align-items: center;
             gap: 5px;
-            padding: 5px 9px;
-            background: rgba(255, 255, 255, 0.05);
+            padding: 5px 10px;
+            background: #f8fafc;
             border: 1px solid var(--border);
             border-radius: var(--radius-sm);
-            color: var(--text-muted);
+            color: #475569;
             font-size: 0.78rem;
             text-decoration: none;
             transition: all 0.15s;
+            font-weight: 500;
         }
 
         .btn-back:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #ffffff;
+            background: #f1f5f9;
+            color: #0f172a;
+            border-color: #cbd5e1;
         }
 
         .brand-title {
             font-size: 0.95rem;
             font-weight: 700;
-            color: #ffffff;
+            color: #0f172a;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
         .fee-pill {
-            background: rgba(217, 119, 6, 0.15);
-            border: 1px solid rgba(217, 119, 6, 0.4);
-            color: #fbbf24;
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+            color: #b45309;
             padding: 4px 10px;
             border-radius: 20px;
             font-size: 0.76rem;
@@ -156,17 +159,17 @@
         }
 
         .panel-scroll::-webkit-scrollbar-thumb {
-            background: #334155;
+            background: #cbd5e1;
             border-radius: 4px;
         }
 
         /* Upload Area */
         .upload-box {
-            border: 2px dashed #475569;
+            border: 2px dashed #cbd5e1;
             border-radius: var(--radius-md);
             padding: 18px 14px;
             text-align: center;
-            background: rgba(11, 17, 32, 0.6);
+            background: #f8fafc;
             cursor: pointer;
             transition: all 0.2s ease;
             display: flex;
@@ -177,23 +180,23 @@
 
         .upload-box:hover {
             border-color: #f59e0b;
-            background: rgba(217, 119, 6, 0.08);
+            background: #fffbeb;
         }
 
         .upload-box svg {
             width: 28px;
             height: 28px;
-            color: #f59e0b;
+            color: #d97706;
         }
 
         .upload-title {
-            font-size: 0.84rem;
+            font-size: 0.88rem;
             font-weight: 700;
-            color: #f1f5f9;
+            color: #0f172a;
         }
 
         .upload-sub {
-            font-size: 0.72rem;
+            font-size: 0.74rem;
             color: var(--text-muted);
         }
 
@@ -211,13 +214,13 @@
         }
 
         .page-bar::-webkit-scrollbar-thumb {
-            background: #475569;
+            background: #cbd5e1;
             border-radius: 4px;
         }
 
         .page-chip {
             padding: 5px 12px;
-            background: #111827;
+            background: #ffffff;
             border: 1px solid var(--border);
             border-radius: var(--radius-sm);
             color: var(--text-muted);
@@ -243,12 +246,13 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
         }
 
         .card-header-title {
             font-size: 0.88rem;
             font-weight: 700;
-            color: #ffffff;
+            color: #0f172a;
             display: flex;
             align-items: center;
             gap: 6px;
@@ -270,13 +274,13 @@
         }
 
         .slider-header strong {
-            color: #f1f5f9;
+            color: #0f172a;
         }
 
         .slider-value {
             font-family: monospace;
             font-size: 0.76rem;
-            color: #fbbf24;
+            color: #d97706;
             font-weight: 700;
         }
 
@@ -285,7 +289,7 @@
             width: 100%;
             height: 6px;
             border-radius: 3px;
-            background: #334155;
+            background: #e2e8f0;
             outline: none;
             cursor: pointer;
         }
@@ -298,7 +302,7 @@
             border-radius: 50%;
             background: #f59e0b;
             cursor: pointer;
-            box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+            box-shadow: 0 1px 4px rgba(245, 158, 11, 0.4);
             transition: transform 0.1s;
         }
 
@@ -306,43 +310,10 @@
             transform: scale(1.15);
         }
 
-        /* Paper Tone Buttons */
-        .tone-picker-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-            margin-top: 4px;
-        }
-
-        .tone-btn {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            padding: 7px 4px;
-            font-size: 0.74rem;
-            font-family: inherit;
-            color: var(--text-muted);
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.15s;
-        }
-
-        .tone-btn:hover {
-            color: #ffffff;
-            border-color: #64748b;
-        }
-
-        .tone-btn.active {
-            background: rgba(217, 119, 6, 0.2);
-            border-color: #f59e0b;
-            color: #fbbf24;
-            font-weight: 700;
-        }
-
         /* Panel Footer */
         .panel-footer {
             padding: 14px 16px;
-            background: #111827;
+            background: #ffffff;
             border-top: 1px solid var(--border);
             display: flex;
             flex-direction: column;
@@ -390,14 +361,15 @@
         }
 
         .btn-secondary {
-            background: #1e293b;
+            background: #f8fafc;
             border: 1px solid var(--border);
-            color: #cbd5e1;
+            color: #334155;
         }
 
         .btn-secondary:hover {
-            background: #334155;
-            color: #ffffff;
+            background: #f1f5f9;
+            color: #0f172a;
+            border-color: #cbd5e1;
         }
 
         .btn-ghost {
@@ -408,13 +380,15 @@
         }
 
         .btn-ghost:hover {
-            color: #ffffff;
+            color: #0f172a;
         }
 
         /* ===== RIGHT CANVAS STAGE ===== */
         .stage-view {
             flex: 1;
-            background: radial-gradient(circle at center, #1e293b 0%, #0b1120 100%);
+            background: #f8fafc;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 24px 24px;
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -423,7 +397,7 @@
 
         .stage-topbar {
             height: 44px;
-            background: rgba(17, 24, 39, 0.85);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(6px);
             border-bottom: 1px solid var(--border);
             display: flex;
@@ -432,22 +406,23 @@
             padding: 0 16px;
             flex-shrink: 0;
             z-index: 5;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
         }
 
         .page-indicator {
             font-size: 0.78rem;
             font-weight: 600;
-            color: #cbd5e1;
-            background: #1e293b;
+            color: #334155;
+            background: #ffffff;
             padding: 3px 10px;
             border-radius: var(--radius-sm);
             border: 1px solid var(--border);
         }
 
         .btn-page-nav {
-            background: #1e293b;
+            background: #ffffff;
             border: 1px solid var(--border);
-            color: #94a3b8;
+            color: #475569;
             border-radius: var(--radius-sm);
             padding: 4px 10px;
             font-size: 0.74rem;
@@ -461,9 +436,9 @@
         }
 
         .btn-page-nav:hover:not(:disabled) {
-            background: #334155;
-            color: #ffffff;
-            border-color: #64748b;
+            background: #f1f5f9;
+            color: #0f172a;
+            border-color: #cbd5e1;
         }
 
         .btn-page-nav:disabled {
@@ -473,9 +448,9 @@
 
         .btn-compare-view {
             padding: 4px 10px;
-            background: rgba(59, 130, 246, 0.15);
-            border: 1px solid rgba(59, 130, 246, 0.35);
-            color: #93c5fd;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #2563eb;
             border-radius: var(--radius-sm);
             font-size: 0.74rem;
             font-weight: 600;
@@ -491,6 +466,7 @@
         .btn-compare-view.active {
             background: #2563eb;
             color: #ffffff;
+            border-color: #1d4ed8;
         }
 
         /* Canvas Scroll Viewport */
@@ -506,7 +482,7 @@
         }
 
         .canvas-frame {
-            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
             border-radius: 4px;
             background: #ffffff;
             margin: 0 auto;
@@ -514,6 +490,7 @@
             justify-content: center;
             align-items: center;
             transition: all 0.15s ease-out;
+            border: 1px solid #cbd5e1;
         }
 
         #mainCanvas {
@@ -538,13 +515,13 @@
         .empty-box svg {
             width: 56px;
             height: 56px;
-            color: #475569;
+            color: #94a3b8;
         }
 
         /* Bottom Floating Bar */
         .stage-bottombar {
             height: 60px;
-            background: rgba(15, 23, 42, 0.95);
+            background: rgba(255, 255, 255, 0.98);
             border-top: 1px solid var(--border);
             display: flex;
             align-items: center;
@@ -552,14 +529,15 @@
             padding: 0 20px;
             flex-shrink: 0;
             z-index: 5;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.03);
         }
 
         /* ===== PAYMENT MODAL ===== */
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(5px);
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(6px);
             display: none;
             align-items: center;
             justify-content: center;
@@ -572,57 +550,148 @@
         }
 
         .modal-card {
-            background: #111827;
-            border: 1px solid #374151;
+            background: #ffffff;
+            border: 1px solid var(--border);
             border-radius: 16px;
-            width: 100%;
-            max-width: 400px;
-            padding: 24px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7);
+            width: 95%;
+            max-width: 390px;
+            max-height: 96vh;
+            overflow-y: auto;
+            padding: 18px 18px 16px 18px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
             position: relative;
+            animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            box-sizing: border-box;
+        }
+
+        @keyframes modalPop {
+            from {
+                transform: scale(0.92);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
 
         .modal-close {
             position: absolute;
             top: 12px;
             right: 12px;
-            background: transparent;
+            background: #f1f5f9;
             border: none;
-            color: #9ca3af;
+            color: #64748b;
             cursor: pointer;
-            padding: 6px;
-            font-size: 1rem;
-        }
-
-        .qr-wrapper {
-            background: #ffffff;
-            padding: 12px;
-            border-radius: 10px;
-            margin: 12px 0 8px 0;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 0.95rem;
+            transition: all 0.15s;
+        }
+
+        .modal-close:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        /* Countdown Box */
+        .checkout-countdown-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #15803d;
+            font-size: 0.76rem;
+            font-weight: 600;
+            padding: 3px 12px;
+            border-radius: 6px;
+            margin: 4px auto 6px auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .checkout-countdown-box.warning {
+            background: #fff7ed;
+            border-color: #fed7aa;
+            color: #c2410c;
+        }
+
+        .checkout-countdown-box.urgent {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #b91c1c;
+            animation: pulseWarn 1s infinite;
+        }
+
+        @keyframes pulseWarn {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.03);
+            }
+        }
+
+        .qr-clean-card {
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 10px 14px 8px 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 4px auto;
+            width: fit-content;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
 
         #qrCodeTarget {
+            display: flex;
+            align-items: center;
+            justify-content: center;
             width: 190px;
             height: 190px;
+            margin: 0 auto;
         }
 
-        #qrCodeTarget canvas,
+        #qrCodeTarget canvas {
+            display: none !important;
+        }
+
         #qrCodeTarget img {
+            margin: 0 auto !important;
+            display: block !important;
             max-width: 100%;
-            max-height: 100%;
+            height: auto;
+        }
+
+        .polling-status-chip {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.72rem;
+            color: #475569;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin: 4px auto;
         }
 
         .clean-spinner {
-            width: 14px;
-            height: 14px;
-            border: 2px solid #334155;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #cbd5e1;
             border-top-color: #f59e0b;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
@@ -638,7 +707,7 @@
         .fullscreen-drop-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, 0.88);
+            background: rgba(255, 255, 255, 0.88);
             backdrop-filter: blur(8px);
             border: 4px dashed #f59e0b;
             display: none;
@@ -660,11 +729,11 @@
             align-items: center;
             gap: 12px;
             text-align: center;
-            background: rgba(30, 41, 59, 0.95);
+            background: #ffffff;
             border: 2px solid rgba(245, 158, 11, 0.6);
             padding: 36px 48px;
             border-radius: var(--radius-lg);
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
             pointer-events: none;
         }
 
@@ -710,6 +779,19 @@
 <body>
 
     <!-- ===== TOP NAVBAR ===== -->
+    <header class="app-navbar">
+        <div class="brand-group">
+            <a href="../../../index.html" class="btn-back" title="กลับหน้าแรก Eworker">
+                <span>◀</span> หน้าแรก
+            </a>
+            <div class="brand-title">
+                <span>📉 แปลงข้อความให้พิกเซลคุณภาพต่ำ</span>
+            </div>
+        </div>
+        <div>
+            <span class="fee-pill">⚡ ค่าบริการ 20฿ / ครั้ง</span>
+        </div>
+    </header>
 
     <!-- ===== MAIN APP ===== -->
     <main class="app-main">
@@ -813,8 +895,8 @@
                             d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z">
                         </path>
                     </svg>
-                    <div style="font-size: 0.95rem; font-weight: 700; color: #f1f5f9;">อัปโหลดเอกสารเพื่อเริ่มต้น</div>
-                    <div style="font-size: 0.76rem; color: #94a3b8;">ลากไฟล์มาวาง หรือคลิกที่กรอบอัปโหลดด้านซ้าย</div>
+                    <div style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">อัปโหลดเอกสารเพื่อเริ่มต้น</div>
+                    <div style="font-size: 0.76rem; color: #64748b;">ลากไฟล์มาวาง หรือคลิกที่กรอบอัปโหลดด้านซ้าย</div>
                 </div>
 
                 <div class="canvas-frame" id="canvasFrame" style="display: none;">
@@ -826,10 +908,10 @@
             <!-- Stage Bottom Action Bar -->
             <div class="stage-bottombar">
                 <div>
-                    <div style="font-size: 0.84rem; font-weight: 700; color: #f8fafc;" id="statusTitle">
+                    <div style="font-size: 0.84rem; font-weight: 700; color: #0f172a;" id="statusTitle">
                         แปลงภาพเรียบร้อย (ลดความคมชัด &amp; ทำภาพแตก)
                     </div>
-                    <div style="font-size: 0.72rem; color: #94a3b8;" id="statusDesc">
+                    <div style="font-size: 0.72rem; color: #64748b;" id="statusDesc">
                         ชำระค่าบริการ 20 บาท เพื่อดาวน์โหลดไฟล์ PDF / รูปภาพความละเอียดสูง
                     </div>
                 </div>
@@ -848,61 +930,89 @@
     <!-- ===== PAYMENT & DOWNLOAD MODAL ===== -->
     <div class="modal-overlay" id="paymentModal">
         <div class="modal-card">
-            <button type="button" class="modal-close" onclick="closePaymentModal()">✕</button>
+            <button type="button" class="modal-close" onclick="closePaymentModal()" title="ปิดหน้าต่าง">✕</button>
 
             <!-- Pending View -->
             <div id="paymentPendingBox" style="width: 100%;">
-                <h3 style="font-size: 1.1rem; font-weight: 800; color: #ffffff; margin-bottom: 2px;">
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">
                     สแกน QR Code เพื่อชำระเงิน
                 </h3>
-                <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 8px;">
+                <p style="font-size: 0.78rem; color: #64748b; margin: 0 0 6px 0;">
                     ปลดล็อคดาวน์โหลดเอกสารความละเอียดสูง
                 </p>
 
-                <div class="qr-wrapper">
-                    <div id="qrCodeTarget"></div>
+                <!-- Countdown Box -->
+                <div class="checkout-countdown-box" id="checkoutCountdownBox">
+                    <span>⏱️ กรุณาชำระเงินภายใน:</span>
+                    <strong id="checkoutCountdownTimer"
+                        style="font-family: monospace; font-size: 0.95rem; font-weight: 800;">10:00</strong>
+                    <span>นาที</span>
                 </div>
 
-                <div style="font-size: 1.7rem; font-weight: 800; color: #10b981; margin: 4px 0;">
+                <!-- QR Code Box -->
+                <div class="qr-clean-card">
+                    <div id="qrCodeTarget"></div>
+                    <div
+                        style="font-size: 0.75rem; font-weight: 700; color: #0b1120; margin-top: 5px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                        <img src="../../../assets/promptpay_header_full.png"
+                            onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/100px-PromptPay-logo.png'; this.onerror=function(){this.style.display='none';};"
+                            style="height: 16px; max-width: 75px; object-fit: contain;">
+                        <span>สแกนผ่านทุกแอปธนาคาร</span>
+                    </div>
+                </div>
+
+                <div
+                    style="font-size: 1.65rem; font-weight: 800; color: #16a34a; margin: 2px 0 4px 0; line-height: 1.2;">
                     ฿ 20.00
                 </div>
 
-                <div
-                    style="display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">
+                <!-- Button Download QR Code Image -->
+                <button type="button" class="btn btn-primary" id="btnDownloadSlip" onclick="downloadPaymentQR()"
+                    style="width: 100%; justify-content: center; padding: 8px 12px; font-size: 0.84rem; font-weight: 700; border-radius: 8px; margin: 2px 0 4px 0; gap: 6px; background: linear-gradient(135deg, #1d4ed8, #2563eb); border: none; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25); color: #ffffff;">
+                    <span>📥 บันทึกรูป QR Code</span>
+                </button>
+
+                <!-- Polling Status -->
+                <div class="polling-status-chip">
                     <div class="clean-spinner"></div>
-                    <span>รอรับยอดเงินอัตโนมัติ (PromptPay)...</span>
+                    <span>ระบบกำลังรอรับยอดเงินอัตโนมัติ (PromptPay)...</span>
                 </div>
 
                 <!-- Admin Test Shortcut -->
-                <div
-                    style="margin-top: 14px; padding: 6px 10px; background: rgba(37, 99, 235, 0.1); border: 1px dashed rgba(59, 130, 246, 0.4); border-radius: 6px; font-size: 0.72rem; color: #93c5fd; width: 100%; display: flex; align-items: center; justify-content: space-between;">
-                    <span>🛠️ <strong>แอดมิน:</strong></span>
-                    <button type="button" onclick="adminSimulateApprove()"
-                        style="background: #2563eb; color: #ffffff; border: none; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; cursor: pointer;">
-                        จำลองเงินเข้า 20 บ.
-                    </button>
+                <div style="margin-top: 6px; width: 100%;">
+                    <div
+                        style="padding: 4px 10px; background: #eff6ff; border: 1px dashed #93c5fd; border-radius: 6px; font-size: 0.72rem; display: flex; align-items: center; justify-content: space-between; color: #1e40af;">
+                        <span>🛠️ <strong>แอดมิน:</strong></span>
+                        <button type="button" onclick="adminSimulateApprove()"
+                            style="background: #2563eb; color: #ffffff; border: none; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; cursor: pointer;">
+                            จำลองเงินเข้า 20 บ.
+                        </button>
+                    </div>
                 </div>
             </div>
 
             <!-- Success Download View -->
             <div id="paymentSuccessBox" style="display: none; width: 100%;">
                 <div style="font-size: 2.8rem; margin-bottom: 4px;">🎉</div>
-                <h3 style="font-size: 1.25rem; font-weight: 800; color: #10b981; margin-bottom: 4px;">
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: #16a34a; margin-bottom: 4px;">
                     ชำระเงินสำเร็จแล้ว!
                 </h3>
-                <p style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 14px;">
+                <p style="font-size: 0.78rem; color: #64748b; margin-bottom: 14px;">
                     เอกสารปลดล็อคเรียบร้อย สามารถดาวน์โหลดได้ทันที
                 </p>
 
-                <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
-                    <button type="button" class="btn btn-success" onclick="downloadPdf()" style="padding: 12px;">
+                <div
+                    style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-md); padding: 14px; display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                    <button type="button" class="btn btn-success" onclick="downloadPdf()"
+                        style="padding: 12px; font-size: 0.92rem;">
                         📄 ดาวน์โหลดไฟล์ PDF รวมทุกหน้า
                     </button>
-                    <button type="button" class="btn btn-primary" onclick="downloadZip()" style="padding: 10px;">
+                    <button type="button" class="btn btn-primary" onclick="downloadZip()"
+                        style="padding: 10px; font-size: 0.88rem;">
                         🗂️ ดาวน์โหลดรูปภาพทั้งหมด (ZIP)
                     </button>
                     <button type="button" class="btn btn-secondary" onclick="downloadCurrentJpg()"
-                        style="padding: 8px;">
+                        style="padding: 8px; font-size: 0.84rem;">
                         🖼️ ดาวน์โหลดรูปหน้านี้ (JPG)
                     </button>
                 </div>
@@ -948,6 +1058,8 @@
         let isComparing = false;
         let renderTimer = null;
         let pollingTimer = null;
+        let lastPromptPayPayload = '';
+        let checkoutCountdownTimer = null;
 
         const mainCanvas = document.getElementById('mainCanvas');
         const mainCtx = mainCanvas.getContext('2d');
@@ -1344,6 +1456,7 @@
 
             currentOrderId = 'order_textquality_' + Date.now();
             generateQR(PROMPTPAY_NUMBER, SERVICE_PRICE);
+            startCheckoutCountdown(Date.now() + 10 * 60 * 1000);
             registerOrder(currentOrderId);
             startPolling(currentOrderId);
         }
@@ -1356,12 +1469,50 @@
 
         function closePaymentModal() {
             paymentModal.classList.remove('active');
+            if (checkoutCountdownTimer) {
+                clearInterval(checkoutCountdownTimer);
+                checkoutCountdownTimer = null;
+            }
+        }
+
+        function startCheckoutCountdown(expiresAt) {
+            if (checkoutCountdownTimer) clearInterval(checkoutCountdownTimer);
+
+            const box = document.getElementById('checkoutCountdownBox');
+            const timerEl = document.getElementById('checkoutCountdownTimer');
+
+            const tick = () => {
+                const diffSec = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+                const m = String(Math.floor(diffSec / 60)).padStart(2, '0');
+                const s = String(diffSec % 60).padStart(2, '0');
+
+                if (timerEl) timerEl.textContent = `${m}:${s}`;
+
+                if (box) {
+                    if (diffSec <= 60) {
+                        box.className = 'checkout-countdown-box urgent';
+                    } else if (diffSec <= 180) {
+                        box.className = 'checkout-countdown-box warning';
+                    } else {
+                        box.className = 'checkout-countdown-box';
+                    }
+                }
+
+                if (diffSec <= 0) {
+                    clearInterval(checkoutCountdownTimer);
+                    if (box) box.textContent = '⚠️ หมดเวลาชำระเงิน กรุณารีเฟรชเพื่อทำรายการใหม่';
+                }
+            };
+
+            tick();
+            checkoutCountdownTimer = setInterval(tick, 1000);
         }
 
         function generateQR(id, amount) {
             const target = document.getElementById('qrCodeTarget');
             target.innerHTML = '';
             const payload = createPayload(id, amount);
+            lastPromptPayPayload = payload;
 
             new QRCode(target, {
                 text: payload,
@@ -1371,6 +1522,143 @@
                 colorLight: "#ffffff",
                 correctLevel: QRCode.CorrectLevel.M
             });
+        }
+
+        async function downloadPaymentQR() {
+            const btn = document.getElementById('btnDownloadSlip');
+            const originalHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.innerHTML = '⏳ กำลังบันทึกรูป...';
+                btn.disabled = true;
+            }
+
+            try {
+                let qrSourceCanvas = null;
+                if (lastPromptPayPayload) {
+                    const tempWrap = document.createElement('div');
+                    new QRCode(tempWrap, {
+                        text: lastPromptPayPayload,
+                        width: 320,
+                        height: 320,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
+                    qrSourceCanvas = tempWrap.querySelector('canvas');
+                }
+
+                if (!qrSourceCanvas) {
+                    const targetEl = document.getElementById('qrCodeTarget');
+                    qrSourceCanvas = targetEl ? (targetEl.querySelector('canvas') || targetEl.querySelector('img')) : null;
+                }
+
+                if (!qrSourceCanvas) {
+                    throw new Error('ไม่พบข้อมูล QR Code กรุณารอสักครู่');
+                }
+
+                // Render Full Slip Image onto Offscreen Canvas (540x660 px)
+                const cvs = document.createElement('canvas');
+                cvs.width = 540;
+                cvs.height = 660;
+                const ctx = cvs.getContext('2d');
+
+                // 1. Background (White)
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+                // 2. Outer Border & Frame
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(10, 10, cvs.width - 20, cvs.height - 20);
+
+                // 3. Top PromptPay Navy Header
+                ctx.fillStyle = '#003764';
+                ctx.fillRect(10, 10, cvs.width - 20, 80);
+
+                // Header Text
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 24px "Prompt", -apple-system, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Thai QR Payment / พร้อมเพย์', cvs.width / 2, 58);
+
+                // 4. Centered QR Code
+                const qrSize = 320;
+                const qrX = (cvs.width - qrSize) / 2;
+                const qrY = 115;
+
+                // QR Quiet Zone / White Background Frame
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(qrX - 12, qrY - 12, qrSize + 24, qrSize + 24);
+                ctx.strokeStyle = '#cbd5e1';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(qrX - 12, qrY - 12, qrSize + 24, qrSize + 24);
+
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(qrSourceCanvas, qrX, qrY, qrSize, qrSize);
+
+                // 5. Amount & Instructions below QR
+                ctx.fillStyle = '#16a34a';
+                ctx.font = 'bold 36px "Prompt", -apple-system, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('฿ 20.00', cvs.width / 2, 490);
+
+                ctx.fillStyle = '#0f172a';
+                ctx.font = 'bold 18px "Prompt", -apple-system, sans-serif';
+                ctx.fillText('สแกนผ่านแอปธนาคารทุกธนาคาร', cvs.width / 2, 530);
+
+                ctx.fillStyle = '#64748b';
+                ctx.font = '15px "Prompt", -apple-system, sans-serif';
+                ctx.fillText('เปิดแอปธนาคาร > สแกน > เลือกรูปจากอัลบั้มรูปในมือถือ', cvs.width / 2, 565);
+
+                if (currentOrderId) {
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.font = '13px monospace';
+                    ctx.fillText('Order Ref: ' + currentOrderId, cvs.width / 2, 605);
+                }
+
+                const fileName = `PromptPay_QR_20baht_${Date.now()}.png`;
+
+                // Try Web Share API
+                let shared = false;
+                if (navigator.share && navigator.canShare) {
+                    try {
+                        const blob = await new Promise(resolve => cvs.toBlob(resolve, 'image/png'));
+                        const file = new File([blob], fileName, { type: 'image/png' });
+                        if (navigator.canShare({ files: [file] })) {
+                            await navigator.share({
+                                files: [file],
+                                title: 'รูป PromptPay QR 20 บาท',
+                                text: 'รูป QR Code สำหรับสแกนชำระเงิน 20 บาท'
+                            });
+                            shared = true;
+                        }
+                    } catch (e) { }
+                }
+
+                if (!shared) {
+                    const dataUrl = cvs.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.download = fileName;
+                    link.href = dataUrl;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+
+                if (btn) {
+                    btn.innerHTML = '✅ บันทึกรูปภาพเรียบร้อยแล้ว!';
+                    setTimeout(() => {
+                        btn.innerHTML = originalHtml;
+                        btn.disabled = false;
+                    }, 2500);
+                }
+            } catch (err) {
+                alert(err.message || 'เกิดข้อผิดพลาดในการบันทึกรูป QR Code');
+                if (btn) {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
+            }
         }
 
         function createPayload(id, amount) {
@@ -1443,6 +1731,10 @@
         function onPaymentSuccess() {
             isPaid = true;
             if (pollingTimer) clearInterval(pollingTimer);
+            if (checkoutCountdownTimer) {
+                clearInterval(checkoutCountdownTimer);
+                checkoutCountdownTimer = null;
+            }
 
             if (typeof confetti === 'function') {
                 confetti({ particleCount: 90, spread: 60, origin: { y: 0.6 } });
