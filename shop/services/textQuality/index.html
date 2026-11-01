@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แปลงข้อความให้พิกเซลคุณภาพต่ำ (Text Low Quality) | eWorker</title>
+
+    <!-- Favicon & Icons -->
+    <link rel="icon" type="image/svg+xml" href="../../../assets/images/favicon.svg"
+        onerror="this.onerror=null; this.href='../../assets/images/favicon.svg';">
+    <link rel="icon" type="image/png" sizes="192x192" href="../../../assets/images/favicon.png"
+        onerror="this.onerror=null; this.href='../../assets/images/favicon.png';">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+
+    <!-- CDNs: PDF.js, jsPDF, JSZip, QRCode, Confetti -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #d97706;
+            --primary-hover: #b45309;
+            --primary-light: #fef3c7;
+            --accent: #2563eb;
+            --bg-page: #0f172a;
+            --bg-surface: #1e293b;
+            --bg-card: #182234;
+            --bg-input: #0b1120;
+            --border: #334155;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html,
+        body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            font-family: 'Prompt', 'Outfit', sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== TOP NAVBAR ===== */
+        .app-navbar {
+            height: 52px;
+            background: #111827;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 50;
+            flex-shrink: 0;
+        }
+
+        .brand-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 9px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            text-decoration: none;
+            transition: all 0.15s;
+        }
+
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+
+        .brand-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .fee-pill {
+            background: rgba(217, 119, 6, 0.15);
+            border: 1px solid rgba(217, 119, 6, 0.4);
+            color: #fbbf24;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.76rem;
+            font-weight: 700;
+        }
+
+        /* ===== MAIN APP LAYOUT ===== */
+        .app-main {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 52px);
+            overflow: hidden;
+        }
+
+        /* ===== LEFT PANEL (CONTROLS) ===== */
+        .control-panel {
+            width: 360px;
+            min-width: 330px;
+            max-width: 400px;
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 10;
+        }
+
+        .panel-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .panel-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .panel-scroll::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        /* Upload Area */
+        .upload-box {
+            border: 2px dashed #475569;
+            border-radius: var(--radius-md);
+            padding: 18px 14px;
+            text-align: center;
+            background: rgba(11, 17, 32, 0.6);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .upload-box:hover {
+            border-color: #f59e0b;
+            background: rgba(217, 119, 6, 0.08);
+        }
+
+        .upload-box svg {
+            width: 28px;
+            height: 28px;
+            color: #f59e0b;
+        }
+
+        .upload-title {
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: #f1f5f9;
+        }
+
+        .upload-sub {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        /* Multi-page bar */
+        .page-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            padding: 4px 0;
+        }
+
+        .page-bar::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .page-bar::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+
+        .page-chip {
+            padding: 5px 12px;
+            background: #111827;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-muted);
+            font-size: 0.74rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s;
+        }
+
+        .page-chip.active {
+            background: #2563eb;
+            border-color: #3b82f6;
+            color: #ffffff;
+        }
+
+        /* Clean Section Card */
+        .clean-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .card-header-title {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Control Slider Item */
+        .slider-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .slider-header strong {
+            color: #f1f5f9;
+        }
+
+        .slider-value {
+            font-family: monospace;
+            font-size: 0.76rem;
+            color: #fbbf24;
+            font-weight: 700;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #334155;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #f59e0b;
+            cursor: pointer;
+            box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+            transition: transform 0.1s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        /* Paper Tone Buttons */
+        .tone-picker-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .tone-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 7px 4px;
+            font-size: 0.74rem;
+            font-family: inherit;
+            color: var(--text-muted);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s;
+        }
+
+        .tone-btn:hover {
+            color: #ffffff;
+            border-color: #64748b;
+        }
+
+        .tone-btn.active {
+            background: rgba(217, 119, 6, 0.2);
+            border-color: #f59e0b;
+            color: #fbbf24;
+            font-weight: 700;
+        }
+
+        /* Panel Footer */
+        .panel-footer {
+            padding: 14px 16px;
+            background: #111827;
+            border-top: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: var(--radius-md);
+            font-size: 0.84rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            border: none;
+            transition: all 0.15s;
+            text-decoration: none;
+            user-select: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #ffffff;
+            box-shadow: 0 3px 10px rgba(217, 119, 6, 0.35);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #fbbf24, #d97706);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #ffffff;
+            box-shadow: 0 3px 10px rgba(16, 185, 129, 0.35);
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #34d399, #059669);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #1e293b;
+            border: 1px solid var(--border);
+            color: #cbd5e1;
+        }
+
+        .btn-secondary:hover {
+            background: #334155;
+            color: #ffffff;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 0.74rem;
+            padding: 4px 8px;
+        }
+
+        .btn-ghost:hover {
+            color: #ffffff;
+        }
+
+        /* ===== RIGHT CANVAS STAGE ===== */
+        .stage-view {
+            flex: 1;
+            background: radial-gradient(circle at center, #1e293b 0%, #0b1120 100%);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .stage-topbar {
+            height: 44px;
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(6px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            flex-shrink: 0;
+            z-index: 5;
+        }
+
+        .page-indicator {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            background: #1e293b;
+            padding: 3px 10px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+        }
+
+        .btn-page-nav {
+            background: #1e293b;
+            border: 1px solid var(--border);
+            color: #94a3b8;
+            border-radius: var(--radius-sm);
+            padding: 4px 10px;
+            font-size: 0.74rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+        }
+
+        .btn-page-nav:hover:not(:disabled) {
+            background: #334155;
+            color: #ffffff;
+            border-color: #64748b;
+        }
+
+        .btn-page-nav:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        .btn-compare-view {
+            padding: 4px 10px;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.35);
+            color: #93c5fd;
+            border-radius: var(--radius-sm);
+            font-size: 0.74rem;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.15s;
+        }
+
+        .btn-compare-view:active,
+        .btn-compare-view.active {
+            background: #2563eb;
+            color: #ffffff;
+        }
+
+        /* Canvas Scroll Viewport */
+        .stage-canvas-scroll {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: auto;
+            display: flex;
+            align-items: flex-start;
+            /* CRITICAL: Never clip the top of document on scroll */
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .canvas-frame {
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08);
+            border-radius: 4px;
+            background: #ffffff;
+            margin: 0 auto;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.15s ease-out;
+        }
+
+        #mainCanvas {
+            display: block;
+            border-radius: 4px;
+            height: auto;
+            max-width: 100%;
+        }
+
+        /* Empty state */
+        .empty-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+            gap: 12px;
+        }
+
+        .empty-box svg {
+            width: 56px;
+            height: 56px;
+            color: #475569;
+        }
+
+        /* Bottom Floating Bar */
+        .stage-bottombar {
+            height: 60px;
+            background: rgba(15, 23, 42, 0.95);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            flex-shrink: 0;
+            z-index: 5;
+        }
+
+        /* ===== PAYMENT MODAL ===== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            padding: 16px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-card {
+            background: #111827;
+            border: 1px solid #374151;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 400px;
+            padding: 24px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: transparent;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 6px;
+            font-size: 1rem;
+        }
+
+        .qr-wrapper {
+            background: #ffffff;
+            padding: 12px;
+            border-radius: 10px;
+            margin: 12px 0 8px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #qrCodeTarget {
+            width: 190px;
+            height: 190px;
+        }
+
+        #qrCodeTarget canvas,
+        #qrCodeTarget img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .clean-spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid #334155;
+            border-top-color: #f59e0b;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Fullscreen Drag & Drop Overlay */
+        .fullscreen-drop-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(8px);
+            border: 4px dashed #f59e0b;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .fullscreen-drop-overlay.active {
+            display: flex;
+            pointer-events: auto;
+        }
+
+        .drop-modal-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            text-align: center;
+            background: rgba(30, 41, 59, 0.95);
+            border: 2px solid rgba(245, 158, 11, 0.6);
+            padding: 36px 48px;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7);
+            pointer-events: none;
+        }
+
+        .drop-modal-box svg {
+            width: 56px;
+            height: 56px;
+            color: #f59e0b;
+            animation: floatBounce 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes floatBounce {
+            from {
+                transform: translateY(0);
+            }
+
+            to {
+                transform: translateY(-8px);
+            }
+        }
+
+        /* Responsive Mobile Layout */
+        @media (max-width: 860px) {
+            .app-main {
+                flex-direction: column;
+                height: auto;
+                overflow-y: auto;
+            }
+
+            .control-panel {
+                width: 100%;
+                max-width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .stage-view {
+                min-height: 480px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ===== TOP NAVBAR ===== -->
+
+    <!-- ===== MAIN APP ===== -->
+    <main class="app-main">
+
+        <!-- ===== LEFT CONTROLS PANEL ===== -->
+        <aside class="control-panel">
+            <div class="panel-scroll">
+
+                <!-- 1. Upload Section -->
+                <div class="upload-box" id="dropzoneEl" onclick="document.getElementById('fileInput').click()">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z">
+                        </path>
+                    </svg>
+                    <div class="upload-title">อัปโหลดรูปภาพ หรือ PDF</div>
+                    <div class="upload-sub" id="fileStatusText">รองรับ PDF หลายหน้า และรูปภาพ JPG, PNG</div>
+                    <input type="file" id="fileInput" accept=".pdf,image/png,image/jpeg,image/webp" multiple
+                        style="display: none;">
+                </div>
+
+                <!-- CONTROLS -->
+                <div class="clean-card">
+                    <div class="card-header-title">
+                        <span>⚙️ ตัวเลือกปรับแต่ง</span>
+                    </div>
+
+                    <!-- CONTROL 1: ปรับคุณภาพต่ำ (Low Quality / สแกนไม่ชัด) -->
+                    <div class="slider-item">
+                        <div class="slider-header">
+                            <strong>📉 ปรับคุณภาพต่ำ (Low Quality)</strong>
+                            <span class="slider-value" id="valLowQuality">45%</span>
+                        </div>
+                        <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 2px;">
+                            บีบอัดภาพเหมือนเอกสารที่ถูกส่งต่อ
+                        </div>
+                        <input type="range" id="paramLowQuality" min="0" max="100" value="45" oninput="renderApp()">
+                    </div>
+
+                    <div style="height: 1px; background: var(--border); margin: 2px 0;"></div>
+
+                    <!-- CONTROL 2: ปรับภาพแตก (Pixelate / เม็ดพิกเซล) -->
+                    <div class="slider-item">
+                        <div class="slider-header">
+                            <strong>🔲 ปรับภาพแตก (Pixelate)</strong>
+                            <span class="slider-value" id="valPixelate">35%</span>
+                        </div>
+                        <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 2px;">
+                            ทำลายความคมชัดของตัวอักษรให้แตกเป็นเม็ดพิกเซล
+                        </div>
+                        <input type="range" id="paramPixelate" min="0" max="100" value="35" oninput="renderApp()">
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Panel Bottom Actions -->
+            <div class="panel-footer">
+                <button type="button" class="btn btn-secondary" onclick="resetDefaults()" style="width: 100%;">
+                    🔄 คืนค่าเริ่มต้น
+                </button>
+            </div>
+        </aside>
+
+        <!-- ===== RIGHT STAGE VIEW ===== -->
+        <section class="stage-view">
+
+            <div class="stage-topbar">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <!-- Visible when multi-page -->
+                    <div id="pageNavControls" style="display: none; align-items: center; gap: 6px;">
+                        <button type="button" class="btn-page-nav" id="btnPrevPage" onclick="navigatePage(-1)"
+                            title="หน้าก่อนหน้า">◀ ก่อนหน้า</button>
+                        <span class="page-indicator" id="pageIndicatorText">หน้า 1 / 1</span>
+                        <button type="button" class="btn-page-nav" id="btnNextPage" onclick="navigatePage(1)"
+                            title="หน้าถัดไป">ถัดไป ▶</button>
+                    </div>
+                    <!-- Visible when 1 page or empty -->
+                    <span class="page-indicator" id="pageIndicatorTextSingle">ตัวอย่างหน้า 1</span>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button type="button" class="btn-page-nav" id="btnToggleViewMode" onclick="toggleViewMode()"
+                        title="สลับมุมมองพอดีจอ / ขนาดจริง 100%">
+                        <span>🔍 พอดีจอ (Fit)</span>
+                    </button>
+                    <button type="button" class="btn-compare-view" id="btnCompare" onmousedown="startCompare()"
+                        onmouseup="stopCompare()" onmouseleave="stopCompare()" ontouchstart="startCompare()"
+                        ontouchend="stopCompare()">
+                        <span>👁️ กดค้างเพื่อดูต้นฉบับ</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Canvas Viewport -->
+            <div class="stage-canvas-scroll">
+
+                <div class="empty-box" id="emptyPlaceholder">
+                    <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z">
+                        </path>
+                    </svg>
+                    <div style="font-size: 0.95rem; font-weight: 700; color: #f1f5f9;">อัปโหลดเอกสารเพื่อเริ่มต้น</div>
+                    <div style="font-size: 0.76rem; color: #94a3b8;">ลากไฟล์มาวาง หรือคลิกที่กรอบอัปโหลดด้านซ้าย</div>
+                </div>
+
+                <div class="canvas-frame" id="canvasFrame" style="display: none;">
+                    <canvas id="mainCanvas"></canvas>
+                </div>
+
+            </div>
+
+            <!-- Stage Bottom Action Bar -->
+            <div class="stage-bottombar">
+                <div>
+                    <div style="font-size: 0.84rem; font-weight: 700; color: #f8fafc;" id="statusTitle">
+                        แปลงภาพเรียบร้อย (ลดความคมชัด &amp; ทำภาพแตก)
+                    </div>
+                    <div style="font-size: 0.72rem; color: #94a3b8;" id="statusDesc">
+                        ชำระค่าบริการ 20 บาท เพื่อดาวน์โหลดไฟล์ PDF / รูปภาพความละเอียดสูง
+                    </div>
+                </div>
+
+                <div>
+                    <button type="button" class="btn btn-primary" id="btnMainPay" onclick="handlePayOrDownload()">
+                        <span id="btnPayText">⚡ ชำระเงิน 20 บาท &amp; ดาวน์โหลด</span>
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ===== PAYMENT & DOWNLOAD MODAL ===== -->
+    <div class="modal-overlay" id="paymentModal">
+        <div class="modal-card">
+            <button type="button" class="modal-close" onclick="closePaymentModal()">✕</button>
+
+            <!-- Pending View -->
+            <div id="paymentPendingBox" style="width: 100%;">
+                <h3 style="font-size: 1.1rem; font-weight: 800; color: #ffffff; margin-bottom: 2px;">
+                    สแกน QR Code เพื่อชำระเงิน
+                </h3>
+                <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 8px;">
+                    ปลดล็อคดาวน์โหลดเอกสารความละเอียดสูง
+                </p>
+
+                <div class="qr-wrapper">
+                    <div id="qrCodeTarget"></div>
+                </div>
+
+                <div style="font-size: 1.7rem; font-weight: 800; color: #10b981; margin: 4px 0;">
+                    ฿ 20.00
+                </div>
+
+                <div
+                    style="display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">
+                    <div class="clean-spinner"></div>
+                    <span>รอรับยอดเงินอัตโนมัติ (PromptPay)...</span>
+                </div>
+
+                <!-- Admin Test Shortcut -->
+                <div
+                    style="margin-top: 14px; padding: 6px 10px; background: rgba(37, 99, 235, 0.1); border: 1px dashed rgba(59, 130, 246, 0.4); border-radius: 6px; font-size: 0.72rem; color: #93c5fd; width: 100%; display: flex; align-items: center; justify-content: space-between;">
+                    <span>🛠️ <strong>แอดมิน:</strong></span>
+                    <button type="button" onclick="adminSimulateApprove()"
+                        style="background: #2563eb; color: #ffffff; border: none; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; cursor: pointer;">
+                        จำลองเงินเข้า 20 บ.
+                    </button>
+                </div>
+            </div>
+
+            <!-- Success Download View -->
+            <div id="paymentSuccessBox" style="display: none; width: 100%;">
+                <div style="font-size: 2.8rem; margin-bottom: 4px;">🎉</div>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: #10b981; margin-bottom: 4px;">
+                    ชำระเงินสำเร็จแล้ว!
+                </h3>
+                <p style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 14px;">
+                    เอกสารปลดล็อคเรียบร้อย สามารถดาวน์โหลดได้ทันที
+                </p>
+
+                <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                    <button type="button" class="btn btn-success" onclick="downloadPdf()" style="padding: 12px;">
+                        📄 ดาวน์โหลดไฟล์ PDF รวมทุกหน้า
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="downloadZip()" style="padding: 10px;">
+                        🗂️ ดาวน์โหลดรูปภาพทั้งหมด (ZIP)
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="downloadCurrentJpg()"
+                        style="padding: 8px;">
+                        🖼️ ดาวน์โหลดรูปหน้านี้ (JPG)
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ===== FULLSCREEN DRAG & DROP OVERLAY ===== -->
+    <div id="fullScreenDropOverlay" class="fullscreen-drop-overlay">
+        <div class="drop-modal-box">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z">
+                </path>
+            </svg>
+            <div style="font-size: 1.3rem; font-weight: 800; color: #ffffff;">
+                ปล่อยไฟล์ที่นี่เพื่ออัปโหลดทันที
+            </div>
+            <div style="font-size: 0.85rem; color: #fbbf24; font-weight: 500;">
+                รองรับไฟล์ PDF หลายหน้า และรูปภาพ JPG, PNG, WebP (ลากได้ทั้งหน้าจอ)
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== LOGIC & PROCEDURAL ENGINE ===== -->
+    <script>
+        const SERVICE_PRICE = 20.00;
+        const PROMPTPAY_NUMBER = "0988573074";
+        const FIREBASE_BASE = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files";
+        const PAYMENT_ENDPOINT = `${FIREBASE_BASE}/payment_requests`;
+
+        // PDF.js worker
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+
+        // State
+        let documentPages = []; // [{ originalCanvas, width, height, seed }]
+        let activePageIndex = 0;
+        let isPaid = false;
+        let currentOrderId = null;
+        let isComparing = false;
+        let renderTimer = null;
+        let pollingTimer = null;
+
+        const mainCanvas = document.getElementById('mainCanvas');
+        const mainCtx = mainCanvas.getContext('2d');
+        const canvasFrame = document.getElementById('canvasFrame');
+        const emptyPlaceholder = document.getElementById('emptyPlaceholder');
+        const paymentModal = document.getElementById('paymentModal');
+
+        /* PRNG per page (สุ่มไม่ซ้ำกันแต่ละหน้า) */
+        function createPRNG(seed) {
+            let s = seed >>> 0;
+            return function () {
+                s = (s + 0x6D2B79F5) | 0;
+                let t = Math.imul(s ^ (s >>> 15), 1 | s);
+                t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+        }
+
+        function resetDefaults() {
+            document.getElementById('paramLowQuality').value = 45;
+            document.getElementById('paramPixelate').value = 35;
+            renderApp();
+        }
+
+        /* Upload Handlers (Full Screen Drag & Drop + Sidebar Box) */
+        const fileInput = document.getElementById('fileInput');
+        const dropzoneEl = document.getElementById('dropzoneEl');
+        const dropOverlay = document.getElementById('fullScreenDropOverlay');
+        let dragCounter = 0;
+
+        // Whole-window drag and drop
+        window.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            dragCounter++;
+            if (e.dataTransfer && e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
+                dropOverlay.classList.add('active');
+            }
+        });
+
+        window.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer) {
+                e.dataTransfer.dropEffect = 'copy';
+            }
+        });
+
+        window.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dragCounter--;
+            if (dragCounter <= 0) {
+                dragCounter = 0;
+                dropOverlay.classList.remove('active');
+            }
+        });
+
+        window.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragCounter = 0;
+            dropOverlay.classList.remove('active');
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                processFiles(e.dataTransfer.files);
+            }
+        });
+
+        // Sidebar click & dropzone handlers
+        dropzoneEl.addEventListener('dragover', (e) => e.preventDefault());
+        dropzoneEl.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                processFiles(e.dataTransfer.files);
+            }
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length > 0) {
+                processFiles(e.target.files);
+            }
+        });
+
+        async function processFiles(fileList) {
+            const files = Array.from(fileList);
+            const pdfFile = files.find(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+
+            if (pdfFile) {
+                document.getElementById('fileStatusText').textContent = pdfFile.name;
+                await loadPdf(pdfFile);
+            } else {
+                document.getElementById('fileStatusText').textContent = `${files.length} ไฟล์รูปภาพ`;
+                await loadImages(files);
+            }
+        }
+
+        async function loadPdf(file) {
+            try {
+                emptyPlaceholder.style.display = 'none';
+                canvasFrame.style.display = 'block';
+
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                documentPages = [];
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const viewport = page.getViewport({ scale: 1.6 });
+                    const c = document.createElement('canvas');
+                    c.width = viewport.width;
+                    c.height = viewport.height;
+                    const ctx = c.getContext('2d');
+                    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+                    documentPages.push({
+                        originalCanvas: c,
+                        width: c.width,
+                        height: c.height,
+                        seed: Math.floor(Math.random() * 9999999) + i * 1337
+                    });
+                }
+
+                activePageIndex = 0;
+                setupPages();
+                renderApp();
+                resetScrollTop();
+            } catch (err) {
+                alert("เกิดข้อผิดพลาดในการอ่านไฟล์ PDF");
+            }
+        }
+
+        async function loadImages(files) {
+            documentPages = [];
+            for (let i = 0; i < files.length; i++) {
+                const img = await new Promise((res, rej) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const image = new Image();
+                        image.onload = () => res(image);
+                        image.onerror = rej;
+                        image.src = e.target.result;
+                    };
+                    reader.readAsDataURL(files[i]);
+                });
+
+                const c = document.createElement('canvas');
+                c.width = img.width;
+                c.height = img.height;
+                const ctx = c.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+
+                documentPages.push({
+                    originalCanvas: c,
+                    width: c.width,
+                    height: c.height,
+                    seed: Math.floor(Math.random() * 9999999) + (i + 1) * 1337
+                });
+            }
+
+            if (documentPages.length > 0) {
+                emptyPlaceholder.style.display = 'none';
+                canvasFrame.style.display = 'block';
+                activePageIndex = 0;
+                setupPages();
+                renderApp();
+                resetScrollTop();
+            }
+        }
+
+        let currentViewMode = 'fit'; // 'fit' (เห็นครบทั้งหน้า ไม่ล้น) หรือ 'full' (ขนาดจริง 100%)
+
+        function toggleViewMode() {
+            currentViewMode = currentViewMode === 'fit' ? 'full' : 'fit';
+            applyViewMode();
+        }
+
+        function applyViewMode() {
+            const frame = document.getElementById('canvasFrame');
+            const scrollBox = document.querySelector('.stage-canvas-scroll');
+            const btn = document.getElementById('btnToggleViewMode');
+            if (!frame || !scrollBox || !mainCanvas) return;
+
+            if (currentViewMode === 'fit') {
+                const availableHeight = Math.max(260, scrollBox.clientHeight - 44);
+                mainCanvas.style.maxHeight = availableHeight + 'px';
+                mainCanvas.style.maxWidth = '100%';
+                mainCanvas.style.width = 'auto';
+                if (btn) btn.innerHTML = '<span>🔍 พอดีจอ (Fit)</span>';
+            } else {
+                mainCanvas.style.maxHeight = 'none';
+                mainCanvas.style.maxWidth = '100%';
+                mainCanvas.style.width = 'auto';
+                if (btn) btn.innerHTML = '<span>🔍 ขนาด 100% (ขยาย)</span>';
+            }
+        }
+
+        function resetScrollTop() {
+            const scrollBox = document.querySelector('.stage-canvas-scroll');
+            if (scrollBox) scrollBox.scrollTop = 0;
+        }
+
+        window.addEventListener('resize', () => {
+            if (currentViewMode === 'fit') applyViewMode();
+        });
+
+        function setupPages() {
+            activePageIndex = 0;
+            updatePageNav();
+            resetScrollTop();
+        }
+
+        function updatePageNav() {
+            const count = documentPages.length;
+            const navControls = document.getElementById('pageNavControls');
+            const singleIndicator = document.getElementById('pageIndicatorTextSingle');
+            const indicatorText = document.getElementById('pageIndicatorText');
+            const btnPrev = document.getElementById('btnPrevPage');
+            const btnNext = document.getElementById('btnNextPage');
+
+            if (count > 1) {
+                if (navControls) navControls.style.display = 'flex';
+                if (singleIndicator) singleIndicator.style.display = 'none';
+                if (indicatorText) indicatorText.textContent = `หน้า ${activePageIndex + 1} / ${count}`;
+                if (btnPrev) btnPrev.disabled = activePageIndex <= 0;
+                if (btnNext) btnNext.disabled = activePageIndex >= count - 1;
+            } else {
+                if (navControls) navControls.style.display = 'none';
+                if (singleIndicator) {
+                    singleIndicator.style.display = 'inline-block';
+                    singleIndicator.textContent = count === 1 ? 'หน้า 1 / 1' : 'ตัวอย่างหน้า 1';
+                }
+            }
+        }
+
+        function navigatePage(delta) {
+            const nextIdx = activePageIndex + delta;
+            if (nextIdx >= 0 && nextIdx < documentPages.length) {
+                activePageIndex = nextIdx;
+                updatePageNav();
+                renderApp();
+                resetScrollTop();
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.target && e.target.tagName === 'INPUT') return;
+            if (e.key === 'ArrowLeft') navigatePage(-1);
+            if (e.key === 'ArrowRight') navigatePage(1);
+        });
+
+        /* ========================================================
+           CORE ENGINE: 2 AUTHENTIC ANTI-FORENSIC EFFECTS
+           1. ปรับคุณภาพต่ำ (Low Quality / สแกนไม่ชัด)
+           2. ปรับภาพแตก (Pixelate / เม็ดพิกเซล)
+        ======================================================== */
+        function renderApp() {
+            // Update value labels
+            document.getElementById('valLowQuality').textContent = `${document.getElementById('paramLowQuality').value}%`;
+            document.getElementById('valPixelate').textContent = `${document.getElementById('paramPixelate').value}%`;
+
+            if (renderTimer) clearTimeout(renderTimer);
+            renderTimer = setTimeout(drawActivePage, 25);
+        }
+
+        function drawActivePage() {
+            if (!documentPages || documentPages.length === 0) return;
+            const page = documentPages[activePageIndex];
+            if (!page) return;
+
+            const w = page.width;
+            const h = page.height;
+            mainCanvas.width = w;
+            mainCanvas.height = h;
+
+            // If user holds "ดูภาพต้นฉบับ"
+            if (isComparing) {
+                mainCtx.drawImage(page.originalCanvas, 0, 0);
+                applyViewMode();
+                return;
+            }
+
+            const lowQuality = parseInt(document.getElementById('paramLowQuality').value) / 100;
+            const pixelate = parseInt(document.getElementById('paramPixelate').value) / 100;
+            const rnd = createPRNG(page.seed);
+
+            // Buffer canvas
+            const buf = document.createElement('canvas');
+            buf.width = w;
+            buf.height = h;
+            const bCtx = buf.getContext('2d');
+
+            // 1. Draw base original document
+            bCtx.drawImage(page.originalCanvas, 0, 0);
+
+            // 2. EFFECT: ปรับภาพแตก (Pixelate)
+            if (pixelate > 0) {
+                applyPixelate(bCtx, w, h, pixelate);
+            }
+
+            // 3. EFFECT: ปรับคุณภาพต่ำ (Low Quality / สแกนไม่ชัด & Compression Noise)
+            if (lowQuality > 0) {
+                applyLowQuality(bCtx, w, h, lowQuality, rnd);
+            }
+
+            // Output to main view
+            mainCtx.clearRect(0, 0, w, h);
+            mainCtx.drawImage(buf, 0, 0);
+            applyViewMode();
+        }
+
+        /* --- 1. ปรับภาพแตก (Pixelate / เม็ดพิกเซล) --- */
+        function applyPixelate(ctx, w, h, intensity) {
+            if (intensity <= 0) return;
+            // pixelBlock: 1.0 (no pixelation) to 7.5 (heavy pixelation)
+            const pixelBlock = 1.0 + intensity * 6.5;
+            const sw = Math.max(2, Math.round(w / pixelBlock));
+            const sh = Math.max(2, Math.round(h / pixelBlock));
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = sw;
+            tempCanvas.height = sh;
+            const tCtx = tempCanvas.getContext('2d');
+            tCtx.drawImage(ctx.canvas, 0, 0, sw, sh);
+
+            ctx.save();
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(tempCanvas, 0, 0, sw, sh, 0, 0, w, h);
+            ctx.restore();
+        }
+
+        /* --- 2. ปรับคุณภาพต่ำ (Low Quality / สแกนไม่ชัด & JPEG Artifacts) --- */
+        function applyLowQuality(ctx, w, h, intensity, rnd) {
+            ctx.save();
+
+            // A. Optical lens softness (สลายความคมกริบแบบดิจิทัล)
+            const blurAmount = 0.4 + intensity * 1.6;
+            ctx.filter = `blur(${blurAmount}px)`;
+            ctx.globalAlpha = 0.70;
+            ctx.drawImage(ctx.canvas, 0, 0);
+            ctx.filter = 'none';
+            ctx.globalAlpha = 1.0;
+
+            // B. Compression noise & 8x8 block boundary variation
+            const imgData = ctx.getImageData(0, 0, w, h);
+            const data = imgData.data;
+            const noiseScale = 14 * intensity;
+
+            for (let y = 0; y < h; y++) {
+                const blockEdgeY = (y % 8 === 0) ? (noiseScale * 0.35) : 0;
+                const row = y * w * 4;
+                for (let x = 0; x < w; x++) {
+                    const idx = row + x * 4;
+                    const blockEdgeX = (x % 8 === 0) ? (noiseScale * 0.35) : 0;
+
+                    const n = (rnd() - 0.5) * noiseScale + (blockEdgeX + blockEdgeY);
+                    data[idx] = Math.min(255, Math.max(0, data[idx] + n));
+                    data[idx + 1] = Math.min(255, Math.max(0, data[idx + 1] + n));
+                    data[idx + 2] = Math.min(255, Math.max(0, data[idx + 2] + n));
+                }
+            }
+            ctx.putImageData(imgData, 0, 0);
+            ctx.restore();
+        }
+
+        /* Compare Original Button */
+        function startCompare() {
+            isComparing = true;
+            document.getElementById('btnCompare').classList.add('active');
+            drawActivePage();
+        }
+
+        function stopCompare() {
+            if (isComparing) {
+                isComparing = false;
+                document.getElementById('btnCompare').classList.remove('active');
+                drawActivePage();
+            }
+        }
+
+        /* ========================================================
+           PAYMENT & DOWNLOAD (20 บาท PROMPTPAY)
+        ======================================================== */
+        function handlePayOrDownload() {
+            if (documentPages.length === 0) {
+                alert("กรุณาอัปโหลดเอกสาร PDF หรือรูปภาพก่อนดำเนินการ");
+                return;
+            }
+            if (isPaid) {
+                openDownloadModal();
+            } else {
+                openPaymentModal();
+            }
+        }
+
+        function openPaymentModal() {
+            paymentModal.classList.add('active');
+            document.getElementById('paymentPendingBox').style.display = 'block';
+            document.getElementById('paymentSuccessBox').style.display = 'none';
+
+            currentOrderId = 'order_textquality_' + Date.now();
+            generateQR(PROMPTPAY_NUMBER, SERVICE_PRICE);
+            registerOrder(currentOrderId);
+            startPolling(currentOrderId);
+        }
+
+        function openDownloadModal() {
+            paymentModal.classList.add('active');
+            document.getElementById('paymentPendingBox').style.display = 'none';
+            document.getElementById('paymentSuccessBox').style.display = 'block';
+        }
+
+        function closePaymentModal() {
+            paymentModal.classList.remove('active');
+        }
+
+        function generateQR(id, amount) {
+            const target = document.getElementById('qrCodeTarget');
+            target.innerHTML = '';
+            const payload = createPayload(id, amount);
+
+            new QRCode(target, {
+                text: payload,
+                width: 190,
+                height: 190,
+                colorDark: "#0f172a",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
+
+        function createPayload(id, amount) {
+            const crc16 = (d) => {
+                let crc = 0xFFFF;
+                for (let i = 0; i < d.length; i++) {
+                    crc ^= d.charCodeAt(i) << 8;
+                    for (let j = 0; j < 8; j++) {
+                        crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) & 0xFFFF : (crc << 1) & 0xFFFF;
+                    }
+                }
+                return crc.toString(16).toUpperCase().padStart(4, '0');
+            };
+
+            let target = id.replace(/[^0-9]/g, '');
+            if (target.length === 10 && target.startsWith('0')) target = '0066' + target.substring(1);
+            let merchantInfo = '0016A000000677010111' + '01' + ('00' + target.length).slice(-2) + target;
+            let payload = '000201010211' + '29' + ('00' + merchantInfo.length).slice(-2) + merchantInfo + '5802TH5303764';
+
+            if (!isNaN(amount) && amount > 0) {
+                const amtStr = Number(amount).toFixed(2);
+                payload += '54' + ('00' + amtStr.length).slice(-2) + amtStr;
+            }
+            payload += '6304';
+            return payload + crc16(payload);
+        }
+
+        async function registerOrder(orderId) {
+            try {
+                await fetch(`${PAYMENT_ENDPOINT}/${orderId}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        service: 'textQuality',
+                        amount: SERVICE_PRICE,
+                        status: 'pending',
+                        createdAt: Date.now()
+                    })
+                });
+            } catch (e) { }
+        }
+
+        function startPolling(orderId) {
+            if (pollingTimer) clearInterval(pollingTimer);
+            pollingTimer = setInterval(async () => {
+                try {
+                    const res = await fetch(`${PAYMENT_ENDPOINT}/${orderId}.json?t=${Date.now()}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.status === 'approved') {
+                            onPaymentSuccess();
+                        }
+                    }
+                } catch (e) { }
+            }, 1500);
+        }
+
+        async function adminSimulateApprove() {
+            if (!currentOrderId) return;
+            try {
+                await fetch(`${PAYMENT_ENDPOINT}/${currentOrderId}.json`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'approved', approvedAt: Date.now() })
+                });
+            } catch (e) { }
+            onPaymentSuccess();
+        }
+
+        function onPaymentSuccess() {
+            isPaid = true;
+            if (pollingTimer) clearInterval(pollingTimer);
+
+            if (typeof confetti === 'function') {
+                confetti({ particleCount: 90, spread: 60, origin: { y: 0.6 } });
+            }
+
+            document.getElementById('statusTitle').textContent = '✨ ปลดล็อคสำเร็จแล้ว ดาวน์โหลดได้ทันที';
+            document.getElementById('statusTitle').style.color = '#10b981';
+            document.getElementById('statusDesc').textContent = 'สามารถดาวน์โหลดไฟล์ PDF หรือรูปภาพความละเอียดสูงได้';
+
+            const btn = document.getElementById('btnMainPay');
+            btn.className = 'btn btn-success';
+            document.getElementById('btnPayText').textContent = '📥 ดาวน์โหลดเอกสาร';
+
+            document.getElementById('paymentPendingBox').style.display = 'none';
+            document.getElementById('paymentSuccessBox').style.display = 'block';
+        }
+
+        /* High-Res Page Render Function for Export */
+        function getPageDataUrl(idx) {
+            const page = documentPages[idx];
+            if (!page) return null;
+
+            const w = page.width;
+            const h = page.height;
+            const lowQuality = parseInt(document.getElementById('paramLowQuality').value) / 100;
+            const pixelate = parseInt(document.getElementById('paramPixelate').value) / 100;
+            const rnd = createPRNG(page.seed);
+
+            const buf = document.createElement('canvas');
+            buf.width = w;
+            buf.height = h;
+            const ctx = buf.getContext('2d');
+
+            ctx.drawImage(page.originalCanvas, 0, 0);
+            if (pixelate > 0) applyPixelate(ctx, w, h, pixelate);
+            if (lowQuality > 0) applyLowQuality(ctx, w, h, lowQuality, rnd);
+
+            const exportQuality = Math.max(0.18, 0.95 - lowQuality * 0.72);
+            return buf.toDataURL('image/jpeg', exportQuality);
+        }
+
+        async function downloadPdf() {
+            if (documentPages.length === 0) return;
+            const { jsPDF } = window.jspdf;
+            const firstW = documentPages[0].width;
+            const firstH = documentPages[0].height;
+
+            const pdf = new jsPDF({
+                orientation: firstW > firstH ? 'l' : 'p',
+                unit: 'pt',
+                format: [firstW, firstH]
+            });
+
+            for (let i = 0; i < documentPages.length; i++) {
+                const pw = documentPages[i].width;
+                const ph = documentPages[i].height;
+                if (i > 0) pdf.addPage([pw, ph], pw > ph ? 'l' : 'p');
+                const imgData = getPageDataUrl(i);
+                pdf.addImage(imgData, 'JPEG', 0, 0, pw, ph);
+            }
+
+            pdf.save(`TextQuality_${Date.now()}.pdf`);
+        }
+
+        async function downloadZip() {
+            if (documentPages.length === 0) return;
+            const zip = new JSZip();
+
+            for (let i = 0; i < documentPages.length; i++) {
+                const dataUrl = getPageDataUrl(i);
+                zip.file(`Page_${String(i + 1).padStart(2, '0')}.jpg`, dataUrl.split(',')[1], { base64: true });
+            }
+
+            const blob = await zip.generateAsync({ type: 'blob' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `TextQuality_Images_${Date.now()}.zip`;
+            link.click();
+        }
+
+        function downloadCurrentJpg() {
+            const dataUrl = getPageDataUrl(activePageIndex);
+            if (dataUrl) {
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = `TextQuality_Page_${activePageIndex + 1}_${Date.now()}.jpg`;
+                link.click();
+            }
+        }
+
+        // Init UI labels
+        window.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('valLowQuality').textContent = `${document.getElementById('paramLowQuality').value}%`;
+            document.getElementById('valPixelate').textContent = `${document.getElementById('paramPixelate').value}%`;
+        });
+    </script>
+</body>
+
+</html>
