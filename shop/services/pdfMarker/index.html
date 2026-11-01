@@ -2161,6 +2161,12 @@
 
         function handlePaymentApprovedSuccess() {
             isPaymentApproved = true;
+            try {
+                localStorage.setItem('eworker_pdfmarker_paid', JSON.stringify({
+                    orderId: currentOrderId,
+                    paidAt: Date.now()
+                }));
+            } catch (e) { }
 
             if (checkoutCountdownTimer) clearInterval(checkoutCountdownTimer);
             if (checkoutPollingTimer) clearInterval(checkoutPollingTimer);
@@ -2345,7 +2351,25 @@
             applyZoom();
             await renderPage(savedActivePage);
 
-            pdf.save(`${originalFileName}_มาร์คจุดแก้ไข.pdf`);
+            const fileName = `${originalFileName}_มาร์คจุดแก้ไข.pdf`;
+            const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1);
+            if (isMobile && navigator.share && navigator.canShare) {
+                try {
+                    const pdfBlob = pdf.output('blob');
+                    const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+                    if (navigator.canShare({ files: [file] })) {
+                        navigator.share({
+                            files: [file],
+                            title: fileName,
+                            text: 'ไฟล์ PDF มาร์คจุดแก้ไข'
+                        }).catch(() => {
+                            pdf.save(fileName);
+                        });
+                        return;
+                    }
+                } catch(e) { }
+            }
+            pdf.save(fileName);
         };
 
         // ===== CUSTOM POPUP ALERT SYSTEM =====
