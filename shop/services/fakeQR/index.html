@@ -124,9 +124,9 @@
 
         /* Left Sidebar Controls */
         .sidebar-controls {
-            width: 350px;
-            min-width: 320px;
-            max-width: 380px;
+            width: 325px;
+            min-width: 295px;
+            max-width: 350px;
             height: 100%;
             background: #ffffff;
             border-right: 1px solid var(--border-color);
@@ -135,12 +135,13 @@
             overflow-y: auto;
             overflow-x: hidden;
             flex-shrink: 0;
-            padding: 14px 14px;
-            gap: 12px;
+            padding: 8px 10px;
+            gap: 6px;
+            box-sizing: border-box;
         }
 
         .sidebar-controls::-webkit-scrollbar {
-            width: 5px;
+            width: 4px;
         }
 
         .sidebar-controls::-webkit-scrollbar-thumb {
@@ -153,15 +154,15 @@
             background: #f8fafc;
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
-            padding: 12px;
+            padding: 7px 9px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 5px;
         }
 
         .card-title {
             margin: 0;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 600;
             color: #334155;
             display: flex;
@@ -173,34 +174,34 @@
         .slider-item {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 2px;
         }
 
         .slider-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.8rem;
+            font-size: 0.76rem;
             color: #475569;
         }
 
         .slider-val-tag {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             font-weight: 600;
             color: var(--primary);
             background: var(--primary-light);
-            padding: 1px 6px;
+            padding: 1px 5px;
             border-radius: 4px;
         }
 
         input[type="range"] {
             width: 100%;
-            height: 5px;
+            height: 4px;
             background: #cbd5e1;
             border-radius: 4px;
             accent-color: var(--primary);
             cursor: pointer;
-            margin: 4px 0;
+            margin: 2px 0;
         }
 
         /* Buttons */
@@ -1240,21 +1241,12 @@
                         <input type="range" id="densityRange" min="21" max="57" step="4" value="29">
                     </div>
 
-                    <!-- White Bleed Slider -->
-                    <div class="slider-item">
-                        <div class="slider-header">
-                            <span>กลบขอบขาว (Bleed)</span>
-                            <span class="slider-val-tag" id="bleedValue">3px</span>
-                        </div>
-                        <input type="range" id="bleedRange" min="0" max="15" value="3">
-                    </div>
-
                     <!-- Action Buttons -->
-                    <div style="display: flex; gap: 6px; margin-top: 2px;">
-                        <button class="btn btn-secondary btn-sm" id="randomizeBtn" type="button" style="flex: 1;">
+                    <div style="display: flex; gap: 6px; margin-top: 1px;">
+                        <button class="btn btn-secondary btn-sm" id="randomizeBtn" type="button" style="flex: 1; padding: 4px 6px; font-size: 0.76rem;">
                             🎲 สุ่มลายใหม่
                         </button>
-                        <button class="btn btn-secondary btn-sm" id="autoDetectBtn" type="button" style="flex: 1.2;">
+                        <button class="btn btn-secondary btn-sm" id="autoDetectBtn" type="button" style="flex: 1.2; padding: 4px 6px; font-size: 0.76rem;">
                             🔍 ลบ QR เดิมซ้ำ
                         </button>
                     </div>
@@ -1266,18 +1258,13 @@
                         <div class="verify-card-header">
                             <span>🛡️ ความปลอดภัย</span>
                             <button id="testScanBtn" type="button" class="btn btn-secondary btn-sm"
-                                style="padding: 2px 7px; font-size: 0.72rem;">
+                                style="padding: 2px 7px; font-size: 0.7rem;">
                                 🧪 ทดสอบสแกน
                             </button>
                         </div>
                         <div>
-                            <span id="verifyBadge" class="status-badge status-success">✅ สแกนไม่ติด 100%
-                                (ปลอดภัย)</span>
+                            <span id="verifyBadge" class="status-badge status-success" style="font-size:0.7rem; padding: 2px 6px;">✅ สแกนไม่ติด 100% (ปลอดภัย)</span>
                         </div>
-                        <p class="verify-desc" id="verifyDesc">
-                            ผ่านการทดสอบด้วย jsQR: ไม่สามารถถอดรหัสได้ ข้อมูลเป็นสัญญาณรบกวนสุ่ม
-                            มั่นใจได้ว่าสแกนไม่ติดแน่นอน
-                        </p>
                     </div>
                 </div>
 
@@ -1285,33 +1272,23 @@
                 <div class="hidden" id="origQrCard">
                     <div class="info-card">
                         <h4>
-                            <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                             QR Code ต้นฉบับ
                         </h4>
-                        <div class="info-row">
-                            <span class="info-label">รุ่น (Version):</span>
-                            <span class="info-val" id="detVersion">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">ขนาดตาราง:</span>
-                            <span class="info-val" id="detModules">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">ขนาดบนสลิป:</span>
-                            <span class="info-val" id="detSize">-</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">ประเภท:</span>
-                            <span class="info-val" id="detType">-</span>
+                        <div class="info-grid">
+                            <div class="info-row"><span class="info-label">รุ่น:</span> <span class="info-val" id="detVersion">-</span></div>
+                            <div class="info-row"><span class="info-label">ขนาดสลิป:</span> <span class="info-val" id="detSize">-</span></div>
+                            <div class="info-row"><span class="info-label">ตาราง:</span> <span class="info-val" id="detModules">-</span></div>
+                            <div class="info-row"><span class="info-label">ประเภท:</span> <span class="info-val" id="detType">-</span></div>
                         </div>
                         <div id="detPayloadWrap"
-                            style="display:none; margin-top:3px; padding-top:3px; border-top:1px dashed #cbd5e1;">
-                            <span class="info-label" style="display:block; margin-bottom:2px;">ข้อมูลใน QR:</span>
+                            style="display:none; margin-top:2px; padding-top:2px; border-top:1px dashed #cbd5e1;">
+                            <span class="info-label" style="display:block; margin-bottom:1px; font-size:0.7rem;">ข้อมูลใน QR:</span>
                             <div class="info-val" id="detPayload"
-                                style="text-align:left; font-family:monospace; font-size:0.72rem; background:#f8fafc; padding:3px 5px; border-radius:4px; border:1px solid #e2e8f0; max-height:48px; overflow-y:auto; word-break:break-all;">
+                                style="text-align:left; font-family:monospace; font-size:0.68rem; background:#f8fafc; padding:2px 4px; border-radius:4px; border:1px solid #e2e8f0; max-height:36px; overflow-y:auto; word-break:break-all;">
                             </div>
                         </div>
                     </div>
@@ -1455,8 +1432,6 @@
         const sizeValue = document.getElementById('sizeValue');
         const densityRange = document.getElementById('densityRange');
         const densityValue = document.getElementById('densityValue');
-        const bleedRange = document.getElementById('bleedRange');
-        const bleedValue = document.getElementById('bleedValue');
         const randomizeBtn = document.getElementById('randomizeBtn');
         const autoDetectBtn = document.getElementById('autoDetectBtn');
         const detectStatus = document.getElementById('detectStatus');
@@ -2197,10 +2172,7 @@
             }
         });
 
-        // White bleed slider
-        bleedRange.addEventListener('input', (e) => {
-            bleedValue.textContent = e.target.value + 'px';
-        });
+
 
         // Drag and Drop files
         dropZone.addEventListener('dragover', (e) => {
@@ -2258,6 +2230,18 @@
         let checkoutPollingTimer = null;
         let antiTamperInterval = null;
         let antiTamperObserver = null;
+
+        // Restore payment on reload if customer already paid within 24 hours (prevents losing money on mobile reload)
+        try {
+            const rawPaid = localStorage.getItem('eworker_fakeqr_paid');
+            if (rawPaid) {
+                const paidData = JSON.parse(rawPaid);
+                if (Date.now() - paidData.paidAt < 24 * 60 * 60 * 1000) {
+                    isPaymentApproved = true;
+                    currentOrderId = paidData.orderId;
+                }
+            }
+        } catch (e) { }
 
         // Context menu & keyboard shortcut interception to prevent screen capture theft
         const studioWorkspace = document.querySelector('.studio-workspace');
@@ -2570,6 +2554,12 @@
         // --- Payment Approved Success Flow ---
         function handlePaymentApprovedSuccess() {
             isPaymentApproved = true;
+            try {
+                localStorage.setItem('eworker_fakeqr_paid', JSON.stringify({
+                    orderId: currentOrderId,
+                    paidAt: Date.now()
+                }));
+            } catch (e) { }
             isLocked = false;
 
             if (checkoutCountdownTimer) clearInterval(checkoutCountdownTimer);
@@ -2631,8 +2621,6 @@
             const scaleY = workingSlipCanvas.height / displayedHeight;
 
             const imgRect = slipImage.getBoundingClientRect();
-            const bleedVal = parseInt(bleedRange.value) || 0;
-            const bleed = bleedVal * scaleX;
 
             // 3. Draw each overlay with full resolution
             overlays.forEach(overlay => {
@@ -2645,12 +2633,6 @@
                 const drawW = qrRect.width * scaleX;
                 const drawH = qrRect.height * scaleY;
 
-                // White backing rectangle under this QR
-                if (bleed > 0) {
-                    saveCtx.fillStyle = '#FFFFFF';
-                    saveCtx.fillRect(drawX - bleed, drawY - bleed, drawW + bleed * 2, drawH + bleed * 2);
-                }
-
                 saveCtx.drawImage(overlay.canvas, drawX, drawY, drawW, drawH);
             });
 
@@ -2662,12 +2644,53 @@
             if (!saveCanvas) return;
 
             const fileName = 'fakeqr-slip-clean-' + Date.now() + '.png';
-            const link = document.createElement('a');
-            link.download = fileName;
-            link.href = saveCanvas.toDataURL('image/png');
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+
+            // Mobile-Safe Download via Blob + Web Share API
+            saveCanvas.toBlob(async (blob) => {
+                if (!blob) return;
+
+                const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1);
+
+                // Show preview inside modal for easy mobile long-press save
+                const prevBox = document.getElementById('mobileFakeQrPreviewBox');
+                const prevImg = document.getElementById('mobileFakeQrPreviewImg');
+                if (prevBox && prevImg) {
+                    prevImg.src = URL.createObjectURL(blob);
+                    prevBox.style.display = 'block';
+                }
+
+                // 1. Try Web Share API for mobile devices (directly saves to Camera Roll on iOS / Gallery on Android)
+                let shared = false;
+                if (isMobile && navigator.share && navigator.canShare) {
+                    try {
+                        const file = new File([blob], fileName, { type: 'image/png' });
+                        if (navigator.canShare({ files: [file] })) {
+                            await navigator.share({
+                                files: [file],
+                                title: 'สลิปปลดล็อค QR ปลอดภัย',
+                                text: 'บันทึกรูปภาพสลิปที่ปิดทับ QR โค้ดเรียบร้อยแล้ว'
+                            });
+                            shared = true;
+                        }
+                    } catch (e) {
+                        // User cancelled share or dismissed; continue to fallback
+                    }
+                }
+
+                // 2. Fallback to anchor click with Blob URL
+                if (!shared) {
+                    const blobUrl = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.download = fileName;
+                    link.href = blobUrl;
+                    document.body.appendChild(link);
+                    link.click();
+                    setTimeout(() => {
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(blobUrl);
+                    }, 4000);
+                }
+            }, 'image/png');
         }
 
         // Admin Simulate Approve Shortcut
@@ -3062,21 +3085,37 @@
 
             <!-- Success View (After Payment Approved) -->
             <div id="paymentViewSuccess" style="display: none;">
-                <div style="font-size: 3.2rem; margin-bottom: 8px;">🎉</div>
-                <h3 style="font-size: 1.4rem; font-weight: 800; color: #16a34a; margin: 0;">ชำระเงิน 20 บาท สำเร็จแล้ว!
+                <div style="font-size: 2.8rem; margin-bottom: 6px;">🎉</div>
+                <h3 style="font-size: 1.35rem; font-weight: 800; color: #16a34a; margin: 0;">ชำระเงิน 20 บาท สำเร็จแล้ว!
                 </h3>
-                <p style="font-size: 0.86rem; color: #64748b; margin-top: 4px;">
-                    กำลังดาวน์โหลดรูปภาพเสร็จแล้ว..
+                <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">
+                    ปลดล็อคเรียบร้อย กำลังดาวน์โหลดรูปภาพคุณภาพสูง..
                 </p>
 
                 <div
-                    style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-md); padding: 18px; margin: 18px 0;">
+                    style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-md); padding: 14px; margin: 14px 0; display: flex; flex-direction: column; gap: 8px;">
                     <button type="button" id="btnDownloadClean" class="btn btn-success"
-                        style="width: 100%; justify-content: center; font-size: 1.05rem; font-weight: 800; padding: 14px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);">
-                        📥 ดาวน์โหลดไฟล์
+                        style="width: 100%; justify-content: center; font-size: 1.02rem; font-weight: 800; padding: 13px; box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);">
+                        📥 ดาวน์โหลดไฟล์รูปภาพทันที
+                    </button>
+                    <button type="button" id="btnMobileShareClean" onclick="generateAndDownloadCleanImage()" class="btn"
+                        style="width: 100%; justify-content: center; font-size: 0.95rem; font-weight: 700; padding: 11px; background: #0284c7; color: #ffffff; border: none; border-radius: 8px; cursor: pointer;">
+                        📱 บันทึกเข้าคลังภาพ / แชร์ (สำหรับมือถือ)
                     </button>
                 </div>
 
+                <!-- Mobile Fallback Preview -->
+                <div id="mobileFakeQrPreviewBox" style="display: none; margin-top: 10px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 10px; text-align: center;">
+                    <p style="font-size: 0.78rem; color: #475569; margin: 0 0 8px 0; font-weight: 600;">
+                        💡 สำหรับมือถือ: หากระบบไม่ดาวน์โหลดอัตโนมัติ ให้ <u>แตะค้างที่รูปภาพด้านล่าง</u> แล้วเลือก <b>"บันทึกรูปภาพ"</b>
+                    </p>
+                    <img id="mobileFakeQrPreviewImg" src="" alt="สลิปที่สำเร็จ" style="max-width: 100%; max-height: 220px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: inline-block;">
+                </div>
+
+                <button type="button" onclick="closePaymentModal()" class="btn btn-secondary"
+                    style="width: 100%; font-size: 0.85rem; margin-top: 10px;">
+                    ปิดหน้าต่าง
+                </button>
             </div>
         </div>
     </div>
