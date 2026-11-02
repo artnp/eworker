@@ -2027,22 +2027,22 @@
 
         if (rawD || rawUrl) {
             try {
-                if (rawD) sessionStorage.setItem('_ps_d', rawD);
-                if (rawUrl) sessionStorage.setItem('_ps_url', rawUrl);
-                if (rawExp) sessionStorage.setItem('_ps_exp', rawExp);
-                if (rawPrice) sessionStorage.setItem('_ps_price', rawPrice);
-                if (rawType) sessionStorage.setItem('_ps_type', rawType);
-                if (rawS) sessionStorage.setItem('_ps_s', rawS);
+                if (rawD) { sessionStorage.setItem('_ps_d', rawD); localStorage.setItem('_ps_d', rawD); }
+                if (rawUrl) { sessionStorage.setItem('_ps_url', rawUrl); localStorage.setItem('_ps_url', rawUrl); }
+                if (rawExp) { sessionStorage.setItem('_ps_exp', rawExp); localStorage.setItem('_ps_exp', rawExp); }
+                if (rawPrice) { sessionStorage.setItem('_ps_price', rawPrice); localStorage.setItem('_ps_price', rawPrice); }
+                if (rawType) { sessionStorage.setItem('_ps_type', rawType); localStorage.setItem('_ps_type', rawType); }
+                if (rawS) { sessionStorage.setItem('_ps_s', rawS); localStorage.setItem('_ps_s', rawS); }
             } catch (e) { }
         } else {
             try {
-                rawD = sessionStorage.getItem('_ps_d');
+                rawD = sessionStorage.getItem('_ps_d') || localStorage.getItem('_ps_d');
                 if (rawD) rawD = rawD.replace(/ /g, '+');
-                rawUrl = sessionStorage.getItem('_ps_url');
-                rawExp = sessionStorage.getItem('_ps_exp');
-                rawPrice = sessionStorage.getItem('_ps_price');
-                rawType = sessionStorage.getItem('_ps_type');
-                rawS = sessionStorage.getItem('_ps_s');
+                rawUrl = sessionStorage.getItem('_ps_url') || localStorage.getItem('_ps_url');
+                rawExp = sessionStorage.getItem('_ps_exp') || localStorage.getItem('_ps_exp');
+                rawPrice = sessionStorage.getItem('_ps_price') || localStorage.getItem('_ps_price');
+                rawType = sessionStorage.getItem('_ps_type') || localStorage.getItem('_ps_type');
+                rawS = sessionStorage.getItem('_ps_s') || localStorage.getItem('_ps_s');
             } catch (e) { }
         }
 
@@ -2052,8 +2052,9 @@
         const fileType = rawType || 'img';
         const promptPayId = "0988573074";
 
-        // ★ Early In-App Browser Redirect (ก่อนลบ params ออกจาก URL)
-        // สำหรับ Android LINE: redirect ผ่าน intent:// ทันทีขณะ URL ยังครบถ้วน
+        // ★ Early In-App Browser Redirect
+        // 1) Android LINE: redirect ผ่าน intent:// ทันที
+        // 2) iOS LINE: redirect ผ่าน openExternalBrowser=1 เพื่อเปิด Safari อัตโนมัติ
         (function earlyInAppRedirect() {
             const ua = navigator.userAgent || '';
             const isLine = /Line/i.test(ua);
@@ -2063,19 +2064,20 @@
                     const fullUrl = window.location.href;
                     const intentUrl = 'intent://' + fullUrl.replace(/^https?:\/\//, '') + '#Intent;scheme=https;action=android.intent.action.VIEW;end';
                     window.location.href = intentUrl;
-                    // หยุดการทำงานต่อไป (redirect จะเกิดขึ้น)
+                    return;
+                } catch (e) { }
+            } else if (isLine && !isAndroid && window.location.search && !window.location.search.includes('openExternalBrowser=1')) {
+                try {
+                    const sep = window.location.href.includes('?') ? '&' : '?';
+                    window.location.href = window.location.href + sep + 'openExternalBrowser=1';
                     return;
                 } catch (e) { }
             }
         })();
 
-        // ลบพารามิเตอร์ URL ใน Address Bar ทันที ป้องกันการแอบดูหรือถอดรหัส Base64
-        if (window.history && window.history.replaceState) {
-            try {
-                const cleanLocation = window.location.protocol + "//" + window.location.host + window.location.pathname;
-                window.history.replaceState({}, document.title, cleanLocation);
-            } catch (e) { }
-        }
+        // หมายเหตุ: ไม่ลบ URL params ทันทีบน initial load เพราะทำให้ฟังก์ชัน 'เปิดใน Safari' บน iPhone/LINE
+        // และการกด Refresh หรือกลับมาจากแอปธนาคารสูญเสียค่า params จนกลายเป็น Invalid Signature
+        // จะทำความสะอาด Address Bar เมื่อยืนยันการชำระเงินสำเร็จใน unlockPaidStatus() เท่านั้น
 
         // ตัวแปรภายในสำหรับป้องกันการขโมยไฟล์
         let _rawFileUrl = fileUrl;
@@ -2305,7 +2307,16 @@
 
         // Initialize
         async function init() {
-            // 0. ตรวจสอบ Digital Signature ทันที ป้องกันการแอบแก้ไขราคาหรือวันหมดอายุใน URL
+            // 0. ตรวจสอบพารามิเตอร์ลิงก์เบื้องต้น (หากไม่มีข้อมูลไฟล์เลย)
+            if (!rawD && !rawUrl) {
+                showError(
+                    'ไม่พบข้อมูลไฟล์',
+                    '⚠️ ไม่พบพารามิเตอร์ของไฟล์ในลิงก์ กรุณาเปิดจากลิงก์เต็มที่คุณได้รับ หรือติดต่อผู้ส่งงาน'
+                );
+                return;
+            }
+
+            // ตรวจสอบ Digital Signature ทันที ป้องกันการแอบแก้ไขราคาหรือวันหมดอายุใน URL
             const isSignatureValid = verifyLinkSignature(rawD || (rawUrl ? encodeURIComponent(rawUrl) : ''), rawExp || '', price, rawS);
             if (!isSignatureValid) {
                 showError(
@@ -2489,28 +2500,7 @@
 
         // พยายามเปิดลิงก์ในเบราว์เซอร์ภายนอกอัตโนมัติ (สำหรับ LINE In-App Browser)
         function tryOpenExternalBrowser() {
-            const currentUrl = window.location.href;
-            // ดึง URL เต็มจาก sessionStorage กลับมา (เพราะตอน init จะลบ params ออกจาก address bar)
-            let fullUrl = currentUrl;
-            try {
-                const d = sessionStorage.getItem('_ps_d');
-                const url = sessionStorage.getItem('_ps_url');
-                const exp = sessionStorage.getItem('_ps_exp');
-                const p = sessionStorage.getItem('_ps_price');
-                const t = sessionStorage.getItem('_ps_type');
-                const s = sessionStorage.getItem('_ps_s');
-                if (d || url) {
-                    const base = window.location.protocol + '//' + window.location.host + window.location.pathname;
-                    const params = new URLSearchParams();
-                    if (d) params.set('d', d);
-                    if (url) params.set('url', url);
-                    if (exp) params.set('exp', exp);
-                    if (p) params.set('price', p);
-                    if (t) params.set('type', t);
-                    if (s) params.set('s', s);
-                    fullUrl = base + '?' + params.toString();
-                }
-            } catch (e) { }
+            const fullUrl = getFullUrlWithParams();
 
             // วิธีที่ 1: ใช้ intent:// scheme สำหรับ Android
             const isAndroid = /Android/i.test(navigator.userAgent);
@@ -2522,24 +2512,33 @@
                 } catch (e) { }
             }
 
-            // วิธีที่ 2: ใช้ window.open สำหรับ iOS
+            // วิธีที่ 2: ใช้ openExternalBrowser=1 สำหรับ LINE (ทั้ง iOS และ Android)
+            const isLine = /Line/i.test(navigator.userAgent);
+            if (isLine && !window.location.search.includes('openExternalBrowser=1')) {
+                try {
+                    const sep = fullUrl.includes('?') ? '&' : '?';
+                    window.location.href = fullUrl + (fullUrl.includes('openExternalBrowser=1') ? '' : sep + 'openExternalBrowser=1');
+                    return true;
+                } catch (e) { }
+            }
+
+            // วิธีที่ 3: ใช้ window.open สำหรับ iOS
             try {
                 window.open(fullUrl, '_blank');
-                // ไม่ return true เพราะ iOS อาจบล็อค → ให้แสดง overlay แทน
             } catch (e) { }
 
             return false;
         }
 
-        // สร้าง URL เต็มพร้อมพารามิเตอร์จาก sessionStorage
+        // สร้าง URL เต็มพร้อมพารามิเตอร์จาก sessionStorage หรือ localStorage
         function getFullUrlWithParams() {
             try {
-                const d = sessionStorage.getItem('_ps_d');
-                const url = sessionStorage.getItem('_ps_url');
-                const exp = sessionStorage.getItem('_ps_exp');
-                const p = sessionStorage.getItem('_ps_price');
-                const t = sessionStorage.getItem('_ps_type');
-                const s = sessionStorage.getItem('_ps_s');
+                const d = sessionStorage.getItem('_ps_d') || localStorage.getItem('_ps_d');
+                const url = sessionStorage.getItem('_ps_url') || localStorage.getItem('_ps_url');
+                const exp = sessionStorage.getItem('_ps_exp') || localStorage.getItem('_ps_exp');
+                const p = sessionStorage.getItem('_ps_price') || localStorage.getItem('_ps_price');
+                const t = sessionStorage.getItem('_ps_type') || localStorage.getItem('_ps_type');
+                const s = sessionStorage.getItem('_ps_s') || localStorage.getItem('_ps_s');
                 if (d || url) {
                     const base = window.location.protocol + '//' + window.location.host + window.location.pathname;
                     const params = new URLSearchParams();
@@ -2549,6 +2548,7 @@
                     if (p) params.set('price', p);
                     if (t) params.set('type', t);
                     if (s) params.set('s', s);
+                    params.set('openExternalBrowser', '1');
                     return base + '?' + params.toString();
                 }
             } catch (e) { }
@@ -2605,9 +2605,13 @@
         function tryOpenBrowserFromButton() {
             const fullUrl = getFullUrlWithParams();
             const isAndroid = /Android/i.test(navigator.userAgent);
+            const isLine = /Line/i.test(navigator.userAgent);
             if (isAndroid) {
                 const intentUrl = 'intent://' + fullUrl.replace(/^https?:\/\//, '') + '#Intent;scheme=https;action=android.intent.action.VIEW;end';
                 window.location.href = intentUrl;
+            } else if (isLine) {
+                const sep = fullUrl.includes('?') ? '&' : '?';
+                window.location.href = fullUrl + (fullUrl.includes('openExternalBrowser=1') ? '' : sep + 'openExternalBrowser=1');
             } else {
                 window.open(fullUrl, '_blank');
             }
@@ -3803,6 +3807,14 @@
             removeProtection();
             showDownloadTutorial();
             showToast('✨ ยืนยันยอดเงินสำเร็จ! ไฟล์พร้อมดาวน์โหลดแล้ว', 'success');
+
+            // ทำความสะอาด Address Bar เมื่อชำระเงินสำเร็จแล้วเท่านั้น
+            if (window.history && window.history.replaceState) {
+                try {
+                    const cleanLocation = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                    window.history.replaceState({}, document.title, cleanLocation);
+                } catch (e) { }
+            }
 
             const manualBox = document.getElementById('manual-confirm-box');
             const manualDivider = document.getElementById('manual-confirm-divider');
