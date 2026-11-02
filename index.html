@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="th">
 
 <head>
@@ -5045,6 +5045,23 @@
 
         const BUILTIN_SERVICES = [
             {
+                id: 'service-blur-censor',
+                slug: 'blur-censor',
+                title: 'เบลอ Censor ข้อมูลในภาพและ PDF',
+                price: 0,
+                category: 'บริการออนไลน์',
+                isService: true,
+                serviceUrl: 'shop/services/blurCensor/index.html',
+                payPerUse: false,
+                language: '',
+                coverImage: 'shop/images/blurcensor_cover.svg',
+                description: 'เครื่องมือลากกรอบเบลอ เซ็นเซอร์ Censor ปิดบังข้อมูลสำคัญ เบอร์โทร บัญชีธนาคาร หรือข้อความลับ ในไฟล์ภาพและเอกสาร PDF ฟรี 100%',
+                hasInstallGuide: false,
+                installSteps: [],
+                isRecommended: true,
+                createdAt: 1762050000000
+            },
+            {
                 id: 'service-payment-slip',
                 slug: 'payment-slip',
                 title: 'สร้างสลิป รับเงินพร้อมเพย์ QR code',
@@ -5416,6 +5433,8 @@
             if (subTitleEl) {
                 if (product.priceText) {
                     subTitleEl.textContent = `${product.description || ''} (ค่าบริการ: ${product.priceText})`;
+                } else if (product.price === 0) {
+                    subTitleEl.textContent = product.description ? `${product.description} (🎁 บริการฟรี)` : '🎁 บริการฟรี 100%';
                 } else {
                     subTitleEl.textContent = product.description || `ค่าบริการ ฿${Number(product.price || 20).toFixed(2)} ต่อครั้ง (ทำงานเสร็จแล้วค่อยชำระเงิน)`;
                 }
