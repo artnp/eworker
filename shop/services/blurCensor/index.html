@@ -1,0 +1,1678 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เบลอ Censor ข้อมูลในภาพและ PDF ฟรี | eWorker</title>
+
+    <!-- Favicon & Icons -->
+    <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg"
+        onerror="this.onerror=null; this.href='../../../assets/images/favicon.svg';">
+    <link rel="icon" type="image/png" sizes="192x192" href="../../assets/images/favicon.png"
+        onerror="this.onerror=null; this.href='../../../assets/images/favicon.png';">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+
+    <!-- CDNs: PDF.js, jsPDF, Confetti -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-hover: #0369a1;
+            --primary-light: #e0f2fe;
+            --primary-border: #bae6fd;
+            --accent: #10b981;
+            --bg-page: #0f172a;
+            --bg-canvas-area: #0b1120;
+            --bg-panel: #ffffff;
+            --bg-card: #f8fafc;
+            --border-color: #e2e8f0;
+            --border-dark: #334155;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html,
+        body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            font-family: 'Prompt', 'Outfit', sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ===== MAIN LAYOUT (Full 100vh, No Scroll) ===== */
+        .app-main {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ===== SIDEBAR CONTROLS ===== */
+        .control-sidebar {
+            width: 320px;
+            min-width: 290px;
+            max-width: 350px;
+            height: 100vh;
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 20;
+            box-shadow: 4px 0 16px rgba(0, 0, 0, 0.05);
+            flex-shrink: 0;
+        }
+
+        .sidebar-scroll {
+            flex: 1;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            overflow: hidden;
+        }
+
+        /* Sidebar Section Card */
+        .tool-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .card-title {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Censor Mode Grid */
+        .mode-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .mode-btn {
+            background: #ffffff;
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 12px 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+            text-align: center;
+        }
+
+        .mode-btn .icon {
+            font-size: 1.35rem;
+        }
+
+        .mode-btn .label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .mode-btn:hover {
+            border-color: #94a3b8;
+            background: #f8fafc;
+        }
+
+        .mode-btn.active {
+            border-color: var(--primary);
+            background: var(--primary-light);
+            box-shadow: 0 0 0 1.5px var(--primary);
+        }
+
+        .mode-btn.active .label {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        /* Sliders */
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: #ffffff;
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .slider-header strong {
+            color: #0f172a;
+        }
+
+        .slider-val-tag {
+            font-family: monospace;
+            font-weight: 700;
+            color: var(--primary);
+            background: var(--primary-light);
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 0.78rem;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e2e8f0;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            transition: transform 0.1s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        /* Compact Shortcut Bar in Sidebar */
+        .sidebar-helper-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .btn-side-action {
+            flex: 1;
+            padding: 8px 10px;
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: center;
+        }
+
+        .btn-side-action:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        .btn-side-action.danger:hover {
+            background: #fee2e2;
+            color: #dc2626;
+            border-color: #fca5a5;
+        }
+
+        /* ===== STAGE / CANVAS WORKSPACE ===== */
+        .stage-container {
+            flex: 1;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-canvas-area);
+            position: relative;
+            overflow: hidden;
+            background-image:
+                radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.08) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+
+        /* Stage Toolbar */
+        .stage-toolbar {
+            height: 48px;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border-dark);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            flex-shrink: 0;
+            z-index: 30;
+        }
+
+        .stage-toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-stage-tool {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #f1f5f9;
+            border-radius: var(--radius-sm);
+            padding: 5px 11px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            user-select: none;
+        }
+
+        .btn-stage-tool:hover:not(:disabled) {
+            background: #334155;
+            color: #ffffff;
+            border-color: #475569;
+        }
+
+        .btn-stage-tool:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        .zoom-label {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            min-width: 48px;
+            text-align: center;
+        }
+
+        .page-status-pill {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.76rem;
+            font-weight: 600;
+        }
+
+        /* Canvas Scroll Area */
+        .viewport-scroll {
+            flex: 1;
+            height: calc(100vh - 48px);
+            overflow: auto;
+            display: flex;
+            padding: 30px;
+            position: relative;
+        }
+
+        .canvas-wrapper {
+            margin: auto;
+            flex-shrink: 0;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            border-radius: 4px;
+            background: #ffffff;
+            user-select: none;
+            touch-action: none;
+            line-height: 0;
+            transition: transform 0.05s ease-out;
+        }
+
+        #imageCanvas {
+            display: block;
+            max-width: none;
+            border-radius: 4px;
+        }
+
+        #interactiveOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+            z-index: 5;
+        }
+
+        /* Empty State Placeholder */
+        .empty-placeholder {
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            text-align: center;
+            gap: 12px;
+            max-width: 420px;
+            padding: 40px 24px;
+            background: rgba(15, 23, 42, 0.65);
+            border: 2px dashed #334155;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .empty-placeholder:hover {
+            border-color: var(--primary);
+            color: #e2e8f0;
+            background: rgba(15, 23, 42, 0.85);
+            transform: scale(1.02);
+        }
+
+        .empty-placeholder .icon {
+            font-size: 3.5rem;
+        }
+
+        /* ===== BOTTOM-RIGHT FLOATING ACTION BUTTONS ===== */
+        .bottom-right-actions {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 40;
+        }
+
+        .btn-floating-save {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 30px;
+            font-family: 'Prompt', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 8px 25px rgba(2, 132, 199, 0.45);
+            transition: all 0.2s ease;
+        }
+
+        .btn-floating-save:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(2, 132, 199, 0.6);
+        }
+
+        .btn-floating-save:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-floating-clipboard {
+            padding: 11px 18px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            color: #e2e8f0;
+            border: 1px solid #334155;
+            border-radius: 30px;
+            font-family: 'Prompt', sans-serif;
+            font-size: 0.84rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-floating-clipboard:hover:not(:disabled) {
+            background: #1e293b;
+            border-color: #64748b;
+            color: #ffffff;
+        }
+
+        .btn-floating-clipboard:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        /* ===== FULL SCREEN DRAG & DROP OVERLAY ===== */
+        .full-screen-drop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(6px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s ease;
+            border: 4px dashed #0284c7;
+        }
+
+        .full-screen-drop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .drop-modal-box {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 18px;
+            padding: 36px 50px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            color: #ffffff;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+            pointer-events: none;
+        }
+
+        /* Toast Notifications */
+        .toast-bubble {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #0f172a;
+            color: #ffffff;
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            font-size: 0.86rem;
+            font-weight: 600;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid #334155;
+            z-index: 999;
+            opacity: 0;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toast-bubble.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast-bubble.success {
+            border-color: #10b981;
+            background: #064e3b;
+        }
+
+        .toast-bubble.warning {
+            border-color: #f59e0b;
+            background: #78350f;
+        }
+
+        /* Loading Spinner */
+        .loading-curtain {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(4px);
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            gap: 12px;
+            font-weight: 600;
+            display: none;
+        }
+
+        .spinner-ring {
+            width: 44px;
+            height: 44px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spinRing 0.8s linear infinite;
+        }
+
+        @keyframes spinRing {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Hidden file input for file picker -->
+    <input type="file" id="fileInput" accept=".pdf,image/png,image/jpeg,image/webp" style="display: none;">
+
+    <!-- FULL PAGE DRAG-AND-DROP OVERLAY -->
+    <div id="fullDropOverlay" class="full-screen-drop">
+        <div class="drop-modal-box">
+            <span style="font-size: 3.5rem;">📂</span>
+            <strong style="font-size: 1.3rem;">ปล่อยไฟล์เพื่อเปิด Censor ได้ทันที</strong>
+            <span style="color: #94a3b8; font-size: 0.88rem;">รองรับทั้งไฟล์ภาพ JPG, PNG, WEBP และเอกสาร PDF</span>
+        </div>
+    </div>
+
+    <!-- MAIN APP INTERFACE -->
+    <div class="app-main">
+
+        <!-- SIDEBAR CONTROLS -->
+        <aside class="control-sidebar">
+            <div class="sidebar-scroll">
+
+                <!-- Censor Style Selector -->
+                <div class="tool-card" id="censorStyleCard">
+                    <div class="card-title">
+                        <span>🎨 สไตล์การ Censor</span>
+                    </div>
+
+                    <div class="mode-grid">
+                        <div class="mode-btn active" data-mode="blur" onclick="setCensorMode('blur')">
+                            <span class="icon">💧</span>
+                            <span class="label">เบลอ (Blur)</span>
+                        </div>
+                        <div class="mode-btn" data-mode="pixel" onclick="setCensorMode('pixel')">
+                            <span class="icon">🔲</span>
+                            <span class="label">โมเสก (Pixelate)</span>
+                        </div>
+                        <div class="mode-btn" data-mode="black" onclick="setCensorMode('black')">
+                            <span class="icon">⬛</span>
+                            <span class="label">แถบดำทึบ</span>
+                        </div>
+                        <div class="mode-btn" data-mode="white" onclick="setCensorMode('white')">
+                            <span class="icon">⬜</span>
+                            <span class="label">แถบขาวลบ</span>
+                        </div>
+                    </div>
+
+                    <!-- Blur Radius Slider -->
+                    <div class="slider-group" id="blurOptionRow">
+                        <div class="slider-header">
+                            <span>ระดับความเบลอ (Blur Strength):</span>
+                            <span class="slider-val-tag" id="valBlurStrength">16 px</span>
+                        </div>
+                        <input type="range" id="rangeBlur" min="4" max="40" value="16" oninput="updateBlurParam(this.value)">
+                    </div>
+
+                    <!-- Pixel Size Slider -->
+                    <div class="slider-group" id="pixelOptionRow" style="display: none;">
+                        <div class="slider-header">
+                            <span>ขนาดเม็ดพิกเซล (Mosaic Size):</span>
+                            <span class="slider-val-tag" id="valPixelSize">12 px</span>
+                        </div>
+                        <input type="range" id="rangePixel" min="4" max="36" value="12" oninput="updatePixelParam(this.value)">
+                    </div>
+
+                    <!-- Quick Clean Actions -->
+                    <div class="sidebar-helper-actions">
+                        <button class="btn-side-action" onclick="document.getElementById('fileInput').click()">
+                            📂 เลือกไฟล์ใหม่
+                        </button>
+                        <button class="btn-side-action danger" onclick="clearCurrentPageBoxes()">
+                            🗑️ ล้างกรอบหน้านี้
+                        </button>
+                    </div>
+
+                    <button class="btn-side-action" id="btnCopyAllPages" onclick="copyCurrentBoxesToAllPages()" style="display: none; margin-top: 4px;">
+                        📑 คัดลอกกรอบ Censor ไปทุกหน้า
+                    </button>
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- STAGE / CANVAS WORKSPACE -->
+        <main class="stage-container">
+
+            <!-- Stage Toolbar -->
+            <div class="stage-toolbar">
+                <div class="stage-toolbar-group">
+                    <button class="btn-stage-tool" id="btnUndo" title="เลิกทำ (Ctrl+Z)" disabled>
+                        <span>↩️</span>
+                        <span>เลิกทำ</span>
+                    </button>
+                    <button class="btn-stage-tool" id="btnRedo" title="ทำซ้ำ (Ctrl+Y)" disabled>
+                        <span>↪️</span>
+                        <span>ทำซ้ำ</span>
+                    </button>
+                </div>
+
+                <!-- Multi-page controls for PDF -->
+                <div class="stage-toolbar-group" id="pdfNavGroup" style="display: none;">
+                    <button class="btn-stage-tool" id="btnPrevPage" onclick="changePdfPage(-1)">◀ หน้าก่อน</button>
+                    <span class="page-status-pill" id="pageIndicator">หน้า 1 / 1</span>
+                    <button class="btn-stage-tool" id="btnNextPage" onclick="changePdfPage(1)">หน้าถัดไป ▶</button>
+                </div>
+
+                <div class="stage-toolbar-group">
+                    <button class="btn-stage-tool" onclick="adjustZoom(-0.15)">🔍 -</button>
+                    <span class="zoom-label" id="zoomLabel">100%</span>
+                    <button class="btn-stage-tool" onclick="adjustZoom(0.15)">🔍 +</button>
+                    <button class="btn-stage-tool" onclick="fitToScreen()">[ ] พอดีจอ</button>
+                    <button class="btn-stage-tool" onclick="resetZoom()">1:1</button>
+                </div>
+            </div>
+
+            <!-- Scroll Viewport -->
+            <div class="viewport-scroll" id="viewportScroll">
+
+                <!-- Empty State Placeholder -->
+                <div class="empty-placeholder" id="emptyPlaceholder" onclick="document.getElementById('fileInput').click()">
+                    <span class="icon">🖼️</span>
+                    <strong style="font-size:1.1rem; color:#f1f5f9;">เริ่มต้นด้วยการเลือกไฟล์ภาพ หรือ PDF</strong>
+                    <span>คลิกที่นี่ หรือลากไฟล์มาวางตรงไหนก็ได้บนหน้าจอ</span>
+                </div>
+
+                <!-- Canvas Frame -->
+                <div class="canvas-wrapper" id="canvasWrapper" style="display: none;">
+                    <canvas id="imageCanvas"></canvas>
+                    <canvas id="interactiveOverlay"></canvas>
+                </div>
+
+            </div>
+
+            <!-- BOTTOM RIGHT FLOATING ACTION BUTTONS -->
+            <div class="bottom-right-actions">
+                <button class="btn-floating-clipboard" id="btnCopyClipboard" onclick="copyCurrentPageToClipboard()" disabled>
+                    <span>📋 คัดลอกภาพ</span>
+                </button>
+                <button class="btn-floating-save" id="btnExport" onclick="exportFinalDocument()" disabled>
+                    <span>⬇️ บันทึกไฟล์ Censor</span>
+                </button>
+            </div>
+
+            <!-- Loading Curtain -->
+            <div class="loading-curtain" id="loadingCurtain">
+                <div class="spinner-ring"></div>
+                <div id="loadingText">กำลังประมวลผลไฟล์...</div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div class="toast-bubble" id="toastBubble">ข้อความแจ้งเตือน</div>
+
+    <!-- SCRIPT -->
+    <script>
+        // PDF.js worker configuration
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+
+        // Global State
+        let currentFile = null;
+        let isPdf = false;
+        let pdfDoc = null;
+        let totalPages = 1;
+        let currentPage = 1;
+        let renderedPagesCache = {};
+
+        // Boxes map: pageNum -> array of boxes
+        let boxesByPage = { 1: [] };
+        let activeBoxId = null;
+
+        // Current tool settings
+        let currentMode = 'blur';
+        let currentBlurStrength = 16;
+        let currentPixelSize = 12;
+
+        // Canvas dimensions & scaling
+        let naturalWidth = 0;
+        let naturalHeight = 0;
+        let currentZoom = 1.0;
+
+        // Dragging & Resizing state
+        let isDrawing = false;
+        let isMoving = false;
+        let isResizing = false;
+        let resizeHandle = null;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let activeBoxInitialRect = null;
+
+        // Undo / Redo history
+        let historyStack = [];
+        let redoStack = [];
+
+        // DOM elements
+        const fileInput = document.getElementById('fileInput');
+        const emptyPlaceholder = document.getElementById('emptyPlaceholder');
+        const canvasWrapper = document.getElementById('canvasWrapper');
+        const imageCanvas = document.getElementById('imageCanvas');
+        const overlayCanvas = document.getElementById('interactiveOverlay');
+        const pdfNavGroup = document.getElementById('pdfNavGroup');
+        const pageIndicator = document.getElementById('pageIndicator');
+        const btnPrevPage = document.getElementById('btnPrevPage');
+        const btnNextPage = document.getElementById('btnNextPage');
+        const btnExport = document.getElementById('btnExport');
+        const btnCopyClipboard = document.getElementById('btnCopyClipboard');
+        const btnCopyAllPages = document.getElementById('btnCopyAllPages');
+        const btnUndo = document.getElementById('btnUndo');
+        const btnRedo = document.getElementById('btnRedo');
+        const zoomLabel = document.getElementById('zoomLabel');
+        const loadingCurtain = document.getElementById('loadingCurtain');
+        const loadingText = document.getElementById('loadingText');
+        const fullDropOverlay = document.getElementById('fullDropOverlay');
+
+        // Mode elements
+        const blurOptionRow = document.getElementById('blurOptionRow');
+        const pixelOptionRow = document.getElementById('pixelOptionRow');
+
+        // ===== TOAST NOTIFICATIONS =====
+        function showToast(msg, type = 'info') {
+            const toast = document.getElementById('toastBubble');
+            toast.textContent = msg;
+            toast.className = 'toast-bubble show ' + (type === 'success' ? 'success' : type === 'warning' ? 'warning' : '');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // ===== SHOW / HIDE LOADING =====
+        function showLoading(msg = 'กำลังประมวลผล...') {
+            loadingText.textContent = msg;
+            loadingCurtain.style.display = 'flex';
+        }
+
+        function hideLoading() {
+            loadingCurtain.style.display = 'none';
+        }
+
+        // ===== HISTORY / UNDO-REDO =====
+        function pushHistory() {
+            const snapshot = JSON.stringify(boxesByPage);
+            historyStack.push(snapshot);
+            if (historyStack.length > 30) historyStack.shift();
+            redoStack = [];
+            updateUndoRedoButtons();
+        }
+
+        function undo() {
+            if (historyStack.length === 0) return;
+            const currentSnapshot = JSON.stringify(boxesByPage);
+            redoStack.push(currentSnapshot);
+            const prev = historyStack.pop();
+            boxesByPage = JSON.parse(prev);
+            activeBoxId = null;
+            renderDocumentView();
+            updateUndoRedoButtons();
+        }
+
+        function redo() {
+            if (redoStack.length === 0) return;
+            const currentSnapshot = JSON.stringify(boxesByPage);
+            historyStack.push(currentSnapshot);
+            const next = redoStack.pop();
+            boxesByPage = JSON.parse(next);
+            activeBoxId = null;
+            renderDocumentView();
+            updateUndoRedoButtons();
+        }
+
+        function updateUndoRedoButtons() {
+            btnUndo.disabled = historyStack.length === 0;
+            btnRedo.disabled = redoStack.length === 0;
+        }
+
+        btnUndo.addEventListener('click', undo);
+        btnRedo.addEventListener('click', redo);
+
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+                e.preventDefault();
+                if (e.shiftKey) redo();
+                else undo();
+            } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+                e.preventDefault();
+                redo();
+            } else if (e.key === 'Delete' || e.key === 'Backspace') {
+                if (activeBoxId && document.activeElement.tagName !== 'INPUT') {
+                    e.preventDefault();
+                    deleteBox(activeBoxId);
+                }
+            }
+        });
+
+        // ===== WHOLE WINDOW DRAG AND DROP =====
+        let dragCounter = 0;
+
+        window.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            dragCounter++;
+            if (e.dataTransfer && e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
+                fullDropOverlay.classList.add('active');
+            }
+        });
+
+        window.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dragCounter--;
+            if (dragCounter <= 0) {
+                dragCounter = 0;
+                fullDropOverlay.classList.remove('active');
+            }
+        });
+
+        window.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+
+        window.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragCounter = 0;
+            fullDropOverlay.classList.remove('active');
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                loadFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        // File input picker
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                loadFile(e.target.files[0]);
+            }
+        });
+
+        async function loadFile(file) {
+            showLoading('กำลังโหลดไฟล์...');
+            currentFile = file;
+            emptyPlaceholder.style.display = 'none';
+            canvasWrapper.style.display = 'block';
+
+            // Reset state
+            boxesByPage = { 1: [] };
+            activeBoxId = null;
+            historyStack = [];
+            redoStack = [];
+            renderedPagesCache = {};
+            updateUndoRedoButtons();
+
+            isPdf = file.name.toLowerCase().endsWith('.pdf') || file.type === 'application/pdf';
+
+            try {
+                if (isPdf) {
+                    const arrayBuffer = await file.arrayBuffer();
+                    pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    totalPages = pdfDoc.numPages;
+                    currentPage = 1;
+
+                    for (let p = 1; p <= totalPages; p++) {
+                        boxesByPage[p] = [];
+                    }
+
+                    pdfNavGroup.style.display = totalPages > 1 ? 'flex' : 'none';
+                    if (btnCopyAllPages) btnCopyAllPages.style.display = totalPages > 1 ? 'block' : 'none';
+                    updatePageNavUI();
+                    await renderPdfPage(1);
+                } else {
+                    totalPages = 1;
+                    currentPage = 1;
+                    pdfNavGroup.style.display = 'none';
+                    if (btnCopyAllPages) btnCopyAllPages.style.display = 'none';
+
+                    await renderImageFile(file);
+                }
+
+                btnExport.disabled = false;
+                btnCopyClipboard.disabled = false;
+                fitToScreen();
+                showToast('โหลดไฟล์เรียบร้อยแล้ว! ลากเมาส์เพื่อครอบ Censor ได้เลย', 'success');
+            } catch (err) {
+                console.error(err);
+                showToast('ไม่สามารถเปิดไฟล์ได้ กรุณาลองใหม่อีกครั้ง', 'warning');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Render Image File
+        function renderImageFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        naturalWidth = img.naturalWidth;
+                        naturalHeight = img.naturalHeight;
+
+                        const offCanvas = document.createElement('canvas');
+                        offCanvas.width = naturalWidth;
+                        offCanvas.height = naturalHeight;
+                        const offCtx = offCanvas.getContext('2d');
+                        offCtx.drawImage(img, 0, 0);
+
+                        renderedPagesCache[1] = offCanvas;
+
+                        setupCanvasDimensions();
+                        renderDocumentView();
+                        resolve();
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Render PDF Page
+        async function renderPdfPage(pageNum) {
+            showLoading(`กำลังเรนเดอร์หน้า ${pageNum}...`);
+            currentPage = pageNum;
+            updatePageNavUI();
+
+            if (!renderedPagesCache[pageNum]) {
+                const page = await pdfDoc.getPage(pageNum);
+                const viewport = page.getViewport({ scale: 2.0 });
+
+                const offCanvas = document.createElement('canvas');
+                offCanvas.width = viewport.width;
+                offCanvas.height = viewport.height;
+                const offCtx = offCanvas.getContext('2d');
+
+                await page.render({
+                    canvasContext: offCtx,
+                    viewport: viewport
+                }).promise;
+
+                renderedPagesCache[pageNum] = offCanvas;
+            }
+
+            const cached = renderedPagesCache[pageNum];
+            naturalWidth = cached.width;
+            naturalHeight = cached.height;
+
+            setupCanvasDimensions();
+            renderDocumentView();
+            hideLoading();
+        }
+
+        function updatePageNavUI() {
+            pageIndicator.textContent = `หน้า ${currentPage} / ${totalPages}`;
+            btnPrevPage.disabled = currentPage <= 1;
+            btnNextPage.disabled = currentPage >= totalPages;
+        }
+
+        async function changePdfPage(delta) {
+            const next = currentPage + delta;
+            if (next >= 1 && next <= totalPages) {
+                activeBoxId = null;
+                await renderPdfPage(next);
+            }
+        }
+
+        // Canvas Dimensions Setup
+        function setupCanvasDimensions() {
+            imageCanvas.width = naturalWidth;
+            imageCanvas.height = naturalHeight;
+            overlayCanvas.width = naturalWidth;
+            overlayCanvas.height = naturalHeight;
+
+            applyZoomStyle();
+        }
+
+        function applyZoomStyle() {
+            canvasWrapper.style.width = `${Math.round(naturalWidth * currentZoom)}px`;
+            canvasWrapper.style.height = `${Math.round(naturalHeight * currentZoom)}px`;
+
+            imageCanvas.style.width = '100%';
+            imageCanvas.style.height = '100%';
+            overlayCanvas.style.width = '100%';
+            overlayCanvas.style.height = '100%';
+
+            zoomLabel.textContent = `${Math.round(currentZoom * 100)}%`;
+        }
+
+        function adjustZoom(delta) {
+            currentZoom = Math.min(3.0, Math.max(0.2, currentZoom + delta));
+            applyZoomStyle();
+        }
+
+        function resetZoom() {
+            currentZoom = 1.0;
+            applyZoomStyle();
+        }
+
+        function fitToScreen() {
+            if (!naturalWidth || !naturalHeight) return;
+            const viewport = document.getElementById('viewportScroll');
+            const availW = viewport.clientWidth - 50;
+            const availH = viewport.clientHeight - 50;
+            const scaleW = availW / naturalWidth;
+            const scaleH = availH / naturalHeight;
+            currentZoom = Math.min(scaleW, scaleH, 1.0);
+            applyZoomStyle();
+        }
+
+        // ===== RENDERING ENGINE =====
+        function renderDocumentView() {
+            const ctx = imageCanvas.getContext('2d');
+            ctx.clearRect(0, 0, naturalWidth, naturalHeight);
+
+            const basePage = renderedPagesCache[currentPage];
+            if (basePage) {
+                ctx.drawImage(basePage, 0, 0);
+            }
+
+            const boxes = boxesByPage[currentPage] || [];
+            boxes.forEach(box => {
+                applyCensorToContext(ctx, basePage, box);
+            });
+
+            renderOverlayView();
+        }
+
+        function applyCensorToContext(ctx, sourceCanvas, box) {
+            let { x, y, w, h, mode, strength } = box;
+
+            if (w < 0) { x += w; w = Math.abs(w); }
+            if (h < 0) { y += h; h = Math.abs(h); }
+
+            if (w <= 0 || h <= 0) return;
+
+            x = Math.max(0, Math.min(naturalWidth - 1, x));
+            y = Math.max(0, Math.min(naturalHeight - 1, y));
+            w = Math.min(w, naturalWidth - x);
+            h = Math.min(h, naturalHeight - y);
+
+            ctx.save();
+
+            if (mode === 'blur') {
+                const blurPx = strength || currentBlurStrength || 16;
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = w;
+                tempCanvas.height = h;
+                const tempCtx = tempCanvas.getContext('2d');
+
+                tempCtx.filter = `blur(${blurPx}px)`;
+                tempCtx.drawImage(
+                    sourceCanvas,
+                    Math.max(0, x - blurPx),
+                    Math.max(0, y - blurPx),
+                    Math.min(naturalWidth, w + blurPx * 2),
+                    Math.min(naturalHeight, h + blurPx * 2),
+                    -blurPx,
+                    -blurPx,
+                    w + blurPx * 2,
+                    h + blurPx * 2
+                );
+
+                ctx.beginPath();
+                ctx.rect(x, y, w, h);
+                ctx.clip();
+                ctx.drawImage(tempCanvas, x, y);
+
+            } else if (mode === 'pixel') {
+                const pz = strength || currentPixelSize || 12;
+                const tinyW = Math.max(1, Math.round(w / pz));
+                const tinyH = Math.max(1, Math.round(h / pz));
+
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = tinyW;
+                tempCanvas.height = tinyH;
+                const tempCtx = tempCanvas.getContext('2d');
+
+                tempCtx.drawImage(sourceCanvas, x, y, w, h, 0, 0, tinyW, tinyH);
+
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(tempCanvas, 0, 0, tinyW, tinyH, x, y, w, h);
+                ctx.imageSmoothingEnabled = true;
+
+            } else if (mode === 'black') {
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(x, y, w, h);
+
+            } else if (mode === 'white') {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(x, y, w, h);
+            }
+
+            ctx.restore();
+        }
+
+        // Overlay Rendering
+        function renderOverlayView() {
+            const ctx = overlayCanvas.getContext('2d');
+            ctx.clearRect(0, 0, naturalWidth, naturalHeight);
+
+            const boxes = boxesByPage[currentPage] || [];
+
+            boxes.forEach(box => {
+                const isSelected = box.id === activeBoxId;
+                let { x, y, w, h } = box;
+                if (w < 0) { x += w; w = Math.abs(w); }
+                if (h < 0) { y += h; h = Math.abs(h); }
+
+                ctx.save();
+                ctx.strokeStyle = isSelected ? '#0284c7' : 'rgba(255, 255, 255, 0.7)';
+                ctx.lineWidth = isSelected ? 2.5 : 1.5;
+                ctx.setLineDash(isSelected ? [6, 4] : [4, 4]);
+                ctx.strokeRect(x, y, w, h);
+
+                if (isSelected) {
+                    ctx.fillStyle = 'rgba(2, 132, 199, 0.12)';
+                    ctx.fillRect(x, y, w, h);
+
+                    const handles = getHandleCoordinates(box);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.strokeStyle = '#0284c7';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([]);
+
+                    const handleRadius = Math.max(5, 7 / currentZoom);
+
+                    Object.values(handles).forEach(pt => {
+                        ctx.beginPath();
+                        ctx.arc(pt.x, pt.y, handleRadius, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.stroke();
+                    });
+
+                    ctx.fillStyle = '#0284c7';
+                    const tagText = getBoxTypeLabel(box.mode);
+                    ctx.font = 'bold 12px Prompt, sans-serif';
+                    const textW = ctx.measureText(tagText).width;
+
+                    const tagX = x;
+                    const tagY = Math.max(16, y - 6);
+
+                    ctx.fillRect(tagX, tagY - 14, textW + 10, 16);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillText(tagText, tagX + 5, tagY - 2);
+                }
+
+                ctx.restore();
+            });
+        }
+
+        function getBoxTypeLabel(mode) {
+            switch (mode) {
+                case 'blur': return '💧 เบลอ';
+                case 'pixel': return '🔲 โมเสก';
+                case 'black': return '⬛ แถบดำ';
+                case 'white': return '⬜ แถบขาว';
+                default: return 'Censor';
+            }
+        }
+
+        function getHandleCoordinates(box) {
+            let { x, y, w, h } = box;
+            if (w < 0) { x += w; w = Math.abs(w); }
+            if (h < 0) { y += h; h = Math.abs(h); }
+
+            const midX = x + w / 2;
+            const midY = y + h / 2;
+
+            return {
+                nw: { x: x, y: y },
+                n: { x: midX, y: y },
+                ne: { x: x + w, y: y },
+                e: { x: x + w, y: midY },
+                se: { x: x + w, y: y + h },
+                s: { midX: midX, y: y + h },
+                sw: { x: x, y: y + h },
+                w: { x: x, y: midY }
+            };
+        }
+
+        // Pointer event handlers
+        function getCanvasPoint(e) {
+            const rect = overlayCanvas.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+
+            const scaleX = naturalWidth / rect.width;
+            const scaleY = naturalHeight / rect.height;
+
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function getHandleUnderPoint(pt, box) {
+            if (!box) return null;
+            const handles = getHandleCoordinates(box);
+            const threshold = Math.max(10, 14 / currentZoom);
+
+            for (const [key, hPt] of Object.entries(handles)) {
+                if (!hPt) continue;
+                const hX = hPt.x || hPt.midX;
+                const hY = hPt.y;
+                const dist = Math.hypot(pt.x - hX, pt.y - hY);
+                if (dist <= threshold) return key;
+            }
+            return null;
+        }
+
+        function isPointInBox(pt, box) {
+            let { x, y, w, h } = box;
+            if (w < 0) { x += w; w = Math.abs(w); }
+            if (h < 0) { y += h; h = Math.abs(h); }
+            return pt.x >= x && pt.x <= x + w && pt.y >= y && pt.y <= y + h;
+        }
+
+        overlayCanvas.addEventListener('mousedown', onPointerDown);
+        window.addEventListener('mousemove', onPointerMove);
+        window.addEventListener('mouseup', onPointerUp);
+
+        overlayCanvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) onPointerDown(e);
+        }, { passive: false });
+        window.addEventListener('touchmove', (e) => {
+            if (isDrawing || isMoving || isResizing) {
+                e.preventDefault();
+                onPointerMove(e);
+            }
+        }, { passive: false });
+        window.addEventListener('touchend', onPointerUp);
+
+        function onPointerDown(e) {
+            if (!currentFile) return;
+            const pt = getCanvasPoint(e);
+            dragStartX = pt.x;
+            dragStartY = pt.y;
+
+            const boxes = boxesByPage[currentPage] || [];
+            const activeBox = boxes.find(b => b.id === activeBoxId);
+
+            if (activeBox) {
+                const handle = getHandleUnderPoint(pt, activeBox);
+                if (handle) {
+                    isResizing = true;
+                    resizeHandle = handle;
+                    activeBoxInitialRect = { ...activeBox };
+                    pushHistory();
+                    return;
+                }
+            }
+
+            const clickedBox = [...boxes].reverse().find(b => isPointInBox(pt, b));
+            if (clickedBox) {
+                activeBoxId = clickedBox.id;
+                isMoving = true;
+                activeBoxInitialRect = { ...clickedBox };
+                pushHistory();
+                renderDocumentView();
+                return;
+            }
+
+            pushHistory();
+            const newBox = {
+                id: 'box_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                x: pt.x,
+                y: pt.y,
+                w: 0,
+                h: 0,
+                mode: currentMode,
+                strength: currentMode === 'blur' ? currentBlurStrength : currentPixelSize
+            };
+
+            boxes.push(newBox);
+            activeBoxId = newBox.id;
+            isDrawing = true;
+
+            renderDocumentView();
+        }
+
+        function onPointerMove(e) {
+            if (!currentFile) return;
+            const pt = getCanvasPoint(e);
+
+            const boxes = boxesByPage[currentPage] || [];
+            const box = boxes.find(b => b.id === activeBoxId);
+
+            if (isDrawing && box) {
+                box.w = pt.x - dragStartX;
+                box.h = pt.y - dragStartY;
+                renderDocumentView();
+            } else if (isMoving && box && activeBoxInitialRect) {
+                const dx = pt.x - dragStartX;
+                const dy = pt.y - dragStartY;
+                box.x = activeBoxInitialRect.x + dx;
+                box.y = activeBoxInitialRect.y + dy;
+                renderDocumentView();
+            } else if (isResizing && box && activeBoxInitialRect) {
+                resizeBoxWithHandle(box, activeBoxInitialRect, resizeHandle, pt.x - dragStartX, pt.y - dragStartY);
+                renderDocumentView();
+            } else {
+                updateCursor(pt);
+            }
+        }
+
+        function resizeBoxWithHandle(box, init, handle, dx, dy) {
+            let { x, y, w, h } = init;
+
+            if (handle.includes('e')) w += dx;
+            if (handle.includes('s')) h += dy;
+            if (handle.includes('w')) { x += dx; w -= dx; }
+            if (handle.includes('n')) { y += dy; h -= dy; }
+
+            box.x = x;
+            box.y = y;
+            box.w = w;
+            box.h = h;
+        }
+
+        function onPointerUp() {
+            if (isDrawing || isMoving || isResizing) {
+                const boxes = boxesByPage[currentPage] || [];
+                const box = boxes.find(b => b.id === activeBoxId);
+
+                if (box) {
+                    if (box.w < 0) { box.x += box.w; box.w = Math.abs(box.w); }
+                    if (box.h < 0) { box.y += box.h; box.h = Math.abs(box.h); }
+
+                    if (box.w < 6 || box.h < 6) {
+                        deleteBox(box.id, false);
+                    }
+                }
+
+                isDrawing = false;
+                isMoving = false;
+                isResizing = false;
+                resizeHandle = null;
+                activeBoxInitialRect = null;
+
+                renderDocumentView();
+            }
+        }
+
+        function updateCursor(pt) {
+            const boxes = boxesByPage[currentPage] || [];
+            const activeBox = boxes.find(b => b.id === activeBoxId);
+
+            if (activeBox) {
+                const handle = getHandleUnderPoint(pt, activeBox);
+                if (handle) {
+                    const cursorMap = {
+                        nw: 'nwse-resize', se: 'nwse-resize',
+                        ne: 'nesw-resize', sw: 'nesw-resize',
+                        n: 'ns-resize', s: 'ns-resize',
+                        e: 'ew-resize', w: 'ew-resize'
+                    };
+                    overlayCanvas.style.cursor = cursorMap[handle] || 'pointer';
+                    return;
+                }
+            }
+
+            const isOverAnyBox = boxes.some(b => isPointInBox(pt, b));
+            overlayCanvas.style.cursor = isOverAnyBox ? 'move' : 'crosshair';
+        }
+
+        // Censor Mode Selection
+        function setCensorMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-mode') === mode);
+            });
+
+            blurOptionRow.style.display = mode === 'blur' ? 'flex' : 'none';
+            pixelOptionRow.style.display = mode === 'pixel' ? 'flex' : 'none';
+
+            const boxes = boxesByPage[currentPage] || [];
+            const box = boxes.find(b => b.id === activeBoxId);
+            if (box) {
+                pushHistory();
+                box.mode = mode;
+                box.strength = mode === 'blur' ? currentBlurStrength : currentPixelSize;
+                renderDocumentView();
+            }
+        }
+
+        function updateBlurParam(val) {
+            currentBlurStrength = parseInt(val, 10);
+            document.getElementById('valBlurStrength').textContent = `${currentBlurStrength} px`;
+
+            const boxes = boxesByPage[currentPage] || [];
+            const box = boxes.find(b => b.id === activeBoxId && b.mode === 'blur');
+            if (box) {
+                box.strength = currentBlurStrength;
+                renderDocumentView();
+            }
+        }
+
+        function updatePixelParam(val) {
+            currentPixelSize = parseInt(val, 10);
+            document.getElementById('valPixelSize').textContent = `${currentPixelSize} px`;
+
+            const boxes = boxesByPage[currentPage] || [];
+            const box = boxes.find(b => b.id === activeBoxId && b.mode === 'pixel');
+            if (box) {
+                box.strength = currentPixelSize;
+                renderDocumentView();
+            }
+        }
+
+        function deleteBox(id, saveUndo = true) {
+            if (saveUndo) pushHistory();
+            const boxes = boxesByPage[currentPage] || [];
+            boxesByPage[currentPage] = boxes.filter(b => b.id !== id);
+            if (activeBoxId === id) activeBoxId = null;
+            renderDocumentView();
+        }
+
+        function clearCurrentPageBoxes() {
+            const boxes = boxesByPage[currentPage] || [];
+            if (boxes.length === 0) return;
+            pushHistory();
+            boxesByPage[currentPage] = [];
+            activeBoxId = null;
+            renderDocumentView();
+            showToast('ล้างกรอบในหน้านี้ทั้งหมดแล้ว');
+        }
+
+        function copyCurrentBoxesToAllPages() {
+            if (!isPdf || totalPages <= 1) return;
+            const currentBoxes = boxesByPage[currentPage] || [];
+            if (currentBoxes.length === 0) {
+                showToast('ไม่มีกรอบ Censor ในหน้านี้ที่จะคัดลอก', 'warning');
+                return;
+            }
+
+            pushHistory();
+            for (let p = 1; p <= totalPages; p++) {
+                if (p !== currentPage) {
+                    boxesByPage[p] = currentBoxes.map(b => ({
+                        ...b,
+                        id: 'box_clone_' + Math.random().toString(36).substr(2, 6)
+                    }));
+                }
+            }
+
+            showToast(`คัดลอก ${currentBoxes.length} จุดไปยังทุกหน้า (${totalPages} หน้า) แล้ว!`, 'success');
+        }
+
+        // ===== EXPORT DOCUMENT =====
+        async function exportFinalDocument() {
+            if (!currentFile) return;
+
+            showLoading('กำลังส่งออกไฟล์...');
+
+            try {
+                if (!isPdf) {
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = naturalWidth;
+                    tempCanvas.height = naturalHeight;
+                    const tempCtx = tempCanvas.getContext('2d');
+
+                    const basePage = renderedPagesCache[1];
+                    tempCtx.drawImage(basePage, 0, 0);
+
+                    const boxes = boxesByPage[1] || [];
+                    boxes.forEach(box => {
+                        applyCensorToContext(tempCtx, basePage, box);
+                    });
+
+                    tempCanvas.toBlob((blob) => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        const origName = currentFile.name.replace(/\.[^/.]+$/, "");
+                        a.download = `${origName}_censored.png`;
+                        a.href = url;
+                        a.click();
+                        URL.revokeObjectURL(url);
+
+                        fireConfetti();
+                        showToast('ดาวน์โหลดรูปภาพ Censor เรียบร้อยแล้ว!', 'success');
+                        hideLoading();
+                    }, 'image/png', 1.0);
+
+                } else {
+                    const { jsPDF } = window.jspdf;
+                    let pdf = null;
+
+                    for (let p = 1; p <= totalPages; p++) {
+                        showLoading(`กำลังประมวลผล PDF หน้า ${p} / ${totalPages}...`);
+
+                        if (!renderedPagesCache[p]) {
+                            const page = await pdfDoc.getPage(p);
+                            const viewport = page.getViewport({ scale: 2.0 });
+                            const offCanvas = document.createElement('canvas');
+                            offCanvas.width = viewport.width;
+                            offCanvas.height = viewport.height;
+                            const offCtx = offCanvas.getContext('2d');
+                            await page.render({ canvasContext: offCtx, viewport: viewport }).promise;
+                            renderedPagesCache[p] = offCanvas;
+                        }
+
+                        const basePage = renderedPagesCache[p];
+                        const pageW = basePage.width;
+                        const pageH = basePage.height;
+
+                        const pageCanvas = document.createElement('canvas');
+                        pageCanvas.width = pageW;
+                        pageCanvas.height = pageH;
+                        const pageCtx = pageCanvas.getContext('2d');
+                        pageCtx.drawImage(basePage, 0, 0);
+
+                        const boxes = boxesByPage[p] || [];
+                        boxes.forEach(box => {
+                            applyCensorToContext(pageCtx, basePage, box);
+                        });
+
+                        const imgData = pageCanvas.toDataURL('image/jpeg', 0.95);
+                        const orientation = pageW > pageH ? 'landscape' : 'portrait';
+
+                        if (p === 1) {
+                            pdf = new jsPDF({
+                                orientation: orientation,
+                                unit: 'pt',
+                                format: [pageW, pageH]
+                            });
+                            pdf.addImage(imgData, 'JPEG', 0, 0, pageW, pageH);
+                        } else {
+                            pdf.addPage([pageW, pageH], orientation);
+                            pdf.addImage(imgData, 'JPEG', 0, 0, pageW, pageH);
+                        }
+                    }
+
+                    const origName = currentFile.name.replace(/\.[^/.]+$/, "");
+                    pdf.save(`${origName}_censored.pdf`);
+
+                    fireConfetti();
+                    showToast('ดาวน์โหลดเอกสาร PDF เรียบร้อยแล้ว!', 'success');
+                    hideLoading();
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('เกิดข้อผิดพลาดในการส่งออกไฟล์', 'warning');
+                hideLoading();
+            }
+        }
+
+        // Copy Page to Clipboard
+        async function copyCurrentPageToClipboard() {
+            if (!currentFile) return;
+
+            showLoading('กำลังคัดลอกรูปภาพ...');
+
+            try {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = naturalWidth;
+                tempCanvas.height = naturalHeight;
+                const tempCtx = tempCanvas.getContext('2d');
+
+                const basePage = renderedPagesCache[currentPage];
+                tempCtx.drawImage(basePage, 0, 0);
+
+                const boxes = boxesByPage[currentPage] || [];
+                boxes.forEach(box => {
+                    applyCensorToContext(tempCtx, basePage, box);
+                });
+
+                tempCanvas.toBlob(async (blob) => {
+                    try {
+                        const item = new ClipboardItem({ 'image/png': blob });
+                        await navigator.clipboard.write([item]);
+                        showToast('📋 คัดลอกภาพหน้านี้เข้าคลิปบอร์ดแล้ว! วางใน Line หรือเอกสารได้ทันที', 'success');
+                    } catch (err) {
+                        console.error(err);
+                        showToast('เบราว์เซอร์ไม่อนุญาตให้คัดลอกรูปภาพอัตโนมัติ กรุณากดปุ่มบันทึกไฟล์แทน', 'warning');
+                    } finally {
+                        hideLoading();
+                    }
+                }, 'image/png');
+            } catch (err) {
+                console.error(err);
+                hideLoading();
+                showToast('ไม่สามารถคัดลอกรูปภาพได้', 'warning');
+            }
+        }
+
+        function fireConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 70,
+                    spread: 60,
+                    origin: { y: 0.8 }
+                });
+            }
+        }
+    </script>
+</body>
+
+</html>
