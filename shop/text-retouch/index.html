@@ -2792,6 +2792,13 @@
                 if (raw) {
                     const saved = JSON.parse(raw);
                     Object.assign(patches, saved);
+                    // ฟื้นฟูคิวที่เคยติด system_error จากบั๊กหลุดการเชื่อมต่อ ให้กลับมาเป็นสถานะจริง
+                    Object.values(patches).forEach(p => {
+                        if (p && p.status === 'system_error' && p.errorMessage && (p.errorMessage.includes('ช่างออฟไลน์') || p.errorMessage.includes('เซิร์ฟเวอร์') || p.errorMessage.includes('ตัดการเชื่อมต่อ'))) {
+                            p.status = (p.price && p.price > 0) ? 'pending_payment' : 'pending_review';
+                            delete p.errorMessage;
+                        }
+                    });
                 }
             } catch (e) { }
         }
@@ -2799,8 +2806,65 @@
         let shopStatus = 'online';
         const SERVER_STATUS_ENDPOINT = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/store_status.json";
         let isMainServerOnline = true;
-        let lastRetouchDbStatus = 'online';
-        let applyRetouchStatusFn = null;
+        let rawShopStatus = 'online';
+
+        function updateEffectiveStatus() {
+            let effectiveStatus = 'online';
+            let statusText = 'พร้อมรับงานทันที';
+
+            if (!isMainServerOnline) {
+                effectiveStatus = 'offline';
+                statusText = 'เซิร์ฟเวอร์ออฟไลน์ (ร้านปิด)';
+            } else if (rawShopStatus === 'offline') {
+                effectiveStatus = 'offline';
+                statusText = 'ร้านปิด';
+            } else if (rawShopStatus === 'away' || rawShopStatus === 'always') {
+                effectiveStatus = 'away';
+                statusText = 'กำลังงีบอยู่ Zzz';
+            } else {
+                effectiveStatus = 'online';
+                statusText = 'พร้อมรับงานทันที';
+            }
+
+            shopStatus = effectiveStatus;
+
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('headerStatus');
+            const zone = document.getElementById('uploadZone');
+
+            if (dot && text) {
+                dot.classList.remove('status-online', 'status-away', 'status-offline');
+                dot.classList.add(`status-${effectiveStatus}`);
+                text.textContent = statusText;
+            }
+
+            if (zone) {
+                if (effectiveStatus === 'offline') {
+                    zone.classList.add('is-offline');
+                    const title = zone.querySelector('.upload-title');
+                    if (title) {
+                        title.textContent = !isMainServerOnline 
+                            ? '❌ ขณะนี้เซิร์ฟเวอร์หลัก/ช่างออฟไลน์ (ปิดรับงานชั่วคราว — โปรดรอเปิดระบบ)' 
+                            : '❌ ขณะนี้ร้านปิดรับงานชั่วคราว (ไม่สามารถส่งไฟล์ได้)';
+                    }
+                } else if (effectiveStatus === 'away') {
+                    zone.classList.remove('is-offline');
+                    const title = zone.querySelector('.upload-title');
+                    if (title) title.textContent = 'คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่ (ขณะนี้ช่างกำลังงีบอยู่ Zzz โปรดรอนักรีทัชมาประเมินราคาให้)';
+                } else {
+                    zone.classList.remove('is-offline');
+                    const title = zone.querySelector('.upload-title');
+                    if (title) title.textContent = 'คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่';
+                }
+            }
+
+            // รีเฟรชการ์ดที่รอนักรีทัชคิดราคาให้แสดงข้อความตรงกับสถานะ
+            Object.keys(patches).forEach(pid => {
+                if (patches[pid] && patches[pid].status === 'pending_review') {
+                    renderPatchCard(pid);
+                }
+            });
+        }
 
         async function checkServerOnlineStatus() {
             try {
@@ -2810,140 +2874,26 @@
                     const now = Date.now();
                     if (data && data.online && (now - (data.lastSeen || 0) < 40000)) {
                         isMainServerOnline = true;
-                        if (applyRetouchStatusFn) applyRetouchStatusFn(lastRetouchDbStatus);
+                        updateEffectiveStatus();
                         return;
                     }
                 }
             } catch (e) { }
             isMainServerOnline = false;
-            if (applyRetouchStatusFn) applyRetouchStatusFn('offline');
+            updateEffectiveStatus();
         }
 
         function initShopStatus() {
-            const applyStatus = (val) => {
-                if (val && val !== 'offline') {
-                    lastRetouchDbStatus = val;
-                }
-                
-                // If the main server is offline, text-retouch MUST go offline as well
-                if (!isMainServerOnline) {
-                    shopStatus = 'offline';
-                } else {
-                    shopStatus = val || lastRetouchDbStatus || 'online';
-                }
-
-                const dot = document.getElementById('statusDot');
-                const text = document.getElementById('headerStatus');
-                const zone = document.getElementById('uploadZone');
-
-                if (!dot || !text) return;
-                dot.classList.remove('status-online', 'status-away', 'status-offline');
-
-                if (shopStatus === 'offline') {
-                    dot.classList.add('status-offline');
-                    text.textContent = !isMainServerOnline ? 'เซิร์ฟเวอร์ออฟไลน์ (ร้านปิด)' : 'ร้านปิด';
-                    if (zone) {
-                        zone.classList.add('is-offline');
-                        const title = zone.querySelector('.upload-title');
-                        if (title) title.textContent = !isMainServerOnline 
-                            ? '❌ ขณะนี้เซิร์ฟเวอร์หลัก/ช่างออฟไลน์ (ปิดรับงานชั่วคราว — โปรดรอเปิดระบบ)' 
-                            : '❌ ขณะนี้ร้านปิดรับงานชั่วคราว (ไม่สามารถส่งไฟล์ได้)';
-                    }
-                    handleAdminOffline(!isMainServerOnline ? 'ระบบขัดข้อง เซิร์ฟเวอร์หลักหรือช่างออฟไลน์ โปรดติดต่อ LINE: https://line.me/ti/p/gqIluRmdJ_' : 'ระบบขัดข้อง เนื่องจากช่างออฟไลน์ โปรดติดต่อ LINE: https://line.me/ti/p/gqIluRmdJ_');
-                } else if (shopStatus === 'away' || shopStatus === 'always') {
-                    dot.classList.add('status-away');
-                    text.textContent = 'กำลังงีบอยู่ Zzz';
-                    if (zone) {
-                        zone.classList.remove('is-offline');
-                        const title = zone.querySelector('.upload-title');
-                        if (title) title.textContent = 'คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่ (ขณะนี้ช่างกำลังงีบอยู่ Zzz โปรดรอนักรีทัชมาประเมินราคาให้)';
-                    }
-                } else {
-                    dot.classList.add('status-online');
-                    text.textContent = 'พร้อมรับงานทันที';
-                    if (zone) {
-                        zone.classList.remove('is-offline');
-                        const title = zone.querySelector('.upload-title');
-                        if (title) title.textContent = 'คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่';
-                    }
-                }
-
-                // รีเฟรชการ์ดที่รอนักรีทัชคิดราคาให้แสดงข้อความตรงกับสถานะ
-                Object.keys(patches).forEach(pid => {
-                    if (patches[pid] && patches[pid].status === 'pending_review') {
-                        renderPatchCard(pid);
-                    }
-                });
-            };
-
-            applyRetouchStatusFn = applyStatus;
-
             db.ref('text_retouch/_shop_status').on('value', snap => {
-                if (snap.val()) applyStatus(snap.val());
-            });
-            db.ref('text_retouch_status').on('value', snap => {
-                if (snap.val()) applyStatus(snap.val());
+                const val = snap.val();
+                if (val) {
+                    rawShopStatus = val;
+                    updateEffectiveStatus();
+                }
             });
 
             checkServerOnlineStatus();
             setInterval(checkServerOnlineStatus, 8000);
-        }
-
-        let offlineGraceTimer = null;
-
-        function handleAdminOffline(reason) {
-            let changed = false;
-            Object.keys(patches).forEach(pid => {
-                const p = patches[pid];
-                if (!p) return;
-                // Active patches waiting for review, waiting for payment, paid, or working in Photoshop
-                if (['pending_review', 'pending_payment', 'paid', 'working'].includes(p.status)) {
-                    p.status = 'system_error';
-                    p.errorMessage = reason || 'ระบบขัดข้อง เนื่องจากช่างออฟไลน์ โปรดติดต่อ LINE: https://line.me/ti/p/gqIluRmdJ_';
-                    renderPatchCard(pid);
-                    renderPatchOverlays();
-                    changed = true;
-                }
-            });
-
-            if (changed) {
-                updateTotal();
-                updateWorkingTimers();
-                const modal = document.getElementById('paymentModal');
-                if (modal && modal.classList.contains('open')) {
-                    modal.classList.remove('open');
-                }
-                savePatchesToLocalStorage();
-                toast('⚠️ ระบบขัดข้อง เนื่องจากช่างออฟไลน์ โปรดติดต่อ LINE เจ้าหน้าที่', 'error');
-            }
-        }
-
-        function initAdminPresenceListener() {
-            const handlePresence = (presence) => {
-                if (!presence) return;
-
-                if (presence.online === false) {
-                    // Admin disconnected -> wait 5s grace period (handles brief page reloads)
-                    if (!offlineGraceTimer) {
-                        offlineGraceTimer = setTimeout(() => {
-                            handleAdminOffline('ระบบขัดข้อง ช่างตัดการเชื่อมต่อ/ออฟไลน์ โปรดติดต่อ LINE: https://line.me/ti/p/gqIluRmdJ_');
-                        }, 5000);
-                    }
-                } else {
-                    // Admin is online
-                    if (offlineGraceTimer) {
-                        clearTimeout(offlineGraceTimer);
-                        offlineGraceTimer = null;
-                    }
-                }
-            };
-
-            db.ref('text_retouch/_admin_presence').on('value', snap => {
-                if (snap.val()) handlePresence(snap.val());
-            });
-            db.ref('text_retouch_admin_presence').on('value', snap => {
-                if (snap.val()) handlePresence(snap.val());
-            });
         }
 
         function updatePatchNote(patchId, val) {
@@ -2966,7 +2916,6 @@
         // ── INIT ──
         window.addEventListener('DOMContentLoaded', async () => {
             initShopStatus();
-            initAdminPresenceListener();
             initUploadZone();
             initCanvas();
 
@@ -3701,6 +3650,11 @@
                 return;
             }
 
+            if (shopStatus === 'offline') {
+                toast('❌ ขณะนี้ร้านปิดรับงานชั่วคราว ไม่สามารถส่งประเมินราคาได้ โปรดรอเปิดระบบ', 'warning');
+                return;
+            }
+
             // เปิด/สลับไปที่แท็บ Admin ทันทีเมื่อส่งคำสั่ง (หากมีแท็บเปิดอยู่แล้วจะ select แท็บเดิม ไม่เปิดซ้ำ)
             try {
                 window.open('http://127.0.0.1:5000/admin-text-retouch.html', 'admin_text_retouch_tab');
@@ -3838,6 +3792,16 @@
                             toast(`⚠️ จุดที่ ${local.num} ระบบขัดข้อง โปรดติดต่อทาง LINE เพื่อให้เจ้าหน้าที่ดูแลทันที`, 'error');
                         }
 
+                        // ฟื้นฟูคิวหากใน Firebase ไม่ใช่ system_error (เช่น เคยติดบั๊กออฟไลน์ชั่วคราว)
+                        if (fbPatch.status && fbPatch.status !== 'system_error' && local.status === 'system_error') {
+                            local.status = fbPatch.status;
+                            delete local.errorMessage;
+                            patches[pid] = local;
+                            renderPatchCard(pid);
+                            renderPatchOverlays();
+                            updateTotal();
+                        }
+
                         // 2. Rejected
                         if (fbPatch.status === 'rejected' && local.status !== 'rejected') {
                             local.status = 'rejected';
@@ -3856,6 +3820,7 @@
                             if (statusChanged || priceChanged) {
                                 local.status = 'pending_payment';
                                 local.price = fbPatch.price || local.price || 0;
+                                delete local.errorMessage;
                                 patches[pid] = local;
                                 renderPatchCard(pid);
                                 renderPatchOverlays();
@@ -3921,29 +3886,31 @@
 
                     updateAddPatchButton();
 
-                    // ตรวจสอบคิวที่ถูกลบออกจาก Firebase (แอดมินลบคิว หรือเซสชันถูกล้าง)
-                    Object.keys(patches).forEach(pid => {
-                        const local = patches[pid];
-                        if (!local) return;
-                        // ถ้างานกำลังรอประเมิน, รอโอน, โอนแล้ว, หรือกำลังทำใน Photoshop แต่หายไปจากฐานข้อมูล -> แสดงระบบขัดข้องทันที
-                        if (['pending_review', 'pending_payment', 'paid', 'working'].includes(local.status)) {
-                            if (!fbPatches[pid]) {
-                                local.status = 'system_error';
-                                local.errorMessage = 'ระบบขัดข้อง หรือคิวงานถูกยกเลิก โปรดติดต่อ LINE: https://line.me/ti/p/gqIluRmdJ_';
-                                patches[pid] = local;
-                                renderPatchCard(pid);
-                                renderPatchOverlays();
-                                updateTotal();
-                                updateWorkingTimers();
+                    // ตรวจสอบคิวที่ถูกลบออกจาก Firebase (เฉพาะเมื่อเซสชันมีข้อมูลสมบูรณ์)
+                    if (snap.exists() && Object.keys(fbPatches).length > 0) {
+                        Object.keys(patches).forEach(pid => {
+                            const local = patches[pid];
+                            if (!local) return;
+                            // ถ้างานกำลังรอประเมิน, รอโอน, โอนแล้ว, หรือกำลังทำใน Photoshop แต่หายไปจากฐานข้อมูล -> แสดงระบบขัดข้อง
+                            if (['pending_review', 'pending_payment', 'paid', 'working'].includes(local.status)) {
+                                if (!fbPatches[pid]) {
+                                    local.status = 'system_error';
+                                    local.errorMessage = 'ระบบขัดข้อง หรือคิวงานถูกยกเลิก โปรดติดต่อ LINE: https://line.me/ti/p/gqIluRmdJ_';
+                                    patches[pid] = local;
+                                    renderPatchCard(pid);
+                                    renderPatchOverlays();
+                                    updateTotal();
+                                    updateWorkingTimers();
 
-                                const modal = document.getElementById('paymentModal');
-                                if (modal && modal.classList.contains('open') && currentPayingPatchId === pid) {
-                                    modal.classList.remove('open');
+                                    const modal = document.getElementById('paymentModal');
+                                    if (modal && modal.classList.contains('open') && currentPayingPatchId === pid) {
+                                        modal.classList.remove('open');
+                                    }
+                                    toast(`⚠️ จุดที่ ${local.num} ถูกลบออกจากระบบ/เกิดเหตุขัดข้อง โปรดติดต่อ LINE เจ้าหน้าที่`, 'error');
                                 }
-                                toast(`⚠️ จุดที่ ${local.num} ถูกลบออกจากระบบ/เกิดเหตุขัดข้อง โปรดติดต่อ LINE เจ้าหน้าที่`, 'error');
                             }
-                        }
-                    });
+                        });
+                    }
 
                     if (patchToOpenPayment) {
                         openPaymentModal(patchToOpenPayment);
