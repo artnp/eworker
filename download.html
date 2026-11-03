@@ -14,7 +14,8 @@
     <meta name="twitter:image" content="">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -340,12 +341,14 @@
             position: relative;
             background: rgba(11, 17, 32, 0.6);
             border-radius: 14px;
-            padding: 10px;
+            padding: 12px;
             width: 100%;
             height: 100%;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: 10px;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.04);
         }
@@ -384,7 +387,7 @@
             position: relative;
             display: inline-flex;
             max-width: 100%;
-            max-height: 100%;
+            max-height: calc(100% - 92px);
             align-items: center;
             justify-content: center;
             user-select: none;
@@ -1218,25 +1221,38 @@
             justify-content: center;
         }
 
+        /* Lightbox Stage: Holds prev thumbnail, main image, and next thumbnail together right beside each other */
+        .lightbox-stage {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            max-width: 96vw;
+            max-height: 92vh;
+            user-select: none;
+        }
+
         .lightbox-content {
             position: relative;
             display: inline-flex;
-            max-width: 95%;
-            max-height: 92vh;
+            max-width: 82vw;
+            max-height: 88vh;
             align-items: center;
             justify-content: center;
-            border-radius: 10px;
+            border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 0 50px rgba(0, 0, 0, 0.85);
             cursor: default;
+            flex-shrink: 1;
         }
 
         .lightbox img {
             max-width: 100%;
-            max-height: 92vh;
+            max-height: 88vh;
             display: block;
             object-fit: contain;
-            border-radius: 10px;
+            border-radius: 12px;
         }
 
         .lightbox.protected img {
@@ -1394,25 +1410,152 @@
 
         .lightbox-close {
             position: fixed;
-            top: 14px;
-            right: 14px;
-            width: 38px;
-            height: 38px;
-            background: rgba(255, 255, 255, 0.15);
+            top: 16px;
+            right: 16px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            border: 2.5px solid rgba(255, 255, 255, 0.7);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
-            color: white;
+            font-size: 2.2rem;
+            line-height: 1;
+            color: #ffffff;
             cursor: pointer;
-            backdrop-filter: blur(8px);
-            transition: background 0.2s ease;
-            z-index: 2010;
+            z-index: 2050;
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.7), 0 0 0 3px rgba(255, 255, 255, 0.25);
+            transition: all 0.2s ease;
+            user-select: none;
         }
 
         .lightbox-close:hover {
-            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.12);
+            background: #b91c1c;
+            box-shadow: 0 6px 26px rgba(239, 68, 68, 0.9), 0 0 0 4px rgba(255, 255, 255, 0.4);
+        }
+
+        .lightbox-close:active {
+            transform: scale(0.95);
+        }
+
+        /* Lightbox Thumbnail Navigation Buttons: แนบชิดข้างรูปภาพในระยะที่พอดีมือ */
+        .lightbox-thumb-btn {
+            position: relative;
+            width: 86px;
+            height: 116px;
+            border-radius: 12px;
+            background: #0b0f17;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 2040;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75), 0 0 16px rgba(99, 102, 241, 0.35);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            overflow: hidden;
+            padding: 0;
+            margin: 0;
+            flex-shrink: 0;
+        }
+
+        .lightbox-thumb-btn:hover {
+            transform: scale(1.08);
+            border-color: #818cf8;
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.65), 0 0 0 3px rgba(255, 255, 255, 0.5);
+        }
+
+        .lightbox-thumb-btn:active {
+            transform: scale(0.96);
+        }
+
+        .lightbox-thumb-btn img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            pointer-events: none;
+        }
+
+        .lightbox-thumb-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.92);
+            color: #f8fafc;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 4px 2px;
+            text-align: center;
+            backdrop-filter: blur(6px);
+            border-top: 1px solid rgba(255, 255, 255, 0.18);
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        /* บนหน้าจอมือถือ หรือจอแคบ: สลับเป็น overlay ลอยบนขอบซ้ายขวาของรูปภาพ */
+        @media (max-width: 768px) {
+            .lightbox-stage {
+                gap: 0;
+                width: 100%;
+                height: 100%;
+            }
+            .lightbox-content {
+                max-width: 100%;
+                max-height: 90vh;
+            }
+            .lightbox img {
+                max-height: 90vh;
+            }
+            .lightbox-thumb-btn {
+                position: absolute;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 64px;
+                height: 86px;
+                border-radius: 9px;
+            }
+            .lightbox-thumb-btn:hover {
+                transform: translateY(-50%) scale(1.06);
+            }
+            .lightbox-thumb-btn:active {
+                transform: translateY(-50%) scale(0.95);
+            }
+            .lightbox-thumb-prev {
+                left: 10px;
+            }
+            .lightbox-thumb-next {
+                right: 10px;
+            }
+            .lightbox-thumb-label {
+                font-size: 0.58rem;
+                padding: 3px 1px;
+            }
+        }
+
+        .lightbox-batch-counter {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #f8fafc;
+            padding: 5px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.88rem;
+            z-index: 2040;
+            display: none;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+            user-select: none;
+            pointer-events: none;
         }
 
         /* Destroy Floating Button */
@@ -1738,6 +1881,22 @@
                         <img id="preview-image" class="hidden" alt="Preview" onclick="handleImageClick()">
                         <!-- เส้นลายน้ำทับรูปภาพ -->
                         <div class="watermark-overlay" id="watermark-overlay"></div>
+                        <!-- Protection Overlay วางทับอยู่บนตัวภาพและลายน้ำโดยตรง -->
+                        <div class="protection-overlay" id="protection-overlay">
+                            <div class="protection-message">
+                                🔒 โปรดชำระเงินเพื่อรับงาน
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Batch Navigation (เมื่อส่งงานเป็นชุดหลายภาพ) -->
+                    <div id="batch-nav-container" class="hidden" style="margin-top: 8px; width: 100%; max-width: 360px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 3px 6px; background: rgba(15, 23, 42, 0.75); border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 6px; gap: 4px;">
+                            <button type="button" onclick="switchBatchIndex(-1)" style="padding: 3px 8px; background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.4); border-radius: 6px; color: #a5b4fc; cursor: pointer; font-weight: 700; font-size: 0.72rem; white-space: nowrap; flex-shrink: 0;">◀ ก่อนหน้า</button>
+                            <span id="batch-indicator-text" style="font-size: 0.78rem; font-weight: 700; color: #f8fafc; white-space: nowrap; flex-shrink: 0; text-align: center;">1 / 1</span>
+                            <button type="button" onclick="switchBatchIndex(1)" style="padding: 3px 8px; background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.4); border-radius: 6px; color: #a5b4fc; cursor: pointer; font-weight: 700; font-size: 0.72rem; white-space: nowrap; flex-shrink: 0;">ถัดไป ▶</button>
+                        </div>
+                        <div id="batch-thumbnails-bar" style="display: flex; gap: 6px; overflow-x: auto; padding: 2px 0; justify-content: center;"></div>
                     </div>
 
                     <!-- PDF Page Navigation Controls -->
@@ -1749,12 +1908,7 @@
                             title="หน้าถัดไป">▶</button>
                     </div>
 
-                    <!-- Protection Overlay -->
-                    <div class="protection-overlay" id="protection-overlay">
-                        <div class="protection-message">
-                            🔒 โปรดชำระเงินเพื่อรับงาน
-                        </div>
-                    </div>
+                    
                 </div>
             </div>
 
@@ -1852,7 +2006,18 @@
                         <div class="unlocked-preview-badge">🔍 แตะเพื่อดูภาพเต็ม (หรือแตะค้างเพื่อบันทึก)</div>
                     </div>
 
+                    <!-- Batch Info Header in Success Section -->
+                    <div id="success-batch-container" class="hidden" style="width: 100%; max-width: 340px; margin: 0 auto 10px; text-align: center;">
+                        <div style="font-size: 0.78rem; color: #34d399; font-weight: 700; margin-bottom: 6px;">
+                            🎉 ปลดล็อคชุดผลงานครบทุกภาพ (<span id="success-batch-count">0</span> ภาพ)
+                        </div>
+                        <div id="success-batch-thumbnails" style="display: flex; gap: 6px; justify-content: center; overflow-x: auto; padding: 4px 0;"></div>
+                    </div>
+
                     <div class="success-actions">
+                        <button class="btn btn-primary hidden" id="download-all-zip-btn" onclick="downloadAllBatchZip()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); margin-bottom: 6px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);">
+                            📦 ดาวน์โหลดทั้งหมด (ZIP)
+                        </button>
                         <button class="btn btn-primary" id="download-btn" onclick="downloadFile()">
                             💾 ดาวน์โหลดไฟล์
                         </button>
@@ -1903,14 +2068,35 @@
         <div class="lightbox-hint-badge" id="lightbox-hint-badge">
             <span>📱 แตะค้างที่รูปภาพ แล้วเลือก <strong>"บันทึกรูปภาพ"</strong></span>
         </div>
-        <div class="lightbox-close">×</div>
-        <div class="lightbox-content" id="lightbox-content" onclick="event.stopPropagation()">
-            <img id="lightbox-image" alt="Full View">
-            <!-- เส้นลายน้ำป้องกัน AI ลบลายน้ำ คลุมเต็มรูปภาพ -->
-            <div class="watermark-overlay" id="lightbox-watermark-overlay"></div>
-            <div class="lightbox-protection-badge" id="lightbox-protection-badge">
-                🔒 โปรดชำระเงินเพื่อรับงาน
+        <div class="lightbox-close" onclick="closeLightbox()" title="ปิด (หรือกดปุ่ม ESC)">×</div>
+
+        <div class="lightbox-batch-counter" id="lightbox-batch-counter">
+            <span id="lightbox-counter-text">1 / 1</span>
+        </div>
+
+        <!-- Lightbox Stage: ยึดปุ่ม Thumbnails ประกบข้างรูปภาพซ้าย-ขวา ไม่หลุดไปขอบจอ -->
+        <div class="lightbox-stage" id="lightbox-stage" onclick="event.stopPropagation()">
+            <!-- ปุ่มภาพก่อนหน้า ชิดข้างซ้ายของรูปภาพ -->
+            <button type="button" class="lightbox-thumb-btn lightbox-thumb-prev" id="lightbox-prev-btn" onclick="event.stopPropagation(); switchBatchIndex(-1);" title="ดูภาพก่อนหน้า (หรือกดลูกศรซ้าย ←)">
+                <img id="lightbox-prev-thumb-img" src="" alt="ภาพก่อนหน้า">
+                <span class="lightbox-thumb-label" id="lightbox-prev-label">◀ ก่อนหน้า</span>
+            </button>
+
+            <!-- รูปภาพหลักตรงกลาง -->
+            <div class="lightbox-content" id="lightbox-content">
+                <img id="lightbox-image" alt="Full View">
+                <!-- เส้นลายน้ำป้องกัน AI ลบลายน้ำ คลุมเต็มรูปภาพ -->
+                <div class="watermark-overlay" id="lightbox-watermark-overlay"></div>
+                <div class="lightbox-protection-badge" id="lightbox-protection-badge">
+                    🔒 โปรดชำระเงินเพื่อรับงาน
+                </div>
             </div>
+
+            <!-- ปุ่มภาพถัดไป ชิดข้างขวาของรูปภาพ -->
+            <button type="button" class="lightbox-thumb-btn lightbox-thumb-next" id="lightbox-next-btn" onclick="event.stopPropagation(); switchBatchIndex(1);" title="ดูภาพถัดไป (หรือกดลูกศรขวา →)">
+                <img id="lightbox-next-thumb-img" src="" alt="ภาพถัดไป">
+                <span class="lightbox-thumb-label" id="lightbox-next-label">ถัดไป ▶</span>
+            </button>
         </div>
     </div>
 
@@ -2047,6 +2233,28 @@
         }
 
         const fileUrl = rawD ? atob(rawD) : (rawUrl ? decodeURIComponent(rawUrl) : '');
+
+        // ตรวจสอบว่าเป็นชุดหลายไฟล์ (Batch Mode) หรือไม่
+        let _batchUrls = [];
+        let _isBatch = false;
+        try {
+            if (fileUrl && fileUrl.startsWith('[') && fileUrl.endsWith(']')) {
+                const parsed = JSON.parse(fileUrl);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    _batchUrls = parsed;
+                    _isBatch = true;
+                }
+            } else if (fileUrl && fileUrl.includes('|')) {
+                const parts = fileUrl.split('|').filter(Boolean);
+                if (parts.length > 1) {
+                    _batchUrls = parts;
+                    _isBatch = true;
+                }
+            }
+        } catch (e) { }
+
+        let _batchItems = [];
+        let _currentBatchIdx = 0;
         const expiryTimestamp = parseInt(rawExp) || 0;
         const price = parseFloat(rawPrice) || 0;
         const fileType = rawType || 'img';
@@ -2120,6 +2328,25 @@
         });
 
         document.addEventListener('keydown', function (e) {
+            // กด ESC เพื่อปิด Lightbox
+            if (e.key === 'Escape' || e.keyCode === 27) {
+                const lb = document.getElementById('lightbox');
+                if (lb && lb.classList.contains('active')) {
+                    e.preventDefault();
+                    closeLightbox();
+                    return;
+                }
+            }
+
+            // ใน Lightbox หรือหน้าเว็บ: รองรับการกดปุ่มลูกศรซ้าย/ขวา เพื่อเลื่อนภาพก่อนหน้า/ถัดไป
+            if (_isBatch && _batchItems.length > 1) {
+                if (e.key === 'ArrowLeft' || e.keyCode === 37) {
+                    switchBatchIndex(-1);
+                } else if (e.key === 'ArrowRight' || e.keyCode === 39) {
+                    switchBatchIndex(1);
+                }
+            }
+
             if (price > 0 && !__isPaid) {
                 // ป้องกัน F12
                 if (e.key === 'F12' || e.keyCode === 123) {
@@ -3250,6 +3477,11 @@
                 return;
             }
 
+            if (_isBatch) {
+                loadBatchFiles();
+                return;
+            }
+
             let downloadUrl = fileUrl;
             let previewUrl = fileUrl;
 
@@ -4286,14 +4518,19 @@
             const lightbox = document.getElementById('lightbox');
             const lightboxImage = document.getElementById('lightbox-image');
 
-            // เมื่อปลดล็อคแล้ว ให้เลือกรูปภาพต้นฉบับคมชัด ไร้ลายน้ำ
-            const currentSrc = (isPaid || isFree)
-                ? (_cleanBlobUrl || previewImage.src || window.__downloadUrl)
-                : (previewImage.src || _cleanBlobUrl);
+            if (_isBatch && _batchItems.length > 0) {
+                const item = _batchItems[_currentBatchIdx];
+                const currentSrc = (isPaid || isFree) ? (item.blobUrl || item.url) : (item.protectedDataUrl || item.blobUrl);
+                if (currentSrc) lightboxImage.src = currentSrc;
+                updateLightboxNav();
+            } else {
+                const currentSrc = (isPaid || isFree)
+                    ? (_cleanBlobUrl || previewImage.src || window.__downloadUrl)
+                    : (previewImage.src || _cleanBlobUrl);
+                if (!currentSrc) return;
+                lightboxImage.src = currentSrc;
+            }
 
-            if (!currentSrc) return;
-
-            lightboxImage.src = currentSrc;
             lightbox.classList.add('active');
 
             if (!isFree && !isPaid) {
@@ -4406,6 +4643,264 @@
             `;
             const destroyWrapper = document.getElementById('destroy-wrapper');
             if (destroyWrapper) destroyWrapper.remove();
+        }
+
+        
+        // --- Batch Files Engine (รองรับงานชุดหลายภาพ) ---
+        async function loadBatchFiles() {
+            updateDownloadProgress('กำลังเตรียมงานชุด (' + _batchUrls.length + ' ภาพ)...', 10);
+            _batchItems = [];
+
+            for (let i = 0; i < _batchUrls.length; i++) {
+                const u = _batchUrls[i];
+                const pct = Math.round(15 + (i / _batchUrls.length) * 60);
+                updateDownloadProgress(`กำลังโหลดภาพที่ ${i + 1}/${_batchUrls.length}...`, pct);
+
+                let blobUrl = null;
+                let filename = `complete_${i + 1}.png`;
+
+                if (u.startsWith('fb_')) {
+                    const fId = u.substring(3);
+                    const fbUrl = `https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/${fId}.json`;
+                    try {
+                        const res = await fetch(fbUrl);
+                        const data = await res.json();
+                        if (data && data.data) {
+                            const binary = atob(data.data);
+                            const bytes = new Uint8Array(binary.length);
+                            for (let b = 0; b < binary.length; b++) bytes[b] = binary.charCodeAt(b);
+                            const blob = new Blob([bytes], { type: 'image/png' });
+                            blobUrl = URL.createObjectURL(blob);
+                            if (data.filename) filename = data.filename;
+                        }
+                    } catch (err) {
+                        console.warn('Batch fetch FB item error:', err);
+                    }
+                } else {
+                    try {
+                        const res = await fetch(u);
+                        const blob = await res.blob();
+                        blobUrl = URL.createObjectURL(blob);
+                        const parts = u.split('/');
+                        const last = parts[parts.length - 1].split('?')[0];
+                        if (last && last.includes('.')) filename = last;
+                    } catch (err) {
+                        blobUrl = u;
+                    }
+                }
+
+                // สร้าง watermark preview ถ้ายังไม่ได้จ่ายเงิน
+                let protectedDataUrl = blobUrl;
+                if (price > 0 && !__isPaid && blobUrl) {
+                    try {
+                        protectedDataUrl = await new Promise((resolve) => {
+                            const tempImg = new Image();
+                            tempImg.crossOrigin = 'Anonymous';
+                            tempImg.onload = async () => {
+                                const w = await bakeWatermarkToCanvas(tempImg);
+                                resolve(w || blobUrl);
+                            };
+                            tempImg.onerror = () => resolve(blobUrl);
+                            tempImg.src = blobUrl;
+                        });
+                    } catch (wErr) {
+                        protectedDataUrl = blobUrl;
+                    }
+                }
+
+                _batchItems.push({
+                    id: i,
+                    url: u,
+                    blobUrl: blobUrl,
+                    protectedDataUrl: protectedDataUrl,
+                    filename: filename
+                });
+            }
+
+            loadingText.classList.add('hidden');
+            previewImage.classList.remove('hidden');
+
+            renderBatchUI();
+            selectBatchIndex(0);
+        }
+
+        function renderBatchUI() {
+            const navContainer = document.getElementById('batch-nav-container');
+            const thumbsBar = document.getElementById('batch-thumbnails-bar');
+            const successContainer = document.getElementById('success-batch-container');
+            const successThumbs = document.getElementById('success-batch-thumbnails');
+            const successCount = document.getElementById('success-batch-count');
+            const zipBtn = document.getElementById('download-all-zip-btn');
+
+            if (navContainer) navContainer.classList.remove('hidden');
+            if (zipBtn) zipBtn.classList.remove('hidden');
+            if (successContainer) successContainer.classList.remove('hidden');
+            if (successCount) successCount.textContent = _batchItems.length;
+
+            const renderThumbnails = (container, isSuccess = false) => {
+                if (!container) return;
+                container.innerHTML = _batchItems.map((item, idx) => {
+                    const src = (__isPaid || price <= 0) ? item.blobUrl : item.protectedDataUrl;
+                    return `
+                        <div class="batch-thumb-item" onclick="selectBatchIndex(${idx})"
+                            style="width: 48px; height: 48px; border-radius: 6px; overflow: hidden; border: 2px solid rgba(255,255,255,0.15); cursor: pointer; flex-shrink: 0; background: #0b0f15; transition: all 0.2s ease;">
+                            <img src="${src}" alt="Thumb ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+                    `;
+                }).join('');
+            };
+
+            renderThumbnails(thumbsBar);
+            renderThumbnails(successThumbs, true);
+        }
+
+        
+        function updateLightboxNav() {
+            if (!_isBatch || _batchItems.length <= 1) {
+                const prevBtn = document.getElementById('lightbox-prev-btn');
+                const nextBtn = document.getElementById('lightbox-next-btn');
+                const counter = document.getElementById('lightbox-batch-counter');
+                if (prevBtn) prevBtn.style.display = 'none';
+                if (nextBtn) nextBtn.style.display = 'none';
+                if (counter) counter.style.display = 'none';
+                return;
+            }
+
+            const isPaid = __isPaid || price === 0;
+            const prevIdx = (_currentBatchIdx - 1 + _batchItems.length) % _batchItems.length;
+            const nextIdx = (_currentBatchIdx + 1) % _batchItems.length;
+
+            const prevItem = _batchItems[prevIdx];
+            const nextItem = _batchItems[nextIdx];
+
+            const prevSrc = isPaid ? (prevItem.blobUrl || prevItem.url) : (prevItem.protectedDataUrl || prevItem.blobUrl);
+            const nextSrc = isPaid ? (nextItem.blobUrl || nextItem.url) : (nextItem.protectedDataUrl || nextItem.blobUrl);
+
+            const prevBtn = document.getElementById('lightbox-prev-btn');
+            const nextBtn = document.getElementById('lightbox-next-btn');
+            const prevImg = document.getElementById('lightbox-prev-thumb-img');
+            const nextImg = document.getElementById('lightbox-next-thumb-img');
+            const prevLabel = document.getElementById('lightbox-prev-label');
+            const nextLabel = document.getElementById('lightbox-next-label');
+            const counter = document.getElementById('lightbox-batch-counter');
+            const counterText = document.getElementById('lightbox-counter-text');
+
+            if (prevBtn) {
+                prevBtn.style.display = 'flex';
+                if (prevImg) prevImg.src = prevSrc;
+                if (prevLabel) prevLabel.textContent = `◀ ${prevIdx + 1}/${_batchItems.length}`;
+            }
+
+            if (nextBtn) {
+                nextBtn.style.display = 'flex';
+                if (nextImg) nextImg.src = nextSrc;
+                if (nextLabel) nextLabel.textContent = `${nextIdx + 1}/${_batchItems.length} ▶`;
+            }
+
+            if (counter) counter.style.display = 'block';
+            if (counterText) counterText.textContent = `${_currentBatchIdx + 1} / ${_batchItems.length}`;
+        }
+
+        function selectBatchIndex(idx) {
+            if (!_batchItems.length) return;
+            if (idx < 0) idx = _batchItems.length - 1;
+            else if (idx >= _batchItems.length) idx = 0;
+            _currentBatchIdx = idx;
+
+            const item = _batchItems[idx];
+            const displaySrc = (__isPaid || price <= 0) ? item.blobUrl : item.protectedDataUrl;
+
+            _cleanBlobUrl = item.blobUrl;
+            _rawDownloadUrl = item.blobUrl || item.url;
+            window.__originalFilename = item.filename;
+
+            if (__isPaid || price <= 0) {
+                window.__downloadUrl = item.blobUrl || item.url;
+            }
+
+            previewImage.src = displaySrc;
+            syncMobileThumb(displaySrc);
+            applyProtection();
+
+            const indText = document.getElementById('batch-indicator-text');
+            if (indText) indText.textContent = `${idx + 1} / ${_batchItems.length}`;
+
+            document.querySelectorAll('.batch-thumb-item').forEach((el, i) => {
+                const isActive = (i % _batchItems.length) === idx;
+                if (isActive) {
+                    el.style.borderColor = '#6366f1';
+                    el.style.boxShadow = '0 0 10px rgba(99, 102, 241, 0.6)';
+                    el.style.opacity = '1';
+                    el.style.transform = 'scale(1.05)';
+                } else {
+                    el.style.borderColor = 'rgba(255,255,255,0.15)';
+                    el.style.boxShadow = 'none';
+                    el.style.opacity = '0.6';
+                    el.style.transform = 'scale(1)';
+                }
+            });
+
+            const lbImg = document.getElementById('lightbox-image');
+            if (lbImg) lbImg.src = displaySrc;
+
+            updateLightboxNav();
+        }
+
+        function switchBatchIndex(delta) {
+            selectBatchIndex(_currentBatchIdx + delta);
+        }
+
+        async function downloadAllBatchZip() {
+            if (price > 0 && !__isPaid) {
+                showToast('🔒 กรุณาชำระเงินก่อนดาวน์โหลด');
+                return;
+            }
+            const btn = document.getElementById('download-all-zip-btn');
+            const origText = btn ? btn.innerHTML : '📦 ดาวน์โหลดทั้งหมด (ZIP)';
+            if (btn) {
+                btn.innerHTML = '⏳ กำลังรวมไฟล์ ZIP...';
+                btn.disabled = true;
+            }
+
+            try {
+                if (typeof JSZip !== 'undefined') {
+                    const zip = new JSZip();
+                    for (let i = 0; i < _batchItems.length; i++) {
+                        const item = _batchItems[i];
+                        let blob;
+                        if (item.blobUrl && item.blobUrl.startsWith('blob:')) {
+                            blob = await fetch(item.blobUrl).then(r => r.blob());
+                        } else {
+                            blob = await fetch(item.url).then(r => r.blob());
+                        }
+                        const name = item.filename || `complete_${i + 1}.png`;
+                        zip.file(name, blob);
+                    }
+                    const content = await zip.generateAsync({ type: 'blob' });
+                    const zipUrl = URL.createObjectURL(content);
+                    const a = document.createElement('a');
+                    a.href = zipUrl;
+                    a.download = `ชุดภาพผลงาน_${Date.now().toString().slice(-4)}.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    showToast('✅ ดาวน์โหลดงานชุด (ZIP) สำเร็จแล้ว!');
+                } else {
+                    for (let i = 0; i < _batchItems.length; i++) {
+                        selectBatchIndex(i);
+                        downloadFile();
+                        await new Promise(r => setTimeout(r, 600));
+                    }
+                }
+            } catch (e) {
+                console.error('downloadAllBatchZip error:', e);
+                showToast('❌ ไม่สามารถสร้างไฟล์ ZIP ได้');
+            } finally {
+                if (btn) {
+                    btn.innerHTML = origText;
+                    btn.disabled = false;
+                }
+            }
         }
 
         // Initialize on load
