@@ -5604,7 +5604,7 @@
 
                         <div class="card-right-action">
                             <div class="price-badge-fh ${p.priceText ? 'custom-price-badge' : (isFree ? 'free' : '')}">
-                                ${p.priceText ? escapeHtml(p.priceText) : (isService ? (isFree ? '🎁 ฟรี (Free)' : `฿ ${priceFormatted} <small style="font-size:0.75rem; color:var(--fh-muted); font-weight:500;">/ ครั้ง</small>`) : (isFree ? 'ฟรี (Free)' : `฿ ${priceFormatted}`))}
+                                ${p.priceText ? escapeHtml(p.priceText) : (isService ? (isFree ? '🎁 ฟรี' : `฿ ${priceFormatted} <small style="font-size:0.75rem; color:var(--fh-muted); font-weight:500;">/ ครั้ง</small>`) : (isFree ? 'ฟรี (Free)' : `฿ ${priceFormatted}`))}
                             </div>
                             ${isCourse ? `
                                 <button class="btn-service-fh" style="${isUserPurchased ? 'background:linear-gradient(135deg, #059669 0%, #10b981 100%); border-color:#059669;' : 'background:linear-gradient(135deg, #d97706 0%, #f59e0b 100%); border-color:#d97706;'}" onclick="openCourseViewer('${p.id}', event)">
