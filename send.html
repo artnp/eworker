@@ -6,6 +6,7 @@
     <title>ชี้จุดแก้ไข</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <style>
         :root {
             --primary: #4f46e5;
@@ -122,14 +123,18 @@
         /* Markers on Canvas */
         .marker {
             position: absolute;
-            border: 3px solid var(--danger);
-            background: rgba(239, 68, 68, 0.15);
-            min-width: 40px;
-            min-height: 40px;
+            border: 2.5px solid var(--danger);
+            background: rgba(239, 68, 68, 0.16);
+            min-width: 20px;
+            min-height: 20px;
             cursor: move;
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-            transition: opacity 0.2s, border-color 0.2s;
+            box-shadow: 0 2px 10px rgba(239, 68, 68, 0.35);
+            border-radius: 6px;
+            transition: opacity 0.2s, border-color 0.2s, box-shadow 0.2s;
             z-index: 10;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .marker.dimmed {
@@ -140,8 +145,8 @@
 
         .marker.completed {
             border-color: var(--success);
-            background: rgba(16, 185, 129, 0.15);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+            background: rgba(16, 185, 129, 0.16);
+            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);
         }
 
         .marker.completed .marker-badge {
@@ -149,7 +154,7 @@
         }
 
         .marker.completed .resize-handle {
-            background: var(--success);
+            border-color: var(--success);
         }
 
         .annotation-card.completed {
@@ -164,18 +169,19 @@
 
         .marker.active {
             border-color: #ef4444;
-            background: rgba(239, 68, 68, 0.2);
-            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+            background: rgba(239, 68, 68, 0.24);
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.35), 0 4px 16px rgba(239, 68, 68, 0.45);
             opacity: 1;
+            z-index: 15;
         }
 
         /* Marker Number Badge */
         .marker-badge {
             position: absolute;
-            top: -10px;
-            left: -10px;
-            width: 22px;
-            height: 22px;
+            top: -11px;
+            left: -11px;
+            width: 24px;
+            height: 24px;
             background: var(--danger);
             border: 2px solid white;
             border-radius: 50%;
@@ -185,7 +191,8 @@
             color: white;
             font-weight: 700;
             font-size: 11px;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+            pointer-events: none;
         }
 
         .marker.active .marker-badge {
@@ -196,24 +203,46 @@
             background: #000;
         }
 
-        /* Resize Handles */
+        /* Resize Handles (Touch-friendly & Precision) */
         .resize-handle {
             position: absolute;
-            width: 8px;
-            height: 8px;
-            background: var(--danger);
-            border: 1px solid white;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-            border-radius: 2px;
+            width: 12px;
+            height: 12px;
+            background: #ffffff;
+            border: 2px solid var(--danger);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+            border-radius: 50%;
+            z-index: 25;
+            touch-action: none;
+            cursor: pointer;
         }
 
-        .resize-handle.tl { top: -4px; left: -4px; cursor: nw-resize; }
-        .resize-handle.tr { top: -4px; right: -4px; cursor: ne-resize; }
-        .resize-handle.bl { bottom: -4px; left: -4px; cursor: sw-resize; }
-        .resize-handle.br { bottom: -4px; right: -4px; cursor: se-resize; }
+        /* Hit-area expander for finger touches on mobile */
+        .resize-handle::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+        }
+
+        .resize-handle.tl { top: -6px; left: -6px; cursor: nwse-resize; }
+        .resize-handle.tr { top: -6px; right: -6px; cursor: nesw-resize; }
+        .resize-handle.bl { bottom: -6px; left: -6px; cursor: nesw-resize; }
+        .resize-handle.br { bottom: -6px; right: -6px; cursor: nwse-resize; }
+
+        .resize-handle.tc { top: -6px; left: calc(50% - 8px); width: 16px; border-radius: 4px; cursor: ns-resize; }
+        .resize-handle.bc { bottom: -6px; left: calc(50% - 8px); width: 16px; border-radius: 4px; cursor: ns-resize; }
+        .resize-handle.ml { top: calc(50% - 8px); left: -6px; height: 16px; border-radius: 4px; cursor: ew-resize; }
+        .resize-handle.mr { top: calc(50% - 8px); right: -6px; height: 16px; border-radius: 4px; cursor: ew-resize; }
 
         .marker.active .resize-handle {
-            background: #ef4444;
+            border-color: #ef4444;
+            background: #ffffff;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.35), 0 2px 6px rgba(0,0,0,0.3);
         }
 
         .marker.dimmed .resize-handle {
@@ -663,18 +692,435 @@
             display: none;
         }
 
+        /* Job Status Banner & Start Job */
+        .job-status-banner {
+            padding: 12px 0 28px 0;
+            margin-top: 8px;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            width: 100%;
+        }
+
+        .btn-start-job {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            background: linear-gradient(135deg, #4338ca 0%, #4f46e5 25%, #2563eb 50%, #0284c7 75%, #4338ca 100%);
+            background-size: 300% 300%;
+            color: #ffffff;
+            border: 1.5px solid rgba(255, 255, 255, 0.3);
+            padding: 14px 20px;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 800;
+            font-family: inherit;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 18px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0.65);
+            animation: startBtnPulse 2.2s infinite ease-in-out, gradientShift 6s ease infinite;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Glowing radar pulse & breathing scale */
+        @keyframes startBtnPulse {
+            0% {
+                box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0.65);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 8px 28px rgba(79, 70, 229, 0.6), 0 0 0 12px rgba(99, 102, 241, 0);
+                transform: scale(1.025);
+            }
+            100% {
+                box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0);
+                transform: scale(1);
+            }
+        }
+
+        /* Continuous moving background gradient */
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Shimmer light sweep across the button */
+        .btn-start-job::after {
+            content: '';
+            position: absolute;
+            top: -60%;
+            left: -80%;
+            width: 50%;
+            height: 220%;
+            background: linear-gradient(
+                to right,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.55) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            transform: rotate(25deg);
+            animation: btnShimmerSweep 2.6s infinite cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        @keyframes btnShimmerSweep {
+            0% {
+                left: -80%;
+            }
+            40%, 100% {
+                left: 160%;
+            }
+        }
+
+        /* Bouncing rocket icon animation */
+        .btn-start-job .fa-rocket {
+            font-size: 18px;
+            display: inline-block;
+            animation: rocketWiggle 1.8s infinite ease-in-out;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+        }
+
+        @keyframes rocketWiggle {
+            0%, 100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            20% {
+                transform: translate(-1px, -2px) rotate(-10deg);
+            }
+            40% {
+                transform: translate(2px, -4px) rotate(8deg) scale(1.15);
+            }
+            60% {
+                transform: translate(-1px, -2px) rotate(-6deg);
+            }
+            80% {
+                transform: translate(1px, 0) rotate(2deg);
+            }
+        }
+
+        .btn-start-job:hover {
+            transform: scale(1.04);
+            box-shadow: 0 8px 30px rgba(79, 70, 229, 0.65), 0 0 0 4px rgba(129, 140, 248, 0.4);
+        }
+
+        .btn-start-job:active {
+            transform: scale(0.97);
+            animation: none;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
+        }
+
+        /* Processing View */
+        .job-processing-view {
+            background: #ffffff;
+            border: 1.5px solid #c7d2fe;
+            border-radius: 10px;
+            padding: 10px 12px;
+            box-shadow: 0 2px 10px rgba(79, 70, 229, 0.08);
+        }
+
+        .processing-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .processing-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #3730a3;
+        }
+
+        .processing-glow-dot {
+            width: 9px;
+            height: 9px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #10b981;
+            animation: glowPulse 1.4s infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.8); }
+        }
+
+        .btn-reset-job {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-reset-job:hover {
+            border-color: #cbd5e1;
+            color: var(--text-dark);
+            background: #f8fafc;
+        }
+
+        .progress-track-wrapper {
+            width: 100%;
+            height: 7px;
+            background: #e0e7ff;
+            border-radius: 99px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .animated-line-bar {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #4f46e5 0%, #06b6d4 50%, #10b981 100%, #4f46e5 200%);
+            background-size: 200% 100%;
+            border-radius: 99px;
+            animation: streamBar 1.4s linear infinite;
+        }
+
+        @keyframes streamBar {
+            0% { background-position: 200% 0; }
+            100% { background-position: 0 0; }
+        }
+
+        /* Completed state for Job Processing View: hide bar and label, keep only button */
+        .job-processing-view.completed {
+            background: #f8fafc;
+            border-color: #e2e8f0;
+            padding: 8px 12px;
+        }
+
+        .job-processing-view.completed .processing-label,
+        .job-processing-view.completed .progress-track-wrapper {
+            display: none !important;
+        }
+
+        .job-processing-view.completed .processing-meta {
+            margin-bottom: 0;
+            justify-content: center;
+        }
+
+        .job-processing-view.completed .btn-reset-job {
+            width: 100%;
+            padding: 10px 16px;
+            font-size: 14.5px;
+            font-weight: 700;
+            color: #4f46e5;
+            background: #eef2ff;
+            border: 1.5px dashed #818cf8;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .job-processing-view.completed .btn-reset-job:hover {
+            background: #e0e7ff;
+            border-color: #6366f1;
+            color: #3730a3;
+        }
+
+        /* Centered Completion Modal Overlay */
+        .completion-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            padding: 20px;
+        }
+
+        .completion-modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .completion-popup-card {
+            background: linear-gradient(135deg, #059669 0%, #10b981 50%, #047857 100%);
+            color: white;
+            padding: 30px 24px 26px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), 0 0 0 1.5px rgba(255, 255, 255, 0.3) inset;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 14px;
+            position: relative;
+            max-width: 400px;
+            width: 100%;
+            transform: scale(0.85);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .completion-modal-overlay.show .completion-popup-card {
+            transform: scale(1);
+        }
+
+        .completion-popup-icon-wrap {
+            width: 76px;
+            height: 76px;
+            background: rgba(255, 255, 255, 0.22);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .completion-popup-icon {
+            font-size: 48px;
+            color: #ffffff;
+            filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.2));
+            animation: iconPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes iconPop {
+            0% { transform: scale(0.3) rotate(-30deg); }
+            70% { transform: scale(1.15) rotate(5deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        .completion-popup-body {
+            width: 100%;
+        }
+
+        .completion-popup-title {
+            font-size: 22px;
+            font-weight: 800;
+            line-height: 1.3;
+            margin-bottom: 6px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .completion-popup-msg {
+            font-size: 15px;
+            font-weight: 500;
+            color: #ecfdf5;
+            line-height: 1.5;
+        }
+
+        .completion-popup-btn {
+            margin-top: 6px;
+            background: #ffffff;
+            color: #059669;
+            border: none;
+            padding: 11px 32px;
+            border-radius: 50px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .completion-popup-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+            background: #f0fdf4;
+        }
+
+        .completion-popup-btn:active {
+            transform: translateY(0);
+        }
+
+        .completion-popup-close {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: rgba(0, 0, 0, 0.18);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            transition: background 0.2s;
+        }
+
+        .completion-popup-close:hover {
+            background: rgba(0, 0, 0, 0.35);
+        }
+
+        /* Done Checkbox: hidden until "กดสั่งให้เริ่มงาน" is clicked */
+        .done-check {
+            display: none !important;
+        }
+        body.job-started .done-check {
+            display: flex !important;
+            animation: fadeInDoneCheck 0.3s ease;
+        }
+        @keyframes fadeInDoneCheck {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
         /* Responsive - Mobile */
         @media (max-width: 768px) {
+            .completion-popup-tag {
+                top: 14px;
+                width: calc(100vw - 24px);
+            }
+            .completion-popup-card {
+                padding: 13px 15px;
+                gap: 12px;
+            }
+            .completion-popup-icon {
+                font-size: 30px;
+            }
+            .completion-popup-title {
+                font-size: 15.5px;
+            }
+            .completion-popup-msg {
+                font-size: 13px;
+            }
             .split-container {
                 flex-direction: column;
             }
             .split-left {
                 flex: none;
-                height: 55vh;
+                height: 52vh;
             }
             .split-right {
                 width: 100%;
-                height: 45vh;
+                height: 48vh;
                 border-left: none;
                 border-top: 2px solid var(--border);
             }
@@ -695,9 +1141,33 @@
             .panel-header {
                 padding: 10px 12px;
             }
+            .job-status-banner {
+                padding: 8px 12px;
+            }
+            .btn-start-job {
+                padding: 9px 14px;
+                font-size: 14px;
+            }
             .annotation-text {
                 font-size: 15px;
                 min-height: 60px;
+            }
+            .resize-handle {
+                width: 14px;
+                height: 14px;
+                border-width: 2.5px;
+            }
+            .resize-handle::after {
+                width: 42px;
+                height: 42px;
+            }
+            .resize-handle.tc, .resize-handle.bc {
+                width: 20px;
+                left: calc(50% - 10px);
+            }
+            .resize-handle.ml, .resize-handle.mr {
+                height: 20px;
+                top: calc(50% - 10px);
             }
             #expiryTimer {
                 bottom: 14px;
@@ -719,6 +1189,27 @@
     </style>
 </head>
 <body>
+
+    <!-- Completion Popup Modal (Centered with Confetti) -->
+    <div class="completion-modal-overlay" id="completionPopupTag">
+        <div class="completion-popup-card">
+            <button class="completion-popup-close" id="completionPopupClose" title="ปิด">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="completion-popup-icon-wrap">
+                <div class="completion-popup-icon">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+            </div>
+            <div class="completion-popup-body">
+                <div class="completion-popup-title">งานเสร็จแล้ว!</div>
+                <div class="completion-popup-msg">กลับไปรับงานที่ได้แชท ปิดหน้าเว็บนี้ได้เลย</div>
+            </div>
+            <button class="completion-popup-btn" id="completionPopupOkBtn">
+                <i class="fa-solid fa-check"></i> รับทราบ
+            </button>
+        </div>
+    </div>
 
     <!-- Upload Screen -->
     <div class="upload-container" id="uploadContainer">
@@ -794,10 +1285,36 @@
             </div>
 
             <div class="annotations-list" id="annotationsList">
-                <div class="empty-state">
-                    <i class="fa-regular fa-circle-dot"></i>
-                    <p><strong>ยังไม่มีจุดแก้ไข</strong></p>
-                    <p>คลิกปุ่ม "เพิ่ม" หรือคลิกที่ไฟล์ด้านซ้าย</p>
+                <div id="annotationsCards">
+                    <div class="empty-state">
+                        <i class="fa-regular fa-circle-dot"></i>
+                        <p><strong>ยังไม่มีจุดแก้ไข</strong></p>
+                        <p>คลิกปุ่ม "เพิ่ม" หรือคลิกที่ไฟล์ด้านซ้าย</p>
+                    </div>
+                </div>
+
+                <!-- Job Status Banner & Start Job Action (Directly below the lowest card) -->
+                <div class="job-status-banner hidden" id="jobStatusBanner">
+                    <div class="job-ready-view" id="jobReadyView">
+                        <button class="btn-start-job" id="btnStartJob">
+                            <i class="fa-solid fa-rocket"></i>
+                            <span>กดสั่งให้เริ่มงาน</span>
+                        </button>
+                    </div>
+                    <div class="job-processing-view hidden" id="jobProcessingView">
+                        <div class="processing-meta">
+                            <div class="processing-label">
+                                <span class="processing-glow-dot"></span>
+                                <span class="processing-text">กำลังประมวลผล / ช่างเริ่มดำเนินการแล้ว</span>
+                            </div>
+                            <button class="btn-reset-job" id="btnResetJob" title="แก้ไขจุดเพิ่มเติม">
+                                <i class="fa-solid fa-pen-to-square"></i> แก้ไขเพิ่ม
+                            </button>
+                        </div>
+                        <div class="progress-track-wrapper">
+                            <div class="animated-line-bar"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -858,6 +1375,7 @@
         const mainImage = document.getElementById('mainImage');
         const pdfCanvas = document.getElementById('pdfCanvas');
         const annotationsList = document.getElementById('annotationsList');
+        const annotationsCards = document.getElementById('annotationsCards');
         const annotationCount = document.getElementById('annotationCount');
         const addMarkerBtn = document.getElementById('addMarkerBtn');
         const addMarkerFloatBtn = document.getElementById('addMarkerFloatBtn');
@@ -875,6 +1393,15 @@
         const pageInput = document.getElementById('pageInput');
         const pageTotal = document.getElementById('pageTotal');
 
+        // Job Action & Completion Popup Elements
+        const jobStatusBanner = document.getElementById('jobStatusBanner');
+        const jobReadyView = document.getElementById('jobReadyView');
+        const jobProcessingView = document.getElementById('jobProcessingView');
+        const btnStartJob = document.getElementById('btnStartJob');
+        const btnResetJob = document.getElementById('btnResetJob');
+        const completionPopupTag = document.getElementById('completionPopupTag');
+        const completionPopupClose = document.getElementById('completionPopupClose');
+
         // State
         let sessionId = null;
         let fileUrl = null;
@@ -885,6 +1412,7 @@
         let pdfDoc = null;
         let currentPage = 1;
         let totalPages = 0;
+        let userDismissedCompletion = false;
         
         // Zoom & Pan State
         let scale = 1;
@@ -893,6 +1421,9 @@
         let isPanning = false;
         let startPanX = 0;
         let startPanY = 0;
+        let isClickSuppressed = false;
+        let panStartX = 0;
+        let panStartY = 0;
         
         // Drag & Resize State
         let isDragging = false;
@@ -904,10 +1435,13 @@
         let markerStartY = 0;
         let resizePos = null;
 
-        // Get event position (works for both mouse and touch)
+        // Get event position (works for mouse and touch, including touchend)
         function getEventPos(e) {
             if (e.touches && e.touches.length > 0) {
                 return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+            if (e.changedTouches && e.changedTouches.length > 0) {
+                return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
             }
             return { x: e.clientX, y: e.clientY };
         }
@@ -1058,6 +1592,14 @@
                 
                 // Render markers immediately from loaded data (ไม่ต้องพึ่ง realtime sync)
                 renderAllMarkers();
+
+                // Check job status from session
+                if (data.jobStatus === 'processing') {
+                    updateJobStatusUI(true);
+                } else {
+                    updateJobStatusUI(false);
+                }
+                checkCompletionStatus();
 
                 // Listen for changes (realtime sync)
                 listenToChanges();
@@ -1652,6 +2194,9 @@
         canvasContainer.addEventListener('mousedown', (e) => {
             if (e.target === canvasContainer || e.target === canvasWrapper || e.target === mainImage || e.target === pdfCanvas) {
                 isPanning = true;
+                isClickSuppressed = false;
+                panStartX = e.clientX;
+                panStartY = e.clientY;
                 canvasContainer.classList.add('grabbing');
                 startPanX = e.clientX - translateX;
                 startPanY = e.clientY - translateY;
@@ -1660,6 +2205,9 @@
 
         document.addEventListener('mousemove', (e) => {
             if (isPanning) {
+                if (Math.hypot(e.clientX - panStartX, e.clientY - panStartY) > 6) {
+                    isClickSuppressed = true;
+                }
                 translateX = e.clientX - startPanX;
                 translateY = e.clientY - startPanY;
                 updateTransform();
@@ -1678,15 +2226,19 @@
 
         canvasContainer.addEventListener('touchstart', (e) => {
             if (e.touches.length === 2) {
+                isClickSuppressed = true;
                 touchStartDist = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
                 );
                 touchStartScale = scale;
             } else if (e.touches.length === 1) {
-                // Don't start panning if touching a marker
+                // Don't start panning if touching a marker or handle
                 if (e.target.closest('.marker')) return;
                 isPanning = true;
+                isClickSuppressed = false;
+                panStartX = e.touches[0].clientX;
+                panStartY = e.touches[0].clientY;
                 startPanX = e.touches[0].clientX - translateX;
                 startPanY = e.touches[0].clientY - translateY;
             }
@@ -1696,6 +2248,7 @@
             e.preventDefault();
             
             if (e.touches.length === 2) {
+                isClickSuppressed = true;
                 const dist = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
@@ -1704,6 +2257,9 @@
                 updateTransform();
                 renderArrows();
             } else if (e.touches.length === 1 && isPanning) {
+                if (Math.hypot(e.touches[0].clientX - panStartX, e.touches[0].clientY - panStartY) > 6) {
+                    isClickSuppressed = true;
+                }
                 translateX = e.touches[0].clientX - startPanX;
                 translateY = e.touches[0].clientY - startPanY;
                 updateTransform();
@@ -1716,16 +2272,24 @@
         });
 
         // ===== MARKERS =====
-        function addMarker(x = 25, y = 25, width = 15, height = 10, text = '') {
+        function addMarker(clickX = null, clickY = null, width = 14, height = 8, text = '') {
             const markerId = 'marker_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             const number = markerCounter++;
+
+            let x = 25;
+            let y = 25;
+            if (clickX !== null && clickY !== null) {
+                // Center the marker accurately on the clicked / tapped spot
+                x = Math.max(0, Math.min(100 - width, clickX - width / 2));
+                y = Math.max(0, Math.min(100 - height, clickY - height / 2));
+            }
 
             const marker = {
                 id: markerId,
                 number: number,
                 page: currentPage,
-                x: x,
-                y: y,
+                x: Math.round(x * 100) / 100,
+                y: Math.round(y * 100) / 100,
                 width: width,
                 height: height,
                 text: text,
@@ -1733,7 +2297,16 @@
             };
 
             // Save to Firebase
-            database.ref(`annotations/${sessionId}/markers/${markerId}`).set(marker);
+            if (sessionId) {
+                database.ref(`annotations/${sessionId}/markers/${markerId}`).set(marker);
+            } else {
+                annotations[markerId] = marker;
+                renderMarker(marker);
+                renderAnnotationCard(marker);
+                annotationCount.textContent = Object.keys(annotations).length;
+                renderArrows();
+                checkCompletionStatus();
+            }
         }
 
         addMarkerBtn.addEventListener('click', () => {
@@ -1744,44 +2317,59 @@
             addMarker();
         });
 
-        // Click on canvas to add marker
+        // Click on canvas to add marker (accurate placement, respects panning)
         mainImage.addEventListener('click', (e) => {
-            if (!isDragging && !isResizing) {
+            if (!isDragging && !isResizing && !isClickSuppressed) {
                 const rect = mainImage.getBoundingClientRect();
                 const x = ((e.clientX - rect.left) / rect.width) * 100;
                 const y = ((e.clientY - rect.top) / rect.height) * 100;
                 addMarker(x, y);
             }
+            isClickSuppressed = false;
         });
 
         pdfCanvas.addEventListener('click', (e) => {
-            if (!isDragging && !isResizing) {
+            if (!isDragging && !isResizing && !isClickSuppressed) {
                 const rect = pdfCanvas.getBoundingClientRect();
                 const x = ((e.clientX - rect.left) / rect.width) * 100;
                 const y = ((e.clientY - rect.top) / rect.height) * 100;
                 addMarker(x, y);
             }
+            isClickSuppressed = false;
         });
 
         function renderAllMarkers() {
             // Clear existing markers
             document.querySelectorAll('.marker').forEach(el => el.remove());
             document.querySelectorAll('.arrow-line').forEach(el => el.remove());
-            annotationsList.innerHTML = '';
+            if (annotationsCards) {
+                annotationsCards.innerHTML = '';
+            } else if (annotationsList) {
+                annotationsList.innerHTML = '';
+            }
 
             const allMarkers = Object.values(annotations);
 
             if (allMarkers.length === 0) {
-                annotationsList.innerHTML = `
+                const emptyHtml = `
                     <div class="empty-state">
                         <i class="fa-regular fa-circle-dot"></i>
                         <p><strong>ยังไม่มีจุดแก้ไข</strong></p>
                         <p>คลิกปุ่ม "เพิ่ม" หรือคลิกที่ไฟล์ด้านซ้าย</p>
                     </div>
                 `;
+                if (annotationsCards) {
+                    annotationsCards.innerHTML = emptyHtml;
+                } else if (annotationsList) {
+                    annotationsList.innerHTML = emptyHtml;
+                }
+                if (jobStatusBanner) jobStatusBanner.classList.add('hidden');
                 annotationCount.textContent = '0';
+                checkCompletionStatus();
                 return;
             }
+
+            if (jobStatusBanner) jobStatusBanner.classList.remove('hidden');
 
             const sortedMarkers = allMarkers.sort((a, b) => a.number - b.number);
             
@@ -1794,6 +2382,9 @@
 
             annotationCount.textContent = sortedMarkers.length;
             
+            // Check completion status
+            checkCompletionStatus();
+
             // Render arrows
             setTimeout(renderArrows, 100);
         }
@@ -1820,9 +2411,10 @@
                 markerEl.appendChild(pageLabel);
             }
 
-            // Resize handles (only for current-page markers)
+            // Resize handles (8 handles for high-precision dragging and resizing on mobile & desktop)
             if (!isCrossPage) {
-                ['tl', 'tr', 'bl', 'br'].forEach(pos => {
+                const handlePositions = ['tl', 'tc', 'tr', 'ml', 'mr', 'bl', 'bc', 'br'];
+                handlePositions.forEach(pos => {
                     const handle = document.createElement('div');
                     handle.className = `resize-handle ${pos}`;
                     handle.dataset.pos = pos;
@@ -1834,7 +2426,7 @@
                     });
                     handle.addEventListener('touchstart', (e) => {
                         e.stopPropagation();
-                        e.preventDefault();
+                        if (e.cancelable) e.preventDefault();
                         startResize(e, marker, pos);
                     }, { passive: false });
                 });
@@ -1851,7 +2443,7 @@
                 if (isCrossPage) return;
                 if (!e.target.classList.contains('resize-handle')) {
                     e.stopPropagation();
-                    e.preventDefault();
+                    if (e.cancelable) e.preventDefault();
                     startDrag(e, marker);
                 }
             }, { passive: false });
@@ -1885,6 +2477,7 @@
 
         function onDragMove(e) {
             if (!isDragging || !currentMarker) return;
+            if (e.cancelable) e.preventDefault();
 
             const content = fileType === 'image' ? mainImage : pdfCanvas;
             const contentRect = content.getBoundingClientRect();
@@ -1897,8 +2490,10 @@
             currentMarker.y = Math.max(0, Math.min(100 - currentMarker.height, markerStartY + dy));
 
             const markerEl = document.querySelector(`.marker[data-id="${currentMarker.id}"]`);
-            markerEl.style.left = currentMarker.x + '%';
-            markerEl.style.top = currentMarker.y + '%';
+            if (markerEl) {
+                markerEl.style.left = currentMarker.x + '%';
+                markerEl.style.top = currentMarker.y + '%';
+            }
 
             renderArrows();
         }
@@ -1906,10 +2501,12 @@
         function onDragEnd() {
             if (isDragging && currentMarker) {
                 // Save to Firebase
-                database.ref(`annotations/${sessionId}/markers/${currentMarker.id}`).update({
-                    x: currentMarker.x,
-                    y: currentMarker.y
-                });
+                if (sessionId) {
+                    database.ref(`annotations/${sessionId}/markers/${currentMarker.id}`).update({
+                        x: currentMarker.x,
+                        y: currentMarker.y
+                    });
+                }
                 renderArrows();
             }
             isDragging = false;
@@ -1941,6 +2538,7 @@
 
             function onResizeMove(e) {
                 if (!isResizing || !currentMarker) return;
+                if (e.cancelable) e.preventDefault();
 
                 const content = fileType === 'image' ? mainImage : pdfCanvas;
                 const contentRect = content.getBoundingClientRect();
@@ -1950,30 +2548,42 @@
                 const dy = ((pos.y - dragStartY) / contentRect.height) * 100;
 
                 const markerEl = document.querySelector(`.marker[data-id="${currentMarker.id}"]`);
+                if (!markerEl) return;
+
+                const minW = 2.5; // Min 2.5% for tiny words / single numbers
+                const minH = 2.0;
 
                 if (resizePos.includes('r')) {
-                    currentMarker.width = Math.max(5, Math.min(100 - currentMarker.x, markerStartWidth + dx));
+                    currentMarker.width = Math.max(minW, Math.min(100 - currentMarker.x, markerStartWidth + dx));
                 }
                 if (resizePos.includes('l')) {
-                    const newWidth = Math.max(5, markerStartWidth - dx);
-                    const newX = markerStartX + (markerStartWidth - newWidth);
-                    if (newX >= 0) {
-                        currentMarker.width = newWidth;
-                        currentMarker.x = newX;
-                        markerEl.style.left = currentMarker.x + '%';
+                    const maxAllowedChange = markerStartWidth - minW;
+                    const clampedDx = Math.min(dx, maxAllowedChange);
+                    const targetX = markerStartX + clampedDx;
+                    if (targetX >= 0) {
+                        currentMarker.x = targetX;
+                        currentMarker.width = markerStartWidth - clampedDx;
+                    } else {
+                        currentMarker.x = 0;
+                        currentMarker.width = markerStartX + markerStartWidth;
                     }
+                    markerEl.style.left = currentMarker.x + '%';
                 }
                 if (resizePos.includes('b')) {
-                    currentMarker.height = Math.max(5, Math.min(100 - currentMarker.y, markerStartHeight + dy));
+                    currentMarker.height = Math.max(minH, Math.min(100 - currentMarker.y, markerStartHeight + dy));
                 }
                 if (resizePos.includes('t')) {
-                    const newHeight = Math.max(5, markerStartHeight - dy);
-                    const newY = markerStartY + (markerStartHeight - newHeight);
-                    if (newY >= 0) {
-                        currentMarker.height = newHeight;
-                        currentMarker.y = newY;
-                        markerEl.style.top = currentMarker.y + '%';
+                    const maxAllowedChange = markerStartHeight - minH;
+                    const clampedDy = Math.min(dy, maxAllowedChange);
+                    const targetY = markerStartY + clampedDy;
+                    if (targetY >= 0) {
+                        currentMarker.y = targetY;
+                        currentMarker.height = markerStartHeight - clampedDy;
+                    } else {
+                        currentMarker.y = 0;
+                        currentMarker.height = markerStartY + markerStartHeight;
                     }
+                    markerEl.style.top = currentMarker.y + '%';
                 }
 
                 markerEl.style.width = currentMarker.width + '%';
@@ -1985,12 +2595,14 @@
             function onResizeEnd() {
                 if (isResizing && currentMarker) {
                     // Save to Firebase
-                    database.ref(`annotations/${sessionId}/markers/${currentMarker.id}`).update({
-                        x: currentMarker.x,
-                        y: currentMarker.y,
-                        width: currentMarker.width,
-                        height: currentMarker.height
-                    });
+                    if (sessionId) {
+                        database.ref(`annotations/${sessionId}/markers/${currentMarker.id}`).update({
+                            x: currentMarker.x,
+                            y: currentMarker.y,
+                            width: currentMarker.width,
+                            height: currentMarker.height
+                        });
+                    }
                     renderArrows();
                 }
                 isResizing = false;
@@ -2012,9 +2624,10 @@
             card.innerHTML = `
                 <div class="card-header">
                     <div class="marker-number">${marker.number}</div>
-                    <label class="done-check" style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-muted);cursor:pointer;margin:0 auto;">
+                    <label class="done-check" style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);cursor:pointer;margin:0 auto;">
+                        <span style="font-weight:600;color:var(--text-dark);">สถานะงาน:</span>
                         <input type="checkbox" class="done-input" ${marker.done ? 'checked' : ''} style="width:15px;height:15px;cursor:pointer;accent-color:var(--success);">
-                        เสร็จ
+                        <span class="done-text" style="font-weight:600;color:${marker.done ? 'var(--success)' : 'inherit'};">เสร็จ</span>
                     </label>
                     <div style="display:flex;align-items:center;gap:4px;">
                         ${fileType === 'pdf' ? `<div style="font-size:12px;color:var(--text-muted);font-weight:600;"><i class="fa-solid fa-file"></i> หน้า ${marker.page || 1}</div>` : ''}
@@ -2027,9 +2640,25 @@
             `;
 
             const doneInput = card.querySelector('.done-input');
+            const doneText = card.querySelector('.done-text');
             doneInput.addEventListener('change', () => {
                 const done = doneInput.checked;
-                database.ref(`annotations/${sessionId}/markers/${marker.id}/done`).set(done);
+                marker.done = done;
+                if (annotations[marker.id]) {
+                    annotations[marker.id].done = done;
+                }
+                card.classList.toggle('completed', done);
+                if (doneText) {
+                    doneText.style.color = done ? 'var(--success)' : 'inherit';
+                }
+                const mEl = document.querySelector(`.marker[data-id="${marker.id}"]`);
+                if (mEl) mEl.classList.toggle('completed', done);
+                renderArrows();
+                userDismissedCompletion = false;
+                checkCompletionStatus();
+                if (sessionId) {
+                    database.ref(`annotations/${sessionId}/markers/${marker.id}/done`).set(done);
+                }
             });
 
             const textarea = card.querySelector('.annotation-text');
@@ -2038,7 +2667,9 @@
                 clearTimeout(saveTimeout);
                 saveTimeout = setTimeout(() => {
                     // Auto-save to Firebase
-                    database.ref(`annotations/${sessionId}/markers/${marker.id}/text`).set(textarea.value);
+                    if (sessionId) {
+                        database.ref(`annotations/${sessionId}/markers/${marker.id}/text`).set(textarea.value);
+                    }
                 }, 500);
             });
 
@@ -2046,7 +2677,12 @@
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (confirm('ต้องการลบจุดแก้ไขนี้ใช่ไหม?')) {
-                    database.ref(`annotations/${sessionId}/markers/${marker.id}`).remove();
+                    if (sessionId) {
+                        database.ref(`annotations/${sessionId}/markers/${marker.id}`).remove();
+                    } else {
+                        delete annotations[marker.id];
+                        renderAllMarkers();
+                    }
                 }
             });
 
@@ -2057,7 +2693,219 @@
                 setActiveMarker(marker.id);
             });
 
-            annotationsList.appendChild(card);
+            if (annotationsCards) {
+                annotationsCards.appendChild(card);
+            } else {
+                annotationsList.appendChild(card);
+            }
+        }
+
+        // ===== JOB STATUS & COMPLETION TAG HANDLERS =====
+        function updateJobStatusUI(isProcessing) {
+            if (isProcessing) {
+                document.body.classList.add('job-started');
+                if (jobReadyView) jobReadyView.classList.add('hidden');
+                if (jobProcessingView) jobProcessingView.classList.remove('hidden');
+            } else {
+                document.body.classList.remove('job-started');
+                if (jobReadyView) jobReadyView.classList.remove('hidden');
+                if (jobProcessingView) jobProcessingView.classList.add('hidden');
+            }
+        }
+
+        if (btnStartJob) {
+            btnStartJob.addEventListener('click', () => {
+                const markersCount = Object.keys(annotations).length;
+                if (markersCount === 0) {
+                    alert('กรุณาเพิ่มจุดแก้ไขและระบุข้อความก่อนกดสั่งให้เริ่มงาน');
+                    return;
+                }
+                updateJobStatusUI(true);
+                if (sessionId) {
+                    database.ref(`annotations/${sessionId}`).update({
+                        jobStatus: 'processing',
+                        startedAt: Date.now()
+                    });
+                }
+            });
+        }
+
+        if (btnResetJob) {
+            btnResetJob.addEventListener('click', () => {
+                updateJobStatusUI(false);
+                if (jobProcessingView) {
+                    jobProcessingView.classList.remove('completed');
+                }
+                userDismissedCompletion = false;
+                hideCompletionPopup();
+                if (sessionId) {
+                    database.ref(`annotations/${sessionId}`).update({
+                        jobStatus: 'pending'
+                    });
+                }
+            });
+        }
+
+        function checkCompletionStatus() {
+            const doneInputs = document.querySelectorAll('.done-input');
+            const markers = Object.values(annotations);
+
+            if (doneInputs.length === 0 && markers.length === 0) {
+                hideCompletionPopup();
+                return;
+            }
+
+            const allDomChecked = doneInputs.length > 0 && Array.from(doneInputs).every(inp => inp.checked);
+            const allDataDone = markers.length > 0 && markers.every(m => !!m.done);
+
+            if (allDomChecked || allDataDone) {
+                if (!userDismissedCompletion) {
+                    showCompletionPopup();
+                } else if (jobProcessingView) {
+                    jobProcessingView.classList.add('completed');
+                }
+            } else {
+                userDismissedCompletion = false;
+                hideCompletionPopup();
+            }
+        }
+
+        function showCompletionPopup() {
+            const popup = document.getElementById('completionPopupTag');
+            if (popup) {
+                popup.classList.add('show');
+            }
+            if (jobProcessingView) {
+                jobProcessingView.classList.add('completed');
+            }
+            triggerConfetti();
+        }
+
+        function hideCompletionPopup() {
+            const popup = document.getElementById('completionPopupTag');
+            if (popup) {
+                popup.classList.remove('show');
+            }
+            const doneInputs = document.querySelectorAll('.done-input');
+            const allChecked = doneInputs.length > 0 && Array.from(doneInputs).every(inp => inp.checked);
+            if (!allChecked && jobProcessingView) {
+                jobProcessingView.classList.remove('completed');
+            }
+        }
+
+        const closeBtn = document.getElementById('completionPopupClose');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                userDismissedCompletion = true;
+                hideCompletionPopup();
+            });
+        }
+
+        const okBtn = document.getElementById('completionPopupOkBtn');
+        if (okBtn) {
+            okBtn.addEventListener('click', () => {
+                userDismissedCompletion = true;
+                hideCompletionPopup();
+            });
+        }
+
+        const overlay = document.getElementById('completionPopupTag');
+        if (overlay) {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    userDismissedCompletion = true;
+                    hideCompletionPopup();
+                }
+            });
+        }
+
+        // ===== CONFETTI CELEBRATION =====
+        function triggerConfetti() {
+            try {
+                if (typeof confetti === 'function') {
+                    confetti({
+                        particleCount: 100,
+                        spread: 80,
+                        origin: { y: 0.5 }
+                    });
+                    setTimeout(() => {
+                        confetti({
+                            particleCount: 60,
+                            angle: 60,
+                            spread: 60,
+                            origin: { x: 0.15, y: 0.6 }
+                        });
+                    }, 200);
+                    setTimeout(() => {
+                        confetti({
+                            particleCount: 60,
+                            angle: 120,
+                            spread: 60,
+                            origin: { x: 0.85, y: 0.6 }
+                        });
+                    }, 400);
+                    return;
+                }
+            } catch (err) {
+                console.warn('Canvas confetti error:', err);
+            }
+            runFallbackConfetti();
+        }
+
+        function runFallbackConfetti() {
+            const canvas = document.createElement('canvas');
+            canvas.style.position = 'fixed';
+            canvas.style.top = '0';
+            canvas.style.left = '0';
+            canvas.style.width = '100vw';
+            canvas.style.height = '100vh';
+            canvas.style.pointerEvents = 'none';
+            canvas.style.zIndex = '99999';
+            document.body.appendChild(canvas);
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            const ctx = canvas.getContext('2d');
+            const colors = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#ec4899', '#8b5cf6'];
+            const particles = Array.from({ length: 90 }, () => ({
+                x: canvas.width / 2,
+                y: canvas.height * 0.45,
+                vx: (Math.random() - 0.5) * 16,
+                vy: (Math.random() - 0.7) * 18,
+                size: Math.random() * 8 + 4,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                rotation: Math.random() * 360,
+                rotSpeed: (Math.random() - 0.5) * 12,
+                alpha: 1
+            }));
+            const start = Date.now();
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let alive = false;
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.38;
+                    p.vx *= 0.98;
+                    p.rotation += p.rotSpeed;
+                    p.alpha -= 0.009;
+                    if (p.alpha > 0) {
+                        alive = true;
+                        ctx.save();
+                        ctx.translate(p.x, p.y);
+                        ctx.rotate((p.rotation * Math.PI) / 180);
+                        ctx.fillStyle = p.color;
+                        ctx.globalAlpha = Math.max(0, p.alpha);
+                        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                        ctx.restore();
+                    }
+                });
+                if (alive && Date.now() - start < 3500) {
+                    requestAnimationFrame(animate);
+                } else {
+                    canvas.remove();
+                }
+            }
+            requestAnimationFrame(animate);
         }
 
         function setActiveMarker(markerId) {
@@ -2225,6 +3073,14 @@
 
         // ===== FIREBASE SYNC =====
         function listenToChanges() {
+            if (!sessionId) return;
+
+            // Sync Job Status
+            database.ref(`annotations/${sessionId}/jobStatus`).on('value', (snapshot) => {
+                const status = snapshot.val();
+                updateJobStatusUI(status === 'processing');
+            });
+
             const markersRef = database.ref(`annotations/${sessionId}/markers`);
 
             const hasExistingData = Object.keys(annotations).length > 0;
@@ -2232,7 +3088,11 @@
             if (!hasExistingData) {
                 document.querySelectorAll('.marker').forEach(el => el.remove());
                 document.querySelectorAll('.arrow-line').forEach(el => el.remove());
-                annotationsList.innerHTML = '';
+                if (annotationsCards) {
+                    annotationsCards.innerHTML = '';
+                } else {
+                    annotationsList.innerHTML = '';
+                }
                 annotations = {};
             }
 
@@ -2245,11 +3105,16 @@
                 annotations[marker.id] = marker;
 
                 if (!isInitialLoad) {
+                    const emptyEl = annotationsCards ? annotationsCards.querySelector('.empty-state') : null;
+                    if (emptyEl) emptyEl.remove();
+                    if (jobStatusBanner) jobStatusBanner.classList.remove('hidden');
+
                     if (!marker.page || marker.page === currentPage) {
                         renderMarker(marker);
                     }
                     renderAnnotationCard(marker);
                     annotationCount.textContent = Object.keys(annotations).length;
+                    checkCompletionStatus();
                     setTimeout(renderArrows, 100);
                 }
             });
@@ -2259,16 +3124,25 @@
                     isInitialLoad = false;
 
                     if (Object.keys(annotations).length === 0) {
-                        annotationsList.innerHTML = `
+                        const emptyHtml = `
                             <div class="empty-state">
                                 <i class="fa-regular fa-circle-dot"></i>
                                 <p><strong>ยังไม่มีจุดแก้ไข</strong></p>
                                 <p>คลิกปุ่ม "เพิ่ม" หรือคลิกที่ไฟล์ด้านซ้าย</p>
                             </div>
                         `;
+                        if (annotationsCards) {
+                            annotationsCards.innerHTML = emptyHtml;
+                        } else {
+                            annotationsList.innerHTML = emptyHtml;
+                        }
+                        if (jobStatusBanner) jobStatusBanner.classList.add('hidden');
                         annotationCount.textContent = '0';
+                        checkCompletionStatus();
                         return;
                     }
+
+                    if (jobStatusBanner) jobStatusBanner.classList.remove('hidden');
 
                     const sorted = Object.values(annotations).sort((a, b) => a.number - b.number);
                     sorted.forEach(marker => {
@@ -2278,6 +3152,7 @@
                         renderAnnotationCard(marker);
                     });
                     annotationCount.textContent = sorted.length;
+                    checkCompletionStatus();
                     setTimeout(renderArrows, 100);
                 } else {
                     // Reconcile: remove markers deleted by others while page was loading
@@ -2289,8 +3164,13 @@
                             document.querySelector(`.annotation-card[data-id="${id}"]`)?.remove();
                         }
                     });
-                    annotationCount.textContent = Object.keys(annotations).length;
+                    const count = Object.keys(annotations).length;
+                    annotationCount.textContent = count;
+                    if (count === 0 && jobStatusBanner) {
+                        jobStatusBanner.classList.add('hidden');
+                    }
                     markerCounter = Object.values(annotations).reduce((max, m) => Math.max(max, m.number || 0), 0) + 1;
+                    checkCompletionStatus();
                 }
             });
 
@@ -2315,11 +3195,16 @@
                     }
                     card.classList.toggle('completed', !!updated.done);
                     const doneInput = card.querySelector('.done-input');
+                    const doneText = card.querySelector('.done-text');
                     if (doneInput) {
                         doneInput.checked = !!updated.done;
                     }
+                    if (doneText) {
+                        doneText.style.color = updated.done ? 'var(--success)' : 'inherit';
+                    }
                 }
 
+                checkCompletionStatus();
                 renderArrows();
             });
 
@@ -2335,14 +3220,21 @@
                 // Recalculate counter from remaining markers
                 markerCounter = Object.values(annotations).reduce((max, m) => Math.max(max, m.number || 0), 0) + 1;
                 if (count === 0) {
-                    annotationsList.innerHTML = `
+                    const emptyHtml = `
                         <div class="empty-state">
                             <i class="fa-regular fa-circle-dot"></i>
                             <p><strong>ยังไม่มีจุดแก้ไข</strong></p>
                             <p>คลิกปุ่ม "เพิ่ม" หรือคลิกที่ไฟล์ด้านซ้าย</p>
                         </div>
                     `;
+                    if (annotationsCards) {
+                        annotationsCards.innerHTML = emptyHtml;
+                    } else {
+                        annotationsList.innerHTML = emptyHtml;
+                    }
+                    if (jobStatusBanner) jobStatusBanner.classList.add('hidden');
                 }
+                checkCompletionStatus();
                 renderArrows();
             });
         }
