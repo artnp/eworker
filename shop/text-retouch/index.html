@@ -69,9 +69,10 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 24px;
+            padding: 0 20px;
             height: 56px;
-            gap: 16px;
+            gap: 12px;
+            box-sizing: border-box;
         }
 
         .brand {
@@ -83,6 +84,20 @@
             font-size: 1.15rem;
             text-decoration: none;
             color: var(--text);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .brand-text-wrap {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .brand-title {
+            line-height: 1.1;
+            font-size: 1.15rem;
+            font-weight: 800;
         }
 
         .brand-icon {
@@ -95,6 +110,7 @@
             justify-content: center;
             font-size: 0.95rem;
             color: white;
+            flex-shrink: 0;
         }
 
         .brand-sub {
@@ -103,13 +119,15 @@
             color: var(--text-muted);
             display: block;
             line-height: 1;
-            margin-top: 2px;
+            margin-top: 3px;
+            white-space: nowrap;
         }
 
         .header-right {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            flex-shrink: 0;
         }
 
         .btn-new-file {
@@ -126,6 +144,8 @@
             gap: 6px;
             transition: all 0.15s;
             font-family: inherit;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .btn-new-file:hover {
@@ -134,7 +154,7 @@
         }
 
         .status-dot {
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 6px;
             font-size: 0.78rem;
@@ -145,6 +165,8 @@
             padding: 4px 12px;
             font-weight: 600;
             transition: all 0.3s;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .status-dot.status-online {
@@ -558,6 +580,11 @@
             color: white;
         }
 
+        .tool-btn#toolCrop.active {
+            background: #dc2626;
+            color: white;
+        }
+
         .zoom-label {
             display: flex;
             align-items: center;
@@ -578,6 +605,7 @@
             cursor: grab;
             user-select: none;
             -webkit-user-select: none;
+            touch-action: none;
         }
 
         .canvas-container.grabbing {
@@ -614,6 +642,7 @@
             display: none;
             cursor: crosshair;
             z-index: 40;
+            touch-action: none;
         }
 
         #cropOverlay.active {
@@ -653,19 +682,31 @@
             cursor: move;
             border: 2px dashed #2563eb !important;
             background: rgba(37, 99, 235, 0.15) !important;
+            touch-action: none;
         }
 
-        /* Resize Handles for Editable Overlay */
+        /* Resize Handles for Editable Overlay (Touch & Mouse friendly) */
         .crop-handle {
             position: absolute;
-            width: 10px;
-            height: 10px;
+            width: 12px;
+            height: 12px;
             background: #ffffff;
             border: 2px solid #2563eb;
-            border-radius: 2px;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
             z-index: 25;
             pointer-events: auto;
+            touch-action: none;
+        }
+
+        /* 36px touch hit area */
+        .crop-handle::after {
+            content: '';
+            position: absolute;
+            top: -12px;
+            left: -12px;
+            right: -12px;
+            bottom: -12px;
         }
 
         .crop-handle.handle-nw {
@@ -2228,6 +2269,114 @@
             color: #0f172a;
         }
 
+        /* Universal Single-Line Rule for Buttons & Badges */
+        button,
+        .btn,
+        .btn-new-file,
+        .mobile-tab-btn,
+        .tool-btn,
+        .btn-add-patch,
+        .btn-patch-action,
+        .btn-download-final,
+        .btn-delete,
+        .btn-legal-toggle,
+        .status-dot {
+            white-space: nowrap !important;
+        }
+
+        /* ===== MOBILE FLOATING CROP CONTROLS ===== */
+        .mobile-crop-fab {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 60;
+            background: var(--primary);
+            color: #ffffff;
+            border: none;
+            border-radius: 30px;
+            padding: 10px 22px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 0.92rem;
+            box-shadow: 0 4px 18px rgba(37, 99, 235, 0.4);
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .mobile-crop-fab:active {
+            transform: translateX(-50%) scale(0.96);
+        }
+
+        .mobile-crop-fab.active {
+            background: #dc2626;
+            box-shadow: 0 4px 18px rgba(220, 38, 38, 0.4);
+        }
+
+        .mobile-crop-hint {
+            display: none;
+            position: absolute;
+            top: 54px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 55;
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(4px);
+            color: #ffffff;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 20px;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            pointer-events: none;
+            animation: fadeInDown 0.25s ease;
+        }
+
+        .mobile-crop-hint.visible {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translate(-50%, -6px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+
+        /* Next Step Pill on Canvas (after placing patch) */
+        .mobile-next-step-pill {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 60;
+            background: #16a34a;
+            color: #ffffff;
+            border: none;
+            border-radius: 30px;
+            padding: 10px 18px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 0.88rem;
+            box-shadow: 0 4px 18px rgba(22, 163, 74, 0.35);
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            white-space: nowrap;
+            animation: pulseGlow 2s infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.03); }
+        }
+
         /* ===== MOBILE TABS ===== */
         .mobile-tabs {
             display: none;
@@ -2239,6 +2388,7 @@
             background: #ffffff;
             border-top: 1px solid var(--border);
             padding: 8px 16px;
+            padding-bottom: max(8px, env(safe-area-inset-bottom));
         }
 
         .mobile-tab-row {
@@ -2273,8 +2423,32 @@
                 display: block;
             }
 
+            .mobile-crop-fab {
+                display: inline-flex;
+            }
+
+            .canvas-toolbar {
+                top: 10px;
+                padding: 3px;
+                gap: 3px;
+                max-width: calc(100vw - 20px);
+            }
+
+            .tool-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 0.82rem;
+            }
+
+            .zoom-label {
+                min-width: 38px;
+                font-size: 0.72rem;
+                padding: 0 4px;
+            }
+
             .editor-layout {
-                height: calc(100vh - 56px - 60px);
+                height: calc(100dvh - 52px - 58px);
+                height: calc(100vh - 52px - 58px);
             }
 
             .sidebar {
@@ -2290,7 +2464,92 @@
             }
 
             #toastContainer {
-                bottom: 120px;
+                bottom: 74px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .app-header {
+                padding: 0 10px;
+                height: 50px;
+                gap: 6px;
+            }
+
+            .brand {
+                font-size: 1rem;
+                gap: 6px;
+                min-width: 0;
+            }
+
+            .brand-icon {
+                width: 28px;
+                height: 28px;
+                font-size: 0.8rem;
+            }
+
+            .brand-sub {
+                display: none !important;
+            }
+
+            .header-right {
+                gap: 5px;
+            }
+
+            .btn-legal-toggle {
+                padding: 6px 8px;
+            }
+
+            .btn-legal-toggle span {
+                display: none !important;
+            }
+
+            .btn-new-file {
+                padding: 5px 8px;
+                font-size: 0.74rem;
+                gap: 4px;
+            }
+
+            .status-dot {
+                padding: 3px 8px;
+                font-size: 0.72rem;
+                gap: 5px;
+            }
+
+            #headerStatus {
+                display: inline-block;
+                max-width: 85px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .app-header {
+                padding: 0 6px;
+                gap: 4px;
+            }
+
+            .brand-title {
+                font-size: 0.92rem;
+            }
+
+            .header-right {
+                gap: 4px;
+            }
+
+            .btn-new-file {
+                padding: 4px 6px;
+                font-size: 0.7rem;
+            }
+
+            .status-dot {
+                padding: 3px 5px;
+                font-size: 0.68rem;
+            }
+
+            #headerStatus {
+                max-width: 65px;
             }
         }
     </style>
@@ -2310,8 +2569,8 @@
     <header class="app-header">
         <a href="../../" class="brand">
             <div class="brand-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
-            <div>
-                Text-Retouch
+            <div class="brand-text-wrap">
+                <span class="brand-title">Text-Retouch</span>
                 <span class="brand-sub">Agent-Powered · ไฟล์ไม่ออกจากเครื่องคุณ</span>
             </div>
         </a>
@@ -2322,11 +2581,11 @@
                 <span>ข้อกำหนด & ความปลอดภัย</span>
             </button>
             <button class="btn-new-file" id="btnNewFile" style="display:none;" onclick="startNewSession()">
-                <i class="fa-solid fa-plus"></i> จ้างงานใหม่
+                <i class="fa-solid fa-plus"></i> <span class="btn-new-text">งานใหม่</span>
             </button>
             <div class="status-dot status-online" id="statusDot">
                 <span class="dot"></span>
-                <span id="headerStatus">พร้อมรับงานทันที</span>
+                <span id="headerStatus">พร้อมรับงาน</span>
             </div>
         </div>
     </header>
@@ -2373,6 +2632,9 @@
                         <button class="tool-btn active" id="toolSelect" title="เลือก / แพนภาพ">
                             <i class="fa-solid fa-hand"></i>
                         </button>
+                        <button class="tool-btn" id="toolCrop" onclick="toggleCropMode()" title="ชี้จุดที่จะแก้">
+                            <i class="fa-solid fa-crosshairs"></i>
+                        </button>
                         <div style="width:1px;background:var(--border-strong);margin:4px 2px;"></div>
                         <button class="tool-btn" id="toolZoomIn" title="ซูมเข้า"><i
                                 class="fa-solid fa-magnifying-glass-plus"></i></button>
@@ -2382,6 +2644,17 @@
                                 class="fa-solid fa-expand"></i></button>
                         <div class="zoom-label" id="zoomLabel">100%</div>
                     </div>
+
+                    <!-- Canvas Floating Mobile Controls -->
+                    <div class="mobile-crop-hint" id="mobileCropHint">
+                        <i class="fa-solid fa-hand-pointer"></i> แตะบนข้อความ หรือลากตีกรอบ
+                    </div>
+                    <button class="mobile-crop-fab" id="mobileCropFab" onclick="toggleCropMode()">
+                        <i class="fa-solid fa-crosshairs"></i> ชี้จุดที่จะแก้
+                    </button>
+                    <button class="mobile-next-step-pill" id="mobileNextStepPill" onclick="switchMobileTab('patches')" style="display:none;">
+                        <i class="fa-solid fa-pen-to-square"></i> ระบุข้อความที่จะแก้ <i class="fa-solid fa-chevron-right"></i>
+                    </button>
 
                     <!-- Canvas Container -->
                     <div class="canvas-container" id="canvasContainer">
@@ -2425,7 +2698,7 @@
                             ชี้จุดที่จะแก้
                         </button>
                         <p class="crop-hint" id="cropHint">
-                            💡 คลิกลากครอบส่วนที่ต้องการแก้ (สามารถดึงจุด 4 มุมเพื่อปรับขยายกรอบได้) · กด <span
+                            💡 แตะบนข้อความ หรือลากครอบส่วนที่ต้องการแก้ (ดึงจุด 4 มุมปรับขนาดได้) · กด <span
                                 class="crop-hint-key">Esc</span> เพื่อยกเลิก
                         </p>
                     </div>
@@ -2434,7 +2707,7 @@
                         <div class="patches-empty" id="patchesEmpty">
                             <div class="patches-empty-icon"><i class="fa-solid fa-crosshairs"></i></div>
                             <div class="patches-empty-text">
-                                กดปุ่มสีแดงด้านบน<br>แล้วลากวาดกรอบจุดที่ต้องการแก้ไข
+                                แตะเลือกจุดที่ต้องการแก้บนภาพ<br>หรือลากตีกรอบข้อความที่ต้องการ
                             </div>
                         </div>
                     </div>
@@ -2810,20 +3083,20 @@
 
         function updateEffectiveStatus() {
             let effectiveStatus = 'online';
-            let statusText = 'พร้อมรับงานทันที';
+            let statusText = 'พร้อมรับงาน';
 
             if (!isMainServerOnline) {
                 effectiveStatus = 'offline';
-                statusText = 'เซิร์ฟเวอร์ออฟไลน์ (ร้านปิด)';
+                statusText = 'ร้านปิดชั่วคราว';
             } else if (rawShopStatus === 'offline') {
                 effectiveStatus = 'offline';
                 statusText = 'ร้านปิด';
             } else if (rawShopStatus === 'away' || rawShopStatus === 'always') {
                 effectiveStatus = 'away';
-                statusText = 'กำลังงีบอยู่ Zzz';
+                statusText = 'พักผ่อน Zzz';
             } else {
                 effectiveStatus = 'online';
-                statusText = 'พร้อมรับงานทันที';
+                statusText = 'พร้อมรับงาน';
             }
 
             shopStatus = effectiveStatus;
@@ -3337,13 +3610,7 @@
             document.getElementById('toolFit').addEventListener('click', fitToScreen);
 
             // Add Patch button
-            document.getElementById('btnAddPatch').addEventListener('click', () => {
-                if (isCropMode) {
-                    exitCropMode();
-                } else {
-                    enterCropMode();
-                }
-            });
+            document.getElementById('btnAddPatch').addEventListener('click', toggleCropMode);
 
             // Esc key
             document.addEventListener('keydown', e => { if (e.key === 'Escape' && isCropMode) exitCropMode(); });
@@ -3390,55 +3657,110 @@
                 applyTransform();
             }, { passive: false });
 
-            // ── CROP DRAW ──
-            overlay.addEventListener('mousedown', e => {
+            // ── CROP DRAW (Mouse & Touch supported: Tap to place OR Drag to draw) ──
+            let cropLastX = 0, cropLastY = 0;
+
+            function startCropDraw(clientX, clientY) {
                 if (!isCropMode) return;
-                e.preventDefault();
                 isCropDragging = true;
                 const or = overlay.getBoundingClientRect();
-                cropStartX = e.clientX - or.left;
-                cropStartY = e.clientY - or.top;
+                cropStartX = clientX - or.left;
+                cropStartY = clientY - or.top;
+                cropLastX = cropStartX;
+                cropLastY = cropStartY;
                 rect.style.display = 'block';
-                rect.style.left = cropStartX + 'px'; rect.style.top = cropStartY + 'px';
-                rect.style.width = '0'; rect.style.height = '0';
-            });
+                rect.style.left = cropStartX + 'px';
+                rect.style.top = cropStartY + 'px';
+                rect.style.width = '0';
+                rect.style.height = '0';
+            }
 
-            window.addEventListener('mousemove', e => {
+            function updateCropDraw(clientX, clientY) {
                 if (!isCropDragging) return;
                 const or = overlay.getBoundingClientRect();
-                const ex = Math.max(0, Math.min(or.width, e.clientX - or.left));
-                const ey = Math.max(0, Math.min(or.height, e.clientY - or.top));
+                const ex = Math.max(0, Math.min(or.width, clientX - or.left));
+                const ey = Math.max(0, Math.min(or.height, clientY - or.top));
+                cropLastX = ex;
+                cropLastY = ey;
                 const x = Math.min(cropStartX, ex);
                 const y = Math.min(cropStartY, ey);
                 const w = Math.abs(ex - cropStartX);
                 const h = Math.abs(ey - cropStartY);
-                rect.style.left = x + 'px'; rect.style.top = y + 'px';
-                rect.style.width = w + 'px'; rect.style.height = h + 'px';
-            });
+                rect.style.left = x + 'px';
+                rect.style.top = y + 'px';
+                rect.style.width = w + 'px';
+                rect.style.height = h + 'px';
+            }
 
-            window.addEventListener('mouseup', async e => {
+            async function finishCropDraw(clientX, clientY) {
                 if (!isCropDragging) return;
                 isCropDragging = false;
                 rect.style.display = 'none';
 
                 const or = overlay.getBoundingClientRect();
-                const ex = Math.max(0, Math.min(or.width, e.clientX - or.left));
-                const ey = Math.max(0, Math.min(or.height, e.clientY - or.top));
-                const rw = Math.abs(ex - cropStartX);
-                const rh = Math.abs(ey - cropStartY);
+                const ex = Math.max(0, Math.min(or.width, clientX !== undefined ? (clientX - or.left) : cropLastX));
+                const ey = Math.max(0, Math.min(or.height, clientY !== undefined ? (clientY - or.top) : cropLastY));
+                let rw = Math.abs(ex - cropStartX);
+                let rh = Math.abs(ey - cropStartY);
+                let rx = Math.min(cropStartX, ex);
+                let ry = Math.min(cropStartY, ey);
 
-                // หากลากน้อยกว่า 10px (เผลอคลิกเฉยๆ) ให้เตือนให้ลากคลุมส่วนที่ต้องการ
-                if (rw < 10 || rh < 10) {
-                    toast('💡 กรุณาคลิกลากครอบข้อความที่ต้องการแก้ครับ', 'info');
-                    return;
+                // หากเป็นการแตะหรือคลิกโดยไม่ได้ลาก (แตะ < 15px) -> วางกรอบเริ่มต้นขนาดพอดีคำทันที!
+                if (rw < 15 || rh < 15) {
+                    const defW = Math.min(140, Math.max(70, or.width * 0.35));
+                    const defH = Math.min(45, Math.max(28, or.height * 0.15));
+                    rx = Math.max(0, Math.min(or.width - defW, cropStartX - defW / 2));
+                    ry = Math.max(0, Math.min(or.height - defH, cropStartY - defH / 2));
+                    rw = defW;
+                    rh = defH;
                 }
-
-                const rx = Math.min(cropStartX, ex);
-                const ry = Math.min(cropStartY, ey);
 
                 await createPatchFromCrop(rx, ry, rw, rh, or);
                 exitCropMode();
-                toast('💡 ได้กรอบจุดแก้แล้ว สามารถคลิกลากจุด 4 มุมเพื่อปรับขยายกรอบ หรือลากย้ายตำแหน่งได้', 'success');
+                toast('🎯 ได้กรอบจุดแก้แล้ว สามารถลากตัวกรอบหรือดึงจุด 4 มุมเพื่อปรับตำแหน่งได้', 'success');
+            }
+
+            // Mouse listeners for Crop
+            overlay.addEventListener('mousedown', e => {
+                if (!isCropMode) return;
+                e.preventDefault();
+                startCropDraw(e.clientX, e.clientY);
+            });
+
+            window.addEventListener('mousemove', e => {
+                if (!isCropDragging) return;
+                updateCropDraw(e.clientX, e.clientY);
+            });
+
+            window.addEventListener('mouseup', e => {
+                if (!isCropDragging) return;
+                finishCropDraw(e.clientX, e.clientY);
+            });
+
+            // Touch listeners for Crop
+            overlay.addEventListener('touchstart', e => {
+                if (!isCropMode || e.touches.length !== 1) return;
+                e.preventDefault();
+                startCropDraw(e.touches[0].clientX, e.touches[0].clientY);
+            }, { passive: false });
+
+            window.addEventListener('touchmove', e => {
+                if (!isCropDragging || e.touches.length !== 1) return;
+                e.preventDefault();
+                updateCropDraw(e.touches[0].clientX, e.touches[0].clientY);
+            }, { passive: false });
+
+            window.addEventListener('touchend', e => {
+                if (!isCropDragging) return;
+                const touch = e.changedTouches && e.changedTouches[0];
+                finishCropDraw(touch ? touch.clientX : undefined, touch ? touch.clientY : undefined);
+            });
+
+            window.addEventListener('touchcancel', () => {
+                if (isCropDragging) {
+                    isCropDragging = false;
+                    rect.style.display = 'none';
+                }
             });
 
             // Touch pan & zoom
@@ -3446,7 +3768,7 @@
             container.addEventListener('touchstart', e => {
                 if (e.touches.length === 2) {
                     touchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                } else if (!isCropMode) {
+                } else if (!isCropMode && !e.target.closest('.patch-overlay') && !e.target.closest('#cropOverlay')) {
                     isPanning = true;
                     t1x = e.touches[0].clientX - translateX;
                     t1y = e.touches[0].clientY - translateY;
@@ -3512,19 +3834,50 @@
             }
             isCropMode = true;
             const btn = document.getElementById('btnAddPatch');
-            btn.classList.add('active');
-            btn.innerHTML = '<i class="fa-solid fa-xmark"></i> ยกเลิกการชี้จุด';
+            if (btn) {
+                btn.classList.add('active');
+                btn.innerHTML = '<i class="fa-solid fa-xmark"></i> ยกเลิก';
+            }
+            const fab = document.getElementById('mobileCropFab');
+            if (fab) {
+                fab.classList.add('active');
+                fab.innerHTML = '<i class="fa-solid fa-xmark"></i> ยกเลิก';
+            }
+            const toolCrop = document.getElementById('toolCrop');
+            if (toolCrop) toolCrop.classList.add('active');
+
+            const mobileHint = document.getElementById('mobileCropHint');
+            if (mobileHint) mobileHint.classList.add('visible');
+
             document.getElementById('cropHint').classList.add('visible');
             document.getElementById('cropOverlay').classList.add('active');
             document.getElementById('canvasContainer').style.cursor = 'crosshair';
             document.getElementById('toolSelect').classList.remove('active');
+
+            // หากอยู่บนมือถือ ให้สลับมาหน้าภาพทันทีเพื่อให้ลูกค้าแตะ/ลากจุดบนรูปภาพได้
+            if (window.innerWidth <= 900) {
+                switchMobileTab('canvas');
+            }
         }
 
         function exitCropMode() {
             isCropMode = false;
             const btn = document.getElementById('btnAddPatch');
-            btn.classList.remove('active');
-            btn.innerHTML = '<i class="fa-solid fa-crosshairs"></i> ชี้จุดที่จะแก้';
+            if (btn) {
+                btn.classList.remove('active');
+                btn.innerHTML = '<i class="fa-solid fa-crosshairs"></i> ชี้จุดที่จะแก้';
+            }
+            const fab = document.getElementById('mobileCropFab');
+            if (fab) {
+                fab.classList.remove('active');
+                fab.innerHTML = '<i class="fa-solid fa-crosshairs"></i> ชี้จุดที่จะแก้';
+            }
+            const toolCrop = document.getElementById('toolCrop');
+            if (toolCrop) toolCrop.classList.remove('active');
+
+            const mobileHint = document.getElementById('mobileCropHint');
+            if (mobileHint) mobileHint.classList.remove('visible');
+
             document.getElementById('cropHint').classList.remove('visible');
             document.getElementById('cropOverlay').classList.remove('active');
             document.getElementById('cropRect').style.display = 'none';
@@ -3533,24 +3886,51 @@
             updateAddPatchButton();
         }
 
+        function toggleCropMode() {
+            if (isCropMode) {
+                exitCropMode();
+            } else {
+                enterCropMode();
+            }
+        }
+
         function updateAddPatchButton() {
             const btn = document.getElementById('btnAddPatch');
-            if (!btn) return;
+            const fab = document.getElementById('mobileCropFab');
+            const toolCrop = document.getElementById('toolCrop');
             const patchList = Object.values(patches);
             const hasUnfinished = patchList.some(p => p.status !== 'done');
 
-            if (hasUnfinished) {
-                // กำลังมีงานที่ยังไม่เสร็จ (รอประเมิน, รอโอน, หรือกำลังทำใน Photoshop)
-                btn.disabled = true;
-                btn.style.opacity = '0.5';
-                btn.style.cursor = 'not-allowed';
-                btn.title = 'จำกัดทีละ 1 จุด (รองานปัจจุบันเสร็จสิ้นก่อน หรือลบจุดเดิมหากต้องการเปลี่ยนตำแหน่ง)';
-            } else {
-                // ไม่มีจุด หรือ จุดเดิมแก้เสร็จสมบูรณ์แล้ว (status === 'done') -> ปลดล็อคให้กดชี้จุดใหม่ได้ทันที
-                btn.disabled = false;
-                btn.style.opacity = '1';
-                btn.style.cursor = 'pointer';
-                btn.title = patchList.length > 0 ? 'ชี้จุดที่จะแก้จุดใหม่ (ขึ้นบิลงานใหม่บนภาพเดิม)' : 'ชี้จุดที่จะแก้';
+            const setEl = (el, disabled, title) => {
+                if (!el) return;
+                el.disabled = disabled;
+                el.style.opacity = disabled ? '0.5' : '1';
+                el.style.cursor = disabled ? 'not-allowed' : 'pointer';
+                if (title) el.title = title;
+            };
+
+            const titleText = hasUnfinished
+                ? 'จำกัดทีละ 1 จุด (รองานปัจจุบันเสร็จสิ้นก่อน หรือลบจุดเดิมหากต้องการเปลี่ยนตำแหน่ง)'
+                : (patchList.length > 0 ? 'ชี้จุดที่จะแก้จุดใหม่ (ขึ้นบิลงานใหม่บนภาพเดิม)' : 'ชี้จุดที่จะแก้');
+
+            if (btn) setEl(btn, hasUnfinished, titleText);
+            if (fab) setEl(fab, hasUnfinished, titleText);
+            if (toolCrop) setEl(toolCrop, hasUnfinished, titleText);
+
+            // Floating next step pill on mobile canvas
+            const pill = document.getElementById('mobileNextStepPill');
+            if (pill && fab) {
+                const waitingPatch = patchList.find(p => p.status === 'waiting' && !p.note.trim());
+                if (waitingPatch && !isCropMode) {
+                    pill.style.display = 'inline-flex';
+                    pill.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> ระบุข้อความจุดที่ ${waitingPatch.num} <i class="fa-solid fa-chevron-right"></i>`;
+                    fab.style.display = 'none';
+                } else {
+                    pill.style.display = 'none';
+                    if (window.innerWidth <= 900) {
+                        fab.style.display = 'inline-flex';
+                    }
+                }
             }
         }
 
@@ -4319,8 +4699,80 @@
             });
         }
 
-        /* Interactive Resize & Drag for waiting patch */
+        /* Interactive Resize & Drag for waiting patch (Supports Mouse & Touch) */
         function attachOverlayResizeAndDrag(div, patchId, nW, nH) {
+            let isResizing = false;
+            let rPos = '';
+            let rStartX = 0, rStartY = 0;
+            let rL = 0, rT = 0, rW = 0, rH = 0;
+
+            function onResizeStart(pos, clientX, clientY) {
+                setActivePatch(patchId);
+                isResizing = true;
+                rPos = pos;
+                rStartX = clientX;
+                rStartY = clientY;
+                rL = parseFloat(div.style.left) || 0;
+                rT = parseFloat(div.style.top) || 0;
+                rW = parseFloat(div.style.width) || 0;
+                rH = parseFloat(div.style.height) || 0;
+            }
+
+            function onResizeMove(clientX, clientY) {
+                if (!isResizing) return;
+                const dx = (clientX - rStartX) / scale;
+                const dy = (clientY - rStartY) / scale;
+                let curL = rL, curT = rT, curW = rW, curH = rH;
+
+                if (rPos === 'se') {
+                    curW = Math.max(20, Math.min(nW - rL, rW + dx));
+                    curH = Math.max(20, Math.min(nH - rT, rH + dy));
+                } else if (rPos === 'sw') {
+                    const newL = Math.max(0, Math.min(rL + rW - 20, rL + dx));
+                    curW = (rL + rW) - newL;
+                    curL = newL;
+                    curH = Math.max(20, Math.min(nH - rT, rH + dy));
+                } else if (rPos === 'ne') {
+                    const newT = Math.max(0, Math.min(rT + rH - 20, rT + dy));
+                    curH = (rT + rH) - newT;
+                    curT = newT;
+                    curW = Math.max(20, Math.min(nW - rL, rW + dx));
+                } else if (rPos === 'nw') {
+                    const newL = Math.max(0, Math.min(rL + rW - 20, rL + dx));
+                    const newT = Math.max(0, Math.min(rT + rH - 20, rT + dy));
+                    curW = (rL + rW) - newL;
+                    curH = (rT + rH) - newT;
+                    curL = newL;
+                    curT = newT;
+                }
+
+                div.style.left = curL + 'px';
+                div.style.top = curT + 'px';
+                div.style.width = curW + 'px';
+                div.style.height = curH + 'px';
+            }
+
+            function onResizeEnd() {
+                if (!isResizing) return;
+                isResizing = false;
+                window.removeEventListener('mousemove', onWinResizeMouseMove);
+                window.removeEventListener('mouseup', onWinResizeMouseUp);
+                window.removeEventListener('touchmove', onWinResizeTouchMove);
+                window.removeEventListener('touchend', onWinResizeTouchEnd);
+                window.removeEventListener('touchcancel', onWinResizeTouchEnd);
+                finalizeOverlayChange(patchId, div, nW, nH);
+            }
+
+            const onWinResizeMouseMove = (ev) => onResizeMove(ev.clientX, ev.clientY);
+            const onWinResizeMouseUp = () => onResizeEnd();
+            const onWinResizeTouchMove = (ev) => {
+                if (ev.touches.length === 1) {
+                    ev.preventDefault();
+                    onResizeMove(ev.touches[0].clientX, ev.touches[0].clientY);
+                }
+            };
+            const onWinResizeTouchEnd = () => onResizeEnd();
+
             ['nw', 'ne', 'se', 'sw'].forEach(pos => {
                 const handle = document.createElement('div');
                 handle.className = `crop-handle handle-${pos}`;
@@ -4330,102 +4782,90 @@
                 handle.addEventListener('mousedown', (e) => {
                     e.stopPropagation();
                     e.preventDefault();
-                    startResize(pos, e);
+                    onResizeStart(pos, e.clientX, e.clientY);
+                    window.addEventListener('mousemove', onWinResizeMouseMove);
+                    window.addEventListener('mouseup', onWinResizeMouseUp);
                 });
+
+                handle.addEventListener('touchstart', (e) => {
+                    if (e.touches.length !== 1) return;
+                    e.stopPropagation();
+                    e.preventDefault();
+                    onResizeStart(pos, e.touches[0].clientX, e.touches[0].clientY);
+                    window.addEventListener('touchmove', onWinResizeTouchMove, { passive: false });
+                    window.addEventListener('touchend', onWinResizeTouchEnd);
+                    window.addEventListener('touchcancel', onWinResizeTouchEnd);
+                }, { passive: false });
             });
 
+            // Dragging whole box
             let isDragging = false;
             let startClientX = 0, startClientY = 0;
             let startL = 0, startT = 0, startW = 0, startH = 0;
+
+            function onDragStart(clientX, clientY) {
+                setActivePatch(patchId);
+                isDragging = true;
+                startClientX = clientX;
+                startClientY = clientY;
+                startL = parseFloat(div.style.left) || 0;
+                startT = parseFloat(div.style.top) || 0;
+                startW = parseFloat(div.style.width) || 0;
+                startH = parseFloat(div.style.height) || 0;
+            }
+
+            function onDragMove(clientX, clientY) {
+                if (!isDragging) return;
+                const dx = (clientX - startClientX) / scale;
+                const dy = (clientY - startClientY) / scale;
+                const maxL = Math.max(0, nW - startW);
+                const maxT = Math.max(0, nH - startH);
+                const curL = Math.max(0, Math.min(maxL, startL + dx));
+                const curT = Math.max(0, Math.min(maxT, startT + dy));
+                div.style.left = curL + 'px';
+                div.style.top = curT + 'px';
+            }
+
+            function onDragEnd() {
+                if (!isDragging) return;
+                isDragging = false;
+                window.removeEventListener('mousemove', onWinDragMouseMove);
+                window.removeEventListener('mouseup', onWinDragMouseUp);
+                window.removeEventListener('touchmove', onWinDragTouchMove);
+                window.removeEventListener('touchend', onWinDragTouchEnd);
+                window.removeEventListener('touchcancel', onWinDragTouchEnd);
+                finalizeOverlayChange(patchId, div, nW, nH);
+            }
+
+            const onWinDragMouseMove = (ev) => onDragMove(ev.clientX, ev.clientY);
+            const onWinDragMouseUp = () => onDragEnd();
+            const onWinDragTouchMove = (ev) => {
+                if (ev.touches.length === 1) {
+                    ev.preventDefault();
+                    onDragMove(ev.touches[0].clientX, ev.touches[0].clientY);
+                }
+            };
+            const onWinDragTouchEnd = () => onDragEnd();
 
             div.addEventListener('mousedown', (e) => {
                 if (e.target.classList.contains('crop-handle') || e.target.classList.contains('patch-num-badge')) return;
                 e.stopPropagation();
                 e.preventDefault();
-                setActivePatch(patchId);
-                isDragging = true;
-                startClientX = e.clientX;
-                startClientY = e.clientY;
-                startL = parseFloat(div.style.left) || 0;
-                startT = parseFloat(div.style.top) || 0;
-                startW = parseFloat(div.style.width) || 0;
-                startH = parseFloat(div.style.height) || 0;
-
-                function onMove(ev) {
-                    if (!isDragging) return;
-                    const dx = (ev.clientX - startClientX) / scale;
-                    const dy = (ev.clientY - startClientY) / scale;
-                    const maxL = Math.max(0, nW - startW);
-                    const maxT = Math.max(0, nH - startH);
-                    const curL = Math.max(0, Math.min(maxL, startL + dx));
-                    const curT = Math.max(0, Math.min(maxT, startT + dy));
-                    div.style.left = curL + 'px';
-                    div.style.top = curT + 'px';
-                }
-
-                function onUp() {
-                    if (!isDragging) return;
-                    isDragging = false;
-                    window.removeEventListener('mousemove', onMove);
-                    window.removeEventListener('mouseup', onUp);
-                    finalizeOverlayChange(patchId, div, nW, nH);
-                }
-
-                window.addEventListener('mousemove', onMove);
-                window.addEventListener('mouseup', onUp);
+                onDragStart(e.clientX, e.clientY);
+                window.addEventListener('mousemove', onWinDragMouseMove);
+                window.addEventListener('mouseup', onWinDragMouseUp);
             });
 
-            function startResize(pos, e) {
-                setActivePatch(patchId);
-                const rStartX = e.clientX;
-                const rStartY = e.clientY;
-                const rL = parseFloat(div.style.left) || 0;
-                const rT = parseFloat(div.style.top) || 0;
-                const rW = parseFloat(div.style.width) || 0;
-                const rH = parseFloat(div.style.height) || 0;
-
-                function onResizeMove(ev) {
-                    const dx = (ev.clientX - rStartX) / scale;
-                    const dy = (ev.clientY - rStartY) / scale;
-                    let curL = rL, curT = rT, curW = rW, curH = rH;
-
-                    if (pos === 'se') {
-                        curW = Math.max(20, Math.min(nW - rL, rW + dx));
-                        curH = Math.max(20, Math.min(nH - rT, rH + dy));
-                    } else if (pos === 'sw') {
-                        const newL = Math.max(0, Math.min(rL + rW - 20, rL + dx));
-                        curW = (rL + rW) - newL;
-                        curL = newL;
-                        curH = Math.max(20, Math.min(nH - rT, rH + dy));
-                    } else if (pos === 'ne') {
-                        const newT = Math.max(0, Math.min(rT + rH - 20, rT + dy));
-                        curH = (rT + rH) - newT;
-                        curT = newT;
-                        curW = Math.max(20, Math.min(nW - rL, rW + dx));
-                    } else if (pos === 'nw') {
-                        const newL = Math.max(0, Math.min(rL + rW - 20, rL + dx));
-                        const newT = Math.max(0, Math.min(rT + rH - 20, rT + dy));
-                        curW = (rL + rW) - newL;
-                        curH = (rT + rH) - newT;
-                        curL = newL;
-                        curT = newT;
-                    }
-
-                    div.style.left = curL + 'px';
-                    div.style.top = curT + 'px';
-                    div.style.width = curW + 'px';
-                    div.style.height = curH + 'px';
-                }
-
-                function onResizeUp() {
-                    window.removeEventListener('mousemove', onResizeMove);
-                    window.removeEventListener('mouseup', onResizeUp);
-                    finalizeOverlayChange(patchId, div, nW, nH);
-                }
-
-                window.addEventListener('mousemove', onResizeMove);
-                window.addEventListener('mouseup', onResizeUp);
-            }
+            div.addEventListener('touchstart', (e) => {
+                if (e.target.classList.contains('crop-handle') || e.target.classList.contains('patch-num-badge')) return;
+                if (e.touches.length !== 1) return;
+                e.stopPropagation();
+                e.preventDefault();
+                onDragStart(e.touches[0].clientX, e.touches[0].clientY);
+                window.addEventListener('touchmove', onWinDragTouchMove, { passive: false });
+                window.addEventListener('touchend', onWinDragTouchEnd);
+                window.addEventListener('touchcancel', onWinDragTouchEnd);
+            }, { passive: false });
         }
 
         function finalizeOverlayChange(patchId, div, nW, nH) {
@@ -5096,6 +5536,12 @@
             } else {
                 canvas.classList.add('mobile-hide');
                 sidebar.classList.add('mobile-show');
+                setTimeout(() => {
+                    const firstNote = document.querySelector('.patch-note-input:not(:disabled)');
+                    if (firstNote) {
+                        firstNote.focus();
+                    }
+                }, 100);
             }
         }
 
