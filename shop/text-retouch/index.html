@@ -42,6 +42,7 @@
             --border: #e2e8f0;
             --border-strong: #cbd5e1;
             --border-active: #2563eb;
+            --zoom-scale: 1;
         }
 
         * {
@@ -680,10 +681,10 @@
 
         .patch-overlay.is-editable {
             cursor: move;
-            border: 2.5px dashed #ef4444 !important;
+            border: max(2px, calc(3px / var(--zoom-scale, 1))) dashed #ef4444 !important;
             background: rgba(239, 68, 68, 0.16) !important;
             touch-action: none;
-            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9), 0 3px 14px rgba(239, 68, 68, 0.28);
+            box-shadow: 0 0 0 calc(1px / var(--zoom-scale, 1)) rgba(255, 255, 255, 0.9), 0 3px 14px rgba(239, 68, 68, 0.28);
         }
 
         /* Center Drag Guide on editable box */
@@ -693,32 +694,32 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 5px;
+            gap: calc(5px / var(--zoom-scale, 1));
             color: #dc2626;
-            font-size: 0.76rem;
+            font-size: calc(13px / var(--zoom-scale, 1));
             font-weight: 700;
             font-family: 'Outfit', sans-serif;
             pointer-events: none;
             user-select: none;
             background: rgba(255, 255, 255, 0.42);
             border-radius: 4px;
-            margin: 3px;
+            margin: calc(4px / var(--zoom-scale, 1));
             backdrop-filter: blur(1px);
         }
 
         .patch-center-drag i {
-            font-size: 0.88rem;
+            font-size: calc(14px / var(--zoom-scale, 1));
         }
 
-        /* Resize Handles for Editable Overlay (Touch & Mouse friendly - High Visibility) */
+        /* Resize Handles for Editable Overlay (Touch & Mouse friendly - Counter-Scaled for Mobile) */
         .crop-handle {
             position: absolute;
-            width: 20px;
-            height: 20px;
+            width: calc(30px / var(--zoom-scale, 1));
+            height: calc(30px / var(--zoom-scale, 1));
             background: #ffffff;
-            border: 2.5px solid #ef4444;
+            border: calc(3.5px / var(--zoom-scale, 1)) solid #ef4444;
             border-radius: 50%;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+            box-shadow: 0 calc(2px / var(--zoom-scale, 1)) calc(8px / var(--zoom-scale, 1)) rgba(0, 0, 0, 0.45);
             z-index: 30;
             pointer-events: auto;
             touch-action: none;
@@ -729,110 +730,59 @@
 
         .crop-handle::before {
             content: '';
-            width: 6px;
-            height: 6px;
+            width: calc(10px / var(--zoom-scale, 1));
+            height: calc(10px / var(--zoom-scale, 1));
             background: #ef4444;
             border-radius: 50%;
         }
 
-        /* 46px touch hit area for mobile fingertips */
+        /* 50px physical touch hit area for mobile fingertips */
         .crop-handle::after {
             content: '';
             position: absolute;
-            top: -13px;
-            left: -13px;
-            right: -13px;
-            bottom: -13px;
+            top: calc(-12px / var(--zoom-scale, 1));
+            left: calc(-12px / var(--zoom-scale, 1));
+            right: calc(-12px / var(--zoom-scale, 1));
+            bottom: calc(-12px / var(--zoom-scale, 1));
             border-radius: 50%;
         }
 
         .crop-handle.handle-nw {
-            top: -10px;
-            left: -10px;
+            top: 0;
+            left: 0;
+            transform: translate(-50%, -50%);
             cursor: nwse-resize;
         }
 
         .crop-handle.handle-ne {
-            top: -10px;
-            right: -10px;
+            top: 0;
+            left: 100%;
+            transform: translate(-50%, -50%);
             cursor: nesw-resize;
         }
 
         .crop-handle.handle-se {
-            bottom: -10px;
-            right: -10px;
+            top: 100%;
+            left: 100%;
+            transform: translate(-50%, -50%);
             cursor: nwse-resize;
         }
 
         .crop-handle.handle-sw {
-            bottom: -10px;
-            left: -10px;
+            top: 100%;
+            left: 0;
+            transform: translate(-50%, -50%);
             cursor: nesw-resize;
-        }
-
-        /* Floating Quick Scale Toolbar attached to active patch */
-        .patch-quick-scale-bar {
-            position: absolute;
-            top: calc(100% + 10px);
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            background: #0f172a;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 20px;
-            padding: 4px 8px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-            z-index: 40;
-            white-space: nowrap;
-            pointer-events: auto;
-            touch-action: auto;
-            animation: fadeInScale 0.2s ease;
-        }
-
-        .patch-quick-scale-bar.flip-top {
-            top: auto;
-            bottom: calc(100% + 10px);
-        }
-
-        @keyframes fadeInScale {
-            from { opacity: 0; transform: translate(-50%, -4px); }
-            to { opacity: 1; transform: translate(-50%, 0); }
-        }
-
-        .btn-quick-scale {
-            background: rgba(255, 255, 255, 0.12);
-            color: #ffffff;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            padding: 5px 10px;
-            border-radius: 14px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            font-family: inherit;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            cursor: pointer;
-            transition: all 0.12s;
-            white-space: nowrap;
-        }
-
-        .btn-quick-scale:hover,
-        .btn-quick-scale:active {
-            background: #ef4444;
-            border-color: #ef4444;
-            transform: scale(0.96);
         }
 
         .patch-num-badge {
             position: absolute;
-            top: -12px;
-            left: -4px;
-            min-width: 24px;
-            height: 24px;
-            border-radius: 12px;
-            font-size: 0.74rem;
+            top: calc(-14px / var(--zoom-scale, 1));
+            left: calc(-14px / var(--zoom-scale, 1));
+            min-width: calc(26px / var(--zoom-scale, 1));
+            height: calc(26px / var(--zoom-scale, 1));
+            border-radius: calc(13px / var(--zoom-scale, 1));
+            font-size: calc(12px / var(--zoom-scale, 1));
             font-weight: 800;
             display: flex;
             align-items: center;
@@ -840,22 +790,11 @@
             font-family: 'Outfit', sans-serif;
             color: white;
             background: #ef4444;
-            border: 2px solid #ffffff;
+            border: calc(2px / var(--zoom-scale, 1)) solid #ffffff;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
             z-index: 35;
-            padding: 0 4px;
+            padding: 0 calc(4px / var(--zoom-scale, 1));
             pointer-events: none;
-        }
-            height: 22px;
-            border-radius: 50%;
-            font-size: 0.7rem;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Outfit', sans-serif;
-            color: white;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         /* Patch status colors on canvas */
@@ -2572,7 +2511,30 @@
             }
 
             #toastContainer {
-                bottom: 74px;
+                top: 58px;
+                bottom: auto;
+                left: 12px;
+                right: 12px;
+                transform: none;
+                flex-direction: column;
+                align-items: center;
+                width: auto;
+                max-width: 100%;
+            }
+
+            .toast {
+                font-size: 0.8rem;
+                padding: 8px 12px;
+                box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
+                cursor: pointer;
+            }
+
+            .sidebar-legal-tip {
+                display: none !important;
+            }
+
+            .sidebar-scroll {
+                padding-bottom: 160px !important;
             }
         }
 
@@ -3918,6 +3880,7 @@
         function applyTransform() {
             document.getElementById('canvasWrapper').style.transform = `translate(${translateX}px,${translateY}px) scale(${scale})`;
             document.getElementById('zoomLabel').textContent = Math.round(scale * 100) + '%';
+            document.documentElement.style.setProperty('--zoom-scale', scale || 1);
         }
 
         function fitToScreen() {
@@ -4525,6 +4488,7 @@
                 placeholder="จุดนี้จะแก้เป็นอะไรขอรับเจ้านาย"
                 ${patch.status !== 'waiting' ? 'disabled' : ''}
                 oninput="updatePatchNote('${patchId}', this.value)"
+                onfocus="scrollPatchIntoView('${patchId}')"
             >${patch.note}</textarea>
 
             <div class="patch-card-footer">
@@ -4808,32 +4772,6 @@
                     dragGuide.innerHTML = '<i class="fa-solid fa-arrows-up-down-left-right"></i> <span>แตะค้างเลื่อนย้าย</span>';
                     div.appendChild(dragGuide);
 
-                    // Floating quick scale buttons
-                    const scaleBar = document.createElement('div');
-                    scaleBar.className = 'patch-quick-scale-bar';
-                    if (py + ph + 55 > nH) scaleBar.classList.add('flip-top');
-                    scaleBar.innerHTML = `
-                        <button type="button" class="btn-quick-scale" data-action="shrink" title="ย่อขนาด"><i class="fa-solid fa-minus"></i> ย่อ</button>
-                        <button type="button" class="btn-quick-scale" data-action="expand" title="ขยายขนาด"><i class="fa-solid fa-plus"></i> ขยาย</button>
-                        <button type="button" class="btn-quick-scale" data-action="wider" title="ขยายความกว้าง"><i class="fa-solid fa-arrows-left-right"></i> กว้าง</button>
-                        <button type="button" class="btn-quick-scale" data-action="taller" title="ขยายความสูง"><i class="fa-solid fa-arrows-up-down"></i> สูง</button>
-                    `;
-
-                    scaleBar.querySelectorAll('.btn-quick-scale').forEach(b => {
-                        const handleScaleClick = (ev) => {
-                            ev.stopPropagation();
-                            ev.preventDefault();
-                            const act = b.dataset.action;
-                            if (act === 'shrink') adjustPatchScale(patch.id, -24, -12);
-                            else if (act === 'expand') adjustPatchScale(patch.id, 24, 12);
-                            else if (act === 'wider') adjustPatchScale(patch.id, 24, 0);
-                            else if (act === 'taller') adjustPatchScale(patch.id, 0, 14);
-                        };
-                        b.addEventListener('click', handleScaleClick);
-                        b.addEventListener('touchstart', handleScaleClick, { passive: false });
-                    });
-                    div.appendChild(scaleBar);
-
                     attachOverlayResizeAndDrag(div, patch.id, nW, nH);
                 }
 
@@ -4892,12 +4830,6 @@
                 div.style.top = curT + 'px';
                 div.style.width = curW + 'px';
                 div.style.height = curH + 'px';
-
-                const bar = div.querySelector('.patch-quick-scale-bar');
-                if (bar) {
-                    if (curT + curH + 55 > nH) bar.classList.add('flip-top');
-                    else bar.classList.remove('flip-top');
-                }
             }
 
             function onResizeEnd() {
@@ -4972,12 +4904,6 @@
                 const curT = Math.max(0, Math.min(maxT, startT + dy));
                 div.style.left = curL + 'px';
                 div.style.top = curT + 'px';
-
-                const bar = div.querySelector('.patch-quick-scale-bar');
-                if (bar) {
-                    if (curT + startH + 55 > nH) bar.classList.add('flip-top');
-                    else bar.classList.remove('flip-top');
-                }
             }
 
             function onDragEnd() {
@@ -5002,7 +4928,7 @@
             const onWinDragTouchEnd = () => onDragEnd();
 
             div.addEventListener('mousedown', (e) => {
-                if (e.target.closest('.crop-handle') || e.target.closest('.btn-quick-scale')) return;
+                if (e.target.closest('.crop-handle')) return;
                 e.stopPropagation();
                 e.preventDefault();
                 onDragStart(e.clientX, e.clientY);
@@ -5011,7 +4937,7 @@
             });
 
             div.addEventListener('touchstart', (e) => {
-                if (e.target.closest('.crop-handle') || e.target.closest('.btn-quick-scale')) return;
+                if (e.target.closest('.crop-handle')) return;
                 if (e.touches.length !== 1) return;
                 e.stopPropagation();
                 e.preventDefault();
@@ -5020,42 +4946,6 @@
                 window.addEventListener('touchend', onWinDragTouchEnd);
                 window.addEventListener('touchcancel', onWinDragTouchEnd);
             }, { passive: false });
-        }
-
-        /* Dedicated Scale Adjuster (for quick buttons) */
-        function adjustPatchScale(patchId, dWidth, dHeight) {
-            const patch = patches[patchId];
-            if (!patch) return;
-            const content = document.getElementById('mainImage').style.display !== 'none'
-                ? document.getElementById('mainImage') : document.getElementById('pdfCanvas');
-            const nW = content.naturalWidth || content.width;
-            const nH = content.naturalHeight || content.height;
-
-            const div = document.getElementById(`overlay_${patchId}`);
-            if (!div) return;
-
-            let curL = parseFloat(div.style.left) || 0;
-            let curT = parseFloat(div.style.top) || 0;
-            let curW = parseFloat(div.style.width) || 0;
-            let curH = parseFloat(div.style.height) || 0;
-
-            const newW = Math.max(30, Math.min(nW, Math.round(curW + dWidth)));
-            const newH = Math.max(20, Math.min(nH, Math.round(curH + dHeight)));
-            const newL = Math.max(0, Math.min(nW - newW, Math.round(curL - (newW - curW) / 2)));
-            const newT = Math.max(0, Math.min(nH - newH, Math.round(curT - (newH - curH) / 2)));
-
-            div.style.left = newL + 'px';
-            div.style.top = newT + 'px';
-            div.style.width = newW + 'px';
-            div.style.height = newH + 'px';
-
-            const bar = div.querySelector('.patch-quick-scale-bar');
-            if (bar) {
-                if (newT + newH + 55 > nH) bar.classList.add('flip-top');
-                else bar.classList.remove('flip-top');
-            }
-
-            finalizeOverlayChange(patchId, div, nW, nH);
         }
 
         function finalizeOverlayChange(patchId, div, nW, nH) {
@@ -5703,13 +5593,35 @@
         /* ======================================================
            TOAST
         ====================================================== */
-        function toast(msg, type = 'info', duration = 4000) {
+        function toast(msg, type = 'info', duration = 3000) {
             const tc = document.getElementById('toastContainer');
+            if (!tc) return;
+            // Limit active toasts to avoid clutter
+            while (tc.children.length >= 2) {
+                tc.firstElementChild.remove();
+            }
             const el = document.createElement('div');
             el.className = `toast ${type}`;
-            el.innerHTML = `<i class="fa-solid fa-${type === 'success' ? 'circle-check' : type === 'error' ? 'circle-xmark' : 'circle-info'}"></i> ${msg}`;
+            el.innerHTML = `<i class="fa-solid fa-${type === 'success' ? 'circle-check' : type === 'error' ? 'circle-xmark' : 'circle-info'}"></i> <span>${msg}</span>`;
+            el.title = 'แตะเพื่อปิด';
+            el.onclick = () => el.remove();
             tc.appendChild(el);
-            setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, duration);
+            setTimeout(() => {
+                if (el.parentNode) {
+                    el.style.opacity = '0';
+                    el.style.transition = 'opacity 0.25s';
+                    setTimeout(() => el.remove(), 250);
+                }
+            }, duration);
+        }
+
+        function scrollPatchIntoView(patchId) {
+            const card = document.getElementById(`card_${patchId}`);
+            if (card) {
+                setTimeout(() => {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 300);
+            }
         }
 
         /* ======================================================
