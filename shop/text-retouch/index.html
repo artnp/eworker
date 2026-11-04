@@ -682,33 +682,14 @@
         .patch-overlay.is-editable {
             cursor: move;
             border: max(2px, calc(3px / var(--zoom-scale, 1))) dashed #ef4444 !important;
-            background: rgba(239, 68, 68, 0.16) !important;
+            background: transparent !important;
             touch-action: none;
             box-shadow: 0 0 0 calc(1px / var(--zoom-scale, 1)) rgba(255, 255, 255, 0.9), 0 3px 14px rgba(239, 68, 68, 0.28);
         }
 
-        /* Center Drag Guide on editable box */
+        /* Center Drag Guide on editable box - completely transparent to clearly see document text/image */
         .patch-center-drag {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: calc(5px / var(--zoom-scale, 1));
-            color: #dc2626;
-            font-size: calc(13px / var(--zoom-scale, 1));
-            font-weight: 700;
-            font-family: 'Outfit', sans-serif;
-            pointer-events: none;
-            user-select: none;
-            background: rgba(255, 255, 255, 0.42);
-            border-radius: 4px;
-            margin: calc(4px / var(--zoom-scale, 1));
-            backdrop-filter: blur(1px);
-        }
-
-        .patch-center-drag i {
-            font-size: calc(14px / var(--zoom-scale, 1));
+            display: none !important;
         }
 
         /* Resize Handles for Editable Overlay (Touch & Mouse friendly - Counter-Scaled for Mobile) */
@@ -1015,6 +996,262 @@
             font-family: monospace;
             font-size: 0.72rem;
             color: #b91c1c;
+        }
+
+        /* ======================================================
+           JOB STATUS BANNER & START JOB ACTION (send.html design)
+        ====================================================== */
+        .job-status-banner {
+            padding: 10px 0 20px 0;
+            margin-top: 10px;
+            margin-bottom: 8px;
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            width: 100%;
+        }
+
+        .job-status-banner.hidden {
+            display: none !important;
+        }
+
+        .job-ready-view.hidden,
+        .job-processing-view.hidden {
+            display: none !important;
+        }
+
+        .btn-start-job {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            background: linear-gradient(135deg, #4338ca 0%, #4f46e5 25%, #2563eb 50%, #0284c7 75%, #4338ca 100%);
+            background-size: 300% 300%;
+            color: #ffffff;
+            border: 1.5px solid rgba(255, 255, 255, 0.35);
+            padding: 13px 18px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 800;
+            font-family: inherit;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 18px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0.65);
+            animation: startBtnPulse 2.2s infinite ease-in-out, gradientShift 6s ease infinite;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Glowing radar pulse & breathing scale */
+        @keyframes startBtnPulse {
+            0% {
+                box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0.65);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 8px 28px rgba(79, 70, 229, 0.6), 0 0 0 10px rgba(99, 102, 241, 0);
+                transform: scale(1.02);
+            }
+            100% {
+                box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0);
+                transform: scale(1);
+            }
+        }
+
+        /* Continuous moving background gradient */
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Shimmer light sweep across the button */
+        .btn-start-job::after {
+            content: '';
+            position: absolute;
+            top: -60%;
+            left: -80%;
+            width: 50%;
+            height: 220%;
+            background: linear-gradient(
+                to right,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.55) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            transform: rotate(25deg);
+            animation: btnShimmerSweep 2.6s infinite cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        @keyframes btnShimmerSweep {
+            0% {
+                left: -80%;
+            }
+            40%, 100% {
+                left: 160%;
+            }
+        }
+
+        /* Bouncing rocket icon animation */
+        .btn-start-job .fa-rocket {
+            font-size: 17px;
+            display: inline-block;
+            animation: rocketWiggle 1.8s infinite ease-in-out;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+        }
+
+        @keyframes rocketWiggle {
+            0%, 100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            20% {
+                transform: translate(-1px, -2px) rotate(-10deg);
+            }
+            40% {
+                transform: translate(2px, -4px) rotate(8deg) scale(1.15);
+            }
+            60% {
+                transform: translate(-1px, -2px) rotate(-6deg);
+            }
+            80% {
+                transform: translate(1px, 0) rotate(2deg);
+            }
+        }
+
+        .btn-start-job:hover {
+            transform: scale(1.03);
+            box-shadow: 0 8px 30px rgba(79, 70, 229, 0.65), 0 0 0 4px rgba(129, 140, 248, 0.4);
+        }
+
+        .btn-start-job:active {
+            transform: scale(0.97);
+            animation: none;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
+        }
+
+        /* Processing View */
+        .job-processing-view {
+            background: #ffffff;
+            border: 1.5px solid #c7d2fe;
+            border-radius: 12px;
+            padding: 11px 14px;
+            box-shadow: 0 2px 10px rgba(79, 70, 229, 0.08);
+        }
+
+        .processing-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .processing-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #3730a3;
+        }
+
+        .processing-glow-dot {
+            width: 9px;
+            height: 9px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #10b981;
+            animation: glowPulse 1.4s infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.8); }
+        }
+
+        .btn-reset-job {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-reset-job:hover {
+            border-color: #cbd5e1;
+            color: var(--text);
+            background: #f8fafc;
+        }
+
+        .progress-track-wrapper {
+            width: 100%;
+            height: 7px;
+            background: #e0e7ff;
+            border-radius: 99px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .animated-line-bar {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #4f46e5 0%, #06b6d4 50%, #10b981 100%, #4f46e5 200%);
+            background-size: 200% 100%;
+            border-radius: 99px;
+            animation: streamBar 1.4s linear infinite;
+        }
+
+        @keyframes streamBar {
+            0% { background-position: 200% 0; }
+            100% { background-position: 0 0; }
+        }
+
+        /* Trash button inside Card Header */
+        .btn-card-trash {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            padding: 5px 8px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        .btn-card-trash:hover {
+            color: #dc2626;
+            background: #fee2e2;
+            transform: scale(1.08);
+        }
+
+        .btn-card-trash:active {
+            transform: scale(0.95);
+        }
+
+        .mobile-tab-btn.tab-eval-active {
+            background: linear-gradient(135deg, #4338ca 0%, #4f46e5 35%, #2563eb 100%) !important;
+            color: #ffffff !important;
+            box-shadow: 0 2px 10px rgba(79, 70, 229, 0.4) !important;
+        }
+
+        .mobile-tab-btn.tab-eval-active i {
+            color: #ffffff !important;
         }
 
         .sidebar-scroll {
@@ -2780,6 +3017,30 @@
                                 แตะเลือกจุดที่ต้องการแก้บนภาพ<br>หรือลากตีกรอบข้อความที่ต้องการ
                             </div>
                         </div>
+
+                        <!-- Job Status Banner & Start Job Action (Directly below the cards / send.html design) -->
+                        <div class="job-status-banner hidden" id="jobStatusBanner">
+                            <div class="job-ready-view" id="jobReadyView">
+                                <button class="btn-start-job" id="btnStartJob" type="button">
+                                    <i class="fa-solid fa-rocket"></i>
+                                    <span>กดประเมินราคา</span>
+                                </button>
+                            </div>
+                            <div class="job-processing-view hidden" id="jobProcessingView">
+                                <div class="processing-meta">
+                                    <div class="processing-label">
+                                        <span class="processing-glow-dot"></span>
+                                        <span class="processing-text" id="jobProcessingText">กำลังประมวลผล / รอนักรีทัชคิดราคา...</span>
+                                    </div>
+                                    <button class="btn-reset-job" id="btnResetJob" type="button" title="แก้ไขจุดเพิ่มเติม">
+                                        <i class="fa-solid fa-pen-to-square"></i> แก้ไขเพิ่ม
+                                    </button>
+                                </div>
+                                <div class="progress-track-wrapper">
+                                    <div class="animated-line-bar"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="sidebar-footer" id="sidebarFooter" style="display:none;">
@@ -2812,8 +3073,8 @@
                     <button class="mobile-tab-btn active" id="mobileTabCanvas" onclick="switchMobileTab('canvas')">
                         <i class="fa-solid fa-image"></i> รูปภาพ
                     </button>
-                    <button class="mobile-tab-btn" id="mobileTabPatches" onclick="switchMobileTab('patches')">
-                        <i class="fa-solid fa-list-check"></i> รายการจุดแก้
+                    <button class="mobile-tab-btn" id="mobileTabPatches" onclick="handleMobilePatchTabClick()">
+                        <span id="mobileTabPatchesContent"><i class="fa-solid fa-list-check"></i> รายการจุดแก้</span>
                         <span id="mobilePatchCount"
                             style="background:var(--danger);color:white;border-radius:10px;padding:1px 6px;font-size:0.7rem;display:none;"></span>
                     </button>
@@ -4003,6 +4264,129 @@
                     }
                 }
             }
+            updateJobStatusBanner();
+        }
+
+        /* ======================================================
+           JOB STATUS BANNER CONTROLLER (send.html design)
+        ====================================================== */
+        function updateJobStatusBanner() {
+            const banner = document.getElementById('jobStatusBanner');
+            const readyView = document.getElementById('jobReadyView');
+            const procView = document.getElementById('jobProcessingView');
+            const procText = document.getElementById('jobProcessingText');
+            const btnAdd = document.getElementById('btnAddPatch');
+            const mobileTabPatches = document.getElementById('mobileTabPatches');
+            const mobileTabContent = document.getElementById('mobileTabPatchesContent');
+
+            const patchList = Object.values(patches);
+            const waitingPatch = patchList.find(p => p.status === 'waiting');
+            const activeProcessing = patchList.find(p => ['pending_review', 'pending_payment', 'paid', 'working'].includes(p.status));
+
+            // Update mobile tab 2 (Bottom bar button)
+            if (mobileTabPatches) {
+                if (waitingPatch) {
+                    mobileTabPatches.classList.add('tab-eval-active');
+                    if (mobileTabContent) {
+                        mobileTabContent.innerHTML = '<i class="fa-solid fa-rocket" style="animation:rocketWiggle 1.8s infinite;"></i> ประเมินราคา';
+                    }
+                } else {
+                    mobileTabPatches.classList.remove('tab-eval-active');
+                    if (mobileTabContent) {
+                        mobileTabContent.innerHTML = '<i class="fa-solid fa-list-check"></i> รายการจุดแก้';
+                    }
+                }
+            }
+
+            if (!banner) return;
+
+            const list = document.getElementById('patchList');
+            if (banner && list && banner.parentNode === list) {
+                list.appendChild(banner);
+            }
+
+            if (waitingPatch) {
+                banner.classList.remove('hidden');
+                if (readyView) readyView.classList.remove('hidden');
+                if (procView) procView.classList.add('hidden');
+
+                const btnStart = document.getElementById('btnStartJob');
+                if (btnStart) {
+                    btnStart.innerHTML = `<i class="fa-solid fa-rocket"></i> <span>กดประเมินราคา</span>`;
+                    btnStart.onclick = () => {
+                        const noteInput = document.getElementById(`note_${waitingPatch.id}`);
+                        const noteVal = noteInput ? noteInput.value : (waitingPatch.note || '');
+                        if (!noteVal.trim()) {
+                            toast('⚠️ กรุณาพิมพ์ข้อความที่ต้องการแก้ไขในช่องโน้ตก่อนครับ', 'error');
+                            switchMobileTab('patches');
+                            if (noteInput) {
+                                noteInput.focus();
+                                noteInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }
+                            return;
+                        }
+                        sendPatch(waitingPatch.id);
+                    };
+                }
+            } else if (activeProcessing) {
+                banner.classList.remove('hidden');
+                if (readyView) readyView.classList.add('hidden');
+                if (procView) procView.classList.remove('hidden');
+
+                if (procText) {
+                    if (activeProcessing.status === 'pending_review') {
+                        procText.textContent = shopStatus === 'away' ? 'โปรดรอนักรีทัชมาประเมินราคา' : 'กำลังประมวลผล / รอนักรีทัชคิดราคา...';
+                    } else if (activeProcessing.status === 'pending_payment') {
+                        procText.textContent = `นักรีทัชคิดราคาแล้ว ฿${activeProcessing.price} (รอชำระเงิน)`;
+                    } else if (activeProcessing.status === 'paid' || activeProcessing.status === 'working') {
+                        procText.textContent = 'กำลังรีทัชงานใน Photoshop...';
+                    }
+                }
+
+                const btnReset = document.getElementById('btnResetJob');
+                if (btnReset) {
+                    if (activeProcessing.status === 'pending_review') {
+                        btnReset.style.display = 'inline-flex';
+                        btnReset.onclick = () => {
+                            activeProcessing.status = 'waiting';
+                            savePatchesToLocalStorage();
+                            renderPatchCard(activeProcessing.id);
+                            renderPatchOverlays();
+                            updateJobStatusBanner();
+                            toast('เปิดให้แก้ไขรายละเอียดจุดเดิมแล้ว', 'info');
+                        };
+                    } else {
+                        btnReset.style.display = 'none';
+                    }
+                }
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+
+        function handleMobilePatchTabClick() {
+            const patchList = Object.values(patches);
+            const waitingPatch = patchList.find(p => p.status === 'waiting');
+            const sidebar = document.getElementById('sidebar');
+            const isSidebarShowing = sidebar && sidebar.classList.contains('mobile-show');
+
+            if (waitingPatch) {
+                if (!isSidebarShowing) {
+                    switchMobileTab('patches');
+                    const noteEl = document.getElementById(`note_${waitingPatch.id}`);
+                    if (noteEl && !noteEl.value.trim()) {
+                        setTimeout(() => {
+                            noteEl.focus();
+                            noteEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }, 150);
+                    }
+                } else {
+                    const btnStart = document.getElementById('btnStartJob');
+                    if (btnStart) btnStart.click();
+                }
+            } else {
+                switchMobileTab('patches');
+            }
         }
 
         /* ======================================================
@@ -4165,13 +4549,24 @@
 
         function setSendBtnLoading(patchId, loading) {
             const btn = document.getElementById(`btnSend_${patchId}`);
-            if (!btn) return;
-            if (loading) {
-                btn.disabled = true;
-                btn.innerHTML = '<span class="spinner"></span> กำลังส่ง...';
-            } else {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> ประเมินราคา';
+            if (btn) {
+                if (loading) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner"></span> กำลังส่ง...';
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> ประเมินราคา';
+                }
+            }
+            const btnStart = document.getElementById('btnStartJob');
+            if (btnStart) {
+                if (loading) {
+                    btnStart.disabled = true;
+                    btnStart.innerHTML = '<span class="spinner"></span> <span>กำลังส่งประเมินราคา...</span>';
+                } else {
+                    btnStart.disabled = false;
+                    btnStart.innerHTML = '<i class="fa-solid fa-rocket"></i> <span>กดประเมินราคา</span>';
+                }
             }
         }
 
@@ -4447,6 +4842,11 @@
             ${headerLeft}
             ${headerMeta}
             ${headerPrice}
+            ${(!isDone && patch.status !== 'paid' && patch.status !== 'working') ? `
+                <button type="button" class="btn-card-trash" onclick="event.stopPropagation(); deletePatch('${patchId}');" title="ลบจุดนี้">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            ` : ''}
         </div>
         <div class="patch-card-body">
             <div class="patch-thumb-row">
@@ -4492,14 +4892,6 @@
             >${patch.note}</textarea>
 
             <div class="patch-card-footer">
-                ${patch.status === 'waiting' ? `
-                    <button class="btn-patch-action btn-send" id="btnSend_${patchId}" onclick="sendPatch('${patchId}')">
-                        <i class="fa-solid fa-paper-plane"></i> ประเมินราคา
-                    </button>
-                    <button class="btn-delete" onclick="deletePatch('${patchId}')" title="ลบจุดนี้">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                ` : ''}
                 ${patch.status === 'pending_review' ? `
                     <span style="font-size:0.82rem;color:#b45309;font-weight:700;display:flex;align-items:center;gap:6px;">
                         <span class="spinner"></span> ${shopStatus === 'away' ? 'โปรดรอนักรีทัชมาประเมินราคาให้' : 'รอนักรีทัชตรวจสอบ & คิดราคา...'}
@@ -4546,7 +4938,17 @@
             if (!card) {
                 card = document.createElement('div');
                 card.id = `card_${patchId}`;
-                list.insertBefore(card, document.getElementById('patchesEmpty'));
+                const banner = document.getElementById('jobStatusBanner');
+                if (banner && banner.parentNode === list) {
+                    list.insertBefore(card, banner);
+                } else {
+                    list.insertBefore(card, document.getElementById('patchesEmpty'));
+                }
+            } else {
+                const banner = document.getElementById('jobStatusBanner');
+                if (banner && banner.parentNode === list && card.nextSibling !== banner) {
+                    list.insertBefore(card, banner);
+                }
             }
             card.className = `patch-card ${isDone ? 'patch-card-done' : ''} ${activePatchId === patchId ? 'active' : ''}`;
             card.innerHTML = html;
@@ -4686,6 +5088,7 @@
             updateEmpty();
             updateTotal();
             updateAddPatchButton();
+            updateJobStatusBanner();
         }
 
         function updateEmpty() {
@@ -4696,6 +5099,7 @@
             if (count > 0) { countEl.style.display = 'inline'; countEl.textContent = count; }
             else countEl.style.display = 'none';
             updateAddPatchButton();
+            updateJobStatusBanner();
         }
 
         function updateTotal() {
@@ -4765,13 +5169,6 @@
 
                 if (patch.status === 'waiting') {
                     div.classList.add('is-editable');
-
-                    // Center move grip indicator
-                    const dragGuide = document.createElement('div');
-                    dragGuide.className = 'patch-center-drag';
-                    dragGuide.innerHTML = '<i class="fa-solid fa-arrows-up-down-left-right"></i> <span>แตะค้างเลื่อนย้าย</span>';
-                    div.appendChild(dragGuide);
-
                     attachOverlayResizeAndDrag(div, patch.id, nW, nH);
                 }
 
