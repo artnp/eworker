@@ -680,64 +680,172 @@
 
         .patch-overlay.is-editable {
             cursor: move;
-            border: 2px dashed #2563eb !important;
-            background: rgba(37, 99, 235, 0.15) !important;
+            border: 2.5px dashed #ef4444 !important;
+            background: rgba(239, 68, 68, 0.16) !important;
             touch-action: none;
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9), 0 3px 14px rgba(239, 68, 68, 0.28);
         }
 
-        /* Resize Handles for Editable Overlay (Touch & Mouse friendly) */
+        /* Center Drag Guide on editable box */
+        .patch-center-drag {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            color: #dc2626;
+            font-size: 0.76rem;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            pointer-events: none;
+            user-select: none;
+            background: rgba(255, 255, 255, 0.42);
+            border-radius: 4px;
+            margin: 3px;
+            backdrop-filter: blur(1px);
+        }
+
+        .patch-center-drag i {
+            font-size: 0.88rem;
+        }
+
+        /* Resize Handles for Editable Overlay (Touch & Mouse friendly - High Visibility) */
         .crop-handle {
             position: absolute;
-            width: 12px;
-            height: 12px;
+            width: 20px;
+            height: 20px;
             background: #ffffff;
-            border: 2px solid #2563eb;
-            border-radius: 3px;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
-            z-index: 25;
+            border: 2.5px solid #ef4444;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+            z-index: 30;
             pointer-events: auto;
             touch-action: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        /* 36px touch hit area */
+        .crop-handle::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: #ef4444;
+            border-radius: 50%;
+        }
+
+        /* 46px touch hit area for mobile fingertips */
         .crop-handle::after {
             content: '';
             position: absolute;
-            top: -12px;
-            left: -12px;
-            right: -12px;
-            bottom: -12px;
+            top: -13px;
+            left: -13px;
+            right: -13px;
+            bottom: -13px;
+            border-radius: 50%;
         }
 
         .crop-handle.handle-nw {
-            top: -6px;
-            left: -6px;
+            top: -10px;
+            left: -10px;
             cursor: nwse-resize;
         }
 
         .crop-handle.handle-ne {
-            top: -6px;
-            right: -6px;
+            top: -10px;
+            right: -10px;
             cursor: nesw-resize;
         }
 
         .crop-handle.handle-se {
-            bottom: -6px;
-            right: -6px;
+            bottom: -10px;
+            right: -10px;
             cursor: nwse-resize;
         }
 
         .crop-handle.handle-sw {
-            bottom: -6px;
-            left: -6px;
+            bottom: -10px;
+            left: -10px;
             cursor: nesw-resize;
+        }
+
+        /* Floating Quick Scale Toolbar attached to active patch */
+        .patch-quick-scale-bar {
+            position: absolute;
+            top: calc(100% + 10px);
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 4px 8px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+            z-index: 40;
+            white-space: nowrap;
+            pointer-events: auto;
+            touch-action: auto;
+            animation: fadeInScale 0.2s ease;
+        }
+
+        .patch-quick-scale-bar.flip-top {
+            top: auto;
+            bottom: calc(100% + 10px);
+        }
+
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: translate(-50%, -4px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+
+        .btn-quick-scale {
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 5px 10px;
+            border-radius: 14px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.12s;
+            white-space: nowrap;
+        }
+
+        .btn-quick-scale:hover,
+        .btn-quick-scale:active {
+            background: #ef4444;
+            border-color: #ef4444;
+            transform: scale(0.96);
         }
 
         .patch-num-badge {
             position: absolute;
-            top: -11px;
-            left: -2px;
-            width: 22px;
+            top: -12px;
+            left: -4px;
+            min-width: 24px;
+            height: 24px;
+            border-radius: 12px;
+            font-size: 0.74rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Outfit', sans-serif;
+            color: white;
+            background: #ef4444;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            z-index: 35;
+            padding: 0 4px;
+            pointer-events: none;
+        }
             height: 22px;
             border-radius: 50%;
             font-size: 0.7rem;
@@ -4035,18 +4143,16 @@
                 return;
             }
 
-            // เปิด/สลับไปที่แท็บ Admin ทันทีเมื่อส่งคำสั่ง (หากมีแท็บเปิดอยู่แล้วจะ select แท็บเดิม ไม่เปิดซ้ำ)
-            try {
-                window.open('http://127.0.0.1:5000/admin-text-retouch.html', 'admin_text_retouch_tab');
-            } catch (e) {
-                console.warn('[TextRetouch] Cannot open admin tab:', e);
-            }
+            const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
-            try {
-                const bc = new BroadcastChannel('admin_text_retouch_singleton');
-                bc.postMessage({ type: 'FOCUS_REQUEST', timestamp: Date.now() });
-                bc.close();
-            } catch (e) { }
+            // สำหรับเครื่อง Dev ในเครื่องตัวเองเท่านั้น (ห้ามรันบนมือถือหรือเครื่องลูกค้าจริง)
+            if (isLocalDev) {
+                try {
+                    const bc = new BroadcastChannel('admin_text_retouch_singleton');
+                    bc.postMessage({ type: 'FOCUS_REQUEST', timestamp: Date.now() });
+                    bc.close();
+                } catch (e) { }
+            }
 
             setSendBtnLoading(patchId, true);
             patch.status = 'pending_review';
@@ -4075,12 +4181,14 @@
                 savePatchesToLocalStorage();
                 toast(`✅ ส่งจุดที่ ${patch.num} ให้นักรีทัชประเมินราคาแล้ว ${shopStatus === 'away' ? 'โปรดรอนักรีทัชมาประเมินราคาให้' : 'กรุณารอสักครู่...'}`, 'success');
 
-                // แจ้งเตือน local service (ถ้ามี)
-                fetch('http://127.0.0.1:5000/text-retouch-review', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sessionId, patchId })
-                }).catch(() => { });
+                // แจ้งเตือน local service เฉพาะกรณีรันบน localhost dev
+                if (isLocalDev) {
+                    fetch('http://127.0.0.1:5000/text-retouch-review', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sessionId, patchId })
+                    }).catch(() => { });
+                }
             } catch (err) {
                 patch.status = 'waiting';
                 savePatchesToLocalStorage();
@@ -4541,17 +4649,15 @@
 
                 toast('🚀 ส่งคำสั่งแก้งานให้ช่างแล้ว! กำลังเปิดเข้า Photoshop ทันที...', 'success');
 
-                // เปิด/สลับไปที่หน้าแอดมิน Photoshop ทันที
-                try {
-                    window.open('http://127.0.0.1:5000/admin-text-retouch.html', 'admin_text_retouch_tab');
-                } catch (e) { }
-
-                // แจ้งเตือน local service (ถ้ามี)
-                fetch('http://127.0.0.1:5000/text-retouch-paid', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ session_id: sessionId, patch_id: patchId })
-                }).catch(() => { });
+                const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                // แจ้งเตือน local service เฉพาะกรณีรันบน localhost dev
+                if (isLocalDev) {
+                    fetch('http://127.0.0.1:5000/text-retouch-paid', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ session_id: sessionId, patch_id: patchId })
+                    }).catch(() => { });
+                }
             } catch (err) {
                 toast('❌ ส่งคำสั่งแก้งานไม่สำเร็จ: ' + err.message, 'error');
             }
@@ -4597,7 +4703,10 @@
             document.querySelectorAll('.patch-card').forEach(c => c.classList.remove('active'));
             const card = document.getElementById(`card_${patchId}`);
             if (card) card.classList.add('active');
-            renderPatchOverlays();
+
+            document.querySelectorAll('.patch-overlay').forEach(ov => ov.classList.remove('active-patch'));
+            const activeOv = document.getElementById(`overlay_${patchId}`);
+            if (activeOv) activeOv.classList.add('active-patch');
         }
 
         async function deletePatch(patchId) {
@@ -4692,6 +4801,39 @@
 
                 if (patch.status === 'waiting') {
                     div.classList.add('is-editable');
+
+                    // Center move grip indicator
+                    const dragGuide = document.createElement('div');
+                    dragGuide.className = 'patch-center-drag';
+                    dragGuide.innerHTML = '<i class="fa-solid fa-arrows-up-down-left-right"></i> <span>แตะค้างเลื่อนย้าย</span>';
+                    div.appendChild(dragGuide);
+
+                    // Floating quick scale buttons
+                    const scaleBar = document.createElement('div');
+                    scaleBar.className = 'patch-quick-scale-bar';
+                    if (py + ph + 55 > nH) scaleBar.classList.add('flip-top');
+                    scaleBar.innerHTML = `
+                        <button type="button" class="btn-quick-scale" data-action="shrink" title="ย่อขนาด"><i class="fa-solid fa-minus"></i> ย่อ</button>
+                        <button type="button" class="btn-quick-scale" data-action="expand" title="ขยายขนาด"><i class="fa-solid fa-plus"></i> ขยาย</button>
+                        <button type="button" class="btn-quick-scale" data-action="wider" title="ขยายความกว้าง"><i class="fa-solid fa-arrows-left-right"></i> กว้าง</button>
+                        <button type="button" class="btn-quick-scale" data-action="taller" title="ขยายความสูง"><i class="fa-solid fa-arrows-up-down"></i> สูง</button>
+                    `;
+
+                    scaleBar.querySelectorAll('.btn-quick-scale').forEach(b => {
+                        const handleScaleClick = (ev) => {
+                            ev.stopPropagation();
+                            ev.preventDefault();
+                            const act = b.dataset.action;
+                            if (act === 'shrink') adjustPatchScale(patch.id, -24, -12);
+                            else if (act === 'expand') adjustPatchScale(patch.id, 24, 12);
+                            else if (act === 'wider') adjustPatchScale(patch.id, 24, 0);
+                            else if (act === 'taller') adjustPatchScale(patch.id, 0, 14);
+                        };
+                        b.addEventListener('click', handleScaleClick);
+                        b.addEventListener('touchstart', handleScaleClick, { passive: false });
+                    });
+                    div.appendChild(scaleBar);
+
                     attachOverlayResizeAndDrag(div, patch.id, nW, nH);
                 }
 
@@ -4725,21 +4867,21 @@
                 let curL = rL, curT = rT, curW = rW, curH = rH;
 
                 if (rPos === 'se') {
-                    curW = Math.max(20, Math.min(nW - rL, rW + dx));
-                    curH = Math.max(20, Math.min(nH - rT, rH + dy));
+                    curW = Math.max(24, Math.min(nW - rL, rW + dx));
+                    curH = Math.max(16, Math.min(nH - rT, rH + dy));
                 } else if (rPos === 'sw') {
-                    const newL = Math.max(0, Math.min(rL + rW - 20, rL + dx));
+                    const newL = Math.max(0, Math.min(rL + rW - 24, rL + dx));
                     curW = (rL + rW) - newL;
                     curL = newL;
-                    curH = Math.max(20, Math.min(nH - rT, rH + dy));
+                    curH = Math.max(16, Math.min(nH - rT, rH + dy));
                 } else if (rPos === 'ne') {
-                    const newT = Math.max(0, Math.min(rT + rH - 20, rT + dy));
+                    const newT = Math.max(0, Math.min(rT + rH - 16, rT + dy));
                     curH = (rT + rH) - newT;
                     curT = newT;
-                    curW = Math.max(20, Math.min(nW - rL, rW + dx));
+                    curW = Math.max(24, Math.min(nW - rL, rW + dx));
                 } else if (rPos === 'nw') {
-                    const newL = Math.max(0, Math.min(rL + rW - 20, rL + dx));
-                    const newT = Math.max(0, Math.min(rT + rH - 20, rT + dy));
+                    const newL = Math.max(0, Math.min(rL + rW - 24, rL + dx));
+                    const newT = Math.max(0, Math.min(rT + rH - 16, rT + dy));
                     curW = (rL + rW) - newL;
                     curH = (rT + rH) - newT;
                     curL = newL;
@@ -4750,6 +4892,12 @@
                 div.style.top = curT + 'px';
                 div.style.width = curW + 'px';
                 div.style.height = curH + 'px';
+
+                const bar = div.querySelector('.patch-quick-scale-bar');
+                if (bar) {
+                    if (curT + curH + 55 > nH) bar.classList.add('flip-top');
+                    else bar.classList.remove('flip-top');
+                }
             }
 
             function onResizeEnd() {
@@ -4824,6 +4972,12 @@
                 const curT = Math.max(0, Math.min(maxT, startT + dy));
                 div.style.left = curL + 'px';
                 div.style.top = curT + 'px';
+
+                const bar = div.querySelector('.patch-quick-scale-bar');
+                if (bar) {
+                    if (curT + startH + 55 > nH) bar.classList.add('flip-top');
+                    else bar.classList.remove('flip-top');
+                }
             }
 
             function onDragEnd() {
@@ -4848,7 +5002,7 @@
             const onWinDragTouchEnd = () => onDragEnd();
 
             div.addEventListener('mousedown', (e) => {
-                if (e.target.classList.contains('crop-handle') || e.target.classList.contains('patch-num-badge')) return;
+                if (e.target.closest('.crop-handle') || e.target.closest('.btn-quick-scale')) return;
                 e.stopPropagation();
                 e.preventDefault();
                 onDragStart(e.clientX, e.clientY);
@@ -4857,7 +5011,7 @@
             });
 
             div.addEventListener('touchstart', (e) => {
-                if (e.target.classList.contains('crop-handle') || e.target.classList.contains('patch-num-badge')) return;
+                if (e.target.closest('.crop-handle') || e.target.closest('.btn-quick-scale')) return;
                 if (e.touches.length !== 1) return;
                 e.stopPropagation();
                 e.preventDefault();
@@ -4866,6 +5020,42 @@
                 window.addEventListener('touchend', onWinDragTouchEnd);
                 window.addEventListener('touchcancel', onWinDragTouchEnd);
             }, { passive: false });
+        }
+
+        /* Dedicated Scale Adjuster (for quick buttons) */
+        function adjustPatchScale(patchId, dWidth, dHeight) {
+            const patch = patches[patchId];
+            if (!patch) return;
+            const content = document.getElementById('mainImage').style.display !== 'none'
+                ? document.getElementById('mainImage') : document.getElementById('pdfCanvas');
+            const nW = content.naturalWidth || content.width;
+            const nH = content.naturalHeight || content.height;
+
+            const div = document.getElementById(`overlay_${patchId}`);
+            if (!div) return;
+
+            let curL = parseFloat(div.style.left) || 0;
+            let curT = parseFloat(div.style.top) || 0;
+            let curW = parseFloat(div.style.width) || 0;
+            let curH = parseFloat(div.style.height) || 0;
+
+            const newW = Math.max(30, Math.min(nW, Math.round(curW + dWidth)));
+            const newH = Math.max(20, Math.min(nH, Math.round(curH + dHeight)));
+            const newL = Math.max(0, Math.min(nW - newW, Math.round(curL - (newW - curW) / 2)));
+            const newT = Math.max(0, Math.min(nH - newH, Math.round(curT - (newH - curH) / 2)));
+
+            div.style.left = newL + 'px';
+            div.style.top = newT + 'px';
+            div.style.width = newW + 'px';
+            div.style.height = newH + 'px';
+
+            const bar = div.querySelector('.patch-quick-scale-bar');
+            if (bar) {
+                if (newT + newH + 55 > nH) bar.classList.add('flip-top');
+                else bar.classList.remove('flip-top');
+            }
+
+            finalizeOverlayChange(patchId, div, nW, nH);
         }
 
         function finalizeOverlayChange(patchId, div, nW, nH) {
