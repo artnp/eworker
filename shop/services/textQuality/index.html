@@ -12,9 +12,10 @@
     <link rel="icon" type="image/png" sizes="192x192" href="../../../assets/images/favicon.png"
         onerror="this.onerror=null; this.href='../../assets/images/favicon.png';">
 
-    <!-- Fonts -->
+    <!-- Fonts & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap"
         rel="stylesheet">
@@ -532,6 +533,150 @@
             box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.03);
         }
 
+        /* ===== FLOATING ACTION BUTTON (BOTTOM RIGHT) ===== */
+        .floating-action-box {
+            position: fixed;
+            bottom: 20px;
+            right: 24px;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-start-job {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #4338ca 0%, #4f46e5 25%, #2563eb 50%, #0284c7 75%, #4338ca 100%);
+            background-size: 300% 300%;
+            color: #ffffff;
+            border: 1.5px solid rgba(255, 255, 255, 0.35);
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 0.95rem;
+            font-weight: 800;
+            font-family: inherit;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 18px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0.65);
+            animation: startBtnPulse 2.2s infinite ease-in-out, gradientShift 6s ease infinite;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-start-job.is-success {
+            background: linear-gradient(135deg, #059669 0%, #10b981 25%, #16a34a 50%, #22c55e 75%, #059669 100%);
+            background-size: 300% 300%;
+            box-shadow: 0 4px 18px rgba(16, 185, 129, 0.4), 0 0 0 0 rgba(34, 197, 94, 0.65);
+            animation: successBtnPulse 2.2s infinite ease-in-out, gradientShift 6s ease infinite;
+        }
+
+        @keyframes startBtnPulse {
+            0% {
+                box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0.65);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 8px 28px rgba(79, 70, 229, 0.6), 0 0 0 12px rgba(99, 102, 241, 0);
+                transform: scale(1.025);
+            }
+            100% {
+                box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0);
+                transform: scale(1);
+            }
+        }
+
+        @keyframes successBtnPulse {
+            0% {
+                box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4), 0 0 0 0 rgba(34, 197, 94, 0.65);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 8px 28px rgba(16, 185, 129, 0.6), 0 0 0 12px rgba(34, 197, 94, 0);
+                transform: scale(1.025);
+            }
+            100% {
+                box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4), 0 0 0 0 rgba(34, 197, 94, 0);
+                transform: scale(1);
+            }
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .btn-start-job::after {
+            content: '';
+            position: absolute;
+            top: -60%;
+            left: -80%;
+            width: 50%;
+            height: 220%;
+            background: linear-gradient(
+                to right,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.55) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            transform: rotate(25deg);
+            animation: btnShimmerSweep 2.6s infinite cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        @keyframes btnShimmerSweep {
+            0% { left: -80%; }
+            40%, 100% { left: 160%; }
+        }
+
+        .btn-start-job i, .btn-start-job .fa-rocket {
+            font-size: 18px;
+            display: inline-block;
+            animation: rocketWiggle 1.8s infinite ease-in-out;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+        }
+
+        @keyframes rocketWiggle {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            20% { transform: translate(-1px, -2px) rotate(-10deg); }
+            40% { transform: translate(2px, -4px) rotate(8deg) scale(1.15); }
+            60% { transform: translate(-1px, -2px) rotate(-6deg); }
+            80% { transform: translate(1px, 0) rotate(2deg); }
+        }
+
+        .btn-start-job:hover {
+            transform: scale(1.04);
+            box-shadow: 0 8px 30px rgba(79, 70, 229, 0.65), 0 0 0 4px rgba(129, 140, 248, 0.4);
+        }
+
+        .btn-start-job.is-success:hover {
+            box-shadow: 0 8px 30px rgba(16, 185, 129, 0.65), 0 0 0 4px rgba(110, 231, 183, 0.4);
+        }
+
+        .btn-start-job:active {
+            transform: scale(0.97);
+            animation: none;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
+        }
+
+        @media (max-width: 860px) {
+            .floating-action-box {
+                bottom: 14px;
+                right: 14px;
+            }
+
+            .btn-start-job {
+                padding: 10px 18px;
+                font-size: 0.88rem;
+            }
+        }
+
         /* ===== PAYMENT MODAL ===== */
         .modal-overlay {
             position: fixed;
@@ -890,7 +1035,7 @@
             </div>
 
             <!-- Stage Bottom Action Bar -->
-            <div class="stage-bottombar">
+            <div class="stage-bottombar" id="stageBottombar" style="display: none;">
                 <div>
                     <div style="font-size: 0.84rem; font-weight: 700; color: #0f172a;" id="statusTitle">
                         แปลงภาพเรียบร้อย (ลดความคมชัด &amp; ทำภาพแตก)
@@ -899,12 +1044,14 @@
                         ชำระค่าบริการ 20 บาท เพื่อดาวน์โหลดไฟล์ PDF / รูปภาพความละเอียดสูง
                     </div>
                 </div>
+            </div>
 
-                <div>
-                    <button type="button" class="btn btn-primary" id="btnMainPay" onclick="handlePayOrDownload()">
-                        <span id="btnPayText">⚡ ชำระเงิน 20 บาท &amp; ดาวน์โหลด</span>
-                    </button>
-                </div>
+            <!-- Bottom Right Floating Download/Payment Action Button (Hidden until document uploaded) -->
+            <div class="floating-action-box" id="floatingActionBox" style="display: none;">
+                <button class="btn-start-job" id="btnMainPay" onclick="handlePayOrDownload()" type="button">
+                    <i class="fa-solid fa-rocket"></i>
+                    <span id="btnPayText">⚡ ชำระเงิน 20 บาท &amp; ดาวน์โหลด</span>
+                </button>
             </div>
 
         </section>
@@ -1165,6 +1312,10 @@
                 setupPages();
                 renderApp();
                 resetScrollTop();
+                const floatingActionBox = document.getElementById('floatingActionBox');
+                if (floatingActionBox) floatingActionBox.style.display = 'flex';
+                const stageBottombar = document.getElementById('stageBottombar');
+                if (stageBottombar) stageBottombar.style.display = 'flex';
             } catch (err) {
                 alert("เกิดข้อผิดพลาดในการอ่านไฟล์ PDF");
             }
@@ -1205,6 +1356,10 @@
                 setupPages();
                 renderApp();
                 resetScrollTop();
+                const floatingActionBox = document.getElementById('floatingActionBox');
+                if (floatingActionBox) floatingActionBox.style.display = 'flex';
+                const stageBottombar = document.getElementById('stageBottombar');
+                if (stageBottombar) stageBottombar.style.display = 'flex';
             }
         }
 
@@ -1729,7 +1884,7 @@
             document.getElementById('statusDesc').textContent = 'สามารถดาวน์โหลดไฟล์ PDF หรือรูปภาพความละเอียดสูงได้';
 
             const btn = document.getElementById('btnMainPay');
-            btn.className = 'btn btn-success';
+            btn.className = 'btn-start-job is-success';
             document.getElementById('btnPayText').textContent = '📥 ดาวน์โหลดเอกสาร';
 
             document.getElementById('paymentPendingBox').style.display = 'none';
