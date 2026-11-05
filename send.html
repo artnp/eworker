@@ -1479,30 +1479,103 @@
                 font-size: 13px;
             }
         }
+
+        /* ===== USER FRIENDLY ANIMATIONS & FLOATING DOWNLOAD ===== */
+        @keyframes pulseGlowGreen {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        .btn-pulse-animate {
+            animation: pulseGlowGreen 1.8s infinite !important;
+        }
+
+        .quote-waiting-card {
+            background: linear-gradient(135deg, #fefce8 0%, #fffbeb 100%);
+            border: 1.5px solid #fde047;
+            border-radius: 14px;
+            padding: 13px 16px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 14px rgba(234, 179, 8, 0.12);
+            animation: quotePulse 2.5s infinite ease-in-out;
+        }
+        @keyframes quotePulse {
+            0%, 100% { border-color: #fde047; box-shadow: 0 4px 14px rgba(234, 179, 8, 0.12); }
+            50% { border-color: #eab308; box-shadow: 0 4px 20px rgba(234, 179, 8, 0.28); }
+        }
+        .quote-waiting-spinner {
+            width: 36px;
+            height: 36px;
+            background: #fef08a;
+            color: #ca8a04;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .quote-waiting-text {
+            flex: 1;
+        }
+        .quote-waiting-title {
+            font-size: 13.5px;
+            font-weight: 800;
+            color: #854d0e;
+            margin-bottom: 2px;
+        }
+        .quote-waiting-sub {
+            font-size: 11.5px;
+            color: #a16207;
+            line-height: 1.4;
+        }
+
+        /* Floating Bottom Right Download Button */
+        .floating-download-box {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1000;
+        }
+        .btn-floating-download {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 50px;
+            padding: 14px 24px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+            transition: transform 0.2s, box-shadow 0.2s;
+            animation: downloadFloatAnim 2s infinite ease-in-out;
+        }
+        .btn-floating-download:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 10px 26px rgba(16, 185, 129, 0.65);
+        }
+        @keyframes downloadFloatAnim {
+            0%, 100% { transform: translateY(0); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45); }
+            50% { transform: translateY(-4px); box-shadow: 0 10px 26px rgba(16, 185, 129, 0.65); }
+        }
+
+        /* Inline Beam Slip Card Under Annotation Point */
+        .inline-beam-slip-card {
+            margin-top: 10px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 55, 100, 0.12);
+        }
+
 </style>
 </head>
 <body>
-
-    <!-- Completion Popup Modal (Centered with Confetti) -->
-    <div class="completion-modal-overlay" id="completionPopupTag">
-        <div class="completion-popup-card">
-            <button class="completion-popup-close" id="completionPopupClose" title="ปิด">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <div class="completion-popup-icon-wrap">
-                <div class="completion-popup-icon">
-                    <i class="fa-solid fa-circle-check"></i>
-                </div>
-            </div>
-            <div class="completion-popup-body">
-                <div class="completion-popup-title">งานเสร็จแล้ว!</div>
-                <div class="completion-popup-msg">กลับไปรับงานที่ได้แชท ปิดหน้าเว็บนี้ได้เลย</div>
-            </div>
-            <button class="completion-popup-btn" id="completionPopupOkBtn">
-                <i class="fa-solid fa-check"></i> รับทราบ
-            </button>
-        </div>
-    </div>
 
     <!-- Upload Screen -->
     <div class="upload-container" id="uploadContainer">
@@ -3306,13 +3379,13 @@
         }
 
         // ===== ANNOTATION CARD RENDER =====
-        function renderAnnotationCard(marker) {
+                function renderAnnotationCard(marker) {
             const card = document.createElement('div');
             card.className = 'annotation-card' + (marker.done ? ' completed' : '') + (marker.rejected ? ' is-rejected' : '');
             card.dataset.id = marker.id;
 
-            // Status in header:
-            // ฝั่งลูกค้าจะไม่มีแสดงสถานะงาน/checkbox ใดๆ ทั้งสิ้นใน header (และกดไม่ได้)
+            // Header status:
+            // ฝั่งลูกค้าจะไม่มีแสดงสถานะงาน/checkbox ใน header
             // ฝั่งแอดมิน: แสดง checkbox เพื่อให้แอดมินกดเสร็จได้
             let statusHtml = '';
             if (isAdmin) {
@@ -3320,21 +3393,18 @@
                     <label class="done-check" style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;margin:0 auto;">
                         <span style="font-weight:700;color:var(--text-dark);">สถานะงาน:</span>
                         <input type="checkbox" class="done-input" ${marker.done ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;accent-color:var(--success);">
-                        <span class="done-text" style="font-weight:700;color:${marker.done ? 'var(--success)' : '#64748b'};">${marker.done ? 'เสร็จแล้ว' : 'ยังไม่เสร็จ'}</span>
+                        <span class="done-text" style="font-weight:700;color:${marker.done ? 'var(--success)' : '#64748b'};${marker.done ? 'เสร็จแล้ว' : 'ยังไม่เสร็จ'}</span>
                     </label>
                 `;
-            } else {
-                statusHtml = ''; // ฝั่งลูกค้าไม่มีแถบสถานะงานใน header
             }
 
-            // Price & Action area
+            // Price & Action Area
             let priceHtml = '';
             if (isAdmin) {
                 // ฝั่งแอดมิน:
-                // เมื่อกดส่งราคาแล้ว ช่องใส่ราคาและปุ่มชิปจะหายไป (ตามที่ผู้ใช้ต้องการ)
                 if (marker.priceQuoted && !marker.isEditingPrice) {
                     priceHtml = `
-                        <div class="admin-price-area" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;">
+                        <div class="admin-price-area" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;margin:8px 0;">
                             <div>
                                 <span style="font-size:12px;color:#64748b;font-weight:700;"><i class="fa-solid fa-tag" style="color:#6366f1;"></i> ราคาที่ส่ง:</span>
                                 <span style="font-size:15px;font-weight:900;color:#1e293b;margin-left:4px;">${marker.price} บาท</span>
@@ -3354,23 +3424,19 @@
                             </div>
                         ` : ''}
                     `;
-                } else {
-                    // ช่องกรอกราคาสำหรับแอดมิน
-                    const quoteStatusBadge = marker.submittedForQuote
-                        ? `<span style="background:#dcfce7;color:#15803d;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i class="fa-solid fa-paper-plane"></i> ลูกค้าส่งประเมินแล้ว</span>`
-                        : `<span style="color:#94a3b8;font-size:10.5px;font-weight:600;display:inline-flex;align-items:center;gap:4px;"><i class="fa-regular fa-clock"></i> รอลูกค้ากดส่ง</span>`;
-
+                } else if (marker.submittedForQuote || marker.isEditingPrice) {
+                    // ลูกค้ากดส่งประเมินราคาแล้ว -> แอดมินจึงจะเห็นกล่องใส่ราคาและชิปตัวเลือก
                     priceHtml = `
-                        <div class="admin-price-area" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px;margin:8px 0;">
+                        <div class="admin-price-area" style="background:#f8fafc;border:1.5px solid #c7d2fe;border-radius:12px;padding:10px 12px;margin:8px 0;box-shadow:0 2px 8px rgba(99,102,241,0.08);">
                             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                                <span style="font-size:12px;font-weight:700;color:#334155;"><i class="fa-solid fa-tag"></i> กำหนดราคาจุดนี้:</span>
-                                ${quoteStatusBadge}
+                                <span style="font-size:12px;font-weight:800;color:#3730a3;"><i class="fa-solid fa-tag"></i> กำหนดราคาจุดนี้:</span>
+                                <span style="background:#dcfce7;color:#15803d;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i class="fa-solid fa-paper-plane"></i> ลูกค้าส่งประเมินแล้ว</span>
                             </div>
                             <div style="display:flex;gap:6px;align-items:center;">
-                                <input type="number" class="admin-price-input" min="0" step="5" placeholder="ราคา (บาท)..." value="${marker.price || ''}" style="width:110px;padding:5px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;font-weight:700;">
-                                <button class="btn-save-admin-price" style="background:#4f46e5;color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;"><i class="fa-solid fa-check"></i> ส่งราคา</button>
+                                <input type="number" class="admin-price-input" min="0" step="5" placeholder="ราคา (บาท)..." value="${marker.price || ''}" style="width:110px;padding:6px 10px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:13.5px;font-weight:700;">
+                                <button class="btn-save-admin-price" style="background:linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);color:#fff;border:none;padding:6px 14px;border-radius:8px;font-size:12.5px;font-weight:800;cursor:pointer;box-shadow:0 2px 6px rgba(79,70,229,0.3);"><i class="fa-solid fa-check"></i> ส่งราคา</button>
                             </div>
-                            <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;">
+                            <div style="display:flex;gap:4px;margin-top:7px;flex-wrap:wrap;">
                                 <button class="chip-price" data-val="20">20฿</button>
                                 <button class="chip-price" data-val="30">30฿</button>
                                 <button class="chip-price" data-val="50">50฿</button>
@@ -3380,33 +3446,100 @@
                             </div>
                         </div>
                     `;
+                } else {
+                    // ลูกค้ายังไม่กดส่งประเมินราคา -> แอดมินจะไม่เห็นช่องใส่ราคา
+                    priceHtml = `
+                        <div style="background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:8px 12px;margin:8px 0;display:flex;align-items:center;gap:6px;color:#64748b;font-size:12px;font-weight:600;">
+                            <i class="fa-regular fa-clock" style="color:#94a3b8;"></i>
+                            <span>รอลูกค้าพิมพ์รายละเอียดและกดส่งประเมินราคา</span>
+                        </div>
+                    `;
                 }
             } else {
                 // ฝั่งลูกค้า:
                 if (marker.done) {
-                    // แอดมินกดเสร็จ -> ลูกค้าเห็น "งานเสร็จแล้ว"
-                    priceHtml = `
-                        <div style="background:#dcfce7;border:1px solid #86efac;border-radius:10px;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
-                            <div style="display:flex;align-items:center;gap:6px;">
-                                <i class="fa-solid fa-circle-check" style="font-size:16px;color:#15803d;"></i>
-                                <span style="font-size:13px;font-weight:800;color:#15803d;">งานเสร็จแล้ว</span>
+                    if (marker.paid) {
+                        // งานเสร็จและชำระเงินเรียบร้อยแล้ว
+                        priceHtml = `
+                            <div style="background:#dcfce7;border:1px solid #86efac;border-radius:10px;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
+                                <div style="display:flex;align-items:center;gap:6px;">
+                                    <i class="fa-solid fa-circle-check" style="font-size:16px;color:#15803d;"></i>
+                                    <span style="font-size:13px;font-weight:800;color:#15803d;">งานเสร็จแล้ว (ชำระเงินเรียบร้อย)</span>
+                                </div>
+                                <span style="font-size:14px;font-weight:900;color:#166534;">${marker.price} บาท</span>
                             </div>
-                            <span style="font-size:14px;font-weight:900;color:#166534;">${marker.price} บาท</span>
-                        </div>
-                    `;
+                        `;
+                    } else {
+                        // งานเสร็จแล้ว แต่ยังไม่ชำระเงิน -> แสดงสลิป Beam Payment ใต้จุดแก้ไขทันที ไม่บังรูปภาพผลงาน!
+                        priceHtml = `
+                            <div style="margin-top:8px;">
+                                <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                                    <div style="display:flex;align-items:center;gap:6px;">
+                                        <i class="fa-solid fa-circle-check" style="color:#059669;font-size:15px;"></i>
+                                        <span style="font-size:13px;font-weight:800;color:#065f46;">จุดนี้ช่างทำเสร็จแล้ว</span>
+                                    </div>
+                                    <span style="font-size:11.5px;color:#047857;font-weight:700;">(สแกนจ่ายเพื่อเริ่มจุดถัดไป)</span>
+                                </div>
+
+                                <div class="inline-beam-slip-card" id="inlineSlip_${marker.id}">
+                                    <div style="background:linear-gradient(135deg, #003764 0%, #005696 100%);color:#fff;padding:10px 14px;border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:space-between;">
+                                        <div style="display:flex;align-items:center;gap:8px;">
+                                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/100px-PromptPay-logo.png" style="height:18px;filter:brightness(0) invert(1);" onerror="this.style.display='none';">
+                                            <span style="font-size:13px;font-weight:800;letter-spacing:0.3px;">พร้อมเพย์ (PromptPay)</span>
+                                        </div>
+                                        <span style="background:rgba(255,255,255,0.22);padding:2px 7px;border-radius:6px;font-size:11px;font-weight:700;">Beam QR</span>
+                                    </div>
+                                    <div style="background:#fff;border:1.5px solid #005696;border-top:none;border-radius:0 0 12px 12px;padding:12px;box-shadow:0 4px 14px rgba(0,55,100,0.12);">
+                                        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px;">
+                                            <span style="font-size:12px;color:#64748b;font-weight:700;">ยอดที่ต้องชำระ:</span>
+                                            <span style="font-size:24px;font-weight:900;color:#16a34a;font-family:Outfit,sans-serif;">฿ ${marker.price}.00</span>
+                                        </div>
+                                        <div style="font-size:11.5px;color:#e11d48;font-weight:700;text-align:center;margin-bottom:8px;">
+                                            ⏱️ กรุณาชำระเงินภายใน: <strong id="inlineTimer_${marker.id}">10:00</strong> นาที
+                                        </div>
+                                        <div style="text-align:center;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;padding:10px;margin-bottom:8px;">
+                                            <div id="inlineLoading_${marker.id}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:180px;gap:6px;font-size:12px;color:#64748b;font-weight:700;">
+                                                <div style="width:26px;height:26px;border:3px solid rgba(16,185,129,0.2);border-top-color:#10b981;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+                                                <span>กำลังสร้าง QR จาก Beam...</span>
+                                            </div>
+                                            <img id="inlineQrImg_${marker.id}" src="" alt="Beam PromptPay QR" style="display:none;width:180px;height:180px;object-fit:contain;margin:0 auto;background:#fff;border-radius:8px;padding:4px;">
+                                            <div style="font-size:12.5px;font-weight:800;color:#1e293b;margin-top:8px;">
+                                                ชำระเข้าบัญชี: <span style="color:#003764;">098-857-3074</span>
+                                            </div>
+                                            <div style="font-size:11px;color:#64748b;margin-top:2px;">(สแกนจ่ายผ่านแอปธนาคารทุกแห่ง • ยอดระบุให้อัตโนมัติ)</div>
+                                            <div style="display:flex;gap:6px;margin-top:8px;">
+                                                <button class="btn-inline-download-slip" data-id="${marker.id}" style="flex:1;background:#f1f5f9;border:1px solid #cbd5e1;padding:7px;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;color:#1e293b;">
+                                                    <i class="fa-solid fa-download"></i> บันทึกสลิป QR
+                                                </button>
+                                                <button class="btn-inline-copy-no" style="background:#f1f5f9;border:1px solid #cbd5e1;padding:7px 12px;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;color:#1e293b;" title="คัดลอกเบอร์">
+                                                    <i class="fa-solid fa-copy"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <button class="btn-inline-notify-paid" data-id="${marker.id}" style="width:100%;background:linear-gradient(135deg, #10b981 0%, #059669 100%);color:#fff;border:none;padding:10px;border-radius:8px;font-size:13.5px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 8px rgba(16,185,129,0.3);">
+                                            <i class="fa-solid fa-circle-check"></i> แจ้งโอนเงินแล้ว (ไม่ต้องส่งสลิป)
+                                        </button>
+                                        <div id="inlinePending_${marker.id}" class="${marker.slipNotified ? '' : 'hidden'}" style="margin-top:6px;background:#f0fdf4;border:1px solid #bbf7d0;padding:6px 10px;border-radius:6px;text-align:center;font-size:11.5px;font-weight:700;color:#15803d;">
+                                            <i class="fa-solid fa-hourglass-half fa-spin-pulse"></i> กำลังตรวจจับยอดโอนจาก Beam อัตโนมัติ...
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
                 } else if (marker.accepted) {
-                    // ลูกค้ากดตกลงแล้ว -> แสดง "กำลังเริ่มงาน.."
+                    // ลูกค้ากดตกลงแล้ว -> แสดงสถานะกำลังเริ่มงาน
                     priceHtml = `
                         <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:9px 12px;display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
                             <div style="display:flex;align-items:center;gap:8px;">
                                 <i class="fa-solid fa-spinner fa-spin" style="font-size:15px;color:#10b981;"></i>
-                                <span style="font-size:13px;font-weight:800;color:#15803d;">กำลังเริ่มงาน..</span>
+                                <span style="font-size:13px;font-weight:800;color:#15803d;">กำลังเริ่มงานใน Photoshop..</span>
                             </div>
                             <span style="font-size:14px;font-weight:900;color:#166534;">${marker.price} บาท</span>
                         </div>
                     `;
                 } else if (marker.rejected) {
-                    // ลูกค้ากดยกเลิกงานจุดนี้
+                    // ลูกค้ากดยกเลิกจุดนี้
                     priceHtml = `
                         <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
                             <span style="font-size:12px;font-weight:700;color:#ef4444;"><i class="fa-solid fa-ban"></i> ยกเลิกงานจุดนี้แล้ว</span>
@@ -3414,7 +3547,7 @@
                         </div>
                     `;
                 } else if (marker.priceQuoted) {
-                    // แอดมินส่งราคามาแล้ว -> แสดงราคา พร้อมปุ่ม "ตกลง" และ "ยกเลิกงาน"
+                    // แอดมินส่งราคามาแล้ว -> แสดงราคา พร้อมปุ่ม "ตกลง" (มี animate pulse) และ "ยกเลิกงาน"
                     priceHtml = `
                         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-top:8px;">
                             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
@@ -3422,7 +3555,7 @@
                                 <span style="font-size:18px;font-weight:900;color:#0f172a;">${marker.price} บาท</span>
                             </div>
                             <div style="display:flex;gap:8px;">
-                                <button class="btn-accept-point" style="flex:1;background:linear-gradient(135deg, #10b981 0%, #059669 100%);color:#fff;border:none;padding:9px 14px;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 2px 6px rgba(16,185,129,0.3);">
+                                <button class="btn-accept-point btn-pulse-animate" style="flex:1;background:linear-gradient(135deg, #10b981 0%, #059669 100%);color:#fff;border:none;padding:10px 14px;border-radius:8px;font-size:13.5px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;">
                                     <i class="fa-solid fa-check"></i> ตกลง
                                 </button>
                                 <button class="btn-reject-point" style="background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;">
@@ -3445,7 +3578,7 @@
                         </div>
                     `;
                 } else {
-                    // ฝั่งลูกค้า พิมพ์จบแล้วให้มีปุ่มเขียว ให้กด ส่งประเมินราคา
+                    // ลูกค้าพิมพ์จบแล้ว มีปุ่มเขียวให้กด "ส่งประเมินราคา"
                     priceHtml = `
                         <div style="margin-top:8px;">
                             <button class="btn-submit-quote" style="width:100%;background:linear-gradient(135deg, #10b981 0%, #059669 100%);color:#ffffff;border:none;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 8px rgba(16,185,129,0.35);transition:all 0.2s;">
@@ -3526,67 +3659,65 @@
                     });
                 }
 
-                // Admin confirm payment
                 const btnConfirmPay = card.querySelector('.btn-admin-confirm-pay');
                 if (btnConfirmPay) {
                     btnConfirmPay.addEventListener('click', async (e) => {
                         e.stopPropagation();
                         if (confirm(`ยืนยันว่าได้รับยอดเงิน ${marker.price} บาท สำหรับจุดที่ ${marker.number} แล้ว?`)) {
                             marker.paid = true;
-                            if (annotations[marker.id]) annotations[marker.id].paid = true;
+                            marker.paidAt = Date.now();
+                            if (annotations[marker.id]) {
+                                annotations[marker.id].paid = true;
+                                annotations[marker.id].paidAt = Date.now();
+                            }
                             if (sessionId) {
                                 await database.ref(`annotations/${sessionId}/markers/${marker.id}`).update({
-                                    paid: true
+                                    paid: true,
+                                    paidAt: Date.now()
                                 });
                             }
                             renderAnnotationCard(marker);
+                            renderMarker(marker);
+                            updateFloatingDownloadButton();
                         }
                     });
                 }
 
-                // Admin done toggle
+                // Checkbox เสร็จฝั่งแอดมิน
                 const doneInput = card.querySelector('.done-input');
-                const doneText = card.querySelector('.done-text');
                 if (doneInput) {
-                    doneInput.addEventListener('change', () => {
-                        const done = doneInput.checked;
-                        marker.done = done;
-                        if (annotations[marker.id]) annotations[marker.id].done = done;
-                        card.classList.toggle('completed', done);
-                        if (doneText) {
-                            doneText.style.color = done ? 'var(--success)' : '#64748b';
-                            doneText.textContent = done ? 'เสร็จแล้ว' : 'ยังไม่เสร็จ';
+                    doneInput.addEventListener('change', async (e) => {
+                        const isDone = e.target.checked;
+                        marker.done = isDone;
+                        if (isDone) marker.completedAt = Date.now();
+                        if (annotations[marker.id]) {
+                            annotations[marker.id].done = isDone;
                         }
-                        const mEl = document.querySelector(`.marker[data-id="${marker.id}"]`);
-                        if (mEl) mEl.classList.toggle('completed', done);
-                        renderArrows();
                         if (sessionId) {
-                            database.ref(`annotations/${sessionId}/markers/${marker.id}/done`).set(done);
+                            await database.ref(`annotations/${sessionId}/markers/${marker.id}`).update({
+                                done: isDone,
+                                completedAt: isDone ? Date.now() : null
+                            });
                         }
-                        checkCompletionStatus();
+                        renderAnnotationCard(marker);
+                        renderMarker(marker);
+                        updateFloatingDownloadButton();
                     });
                 }
             } else {
-                // Client Events: ส่งประเมินราคา / ยกเลิกการส่ง / ตกลง / ยกเลิกงาน
+                // Customer Events
                 const btnSubmitQuote = card.querySelector('.btn-submit-quote');
                 if (btnSubmitQuote) {
                     btnSubmitQuote.addEventListener('click', async (e) => {
                         e.stopPropagation();
-                        const txt = textarea ? textarea.value.trim() : '';
-                        if (!txt) {
-                            alert('กรุณาพิมพ์รายละเอียดสิ่งที่ต้องการแก้ไขก่อนกดส่งประเมินราคาครับ');
-                            if (textarea) textarea.focus();
-                            return;
-                        }
-                        marker.text = txt;
                         marker.submittedForQuote = true;
+                        marker.submittedAt = Date.now();
                         if (annotations[marker.id]) {
-                            annotations[marker.id].text = txt;
                             annotations[marker.id].submittedForQuote = true;
+                            annotations[marker.id].submittedAt = Date.now();
                         }
                         if (sessionId) {
                             await database.ref(`annotations/${sessionId}/markers/${marker.id}`).update({
-                                text: txt,
                                 submittedForQuote: true,
                                 submittedAt: Date.now()
                             });
@@ -3596,14 +3727,12 @@
                     });
                 }
 
-                const btnCancelQuoteSubmit = card.querySelector('.btn-cancel-quote-submit');
-                if (btnCancelQuoteSubmit) {
-                    btnCancelQuoteSubmit.addEventListener('click', async (e) => {
+                const btnCancelSubmit = card.querySelector('.btn-cancel-quote-submit');
+                if (btnCancelSubmit) {
+                    btnCancelSubmit.addEventListener('click', async (e) => {
                         e.stopPropagation();
                         marker.submittedForQuote = false;
-                        if (annotations[marker.id]) {
-                            annotations[marker.id].submittedForQuote = false;
-                        }
+                        if (annotations[marker.id]) annotations[marker.id].submittedForQuote = false;
                         if (sessionId) {
                             await database.ref(`annotations/${sessionId}/markers/${marker.id}`).update({
                                 submittedForQuote: false
@@ -3620,16 +3749,19 @@
                         e.stopPropagation();
                         marker.accepted = true;
                         marker.rejected = false;
+                        marker.acceptedAt = Date.now();
                         if (annotations[marker.id]) {
                             annotations[marker.id].accepted = true;
                             annotations[marker.id].rejected = false;
+                            annotations[marker.id].acceptedAt = Date.now();
                         }
                         if (sessionId) {
                             await database.ref(`annotations/${sessionId}/markers/${marker.id}`).update({
                                 accepted: true,
-                                rejected: false,
-                                acceptedAt: Date.now()
+                                acceptedAt: Date.now(),
+                                rejected: false
                             });
+                            // สั่งให้เริ่มงาน และอัปเดต active point เพื่อเปิด Photoshop ฝั่งแอดมินทันที!
                             await database.ref(`annotations/${sessionId}`).update({
                                 jobStatus: 'processing',
                                 activePointNumber: marker.number,
@@ -3639,6 +3771,7 @@
                         }
                         renderAnnotationCard(marker);
                         updateJobStatusBanner();
+                        renderArrows();
                     });
                 }
 
@@ -3646,7 +3779,7 @@
                 if (btnReject) {
                     btnReject.addEventListener('click', async (e) => {
                         e.stopPropagation();
-                        if (confirm(`ยืนยันยกเลิกงานจุดที่ ${marker.number} นี้ใช่ไหม? (จุดนี้จะไม่ถูกคิดเงิน)`)) {
+                        if (confirm('คุณต้องการยกเลิกงานจุดแก้ไขนี้ใช่ไหม?')) {
                             marker.rejected = true;
                             marker.accepted = false;
                             if (annotations[marker.id]) {
@@ -3686,6 +3819,56 @@
                         renderArrows();
                     });
                 }
+
+                // Inline Beam Slip Event Listeners
+                const btnInlineDownload = card.querySelector('.btn-inline-download-slip');
+                if (btnInlineDownload) {
+                    btnInlineDownload.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        downloadInlinePointSlip(marker.id);
+                    });
+                }
+
+                const btnInlineCopy = card.querySelector('.btn-inline-copy-no');
+                if (btnInlineCopy) {
+                    btnInlineCopy.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText('0988573074').then(() => {
+                            alert('📋 คัดลอกเบอร์พร้อมเพย์ 098-857-3074 เรียบร้อยแล้ว');
+                        });
+                    });
+                }
+
+                const btnInlineNotify = card.querySelector('.btn-inline-notify-paid');
+                if (btnInlineNotify) {
+                    btnInlineNotify.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        const markpointLinkKey = `markpoint_${sessionId}_${marker.id}`;
+                        await database.ref(`annotations/${sessionId}/markers/${marker.id}`).update({
+                            slipNotified: true,
+                            slipNotifiedAt: Date.now()
+                        });
+                        await database.ref(`temp_files/payment_requests/${markpointLinkKey}`).set({
+                            sessionId: sessionId,
+                            markerId: marker.id,
+                            amount: marker.price,
+                            linkKey: markpointLinkKey,
+                            slipNotified: true,
+                            status: 'pending_verification',
+                            updatedAt: Date.now()
+                        });
+                        const pendingEl = document.getElementById(`inlinePending_${marker.id}`);
+                        if (pendingEl) pendingEl.classList.remove('hidden');
+                        alert('✅ แจ้งโอนเงินแล้ว! ระบบกำลังตรวจจับยอดโอนจาก Beam อัตโนมัติ...');
+                    });
+                }
+
+                // Trigger Beam QR loading if marker done & not paid
+                if (marker.done && !marker.paid) {
+                    setTimeout(() => {
+                        loadInlineBeamPayment(marker);
+                    }, 50);
+                }
             }
 
             // Sync text changes
@@ -3721,7 +3904,6 @@
                 setActiveMarker(marker.id);
             });
 
-            // Replace card in DOM if exists, else append
             const existingCard = document.querySelector(`.annotation-card[data-id="${marker.id}"]`);
             if (existingCard) {
                 existingCard.replaceWith(card);
@@ -3736,7 +3918,7 @@
         function updateJobStatusBanner() {
             if (!jobStatusBanner) return;
 
-            // Admin never sees the "กดสั่งให้เริ่มงาน" button!
+            // Admin never sees this banner
             if (isAdmin) {
                 jobStatusBanner.classList.add('hidden');
                 return;
@@ -3750,51 +3932,34 @@
                 return;
             }
 
-            jobStatusBanner.classList.remove('hidden');
+            // แสดงเมื่อมีจุดที่ลูกค้ากด "ส่งประเมินราคา" แล้ว และแอดมินยังใส่ราคาไม่ครบ
+            const hasWaitingQuote = activeMarkers.some(m => m.submittedForQuote && !m.priceQuoted);
 
-            // Check if all active markers are quoted
-            const allQuoted = activeMarkers.every(m => m.priceQuoted && m.price !== undefined && m.price !== null);
-
-            if (!allQuoted) {
-                // Not ready to start: waiting for admin quote
+            if (hasWaitingQuote) {
+                jobStatusBanner.classList.remove('hidden');
                 if (jobReadyView) {
                     jobReadyView.innerHTML = `
-                        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;color:#92400e;">
-                            <i class="fa-solid fa-hourglass-half" style="font-size:22px;color:#f59e0b;"></i>
-                            <div>
-                                <div style="font-weight:700;font-size:13.5px;">แอดมินกำลังประเมินราคาทีละจุด...</div>
-                                <div style="font-size:12px;color:#b45309;">โปรดรอสักครู่ เมื่อใส่ราคาครบแล้ว คุณสามารถตรวจสอบและกดสั่งเริ่มงานได้ที่นี่</div>
+                        <div class="quote-waiting-card">
+                            <div class="quote-waiting-spinner">
+                                <i class="fa-solid fa-hourglass-half fa-spin-pulse"></i>
+                            </div>
+                            <div class="quote-waiting-text">
+                                <div class="quote-waiting-title">แอดมินกำลังประเมินราคาทีละจุด...</div>
+                                <div class="quote-waiting-sub">โปรดรอสักครู่ เมื่อใส่ราคาครบแล้ว คุณสามารถตรวจสอบและกดสั่งเริ่มงานได้ที่นี่</div>
                             </div>
                         </div>
                     `;
+                    jobReadyView.classList.remove('hidden');
                 }
             } else {
-                // All points priced -> Show Start Job Button with total agreed price!
-                const totalPrice = activeMarkers.reduce((sum, m) => sum + (Number(m.price) || 0), 0);
+                // ไม่มีจุดที่รอประเมินราคา -> ซ่อนแบนเนอร์ (ไม่ต้องมีปุ่มรวม "ยืนยันราคาและสั่งให้เริ่มงาน" เพราะลูกค้ากดสั่งเริ่มงานที่แต่ละจุดได้โดยตรง)
                 if (jobReadyView) {
-                    jobReadyView.innerHTML = `
-                        <div style="display:flex;flex-direction:column;gap:8px;width:100%;">
-                            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;">
-                                <span style="font-size:13px;font-weight:700;color:#166534;"><i class="fa-solid fa-calculator"></i> ราคารวมประเมิน (${activeMarkers.length} จุด):</span>
-                                <span style="font-size:18px;font-weight:900;color:#15803d;">${totalPrice} บาท</span>
-                            </div>
-                            <button class="btn-start-job" id="btnStartJob" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%);">
-                                <i class="fa-solid fa-rocket"></i>
-                                <span>ยืนยันราคาและสั่งให้เริ่มงาน (รวม ${totalPrice} บาท)</span>
-                            </button>
-                        </div>
-                    `;
-                    const btn = document.getElementById('btnStartJob');
-                    btn?.addEventListener('click', async () => {
-                        updateJobStatusUI(true);
-                        if (sessionId) {
-                            await database.ref(`annotations/${sessionId}`).update({
-                                jobStatus: 'processing',
-                                totalAgreedPrice: totalPrice,
-                                startedAt: Date.now()
-                            });
-                        }
-                    });
+                    jobReadyView.innerHTML = '';
+                    jobReadyView.classList.add('hidden');
+                }
+                const anyProcessing = activeMarkers.some(m => m.accepted && !m.done);
+                if (!anyProcessing) {
+                    jobStatusBanner.classList.add('hidden');
                 }
             }
         }
@@ -3808,7 +3973,6 @@
                 document.body.classList.remove('job-started');
                 document.body.classList.add('session-loaded');
                 updateJobStatusBanner();
-                checkPaymentModalTrigger();
                 if (jobReadyView) jobReadyView.classList.remove('hidden');
                 if (jobProcessingView) jobProcessingView.classList.add('hidden');
             }
@@ -3818,94 +3982,51 @@
             btnResetJob.addEventListener('click', () => {
                 updateJobStatusUI(false);
                 if (jobProcessingView) jobProcessingView.classList.remove('completed');
-                userDismissedCompletion = false;
-                hideCompletionPopup();
                 if (sessionId) {
                     database.ref(`annotations/${sessionId}`).update({ jobStatus: 'pending' });
                 }
             });
         }
 
-        // ===== POINT PAYMENT SLIP MODAL & BEAM PAYMENT =====
-        const pointPaymentModal = document.getElementById('pointPaymentModal');
-        const paymentPointNum = document.getElementById('paymentPointNum');
-        const paymentPointAmount = document.getElementById('paymentPointAmount');
-        const paymentQrImg = document.getElementById('paymentQrImg');
-        const beamQrLoading = document.getElementById('beamQrLoading');
-        const beamCountdownTimer = document.getElementById('beamCountdownTimer');
-        const closePaymentModalBtn = document.getElementById('closePaymentModalBtn');
-        const btnDownloadPointQr = document.getElementById('btnDownloadPointQr');
-        const btnCopyPromptPayNo = document.getElementById('btnCopyPromptPayNo');
-        const btnCustomerNotifyTransfer = document.getElementById('btnCustomerNotifyTransfer');
-        const paymentNotifyPending = document.getElementById('paymentNotifyPending');
+                // ===== INLINE BEAM PAYMENT SLIP & FLOATING DOWNLOAD =====
+        const inlineTimers = {};
+        const inlineListeners = {};
 
-        let currentPayingMarker = null;
-        let beamPaymentCountdownInterval = null;
-        let beamPaymentListenerRef = null;
-
-        function startBeamPaymentCountdown(totalSeconds) {
-            if (beamPaymentCountdownInterval) clearInterval(beamPaymentCountdownInterval);
-            let remaining = Math.max(0, Math.floor(totalSeconds));
-            const updateDisplay = () => {
-                const mins = Math.floor(remaining / 60);
-                const secs = remaining % 60;
-                if (beamCountdownTimer) {
-                    beamCountdownTimer.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-                }
-                if (remaining <= 0) {
-                    clearInterval(beamPaymentCountdownInterval);
-                    if (beamCountdownTimer) beamCountdownTimer.textContent = '00:00 (หมดเวลา)';
-                }
-                remaining--;
-            };
-            updateDisplay();
-            beamPaymentCountdownInterval = setInterval(updateDisplay, 1000);
-        }
-
-        async function openPointPaymentModal(marker) {
-            if (!marker) return;
-            currentPayingMarker = marker;
-            if (paymentPointNum) paymentPointNum.textContent = marker.number;
-            if (paymentPointAmount) paymentPointAmount.textContent = marker.price || 0;
-
-            if (beamQrLoading) beamQrLoading.style.display = 'flex';
-            if (paymentQrImg) {
-                paymentQrImg.style.display = 'none';
-                paymentQrImg.src = '';
-            }
-            if (paymentNotifyPending) paymentNotifyPending.classList.toggle('hidden', !marker.slipNotified);
-            if (pointPaymentModal) pointPaymentModal.classList.remove('hidden');
-
+        async function loadInlineBeamPayment(marker) {
+            if (!marker || !marker.price) return;
             const markpointLinkKey = `markpoint_${sessionId || 'sess'}_${marker.id}`;
+            const qrImg = document.getElementById(`inlineQrImg_${marker.id}`);
+            const loadingEl = document.getElementById(`inlineLoading_${marker.id}`);
+            const timerEl = document.getElementById(`inlineTimer_${marker.id}`);
 
-            // Auto-detect payment from Beam via Firebase
-            if (beamPaymentListenerRef) {
-                beamPaymentListenerRef.off();
+            // Auto-listen to Beam payment via Firebase Realtime DB
+            if (inlineListeners[marker.id]) {
+                inlineListeners[marker.id].off();
             }
-            beamPaymentListenerRef = database.ref(`temp_files/payment_requests/${markpointLinkKey}`);
-            beamPaymentListenerRef.on('value', async (snap) => {
+            inlineListeners[marker.id] = database.ref(`temp_files/payment_requests/${markpointLinkKey}`);
+            inlineListeners[marker.id].on('value', async (snap) => {
                 const val = snap.val();
                 if (val && (val.status === 'approved' || val.autoApproved || val.paid)) {
-                    if (beamPaymentCountdownInterval) clearInterval(beamPaymentCountdownInterval);
-                    if (currentPayingMarker && annotations[currentPayingMarker.id]) {
-                        annotations[currentPayingMarker.id].paid = true;
-                        annotations[currentPayingMarker.id].paidAt = Date.now();
-                        annotations[currentPayingMarker.id].paidBy = 'Beam_PromptPay';
-                        await database.ref(`annotations/${sessionId}/markers/${currentPayingMarker.id}`).update({
+                    if (inlineTimers[marker.id]) clearInterval(inlineTimers[marker.id]);
+                    if (annotations[marker.id]) {
+                        annotations[marker.id].paid = true;
+                        annotations[marker.id].paidAt = Date.now();
+                        annotations[marker.id].paidBy = 'Beam_PromptPay';
+                        await database.ref(`annotations/${sessionId}/markers/${marker.id}`).update({
                             paid: true,
                             paidAt: Date.now(),
                             paidBy: 'Beam_PromptPay'
                         });
-                        renderAnnotationCard(annotations[currentPayingMarker.id]);
-                        renderMarker(annotations[currentPayingMarker.id]);
+                        renderAnnotationCard(annotations[marker.id]);
+                        renderMarker(annotations[marker.id]);
+                        updateFloatingDownloadButton();
                     }
                     triggerConfetti();
-                    alert(`🎉 ได้รับยอดเงินโอน ฿${marker.price} บาท จาก Beam สำเร็จแล้ว!`);
-                    closePointPaymentModal();
+                    alert(`🎉 ได้รับยอดเงินโอน ฿${marker.price} บาท จาก Beam เรียบร้อยแล้ว! ขอบคุณครับ`);
                 }
             });
 
-            // Call Beam Worker /create-charge
+            // Request QR from Beam Worker API
             try {
                 const res = await fetch(`${BEAM_WORKER_URL}/create-charge`, {
                     method: 'POST',
@@ -3915,75 +4036,79 @@
                         amount: marker.price
                     })
                 });
-
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.qrImageBase64) {
-                        if (paymentQrImg) {
-                            paymentQrImg.src = `data:image/png;base64,${data.qrImageBase64}`;
-                            paymentQrImg.style.display = 'block';
+                        if (qrImg) {
+                            qrImg.src = `data:image/png;base64,${data.qrImageBase64}`;
+                            qrImg.style.display = 'block';
                         }
-                        if (beamQrLoading) beamQrLoading.style.display = 'none';
+                        if (loadingEl) loadingEl.style.display = 'none';
 
+                        let remainSec = 600;
                         if (data.expiry) {
                             const expiryMs = new Date(data.expiry).getTime();
-                            const remainSec = Math.max(0, Math.floor((expiryMs - Date.now()) / 1000));
-                            startBeamPaymentCountdown(remainSec > 0 ? remainSec : 600);
-                        } else {
-                            startBeamPaymentCountdown(600);
+                            remainSec = Math.max(0, Math.floor((expiryMs - Date.now()) / 1000)) || 600;
                         }
+                        startInlineTimer(marker.id, remainSec, timerEl);
                         return;
                     }
                 }
                 throw new Error('Invalid Beam response');
-            } catch (err) {
-                console.warn('Beam create-charge fallback to direct QR image:', err);
-                const beamQrUrl = `${BEAM_WORKER_URL}/qr-image?linkKey=${encodeURIComponent(markpointLinkKey)}&amount=${marker.price}`;
-                if (paymentQrImg) {
-                    paymentQrImg.crossOrigin = 'anonymous';
-                    paymentQrImg.src = beamQrUrl;
-                    paymentQrImg.onload = () => {
-                        paymentQrImg.style.display = 'block';
-                        if (beamQrLoading) beamQrLoading.style.display = 'none';
+            } catch(err) {
+                console.warn('Fallback direct QR:', err);
+                const fallbackUrl = `${BEAM_WORKER_URL}/qr-image?linkKey=${encodeURIComponent(markpointLinkKey)}&amount=${marker.price}`;
+                if (qrImg) {
+                    qrImg.crossOrigin = 'anonymous';
+                    qrImg.src = fallbackUrl;
+                    qrImg.onload = () => {
+                        qrImg.style.display = 'block';
+                        if (loadingEl) loadingEl.style.display = 'none';
                     };
                 }
-                startBeamPaymentCountdown(600);
+                startInlineTimer(marker.id, 600, timerEl);
             }
         }
 
-        function closePointPaymentModal() {
-            if (beamPaymentCountdownInterval) clearInterval(beamPaymentCountdownInterval);
-            if (beamPaymentListenerRef) {
-                beamPaymentListenerRef.off();
-                beamPaymentListenerRef = null;
+        function startInlineTimer(markerId, totalSeconds, timerEl) {
+            if (inlineTimers[markerId]) clearInterval(inlineTimers[markerId]);
+            let remaining = Math.max(0, Math.floor(totalSeconds));
+            const update = () => {
+                const mins = Math.floor(remaining / 60);
+                const secs = remaining % 60;
+                if (timerEl) {
+                    timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                }
+                if (remaining <= 0) {
+                    clearInterval(inlineTimers[markerId]);
+                    if (timerEl) timerEl.textContent = '00:00 (หมดเวลา)';
+                }
+                remaining--;
+            };
+            update();
+            inlineTimers[markerId] = setInterval(update, 1000);
+        }
+
+        // Download PromptPay Beam Slip for a specific marker
+        function downloadInlinePointSlip(markerId) {
+            const marker = annotations[markerId];
+            if (!marker) return;
+            const qrImg = document.getElementById(`inlineQrImg_${marker.id}`);
+            if (!qrImg || !qrImg.src) {
+                alert('กำลังโหลดภาพ QR Code กรุณารอสักครู่...');
+                return;
             }
-            if (pointPaymentModal) pointPaymentModal.classList.add('hidden');
-        }
 
-        if (closePaymentModalBtn) closePaymentModalBtn.addEventListener('click', closePointPaymentModal);
-
-        if (btnCopyPromptPayNo) {
-            btnCopyPromptPayNo.addEventListener('click', () => {
-                navigator.clipboard.writeText('0988573074').then(() => {
-                    alert('📋 คัดลอกเบอร์พร้อมเพย์ 098-857-3074 เรียบร้อยแล้ว');
-                });
-            });
-        }
-
-        // Download PromptPay Beam Slip
-        function downloadPointPaymentSlip() {
-            if (!currentPayingMarker) return;
-            const marker = currentPayingMarker;
             const canvas = document.createElement('canvas');
             canvas.width = 400;
             canvas.height = 510;
             const ctx = canvas.getContext('2d');
 
-            // White Background
+            // Background
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, 400, 510);
 
-            // Blue PromptPay Header banner
+            // Blue PromptPay Header
             const grad = ctx.createLinearGradient(0, 0, 400, 0);
             grad.addColorStop(0, '#003764');
             grad.addColorStop(1, '#005696');
@@ -4005,91 +4130,61 @@
             ctx.fillText(`จุดแก้ไขที่ #${marker.number} (${marker.price} บาท)`, 200, 105);
 
             const drawRest = (source) => {
-                // Draw Beam QR in center
                 ctx.drawImage(source, 75, 120, 250, 250);
 
-                // Price amount
                 ctx.fillStyle = '#16a34a';
                 ctx.font = 'bold 28px Outfit, Prompt, sans-serif';
                 ctx.fillText(`฿ ${marker.price}.00`, 200, 405);
 
-                // Account number
                 ctx.fillStyle = '#334155';
                 ctx.font = 'bold 14px Prompt, Sarabun, sans-serif';
-                ctx.fillText(`ชำระเข้าบัญชี: 098-857-3074`, 200, 435);
+                ctx.fillText('ชำระเข้าบัญชี: 098-857-3074', 200, 435);
 
-                // Footer note
                 ctx.fillStyle = '#94a3b8';
                 ctx.font = '12px Prompt, Sarabun, sans-serif';
                 ctx.fillText('สแกนผ่านทุกแอปธนาคาร • งานเริ่มทันที', 200, 465);
 
-                // Trigger download
                 const link = document.createElement('a');
                 link.download = `PromptPay_Beam_Point_${marker.number}_${marker.price}THB.png`;
                 link.href = canvas.toDataURL('image/png');
                 link.click();
             };
 
-            if (paymentQrImg && paymentQrImg.src) {
-                const img = new Image();
-                img.crossOrigin = 'anonymous';
-                img.onload = () => drawRest(img);
-                img.onerror = () => {
-                    const link = document.createElement('a');
-                    link.download = `PromptPay_Beam_Point_${marker.number}.png`;
-                    link.href = paymentQrImg.src;
-                    link.click();
-                };
-                img.src = paymentQrImg.src;
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => drawRest(img);
+            img.onerror = () => {
+                const link = document.createElement('a');
+                link.download = `PromptPay_Beam_Point_${marker.number}.png`;
+                link.href = qrImg.src;
+                link.click();
+            };
+            img.src = qrImg.src;
+        }
+
+        // Floating Bottom-Right Download Button Controller
+        function updateFloatingDownloadButton() {
+            const floatingBox = document.getElementById('floatingDownloadBox');
+            if (!floatingBox) return;
+
+            // ผู้ใช้ระบุ: "คือให้ลูกค้าเห็นงานก่อนนะ => สแกนจ่าย => ถึงขึ้นปุ่มให้ ดาวน์โหลดงาน ได้"
+            // "เหมือนเสร็จทีละจุดให้ดาวน์โหลดเก็บไว้เลย"
+            const hasPaidCompleted = Object.values(annotations).some(m => m.done && m.paid);
+            if (hasPaidCompleted) {
+                floatingBox.classList.remove('hidden');
+            } else {
+                floatingBox.classList.add('hidden');
             }
         }
 
-        if (btnDownloadPointQr) {
-            btnDownloadPointQr.addEventListener('click', downloadPointPaymentSlip);
-        }
-
-        if (btnCustomerNotifyTransfer) {
-            btnCustomerNotifyTransfer.addEventListener('click', async () => {
-                if (!currentPayingMarker || !sessionId) return;
-                const markpointLinkKey = `markpoint_${sessionId}_${currentPayingMarker.id}`;
-                await database.ref(`annotations/${sessionId}/markers/${currentPayingMarker.id}`).update({
-                    slipNotified: true,
-                    slipNotifiedAt: Date.now()
-                });
-                await database.ref(`temp_files/payment_requests/${markpointLinkKey}`).set({
-                    sessionId: sessionId,
-                    markerId: currentPayingMarker.id,
-                    amount: currentPayingMarker.price,
-                    linkKey: markpointLinkKey,
-                    slipNotified: true,
-                    status: 'pending_verification',
-                    updatedAt: Date.now()
-                });
-                if (paymentNotifyPending) paymentNotifyPending.classList.remove('hidden');
-                alert('✅ แจ้งโอนเงินแล้ว! ระบบและแอดมินกำลังตรวจสอบยอดเงิน และงานจุดถัดไปจะเริ่มทันที');
-            });
-        }
-
-        // Project Paused Modal Handler
-        const projectPausedModal = document.getElementById('projectPausedModal');
-        const btnOpenUnpaidPaymentModal = document.getElementById('btnOpenUnpaidPaymentModal');
-        if (btnOpenUnpaidPaymentModal) {
-            btnOpenUnpaidPaymentModal.addEventListener('click', () => {
-                if (projectPausedModal) projectPausedModal.classList.add('hidden');
-                const unpaid = Object.values(annotations).find(m => m.done && !m.paid && !m.rejected);
-                if (unpaid) openPointPaymentModal(unpaid);
-            });
+        const btnFloatingDownload = document.getElementById('btnFloatingDownload');
+        if (btnFloatingDownload) {
+            btnFloatingDownload.addEventListener('click', downloadCompletedWork);
         }
 
         function checkPaymentModalTrigger() {
-            // Only trigger popup on client side
-            if (isAdmin) return;
-            const unpaid = Object.values(annotations).find(m => m.done && !m.paid && !m.rejected);
-            if (unpaid) {
-                openPointPaymentModal(unpaid);
-            } else {
-                closePointPaymentModal();
-            }
+            // ไม่เปิด modal ป๊อปอัปบังภาพผลงานอีกต่อไป เพราะสลิปจะปรากฏใต้จุดแก้ไขโดยตรง
+            return;
         }
 
         // ===== MULTI-PAGE PDF MERGE & MOBILE DOWNLOAD =====
@@ -4593,5 +4688,14 @@ function setActiveMarker(markerId) {
             }
         });
     </script>
+
+    <!-- Floating Bottom-Right Download Button (Shown after payment) -->
+    <div class="floating-download-box hidden" id="floatingDownloadBox">
+        <button class="btn-floating-download" id="btnFloatingDownload" title="ดาวน์โหลดผลงานล่าสุด">
+            <i class="fa-solid fa-cloud-arrow-down fa-bounce" style="--fa-bounce-height: -4px;"></i>
+            <span>ดาวน์โหลดงานเสร็จแล้ว</span>
+        </button>
+    </div>
+
 </body>
 </html>
