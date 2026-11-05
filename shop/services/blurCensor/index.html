@@ -12,9 +12,10 @@
     <link rel="icon" type="image/png" sizes="192x192" href="../../assets/images/favicon.png"
         onerror="this.onerror=null; this.href='../../../assets/images/favicon.png';">
 
-    <!-- Fonts -->
+    <!-- Fonts & Font Awesome -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600&display=swap"
         rel="stylesheet">
@@ -407,40 +408,114 @@
 
         /* ===== BOTTOM-RIGHT FLOATING ACTION BUTTONS ===== */
         .bottom-right-actions {
-            position: absolute;
+            position: fixed;
             bottom: 24px;
             right: 24px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            z-index: 40;
+            gap: 12px;
+            z-index: 999;
         }
 
-        .btn-floating-save {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+        .btn-start-job {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #4338ca 0%, #4f46e5 25%, #2563eb 50%, #0284c7 75%, #4338ca 100%);
+            background-size: 300% 300%;
             color: #ffffff;
-            border: none;
-            border-radius: 30px;
-            font-family: 'Prompt', sans-serif;
+            border: 1.5px solid rgba(255, 255, 255, 0.35);
+            padding: 12px 24px;
+            border-radius: 50px;
             font-size: 0.95rem;
-            font-weight: 700;
+            font-weight: 800;
+            font-family: inherit;
+            letter-spacing: 0.3px;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            box-shadow: 0 8px 25px rgba(2, 132, 199, 0.45);
-            transition: all 0.2s ease;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 18px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0.65);
+            animation: startBtnPulse 2.2s infinite ease-in-out, gradientShift 6s ease infinite;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .btn-floating-save:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 30px rgba(2, 132, 199, 0.6);
+        @keyframes startBtnPulse {
+            0% {
+                box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0.65);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 8px 28px rgba(79, 70, 229, 0.6), 0 0 0 12px rgba(99, 102, 241, 0);
+                transform: scale(1.025);
+            }
+            100% {
+                box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0);
+                transform: scale(1);
+            }
         }
 
-        .btn-floating-save:disabled {
-            opacity: 0.35;
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .btn-start-job::after {
+            content: '';
+            position: absolute;
+            top: -60%;
+            left: -80%;
+            width: 50%;
+            height: 220%;
+            background: linear-gradient(
+                to right,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.55) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            transform: rotate(25deg);
+            animation: btnShimmerSweep 2.6s infinite cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        @keyframes btnShimmerSweep {
+            0% { left: -80%; }
+            40%, 100% { left: 160%; }
+        }
+
+        .btn-start-job i, .btn-start-job .fa-rocket {
+            font-size: 18px;
+            display: inline-block;
+            animation: rocketWiggle 1.8s infinite ease-in-out;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+        }
+
+        @keyframes rocketWiggle {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            20% { transform: translate(-1px, -2px) rotate(-10deg); }
+            40% { transform: translate(2px, -4px) rotate(8deg) scale(1.15); }
+            60% { transform: translate(-1px, -2px) rotate(-6deg); }
+            80% { transform: translate(1px, 0) rotate(2deg); }
+        }
+
+        .btn-start-job:hover:not(:disabled) {
+            transform: scale(1.04);
+            box-shadow: 0 8px 30px rgba(79, 70, 229, 0.65), 0 0 0 4px rgba(129, 140, 248, 0.4);
+        }
+
+        .btn-start-job:active:not(:disabled) {
+            transform: scale(0.97);
+            animation: none;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn-start-job:disabled {
+            opacity: 0.4;
             cursor: not-allowed;
+            animation: none;
             transform: none;
             box-shadow: none;
         }
@@ -713,13 +788,14 @@
 
             </div>
 
-            <!-- BOTTOM RIGHT FLOATING ACTION BUTTONS -->
-            <div class="bottom-right-actions">
+            <!-- BOTTOM RIGHT FLOATING ACTION BUTTONS (Hidden until file uploaded) -->
+            <div class="bottom-right-actions" id="bottomRightActions" style="display: none;">
                 <button class="btn-floating-clipboard" id="btnCopyClipboard" onclick="copyCurrentPageToClipboard()" disabled>
                     <span>📋 คัดลอกภาพ</span>
                 </button>
-                <button class="btn-floating-save" id="btnExport" onclick="exportFinalDocument()" disabled>
-                    <span>⬇️ บันทึกไฟล์ Censor</span>
+                <button class="btn-start-job" id="btnExport" onclick="exportFinalDocument()" disabled>
+                    <i class="fa-solid fa-rocket"></i>
+                    <span>บันทึกไฟล์ Censor</span>
                 </button>
             </div>
 
@@ -958,6 +1034,8 @@
 
                 btnExport.disabled = false;
                 btnCopyClipboard.disabled = false;
+                const brActions = document.getElementById('bottomRightActions');
+                if (brActions) brActions.style.display = 'flex';
                 fitToScreen();
                 showToast('โหลดไฟล์เรียบร้อยแล้ว! ลากเมาส์เพื่อครอบ Censor ได้เลย', 'success');
             } catch (err) {
