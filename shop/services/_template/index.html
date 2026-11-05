@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[ชื่อบริการของคุณ] | eWorker Services Template</title>
+
+    <!-- Favicon & Web App Icons -->
+    <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg"
+        onerror="this.onerror=null; this.href='../../../assets/images/favicon.svg';">
+    <link rel="icon" type="image/png" sizes="192x192" href="../../assets/images/favicon.png"
+        onerror="this.onerror=null; this.href='../../../assets/images/favicon.png';">
+    <link rel="shortcut icon" href="../../favicon.ico">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Prompt:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- CDNs: QRCode, Canvas Confetti -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-light: #eff6ff;
+            --primary-border: #bfdbfe;
+            --accent: #10b981;
+            --bg-page: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --success-bg: #f0fdf4;
+            --success-border: #bbf7d0;
+            --success-text: #166534;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: 'Prompt', 'Outfit', sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ===== TOP HEADER NAVBAR ===== */
+        .top-navbar {
+            height: 56px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
+            z-index: 50;
+            position: relative;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: inherit;
+        }
+
+        .brand-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-badge {
+            font-size: 0.68rem;
+            font-weight: 600;
+            background: #ecfdf5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+            border-radius: 20px;
+            padding: 2px 8px;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-outline {
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-outline:hover {
+            background: #f8fafc;
+            color: var(--text-main);
+            border-color: #cbd5e1;
+        }
+
+        /* ===== 2-COLUMN WORKSPACE ===== */
+        .workspace-container {
+            display: flex;
+            height: calc(100vh - 56px);
+            width: 100vw;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* LEFT SIDEBAR: Controls & Upload */
+        .sidebar-panel {
+            width: 360px;
+            min-width: 320px;
+            background: #ffffff;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            z-index: 20;
+            padding: 18px;
+            gap: 16px;
+        }
+
+        .panel-section {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 14px;
+        }
+
+        .panel-section-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Dropzone Component */
+        .dropzone-box {
+            border: 2px dashed #93c5fd;
+            background: #f0f7ff;
+            border-radius: var(--radius-md);
+            padding: 24px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+        }
+
+        .dropzone-box:hover {
+            border-color: var(--primary);
+            background: #e0f2fe;
+            transform: translateY(-1px);
+        }
+
+        .dropzone-box i {
+            font-size: 2.2rem;
+            color: var(--primary);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .dropzone-box .drop-title {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #1e3a8a;
+            margin-bottom: 4px;
+        }
+
+        .dropzone-box .drop-subtitle {
+            font-size: 0.76rem;
+            color: #64748b;
+        }
+
+        /* Form Controls */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .control-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #475569;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .control-range {
+            width: 100%;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        /* RIGHT STAGE: Canvas / Preview Area */
+        .stage-area {
+            flex: 1;
+            height: 100%;
+            background: #f1f5f9;
+            background-image: radial-gradient(#cbd5e1 1.2px, transparent 1.2px);
+            background-size: 24px 24px;
+            position: relative;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+        }
+
+        /* Empty Stage State */
+        .empty-stage-state {
+            text-align: center;
+            max-width: 420px;
+            padding: 30px 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        }
+
+        .empty-stage-icon {
+            font-size: 3rem;
+            color: #94a3b8;
+            margin-bottom: 12px;
+        }
+
+        /* Preview Canvas Frame */
+        .stage-canvas-frame {
+            background: #ffffff;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+            border-radius: var(--radius-sm);
+            max-width: 100%;
+            max-height: 100%;
+            position: relative;
+        }
+
+        #previewCanvas {
+            max-width: 100%;
+            max-height: 80vh;
+            display: block;
+            border-radius: var(--radius-sm);
+        }
+
+        /* ===== FLOATING ACTION BUTTON (BOTTOM RIGHT) ===== */
+        .floating-action-box {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Animated Rocket Action Button (send.html Standard) */
+        .btn-start-job {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #4338ca 0%, #4f46e5 25%, #2563eb 50%, #0284c7 75%, #4338ca 100%);
+            background-size: 300% 300%;
+            color: #ffffff;
+            border: 1.5px solid rgba(255, 255, 255, 0.35);
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 0.95rem;
+            font-weight: 800;
+            font-family: inherit;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 18px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0.65);
+            animation: startBtnPulse 2.2s infinite ease-in-out, gradientShift 6s ease infinite;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-start-job.is-success {
+            background: linear-gradient(135deg, #059669 0%, #10b981 25%, #16a34a 50%, #22c55e 75%, #059669 100%);
+            background-size: 300% 300%;
+            box-shadow: 0 4px 18px rgba(16, 185, 129, 0.4), 0 0 0 0 rgba(34, 197, 94, 0.65);
+            animation: successBtnPulse 2.2s infinite ease-in-out, gradientShift 6s ease infinite;
+        }
+
+        @keyframes startBtnPulse {
+            0% {
+                box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0.65);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 8px 28px rgba(79, 70, 229, 0.6), 0 0 0 12px rgba(99, 102, 241, 0);
+                transform: scale(1.025);
+            }
+            100% {
+                box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0);
+                transform: scale(1);
+            }
+        }
+
+        @keyframes successBtnPulse {
+            0% {
+                box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4), 0 0 0 0 rgba(34, 197, 94, 0.65);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 8px 28px rgba(16, 185, 129, 0.6), 0 0 0 12px rgba(34, 197, 94, 0);
+                transform: scale(1.025);
+            }
+            100% {
+                box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4), 0 0 0 0 rgba(34, 197, 94, 0);
+                transform: scale(1);
+            }
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .btn-start-job::after {
+            content: '';
+            position: absolute;
+            top: -60%;
+            left: -80%;
+            width: 50%;
+            height: 220%;
+            background: linear-gradient(
+                to right,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.55) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            transform: rotate(25deg);
+            animation: btnShimmerSweep 2.6s infinite cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        @keyframes btnShimmerSweep {
+            0% { left: -80%; }
+            40%, 100% { left: 160%; }
+        }
+
+        .btn-start-job i, .btn-start-job .fa-rocket {
+            font-size: 18px;
+            display: inline-block;
+            animation: rocketWiggle 1.8s infinite ease-in-out;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+        }
+
+        @keyframes rocketWiggle {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            20% { transform: translate(-1px, -2px) rotate(-10deg); }
+            40% { transform: translate(2px, -4px) rotate(8deg) scale(1.15); }
+            60% { transform: translate(-1px, -2px) rotate(-6deg); }
+            80% { transform: translate(1px, 0) rotate(2deg); }
+        }
+
+        .btn-start-job:hover {
+            transform: scale(1.04);
+            box-shadow: 0 8px 30px rgba(79, 70, 229, 0.65), 0 0 0 4px rgba(129, 140, 248, 0.4);
+        }
+
+        .btn-start-job.is-success:hover {
+            box-shadow: 0 8px 30px rgba(16, 185, 129, 0.65), 0 0 0 4px rgba(110, 231, 183, 0.4);
+        }
+
+        .btn-start-job:active {
+            transform: scale(0.97);
+            animation: none;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
+        }
+
+        /* ===== RESPONSIVE MOBILE LAYOUT ===== */
+        @media (max-width: 860px) {
+            .workspace-container {
+                flex-direction: column-reverse;
+                height: calc(100vh - 56px);
+            }
+
+            .sidebar-panel {
+                width: 100%;
+                min-width: 100%;
+                height: 42vh;
+                border-right: none;
+                border-top: 1px solid var(--border-color);
+                padding: 12px;
+                gap: 10px;
+            }
+
+            .stage-area {
+                height: 58vh;
+                padding: 14px;
+            }
+
+            .floating-action-box {
+                bottom: 14px;
+                right: 14px;
+            }
+
+            .btn-start-job {
+                padding: 10px 18px;
+                font-size: 0.88rem;
+            }
+        }
+
+        /* ===== FULLPAGE DRAG OVERLAY ===== */
+        .page-drag-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 999999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .page-drag-overlay.active {
+            display: flex;
+        }
+
+        .page-drag-card {
+            background: #ffffff;
+            border: 2.5px dashed var(--primary);
+            border-radius: 20px;
+            padding: 36px 48px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+            pointer-events: none;
+            animation: dragCardPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes dragCardPop {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* ===== PROMPTPAY PAYMENT MODAL ===== */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal-backdrop.active {
+            display: flex;
+        }
+
+        .modal-card {
+            background: #ffffff;
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 380px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            position: relative;
+            animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes modalPop {
+            0% { transform: scale(0.92); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: #f1f5f9;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            font-size: 16px;
+            color: #64748b;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qr-wrapper {
+            background: #ffffff;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            display: inline-block;
+            margin: 14px 0 10px 0;
+        }
+
+        .qr-wrapper img, .qr-wrapper canvas {
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Fullpage Drag & Drop Overlay -->
+    <div class="page-drag-overlay" id="pageDragOverlay">
+        <div class="page-drag-card">
+            <i class="fa-solid fa-cloud-arrow-up" style="font-size: 3.5rem; color: var(--primary); margin-bottom: 12px; display: block;"></i>
+            <div style="font-size: 1.25rem; font-weight: 800; color: #0f172a;">วางไฟล์ที่นี่เพื่อเริ่มต้น</div>
+            <div style="font-size: 0.85rem; color: #64748b; margin-top: 6px;">ลากไฟล์ลงตรงไหนของหน้าจอก็ได้</div>
+        </div>
+    </div>
+
+    <!-- ===== TOP NAVBAR ===== -->
+    <header class="top-navbar">
+        <div class="nav-brand">
+            <span class="brand-title">
+                [ชื่อบริการของคุณ]
+                <span class="brand-badge">⚡ ปลอดภัย 100%</span>
+            </span>
+        </div>
+
+        <div class="nav-actions">
+            <button type="button" class="btn-outline" onclick="resetWorkspace()">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span>รีเซ็ต</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ===== MAIN WORKSPACE ===== -->
+    <main class="workspace-container">
+
+        <!-- LEFT SIDEBAR: Controls & Upload -->
+        <aside class="sidebar-panel">
+
+            <!-- Upload Section -->
+            <div class="panel-section">
+                <div class="panel-section-title">
+                    <i class="fa-solid fa-cloud-arrow-up" style="color: var(--primary);"></i>
+                    <span>อัปโหลดไฟล์ต้นฉบับ</span>
+                </div>
+
+                <div class="dropzone-box" id="dropzoneBox" onclick="fileInput.click()">
+                    <i class="fa-regular fa-image"></i>
+                    <div class="drop-title">คลิกเลือกรูปภาพ หรือลากไฟล์มาวาง</div>
+                    <div class="drop-subtitle">รองรับ JPG, PNG, WEBP (ประมวลผลบนเครื่องคุณ)</div>
+                </div>
+                <input type="file" id="fileInput" accept="image/*" style="display: none;">
+            </div>
+
+            <!-- Custom Controls Section (ปรับแต่งตามบริการของคุณ) -->
+            <div class="panel-section">
+                <div class="panel-section-title">
+                    <i class="fa-solid fa-sliders" style="color: var(--primary);"></i>
+                    <span>ตั้งค่าเครื่องมือ</span>
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>ค่าความสว่าง (Brightness)</span>
+                        <span id="lblBrightness">100%</span>
+                    </div>
+                    <input type="range" class="control-range" id="paramBrightness" min="50" max="150" value="100" oninput="updateSettings()">
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>ความคมชัด (Contrast)</span>
+                        <span id="lblContrast">100%</span>
+                    </div>
+                    <input type="range" class="control-range" id="paramContrast" min="50" max="150" value="100" oninput="updateSettings()">
+                </div>
+            </div>
+
+            <!-- Price & Service Meta -->
+            <div class="panel-section" style="background: #faf5ff; border-color: #e9d5ff;">
+                <div style="font-size: 0.82rem; font-weight: 700; color: #6b21a8; margin-bottom: 4px;">
+                    ✨ บริการคุณภาพสูง อัตโนมัติ 100%
+                </div>
+                <div style="font-size: 0.74rem; color: #7e22ce; line-height: 1.4;">
+                    ค่าบริการเพียง <strong>฿ 5.00</strong> ชำระผ่าน PromptPay QR สะดวก รวดเร็ว พร้อมดาวน์โหลดไฟล์ผลลัพธ์ทันที
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- RIGHT STAGE: Preview & Workspace -->
+        <section class="stage-area" id="stageArea">
+
+            <!-- Empty Stage State (แสดงตอนยังไม่อัปโหลดไฟล์) -->
+            <div class="empty-stage-state" id="emptyStageState">
+                <div class="empty-stage-icon">
+                    <i class="fa-regular fa-file-image"></i>
+                </div>
+                <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 6px;">อัปโหลดรูปภาพเพื่อเริ่มต้น</h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5;">
+                    ไฟล์จะถูกประมวลผลภายในเบราว์เซอร์ของคุณ ปลอดภัย ข้อมูลไม่ถูกส่งออกนอกเครื่อง
+                </p>
+            </div>
+
+            <!-- Canvas View (แสดงหลังโหลดไฟล์) -->
+            <div class="stage-canvas-frame" id="canvasFrame" style="display: none;">
+                <canvas id="previewCanvas"></canvas>
+            </div>
+
+            <!-- Bottom Right Floating Action Button (ปรากฏเฉพาะหลังอัปโหลดไฟล์แล้ว) -->
+            <div class="floating-action-box" id="floatingActionBox" style="display: none;">
+                <button class="btn-start-job" id="btnMainAction" type="button" onclick="handleMainAction()">
+                    <i class="fa-solid fa-rocket"></i>
+                    <span id="btnActionText">⚡ ชำระเงิน (฿ 5) &amp; ดาวน์โหลด</span>
+                </button>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ===== PROMPTPAY PAYMENT MODAL ===== -->
+    <div class="modal-backdrop" id="paymentModal">
+        <div class="modal-card">
+            <button type="button" class="modal-close-btn" onclick="closePaymentModal()">✕</button>
+
+            <!-- Pending View -->
+            <div id="paymentPendingView">
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">
+                    สแกน QR เพื่อชำระเงิน
+                </h3>
+                <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 10px;">
+                    ยอดชำระ <strong style="color: #2563eb; font-size: 1.1rem;" id="lblPayAmount">฿ 5.00</strong> (PromptPay)
+                </p>
+
+                <!-- QR Target -->
+                <div class="qr-wrapper" id="qrTarget"></div>
+
+                <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 6px;">
+                    ⏳ ระบบจะปลดล็อคให้อัตโนมัติเมื่อยอดเงินเข้า
+                </div>
+
+                <!-- Admin / Test Payment Bypass -->
+                <button type="button" onclick="testApprovePayment()"
+                    style="margin-top: 14px; background: transparent; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 4px 10px; font-size: 0.7rem; color: #94a3b8; cursor: pointer;">
+                    🛠️ ทดสอบจำลองการชำระเงินสำเร็จ (Admin Test)
+                </button>
+            </div>
+
+            <!-- Success View -->
+            <div id="paymentSuccessView" style="display: none;">
+                <div style="font-size: 3rem; margin-bottom: 6px;">🎉</div>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: #16a34a; margin-bottom: 4px;">
+                    ชำระเงินสำเร็จแล้ว!
+                </h3>
+                <p style="font-size: 0.84rem; color: #475569; margin-bottom: 16px;">
+                    ขอบคุณที่ใช้บริการ ระบบได้ปลดล็อคไฟล์ให้คุณแล้ว
+                </p>
+
+                <button class="btn-start-job is-success" style="width: 100%;" onclick="executeDownload()">
+                    <i class="fa-solid fa-download"></i>
+                    <span>ดาวน์โหลดไฟล์ผลลัพธ์</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== JAVASCRIPT LOGIC ===== -->
+    <script>
+        /* ==========================================================================
+           [STEP 1: CONFIGURATION] กำหนดค่าบริการและตัวแปรหลัก
+           ========================================================================== */
+        const SERVICE_CONFIG = {
+            serviceName: "MyService",
+            servicePriceThb: 5.00,
+            promptPayNumber: "0988573074",
+            firebaseBase: "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests"
+        };
+
+        // DOM Elements
+        const fileInput = document.getElementById('fileInput');
+        const dropzoneBox = document.getElementById('dropzoneBox');
+        const emptyStageState = document.getElementById('emptyStageState');
+        const canvasFrame = document.getElementById('canvasFrame');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const floatingActionBox = document.getElementById('floatingActionBox');
+        const btnMainAction = document.getElementById('btnMainAction');
+        const btnActionText = document.getElementById('btnActionText');
+        const paymentModal = document.getElementById('paymentModal');
+
+        let rawImage = null;
+        let isPaid = false;
+        let currentOrderId = null;
+        let pollingTimer = null;
+
+        /* ==========================================================================
+           [STEP 2: FILE UPLOAD & PREVIEW] จัดการการอัปโหลดไฟล์
+           ========================================================================== */
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                loadFile(e.target.files[0]);
+            }
+        });
+
+        // Fullpage Drag & Drop across entire window
+        let dragCounter = 0;
+        const pageDragOverlay = document.getElementById('pageDragOverlay');
+
+        window.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            dragCounter++;
+            if (e.dataTransfer && e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
+                if (pageDragOverlay) pageDragOverlay.classList.add('active');
+            }
+        });
+
+        window.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dragCounter--;
+            if (dragCounter <= 0) {
+                dragCounter = 0;
+                if (pageDragOverlay) pageDragOverlay.classList.remove('active');
+            }
+        });
+
+        window.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+        });
+
+        window.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragCounter = 0;
+            if (pageDragOverlay) pageDragOverlay.classList.remove('active');
+            if (dropzoneBox) dropzoneBox.style.borderColor = '#93c5fd';
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+                loadFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        // Dropzone box element events
+        dropzoneBox.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzoneBox.style.borderColor = 'var(--primary)';
+        });
+        dropzoneBox.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropzoneBox.style.borderColor = '#93c5fd';
+        });
+        dropzoneBox.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzoneBox.style.borderColor = '#93c5fd';
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+                loadFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        function loadFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    rawImage = img;
+                    previewCanvas.width = img.width;
+                    previewCanvas.height = img.height;
+
+                    // แสดงภาพและแสดงปุ่ม Floating Action
+                    emptyStageState.style.display = 'none';
+                    canvasFrame.style.display = 'block';
+                    floatingActionBox.style.display = 'flex';
+
+                    renderCanvas();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        /* ==========================================================================
+           [STEP 3: CUSTOM BUSINESS LOGIC] การประมวลผลภาพ / งานใน Canvas
+           ========================================================================== */
+        function updateSettings() {
+            const b = document.getElementById('paramBrightness').value;
+            const c = document.getElementById('paramContrast').value;
+            document.getElementById('lblBrightness').textContent = `${b}%`;
+            document.getElementById('lblContrast').textContent = `${c}%`;
+            renderCanvas();
+        }
+
+        function renderCanvas() {
+            if (!rawImage) return;
+            const ctx = previewCanvas.getContext('2d');
+            const b = document.getElementById('paramBrightness').value;
+            const c = document.getElementById('paramContrast').value;
+
+            ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            ctx.filter = `brightness(${b}%) contrast(${c}%)`;
+            ctx.drawImage(rawImage, 0, 0);
+            ctx.filter = 'none';
+        }
+
+        /* ==========================================================================
+           [STEP 4: PAYMENT & UNLOCK FLOW] ระบบชำระเงินและปลดล็อค
+           ========================================================================== */
+        function handleMainAction() {
+            if (isPaid) {
+                executeDownload();
+            } else {
+                openPaymentModal();
+            }
+        }
+
+        function openPaymentModal() {
+            currentOrderId = `${SERVICE_CONFIG.serviceName.toLowerCase()}_${Date.now()}`;
+            document.getElementById('paymentPendingView').style.display = 'block';
+            document.getElementById('paymentSuccessView').style.display = 'none';
+            document.getElementById('lblPayAmount').textContent = `฿ ${SERVICE_CONFIG.servicePriceThb.toFixed(2)}`;
+
+            // สร้าง PromptPay QR
+            generatePromptPayQR(SERVICE_CONFIG.promptPayNumber, SERVICE_CONFIG.servicePriceThb);
+
+            // บันทึก Order ID ลง Firebase
+            registerOrderInFirebase(currentOrderId);
+
+            paymentModal.classList.add('active');
+            startPaymentPolling(currentOrderId);
+        }
+
+        function closePaymentModal() {
+            paymentModal.classList.remove('active');
+            if (pollingTimer) clearInterval(pollingTimer);
+        }
+
+        // PromptPay Payload Generator (EMVCo standard)
+        function generatePromptPayQR(phoneOrId, amount) {
+            const qrTarget = document.getElementById('qrTarget');
+            qrTarget.innerHTML = '';
+
+            let target = phoneOrId.replace(/[^0-9]/g, '');
+            if (target.length === 10 && target.startsWith('0')) {
+                target = '0066' + target.substring(1);
+            }
+
+            function f(id, val) {
+                const len = ('00' + val.length).slice(-2);
+                return id + len + val;
+            }
+
+            let payload = '000201' + '010212';
+            let merchant = f('00', 'A000000677010111') + f('01', target);
+            payload += f('29', merchant);
+            payload += '5303764'; // THB currency
+            if (amount) {
+                payload += f('54', Number(amount).toFixed(2));
+            }
+            payload += '5802TH';
+            payload += '6304';
+
+            // CRC16 Checksum
+            function crc16(data) {
+                let crc = 0xFFFF;
+                for (let i = 0; i < data.length; i++) {
+                    let x = ((crc >> 8) ^ data.charCodeAt(i)) & 0xFF;
+                    x ^= x >> 4;
+                    crc = ((crc << 8) ^ (x << 12) ^ (x << 5) ^ x) & 0xFFFF;
+                }
+                return ('0000' + crc.toString(16).toUpperCase()).slice(-4);
+            }
+            payload += crc16(payload);
+
+            new QRCode(qrTarget, {
+                text: payload,
+                width: 170,
+                height: 170,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
+
+        async function registerOrderInFirebase(orderId) {
+            try {
+                await fetch(`${SERVICE_CONFIG.firebaseBase}/${orderId}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        orderId: orderId,
+                        service: SERVICE_CONFIG.serviceName,
+                        amount: SERVICE_CONFIG.servicePriceThb,
+                        status: 'pending',
+                        createdAt: Date.now()
+                    })
+                });
+            } catch (e) {
+                console.warn('Firebase registration notice:', e);
+            }
+        }
+
+        function startPaymentPolling(orderId) {
+            if (pollingTimer) clearInterval(pollingTimer);
+            pollingTimer = setInterval(async () => {
+                try {
+                    const res = await fetch(`${SERVICE_CONFIG.firebaseBase}/${orderId}.json?t=${Date.now()}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.status === 'approved') {
+                            onPaymentSuccess();
+                        }
+                    }
+                } catch (e) { }
+            }, 1800);
+        }
+
+        async function testApprovePayment() {
+            if (!currentOrderId) return;
+            try {
+                await fetch(`${SERVICE_CONFIG.firebaseBase}/${currentOrderId}.json`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'approved', approvedAt: Date.now() })
+                });
+            } catch (e) { }
+            onPaymentSuccess();
+        }
+
+        function onPaymentSuccess() {
+            isPaid = true;
+            if (pollingTimer) clearInterval(pollingTimer);
+
+            // ยิง Confetti
+            try {
+                confetti({ particleCount: 90, spread: 65, origin: { y: 0.6 } });
+            } catch (e) { }
+
+            document.getElementById('paymentPendingView').style.display = 'none';
+            document.getElementById('paymentSuccessView').style.display = 'block';
+
+            // อัปเดตปุ่ม Floating Action
+            btnMainAction.className = 'btn-start-job is-success';
+            btnActionText.textContent = '📥 ดาวน์โหลดไฟล์ผลลัพธ์';
+        }
+
+        /* ==========================================================================
+           [STEP 5: EXPORT & DOWNLOAD] ส่งออกและดาวน์โหลดไฟล์
+           ========================================================================== */
+        function executeDownload() {
+            if (!previewCanvas) return;
+            const link = document.createElement('a');
+            link.download = `${SERVICE_CONFIG.serviceName}_${Date.now()}.png`;
+            link.href = previewCanvas.toDataURL('image/png');
+            link.click();
+            closePaymentModal();
+        }
+
+        function resetWorkspace() {
+            rawImage = null;
+            isPaid = false;
+            currentOrderId = null;
+            if (pollingTimer) clearInterval(pollingTimer);
+
+            emptyStageState.style.display = 'block';
+            canvasFrame.style.display = 'none';
+            floatingActionBox.style.display = 'none';
+
+            btnMainAction.className = 'btn-start-job';
+            btnActionText.textContent = `⚡ ชำระเงิน (฿ ${SERVICE_CONFIG.servicePriceThb}) & ดาวน์โหลด`;
+
+            const ctx = previewCanvas.getContext('2d');
+            ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+        }
+    </script>
+</body>
+
+</html>
+
