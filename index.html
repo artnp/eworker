@@ -3398,58 +3398,89 @@
             box-shadow: 0 4px 15px rgba(245, 158, 11, 0.12) !important;
         }
 
-        /* ===== ADMIN RIGHT SIDEBAR & EXPANDED LAYOUT (127.0.0.1) ===== */
-        body.is-admin-view .container {
-            max-width: 100% !important;
-            padding-left: 24px !important;
-            padding-right: 24px !important;
-            box-sizing: border-box;
-            transition: max-width 0.25s ease;
-        }
-
-        body.is-admin-view .header-main {
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-        }
-
-        body.is-admin-view .top-notice-inner {
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-        }
-
-        .store-grid-wrapper {
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        body.is-admin-view .store-grid-wrapper {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 400px;
-            gap: 24px;
-            align-items: start;
+        /* ===== ADMIN RIGHT SIDEBAR LAYOUT (127.0.0.1) ===== */
+        .page-body-wrap {
+            flex: 1;
             width: 100%;
         }
 
-        @media (max-width: 1200px) {
-            body.is-admin-view .store-grid-wrapper {
-                grid-template-columns: 1fr;
-            }
+        .admin-layout-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 16px;
+            box-sizing: border-box;
+        }
+
+        .admin-main-column {
+            width: 100%;
+            min-width: 0;
         }
 
         .admin-right-sidebar {
+            display: none;
+            box-sizing: border-box;
+        }
+
+        /* When in Admin View (127.0.0.1 / localhost):
+           - Pin sidebar strictly to the FAR RIGHT edge of viewport (right: 14px)
+           - Reserve 325px right cushion on page-body-wrap so product cards NEVER overlap
+           - Web layout proportions stay completely normal and unwarped (1200px max container)
+           - Zero border overlap
+        */
+        body.is-admin-view .page-body-wrap {
+            padding-right: 335px;
+            box-sizing: border-box;
+        }
+
+        body.is-admin-view footer {
+            padding-right: 335px;
+            box-sizing: border-box;
+        }
+
+        body.is-admin-view .admin-layout-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 16px;
+            box-sizing: border-box;
+            display: block;
+        }
+
+        body.is-admin-view .admin-main-column {
+            width: 100%;
+            min-width: 0;
+        }
+
+        body.is-admin-view .admin-right-sidebar {
             display: flex;
             flex-direction: column;
-            gap: 16px;
-            position: sticky;
-            top: 16px;
-            width: 100%;
-            box-sizing: border-box;
-            max-height: calc(100vh - 32px);
+            gap: 14px;
+            position: fixed;
+            top: 125px;
+            right: 10px;
+            width: 315px;
+            max-height: calc(100vh - 145px);
             overflow-y: auto;
             overflow-x: hidden;
-            padding-bottom: 24px;
+            padding-bottom: 20px;
+            z-index: 999;
+            box-sizing: border-box;
             scrollbar-width: thin;
             scrollbar-color: #cbd5e1 transparent;
+        }
+
+        @media (max-width: 1240px) {
+            body.is-admin-view .page-body-wrap {
+                padding-right: 0;
+            }
+            body.is-admin-view footer {
+                padding-right: 0;
+            }
+            body.is-admin-view .admin-right-sidebar {
+                position: static;
+                width: 100%;
+                max-height: none;
+                margin-top: 24px;
+            }
         }
 
         .admin-right-sidebar::-webkit-scrollbar {
@@ -3540,7 +3571,7 @@
         .admin-rs-today-card {
             background: linear-gradient(135deg, #ffffff 60%, #ecfdf5 100%);
             border: 1.5px solid rgba(16, 185, 129, 0.35);
-            padding: 16px 18px;
+            padding: 12px 14px;
             border-radius: var(--radius-md);
             box-shadow: var(--shadow-sm);
             position: relative;
@@ -3563,7 +3594,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .admin-rs-today-label {
@@ -3588,17 +3619,17 @@
             display: flex;
             align-items: baseline;
             gap: 5px;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
 
         .admin-rs-currency {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 800;
             color: #059669;
         }
 
         .admin-rs-today-val {
-            font-size: 2.15rem;
+            font-size: 1.95rem;
             font-weight: 900;
             color: #059669;
             letter-spacing: -0.03em;
@@ -3606,19 +3637,19 @@
         }
 
         .admin-rs-today-recent-box {
-            padding-top: 10px;
+            padding-top: 8px;
             border-top: 1px dashed rgba(16, 185, 129, 0.3);
-            margin-top: 4px;
+            margin-top: 2px;
         }
 
         .admin-rs-today-recent-title {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 0.78rem;
+            font-size: 0.76rem;
             font-weight: 700;
             color: #0f172a;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
 
         /* Sales Ranking Table Card */
@@ -3705,14 +3736,14 @@
             background: #f8fafc;
             color: #64748b;
             font-weight: 600;
-            padding: 6px 4px;
+            padding: 5px 2px;
             border-bottom: 1px solid var(--fh-border);
             font-size: 0.7rem;
             text-transform: uppercase;
         }
 
         .admin-rs-table td {
-            padding: 8px 4px;
+            padding: 6px 2px;
             border-bottom: 1px solid #f1f5f9;
             vertical-align: middle;
         }
@@ -3726,13 +3757,13 @@
         }
 
         .admin-rs-rank-pill {
-            width: 20px;
-            height: 20px;
-            border-radius: 5px;
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.68rem;
+            font-size: 0.65rem;
             font-weight: 800;
         }
 
@@ -3745,18 +3776,22 @@
             font-weight: 700;
             color: #0f172a;
             line-height: 1.25;
-            font-size: 0.76rem;
+            font-size: 0.74rem;
             margin-bottom: 2px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
+            white-space: nowrap;
             overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 105px;
         }
 
         .admin-rs-item-meta {
-            font-size: 0.66rem;
+            font-size: 0.64rem;
             color: #94a3b8;
             margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 105px;
         }
 
         .admin-rs-progress {
@@ -3777,9 +3812,9 @@
             background: #f1f5f9;
             border: 1px solid #e2e8f0;
             color: #334155;
-            font-size: 0.68rem;
+            font-size: 0.65rem;
             font-weight: 700;
-            padding: 2px 5px;
+            padding: 1px 4px;
             border-radius: 50px;
             white-space: nowrap;
         }
@@ -3787,68 +3822,81 @@
         .admin-rs-item-revenue {
             font-weight: 800;
             color: #059669;
-            font-size: 0.82rem;
+            font-size: 0.8rem;
+            text-align: right;
+            white-space: nowrap;
+            padding-right: 2px;
+        }
             text-align: right;
             white-space: nowrap;
         }
 
-        /* Recent Activity Feed */
+        /* Recent Activity Feed - Compact Single Line */
         .admin-rs-recent-list {
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            margin-top: 8px;
+            gap: 2px;
+            margin-top: 4px;
         }
 
         .admin-rs-recent-item {
-            background: #ffffff;
-            border: 1px solid rgba(16, 185, 129, 0.22);
-            border-radius: 6px;
-            padding: 7px 9px;
+            background: rgba(255, 255, 255, 0.75);
+            border: 1px solid rgba(16, 185, 129, 0.16);
+            border-radius: 4px;
+            padding: 3px 6px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 8px;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-        }
+            gap: 6px;
+            transition: all 0.15s ease;
         }
 
         .admin-rs-recent-item:hover {
-            background: #f1f5f9;
+            background: #ffffff;
+            border-color: rgba(16, 185, 129, 0.35);
         }
 
         .admin-rs-recent-left {
             display: flex;
             align-items: center;
-            gap: 7px;
+            gap: 5px;
             min-width: 0;
+            flex: 1 1 auto;
+            overflow: hidden;
         }
 
         .admin-rs-recent-icon {
-            font-size: 1rem;
+            font-size: 0.78rem;
             flex-shrink: 0;
+            line-height: 1;
         }
 
         .admin-rs-recent-title {
-            font-size: 0.74rem;
-            font-weight: 700;
+            font-size: 0.7rem;
+            font-weight: 600;
             color: #0f172a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 95px;
+            flex-shrink: 0;
+        }
+
+        .admin-rs-recent-time {
+            font-size: 0.62rem;
+            color: #94a3b8;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        .admin-rs-recent-time {
-            font-size: 0.65rem;
-            color: #94a3b8;
-        }
-
         .admin-rs-recent-price {
-            font-size: 0.8rem;
-            font-weight: 800;
+            font-size: 0.74rem;
+            font-weight: 700;
             color: #059669;
             flex-shrink: 0;
             text-align: right;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -3921,10 +3969,10 @@
     </header>
 
     <!-- MAIN BODY -->
-    <main class="container" style="flex: 1;">
-        <div class="store-grid-wrapper" id="store-grid-wrapper">
-            <!-- Left / Center Column (Store Hero & Product Catalog) -->
-            <div class="store-main-column">
+    <main class="page-body-wrap" id="main-page-wrapper">
+        <div class="admin-layout-container">
+            <!-- Left Main Column (Trust Banner + Categories + Products) -->
+            <div class="admin-main-column">
                 <!-- TRUST HERO BANNER -->
                 <section class="trust-banner-fh">
                     <div class="trust-text">
@@ -3989,7 +4037,7 @@
                 </div>
             </div>
 
-            <!-- ADMIN RIGHT SIDEBAR (127.0.0.1 Only) -->
+            <!-- ADMIN RIGHT SIDEBAR (127.0.0.1 Only - In-Flow Responsive Side Column) -->
             <aside class="admin-right-sidebar" id="admin-right-sidebar" style="display: none;">
                 <!-- 1. Today's Revenue Hero Card with Recent Orders (บอก รายได้ของวันนี้ + รายการโอนล่าสุด) -->
                 <div class="admin-rs-today-card">
@@ -4019,15 +4067,15 @@
                 </div>
 
                 <!-- 2. Sold Products Ranking Table (ตารางรวมว่าขายอะไรได้แล้วบ้าง เหมือน admin-payment.html) -->
-                <div class="admin-rs-card" style="padding: 10px 12px;">
+                <div class="admin-rs-card" style="padding: 10px 8px;">
                     <div class="admin-rs-table-wrap">
                         <table class="admin-rs-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 26px; text-align: center;">#</th>
-                                    <th>สินค้า / บริการ</th>
-                                    <th style="width: 52px; text-align: center;">ขายได้</th>
-                                    <th style="text-align: right; width: 75px;">ยอดรวม</th>
+                                    <th style="width: 20px; text-align: center;">#</th>
+                                    <th style="text-align: left;">สินค้า / บริการ</th>
+                                    <th style="width: 48px; text-align: center;">ขายได้</th>
+                                    <th style="text-align: right; width: 85px; padding-right: 4px;">ยอดรวม</th>
                                 </tr>
                             </thead>
                             <tbody id="admin-ranking-table-body">
@@ -13217,8 +13265,8 @@ ${encodedToken}
                             <div class="admin-rs-item-title" title="${srv.name}">
                                 ${srv.icon || '📦'} ${srv.name}
                             </div>
-                            <div class="admin-rs-item-meta">
-                                ${srv.category} • ${timeStr}
+                            <div class="admin-rs-item-meta" title="${srv.category}">
+                                ${srv.category}
                             </div>
                             <div class="admin-rs-progress" title="สัดส่วนรายได้ ${pct}%">
                                 <div class="admin-rs-fill" style="width: ${pct}%;"></div>
@@ -13266,13 +13314,11 @@ ${encodedToken}
                 const timeStr = formatAdminTimeAgo(item.createdAt);
                 const refShort = String(item.referenceId || item.id || '').slice(-6);
                 return `
-                    <div class="admin-rs-recent-item">
+                    <div class="admin-rs-recent-item" title="${s.name} • ${timeStr} • #${refShort}">
                         <div class="admin-rs-recent-left">
                             <span class="admin-rs-recent-icon">${s.icon || '🛍️'}</span>
-                            <div style="min-width: 0;">
-                                <div class="admin-rs-recent-title" title="${s.name}">${s.name}</div>
-                                <div class="admin-rs-recent-time">${timeStr} • #${refShort}</div>
-                            </div>
+                            <span class="admin-rs-recent-title">${s.name}</span>
+                            <span class="admin-rs-recent-time">(${timeStr})</span>
                         </div>
                         <div class="admin-rs-recent-price">+฿${Number(item.price || 0).toFixed(2)}</div>
                     </div>
