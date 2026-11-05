@@ -9,7 +9,7 @@ const firebaseConfig = {
 };
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, query, orderByChild, limitToLast, remove, get, set, onValue, endAt, onDisconnect as fbOnDisconnect } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+import { getDatabase, ref, push, onChildAdded, onChildChanged, onChildRemoved, query, orderByChild, limitToLast, remove, get, set, update, onValue, endAt, onDisconnect as fbOnDisconnect } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
 
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
@@ -92,6 +92,9 @@ function updateAdminButtonsVisibility() {
         if (changeRoomBtn) changeRoomBtn.style.display = isVisible ? 'flex' : 'none';
         if (latestPriceBadge) latestPriceBadge.style.display = isVisible ? 'flex' : 'none';
         if (adminPreviewUploadBtn) adminPreviewUploadBtn.style.display = (isVisible && !isRoomClosed) ? 'inline-flex' : 'none';
+        document.querySelectorAll('.admin-sim-btn').forEach(btn => {
+            btn.style.display = isVisible ? 'inline-block' : 'none';
+        });
         if (!isLocalHost && hasRoom) {
             const isWorkSubmitted = currentRoom && sessionStorage.getItem(`work_submitted_${currentRoom}`) === '1';
             const showUpload = !isWorkSubmitted && !isRoomClosed;
@@ -800,6 +803,9 @@ function initChatListeners() {
         }
         if (data && data.type === 'watermarked_work') {
             updateWatermarkedWorkUI(key, data);
+        }
+        if (data && (data.paid || data.status === 'approved')) {
+            updateChatSlipPaidUI(key, data);
         }
     });
 
@@ -1574,6 +1580,191 @@ window.updateWatermarkedWorkUI = function (msgId, data) {
     }
 };
 
+// Play high-grade 3-tone chime for payment success (Web Audio API)
+function playSuccessChime() {
+    try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        if (!_notifCtx || _notifCtx.state === 'closed') {
+            _notifCtx = new AudioContextClass();
+        }
+        const ctx = _notifCtx;
+        if (ctx.state === 'suspended') {
+            ctx.resume();
+        }
+        const now = ctx.currentTime;
+
+        // Tone 1: C5 (523.25 Hz)
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(523.25, now);
+        gain1.gain.setValueAtTime(0.2, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.3);
+
+        // Tone 2: E5 (659.25 Hz)
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(659.25, now + 0.1);
+        gain2.gain.setValueAtTime(0.22, now + 0.1);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(now + 0.1);
+        osc2.stop(now + 0.4);
+
+        // Tone 3: G5 (783.99 Hz)
+        const osc3 = ctx.createOscillator();
+        const gain3 = ctx.createGain();
+        osc3.type = 'sine';
+        osc3.frequency.setValueAtTime(783.99, now + 0.2);
+        gain3.gain.setValueAtTime(0.25, now + 0.2);
+        gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+        osc3.connect(gain3);
+        gain3.connect(ctx.destination);
+        osc3.start(now + 0.2);
+        osc3.stop(now + 0.65);
+    } catch (_) { }
+}
+
+// Update Chat Slip to Paid State (Smoothly fade QR out, pop animated success card)
+window.updateChatSlipPaidUI = function (msgId, data) {
+    if (!data || (!data.paid && data.status !== 'approved')) return;
+    if (document.getElementById(`slipSuccess_${msgId}`)) return;
+
+    const slipCard = document.getElementById(`slipCard_${msgId}`);
+    const slipWrap = document.getElementById(`chatSlipWrap_${msgId}`);
+    const bubble = document.querySelector(`.message-bubble[data-id="${msgId}"]`);
+
+    let amount = data.amount || (slipCard ? slipCard.getAttribute('data-amount') : '');
+    if (!amount && bubble) {
+        const textEl = bubble.querySelector('.text-content');
+        if (textEl) {
+            const m = textEl.textContent.trim().match(/^(\d+(?:\.\d{1,2})?)\s*บาท$/);
+            if (m) amount = m[1];
+        }
+    }
+    const formattedAmount = (!isNaN(parseFloat(amount))) ? parseFloat(amount).toFixed(2) : (amount || '0.00');
+
+    const successHTML = `
+        <div class="chat-payment-success-card" id="slipSuccess_${msgId}">
+            <div class="success-circle-check">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <div class="success-title">ชำระเงินสำเร็จ!</div>
+            <div class="success-amount">฿ ${formattedAmount}</div>
+            <div class="success-note">
+                <i class="fa-solid fa-circle-check" style="color: #16a34a;"></i>
+                <span>ตรวจพบยอดเงินเรียบร้อยแล้ว</span>
+            </div>
+        </div>
+    `;
+
+    playSuccessChime();
+
+    if (slipCard) {
+        slipCard.classList.add('fade-out');
+        setTimeout(() => {
+            if (slipWrap) {
+                slipWrap.innerHTML = successHTML;
+            } else if (slipCard.parentNode) {
+                slipCard.outerHTML = successHTML;
+            }
+        }, 220);
+    } else if (slipWrap) {
+        slipWrap.innerHTML = successHTML;
+    }
+};
+
+// Realtime watcher for PromptPay payment requests
+window.setupChatSlipPaymentWatcher = function (msgId, amount, msgTimestamp) {
+    if (!currentRoom || !msgId) return;
+    const chatLinkKey = `chat_${currentRoom}_${msgId}`;
+    const cleanAmount = parseFloat(amount) || 0;
+
+    try {
+        const payReqRef = ref(database, `temp_files/payment_requests/${chatLinkKey}`);
+        get(payReqRef).then(snap => {
+            if (!snap.exists()) {
+                set(payReqRef, {
+                    status: 'pending',
+                    price: cleanAmount,
+                    type: 'chat_price_slip',
+                    roomId: currentRoom,
+                    msgId: msgId,
+                    createdAt: msgTimestamp || Date.now()
+                }).catch(() => { });
+            }
+        }).catch(() => { });
+
+        // Listen to payment request status
+        onValue(payReqRef, (snap) => {
+            const val = snap.val();
+            if (val && (val.status === 'approved' || val.paid)) {
+                try {
+                    set(ref(database, `rooms/${currentRoom}/messages/${msgId}/paid`), true).catch(() => { });
+                    set(ref(database, `rooms/${currentRoom}/messages/${msgId}/paidAt`), Date.now()).catch(() => { });
+                } catch (_) { }
+                window.updateChatSlipPaidUI(msgId, { paid: true, amount: amount });
+            }
+        });
+    } catch (_) { }
+};
+
+// Admin Instant Payment Simulator for Chat Slips
+window.simulateChatPayment = async function (msgId, amount) {
+    if (!currentRoom || !msgId) return;
+    try {
+        const cleanAmount = parseFloat(amount) || 0;
+
+        // 1. Mark message paid in Firebase
+        try {
+            const msgPaidRef = ref(database, `rooms/${currentRoom}/messages/${msgId}/paid`);
+            await set(msgPaidRef, true);
+            await set(ref(database, `rooms/${currentRoom}/messages/${msgId}/paidAt`), Date.now());
+            await set(ref(database, `rooms/${currentRoom}/messages/${msgId}/paidBy`), currentUser);
+        } catch (e1) {
+            console.warn("Message paid set warning:", e1);
+        }
+
+        // 2. Mark payment request approved in Firebase
+        try {
+            const payReqRef = ref(database, `temp_files/payment_requests/chat_${currentRoom}_${msgId}`);
+            if (typeof update === 'function') {
+                await update(payReqRef, {
+                    status: 'approved',
+                    approvedAt: Date.now(),
+                    approvedBy: currentUser,
+                    paidAmount: cleanAmount
+                });
+            } else {
+                await set(payReqRef, {
+                    status: 'approved',
+                    approvedAt: Date.now(),
+                    approvedBy: currentUser,
+                    paidAmount: cleanAmount,
+                    roomId: currentRoom,
+                    msgId: msgId
+                });
+            }
+        } catch (e2) {
+            console.warn("Payment request update warning:", e2);
+        }
+
+        // 3. Update UI instantly
+        window.updateChatSlipPaidUI(msgId, { paid: true, amount: cleanAmount });
+        showDownloadToast("⚡ จำลองยอดชำระเงินสำเร็จ!", 2500);
+    } catch (err) {
+        console.error("Simulation failed:", err);
+        alert("ไม่สามารถจำลองการชำระเงินได้: " + err.message);
+    }
+};
+
 // ===== Process Task Choices & Facebook Instant Popup Logic =====
 window.handleProcessChoice = async function (msgId, choice) {
     if (!currentRoom || isRoomClosed) return;
@@ -1986,43 +2177,41 @@ function renderMessage(data, id) {
                         <div class="work-bill-divider">
                             <span>สแกนจ่ายเพื่อปลดล็อคไฟล์ทันที</span>
                         </div>
-                        <div class="promptpay-container" style="margin-top: 8px; border-radius: 12px; overflow: hidden; background: #fff; padding: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.12);">
-                            <div style="color: #1a1a1a; font-weight: 600; font-size: 0.88rem; margin-bottom: 8px;">
-                                <span>💵 พร้อมเพย์ :</span> <span style="color: #0046b8; font-size: 1.05rem; font-weight: 700;">${amount} บาท</span>
-                            </div>
-                            <div class="qr-container" onclick="downloadQRCode('${qrUrl}', '${amount}')" title="คลิกเพื่อบันทึก QR Code">
-                                <img src="${qrUrl}" onerror="if(!this._fb){this._fb=true;this.src='${qrFb}';}" class="qr-image" style="width:220px; height:220px; max-width:100%; object-fit:contain;" alt="PromptPay QR Code">
-                                <div class="qr-download-overlay">
-                                    <div class="qr-download-icon">
-                                        <img src="https://cdn-icons-png.flaticon.com/128/4196/4196713.png" style="width: 20px; height: 20px;" alt="Save">
-                                    </div>
+                        <div class="promptpay-slip-card" id="slipCard_${id}" data-amount="${amount}">
+                            <div class="chat-slip-header">
+                                <span class="slip-type-badge">
+                                    <span>⚡ PromptPay</span>
+                                </span>
+                                <div class="checkout-countdown-box" id="slipCountdown_${id}">
+                                    <span>⏱️</span>
+                                    <strong class="slip-countdown-timer" data-timestamp="${data.timestamp || Date.now()}">10:00</strong>
+                                    <span>นาที</span>
                                 </div>
                             </div>
 
-                            <!-- ⚡ ชำระผ่าน Mobile Banking (แสดงเฉพาะบนมือถือ) -->
-                            <div class="mobile-banking-container">
-                                <button type="button" class="btn-rocket-pay" onclick="window.openChatMobileBanking('${chatLinkKey}', '${amount}', this)">
-                                    <span>กดชำระผ่านธนาคาร</span>
-                                </button>
-                                <div style="display: flex; justify-content: center; align-items: center; gap: 5px; margin: 4px auto 8px; flex-wrap: wrap;">
-                                    <img alt="scb-easy" title="SCB Easy (ไทยพาณิชย์)" style="width: 20px; height: 20px; border-radius: 4px; object-fit: contain;" src="https://lighthouse.beamcheckout.com/assets/scb-easy-C-cOoQPx.svg">
-                                    <img alt="k-plus" title="K PLUS (กสิกรไทย)" style="width: 20px; height: 20px; border-radius: 4px; object-fit: contain;" src="https://lighthouse.beamcheckout.com/assets/k-plus-BSX7oC6W.svg">
-                                    <img alt="krungthai-next" title="Krungthai NEXT (กรุงไทย)" style="width: 20px; height: 20px; border-radius: 4px; object-fit: contain;" src="https://lighthouse.beamcheckout.com/assets/next-app-CMFd8cOO.svg">
-                                    <img alt="krungsri-app" title="Krungsri App (กรุงศรี)" style="width: 20px; height: 20px; border-radius: 4px; object-fit: contain;" src="data:image/svg+xml,%3csvg%20width='60'%20height='60'%20viewBox='0%200%2060%2060'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cmask%20id='path-1-inside-1_31_3248'%20fill='white'%3e%3cpath%20d='M0%208C0%203.58172%203.58172%200%208%200H52C56.4183%200%2060%203.58172%2060%208V52C60%2056.4183%2056.4183%2060%2052%2060H8C3.58172%2060%200%2056.4183%200%2052V8Z'/%3e%3c/mask%3e%3cpath%20d='M0%208C0%203.58172%203.58172%200%208%200H52C56.4183%200%2060%203.58172%2060%208V52C60%2056.4183%2056.4183%2060%2052%2060H8C3.58172%2060%200%2056.4183%200%2052V8Z'%20fill='%23715F5F'/%3e%3cpath%20d='M8%200V1H52V0V-1H8V0ZM60%208H59V52H60H61V8H60ZM52%2060V59H8V60V61H52V60ZM0%2052H1V8H0H-1V52H0ZM8%2060V59C4.13401%2059%201%2055.866%201%2052H0H-1C-1%2056.9706%203.02944%2061%208%2061V60ZM60%2052H59C59%2055.866%2055.866%2059%2052%2059V60V61C56.9706%2061%2061%2056.9706%2061%2052H60ZM52%200V1C55.866%201%2059%204.13401%2059%208H60H61C61%203.02944%2056.9706%20-1%2052%20-1V0ZM8%200V-1C3.02944%20-1%20-1%203.02944%20-1%208H0H1C1%204.13401%204.13401%201%208%201V0Z'%20fill='%23CED4DA'%20mask='url(%23path-1-inside-1_31_3248)'/%3e%3cpath%20d='M22.8476%2025.6088C23.5369%2027.0888%2024.3574%2028.536%2025.4406%2029.7528C25.8344%2029.0293%2026.1298%2028.2728%2026.458%2027.5164C27.7381%2024.1617%2028.4274%2020.6097%2028.8869%2017.0906C29.2151%2014.4266%2029.4449%2011.6968%2029.412%209.03284C26.3596%209.09861%2023.2415%209.88795%2020.4844%2011.2693C20.4188%2011.3022%2020.3203%2011.3679%2020.2547%2011.4337C20.189%2011.9599%2020.2547%2012.5191%2020.2218%2013.0453C20.3203%2017.3208%2021.0752%2021.6622%2022.8476%2025.6088Z'%20fill='%23FFD505'/%3e%3cpath%20d='M32.8257%2025.4444C33.2852%2026.8916%2033.8104%2028.3716%2034.5325%2029.72C35.3202%2028.7991%2035.9766%2027.7796%2036.5674%2026.7271C38.307%2023.4711%2039.226%2019.7876%2039.5871%2016.104C39.7184%2014.5582%2039.8168%2012.9796%2039.7512%2011.4338C39.0619%2011.0062%2038.2742%2010.7102%2037.5521%2010.3813C35.3202%209.52622%2032.957%209.06578%2030.561%209C30.5281%2010.3156%2030.5938%2011.6311%2030.6923%2012.9138C30.9877%2017.1564%2031.5785%2021.3662%2032.8257%2025.4444Z'%20fill='%23FFD505'/%3e%3cpath%20d='M15.1673%2027.5165C16.7428%2025.1814%2017.6946%2022.4845%2018.3183%2019.7548C18.8762%2017.2223%2019.1716%2014.6241%2019.1716%2012.0259C19.0075%2012.0917%2018.8434%2012.1903%2018.7121%2012.289C16.0535%2013.9992%2013.756%2016.3014%2012.0821%2019.0312C9.62039%2023.0108%208.57008%2027.9112%209.16088%2032.5485C11.6225%2031.529%2013.6903%2029.6872%2015.1673%2027.5165Z'%20fill='%23FFD505'/%3e%3cpath%20d='M48.5475%2020.1823C47.0705%2017.3539%2044.9043%2014.8543%2042.3113%2012.9797C41.819%2012.6508%2041.3595%2012.289%2040.8343%2012.0259C40.8343%2014.0979%2041.0313%2016.2028%2041.3923%2018.2748C41.9503%2021.3992%2042.9349%2024.5237%2044.6417%2027.1877C46.1187%2029.5228%2048.2521%2031.4961%2050.8451%2032.5485C51.3702%2028.3388%2050.5497%2023.9317%2048.5475%2020.1823Z'%20fill='%23FFD505'/%3e%3cpath%20d='M23.7011%2033.568C23.5698%2033.3048%2023.3072%2033.1075%2023.1103%2032.8773C22.2241%2031.8577%2021.502%2030.7066%2020.8784%2029.5226C20.3861%2028.5688%2020.025%2027.5493%2019.6968%2026.5626C19.4999%2026.8586%2019.4014%2027.1875%2019.3029%2027.5164C18.7121%2029.1937%2017.8587%2030.8053%2016.7756%2032.2195C15.1017%2034.3902%2012.8698%2036.232%2010.2768%2037.1857C10.3096%2037.3831%2010.3753%2037.5804%2010.4409%2037.7448C11.0974%2039.3893%2011.9508%2040.968%2013.0011%2042.3822C13.4278%2042.9084%2013.8216%2043.5004%2014.314%2043.9608C14.6422%2043.8622%2014.9048%2043.6648%2015.2002%2043.5004C18.3511%2041.4613%2020.8456%2038.5013%2022.7493%2035.3111C23.1103%2034.752%2023.4713%2034.1928%2023.7011%2033.568Z'%20fill='%23FFD505'/%3e%3cpath%20d='M30.2654%2027.648C30.1669%2027.2862%2030.1998%2026.8916%2029.97%2026.5956C29.7402%2026.8916%2029.7731%2027.3191%2029.6746%2027.648C28.9853%2031.2%2027.935%2034.7191%2026.5237%2038.0409C24.9154%2041.7902%2022.8148%2045.408%2019.8608%2048.2694C19.7295%2048.4338%2020.0249%2048.4996%2020.1233%2048.5654C23.0773%2050.1111%2026.4252%2050.9662%2029.7731%2050.9991C33.3507%2051.032%2036.9939%2050.144%2040.1121%2048.368C37.1581%2045.4409%2034.959%2041.7902%2033.3507%2037.9751C32.0378%2034.6534%2030.9547%2031.2%2030.2654%2027.648Z'%20fill='%23FFD505'/%3e%3cpath%20d='M40.6702%2027.4836C40.5717%2027.1876%2040.506%2026.8587%2040.3091%2026.5956C40.1122%2026.9245%2040.0137%2027.3191%2039.8824%2027.6809C39.0947%2029.8187%2037.9131%2031.792%2036.3704%2033.4694C36.2063%2033.6009%2036.3376%2033.7654%2036.4033%2033.8969C37.0925%2035.2125%2037.8803%2036.4622%2038.7336%2037.6462C40.4076%2039.9156%2042.4097%2041.9876%2044.8057%2043.5662C45.0683%2043.7307%2045.3309%2043.928%2045.6263%2043.9938C45.8561%2043.8294%2046.0202%2043.5662%2046.1843%2043.3689C47.3002%2042.0205%2048.2193%2040.5405%2048.9742%2038.9618C49.2367%2038.4027%2049.4993%2037.8107%2049.6634%2037.2187C48.2521%2036.6925%2046.972%2035.936%2045.8232%2034.9822C43.46%2033.0089%2041.6876%2030.3778%2040.6702%2027.4836Z'%20fill='%23FFD505'/%3e%3c/svg%3e">
-                                    <img alt="bangkok-bank-app" title="Bangkok Bank (กรุงเทพ)" style="width: 20px; height: 20px; border-radius: 4px; object-fit: contain;" src="data:image/svg+xml,%3csvg%20width='60'%20height='60'%20viewBox='0%200%2060%2060'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cmask%20id='path-1-inside-1_512_543'%20fill='white'%3e%3cpath%20d='M0%208C0%203.58172%203.58172%200%208%200H52C56.4183%200%2060%203.58172%2060%208V52C60%2056.4183%2056.4183%2060%2052%2060H8C3.58172%2060%200%2056.4183%200%2052V8Z'/%3e%3c/mask%3e%3cpath%20d='M0%208C0%203.58172%203.58172%200%208%200H52C56.4183%200%2060%203.58172%2060%208V52C60%2056.4183%2056.4183%2060%2052%2060H8C3.58172%2060%200%2056.4183%200%2052V8Z'%20fill='%230066FF'/%3e%3cpath%20d='M8%200V1H52V0V-1H8V0ZM60%208H59V52H60H61V8H60ZM52%2060V59H8V60V61H52V60ZM0%2052H1V8H0H-1V52H0ZM8%2060V59C4.13401%2059%201%2055.866%201%2052H0H-1C-1%2056.9706%203.02944%2061%208%2061V60ZM60%2052H59C59%2055.866%2055.866%2059%2052%2059V60V61C56.9706%2061%2061%2056.9706%2061%2052H60ZM52%200V1C55.866%201%2059%204.13401%2059%208H60H61C61%203.02944%2056.9706%20-1%2052%20-1V0ZM8%200V-1C3.02944%20-1%20-1%203.02944%20-1%208H0H1C1%204.13401%204.13401%201%208%201V0Z'%20fill='%23CED4DA'%20mask='url(%23path-1-inside-1_512_543)'/%3e%3cg%20clip-path='url(%23clip0_512_543)'%3e%3cpath%20d='M42.717%2027.5377C40.7304%2024.44%2038.5352%2021.4813%2036.3235%2018.5362C35.2945%2017.1646%2034.2628%2015.793%2033.2173%2014.435C32.3392%2013.2924%2031.4529%2012.1525%2030.5447%2011.0318C30.0288%2010.3937%2030.0727%2010.2573%2029.4443%2011.0318C28.2617%2012.4907%2027.1147%2013.9823%2025.9759%2015.4739C24.6424%2017.2191%2023.3253%2018.9753%2022.0301%2020.7505C20.5154%2022.8229%2019.0035%2024.8981%2017.5931%2027.0442C16.7122%2028.3831%2015.9631%2029.7874%2015.4912%2031.32C15.1098%2032.5471%2015.0027%2033.8178%2015%2035.304C14.9918%2035.6585%2015.0165%2036.212%2015.0741%2036.7656C15.1729%2037.7118%2015.2936%2038.6499%2015.7519%2039.5089C16.5613%2041.025%2017.7714%2042.1894%2019.0913%2043.2502C20.7459%2044.5809%2022.4307%2045.868%2024.1786%2047.0787C25.9787%2048.3249%2027.7458%2049.6175%2029.5651%2050.8364C29.8614%2051.0355%2030.1166%2051.0709%2030.3993%2050.8446C30.4843%2050.7764%2030.5831%2050.7273%2030.6736%2050.6646C33.9829%2048.3877%2037.3086%2046.1298%2040.445%2043.6183C41.2984%2042.9338%2042.1435%2042.2358%2042.8734%2041.4177C43.628%2040.5723%2044.3332%2039.6779%2044.6104%2038.5599C45.0741%2036.6865%2045.0796%2034.7859%2044.8408%2032.8743C44.5939%2030.9082%2043.7625%2029.1657%2042.7143%2027.535L42.717%2027.5377ZM27.7156%2045.2626C27.7074%2045.399%2027.7486%2045.5626%2027.5867%2045.6417C27.4357%2045.7153%2027.3123%2045.6171%2027.197%2045.5353C26.2723%2044.8727%2025.3448%2044.21%2024.4228%2043.542C23.2265%2042.6748%2022.0027%2041.8404%2020.8474%2040.9214C19.3821%2039.7543%2018.559%2038.1836%2018.2846%2036.3456C18.0348%2034.6822%2018.3422%2033.0652%2018.8169%2031.4727C18.8635%2031.3172%2018.9129%2031.1345%2019.1077%2031.11C19.2916%2031.0882%2019.3575%2031.2627%2019.4425%2031.3827C20.8008%2033.3242%2022.1042%2035.3067%2023.649%2037.1146C24.7631%2038.4181%2025.8964%2039.7079%2027.0351%2040.9923C27.5236%2041.5459%2027.7294%2042.1949%2027.776%2042.9066C27.7897%2043.1247%2027.776%2043.3429%2027.776%2043.561H27.7925C27.7678%2044.1282%2027.7431%2044.6927%2027.7129%2045.2599L27.7156%2045.2626ZM30.3279%2039.4625C30.0453%2039.7843%2029.9355%2039.7843%2029.6529%2039.4516C28.9367%2038.6117%2028.2233%2037.7691%2027.5098%2036.9265C25.8854%2035.0095%2024.2445%2033.1034%2022.642%2031.1673C21.7941%2030.1447%2021.3551%2028.9694%2021.5636%2027.6141C21.6706%2026.9187%2022.0438%2026.3597%2022.4417%2025.8062C24.6286%2022.7629%2026.8321%2019.7306%2029.1041%2016.7501C29.3099%2016.4801%2029.5267%2016.2211%2029.7297%2015.9484C29.9026%2015.7193%2030.0563%2015.6893%2030.2428%2015.9348C30.8383%2016.7174%2031.4475%2017.4891%2032.0374%2018.2772C33.9884%2020.8841%2035.9119%2023.5101%2037.7943%2026.1688C38.247%2026.8069%2038.505%2027.4914%2038.4528%2028.2549C38.505%2029.4684%2037.9644%2030.4392%2037.24%2031.3063C35.2067%2033.7387%2033.146%2036.1466%2031.0962%2038.5626C30.841%2038.8626%2030.5886%2039.1625%2030.3279%2039.457V39.4625ZM39.6657%2040.4851C39.3062%2040.8859%2038.8398%2041.1668%2038.4062%2041.4804C36.5842%2042.8084%2034.754%2044.1228%2032.9237%2045.4399C32.8359%2045.5026%2032.7454%2045.5708%2032.6466%2045.6171C32.4243%2045.7207%2032.2652%2045.658%2032.2624%2045.4044C32.2542%2044.48%2032.1088%2043.5583%2032.224%2042.6284C32.3091%2041.9549%2032.5889%2041.3904%2033.039%2040.8832C34.7841%2038.9117%2036.5705%2036.9728%2038.1098%2034.8295C38.933%2033.6842%2039.7233%2032.5198%2040.5328%2031.3663C40.6151%2031.2463%2040.6782%2031.0664%2040.8703%2031.1073C41.0377%2031.1427%2041.1063%2031.2927%2041.1502%2031.4427C41.5096%2032.6616%2041.7621%2033.8969%2041.7676%2035.1676C41.8115%2037.2319%2041.0185%2038.9717%2039.6602%2040.4824L39.6657%2040.4851Z'%20fill='white'/%3e%3c/g%3e%3cdefs%3e%3cclipPath%20id='clip0_512_543'%3e%3crect%20width='30'%20height='40.5'%20fill='white'%20transform='translate(15%2010.5)'/%3e%3c/clipPath%3e%3c/defs%3e%3c/svg%3e">
-                                    <img alt="make" title="MAKE by KBank" style="width: 20px; height: 20px; border-radius: 4px; object-fit: contain;" src="https://lighthouse.beamcheckout.com/assets/make-BaYE7-h2.svg">
+                            <div class="qr-clean-card" onclick="downloadQRCode('${qrUrl}', '${amount}')" title="คลิกเพื่อบันทึกรูป QR Code">
+                                <div class="qr-clean-target">
+                                    <img src="${qrUrl}" onerror="if(!this._fb){this._fb=true;this.src='${qrFb}';}" class="qr-clean-img" alt="PromptPay QR Code">
+                                </div>
+                                <div class="qr-bank-tag">
+                                    <img src="../assets/promptpay_header_full.png"
+                                        onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/100px-PromptPay-logo.png'; this.onerror=function(){this.style.display='none';};"
+                                        alt="PromptPay" class="qr-promptpay-logo">
+                                    <span>สแกนผ่านทุกแอปธนาคาร</span>
+                                </div>
+                                <div class="qr-tap-hint">
+                                    <span>📥 แตะ/คลิกรูปเพื่อบันทึก QR</span>
                                 </div>
                             </div>
 
+                            <div class="qr-amount-text">
+                                ฿ ${(!isNaN(parseFloat(amount))) ? parseFloat(amount).toFixed(2) : amount}
+                            </div>
 
-                            ${isAdmin ? `
-                                <div style="margin-top: 10px;">
-                                    <button type="button" class="work-pay-confirm-btn" onclick="window.confirmWorkPayment('${id}', '${amount}')">
-                                        <i class="fa-solid fa-circle-check"></i>
-                                        <span>ปลดล็อคงานให้ลูกค้าทันที (Admin)</span>
-                                    </button>
-                                </div>
-                            ` : ''}
+                            <div class="polling-status-chip">
+                                <div class="clean-spinner"></div>
+                                <span>ตรวจจับยอดเงินเข้าอัตโนมัติ (PromptPay)</span>
+                            </div>
                         </div>
                     </div>
                 ` : `
@@ -2240,45 +2429,87 @@ function renderMessage(data, id) {
             const strictPriceMatch = data.text.trim().match(/^(\d+(?:\.\d{1,2})?)\s*บาท$/);
 
             if (strictPriceMatch) {
-                // It's ONLY the price: Show only QR Code
+                // It's ONLY the price: Show QR Code (or animated success card if already paid)
                 const amount = strictPriceMatch[1];
+                const formattedAmount = (!isNaN(parseFloat(amount))) ? parseFloat(amount).toFixed(2) : amount;
                 updateLatestPriceDisplay(amount);
-                const chatLinkKey = `chat_${currentRoom}_${id}`;
-                const workerBaseStrict = (typeof BEAM_WORKER_URL !== "undefined" ? BEAM_WORKER_URL : (window.BEAM_WORKER_URL || "https://eworker-beam-pay.moonverse69.workers.dev"));
-                const chatQrUrl = `${workerBaseStrict}/qr-image?linkKey=${encodeURIComponent(chatLinkKey)}&amount=${amount}`;
-                const chatQrPayload = generatePromptPayPayload('0988573074', amount);
-                const chatQrFb = 'https://quickchart.io/qr?size=300&margin=2&text=' + encodeURIComponent(chatQrPayload);
+                const isPaid = !!data.paid;
 
-                contentHTML += `
-                    <div class="promptpay-container" style="margin-top: 12px; border-radius: 12px; overflow: hidden; background: #fff; padding: 15px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-                        <div style="color: #1a1a1a; font-weight: 600; font-size: 0.85rem; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                            <span>💵พร้อมเพย์ :</span><span style="color: #0046b8; font-size: 1rem;">${amount} บาท</span>
+                if (isPaid) {
+                    contentHTML += `
+                        <div class="chat-payment-success-card" id="slipSuccess_${id}">
+                            <div class="success-circle-check">
+                                <i class="fa-solid fa-check"></i>
+                            </div>
+                            <div class="success-title">ชำระเงินสำเร็จ!</div>
+                            <div class="success-amount">฿ ${formattedAmount}</div>
+                            <div class="success-note">
+                                <i class="fa-solid fa-circle-check" style="color: #16a34a;"></i>
+                                <span>ตรวจพบยอดเงินเรียบร้อยแล้ว</span>
+                            </div>
                         </div>
-                        <div class="qr-container" onclick="downloadQRCode('${chatQrUrl}', '${amount}')" title="คลิกเพื่อบันทึก QR Code">
-                            <img src="${chatQrUrl}" onerror="if(!this._fb){this._fb=true;this.src='${chatQrFb}';}" class="qr-image" style="width:220px; height:220px; max-width:100%; object-fit:contain; margin:0 auto;" alt="PromptPay QR Code">
-                            <div class="qr-download-overlay">
-                                <div class="qr-download-icon">
-                                    <img src="https://cdn-icons-png.flaticon.com/128/4196/4196713.png" style="width: 24px; height: 24px;" alt="Save">
+                    `;
+                } else {
+                    const chatLinkKey = `chat_${currentRoom}_${id}`;
+                    const workerBaseStrict = (typeof BEAM_WORKER_URL !== "undefined" ? BEAM_WORKER_URL : (window.BEAM_WORKER_URL || "https://eworker-beam-pay.moonverse69.workers.dev"));
+                    const chatQrUrl = `${workerBaseStrict}/qr-image?linkKey=${encodeURIComponent(chatLinkKey)}&amount=${amount}`;
+                    const chatQrPayload = generatePromptPayPayload('0988573074', amount);
+                    const chatQrFb = 'https://quickchart.io/qr?size=300&margin=2&text=' + encodeURIComponent(chatQrPayload);
+
+                    contentHTML += `
+                        <div class="chat-slip-container" id="chatSlipWrap_${id}">
+                            <div class="promptpay-slip-card" id="slipCard_${id}" data-amount="${amount}">
+                                <div class="chat-slip-header">
+                                    <span class="slip-type-badge">
+                                        <span>⚡ PromptPay</span>
+                                    </span>
+                                    <div class="checkout-countdown-box" id="slipCountdown_${id}">
+                                        <span>⏱️</span>
+                                        <strong class="slip-countdown-timer" data-timestamp="${data.timestamp || Date.now()}">10:00</strong>
+                                        <span>นาที</span>
+                                    </div>
+                                </div>
+
+                                <div class="qr-clean-card" onclick="downloadQRCode('${chatQrUrl}', '${amount}')" title="คลิกเพื่อบันทึกรูป QR Code">
+                                    <div class="qr-clean-target">
+                                        <img src="${chatQrUrl}" onerror="if(!this._fb){this._fb=true;this.src='${chatQrFb}';}" class="qr-clean-img" alt="PromptPay QR Code">
+                                    </div>
+                                    <div class="qr-bank-tag">
+                                        <img src="../assets/promptpay_header_full.png"
+                                            onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/100px-PromptPay-logo.png'; this.onerror=function(){this.style.display='none';};"
+                                            alt="PromptPay" class="qr-promptpay-logo">
+                                        <span>สแกนผ่านทุกแอปธนาคาร</span>
+                                    </div>
+                                    <div class="qr-tap-hint">
+                                        <span>📥 แตะ/คลิกรูปเพื่อบันทึก QR</span>
+                                    </div>
+                                </div>
+
+                                <div class="qr-amount-text">
+                                    ฿ ${formattedAmount}
+                                </div>
+
+                                <div class="polling-status-chip">
+                                    <div class="clean-spinner"></div>
+                                    <span>ตรวจจับยอดเงินเข้าอัตโนมัติ (PromptPay)</span>
+                                </div>
+
+                                <div class="admin-sim-wrap" style="margin-top: 6px; text-align: center;">
+                                    <button type="button" class="btn-tool-sm admin-sim-btn" onclick="window.simulateChatPayment('${id}', '${amount}')" style="display: ${isAdminUser() ? 'inline-block' : 'none'}; font-size: 0.68rem; background: rgb(239, 246, 255); color: rgb(29, 78, 216); border: 1px solid rgb(191, 219, 254); padding: 2px 7px; border-radius: 5px; cursor: pointer;">
+                                        ⚡ จำลองโอนเงิน (Admin Test)
+                                    </button>
                                 </div>
                             </div>
                         </div>
+                    `;
 
-                        <!-- ⚡ ชำระผ่าน Mobile Banking (แสดงเฉพาะบนมือถือ) -->
-                        <div class="mobile-banking-container">
-                            <button type="button" class="btn-rocket-pay" onclick="window.openChatMobileBanking('${chatLinkKey}', '${amount}', this)">
-                                <span>กดชำระผ่านธนาคาร</span>
-                            </button>
-                            <div style="display: flex; justify-content: center; align-items: center; gap: 5px; margin: 4px auto 8px; flex-wrap: wrap;">
-                                <img alt="scb-easy" title="SCB Easy (ไทยพาณิชย์)" style="width: 20px; height: 20px; border-radius: 4px; object-fit: contain;" src="https://lighthouse.beamcheckout.com/assets/scb-easy-C-cOoQPx.svg">
-                                <img alt="k-plus" title="K PLUS (กสิกรไทย)" style="width: 20px; height: 20px; border-radius: 4px; object-fit: contain;" src="https://lighthouse.beamcheckout.com/assets/k-plus-BSX7oC6W.svg">
-                                <img alt="krungthai-next" title="Krungthai NEXT (กรุงไทย)" style="width: 20px; height: 20px; border-radius: 4px; object-fit: contain;" src="https://lighthouse.beamcheckout.com/assets/next-app-CMFd8cOO.svg">
-                                <img alt="krungsri-app" title="Krungsri App (กรุงศรี)" style="width: 20px; height: 20px; border-radius: 4px; object-fit: contain;" src="data:image/svg+xml,%3csvg%20width='60'%20height='60'%20viewBox='0%200%2060%2060'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cmask%20id='path-1-inside-1_31_3248'%20fill='white'%3e%3cpath%20d='M0%208C0%203.58172%203.58172%200%208%200H52C56.4183%200%2060%203.58172%2060%208V52C60%2056.4183%2056.4183%2060%2052%2060H8C3.58172%2060%200%2056.4183%200%2052V8Z'/%3e%3c/mask%3e%3cpath%20d='M0%208C0%203.58172%203.58172%200%208%200H52C56.4183%200%2060%203.58172%2060%208V52C60%2056.4183%2056.4183%2060%2052%2060H8C3.58172%2060%200%2056.4183%200%2052V8Z'%20fill='%23715F5F'/%3e%3cpath%20d='M8%200V1H52V0V-1H8V0ZM60%208H59V52H60H61V8H60ZM52%2060V59H8V60V61H52V60ZM0%2052H1V8H0H-1V52H0ZM8%2060V59C4.13401%2059%201%2055.866%201%2052H0H-1C-1%2056.9706%203.02944%2061%208%2061V60ZM60%2052H59C59%2055.866%2055.866%2059%2052%2059V60V61C56.9706%2061%2061%2056.9706%2061%2052H60ZM52%200V1C55.866%201%2059%204.13401%2059%208H60H61C61%203.02944%2056.9706%20-1%2052%20-1V0ZM8%200V-1C3.02944%20-1%20-1%203.02944%20-1%208H0H1C1%204.13401%204.13401%201%208%201V0Z'%20fill='%23CED4DA'%20mask='url(%23path-1-inside-1_31_3248)'/%3e%3cpath%20d='M22.8476%2025.6088C23.5369%2027.0888%2024.3574%2028.536%2025.4406%2029.7528C25.8344%2029.0293%2026.1298%2028.2728%2026.458%2027.5164C27.7381%2024.1617%2028.4274%2020.6097%2028.8869%2017.0906C29.2151%2014.4266%2029.4449%2011.6968%2029.412%209.03284C26.3596%209.09861%2023.2415%209.88795%2020.4844%2011.2693C20.4188%2011.3022%2020.3203%2011.3679%2020.2547%2011.4337C20.189%2011.9599%2020.2547%2012.5191%2020.2218%2013.0453C20.3203%2017.3208%2021.0752%2021.6622%2022.8476%2025.6088Z'%20fill='%23FFD505'/%3e%3cpath%20d='M32.8257%2025.4444C33.2852%2026.8916%2033.8104%2028.3716%2034.5325%2029.72C35.3202%2028.7991%2035.9766%2027.7796%2036.5674%2026.7271C38.307%2023.4711%2039.226%2019.7876%2039.5871%2016.104C39.7184%2014.5582%2039.8168%2012.9796%2039.7512%2011.4338C39.0619%2011.0062%2038.2742%2010.7102%2037.5521%2010.3813C35.3202%209.52622%2032.957%209.06578%2030.561%209C30.5281%2010.3156%2030.5938%2011.6311%2030.6923%2012.9138C30.9877%2017.1564%2031.5785%2021.3662%2032.8257%2025.4444Z'%20fill='%23FFD505'/%3e%3cpath%20d='M15.1673%2027.5165C16.7428%2025.1814%2017.6946%2022.4845%2018.3183%2019.7548C18.8762%2017.2223%2019.1716%2014.6241%2019.1716%2012.0259C19.0075%2012.0917%2018.8434%2012.1903%2018.7121%2012.289C16.0535%2013.9992%2013.756%2016.3014%2012.0821%2019.0312C9.62039%2023.0108%208.57008%2027.9112%209.16088%2032.5485C11.6225%2031.529%2013.6903%2029.6872%2015.1673%2027.5165Z'%20fill='%23FFD505'/%3e%3cpath%20d='M48.5475%2020.1823C47.0705%2017.3539%2044.9043%2014.8543%2042.3113%2012.9797C41.819%2012.6508%2041.3595%2012.289%2040.8343%2012.0259C40.8343%2014.0979%2041.0313%2016.2028%2041.3923%2018.2748C41.9503%2021.3992%2042.9349%2024.5237%2044.6417%2027.1877C46.1187%2029.5228%2048.2521%2031.4961%2050.8451%2032.5485C51.3702%2028.3388%2050.5497%2023.9317%2048.5475%2020.1823Z'%20fill='%23FFD505'/%3e%3cpath%20d='M23.7011%2033.568C23.5698%2033.3048%2023.3072%2033.1075%2023.1103%2032.8773C22.2241%2031.8577%2021.502%2030.7066%2020.8784%2029.5226C20.3861%2028.5688%2020.025%2027.5493%2019.6968%2026.5626C19.4999%2026.8586%2019.4014%2027.1875%2019.3029%2027.5164C18.7121%2029.1937%2017.8587%2030.8053%2016.7756%2032.2195C15.1017%2034.3902%2012.8698%2036.232%2010.2768%2037.1857C10.3096%2037.3831%2010.3753%2037.5804%2010.4409%2037.7448C11.0974%2039.3893%2011.9508%2040.968%2013.0011%2042.3822C13.4278%2042.9084%2013.8216%2043.5004%2014.314%2043.9608C14.6422%2043.8622%2014.9048%2043.6648%2015.2002%2043.5004C18.3511%2041.4613%2020.8456%2038.5013%2022.7493%2035.3111C23.1103%2034.752%2023.4713%2034.1928%2023.7011%2033.568Z'%20fill='%23FFD505'/%3e%3cpath%20d='M30.2654%2027.648C30.1669%2027.2862%2030.1998%2026.8916%2029.97%2026.5956C29.7402%2026.8916%2029.7731%2027.3191%2029.6746%2027.648C28.9853%2031.2%2027.935%2034.7191%2026.5237%2038.0409C24.9154%2041.7902%2022.8148%2045.408%2019.8608%2048.2694C19.7295%2048.4338%2020.0249%2048.4996%2020.1233%2048.5654C23.0773%2050.1111%2026.4252%2050.9662%2029.7731%2050.9991C33.3507%2051.032%2036.9939%2050.144%2040.1121%2048.368C37.1581%2045.4409%2034.959%2041.7902%2033.3507%2037.9751C32.0378%2034.6534%2030.9547%2031.2%2030.2654%2027.648Z'%20fill='%23FFD505'/%3e%3cpath%20d='M40.6702%2027.4836C40.5717%2027.1876%2040.506%2026.8587%2040.3091%2026.5956C40.1122%2026.9245%2040.0137%2027.3191%2039.8824%2027.6809C39.0947%2029.8187%2037.9131%2031.792%2036.3704%2033.4694C36.2063%2033.6009%2036.3376%2033.7654%2036.4033%2033.8969C37.0925%2035.2125%2037.8803%2036.4622%2038.7336%2037.6462C40.4076%2039.9156%2042.4097%2041.9876%2044.8057%2043.5662C45.0683%2043.7307%2045.3309%2043.928%2045.6263%2043.9938C45.8561%2043.8294%2046.0202%2043.5662%2046.1843%2043.3689C47.3002%2042.0205%2048.2193%2040.5405%2048.9742%2038.9618C49.2367%2038.4027%2049.4993%2037.8107%2049.6634%2037.2187C48.2521%2036.6925%2046.972%2035.936%2045.8232%2034.9822C43.46%2033.0089%2041.6876%2030.3778%2040.6702%2027.4836Z'%20fill='%23FFD505'/%3e%3c/svg%3e">
-                                <img alt="bangkok-bank-app" title="Bangkok Bank (กรุงเทพ)" style="width: 20px; height: 20px; border-radius: 4px; object-fit: contain;" src="data:image/svg+xml,%3csvg%20width='60'%20height='60'%20viewBox='0%200%2060%2060'%20fill='none'%20xmlns='http://www.w3.org/2000/svg'%3e%3cmask%20id='path-1-inside-1_512_543'%20fill='white'%3e%3cpath%20d='M0%208C0%203.58172%203.58172%200%208%200H52C56.4183%200%2060%203.58172%2060%208V52C60%2056.4183%2056.4183%2060%2052%2060H8C3.58172%2060%200%2056.4183%200%2052V8Z'/%3e%3c/mask%3e%3cpath%20d='M0%208C0%203.58172%203.58172%200%208%200H52C56.4183%200%2060%203.58172%2060%208V52C60%2056.4183%2056.4183%2060%2052%2060H8C3.58172%2060%200%2056.4183%200%2052V8Z'%20fill='%230066FF'/%3e%3cpath%20d='M8%200V1H52V0V-1H8V0ZM60%208H59V52H60H61V8H60ZM52%2060V59H8V60V61H52V60ZM0%2052H1V8H0H-1V52H0ZM8%2060V59C4.13401%2059%201%2055.866%201%2052H0H-1C-1%2056.9706%203.02944%2061%208%2061V60ZM60%2052H59C59%2055.866%2055.866%2059%2052%2059V60V61C56.9706%2061%2061%2056.9706%2061%2052H60ZM52%200V1C55.866%201%2059%204.13401%2059%208H60H61C61%203.02944%2056.9706%20-1%2052%20-1V0ZM8%200V-1C3.02944%20-1%20-1%203.02944%20-1%208H0H1C1%204.13401%204.13401%201%208%201V0Z'%20fill='%23CED4DA'%20mask='url(%23path-1-inside-1_512_543)'/%3e%3cg%20clip-path='url(%23clip0_512_543)'%3e%3cpath%20d='M42.717%2027.5377C40.7304%2024.44%2038.5352%2021.4813%2036.3235%2018.5362C35.2945%2017.1646%2034.2628%2015.793%2033.2173%2014.435C32.3392%2013.2924%2031.4529%2012.1525%2030.5447%2011.0318C30.0288%2010.3937%2030.0727%2010.2573%2029.4443%2011.0318C28.2617%2012.4907%2027.1147%2013.9823%2025.9759%2015.4739C24.6424%2017.2191%2023.3253%2018.9753%2022.0301%2020.7505C20.5154%2022.8229%2019.0035%2024.8981%2017.5931%2027.0442C16.7122%2028.3831%2015.9631%2029.7874%2015.4912%2031.32C15.1098%2032.5471%2015.0027%2033.8178%2015%2035.304C14.9918%2035.6585%2015.0165%2036.212%2015.0741%2036.7656C15.1729%2037.7118%2015.2936%2038.6499%2015.7519%2039.5089C16.5613%2041.025%2017.7714%2042.1894%2019.0913%2043.2502C20.7459%2044.5809%2022.4307%2045.868%2024.1786%2047.0787C25.9787%2048.3249%2027.7458%2049.6175%2029.5651%2050.8364C29.8614%2051.0355%2030.1166%2051.0709%2030.3993%2050.8446C30.4843%2050.7764%2030.5831%2050.7273%2030.6736%2050.6646C33.9829%2048.3877%2037.3086%2046.1298%2040.445%2043.6183C41.2984%2042.9338%2042.1435%2042.2358%2042.8734%2041.4177C43.628%2040.5723%2044.3332%2039.6779%2044.6104%2038.5599C45.0741%2036.6865%2045.0796%2034.7859%2044.8408%2032.8743C44.5939%2030.9082%2043.7625%2029.1657%2042.7143%2027.535L42.717%2027.5377ZM27.7156%2045.2626C27.7074%2045.399%2027.7486%2045.5626%2027.5867%2045.6417C27.4357%2045.7153%2027.3123%2045.6171%2027.197%2045.5353C26.2723%2044.8727%2025.3448%2044.21%2024.4228%2043.542C23.2265%2042.6748%2022.0027%2041.8404%2020.8474%2040.9214C19.3821%2039.7543%2018.559%2038.1836%2018.2846%2036.3456C18.0348%2034.6822%2018.3422%2033.0652%2018.8169%2031.4727C18.8635%2031.3172%2018.9129%2031.1345%2019.1077%2031.11C19.2916%2031.0882%2019.3575%2031.2627%2019.4425%2031.3827C20.8008%2033.3242%2022.1042%2035.3067%2023.649%2037.1146C24.7631%2038.4181%2025.8964%2039.7079%2027.0351%2040.9923C27.5236%2041.5459%2027.7294%2042.1949%2027.776%2042.9066C27.7897%2043.1247%2027.776%2043.3429%2027.776%2043.561H27.7925C27.7678%2044.1282%2027.7431%2044.6927%2027.7129%2045.2599L27.7156%2045.2626ZM30.3279%2039.4625C30.0453%2039.7843%2029.9355%2039.7843%2029.6529%2039.4516C28.9367%2038.6117%2028.2233%2037.7691%2027.5098%2036.9265C25.8854%2035.0095%2024.2445%2033.1034%2022.642%2031.1673C21.7941%2030.1447%2021.3551%2028.9694%2021.5636%2027.6141C21.6706%2026.9187%2022.0438%2026.3597%2022.4417%2025.8062C24.6286%2022.7629%2026.8321%2019.7306%2029.1041%2016.7501C29.3099%2016.4801%2029.5267%2016.2211%2029.7297%2015.9484C29.9026%2015.7193%2030.0563%2015.6893%2030.2428%2015.9348C30.8383%2016.7174%2031.4475%2017.4891%2032.0374%2018.2772C33.9884%2020.8841%2035.9119%2023.5101%2037.7943%2026.1688C38.247%2026.8069%2038.505%2027.4914%2038.4528%2028.2549C38.505%2029.4684%2037.9644%2030.4392%2037.24%2031.3063C35.2067%2033.7387%2033.146%2036.1466%2031.0962%2038.5626C30.841%2038.8626%2030.5886%2039.1625%2030.3279%2039.457V39.4625ZM39.6657%2040.4851C39.3062%2040.8859%2038.8398%2041.1668%2038.4062%2041.4804C36.5842%2042.8084%2034.754%2044.1228%2032.9237%2045.4399C32.8359%2045.5026%2032.7454%2045.5708%2032.6466%2045.6171C32.4243%2045.7207%2032.2652%2045.658%2032.2624%2045.4044C32.2542%2044.48%2032.1088%2043.5583%2032.224%2042.6284C32.3091%2041.9549%2032.5889%2041.3904%2033.039%2040.8832C34.7841%2038.9117%2036.5705%2036.9728%2038.1098%2034.8295C38.933%2033.6842%2039.7233%2032.5198%2040.5328%2031.3663C40.6151%2031.2463%2040.6782%2031.0664%2040.8703%2031.1073C41.0377%2031.1427%2041.1063%2031.2927%2041.1502%2031.4427C41.5096%2032.6616%2041.7621%2033.8969%2041.7676%2035.1676C41.8115%2037.2319%2041.0185%2038.9717%2039.6602%2040.4824L39.6657%2040.4851Z'%20fill='white'/%3e%3c/g%3e%3cdefs%3e%3cclipPath%20id='clip0_512_543'%3e%3crect%20width='30'%20height='40.5'%20fill='white'%20transform='translate(15%2010.5)'/%3e%3c/clipPath%3e%3c/defs%3e%3c/svg%3e">
-                                <img alt="make" title="MAKE by KBank" style="width: 20px; height: 20px; border-radius: 4px; object-fit: contain;" src="https://lighthouse.beamcheckout.com/assets/make-BaYE7-h2.svg">
-                            </div>
-                        </div>
-                    </div>
-                `;
+                    // Setup realtime watcher for this slip
+                    setTimeout(() => {
+                        if (typeof window.setupChatSlipPaymentWatcher === 'function') {
+                            window.setupChatSlipPaymentWatcher(id, amount, data.timestamp);
+                        }
+                    }, 50);
+                }
             } else {
 
                 // Regular message: Show text and URL links
@@ -2519,6 +2750,8 @@ window.openImagePopup = function (imgSrc, downloadUrl) {
 
 function updateCountdowns() {
     const now = Date.now();
+
+    // 1. Message self-destruction countdown (10 minutes)
     document.querySelectorAll('.message-bubble, .message-notification[data-timestamp]').forEach(el => {
         const timestamp = parseInt(el.getAttribute('data-timestamp'));
         const remaining = DELETION_TIME_MS - (now - timestamp);
@@ -2531,6 +2764,33 @@ function updateCountdowns() {
             const minutes = Math.floor(remaining / 60000);
             const seconds = Math.floor((remaining % 60000) / 1000);
             timerEl.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+    });
+
+    // 2. PromptPay QR Slip Countdown (10 minutes validity)
+    document.querySelectorAll('.slip-countdown-timer[data-timestamp]').forEach(timerEl => {
+        const ts = parseInt(timerEl.getAttribute('data-timestamp'));
+        if (!ts) return;
+        const remaining = (ts + DELETION_TIME_MS) - now;
+        const box = timerEl.closest('.checkout-countdown-box');
+
+        if (remaining <= 0) {
+            timerEl.textContent = '00:00';
+            if (box) {
+                box.classList.remove('urgent');
+                box.classList.add('expired');
+            }
+        } else {
+            const minutes = Math.floor(remaining / 60000);
+            const seconds = Math.floor((remaining % 60000) / 1000);
+            timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            if (box) {
+                if (remaining < 60000) {
+                    box.classList.add('urgent');
+                } else {
+                    box.classList.remove('urgent');
+                }
+            }
         }
     });
 }
@@ -3065,7 +3325,31 @@ copyBtn.addEventListener('click', () => {
     setTimeout(() => copyBtn.textContent = orig, 2000);
 });
 
-// Auto-select text on click for convenience
+// Dynamic Viewport Height & Mobile Bar Compensation
+function updateAppViewportHeight() {
+    const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const vh = height * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+window.addEventListener('resize', updateAppViewportHeight);
+window.addEventListener('orientationchange', () => {
+    setTimeout(updateAppViewportHeight, 200);
+});
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', updateAppViewportHeight);
+    window.visualViewport.addEventListener('scroll', updateAppViewportHeight);
+}
+updateAppViewportHeight();
+
+// Auto-select text on click for convenience & ensure input visibility on mobile
+messageInput.addEventListener('focus', function () {
+    updateAppViewportHeight();
+    setTimeout(() => {
+        scrollToBottom();
+        messageInput.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }, 150);
+});
+
 messageInput.addEventListener('click', function () {
     if (this.value.length > 0) this.select();
 });
@@ -3241,70 +3525,141 @@ window.copyToClipboard = function (text, event) {
     });
 };
 
-// Function to download QR Code image
+// ===== Render Full Slip Image onto Canvas (matching shop/services design) =====
+async function generatePromptPaySlipCanvas(qrUrl, amount) {
+    const formattedAmount = (!isNaN(parseFloat(amount))) ? parseFloat(amount).toFixed(2) : amount;
+    const payload = typeof generatePromptPayPayload === 'function' ? generatePromptPayPayload('0988573074', amount) : '';
+
+    const cvs = document.createElement('canvas');
+    cvs.width = 540;
+    cvs.height = 660;
+    const ctx = cvs.getContext('2d');
+
+    // 1. Background (White)
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+    // 2. Outer Border & Frame
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(10, 10, cvs.width - 20, cvs.height - 20);
+
+    // 3. Top PromptPay Navy Header
+    ctx.fillStyle = '#003764';
+    ctx.fillRect(10, 10, cvs.width - 20, 80);
+
+    // Header Text
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 24px "Kanit", "Prompt", -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Thai QR Payment / พร้อมเพย์', cvs.width / 2, 58);
+
+    // 4. Generate Crisp QR Code
+    let qrSourceCanvas = null;
+    if (window.QRCode && payload) {
+        try {
+            const tempWrap = document.createElement('div');
+            new QRCode(tempWrap, {
+                text: payload,
+                width: 320,
+                height: 320,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.M
+            });
+            qrSourceCanvas = tempWrap.querySelector('canvas');
+        } catch (_) { }
+    }
+
+    if (!qrSourceCanvas && qrUrl) {
+        qrSourceCanvas = await new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => resolve(img);
+            img.onerror = () => {
+                const fbImg = new Image();
+                fbImg.crossOrigin = 'anonymous';
+                fbImg.onload = () => resolve(fbImg);
+                fbImg.onerror = () => resolve(null);
+                fbImg.src = 'https://quickchart.io/qr?size=320&margin=2&text=' + encodeURIComponent(payload);
+            };
+            img.src = qrUrl;
+        });
+    }
+
+    const qrSize = 320;
+    const qrX = (cvs.width - qrSize) / 2;
+    const qrY = 115;
+
+    // QR Quiet Zone / White Background Frame
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(qrX - 12, qrY - 12, qrSize + 24, qrSize + 24);
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(qrX - 12, qrY - 12, qrSize + 24, qrSize + 24);
+
+    if (qrSourceCanvas) {
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(qrSourceCanvas, qrX, qrY, qrSize, qrSize);
+    }
+
+    // 5. Amount & Instructions below QR
+    ctx.fillStyle = '#16a34a';
+    ctx.font = 'bold 36px "Kanit", "Prompt", -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`฿ ${formattedAmount}`, cvs.width / 2, 490);
+
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 18px "Kanit", "Prompt", -apple-system, sans-serif';
+    ctx.fillText('สแกนผ่านแอปธนาคารทุกธนาคาร', cvs.width / 2, 530);
+
+    ctx.fillStyle = '#64748b';
+    ctx.font = '15px "Kanit", "Prompt", -apple-system, sans-serif';
+    ctx.fillText('เปิดแอปธนาคาร > สแกน > เลือกรูปจากอัลบั้มรูปในมือถือ', cvs.width / 2, 565);
+
+    const now = new Date();
+    const timeStr = now.toLocaleDateString('th-TH') + ' ' + now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '13px monospace';
+    ctx.fillText(`พร้อมเพย์: 098-857-3074 • ${timeStr}`, cvs.width / 2, 605);
+
+    return cvs;
+}
+
+// Function to download QR Code Slip image
 window.downloadQRCode = async function (url, amount) {
-    if (window.forceDownload) {
-        window.forceDownload(url, `PromptPay_${amount}_Baht.png`);
-        return;
-    }
-
-    // Check for any in-app browser
-    if (isInAppBrowser()) {
-        const browserName = getBrowserName();
-        const message = `⚠️ ${browserName} อาจบล็อกการดาวน์โหลด QR Code\n\n` +
-            `กรุณา:\n` +
-            `1. คลิกที่ QR Code เพื่อเปิดในแท็บใหม่\n` +
-            `2. กดปิดแล้วเลือก "เปิดในเบราว์เซอร์"\n` +
-            `3. บันทึกภาพจากเบราว์เซอร์นั้น\n\n` +
-            `หรือคัดลอกลิงค์นี้: ${url}`;
-        alert(message);
-
-        // Try to open in new tab
-        window.open(url, '_blank');
-        return;
-    }
+    const formattedAmount = (!isNaN(parseFloat(amount))) ? parseFloat(amount).toFixed(2) : amount;
+    const fileName = `PromptPay_QR_${formattedAmount}baht_${Date.now()}.png`;
 
     try {
-        // Use CORS proxy to ensure we can fetch as blob for direct download
-        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-        const response = await fetch(proxyUrl);
+        const cvs = await generatePromptPaySlipCanvas(url, amount);
 
-        if (!response.ok) throw new Error('Network response was not ok');
+        // Try Web Share API (Save Image to Gallery on iOS/Android mobile)
+        if (navigator.share && navigator.canShare) {
+            try {
+                const blob = await new Promise(resolve => cvs.toBlob(resolve, 'image/png'));
+                if (blob) {
+                    const file = new File([blob], fileName, { type: 'image/png' });
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: `รูป PromptPay QR ${formattedAmount} บาท`,
+                            text: `รูป QR Code สำหรับสแกนชำระเงิน ${formattedAmount} บาท`
+                        });
+                        return;
+                    }
+                }
+            } catch (shareErr) {
+                if (shareErr.name === 'AbortError') return; // User closed sheet
+            }
+        }
 
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = `PromptPay_${amount}_Baht.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(blobUrl);
+        const dataUrl = cvs.toDataURL('image/png');
+        window.forceDownload(dataUrl, fileName);
     } catch (err) {
-        console.warn('Proxy download failed, trying direct link as fallback...', err);
-        // Direct link fallback (might still open in new tab if CORS fails)
-        const link = document.createElement('a');
-        link.href = url;
-        link.target = '_blank';
-        link.download = `PromptPay_${amount}_Baht.png`;
-        link.click();
+        console.warn('Canvas slip generation failed, using forceDownload fallback...', err);
+        window.forceDownload(url, fileName);
     }
-};
-
-// Function to launch Mobile Banking checkout (only on mobile)
-window.openChatMobileBanking = function (linkKey, amount, btnEl) {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (window.innerWidth <= 768);
-    if (!isMobile) {
-        alert("กรุณาใช้โทรศัพท์มือถือสแกน QR Code หรือเปิดหน้านี้บนมือถือเพื่อชำระผ่านแอปธนาคาร");
-        return;
-    }
-    if (btnEl) {
-        btnEl.innerHTML = `<span>⏳ กำลังเปิดแอปธนาคาร...</span>`;
-        btnEl.style.opacity = '0.85';
-    }
-    const workerBase = (typeof BEAM_WORKER_URL !== "undefined" ? BEAM_WORKER_URL : (window.BEAM_WORKER_URL || "https://eworker-beam-pay.moonverse69.workers.dev"));
-    const checkoutUrl = `${workerBase}/checkout-url?linkKey=${encodeURIComponent(linkKey)}&amount=${encodeURIComponent(amount)}`;
-    window.location.href = checkoutUrl;
 };
 
 // ===== Live Voice Broadcast System (WebRTC + Alien Voice) =====
