@@ -622,8 +622,6 @@
             border-radius: 16px;
             max-width: 380px;
             width: 95%;
-            max-height: 96vh;
-            overflow-y: auto;
             padding: 16px 18px 14px 18px;
             text-align: center;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.05);
@@ -631,6 +629,38 @@
             position: relative;
             animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             box-sizing: border-box;
+            overflow: visible;
+        }
+
+        .btn-modal-close-red {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #ef4444;
+            color: #ffffff;
+            border: 2.5px solid #ffffff;
+            font-size: 16px;
+            font-weight: 800;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25), 0 2px 6px rgba(239, 68, 68, 0.4);
+            transition: all 0.2s ease;
+            z-index: 30;
+        }
+
+        .btn-modal-close-red:hover {
+            background: #dc2626;
+            transform: scale(1.1);
+        }
+
+        .btn-modal-close-red:active {
+            transform: scale(0.95);
         }
 
         @keyframes modalPop {
@@ -1431,7 +1461,7 @@
                                 d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3">
                             </path>
                         </svg>
-                        <span id="btnPdfText">⚡ ชำระเงิน & ดาวน์โหลด PDF</span>
+                        <span id="btnPdfText">⚡ ชำระเงิน 5 บาท &amp; ดาวน์โหลด PDF</span>
                     </div>
                 </button>
                 <button class="btn" id="downloadJpgBtn" type="button" onclick="triggerJpgDownload()"
@@ -1452,6 +1482,9 @@
     <!-- ===== PAYMENT & LOCK MODAL ===== -->
     <div id="paymentModal" class="payment-modal-overlay">
         <div class="payment-modal-card">
+            <!-- Round Red Close Button at Top Right -->
+            <button type="button" class="btn-modal-close-red" onclick="closePaymentModal()" title="ปิดหน้าต่าง">✕</button>
+
             <!-- Pending Payment View -->
             <div id="paymentViewPending">
                 <h4 style="font-size: 1.08rem; font-weight: 800; color: #16a34a; margin: 0 0 4px 0;">🎉
@@ -2350,9 +2383,12 @@
             }
             const modal = document.getElementById('paymentModal');
             if (modal) modal.classList.add('active');
+            startAntiTamperGuard();
         }
 
         function closePaymentModal() {
+            if (antiTamperObserver) antiTamperObserver.disconnect();
+            if (antiTamperInterval) clearInterval(antiTamperInterval);
             const modal = document.getElementById('paymentModal');
             if (modal) modal.classList.remove('active');
         }
@@ -2617,10 +2653,8 @@
                 const modal = document.getElementById('paymentModal');
                 const backdrop = document.getElementById('securityBackdrop');
 
-                if (!modal || !backdrop) {
-                    triggerTamperLockout('องค์ประกอบหน้าต่างชำระเงินถูกลบ');
-                    return;
-                }
+                // If user legitimately closed modal (modal does not have 'active' class), skip check
+                if (!modal || !modal.classList.contains('active')) return;
 
                 if (!document.body.contains(modal)) {
                     triggerTamperLockout('ตรวจพบการ Remove Modal');
@@ -2628,16 +2662,17 @@
                 }
 
                 const modalStyle = window.getComputedStyle(modal);
-                const backdropStyle = window.getComputedStyle(backdrop);
-
                 if (modalStyle.display === 'none' || modalStyle.visibility === 'hidden' || parseFloat(modalStyle.opacity) < 0.2) {
                     triggerTamperLockout('ตรวจพบการซ่อนหน้าต่างชำระเงิน');
                     return;
                 }
 
-                if (backdropStyle.display === 'none' || backdropStyle.visibility === 'hidden' || parseFloat(backdropStyle.opacity) < 0.2) {
-                    triggerTamperLockout('ตรวจพบการซ่อนม่านบังหน้าจอ');
-                    return;
+                if (backdrop) {
+                    const backdropStyle = window.getComputedStyle(backdrop);
+                    if (backdropStyle.display === 'none' || backdropStyle.visibility === 'hidden' || parseFloat(backdropStyle.opacity) < 0.2) {
+                        triggerTamperLockout('ตรวจพบการซ่อนม่านบังหน้าจอ');
+                        return;
+                    }
                 }
             };
 
@@ -2654,6 +2689,8 @@
 
         function triggerTamperLockout(reason) {
             if (isPaymentApproved) return;
+            if (antiTamperObserver) antiTamperObserver.disconnect();
+            if (antiTamperInterval) clearInterval(antiTamperInterval);
             console.warn('Anti-tamper activated:', reason);
             uploadedImage = null;
             if (previewCanvas) {
@@ -2715,7 +2752,7 @@
                             <svg style="width:18px;height:18px;flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"></path>
                             </svg>
-                            <span id="btnPdfText">⚡ ชำระเงิน & ดาวน์โหลด PDF</span>
+                            <span id="btnPdfText">⚡ ชำระเงิน 5 บาท &amp; ดาวน์โหลด PDF</span>
                         </div>
                     `;
                 }
