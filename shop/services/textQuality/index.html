@@ -476,29 +476,189 @@
             overflow-y: auto;
             overflow-x: auto;
             display: flex;
-            align-items: flex-start;
-            /* CRITICAL: Never clip the top of document on scroll */
+            align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 24px;
+            position: relative;
+            touch-action: none;
         }
 
         .canvas-frame {
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
             border-radius: 4px;
             background: #ffffff;
-            margin: 0 auto;
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.15s ease-out;
+            margin: auto;
+            display: inline-block;
+            position: relative;
             border: 1px solid #cbd5e1;
+            user-select: none;
+            touch-action: none;
         }
 
         #mainCanvas {
             display: block;
             border-radius: 4px;
-            height: auto;
-            max-width: 100%;
+        }
+
+        #overlayCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-radius: 4px;
+            pointer-events: auto;
+            cursor: crosshair;
+        }
+
+        /* Tool Mode Switcher */
+        .tool-mode-bar {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 5px;
+            width: 100%;
+        }
+
+        .btn-tool-mode {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 7px 2px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-md);
+            background: #f8fafc;
+            color: #475569;
+            font-size: 0.72rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.15s;
+            user-select: none;
+            white-space: nowrap;
+            letter-spacing: -0.2px;
+        }
+
+        .btn-tool-mode:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        .btn-tool-mode.active {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            color: #1d4ed8;
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.15);
+        }
+
+        /* Floating Zoom Controls Dock (Bottom Left) */
+        .floating-zoom-dock {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            padding: 4px 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+            z-index: 25;
+            user-select: none;
+        }
+
+        .btn-zoom {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: #ffffff;
+            color: #334155;
+            font-size: 1.05rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-zoom:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        .zoom-value-label {
+            font-family: monospace;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #0f172a;
+            min-width: 44px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .btn-zoom-fit {
+            padding: 3px 10px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: #f8fafc;
+            color: #475569;
+            font-size: 0.74rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-zoom-fit:hover {
+            background: #eff6ff;
+            color: #2563eb;
+            border-color: #bfdbfe;
+        }
+
+        .btn-delete-spot {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.15s;
+        }
+
+        .btn-delete-spot:hover {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .btn-ghost-danger {
+            background: transparent;
+            border: none;
+            color: #ef4444;
+            font-size: 0.74rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 2px 6px;
+        }
+
+        .btn-ghost-danger:hover {
+            text-decoration: underline;
+        }
+
+        .instruction-box {
+            background: #fffbeb;
+            border: 1px solid #fef3c7;
+            border-radius: var(--radius-md);
+            padding: 10px 12px;
+            font-size: 0.72rem;
+            color: #92400e;
         }
 
         /* Empty state */
@@ -581,10 +741,12 @@
                 box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0.65);
                 transform: scale(1);
             }
+
             50% {
                 box-shadow: 0 8px 28px rgba(79, 70, 229, 0.6), 0 0 0 12px rgba(99, 102, 241, 0);
                 transform: scale(1.025);
             }
+
             100% {
                 box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0);
                 transform: scale(1);
@@ -596,10 +758,12 @@
                 box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4), 0 0 0 0 rgba(34, 197, 94, 0.65);
                 transform: scale(1);
             }
+
             50% {
                 box-shadow: 0 8px 28px rgba(16, 185, 129, 0.6), 0 0 0 12px rgba(34, 197, 94, 0);
                 transform: scale(1.025);
             }
+
             100% {
                 box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4), 0 0 0 0 rgba(34, 197, 94, 0);
                 transform: scale(1);
@@ -607,9 +771,17 @@
         }
 
         @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
         }
 
         .btn-start-job::after {
@@ -619,23 +791,28 @@
             left: -80%;
             width: 50%;
             height: 220%;
-            background: linear-gradient(
-                to right,
-                rgba(255, 255, 255, 0) 0%,
-                rgba(255, 255, 255, 0.55) 50%,
-                rgba(255, 255, 255, 0) 100%
-            );
+            background: linear-gradient(to right,
+                    rgba(255, 255, 255, 0) 0%,
+                    rgba(255, 255, 255, 0.55) 50%,
+                    rgba(255, 255, 255, 0) 100%);
             transform: rotate(25deg);
             animation: btnShimmerSweep 2.6s infinite cubic-bezier(0.4, 0, 0.2, 1);
             pointer-events: none;
         }
 
         @keyframes btnShimmerSweep {
-            0% { left: -80%; }
-            40%, 100% { left: 160%; }
+            0% {
+                left: -80%;
+            }
+
+            40%,
+            100% {
+                left: 160%;
+            }
         }
 
-        .btn-start-job i, .btn-start-job .fa-rocket {
+        .btn-start-job i,
+        .btn-start-job .fa-rocket {
             font-size: 18px;
             display: inline-block;
             animation: rocketWiggle 1.8s infinite ease-in-out;
@@ -643,11 +820,27 @@
         }
 
         @keyframes rocketWiggle {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            20% { transform: translate(-1px, -2px) rotate(-10deg); }
-            40% { transform: translate(2px, -4px) rotate(8deg) scale(1.15); }
-            60% { transform: translate(-1px, -2px) rotate(-6deg); }
-            80% { transform: translate(1px, 0) rotate(2deg); }
+
+            0%,
+            100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+
+            20% {
+                transform: translate(-1px, -2px) rotate(-10deg);
+            }
+
+            40% {
+                transform: translate(2px, -4px) rotate(8deg) scale(1.15);
+            }
+
+            60% {
+                transform: translate(-1px, -2px) rotate(-6deg);
+            }
+
+            80% {
+                transform: translate(1px, 0) rotate(2deg);
+            }
         }
 
         .btn-start-job:hover {
@@ -687,7 +880,8 @@
             align-items: center;
             justify-content: center;
             z-index: 999;
-            padding: 16px;
+            padding: 20px 16px;
+            overflow-y: auto;
         }
 
         .modal-overlay.active {
@@ -697,12 +891,10 @@
         .modal-card {
             background: #ffffff;
             border: 1px solid var(--border);
-            border-radius: 16px;
+            border-radius: 18px;
             width: 95%;
             max-width: 390px;
-            max-height: 96vh;
-            overflow-y: auto;
-            padding: 18px 18px 16px 18px;
+            padding: 20px 18px 16px 18px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
             display: flex;
             flex-direction: column;
@@ -711,6 +903,7 @@
             position: relative;
             animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             box-sizing: border-box;
+            overflow: visible;
         }
 
         @keyframes modalPop {
@@ -718,6 +911,7 @@
                 transform: scale(0.92);
                 opacity: 0;
             }
+
             to {
                 transform: scale(1);
                 opacity: 1;
@@ -726,25 +920,34 @@
 
         .modal-close {
             position: absolute;
-            top: 12px;
-            right: 12px;
-            background: #f1f5f9;
-            border: none;
-            color: #64748b;
-            cursor: pointer;
-            width: 28px;
-            height: 28px;
+            top: -12px;
+            right: -12px;
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
+            background: #ef4444;
+            color: #ffffff;
+            border: 2.5px solid #ffffff;
+            font-size: 16px;
+            font-weight: 800;
+            line-height: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.95rem;
-            transition: all 0.15s;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25), 0 2px 6px rgba(239, 68, 68, 0.4);
+            transition: all 0.2s ease;
+            z-index: 30;
         }
 
         .modal-close:hover {
-            background: #e2e8f0;
-            color: #0f172a;
+            background: #dc2626;
+            color: #ffffff;
+            transform: scale(1.1);
+        }
+
+        .modal-close:active {
+            transform: scale(0.95);
         }
 
         /* Countdown Box */
@@ -778,9 +981,12 @@
         }
 
         @keyframes pulseWarn {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: scale(1);
             }
+
             50% {
                 transform: scale(1.03);
             }
@@ -927,61 +1133,95 @@
 
         <!-- ===== LEFT CONTROLS PANEL ===== -->
         <aside class="control-panel">
-            <div class="panel-scroll">
+            <div class="panel-scroll" style="gap: 12px; padding: 14px;">
 
-                <!-- 1. Upload Section -->
-                <div class="upload-box" id="dropzoneEl" onclick="document.getElementById('fileInput').click()">
-                    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z">
-                        </path>
-                    </svg>
-                    <div class="upload-title">อัปโหลดรูปภาพ หรือ PDF</div>
-                    <div class="upload-sub" id="fileStatusText">รองรับ PDF หลายหน้า และรูปภาพ JPG, PNG</div>
+                <!-- File info bar & Change button -->
+                <div
+                    style="display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius-md);">
+                    <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                        <i class="fa-solid fa-file" style="color: #d97706; font-size: 0.85rem;"></i>
+                        <span id="fileStatusText"
+                            style="font-size: 0.74rem; font-weight: 600; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;">ยังไม่มีไฟล์</span>
+                    </div>
+                    <button type="button" onclick="document.getElementById('fileInput').click()" class="btn-page-nav"
+                        style="padding: 3px 8px; font-size: 0.7rem;">
+                        📁 เปลี่ยนไฟล์
+                    </button>
                     <input type="file" id="fileInput" accept=".pdf,image/png,image/jpeg,image/webp" multiple
                         style="display: none;">
                 </div>
 
-                <!-- CONTROLS -->
-                <div class="clean-card">
-                    <div class="card-header-title">
-                        <span>⚙️ ตัวเลือกปรับแต่ง</span>
-                    </div>
+                <!-- TOOL MODE SWITCHER (SINGLE ROW) -->
+                <div class="tool-mode-bar">
+                    <button type="button" class="btn-tool-mode active" id="btnToolBrush" onclick="setToolMode('brush')"
+                        title="ระบายเพื่อลดคุณภาพเฉพาะจุด (คีย์ลัด: B)">
+                        <span>🖌️ แปรง (B)</span>
+                    </button>
+                    <button type="button" class="btn-tool-mode" id="btnToolEraser" onclick="setToolMode('eraser')"
+                        title="ลบรอยระบายคืนสภาพต้นฉบับ (คีย์ลัด: E)">
+                        <span>🧹 ยางลบ (E)</span>
+                    </button>
+                    <button type="button" class="btn-tool-mode" id="btnToolPan" onclick="setToolMode('pan')"
+                        title="เลื่อนดูภาพ (คีย์ลัด: กด Spacebar ค้าง)">
+                        <span>✋ ลากดู (Space)</span>
+                    </button>
+                </div>
 
-                    <!-- CONTROL 1: ปรับคุณภาพต่ำ (Low Quality / สแกนไม่ชัด) -->
+                <!-- ADJUSTMENT CONTROLS CARD -->
+                <div class="clean-card" style="padding: 12px 14px; gap: 12px;">
+                    <!-- ขนาดหัวแปรง -->
                     <div class="slider-item">
                         <div class="slider-header">
-                            <strong>📉 ปรับคุณภาพต่ำ (Low Quality)</strong>
-                            <span class="slider-value" id="valLowQuality">45%</span>
+                            <strong>🖌️ ขนาดหัวแปรง (Q/A)</strong>
+                            <span class="slider-value" id="valBrushSize">30 px</span>
+                        </div>
+                        <input type="range" id="paramBrushSize" min="6" max="120" value="30"
+                            oninput="onBrushSizeChange()">
+                    </div>
+
+                    <div style="height: 1px; background: var(--border); margin: 0;"></div>
+
+                    <!-- ปรับคุณภาพต่ำ -->
+                    <div class="slider-item">
+                        <div class="slider-header">
+                            <strong>📉 ปรับคุณภาพต่ำ</strong>
+                            <span class="slider-value" id="valLowQuality">50%</span>
                         </div>
                         <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 2px;">
-                            บีบอัดภาพเหมือนเอกสารที่ถูกส่งต่อ
+                            บีบอัดภาพเหมือนเอกสารที่ถูกส่งต่อ / สแกนไม่ชัด
                         </div>
-                        <input type="range" id="paramLowQuality" min="0" max="100" value="45" oninput="renderApp()">
+                        <input type="range" id="paramLowQuality" min="0" max="100" value="50"
+                            oninput="onQualityParamChange()">
                     </div>
 
-                    <div style="height: 1px; background: var(--border); margin: 2px 0;"></div>
+                    <div style="height: 1px; background: var(--border); margin: 0;"></div>
 
-                    <!-- CONTROL 2: ปรับภาพแตก (Pixelate / เม็ดพิกเซล) -->
+                    <!-- ปรับภาพแตก -->
                     <div class="slider-item">
                         <div class="slider-header">
-                            <strong>🔲 ปรับภาพแตก (Pixelate)</strong>
-                            <span class="slider-value" id="valPixelate">35%</span>
+                            <strong>🔲 ปรับภาพแตก</strong>
+                            <span class="slider-value" id="valPixelate">40%</span>
                         </div>
                         <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 2px;">
                             ทำลายความคมชัดของตัวอักษรให้แตกเป็นเม็ดพิกเซล
                         </div>
-                        <input type="range" id="paramPixelate" min="0" max="100" value="35" oninput="renderApp()">
+                        <input type="range" id="paramPixelate" min="0" max="100" value="40"
+                            oninput="onQualityParamChange()">
                     </div>
                 </div>
 
-            </div>
+                <!-- ACTIONS -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <button type="button" class="btn btn-secondary" onclick="clearPaintedMask()"
+                        style="font-size: 0.76rem; padding: 8px 10px;">
+                        <i class="fa-solid fa-rotate-left"></i> ล้างที่ระบาย
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="resetDefaults()"
+                        style="font-size: 0.76rem; padding: 8px 10px;">
+                        🔄 คืนค่าเริ่มต้น
+                    </button>
+                </div>
 
-            <!-- Panel Bottom Actions -->
-            <div class="panel-footer">
-                <button type="button" class="btn btn-secondary" onclick="resetDefaults()" style="width: 100%;">
-                    🔄 คืนค่าเริ่มต้น
-                </button>
             </div>
         </aside>
 
@@ -1018,32 +1258,33 @@
             <!-- Canvas Viewport -->
             <div class="stage-canvas-scroll">
 
-                <div class="empty-box" id="emptyPlaceholder">
+                <div class="empty-box" id="emptyPlaceholder" onclick="document.getElementById('fileInput').click()"
+                    style="cursor: pointer;">
                     <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z">
                         </path>
                     </svg>
                     <div style="font-size: 0.95rem; font-weight: 700; color: #0f172a;">อัปโหลดเอกสารเพื่อเริ่มต้น</div>
-                    <div style="font-size: 0.76rem; color: #64748b;">ลากไฟล์มาวาง หรือคลิกที่กรอบอัปโหลดด้านซ้าย</div>
+                    <div style="font-size: 0.76rem; color: #64748b;">ลากไฟล์มาวางที่ใดก็ได้บนหน้าจอ
+                        หรือคลิกที่นี่เพื่อเลือกไฟล์</div>
                 </div>
 
                 <div class="canvas-frame" id="canvasFrame" style="display: none;">
                     <canvas id="mainCanvas"></canvas>
+                    <canvas id="overlayCanvas"></canvas>
                 </div>
 
             </div>
 
-            <!-- Stage Bottom Action Bar -->
-            <div class="stage-bottombar" id="stageBottombar" style="display: none;">
-                <div>
-                    <div style="font-size: 0.84rem; font-weight: 700; color: #0f172a;" id="statusTitle">
-                        แปลงภาพเรียบร้อย (ลดความคมชัด &amp; ทำภาพแตก)
-                    </div>
-                    <div style="font-size: 0.72rem; color: #64748b;" id="statusDesc">
-                        ชำระค่าบริการ 20 บาท เพื่อดาวน์โหลดไฟล์ PDF / รูปภาพความละเอียดสูง
-                    </div>
-                </div>
+            <!-- Floating Zoom Controls Dock (Bottom Left) -->
+            <div class="floating-zoom-dock" id="floatingZoomDock" style="display: none;">
+                <button type="button" class="btn-zoom" onclick="zoomStep(-0.15)" title="ย่อมุมมอง (Zoom Out)">−</button>
+                <span class="zoom-value-label" id="zoomValueLabel" onclick="setFitZoom()"
+                    title="คลิกเพื่อปรับพอดีจอ">100%</span>
+                <button type="button" class="btn-zoom" onclick="zoomStep(0.15)" title="ขยายมุมมอง (Zoom In)">+</button>
+                <button type="button" class="btn-zoom-fit" onclick="setFitZoom()" title="ปรับพอดีหน้าจอ">⛶
+                    พอดีจอ</button>
             </div>
 
             <!-- Bottom Right Floating Download/Payment Action Button (Hidden until document uploaded) -->
@@ -1182,21 +1423,53 @@
         }
 
         // State
-        let documentPages = []; // [{ originalCanvas, width, height, seed }]
+        let documentPages = []; // [{ originalCanvas, degradedCanvas, maskCanvas, tempCompCanvas, width, height, seed }]
         let activePageIndex = 0;
         let isPaid = false;
         let currentOrderId = null;
         let isComparing = false;
-        let renderTimer = null;
         let pollingTimer = null;
         let lastPromptPayPayload = '';
         let checkoutCountdownTimer = null;
 
+        // Tool & Brush state
+        let currentToolMode = 'brush'; // 'brush', 'eraser', or 'pan'
+        let currentZoom = 1.0;
+        let mouseCanvasPos = null;
+        let isPainting = false;
+        let lastPaintX = 0;
+        let lastPaintY = 0;
+        let isPanningCanvas = false;
+        let panStart = { x: 0, y: 0, scrollLeft: 0, scrollTop: 0 };
+
+        // Mobile touch gesture state
+        let touchState = {
+            isPinching: false,
+            initialDist: 0,
+            initialZoom: 1.0,
+            panStartX: 0,
+            panStartY: 0,
+            scrollStartX: 0,
+            scrollStartY: 0
+        };
+
         const mainCanvas = document.getElementById('mainCanvas');
         const mainCtx = mainCanvas.getContext('2d');
+        const overlayCanvas = document.getElementById('overlayCanvas');
+        const overlayCtx = overlayCanvas.getContext('2d');
         const canvasFrame = document.getElementById('canvasFrame');
         const emptyPlaceholder = document.getElementById('emptyPlaceholder');
         const paymentModal = document.getElementById('paymentModal');
+        const scrollBox = document.querySelector('.stage-canvas-scroll');
+
+        /* Accidental Refresh / Navigation Protection */
+        window.addEventListener('beforeunload', (e) => {
+            if (documentPages && documentPages.length > 0) {
+                e.preventDefault();
+                e.returnValue = '';
+                return '';
+            }
+        });
 
         /* PRNG per page (สุ่มไม่ซ้ำกันแต่ละหน้า) */
         function createPRNG(seed) {
@@ -1209,19 +1482,541 @@
             };
         }
 
-        function resetDefaults() {
-            document.getElementById('paramLowQuality').value = 45;
-            document.getElementById('paramPixelate').value = 35;
-            renderApp();
+        /* Tool Mode Switcher */
+        function setToolMode(mode) {
+            currentToolMode = mode;
+            const btnBrush = document.getElementById('btnToolBrush');
+            const btnEraser = document.getElementById('btnToolEraser');
+            const btnPan = document.getElementById('btnToolPan');
+
+            if (btnBrush) btnBrush.classList.toggle('active', mode === 'brush');
+            if (btnEraser) btnEraser.classList.toggle('active', mode === 'eraser');
+            if (btnPan) btnPan.classList.toggle('active', mode === 'pan');
+
+            if (overlayCanvas) {
+                overlayCanvas.style.cursor = mode === 'pan' ? 'grab' : 'crosshair';
+            }
+            drawOverlay();
         }
 
-        /* Upload Handlers (Full Screen Drag & Drop + Sidebar Box) */
+        /* Screen Client Coords -> Canvas Coordinates */
+        function getCanvasCoords(e) {
+            const rect = mainCanvas.getBoundingClientRect();
+            const clientX = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+            const clientY = (e.touches && e.touches.length > 0) ? e.touches[0].clientY : e.clientY;
+
+            const scaleX = rect.width > 0 ? (mainCanvas.width / rect.width) : 1;
+            const scaleY = rect.height > 0 ? (mainCanvas.height / rect.height) : 1;
+
+            const x = Math.round((clientX - rect.left) * scaleX);
+            const y = Math.round((clientY - rect.top) * scaleY);
+
+            const page = documentPages[activePageIndex];
+            const maxW = page ? page.width : mainCanvas.width;
+            const maxH = page ? page.height : mainCanvas.height;
+
+            return {
+                x: Math.max(0, Math.min(maxW, x)),
+                y: Math.max(0, Math.min(maxH, y))
+            };
+        }
+
+        /* Brush size & Quality Slider change handlers */
+        function onBrushSizeChange() {
+            const size = parseInt(document.getElementById('paramBrushSize').value) || 30;
+            document.getElementById('valBrushSize').textContent = `${size} px`;
+            drawOverlay();
+        }
+
+        function onQualityParamChange() {
+            const lowQ = parseInt(document.getElementById('paramLowQuality').value);
+            const pix = parseInt(document.getElementById('paramPixelate').value);
+
+            document.getElementById('valLowQuality').textContent = `${lowQ}%`;
+            document.getElementById('valPixelate').textContent = `${pix}%`;
+
+            const page = documentPages[activePageIndex];
+            if (page) {
+                updateDegradedBuffer(page);
+                compositePage();
+            }
+        }
+
+        function clearPaintedMask() {
+            const page = documentPages[activePageIndex];
+            if (!page || !page.maskCanvas) return;
+            const mCtx = page.maskCanvas.getContext('2d');
+            mCtx.clearRect(0, 0, page.width, page.height);
+            compositePage();
+        }
+
+        function resetDefaults() {
+            document.getElementById('paramBrushSize').value = 30;
+            document.getElementById('paramLowQuality').value = 50;
+            document.getElementById('paramPixelate').value = 40;
+
+            document.getElementById('valBrushSize').textContent = '30 px';
+            document.getElementById('valLowQuality').textContent = '50%';
+            document.getElementById('valPixelate').textContent = '40%';
+
+            const page = documentPages[activePageIndex];
+            if (page) {
+                updateDegradedBuffer(page);
+                compositePage();
+            }
+            drawOverlay();
+        }
+
+        /* ========================================================
+           CORE ENGINE: CONTINUOUS BRUSH RETOUCH SYSTEM
+           Degradation applied wherever the user paints!
+        ======================================================== */
+        function updateDegradedBuffer(page) {
+            if (!page || !page.originalCanvas) return;
+
+            if (!page.degradedCanvas) {
+                page.degradedCanvas = document.createElement('canvas');
+                page.degradedCanvas.width = page.width;
+                page.degradedCanvas.height = page.height;
+            }
+
+            const dCtx = page.degradedCanvas.getContext('2d');
+            dCtx.clearRect(0, 0, page.width, page.height);
+            dCtx.drawImage(page.originalCanvas, 0, 0);
+
+            const lowQuality = parseInt(document.getElementById('paramLowQuality').value) / 100;
+            const pixelate = parseInt(document.getElementById('paramPixelate').value) / 100;
+            const rnd = createPRNG(page.seed);
+
+            if (pixelate > 0) {
+                applyPixelate(dCtx, page.width, page.height, pixelate);
+            }
+            if (lowQuality > 0) {
+                applyLowQuality(dCtx, page.width, page.height, lowQuality, rnd);
+            }
+        }
+
+        function compositePage() {
+            if (!documentPages || documentPages.length === 0) return;
+            const page = documentPages[activePageIndex];
+            if (!page) return;
+
+            const w = page.width;
+            const h = page.height;
+
+            if (mainCanvas.width !== w || mainCanvas.height !== h) {
+                mainCanvas.width = w;
+                mainCanvas.height = h;
+            }
+            if (overlayCanvas.width !== w || overlayCanvas.height !== h) {
+                overlayCanvas.width = w;
+                overlayCanvas.height = h;
+            }
+
+            // If user holds "กดค้างเพื่อดูต้นฉบับ"
+            if (isComparing) {
+                mainCtx.drawImage(page.originalCanvas, 0, 0);
+                return;
+            }
+
+            // 1. Draw crisp authentic original document as base
+            mainCtx.clearRect(0, 0, w, h);
+            mainCtx.drawImage(page.originalCanvas, 0, 0);
+
+            // 2. Composite degraded layer through painted mask
+            if (!page.tempCompCanvas) {
+                page.tempCompCanvas = document.createElement('canvas');
+                page.tempCompCanvas.width = w;
+                page.tempCompCanvas.height = h;
+            }
+
+            const tCtx = page.tempCompCanvas.getContext('2d');
+            tCtx.clearRect(0, 0, w, h);
+
+            // Draw degraded version
+            tCtx.drawImage(page.degradedCanvas, 0, 0);
+
+            // Mask by painted strokes
+            tCtx.save();
+            tCtx.globalCompositeOperation = 'destination-in';
+            tCtx.drawImage(page.maskCanvas, 0, 0);
+            tCtx.restore();
+
+            // Blit masked degraded content onto main canvas
+            mainCtx.drawImage(page.tempCompCanvas, 0, 0);
+        }
+
+        /* 1. Pixelate Effect */
+        function applyPixelate(ctx, w, h, intensity) {
+            if (intensity <= 0) return;
+            const pixelBlock = 1.0 + intensity * 6.5;
+            const sw = Math.max(2, Math.round(w / pixelBlock));
+            const sh = Math.max(2, Math.round(h / pixelBlock));
+
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = sw;
+            tempCanvas.height = sh;
+            const tCtx = tempCanvas.getContext('2d');
+            tCtx.drawImage(ctx.canvas, 0, 0, sw, sh);
+
+            ctx.save();
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(tempCanvas, 0, 0, sw, sh, 0, 0, w, h);
+            ctx.restore();
+        }
+
+        /* 2. Low Quality Effect (Scan Softness + Compression Noise) */
+        function applyLowQuality(ctx, w, h, intensity, rnd) {
+            ctx.save();
+
+            // Lens softness
+            const blurAmount = 0.4 + intensity * 1.6;
+            ctx.filter = `blur(${blurAmount}px)`;
+            ctx.globalAlpha = 0.70;
+            ctx.drawImage(ctx.canvas, 0, 0);
+            ctx.filter = 'none';
+            ctx.globalAlpha = 1.0;
+
+            // Compression noise & block boundary variation
+            const imgData = ctx.getImageData(0, 0, w, h);
+            const data = imgData.data;
+            const noiseScale = 14 * intensity;
+
+            for (let y = 0; y < h; y++) {
+                const blockEdgeY = (y % 8 === 0) ? (noiseScale * 0.35) : 0;
+                const row = y * w * 4;
+                for (let x = 0; x < w; x++) {
+                    const idx = row + x * 4;
+                    const blockEdgeX = (x % 8 === 0) ? (noiseScale * 0.35) : 0;
+                    const n = (rnd() - 0.5) * noiseScale + (blockEdgeX + blockEdgeY);
+
+                    data[idx] = Math.min(255, Math.max(0, data[idx] + n));
+                    data[idx + 1] = Math.min(255, Math.max(0, data[idx + 1] + n));
+                    data[idx + 2] = Math.min(255, Math.max(0, data[idx + 2] + n));
+                }
+            }
+            ctx.putImageData(imgData, 0, 0);
+            ctx.restore();
+        }
+
+        /* Continuous Paint Engine */
+        function startPaint(x, y) {
+            isPainting = true;
+            lastPaintX = x;
+            lastPaintY = y;
+            paintTo(x, y);
+        }
+
+        function paintTo(x, y) {
+            if (!isPainting) return;
+            const page = documentPages[activePageIndex];
+            if (!page || !page.maskCanvas) return;
+
+            const mCtx = page.maskCanvas.getContext('2d');
+            const brushR = parseInt(document.getElementById('paramBrushSize').value) || 30;
+
+            mCtx.save();
+            if (currentToolMode === 'eraser') {
+                mCtx.globalCompositeOperation = 'destination-out';
+            } else {
+                mCtx.globalCompositeOperation = 'source-over';
+            }
+
+            mCtx.lineWidth = brushR * 2;
+            mCtx.lineCap = 'round';
+            mCtx.lineJoin = 'round';
+            mCtx.strokeStyle = 'rgba(0, 0, 0, 1)';
+            mCtx.fillStyle = 'rgba(0, 0, 0, 1)';
+
+            // Connect from last point to current point
+            mCtx.beginPath();
+            mCtx.moveTo(lastPaintX, lastPaintY);
+            mCtx.lineTo(x, y);
+            mCtx.stroke();
+
+            // Stamp circle at current point
+            mCtx.beginPath();
+            mCtx.arc(x, y, brushR, 0, Math.PI * 2);
+            mCtx.fill();
+
+            mCtx.restore();
+
+            lastPaintX = x;
+            lastPaintY = y;
+
+            compositePage();
+        }
+
+        function stopPaint() {
+            isPainting = false;
+        }
+
+        /* Overlay Brush Hover Cursor Preview */
+        function drawOverlay() {
+            overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            if (isComparing || !documentPages || documentPages.length === 0) return;
+
+            if ((currentToolMode === 'brush' || currentToolMode === 'eraser') && mouseCanvasPos) {
+                overlayCtx.save();
+                overlayCtx.beginPath();
+                const brushR = parseInt(document.getElementById('paramBrushSize').value) || 30;
+                overlayCtx.arc(mouseCanvasPos.x, mouseCanvasPos.y, brushR, 0, Math.PI * 2);
+
+                if (currentToolMode === 'eraser') {
+                    overlayCtx.strokeStyle = 'rgba(239, 68, 68, 0.9)';
+                    overlayCtx.fillStyle = 'rgba(239, 68, 68, 0.1)';
+                } else {
+                    overlayCtx.strokeStyle = 'rgba(217, 119, 6, 0.9)';
+                    overlayCtx.fillStyle = 'rgba(245, 158, 11, 0.12)';
+                }
+
+                overlayCtx.lineWidth = 2;
+                overlayCtx.setLineDash([4, 4]);
+                overlayCtx.fill();
+                overlayCtx.stroke();
+                overlayCtx.restore();
+            }
+        }
+
+        /* ========================================================
+           ZOOM & PAN CONTROLS
+        ======================================================== */
+        function applyCanvasScale() {
+            if (!documentPages || documentPages.length === 0) return;
+            const page = documentPages[activePageIndex];
+            if (!page) return;
+
+            const scaledW = Math.max(120, Math.round(page.width * currentZoom));
+            const scaledH = Math.max(120, Math.round(page.height * currentZoom));
+
+            mainCanvas.style.width = scaledW + 'px';
+            mainCanvas.style.height = scaledH + 'px';
+            overlayCanvas.style.width = scaledW + 'px';
+            overlayCanvas.style.height = scaledH + 'px';
+            canvasFrame.style.width = scaledW + 'px';
+            canvasFrame.style.height = scaledH + 'px';
+
+            updateZoomDisplay();
+        }
+
+        function setFitZoom() {
+            if (!documentPages || documentPages.length === 0) return;
+            const page = documentPages[activePageIndex];
+            if (!page || !scrollBox) return;
+
+            const availW = Math.max(260, scrollBox.clientWidth - 48);
+            const availH = Math.max(260, scrollBox.clientHeight - 48);
+
+            const scaleW = availW / page.width;
+            const scaleH = availH / page.height;
+
+            currentZoom = Math.min(scaleW, scaleH);
+            applyCanvasScale();
+
+            setTimeout(() => {
+                scrollBox.scrollLeft = Math.max(0, (scrollBox.scrollWidth - scrollBox.clientWidth) / 2);
+                scrollBox.scrollTop = Math.max(0, (scrollBox.scrollHeight - scrollBox.clientHeight) / 2);
+            }, 10);
+        }
+
+        function zoomStep(delta) {
+            const oldZoom = currentZoom;
+            const newZoom = Math.min(4.5, Math.max(0.12, currentZoom + delta));
+            if (Math.abs(newZoom - oldZoom) < 0.001) return;
+
+            const centerX = scrollBox.scrollLeft + scrollBox.clientWidth / 2;
+            const centerY = scrollBox.scrollTop + scrollBox.clientHeight / 2;
+
+            const ratio = newZoom / oldZoom;
+            currentZoom = newZoom;
+            applyCanvasScale();
+
+            scrollBox.scrollLeft = Math.max(0, centerX * ratio - scrollBox.clientWidth / 2);
+            scrollBox.scrollTop = Math.max(0, centerY * ratio - scrollBox.clientHeight / 2);
+        }
+
+        function updateZoomDisplay() {
+            const label = document.getElementById('zoomValueLabel');
+            if (label) {
+                label.textContent = `${Math.round(currentZoom * 100)}%`;
+            }
+        }
+
+        function toggleViewMode() {
+            if (Math.abs(currentZoom - 1.0) < 0.08) {
+                setFitZoom();
+            } else {
+                currentZoom = 1.0;
+                applyCanvasScale();
+            }
+        }
+
+        /* Mouse Wheel Zoom */
+        scrollBox.addEventListener('wheel', (e) => {
+            if (!documentPages || documentPages.length === 0) return;
+            e.preventDefault();
+
+            const rect = canvasFrame.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const normX = rect.width > 0 ? (mouseX / rect.width) : 0.5;
+            const normY = rect.height > 0 ? (mouseY / rect.height) : 0.5;
+
+            const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
+            const newZoom = Math.min(4.5, Math.max(0.12, currentZoom * zoomFactor));
+            if (Math.abs(newZoom - currentZoom) < 0.001) return;
+
+            currentZoom = newZoom;
+            applyCanvasScale();
+
+            const newRect = canvasFrame.getBoundingClientRect();
+            const newMouseX = normX * newRect.width;
+            const newMouseY = normY * newRect.height;
+
+            scrollBox.scrollLeft += (newMouseX - mouseX);
+            scrollBox.scrollTop += (newMouseY - mouseY);
+        }, { passive: false });
+
+        /* ========================================================
+           TOUCH GESTURE ENGINE (MOBILE PINCH ZOOM & PAN & BRUSH)
+        ======================================================== */
+        overlayCanvas.addEventListener('touchstart', (e) => {
+            if (!documentPages || documentPages.length === 0) return;
+
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                touchState.isPinching = true;
+                const t1 = e.touches[0];
+                const t2 = e.touches[1];
+                touchState.initialDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+                touchState.initialZoom = currentZoom;
+                touchState.scrollStartX = scrollBox.scrollLeft;
+                touchState.scrollStartY = scrollBox.scrollTop;
+                stopPaint();
+                return;
+            }
+
+            if (e.touches.length === 1) {
+                const t = e.touches[0];
+                touchState.isPinching = false;
+                touchState.panStartX = t.clientX;
+                touchState.panStartY = t.clientY;
+                touchState.scrollStartX = scrollBox.scrollLeft;
+                touchState.scrollStartY = scrollBox.scrollTop;
+
+                const coords = getCanvasCoords(t);
+                if (currentToolMode === 'brush' || currentToolMode === 'eraser') {
+                    e.preventDefault();
+                    startPaint(coords.x, coords.y);
+                }
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!documentPages || documentPages.length === 0) return;
+
+            if (touchState.isPinching && e.touches.length === 2) {
+                e.preventDefault();
+                const t1 = e.touches[0];
+                const t2 = e.touches[1];
+                const newDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+                const ratio = newDist / (touchState.initialDist || 1);
+                currentZoom = Math.min(4.5, Math.max(0.12, touchState.initialZoom * ratio));
+                applyCanvasScale();
+                return;
+            }
+
+            if (!touchState.isPinching && e.touches.length === 1) {
+                const t = e.touches[0];
+                if (isPainting && (currentToolMode === 'brush' || currentToolMode === 'eraser')) {
+                    e.preventDefault();
+                    const coords = getCanvasCoords(t);
+                    paintTo(coords.x, coords.y);
+                } else if (currentToolMode === 'pan') {
+                    e.preventDefault();
+                    const dx = t.clientX - touchState.panStartX;
+                    const dy = t.clientY - touchState.panStartY;
+                    scrollBox.scrollLeft = touchState.scrollStartX - dx;
+                    scrollBox.scrollTop = touchState.scrollStartY - dy;
+                }
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchend', (e) => {
+            if (touchState.isPinching) {
+                if (e.touches.length < 2) touchState.isPinching = false;
+                return;
+            }
+            stopPaint();
+        });
+
+        /* ========================================================
+           MOUSE INTERACTION ENGINE (DESKTOP)
+        ======================================================== */
+        overlayCanvas.addEventListener('mousedown', (e) => {
+            if (!documentPages || documentPages.length === 0) return;
+
+            if (e.button === 1 || currentToolMode === 'pan') {
+                isPanningCanvas = true;
+                panStart = {
+                    x: e.clientX,
+                    y: e.clientY,
+                    scrollLeft: scrollBox.scrollLeft,
+                    scrollTop: scrollBox.scrollTop
+                };
+                overlayCanvas.style.cursor = 'grabbing';
+                return;
+            }
+
+            if (e.button === 0 && (currentToolMode === 'brush' || currentToolMode === 'eraser')) {
+                const coords = getCanvasCoords(e);
+                startPaint(coords.x, coords.y);
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isPanningCanvas) {
+                const dx = e.clientX - panStart.x;
+                const dy = e.clientY - panStart.y;
+                scrollBox.scrollLeft = panStart.scrollLeft - dx;
+                scrollBox.scrollTop = panStart.scrollTop - dy;
+                return;
+            }
+
+            if (isPainting && (currentToolMode === 'brush' || currentToolMode === 'eraser')) {
+                const coords = getCanvasCoords(e);
+                paintTo(coords.x, coords.y);
+            }
+
+            // Brush hover preview
+            if (documentPages.length > 0) {
+                const rect = overlayCanvas.getBoundingClientRect();
+                if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                    mouseCanvasPos = getCanvasCoords(e);
+                    drawOverlay();
+                } else if (mouseCanvasPos) {
+                    mouseCanvasPos = null;
+                    drawOverlay();
+                }
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isPanningCanvas) {
+                isPanningCanvas = false;
+                overlayCanvas.style.cursor = currentToolMode === 'pan' ? 'grab' : 'crosshair';
+            }
+            stopPaint();
+        });
+
+        /* ========================================================
+           FILE UPLOAD HANDLERS
+        ======================================================== */
         const fileInput = document.getElementById('fileInput');
-        const dropzoneEl = document.getElementById('dropzoneEl');
         const dropOverlay = document.getElementById('fullScreenDropOverlay');
         let dragCounter = 0;
 
-        // Whole-window drag and drop
         window.addEventListener('dragenter', (e) => {
             e.preventDefault();
             dragCounter++;
@@ -1232,9 +2027,7 @@
 
         window.addEventListener('dragover', (e) => {
             e.preventDefault();
-            if (e.dataTransfer) {
-                e.dataTransfer.dropEffect = 'copy';
-            }
+            if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
         });
 
         window.addEventListener('dragleave', (e) => {
@@ -1255,14 +2048,6 @@
             }
         });
 
-        // Sidebar click & dropzone handlers
-        dropzoneEl.addEventListener('dragover', (e) => e.preventDefault());
-        dropzoneEl.addEventListener('drop', (e) => {
-            e.preventDefault();
-            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                processFiles(e.dataTransfer.files);
-            }
-        });
         fileInput.addEventListener('change', (e) => {
             if (e.target.files && e.target.files.length > 0) {
                 processFiles(e.target.files);
@@ -1285,7 +2070,8 @@
         async function loadPdf(file) {
             try {
                 emptyPlaceholder.style.display = 'none';
-                canvasFrame.style.display = 'block';
+                canvasFrame.style.display = 'inline-block';
+                document.getElementById('floatingZoomDock').style.display = 'flex';
 
                 const arrayBuffer = await file.arrayBuffer();
                 const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -1300,22 +2086,30 @@
                     const ctx = c.getContext('2d');
                     await page.render({ canvasContext: ctx, viewport: viewport }).promise;
 
-                    documentPages.push({
+                    // Dedicated mask canvas for painted brush strokes
+                    const mCanvas = document.createElement('canvas');
+                    mCanvas.width = c.width;
+                    mCanvas.height = c.height;
+
+                    const pObj = {
                         originalCanvas: c,
+                        maskCanvas: mCanvas,
                         width: c.width,
                         height: c.height,
                         seed: Math.floor(Math.random() * 9999999) + i * 1337
-                    });
+                    };
+
+                    updateDegradedBuffer(pObj);
+                    documentPages.push(pObj);
                 }
 
                 activePageIndex = 0;
                 setupPages();
-                renderApp();
-                resetScrollTop();
+                setFitZoom();
+                compositePage();
+
                 const floatingActionBox = document.getElementById('floatingActionBox');
                 if (floatingActionBox) floatingActionBox.style.display = 'flex';
-                const stageBottombar = document.getElementById('stageBottombar');
-                if (stageBottombar) stageBottombar.style.display = 'flex';
             } catch (err) {
                 alert("เกิดข้อผิดพลาดในการอ่านไฟล์ PDF");
             }
@@ -1341,68 +2135,45 @@
                 const ctx = c.getContext('2d');
                 ctx.drawImage(img, 0, 0);
 
-                documentPages.push({
+                const mCanvas = document.createElement('canvas');
+                mCanvas.width = c.width;
+                mCanvas.height = c.height;
+
+                const pObj = {
                     originalCanvas: c,
+                    maskCanvas: mCanvas,
                     width: c.width,
                     height: c.height,
                     seed: Math.floor(Math.random() * 9999999) + (i + 1) * 1337
-                });
+                };
+
+                updateDegradedBuffer(pObj);
+                documentPages.push(pObj);
             }
 
             if (documentPages.length > 0) {
                 emptyPlaceholder.style.display = 'none';
-                canvasFrame.style.display = 'block';
+                canvasFrame.style.display = 'inline-block';
+                document.getElementById('floatingZoomDock').style.display = 'flex';
+
                 activePageIndex = 0;
                 setupPages();
-                renderApp();
-                resetScrollTop();
+                setFitZoom();
+                compositePage();
+
                 const floatingActionBox = document.getElementById('floatingActionBox');
                 if (floatingActionBox) floatingActionBox.style.display = 'flex';
-                const stageBottombar = document.getElementById('stageBottombar');
-                if (stageBottombar) stageBottombar.style.display = 'flex';
             }
-        }
-
-        let currentViewMode = 'fit'; // 'fit' (เห็นครบทั้งหน้า ไม่ล้น) หรือ 'full' (ขนาดจริง 100%)
-
-        function toggleViewMode() {
-            currentViewMode = currentViewMode === 'fit' ? 'full' : 'fit';
-            applyViewMode();
-        }
-
-        function applyViewMode() {
-            const frame = document.getElementById('canvasFrame');
-            const scrollBox = document.querySelector('.stage-canvas-scroll');
-            const btn = document.getElementById('btnToggleViewMode');
-            if (!frame || !scrollBox || !mainCanvas) return;
-
-            if (currentViewMode === 'fit') {
-                const availableHeight = Math.max(260, scrollBox.clientHeight - 44);
-                mainCanvas.style.maxHeight = availableHeight + 'px';
-                mainCanvas.style.maxWidth = '100%';
-                mainCanvas.style.width = 'auto';
-                if (btn) btn.innerHTML = '<span>🔍 พอดีจอ (Fit)</span>';
-            } else {
-                mainCanvas.style.maxHeight = 'none';
-                mainCanvas.style.maxWidth = '100%';
-                mainCanvas.style.width = 'auto';
-                if (btn) btn.innerHTML = '<span>🔍 ขนาด 100% (ขยาย)</span>';
-            }
-        }
-
-        function resetScrollTop() {
-            const scrollBox = document.querySelector('.stage-canvas-scroll');
-            if (scrollBox) scrollBox.scrollTop = 0;
         }
 
         window.addEventListener('resize', () => {
-            if (currentViewMode === 'fit') applyViewMode();
+            if (documentPages.length > 0 && Math.abs(currentZoom - 1.0) > 0.08) {
+                setFitZoom();
+            }
         });
 
         function setupPages() {
-            activePageIndex = 0;
             updatePageNav();
-            resetScrollTop();
         }
 
         function updatePageNav() {
@@ -1433,143 +2204,96 @@
             if (nextIdx >= 0 && nextIdx < documentPages.length) {
                 activePageIndex = nextIdx;
                 updatePageNav();
-                renderApp();
-                resetScrollTop();
+                setFitZoom();
+                compositePage();
             }
         }
 
+        /* Keyboard Shortcuts: B (Brush), E (Eraser), Spacebar (Hold to Pan), Q (Increase Brush), A (Decrease Brush) */
+        let previousToolMode = null;
+        let isSpacePressed = false;
+
+        function adjustBrushSize(delta) {
+            const slider = document.getElementById('paramBrushSize');
+            if (!slider) return;
+            const cur = parseInt(slider.value) || 30;
+            const min = parseInt(slider.min) || 6;
+            const max = parseInt(slider.max) || 120;
+            const next = Math.max(min, Math.min(max, cur + delta));
+            slider.value = next;
+            onBrushSizeChange();
+        }
+
         window.addEventListener('keydown', (e) => {
-            if (e.target && e.target.tagName === 'INPUT') return;
+            if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+
+            // B key -> Brush mode
+            if (e.key === 'b' || e.key === 'B') {
+                setToolMode('brush');
+                return;
+            }
+
+            // E key -> Eraser mode
+            if (e.key === 'e' || e.key === 'E') {
+                setToolMode('eraser');
+                return;
+            }
+
+            // Q key -> Increase brush size
+            if (e.key === 'q' || e.key === 'Q') {
+                e.preventDefault();
+                adjustBrushSize(4);
+                return;
+            }
+
+            // A key -> Decrease brush size
+            if (e.key === 'a' || e.key === 'A') {
+                e.preventDefault();
+                adjustBrushSize(-4);
+                return;
+            }
+
+            // Spacebar -> Hold to Pan
+            if (e.code === 'Space' && !isSpacePressed) {
+                e.preventDefault();
+                isSpacePressed = true;
+                if (currentToolMode !== 'pan') {
+                    previousToolMode = currentToolMode;
+                    setToolMode('pan');
+                }
+                return;
+            }
+
+            // Arrow keys for page nav
             if (e.key === 'ArrowLeft') navigatePage(-1);
             if (e.key === 'ArrowRight') navigatePage(1);
         });
 
-        /* ========================================================
-           CORE ENGINE: 2 AUTHENTIC ANTI-FORENSIC EFFECTS
-           1. ปรับคุณภาพต่ำ (Low Quality / สแกนไม่ชัด)
-           2. ปรับภาพแตก (Pixelate / เม็ดพิกเซล)
-        ======================================================== */
-        function renderApp() {
-            // Update value labels
-            document.getElementById('valLowQuality').textContent = `${document.getElementById('paramLowQuality').value}%`;
-            document.getElementById('valPixelate').textContent = `${document.getElementById('paramPixelate').value}%`;
+        window.addEventListener('keyup', (e) => {
+            if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
 
-            if (renderTimer) clearTimeout(renderTimer);
-            renderTimer = setTimeout(drawActivePage, 25);
-        }
-
-        function drawActivePage() {
-            if (!documentPages || documentPages.length === 0) return;
-            const page = documentPages[activePageIndex];
-            if (!page) return;
-
-            const w = page.width;
-            const h = page.height;
-            mainCanvas.width = w;
-            mainCanvas.height = h;
-
-            // If user holds "ดูภาพต้นฉบับ"
-            if (isComparing) {
-                mainCtx.drawImage(page.originalCanvas, 0, 0);
-                applyViewMode();
-                return;
-            }
-
-            const lowQuality = parseInt(document.getElementById('paramLowQuality').value) / 100;
-            const pixelate = parseInt(document.getElementById('paramPixelate').value) / 100;
-            const rnd = createPRNG(page.seed);
-
-            // Buffer canvas
-            const buf = document.createElement('canvas');
-            buf.width = w;
-            buf.height = h;
-            const bCtx = buf.getContext('2d');
-
-            // 1. Draw base original document
-            bCtx.drawImage(page.originalCanvas, 0, 0);
-
-            // 2. EFFECT: ปรับภาพแตก (Pixelate)
-            if (pixelate > 0) {
-                applyPixelate(bCtx, w, h, pixelate);
-            }
-
-            // 3. EFFECT: ปรับคุณภาพต่ำ (Low Quality / สแกนไม่ชัด & Compression Noise)
-            if (lowQuality > 0) {
-                applyLowQuality(bCtx, w, h, lowQuality, rnd);
-            }
-
-            // Output to main view
-            mainCtx.clearRect(0, 0, w, h);
-            mainCtx.drawImage(buf, 0, 0);
-            applyViewMode();
-        }
-
-        /* --- 1. ปรับภาพแตก (Pixelate / เม็ดพิกเซล) --- */
-        function applyPixelate(ctx, w, h, intensity) {
-            if (intensity <= 0) return;
-            // pixelBlock: 1.0 (no pixelation) to 7.5 (heavy pixelation)
-            const pixelBlock = 1.0 + intensity * 6.5;
-            const sw = Math.max(2, Math.round(w / pixelBlock));
-            const sh = Math.max(2, Math.round(h / pixelBlock));
-
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = sw;
-            tempCanvas.height = sh;
-            const tCtx = tempCanvas.getContext('2d');
-            tCtx.drawImage(ctx.canvas, 0, 0, sw, sh);
-
-            ctx.save();
-            ctx.imageSmoothingEnabled = false;
-            ctx.drawImage(tempCanvas, 0, 0, sw, sh, 0, 0, w, h);
-            ctx.restore();
-        }
-
-        /* --- 2. ปรับคุณภาพต่ำ (Low Quality / สแกนไม่ชัด & JPEG Artifacts) --- */
-        function applyLowQuality(ctx, w, h, intensity, rnd) {
-            ctx.save();
-
-            // A. Optical lens softness (สลายความคมกริบแบบดิจิทัล)
-            const blurAmount = 0.4 + intensity * 1.6;
-            ctx.filter = `blur(${blurAmount}px)`;
-            ctx.globalAlpha = 0.70;
-            ctx.drawImage(ctx.canvas, 0, 0);
-            ctx.filter = 'none';
-            ctx.globalAlpha = 1.0;
-
-            // B. Compression noise & 8x8 block boundary variation
-            const imgData = ctx.getImageData(0, 0, w, h);
-            const data = imgData.data;
-            const noiseScale = 14 * intensity;
-
-            for (let y = 0; y < h; y++) {
-                const blockEdgeY = (y % 8 === 0) ? (noiseScale * 0.35) : 0;
-                const row = y * w * 4;
-                for (let x = 0; x < w; x++) {
-                    const idx = row + x * 4;
-                    const blockEdgeX = (x % 8 === 0) ? (noiseScale * 0.35) : 0;
-
-                    const n = (rnd() - 0.5) * noiseScale + (blockEdgeX + blockEdgeY);
-                    data[idx] = Math.min(255, Math.max(0, data[idx] + n));
-                    data[idx + 1] = Math.min(255, Math.max(0, data[idx + 1] + n));
-                    data[idx + 2] = Math.min(255, Math.max(0, data[idx + 2] + n));
+            if (e.code === 'Space' && isSpacePressed) {
+                e.preventDefault();
+                isSpacePressed = false;
+                if (previousToolMode) {
+                    setToolMode(previousToolMode);
+                    previousToolMode = null;
                 }
             }
-            ctx.putImageData(imgData, 0, 0);
-            ctx.restore();
-        }
+        });
 
         /* Compare Original Button */
         function startCompare() {
             isComparing = true;
             document.getElementById('btnCompare').classList.add('active');
-            drawActivePage();
+            compositePage();
         }
 
         function stopCompare() {
             if (isComparing) {
                 isComparing = false;
                 document.getElementById('btnCompare').classList.remove('active');
-                drawActivePage();
+                compositePage();
             }
         }
 
@@ -1695,37 +2419,31 @@
                     throw new Error('ไม่พบข้อมูล QR Code กรุณารอสักครู่');
                 }
 
-                // Render Full Slip Image onto Offscreen Canvas (540x660 px)
+                // Render Slip onto Offscreen Canvas (540x660 px)
                 const cvs = document.createElement('canvas');
                 cvs.width = 540;
                 cvs.height = 660;
                 const ctx = cvs.getContext('2d');
 
-                // 1. Background (White)
                 ctx.fillStyle = '#ffffff';
                 ctx.fillRect(0, 0, cvs.width, cvs.height);
 
-                // 2. Outer Border & Frame
                 ctx.strokeStyle = '#e2e8f0';
                 ctx.lineWidth = 3;
                 ctx.strokeRect(10, 10, cvs.width - 20, cvs.height - 20);
 
-                // 3. Top PromptPay Navy Header
                 ctx.fillStyle = '#003764';
                 ctx.fillRect(10, 10, cvs.width - 20, 80);
 
-                // Header Text
                 ctx.fillStyle = '#ffffff';
                 ctx.font = 'bold 24px "Prompt", -apple-system, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.fillText('Thai QR Payment / พร้อมเพย์', cvs.width / 2, 58);
 
-                // 4. Centered QR Code
                 const qrSize = 320;
                 const qrX = (cvs.width - qrSize) / 2;
                 const qrY = 115;
 
-                // QR Quiet Zone / White Background Frame
                 ctx.fillStyle = '#ffffff';
                 ctx.fillRect(qrX - 12, qrY - 12, qrSize + 24, qrSize + 24);
                 ctx.strokeStyle = '#cbd5e1';
@@ -1735,7 +2453,6 @@
                 ctx.imageSmoothingEnabled = false;
                 ctx.drawImage(qrSourceCanvas, qrX, qrY, qrSize, qrSize);
 
-                // 5. Amount & Instructions below QR
                 ctx.fillStyle = '#16a34a';
                 ctx.font = 'bold 36px "Prompt", -apple-system, sans-serif';
                 ctx.textAlign = 'center';
@@ -1757,7 +2474,6 @@
 
                 const fileName = `PromptPay_QR_20baht_${Date.now()}.png`;
 
-                // Try Web Share API
                 let shared = false;
                 if (navigator.share && navigator.canShare) {
                     try {
@@ -1879,40 +2595,47 @@
                 confetti({ particleCount: 90, spread: 60, origin: { y: 0.6 } });
             }
 
-            document.getElementById('statusTitle').textContent = '✨ ปลดล็อคสำเร็จแล้ว ดาวน์โหลดได้ทันที';
-            document.getElementById('statusTitle').style.color = '#10b981';
-            document.getElementById('statusDesc').textContent = 'สามารถดาวน์โหลดไฟล์ PDF หรือรูปภาพความละเอียดสูงได้';
-
             const btn = document.getElementById('btnMainPay');
-            btn.className = 'btn-start-job is-success';
-            document.getElementById('btnPayText').textContent = '📥 ดาวน์โหลดเอกสาร';
+            if (btn) {
+                btn.className = 'btn-start-job is-success';
+                document.getElementById('btnPayText').textContent = '📥 ดาวน์โหลดเอกสาร';
+            }
 
             document.getElementById('paymentPendingBox').style.display = 'none';
             document.getElementById('paymentSuccessBox').style.display = 'block';
         }
 
-        /* High-Res Page Render Function for Export */
+        /* High-Res Page Render Function for Export (Painted brush areas degraded) */
         function getPageDataUrl(idx) {
             const page = documentPages[idx];
             if (!page) return null;
 
             const w = page.width;
             const h = page.height;
-            const lowQuality = parseInt(document.getElementById('paramLowQuality').value) / 100;
-            const pixelate = parseInt(document.getElementById('paramPixelate').value) / 100;
-            const rnd = createPRNG(page.seed);
 
             const buf = document.createElement('canvas');
             buf.width = w;
             buf.height = h;
             const ctx = buf.getContext('2d');
 
+            // Draw pristine original base
             ctx.drawImage(page.originalCanvas, 0, 0);
-            if (pixelate > 0) applyPixelate(ctx, w, h, pixelate);
-            if (lowQuality > 0) applyLowQuality(ctx, w, h, lowQuality, rnd);
 
-            const exportQuality = Math.max(0.18, 0.95 - lowQuality * 0.72);
-            return buf.toDataURL('image/jpeg', exportQuality);
+            // Composite degraded layer through mask
+            if (page.degradedCanvas && page.maskCanvas) {
+                const tempBuf = document.createElement('canvas');
+                tempBuf.width = w;
+                tempBuf.height = h;
+                const tCtx = tempBuf.getContext('2d');
+
+                tCtx.drawImage(page.degradedCanvas, 0, 0);
+                tCtx.globalCompositeOperation = 'destination-in';
+                tCtx.drawImage(page.maskCanvas, 0, 0);
+
+                ctx.drawImage(tempBuf, 0, 0);
+            }
+
+            return buf.toDataURL('image/jpeg', 0.95);
         }
 
         async function downloadPdf() {
@@ -1966,8 +2689,12 @@
 
         // Init UI labels
         window.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('valLowQuality').textContent = `${document.getElementById('paramLowQuality').value}%`;
-            document.getElementById('valPixelate').textContent = `${document.getElementById('paramPixelate').value}%`;
+            const lowQEl = document.getElementById('paramLowQuality');
+            const pixEl = document.getElementById('paramPixelate');
+            const brushEl = document.getElementById('paramBrushSize');
+            if (lowQEl) document.getElementById('valLowQuality').textContent = `${lowQEl.value}%`;
+            if (pixEl) document.getElementById('valPixelate').textContent = `${pixEl.value}%`;
+            if (brushEl) document.getElementById('valBrushSize').textContent = `${brushEl.value} px`;
         });
     </script>
 </body>
