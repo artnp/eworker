@@ -743,6 +743,123 @@
             height: auto;
         }
 
+        /* Mobile Banking Container & Rocket Pay */
+        .mobile-banking-container {
+            display: none;
+            width: 100%;
+            margin: 6px 0 4px 0;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-banking-container {
+                display: block !important;
+            }
+        }
+
+        .btn-rocket-pay {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 320px;
+            margin: 0 auto;
+            padding: 11px 18px;
+            background: linear-gradient(135deg, #059669 0%, #10b981 50%, #047857 100%);
+            background-size: 200% 200%;
+            color: #ffffff;
+            border: none;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 0.95rem;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+            overflow: hidden;
+            white-space: nowrap;
+            transition: all 0.25s ease;
+        }
+
+        .btn-rocket-pay::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -120%;
+            width: 80%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.8), transparent);
+            transform: skewX(-25deg);
+            animation: rocketShimmer 2.2s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes rocketShimmer {
+            0% { left: -120%; opacity: 0; }
+            20% { opacity: 1; }
+            60% { left: 160%; opacity: 1; }
+            100% { left: 160%; opacity: 0; }
+        }
+
+        .btn-rocket-pay:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45);
+        }
+
+        .btn-rocket-pay:active {
+            transform: scale(0.98);
+        }
+
+        .qr-container {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .qr-container:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+        }
+
+        .qr-download-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.28);
+            backdrop-filter: blur(2px);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            pointer-events: none;
+        }
+
+        .qr-container:hover .qr-download-overlay {
+            opacity: 1;
+        }
+
+        .qr-download-icon {
+            background: #ffffff;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+            transform: scale(0.85);
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .qr-container:hover .qr-download-icon {
+            transform: scale(1);
+        }
+
         .polling-status-chip {
             background: #f8fafc;
             border: 1px solid var(--border-color);
