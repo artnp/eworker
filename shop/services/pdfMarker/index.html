@@ -1060,7 +1060,8 @@
             opacity: 0;
             pointer-events: none;
             transition: all 0.25s ease;
-            padding: 16px;
+            padding: 20px 16px;
+            overflow-y: auto;
         }
 
         .payment-modal-overlay.active {
@@ -1079,8 +1080,39 @@
             transform: scale(0.95);
             transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
-            max-height: 94vh;
-            overflow-y: auto;
+            overflow: visible;
+            box-sizing: border-box;
+        }
+
+        .btn-modal-close-red {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #ef4444;
+            color: #ffffff;
+            border: 2.5px solid #ffffff;
+            font-size: 16px;
+            font-weight: 800;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25), 0 2px 6px rgba(239, 68, 68, 0.4);
+            transition: all 0.2s ease;
+            z-index: 30;
+        }
+
+        .btn-modal-close-red:hover {
+            background: #dc2626;
+            transform: scale(1.1);
+        }
+
+        .btn-modal-close-red:active {
+            transform: scale(0.95);
         }
 
         .payment-modal-overlay.active .payment-modal-card {
@@ -1296,7 +1328,7 @@
                 <span>🗑️ ล้างจุดมาร์ค</span>
             </button>
             <button type="button" class="btn btn-primary" id="btnExportCheckout" style="display: none;">
-                <span id="btnExportText">⚡ ชำระเงิน & ส่งออก PDF</span>
+                <span id="btnExportText">⚡ ชำระเงิน 5 บาท &amp; ส่งออก PDF</span>
             </button>
         </div>
     </header>
@@ -1459,7 +1491,7 @@
             <div class="floating-action-box" id="floatingActionBox" style="display: none;">
                 <button class="btn-start-job" id="btnFloatingExport" type="button" onclick="document.getElementById('btnExportCheckout').click()">
                     <i class="fa-solid fa-rocket"></i>
-                    <span id="btnFloatingExportText">⚡ ชำระเงิน &amp; ส่งออก PDF</span>
+                    <span id="btnFloatingExportText">⚡ ชำระเงิน 5 บาท &amp; ส่งออก PDF</span>
                 </button>
             </div>
 
@@ -1470,6 +1502,9 @@
     <!-- ===== PAYMENT & CHECKOUT MODAL (PromptPay 5 THB) ===== -->
     <div id="paymentModal" class="payment-modal-overlay">
         <div class="payment-modal-card">
+            <!-- Round Red Close Button at Top Right -->
+            <button type="button" class="btn-modal-close-red" onclick="closePaymentModal()" title="ปิดหน้าต่าง">✕</button>
+
             <!-- Pending Payment View -->
             <div id="paymentViewPending">
                 <h4 style="font-size: 1.1rem; font-weight: 800; color: #16a34a; margin: 0 0 4px 0;">🎉
@@ -1525,13 +1560,6 @@
                             จำลองเงินเข้า 5 บ.
                         </button>
                     </div>
-                </div>
-
-                <div style="margin-top: 10px; display: flex; justify-content: center;">
-                    <button type="button" class="btn btn-secondary" onclick="closePaymentModal()"
-                        style="font-size: 0.76rem; padding: 5px 16px; justify-content: center; text-align: center;">
-                        ปิดหน้าต่างชั่วคราว
-                    </button>
                 </div>
             </div>
 
