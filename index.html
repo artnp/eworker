@@ -3397,6 +3397,459 @@
             background: #fffdf5 !important;
             box-shadow: 0 4px 15px rgba(245, 158, 11, 0.12) !important;
         }
+
+        /* ===== ADMIN RIGHT SIDEBAR & EXPANDED LAYOUT (127.0.0.1) ===== */
+        body.is-admin-view .container {
+            max-width: 100% !important;
+            padding-left: 24px !important;
+            padding-right: 24px !important;
+            box-sizing: border-box;
+            transition: max-width 0.25s ease;
+        }
+
+        body.is-admin-view .header-main {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+
+        body.is-admin-view .top-notice-inner {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+
+        .store-grid-wrapper {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        body.is-admin-view .store-grid-wrapper {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 400px;
+            gap: 24px;
+            align-items: start;
+            width: 100%;
+        }
+
+        @media (max-width: 1200px) {
+            body.is-admin-view .store-grid-wrapper {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .admin-right-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            position: sticky;
+            top: 16px;
+            width: 100%;
+            box-sizing: border-box;
+            max-height: calc(100vh - 32px);
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-bottom: 24px;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+
+        .admin-right-sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .admin-right-sidebar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        /* Top Bar of Sidebar */
+        .admin-rs-bar-header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #ffffff;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .admin-rs-bar-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .admin-rs-live-pill {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            padding: 2px 7px;
+            border-radius: 50px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .admin-rs-pulse-dot {
+            width: 6px;
+            height: 6px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: adminRsPulse 1.8s infinite;
+        }
+
+        @keyframes adminRsPulse {
+            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1.2); box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .admin-rs-tools {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .admin-rs-tool-btn {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #f1f5f9;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            transition: all 0.15s ease;
+            font-family: inherit;
+        }
+
+        .admin-rs-tool-btn:hover {
+            background: rgba(255, 255, 255, 0.24);
+            color: #ffffff;
+        }
+
+        /* Today's Revenue Hero Card */
+        .admin-rs-today-card {
+            background: linear-gradient(135deg, #ffffff 60%, #ecfdf5 100%);
+            border: 1.5px solid rgba(16, 185, 129, 0.35);
+            padding: 16px 18px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .admin-rs-today-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: #10b981;
+        }
+
+        .admin-rs-today-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .admin-rs-today-label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #065f46;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .admin-rs-today-badge {
+            background: #d1fae5;
+            color: #047857;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .admin-rs-amount-row {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+            margin-bottom: 12px;
+        }
+
+        .admin-rs-currency {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #059669;
+        }
+
+        .admin-rs-today-val {
+            font-size: 2.15rem;
+            font-weight: 900;
+            color: #059669;
+            letter-spacing: -0.03em;
+            line-height: 1;
+        }
+
+        .admin-rs-today-recent-box {
+            padding-top: 10px;
+            border-top: 1px dashed rgba(16, 185, 129, 0.3);
+            margin-top: 4px;
+        }
+
+        .admin-rs-today-recent-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+
+        /* Sales Ranking Table Card */
+        .admin-rs-card {
+            background: #ffffff;
+            border: 1px solid var(--fh-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            padding: 12px 14px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .admin-rs-ranking-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .admin-rs-ranking-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .admin-rs-ranking-title {
+            font-size: 0.86rem;
+            font-weight: 700;
+            color: var(--fh-dark);
+        }
+
+        .admin-rs-count-badge {
+            background: #f1f5f9;
+            color: #475569;
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 10px;
+        }
+
+        .admin-rs-sort-pills {
+            display: flex;
+            background: #f1f5f9;
+            padding: 2px;
+            border-radius: 8px;
+            gap: 2px;
+        }
+
+        .admin-rs-sort-btn {
+            background: transparent;
+            border: none;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #64748b;
+            padding: 3px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+
+        .admin-rs-sort-btn.active {
+            background: #ffffff;
+            color: #0f172a;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .admin-rs-table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .admin-rs-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 0.76rem;
+        }
+
+        .admin-rs-table th {
+            background: #f8fafc;
+            color: #64748b;
+            font-weight: 600;
+            padding: 6px 4px;
+            border-bottom: 1px solid var(--fh-border);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+        }
+
+        .admin-rs-table td {
+            padding: 8px 4px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+
+        .admin-rs-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .admin-rs-table tr:hover td {
+            background: #f8fafc;
+        }
+
+        .admin-rs-rank-pill {
+            width: 20px;
+            height: 20px;
+            border-radius: 5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.68rem;
+            font-weight: 800;
+        }
+
+        .admin-rs-rank-pill.rank-1 { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+        .admin-rs-rank-pill.rank-2 { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
+        .admin-rs-rank-pill.rank-3 { background: #ffedd5; color: #c2410c; border: 1px solid #fed7aa; }
+        .admin-rs-rank-pill.rank-other { background: transparent; color: #94a3b8; }
+
+        .admin-rs-item-title {
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1.25;
+            font-size: 0.76rem;
+            margin-bottom: 2px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .admin-rs-item-meta {
+            font-size: 0.66rem;
+            color: #94a3b8;
+            margin-bottom: 3px;
+        }
+
+        .admin-rs-progress {
+            height: 3px;
+            background: #f1f5f9;
+            border-radius: 3px;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .admin-rs-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0284c7, #10b981);
+            border-radius: 3px;
+        }
+
+        .admin-rs-pill-count {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            color: #334155;
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 2px 5px;
+            border-radius: 50px;
+            white-space: nowrap;
+        }
+
+        .admin-rs-item-revenue {
+            font-weight: 800;
+            color: #059669;
+            font-size: 0.82rem;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        /* Recent Activity Feed */
+        .admin-rs-recent-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .admin-rs-recent-item {
+            background: #ffffff;
+            border: 1px solid rgba(16, 185, 129, 0.22);
+            border-radius: 6px;
+            padding: 7px 9px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        }
+        }
+
+        .admin-rs-recent-item:hover {
+            background: #f1f5f9;
+        }
+
+        .admin-rs-recent-left {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            min-width: 0;
+        }
+
+        .admin-rs-recent-icon {
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .admin-rs-recent-title {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: #0f172a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .admin-rs-recent-time {
+            font-size: 0.65rem;
+            color: #94a3b8;
+        }
+
+        .admin-rs-recent-price {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: #059669;
+            flex-shrink: 0;
+            text-align: right;
+        }
     </style>
 </head>
 
@@ -3469,67 +3922,126 @@
 
     <!-- MAIN BODY -->
     <main class="container" style="flex: 1;">
-        <!-- TRUST HERO BANNER -->
-        <section class="trust-banner-fh">
-            <div class="trust-text">
-                <h2>พัฒนาระบบเพื่อเป็นตัวช่วยในการทำงานออนไลน์</h2>
-                <p>ตัวช่วยที่จะทำให้งานในชีวิตประจำวันของท่านให้ง่ายกว่าเดิม — อาณาจักรแห่ง แอพพลิเคชั่น งานบริการ และ
-                    ความรู้ใหม่ๆ ที่หาที่ไหนไม่ได้!
-                </p>
-            </div>
-            <div class="trust-badges-grid">
-                <div class="badge-pill-item"><span>✓</span> ราคาถูกมาก</div>
-                <div class="badge-pill-item"><span>✓</span> ระบบสแกนจ่ายอัตโนมัติ</div>
-                <div class="badge-pill-item"><span>✓</span> รับไฟล์งานทันที</div>
-                <div class="badge-pill-item"><span>✓</span> พัฒนาระบบอยู่ตลอดเวลา</div>
-            </div>
-        </section>
+        <div class="store-grid-wrapper" id="store-grid-wrapper">
+            <!-- Left / Center Column (Store Hero & Product Catalog) -->
+            <div class="store-main-column">
+                <!-- TRUST HERO BANNER -->
+                <section class="trust-banner-fh">
+                    <div class="trust-text">
+                        <h2>พัฒนาระบบเพื่อเป็นตัวช่วยในการทำงานออนไลน์</h2>
+                        <p>ตัวช่วยที่จะทำให้งานในชีวิตประจำวันของท่านให้ง่ายกว่าเดิม — อาณาจักรแห่ง แอพพลิเคชั่น งานบริการ และ
+                            ความรู้ใหม่ๆ ที่หาที่ไหนไม่ได้!
+                        </p>
+                    </div>
+                    <div class="trust-badges-grid">
+                        <div class="badge-pill-item"><span>✓</span> ราคาถูกมาก</div>
+                        <div class="badge-pill-item"><span>✓</span> ระบบสแกนจ่ายอัตโนมัติ</div>
+                        <div class="badge-pill-item"><span>✓</span> รับไฟล์งานทันที</div>
+                        <div class="badge-pill-item"><span>✓</span> แก้ปัญหาที่น่าปวดหัว</div>
+                        <div class="badge-pill-item"><span>✓</span> พัฒนาทักษะเชี่ยวชาญ</div>
+                    </div>
+                </section>
 
-        <!-- TWO-COLUMN LAYOUT -->
-        <div class="main-layout" id="main-layout-container">
-            <!-- Left Sidebar -->
-            <aside class="sidebar">
-                <div class="sidebar-card">
-                    <div class="sidebar-title">📁 หมวดหมู่</div>
-                    <ul class="sidebar-menu" id="sidebar-categories">
-                        <li>
-                            <a class="active" onclick="filterCategory('all')">
-                                <span>ทั้งหมด</span>
-                                <span class="sidebar-count" id="count-all">0</span>
-                            </a>
-                        </li>
-                    </ul>
+                <!-- TWO-COLUMN LAYOUT -->
+                <div class="main-layout" id="main-layout-container">
+                    <!-- Left Sidebar -->
+                    <aside class="sidebar">
+                        <div class="sidebar-card">
+                            <div class="sidebar-title">📁 หมวดหมู่</div>
+                            <ul class="sidebar-menu" id="sidebar-categories">
+                                <li>
+                                    <a class="active" onclick="filterCategory('all')">
+                                        <span>ทั้งหมด</span>
+                                        <span class="sidebar-count" id="count-all">0</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </aside>
+
+                    <!-- Main Content Area -->
+                    <section class="content-area">
+                        <div class="content-header-bar">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <div class="content-header-title" id="content-header-title">รายการทั้งหมด</div>
+                                <button type="button" class="btn-knowledge-bar-pill" id="content-header-knowledge-btn"
+                                    onclick="toggleKnowledgeDrawer()" style="display: none;">🔖 ความรู้บันทึก (<span
+                                        id="header-knowledge-count">0</span>)</button>
+                            </div>
+                            <div class="sort-control">
+                                <span>เรียงตาม:</span>
+                                <select class="sort-select-fh" id="sort-select" onchange="handleSortChange(this.value)">
+                                    <option value="newest">🕒 ล่าสุด</option>
+                                    <option value="recommended">⭐ ยอดนิยม / แนะนำ</option>
+                                    <option value="price-asc">💵 ราคา: ต่ำ ➔ สูง</option>
+                                    <option value="price-desc">💎 ราคา: สูง ➔ ต่ำ</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Program List Container -->
+                        <div class="program-list" id="program-list-container">
+                            <!-- Dynamic Program Cards Rendered Here -->
+                        </div>
+                        <!-- Catalog Pagination -->
+                        <div id="catalog-pagination" class="catalog-pagination" style="display: none;"></div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- ADMIN RIGHT SIDEBAR (127.0.0.1 Only) -->
+            <aside class="admin-right-sidebar" id="admin-right-sidebar" style="display: none;">
+                <!-- 1. Today's Revenue Hero Card with Recent Orders (บอก รายได้ของวันนี้ + รายการโอนล่าสุด) -->
+                <div class="admin-rs-today-card">
+                    <div class="admin-rs-today-top">
+                        <div class="admin-rs-today-label">
+                            <span>📅 รายได้ของวันนี้</span>
+                        </div>
+                        <span class="admin-rs-today-badge" id="admin-today-date-badge">วันนี้</span>
+                    </div>
+                    <div class="admin-rs-amount-row">
+                        <div class="admin-rs-currency">฿</div>
+                        <div class="admin-rs-today-val" id="admin-today-revenue-val">0.00</div>
+                    </div>
+
+                    <!-- ⚡ รายการโอนล่าสุด (รวมอยู่ในช่องรายได้ของวันนี้) -->
+                    <div class="admin-rs-today-recent-box">
+                        <div class="admin-rs-today-recent-title">
+                            <span>⚡ รายการโอนล่าสุด</span>
+                            <span class="admin-rs-count-badge" id="admin-recent-count">0</span>
+                        </div>
+                        <div class="admin-rs-recent-list" id="admin-recent-feed-list">
+                            <div style="text-align: center; color: var(--fh-muted); font-size: 0.72rem; padding: 8px 0;">
+                                กำลังโหลด...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Sold Products Ranking Table (ตารางรวมว่าขายอะไรได้แล้วบ้าง เหมือน admin-payment.html) -->
+                <div class="admin-rs-card" style="padding: 10px 12px;">
+                    <div class="admin-rs-table-wrap">
+                        <table class="admin-rs-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 26px; text-align: center;">#</th>
+                                    <th>สินค้า / บริการ</th>
+                                    <th style="width: 52px; text-align: center;">ขายได้</th>
+                                    <th style="text-align: right; width: 75px;">ยอดรวม</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-ranking-table-body">
+                                <tr>
+                                    <td colspan="4" style="text-align: center; padding: 22px 10px; color: var(--fh-muted);">
+                                        <div style="font-size: 1.4rem; margin-bottom: 4px;">⏳</div>
+                                        <div>กำลังดึงสถิติจาก Beam...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </aside>
-
-            <!-- Main Content Area -->
-            <section class="content-area">
-                <div class="content-header-bar">
-                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                        <div class="content-header-title" id="content-header-title">รายการทั้งหมด</div>
-                        <button type="button" class="btn-knowledge-bar-pill" id="content-header-knowledge-btn"
-                            onclick="toggleKnowledgeDrawer()" style="display: none;">🔖 ความรู้บันทึก (<span
-                                id="header-knowledge-count">0</span>)</button>
-                    </div>
-                    <div class="sort-control">
-                        <span>เรียงตาม:</span>
-                        <select class="sort-select-fh" id="sort-select" onchange="handleSortChange(this.value)">
-                            <option value="newest">🕒 ล่าสุด</option>
-                            <option value="recommended">⭐ ยอดนิยม / แนะนำ</option>
-                            <option value="price-asc">💵 ราคา: ต่ำ ➔ สูง</option>
-                            <option value="price-desc">💎 ราคา: สูง ➔ ต่ำ</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Program List Container -->
-                <div class="program-list" id="program-list-container">
-                    <!-- Dynamic Program Cards Rendered Here -->
-                </div>
-                <!-- Catalog Pagination -->
-                <div id="catalog-pagination" class="catalog-pagination" style="display: none;"></div>
-            </section>
-
         </div>
 
         <!-- ===== KNOWLEDGE SLIDE DRAWER (ความรู้บันทึก - แถบสไลด์ขวาเปิดเมื่อกดดู) ===== -->
@@ -5014,7 +5526,8 @@
         const isLocalAdmin = (
             window.location.hostname === '127.0.0.1' ||
             window.location.hostname === 'localhost' ||
-            window.location.protocol === 'file:'
+            window.location.protocol === 'file:' ||
+            new URLSearchParams(window.location.search).get('admin') === '1'
         );
 
         let products = [];
@@ -5040,6 +5553,7 @@
                 if (btnAdmin) btnAdmin.style.display = 'inline-flex';
                 const btnAdminCourse = document.getElementById('btn-admin-course-manage');
                 if (btnAdminCourse) btnAdminCourse.style.display = 'inline-flex';
+                initAdminRightSidebar();
             }
 
             setupGithubImageDropZone();
@@ -12346,6 +12860,457 @@ ${encodedToken}
 
                 if (confirmPrompt) showToast('🗑️ ล้างแบบร่างคอร์สเรียนเรียบร้อย', 'info');
             } catch (e) { }
+        }
+
+        // ===== ADMIN RIGHT SIDEBAR: REVENUE & SALES STATS (127.0.0.1) =====
+        const ADMIN_BEAM_MERCHANT_ID = "eworker-6i7xhm";
+        const ADMIN_BEAM_API_KEY = "cJZf85jmvhcKeKTB7NTr/1nGfKA/IP+6mkPrdagRMI4=";
+        const ADMIN_FIREBASE_ENDPOINT = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests.json";
+
+        let adminRankingSortMethod = 'revenue'; // 'revenue' or 'count'
+        let adminBeamOrders = [];
+        let adminKnownOrderKeys = new Set();
+        let isAdminFirstLoad = true;
+        let adminRevenuePollingTimer = null;
+        let isAdminRevenueFetching = false;
+        let isAdminSoundEnabled = true;
+
+        // Sound synthesizer for new payments
+        let adminAudioCtx = null;
+        function getAdminAudioContext() {
+            try {
+                if (!adminAudioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) adminAudioCtx = new AudioContext();
+                }
+                if (adminAudioCtx && adminAudioCtx.state === 'suspended') {
+                    adminAudioCtx.resume().catch(() => {});
+                }
+                return adminAudioCtx;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function playAdminChime() {
+            if (!isAdminSoundEnabled) return;
+            try {
+                const ctx = getAdminAudioContext();
+                if (!ctx) return;
+                const notes = [
+                    { freq: 523.25, time: 0.0, dur: 0.22 },
+                    { freq: 659.25, time: 0.10, dur: 0.22 },
+                    { freq: 783.99, time: 0.20, dur: 0.25 },
+                    { freq: 1046.50, time: 0.30, dur: 0.45 }
+                ];
+                notes.forEach(note => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(note.freq, ctx.currentTime + note.time);
+                    gain.gain.setValueAtTime(0.24, ctx.currentTime + note.time);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + note.time + note.dur);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(ctx.currentTime + note.time);
+                    osc.stop(ctx.currentTime + note.time + note.dur);
+                });
+            } catch (e) {}
+        }
+
+        function toggleAdminSound() {
+            isAdminSoundEnabled = !isAdminSoundEnabled;
+            const btn = document.getElementById('btn-admin-sound');
+            if (btn) {
+                btn.innerHTML = isAdminSoundEnabled ? '🔊' : '🔇';
+                btn.title = isAdminSoundEnabled ? 'เสียงเตือน: เปิด' : 'เสียงเตือน: ปิด';
+            }
+            if (isAdminSoundEnabled) {
+                playAdminChime();
+                if (typeof showToast === 'function') showToast('🔊 เปิดเสียงเตือนยอดเงินแล้ว', 'info');
+            } else {
+                if (typeof showToast === 'function') showToast('🔇 ปิดเสียงเตือนยอดเงินแล้ว', 'info');
+            }
+        }
+
+        function identifyAdminService(item) {
+            const title = String(item.productTitle || item.name || '').trim();
+            const id = String(item.referenceId || item.id || '').trim();
+
+            if (typeof products !== 'undefined' && Array.isArray(products) && item.productId) {
+                const found = products.find(p => p.id === item.productId || p.slug === item.productId);
+                if (found) {
+                    return { name: found.title, icon: found.icon || '📦', category: found.category || 'สินค้าในระบบ' };
+                }
+            }
+
+            if (title.includes('ติดบัตร') || title.includes('inch-convert') || id.includes('MVXL3R') || id.includes('MVXQBZ') || id.includes('MVXQCESH')) {
+                return { name: 'จัดรูปติดบัตรลงกระดาษ 1-2 นิ้ว', icon: '🪪', category: 'งานเอกสารและภาพถ่าย' };
+            }
+            if (title.includes('PDF') || title.includes('pdf-marker') || id.includes('ORD-PDF')) {
+                return { name: 'มาร์คจุดแก้เอกสาร PDF', icon: '📑', category: 'งานเอกสาร PDF' };
+            }
+            if (title.includes('Fake QR') || title.includes('แก้ QR') || title.includes('fake-qr') || id.includes('ORD-QR')) {
+                return { name: 'บริการแก้ QR code ให้สแกนไม่ติด', icon: '🔲', category: 'เครื่องมือและ QR' };
+            }
+            if (title.includes('oldPaper') || title.includes('กระดาษเก่า') || id.includes('order_oldpaper')) {
+                return { name: 'บริการแต่งรูปกระดาษเก่า (Old Paper)', icon: '📜', category: 'แต่งภาพวินเทจ' };
+            }
+            if (title.includes('textQuality') || title.includes('ความคมชัด') || id.includes('order_textquality')) {
+                return { name: 'บริการปรับความคมชัดตัวหนังสือ', icon: '🔍', category: 'ปรับคุณภาพรูปภาพ' };
+            }
+            if (title.includes('Grand Super Cycle') || title.includes('TradingView') || title.includes('Bitcoin')) {
+                return { name: 'อินดิเคเตอร์ TradingView Grand Super Cycle', icon: '📈', category: 'โค้ด & อินดิเคเตอร์' };
+            }
+            if (title.includes('เดินขึ้นเขา') || title.includes('hiking')) {
+                return { name: 'คอร์สเทคนิคเดินขึ้นเขาชัน', icon: '⛰️', category: 'คอร์สเรียนออนไลน์' };
+            }
+            if (title.includes('paymentSlip') || id.includes('paymentSlip')) {
+                return { name: 'ระบบสร้างสลิปโอนเงิน', icon: '🧾', category: 'ระบบชำระเงิน' };
+            }
+            if (title.includes('redPacket') || id.includes('redPacket')) {
+                return { name: 'ระบบซองอั่งเปาออนไลน์', icon: '🧧', category: 'กิจกรรมและการเงิน' };
+            }
+            if (id.startsWith('chat_')) {
+                return { name: 'บริการห้องสนทนา & ส่งไฟล์งาน (Chat Room)', icon: '💬', category: 'ห้องสนทนาและไฟล์' };
+            }
+            if (id.startsWith('retouch_') || title.includes('retouch')) {
+                return { name: 'บริการรีทัชลบตัวหนังสือบนรูป (Text Retouch)', icon: '✏️', category: 'งานกราฟิกและรีทัช' };
+            }
+            if (id.startsWith('k') || id.startsWith('ORD-PS-') || id.includes('PrivateSend') || title.includes('PrivateSend')) {
+                return { name: 'PrivateSend', icon: '🛡️', category: 'ระบบส่งไฟล์ลับ' };
+            }
+            if (item.productTitle) {
+                return { name: item.productTitle, icon: '📦', category: 'สินค้าในระบบ' };
+            }
+            return { name: 'PrivateSend', icon: '🛡️', category: 'ระบบส่งไฟล์ลับ' };
+        }
+
+        function formatAdminTimeAgo(timestamp) {
+            if (!timestamp) return 'เมื่อสักครู่';
+            const diff = Math.floor((Date.now() - timestamp) / 1000);
+            if (diff < 15) return 'เมื่อสักครู่';
+            if (diff < 60) return `${diff} วินาทีที่แล้ว`;
+            if (diff < 3600) return `${Math.floor(diff / 60)} นาทีที่แล้ว`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)} ชั่วโมงที่แล้ว`;
+            return `${Math.floor(diff / 86400)} วันที่แล้ว`;
+        }
+
+        async function fetchAdminRevenueData(isManual = false) {
+            if (!isLocalAdmin || isAdminRevenueFetching) return;
+            isAdminRevenueFetching = true;
+
+            const spin = document.getElementById('admin-refresh-spin');
+            if (spin) {
+                spin.style.display = 'inline-block';
+                spin.style.animation = 'spin 0.8s linear infinite';
+            }
+
+            try {
+                const authHeader = "Basic " + btoa(`${ADMIN_BEAM_MERCHANT_ID}:${ADMIN_BEAM_API_KEY}`);
+
+                // 1. Fetch transactions from Beam
+                let allTransactions = [];
+                let offset = 0;
+                const limit = 100;
+                let hasMore = true;
+
+                while (hasMore) {
+                    const res = await fetch(`https://api.beamcheckout.com/api/v1/transactions?limit=${limit}&offset=${offset}`, {
+                        headers: { "Authorization": authHeader }
+                    }).then(r => r.ok ? r.json() : null).catch(() => null);
+
+                    if (res && Array.isArray(res.data) && res.data.length > 0) {
+                        allTransactions.push(...res.data);
+                        offset += res.data.length;
+                        if (allTransactions.length >= (res.totalCount || 0) || res.data.length < limit) {
+                            hasMore = false;
+                        }
+                    } else {
+                        hasMore = false;
+                    }
+                }
+
+                // 2. Fetch Firebase metadata for mapping titles
+                const fbRes = await fetch(`${ADMIN_FIREBASE_ENDPOINT}?t=${Date.now()}`)
+                    .then(r => r.ok ? r.json() : null).catch(() => null);
+
+                // 3. Process Beam Transactions
+                let grandTotalSatang = 0;
+                let todayTotalSatang = 0;
+                let todayOrdersCount = 0;
+                const realBeamOrders = [];
+
+                const now = new Date();
+                const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+                const endOfToday = startOfToday + 24 * 60 * 60 * 1000;
+
+                allTransactions.forEach(tx => {
+                    if (tx.transactionType === 'PAYMENT' || (tx.netAmount && tx.netAmount > 0)) {
+                        const satang = Number(tx.grossAmount || tx.netAmount || 0);
+                        grandTotalSatang += satang;
+
+                        const refId = String(tx.referenceId || '');
+                        const fbMeta = (fbRes && fbRes[refId]) || {};
+                        const timeMs = tx.transactionTime ? new Date(tx.transactionTime).getTime() : new Date(tx.createdAt).getTime();
+
+                        if (timeMs >= startOfToday && timeMs < endOfToday) {
+                            todayTotalSatang += satang;
+                            todayOrdersCount++;
+                        }
+
+                        realBeamOrders.push({
+                            id: tx.transactionId,
+                            referenceId: refId,
+                            price: satang / 100,
+                            createdAt: timeMs,
+                            source: 'Beam',
+                            productTitle: fbMeta.productTitle || '',
+                            service: fbMeta.service || '',
+                            productId: fbMeta.productId || '',
+                            raw: tx
+                        });
+                    }
+                });
+
+                realBeamOrders.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                adminBeamOrders = realBeamOrders;
+
+                // Detect new incoming payments after initial load
+                const currentKeys = new Set(realBeamOrders.map(it => it.id || it.referenceId).filter(Boolean));
+                if (!isAdminFirstLoad) {
+                    let hasNew = false;
+                    currentKeys.forEach(k => {
+                        if (!adminKnownOrderKeys.has(k)) hasNew = true;
+                    });
+                    if (hasNew) {
+                        playAdminChime();
+                        if (typeof showToast === 'function') {
+                            const latest = realBeamOrders[0];
+                            const srv = latest ? identifyAdminService(latest) : null;
+                            showToast(`🎉 มีเงินโอนเข้า +฿${Number(latest?.price || 0).toFixed(2)} (${srv?.name || 'รายการใหม่'})`, 'success');
+                        }
+                    }
+                }
+                adminKnownOrderKeys = currentKeys;
+                isAdminFirstLoad = false;
+
+                // 4. Update Today's Revenue & Lifetime
+                const todayRevenue = todayTotalSatang / 100;
+                const lifetimeRevenue = grandTotalSatang / 100;
+
+                const todayValEl = document.getElementById('admin-today-revenue-val');
+                if (todayValEl) {
+                    todayValEl.textContent = todayRevenue.toLocaleString('th-TH', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                }
+
+                const todayOrdersEl = document.getElementById('admin-today-orders-count');
+                if (todayOrdersEl) {
+                    todayOrdersEl.textContent = `${todayOrdersCount} รายการ`;
+                }
+
+                const lifetimeEl = document.getElementById('admin-lifetime-revenue-val');
+                if (lifetimeEl) {
+                    lifetimeEl.textContent = `฿${lifetimeRevenue.toLocaleString('th-TH', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    })} (${realBeamOrders.length} รายการ)`;
+                }
+
+                const dateBadge = document.getElementById('admin-today-date-badge');
+                if (dateBadge) {
+                    dateBadge.textContent = now.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+                }
+
+                // 5. Render Ranking Table & Recent Feed
+                renderAdminSalesRankingTable(realBeamOrders, lifetimeRevenue);
+                renderAdminRecentFeed(realBeamOrders.slice(0, 5));
+
+                if (isManual && typeof showToast === 'function') {
+                    showToast('🔄 อัปเดตข้อมูลยอดขาย Beam สำเร็จแล้ว', 'success');
+                }
+
+            } catch (err) {
+                console.error("Admin revenue fetch error:", err);
+            } finally {
+                isAdminRevenueFetching = false;
+                if (spin) {
+                    spin.style.animation = 'none';
+                }
+            }
+        }
+
+        function renderAdminSalesRankingTable(completedList, grandTotalRevenue) {
+            const tbody = document.getElementById('admin-ranking-table-body');
+            const totalBadge = document.getElementById('admin-total-sold-count');
+            if (!tbody) return;
+
+            if (!completedList || completedList.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 22px 10px; color: var(--fh-muted);">
+                            <div style="font-size: 1.4rem; margin-bottom: 4px;">📦</div>
+                            <div style="font-size: 0.78rem;">ยังไม่มีรายการชำระเงินในระบบ</div>
+                        </td>
+                    </tr>
+                `;
+                if (totalBadge) totalBadge.textContent = '0 รายการ';
+                return;
+            }
+
+            const serviceAggMap = new Map();
+            let totalCount = 0;
+
+            completedList.forEach(item => {
+                const s = identifyAdminService(item);
+                const price = Number(item.price || 0);
+                totalCount++;
+
+                if (!serviceAggMap.has(s.name)) {
+                    serviceAggMap.set(s.name, {
+                        name: s.name,
+                        icon: s.icon,
+                        category: s.category,
+                        purchaseCount: 0,
+                        totalRevenue: 0,
+                        latestTimestamp: 0
+                    });
+                }
+
+                const agg = serviceAggMap.get(s.name);
+                agg.purchaseCount += 1;
+                agg.totalRevenue += price;
+                if ((item.createdAt || 0) > agg.latestTimestamp) {
+                    agg.latestTimestamp = item.createdAt;
+                }
+            });
+
+            if (totalBadge) totalBadge.textContent = `${totalCount} รายการ`;
+
+            const rankedServices = Array.from(serviceAggMap.values());
+
+            if (adminRankingSortMethod === 'revenue') {
+                rankedServices.sort((a, b) => b.totalRevenue - a.totalRevenue || b.purchaseCount - a.purchaseCount);
+            } else {
+                rankedServices.sort((a, b) => b.purchaseCount - a.purchaseCount || b.totalRevenue - a.totalRevenue);
+            }
+
+            tbody.innerHTML = rankedServices.map((srv, idx) => {
+                const rankNum = idx + 1;
+                let rankClass = 'rank-other';
+                if (rankNum === 1) rankClass = 'rank-1';
+                else if (rankNum === 2) rankClass = 'rank-2';
+                else if (rankNum === 3) rankClass = 'rank-3';
+
+                const pct = grandTotalRevenue > 0 ? ((srv.totalRevenue / grandTotalRevenue) * 100).toFixed(1) : 0;
+                const timeStr = formatAdminTimeAgo(srv.latestTimestamp);
+
+                return `
+                    <tr>
+                        <td style="text-align: center;">
+                            <span class="admin-rs-rank-pill ${rankClass}">#${rankNum}</span>
+                        </td>
+                        <td>
+                            <div class="admin-rs-item-title" title="${srv.name}">
+                                ${srv.icon || '📦'} ${srv.name}
+                            </div>
+                            <div class="admin-rs-item-meta">
+                                ${srv.category} • ${timeStr}
+                            </div>
+                            <div class="admin-rs-progress" title="สัดส่วนรายได้ ${pct}%">
+                                <div class="admin-rs-fill" style="width: ${pct}%;"></div>
+                            </div>
+                        </td>
+                        <td style="text-align: center;">
+                            <span class="admin-rs-pill-count">${srv.purchaseCount} ครั้ง</span>
+                        </td>
+                        <td style="text-align: right;">
+                            <div class="admin-rs-item-revenue">฿${srv.totalRevenue.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function setAdminRankingSort(type) {
+            adminRankingSortMethod = type;
+            const btnRev = document.getElementById('admin-sort-revenue-btn');
+            const btnCnt = document.getElementById('admin-sort-count-btn');
+            if (btnRev) btnRev.classList.toggle('active', type === 'revenue');
+            if (btnCnt) btnCnt.classList.toggle('active', type === 'count');
+            if (adminBeamOrders && adminBeamOrders.length > 0) {
+                let totalRev = 0;
+                adminBeamOrders.forEach(o => totalRev += (o.price || 0));
+                renderAdminSalesRankingTable(adminBeamOrders, totalRev);
+            }
+        }
+
+        function renderAdminRecentFeed(recentOrders) {
+            const list = document.getElementById('admin-recent-feed-list');
+            const countBadge = document.getElementById('admin-recent-count');
+            if (!list) return;
+
+            if (!recentOrders || recentOrders.length === 0) {
+                list.innerHTML = `<div style="text-align: center; color: var(--fh-muted); font-size: 0.72rem; padding: 10px;">ยังไม่มีรายการล่าสุด</div>`;
+                if (countBadge) countBadge.textContent = '0';
+                return;
+            }
+
+            if (countBadge) countBadge.textContent = String(recentOrders.length);
+
+            list.innerHTML = recentOrders.map(item => {
+                const s = identifyAdminService(item);
+                const timeStr = formatAdminTimeAgo(item.createdAt);
+                const refShort = String(item.referenceId || item.id || '').slice(-6);
+                return `
+                    <div class="admin-rs-recent-item">
+                        <div class="admin-rs-recent-left">
+                            <span class="admin-rs-recent-icon">${s.icon || '🛍️'}</span>
+                            <div style="min-width: 0;">
+                                <div class="admin-rs-recent-title" title="${s.name}">${s.name}</div>
+                                <div class="admin-rs-recent-time">${timeStr} • #${refShort}</div>
+                            </div>
+                        </div>
+                        <div class="admin-rs-recent-price">+฿${Number(item.price || 0).toFixed(2)}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function initAdminRightSidebar() {
+            if (!isLocalAdmin) return;
+
+            document.body.classList.add('is-admin-view');
+
+            const sidebar = document.getElementById('admin-right-sidebar');
+            if (sidebar) {
+                sidebar.style.display = 'flex';
+            }
+
+            const now = new Date();
+            const dateBadge = document.getElementById('admin-today-date-badge');
+            if (dateBadge) {
+                dateBadge.textContent = now.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+            }
+
+            fetchAdminRevenueData();
+
+            if (adminRevenuePollingTimer) clearInterval(adminRevenuePollingTimer);
+            adminRevenuePollingTimer = setInterval(() => {
+                if (!document.hidden) {
+                    fetchAdminRevenueData(false);
+                }
+            }, 12000);
+
+            // AudioContext resume on user gesture
+            ['click', 'keydown', 'touchstart'].forEach(evt => {
+                window.addEventListener(evt, () => {
+                    getAdminAudioContext();
+                }, { once: true });
+            });
         }
     </script>
 </body>
