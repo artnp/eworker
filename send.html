@@ -1553,46 +1553,73 @@
         </div>
     </header>
 
-    <!-- Point Payment Modal (Per-Point PromptPay Slip Popup) -->
+    <!-- Point Payment Modal (Per-Point PromptPay Slip Popup - Beam Payment) -->
     <div class="app-modal-overlay hidden" id="pointPaymentModal">
-        <div class="app-modal-card">
-            <div class="app-modal-header">
-                <div class="app-modal-title">
-                    <i class="fa-solid fa-receipt" style="color:#10b981;"></i>
-                    <span>ชำระเงินค่าบริการจุดที่ <span id="paymentPointNum">1</span></span>
+        <div class="app-modal-card" style="max-width: 420px; border-radius: 18px; overflow: hidden; padding: 0;">
+            <!-- PromptPay Header Style Banner -->
+            <div style="background: linear-gradient(135deg, #003764 0%, #005696 100%); color: #fff; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/100px-PromptPay-logo.png" alt="PromptPay" style="height: 24px; filter: brightness(0) invert(1);" onerror="this.style.display='none';">
+                    <div>
+                        <div style="font-size: 15px; font-weight: 800; letter-spacing: 0.3px;">พร้อมเพย์ (PromptPay)</div>
+                        <div style="font-size: 11px; opacity: 0.85;">ชำระเงินผ่าน Beam QR Code</div>
+                    </div>
                 </div>
-                <button class="app-modal-close" id="closePaymentModalBtn">&times;</button>
+                <button class="app-modal-close" id="closePaymentModalBtn" style="color: #fff; font-size: 22px; cursor: pointer; border: none; background: transparent; padding: 0 4px; line-height: 1;">&times;</button>
             </div>
-            <div class="app-modal-body">
-                <div style="text-align:center;margin-bottom:8px;">
-                    <div style="font-size:14px;color:#64748b;font-weight:600;">จุดนี้ช่างทำเสร็จเรียบร้อยแล้ว กรุณาโอนเงินเพื่อดำเนินการจุดถัดไป</div>
-                    <div style="font-size:26px;font-weight:900;color:#059669;margin-top:4px;">
-                        <span id="paymentPointAmount">0</span> <span style="font-size:16px;">บาท</span>
+            
+            <div class="app-modal-body" style="padding: 16px 20px;">
+                <div style="text-align: center; margin-bottom: 6px;">
+                    <div style="font-size: 13px; color: #64748b; font-weight: 700;">ช่างทำจุดนี้เสร็จแล้ว • กรุณาโอนเงินเพื่อดำเนินการต่อ</div>
+                    <div style="margin-top: 4px; display: flex; align-items: baseline; justify-content: center; gap: 6px;">
+                        <span style="font-size: 13px; font-weight: 700; color: #64748b;">ยอดที่ต้องชำระ:</span>
+                        <span style="font-size: 30px; font-weight: 900; color: #16a34a; font-family: Outfit, sans-serif;">฿ <span id="paymentPointAmount">0</span>.00</span>
+                    </div>
+                    <div style="font-size: 12px; color: #64748b; font-weight: 600;">จุดแก้ไขที่ #<span id="paymentPointNum">1</span></div>
+                </div>
+
+                <!-- Countdown Timer -->
+                <div style="display: flex; justify-content: center; margin: 6px 0 10px;">
+                    <div id="beamCountdownBox" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 20px; padding: 4px 12px; font-size: 12px; color: #475569; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                        <span>⏱️ กรุณาชำระเงินภายใน:</span>
+                        <strong id="beamCountdownTimer" style="color: #e11d48; font-family: monospace; font-size: 13px;">10:00</strong>
+                        <span>นาที</span>
                     </div>
                 </div>
 
-                <div class="qr-card-box">
-                    <img id="paymentQrImg" class="qr-img" src="" alt="PromptPay QR">
-                    <div style="font-size:13px;font-weight:800;color:#1e293b;">
-                        พร้อมเพย์: <span id="promptPayNumberText">098-857-3074</span>
+                <!-- QR Card Box -->
+                <div class="qr-card-box" style="margin: 0 0 10px; padding: 14px; background: #fafafa; border: 1.5px solid #e2e8f0; border-radius: 14px;">
+                    <!-- Loading state -->
+                    <div id="beamQrLoading" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 210px; gap: 8px; color: #64748b; font-size: 12px; font-weight: 700;">
+                        <div style="width: 30px; height: 30px; border: 3px solid rgba(16,185,129,0.2); border-top-color: #10b981; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+                        <span>กำลังสร้าง QR จาก Beam...</span>
                     </div>
-                    <div style="font-size:11px;color:#64748b;margin-top:2px;">(สแกนได้ทุกแอปธนาคาร ยอดเงินระบุให้อัตโนมัติ)</div>
-                    <div style="display:flex;gap:8px;margin-top:10px;justify-content:center;">
-                        <button id="btnDownloadPointQr" style="background:#f1f5f9;border:1px solid #cbd5e1;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
-                            <i class="fa-solid fa-download"></i> บันทึกภาพ QR
+                    <!-- QR Image -->
+                    <img id="paymentQrImg" class="qr-img" src="" alt="Beam PromptPay QR" style="display: none; width: 210px; height: 210px; object-fit: contain; border-radius: 8px; margin: 0 auto; background: #fff; padding: 6px;">
+
+                    <div style="font-size: 12.5px; font-weight: 800; color: #1e293b; margin-top: 8px;">
+                        ชำระเข้าบัญชี: <span id="promptPayNumberText" style="color: #003764;">098-857-3074</span>
+                    </div>
+                    <div style="font-size: 11px; color: #64748b; margin-top: 2px;">(สแกนจ่ายผ่านแอปธนาคารทุกแห่ง • ยอดระบุให้อัตโนมัติ)</div>
+
+                    <!-- Action buttons under QR -->
+                    <div style="display: flex; gap: 8px; margin-top: 10px; width: 100%;">
+                        <button id="btnDownloadPointQr" style="flex: 1; background: #f1f5f9; border: 1px solid #cbd5e1; padding: 7px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: #1e293b; transition: all 0.2s;">
+                            <i class="fa-solid fa-download"></i> บันทึกสลิป QR
                         </button>
-                        <button id="btnCopyPromptPayNo" style="background:#f1f5f9;border:1px solid #cbd5e1;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+                        <button id="btnCopyPromptPayNo" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 7px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: #1e293b; transition: all 0.2s;">
                             <i class="fa-solid fa-copy"></i> คัดลอกเบอร์
                         </button>
                     </div>
                 </div>
 
-                <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
-                    <button id="btnCustomerNotifyTransfer" style="width:100%;background:linear-gradient(135deg, #10b981 0%, #059669 100%);color:#fff;border:none;padding:12px;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(16,185,129,0.3);display:inline-flex;align-items:center;justify-content:center;gap:8px;">
-                        <i class="fa-solid fa-check"></i> แจ้งโอนเงินเรียบร้อยแล้ว
+                <!-- Bottom Notify / Confirmation -->
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <button id="btnCustomerNotifyTransfer" style="width: 100%; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border: none; padding: 11px 14px; border-radius: 10px; font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(16,185,129,0.3); display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                        <i class="fa-solid fa-circle-check"></i> แจ้งโอนเงินแล้ว (ไม่ต้องส่งสลิป)
                     </button>
-                    <div id="paymentNotifyPending" class="hidden" style="background:#f0fdf4;border:1px solid #bbf7d0;padding:10px;border-radius:8px;text-align:center;font-size:13px;font-weight:700;color:#15803d;">
-                        <i class="fa-solid fa-circle-check"></i> ได้แจ้งโอนเงินแล้ว กำลังรอแอดมินยืนยันยอดเงินสักครู่...
+                    <div id="paymentNotifyPending" class="hidden" style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 9px 12px; border-radius: 8px; text-align: center; font-size: 12px; font-weight: 700; color: #15803d;">
+                        <i class="fa-solid fa-hourglass-half fa-spin-pulse"></i> ได้แจ้งโอนเงินแล้ว ระบบกำลังตรวจจับยอดโอนจาก Beam อัตโนมัติ...
                     </div>
                 </div>
             </div>
@@ -1783,6 +1810,10 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
+        // Beam Payment Config
+        const BEAM_WORKER_URL = "https://eworker-beam-pay.moonverse69.workers.dev";
+        const PROMPTPAY_NUMBER = "0988573074";
+
         // PDF.js Configuration
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
@@ -1873,6 +1904,109 @@
                 return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
             }
             return { x: e.clientX, y: e.clientY };
+        }
+
+        
+        // ===== EXPIRY & POPUP HELPERS (Defined early to prevent hoisting / TDZ issues) =====
+        let expiryInterval = null;
+        let currentExpiresAt = null;
+
+        function startExpiryCountdown(expiresAt) {
+            if (!expiresAt) return;
+            currentExpiresAt = expiresAt;
+            const expiryTimer = document.getElementById('expiryTimer');
+            const expiryTime = document.getElementById('expiryTime');
+            const extendBtn = document.getElementById('extendBtn');
+            if (expiryTimer) expiryTimer.style.display = 'block';
+
+            if (extendBtn) extendBtn.onclick = extendSession;
+
+            if (expiryInterval) clearInterval(expiryInterval);
+            expiryInterval = setInterval(() => {
+                const now = Date.now();
+                const remaining = currentExpiresAt - now;
+                
+                if (remaining <= 0) {
+                    clearInterval(expiryInterval);
+                    if (extendBtn) extendBtn.style.display = 'none';
+                    if (expiryTime) expiryTime.textContent = 'หมดอายุแล้ว';
+                    
+                    if (sessionId) {
+                        database.ref(`annotations/${sessionId}`).remove();
+                    }
+                    if (fileUrl && fileUrl.startsWith('fb_')) {
+                        deleteFirebaseFile(fileUrl.substring(3));
+                    } else if (window.__firebaseFileId) {
+                        deleteFirebaseFile(window.__firebaseFileId);
+                    }
+                    
+                    alert('⚠️ เซสชันหมดอายุแล้ว\n\nไฟล์และข้อมูลทั้งหมดถูกลบแล้ว\nกรุณาอัพโหลดใหม่');
+                    location.reload();
+                    return;
+                }
+                
+                const hours = Math.floor(remaining / 3600000);
+                const minutes = Math.floor((remaining % 3600000) / 60000);
+                const seconds = Math.floor((remaining % 60000) / 1000);
+                
+                if (expiryTime) {
+                    expiryTime.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                }
+                
+                // Show extend button when < 5 minutes
+                if (remaining < 5 * 60 * 1000) {
+                    if (expiryTimer) expiryTimer.style.color = '#fbbf24';
+                    if (extendBtn) extendBtn.style.display = 'inline';
+                } else {
+                    if (extendBtn) extendBtn.style.display = 'none';
+                }
+                if (remaining < 1 * 60 * 1000) {
+                    if (expiryTimer) expiryTimer.style.color = '#ef4444';
+                }
+            }, 1000);
+        }
+
+        async function extendSession() {
+            if (!sessionId) return;
+            currentExpiresAt = Date.now() + 10 * 60 * 1000;
+            await database.ref(`annotations/${sessionId}`).update({ expiresAt: currentExpiresAt });
+            const extendBtn = document.getElementById('extendBtn');
+            const expiryTimer = document.getElementById('expiryTimer');
+            if (extendBtn) extendBtn.style.display = 'none';
+            if (expiryTimer) expiryTimer.style.color = '#fde68a';
+        }
+
+        async function cleanupExpiredSessions() {
+            return;
+        }
+
+        function triggerConfetti() {
+            try {
+                if (typeof confetti === 'function') {
+                    confetti({
+                        particleCount: 80,
+                        spread: 70,
+                        origin: { y: 0.6 }
+                    });
+                }
+            } catch (e) {
+                console.warn('Confetti error:', e);
+            }
+        }
+
+        function showCompletionPopup() {
+            const popup = document.getElementById('completionPopupTag');
+            if (popup) {
+                popup.classList.add('show');
+            }
+            triggerConfetti();
+        }
+
+        function hideCompletionPopup() {
+            const popup = document.getElementById('completionPopupTag');
+            if (popup) {
+                popup.classList.remove('show');
+            }
         }
 
         // Check URL for existing session
@@ -3692,63 +3826,137 @@
             });
         }
 
-        // ===== POINT PAYMENT SLIP MODAL & PROMPTPAY QR =====
+        // ===== POINT PAYMENT SLIP MODAL & BEAM PAYMENT =====
         const pointPaymentModal = document.getElementById('pointPaymentModal');
         const paymentPointNum = document.getElementById('paymentPointNum');
         const paymentPointAmount = document.getElementById('paymentPointAmount');
         const paymentQrImg = document.getElementById('paymentQrImg');
+        const beamQrLoading = document.getElementById('beamQrLoading');
+        const beamCountdownTimer = document.getElementById('beamCountdownTimer');
         const closePaymentModalBtn = document.getElementById('closePaymentModalBtn');
         const btnDownloadPointQr = document.getElementById('btnDownloadPointQr');
         const btnCopyPromptPayNo = document.getElementById('btnCopyPromptPayNo');
         const btnCustomerNotifyTransfer = document.getElementById('btnCustomerNotifyTransfer');
         const paymentNotifyPending = document.getElementById('paymentNotifyPending');
+
         let currentPayingMarker = null;
+        let beamPaymentCountdownInterval = null;
+        let beamPaymentListenerRef = null;
 
-        function generatePromptPayPayload(phone, amount) {
-            const crc16 = (data) => {
-                let crc = 0xFFFF;
-                for (let i = 0; i < data.length; i++) {
-                    crc ^= data.charCodeAt(i) << 8;
-                    for (let j = 0; j < 8; j++) {
-                        crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) & 0xFFFF : (crc << 1) & 0xFFFF;
-                    }
+        function startBeamPaymentCountdown(totalSeconds) {
+            if (beamPaymentCountdownInterval) clearInterval(beamPaymentCountdownInterval);
+            let remaining = Math.max(0, Math.floor(totalSeconds));
+            const updateDisplay = () => {
+                const mins = Math.floor(remaining / 60);
+                const secs = remaining % 60;
+                if (beamCountdownTimer) {
+                    beamCountdownTimer.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
                 }
-                return crc.toString(16).toUpperCase().padStart(4, '0');
+                if (remaining <= 0) {
+                    clearInterval(beamPaymentCountdownInterval);
+                    if (beamCountdownTimer) beamCountdownTimer.textContent = '00:00 (หมดเวลา)';
+                }
+                remaining--;
             };
-
-            let target = phone.replace(/[^0-9]/g, '');
-            if (target.length === 10 && target.startsWith('0')) {
-                target = '0066' + target.substring(1);
-            }
-
-            let merchantInfo = '0016A000000677010111' + '01' + ('00' + target.length).slice(-2) + target;
-            let payload = '000201010211' + '29' + ('00' + merchantInfo.length).slice(-2) + merchantInfo + '5802TH5303764';
-
-            if (!isNaN(amount) && amount > 0) {
-                const amtStr = Number(amount).toFixed(2);
-                payload += '54' + ('00' + amtStr.length).slice(-2) + amtStr;
-            }
-
-            payload += '6304';
-            return payload + crc16(payload);
+            updateDisplay();
+            beamPaymentCountdownInterval = setInterval(updateDisplay, 1000);
         }
 
-        function openPointPaymentModal(marker) {
+        async function openPointPaymentModal(marker) {
+            if (!marker) return;
             currentPayingMarker = marker;
             if (paymentPointNum) paymentPointNum.textContent = marker.number;
             if (paymentPointAmount) paymentPointAmount.textContent = marker.price || 0;
 
-            const promptPayNo = '0988573074';
-            const payload = generatePromptPayPayload(promptPayNo, marker.price || 0);
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=10&data=${encodeURIComponent(payload)}`;
-
-            if (paymentQrImg) paymentQrImg.src = qrUrl;
+            if (beamQrLoading) beamQrLoading.style.display = 'flex';
+            if (paymentQrImg) {
+                paymentQrImg.style.display = 'none';
+                paymentQrImg.src = '';
+            }
             if (paymentNotifyPending) paymentNotifyPending.classList.toggle('hidden', !marker.slipNotified);
-
             if (pointPaymentModal) pointPaymentModal.classList.remove('hidden');
+
+            const markpointLinkKey = `markpoint_${sessionId || 'sess'}_${marker.id}`;
+
+            // Auto-detect payment from Beam via Firebase
+            if (beamPaymentListenerRef) {
+                beamPaymentListenerRef.off();
+            }
+            beamPaymentListenerRef = database.ref(`temp_files/payment_requests/${markpointLinkKey}`);
+            beamPaymentListenerRef.on('value', async (snap) => {
+                const val = snap.val();
+                if (val && (val.status === 'approved' || val.autoApproved || val.paid)) {
+                    if (beamPaymentCountdownInterval) clearInterval(beamPaymentCountdownInterval);
+                    if (currentPayingMarker && annotations[currentPayingMarker.id]) {
+                        annotations[currentPayingMarker.id].paid = true;
+                        annotations[currentPayingMarker.id].paidAt = Date.now();
+                        annotations[currentPayingMarker.id].paidBy = 'Beam_PromptPay';
+                        await database.ref(`annotations/${sessionId}/markers/${currentPayingMarker.id}`).update({
+                            paid: true,
+                            paidAt: Date.now(),
+                            paidBy: 'Beam_PromptPay'
+                        });
+                        renderAnnotationCard(annotations[currentPayingMarker.id]);
+                        renderMarker(annotations[currentPayingMarker.id]);
+                    }
+                    triggerConfetti();
+                    alert(`🎉 ได้รับยอดเงินโอน ฿${marker.price} บาท จาก Beam สำเร็จแล้ว!`);
+                    closePointPaymentModal();
+                }
+            });
+
+            // Call Beam Worker /create-charge
+            try {
+                const res = await fetch(`${BEAM_WORKER_URL}/create-charge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        linkKey: markpointLinkKey,
+                        amount: marker.price
+                    })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.qrImageBase64) {
+                        if (paymentQrImg) {
+                            paymentQrImg.src = `data:image/png;base64,${data.qrImageBase64}`;
+                            paymentQrImg.style.display = 'block';
+                        }
+                        if (beamQrLoading) beamQrLoading.style.display = 'none';
+
+                        if (data.expiry) {
+                            const expiryMs = new Date(data.expiry).getTime();
+                            const remainSec = Math.max(0, Math.floor((expiryMs - Date.now()) / 1000));
+                            startBeamPaymentCountdown(remainSec > 0 ? remainSec : 600);
+                        } else {
+                            startBeamPaymentCountdown(600);
+                        }
+                        return;
+                    }
+                }
+                throw new Error('Invalid Beam response');
+            } catch (err) {
+                console.warn('Beam create-charge fallback to direct QR image:', err);
+                const beamQrUrl = `${BEAM_WORKER_URL}/qr-image?linkKey=${encodeURIComponent(markpointLinkKey)}&amount=${marker.price}`;
+                if (paymentQrImg) {
+                    paymentQrImg.crossOrigin = 'anonymous';
+                    paymentQrImg.src = beamQrUrl;
+                    paymentQrImg.onload = () => {
+                        paymentQrImg.style.display = 'block';
+                        if (beamQrLoading) beamQrLoading.style.display = 'none';
+                    };
+                }
+                startBeamPaymentCountdown(600);
+            }
         }
 
         function closePointPaymentModal() {
+            if (beamPaymentCountdownInterval) clearInterval(beamPaymentCountdownInterval);
+            if (beamPaymentListenerRef) {
+                beamPaymentListenerRef.off();
+                beamPaymentListenerRef = null;
+            }
             if (pointPaymentModal) pointPaymentModal.classList.add('hidden');
         }
 
@@ -3762,25 +3970,103 @@
             });
         }
 
-        if (btnDownloadPointQr && paymentQrImg) {
-            btnDownloadPointQr.addEventListener('click', () => {
-                const a = document.createElement('a');
-                a.href = paymentQrImg.src;
-                a.download = `PromptPay_QR_Point_${currentPayingMarker ? currentPayingMarker.number : '1'}.png`;
-                a.target = '_blank';
-                a.click();
-            });
+        // Download PromptPay Beam Slip
+        function downloadPointPaymentSlip() {
+            if (!currentPayingMarker) return;
+            const marker = currentPayingMarker;
+            const canvas = document.createElement('canvas');
+            canvas.width = 400;
+            canvas.height = 510;
+            const ctx = canvas.getContext('2d');
+
+            // White Background
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, 400, 510);
+
+            // Blue PromptPay Header banner
+            const grad = ctx.createLinearGradient(0, 0, 400, 0);
+            grad.addColorStop(0, '#003764');
+            grad.addColorStop(1, '#005696');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 400, 75);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 20px Prompt, Sarabun, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('พร้อมเพย์ (PromptPay)', 200, 36);
+
+            ctx.font = '13px Prompt, Sarabun, sans-serif';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+            ctx.fillText('ชำระเงินผ่าน Beam QR Code', 200, 58);
+
+            // Point Info
+            ctx.font = 'bold 15px Prompt, Sarabun, sans-serif';
+            ctx.fillStyle = '#0f172a';
+            ctx.fillText(`จุดแก้ไขที่ #${marker.number} (${marker.price} บาท)`, 200, 105);
+
+            const drawRest = (source) => {
+                // Draw Beam QR in center
+                ctx.drawImage(source, 75, 120, 250, 250);
+
+                // Price amount
+                ctx.fillStyle = '#16a34a';
+                ctx.font = 'bold 28px Outfit, Prompt, sans-serif';
+                ctx.fillText(`฿ ${marker.price}.00`, 200, 405);
+
+                // Account number
+                ctx.fillStyle = '#334155';
+                ctx.font = 'bold 14px Prompt, Sarabun, sans-serif';
+                ctx.fillText(`ชำระเข้าบัญชี: 098-857-3074`, 200, 435);
+
+                // Footer note
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '12px Prompt, Sarabun, sans-serif';
+                ctx.fillText('สแกนผ่านทุกแอปธนาคาร • งานเริ่มทันที', 200, 465);
+
+                // Trigger download
+                const link = document.createElement('a');
+                link.download = `PromptPay_Beam_Point_${marker.number}_${marker.price}THB.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            };
+
+            if (paymentQrImg && paymentQrImg.src) {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => drawRest(img);
+                img.onerror = () => {
+                    const link = document.createElement('a');
+                    link.download = `PromptPay_Beam_Point_${marker.number}.png`;
+                    link.href = paymentQrImg.src;
+                    link.click();
+                };
+                img.src = paymentQrImg.src;
+            }
+        }
+
+        if (btnDownloadPointQr) {
+            btnDownloadPointQr.addEventListener('click', downloadPointPaymentSlip);
         }
 
         if (btnCustomerNotifyTransfer) {
             btnCustomerNotifyTransfer.addEventListener('click', async () => {
                 if (!currentPayingMarker || !sessionId) return;
+                const markpointLinkKey = `markpoint_${sessionId}_${currentPayingMarker.id}`;
                 await database.ref(`annotations/${sessionId}/markers/${currentPayingMarker.id}`).update({
                     slipNotified: true,
                     slipNotifiedAt: Date.now()
                 });
+                await database.ref(`temp_files/payment_requests/${markpointLinkKey}`).set({
+                    sessionId: sessionId,
+                    markerId: currentPayingMarker.id,
+                    amount: currentPayingMarker.price,
+                    linkKey: markpointLinkKey,
+                    slipNotified: true,
+                    status: 'pending_verification',
+                    updatedAt: Date.now()
+                });
                 if (paymentNotifyPending) paymentNotifyPending.classList.remove('hidden');
-                alert('✅ แจ้งโอนเงินเรียบร้อยแล้ว! แอดมินกำลังตรวจสอบและดำเนินการจุดถัดไปให้คุณ');
+                alert('✅ แจ้งโอนเงินแล้ว! ระบบและแอดมินกำลังตรวจสอบยอดเงิน และงานจุดถัดไปจะเริ่มทันที');
             });
         }
 
@@ -3958,36 +4244,7 @@
             }
         }
 
-        function showCompletionPopup() {
-            const popup = document.getElementById('completionPopupTag');
-            if (popup) {
-                popup.classList.add('show');
-            }
-            triggerConfetti();
-        }
-
-        function hideCompletionPopup() {
-            const popup = document.getElementById('completionPopupTag');
-            if (popup) {
-                popup.classList.remove('show');
-            }
-        }
-
-        function triggerConfetti() {
-            try {
-                if (typeof confetti === 'function') {
-                    confetti({
-                        particleCount: 80,
-                        spread: 70,
-                        origin: { y: 0.6 }
-                    });
-                }
-            } catch (e) {
-                console.log('Confetti error:', e);
-            }
-        }
-
-        const completionPopupOkBtn = document.getElementById('completionPopupOkBtn');
+const completionPopupOkBtn = document.getElementById('completionPopupOkBtn');
         if (completionPopupClose) {
             completionPopupClose.addEventListener('click', () => {
                 userDismissedCompletion = true;
@@ -4109,69 +4366,6 @@ function setActiveMarker(markerId) {
         });
 
         // ===== EXPIRY COUNTDOWN =====
-        let expiryInterval = null;
-        let currentExpiresAt = null;
-        const extendBtn = document.getElementById('extendBtn');
-
-        function startExpiryCountdown(expiresAt) {
-            if (!expiresAt) return;
-            currentExpiresAt = expiresAt;
-            expiryTimer.style.display = 'block';
-
-            extendBtn.onclick = extendSession;
-
-            expiryInterval = setInterval(() => {
-                const now = Date.now();
-                const remaining = currentExpiresAt - now;
-                
-                if (remaining <= 0) {
-                    clearInterval(expiryInterval);
-                    extendBtn.style.display = 'none';
-                    expiryTime.textContent = 'หมดอายุแล้ว';
-                    
-                    if (sessionId) {
-                        database.ref(`annotations/${sessionId}`).remove();
-                    }
-                    if (fileUrl && fileUrl.startsWith('fb_')) {
-                        deleteFirebaseFile(fileUrl.substring(3));
-                    } else if (window.__firebaseFileId) {
-                        deleteFirebaseFile(window.__firebaseFileId);
-                    }
-                    
-                    alert('⚠️ เซสชันหมดอายุแล้ว\n\nไฟล์และข้อมูลทั้งหมดถูกลบแล้ว\nกรุณาอัพโหลดใหม่');
-                    location.reload();
-                    return;
-                }
-                
-                const hours = Math.floor(remaining / 3600000);
-                const minutes = Math.floor((remaining % 3600000) / 60000);
-                const seconds = Math.floor((remaining % 60000) / 1000);
-                
-                expiryTime.textContent = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-                
-                // Show extend button when < 5 minutes
-                if (remaining < 5 * 60 * 1000) {
-                    expiryTimer.style.color = '#fbbf24';
-                    extendBtn.style.display = 'inline';
-                } else {
-                    extendBtn.style.display = 'none';
-                }
-                if (remaining < 1 * 60 * 1000) {
-                    expiryTimer.style.color = '#ef4444';
-                }
-            }, 1000);
-        }
-
-        async function extendSession() {
-            if (!sessionId) return;
-            currentExpiresAt = Date.now() + 10 * 60 * 1000;
-            await database.ref(`annotations/${sessionId}`).update({ expiresAt: currentExpiresAt });
-            extendBtn.style.display = 'none';
-            expiryTimer.style.color = '#fde68a';
-        }
-
-        
-
         // ===== FIREBASE SYNC =====
         function listenToChanges() {
             if (!sessionId) return;
