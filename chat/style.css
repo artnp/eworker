@@ -16,18 +16,42 @@
     box-sizing: border-box;
 }
 
+html {
+    height: 100%;
+    height: 100dvh;
+    -webkit-text-size-adjust: 100%;
+}
+
 body {
     font-family: 'Inter', 'Kanit', sans-serif;
     background-color: var(--bg-dark);
     color: var(--text-main);
-    height: 100vh;
+    height: 100%;
+    height: 100dvh;
+    min-height: 100dvh;
     overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
 }
 
 .app-container {
     display: flex;
-    height: 100vh;
+    height: 100%;
+    height: 100dvh;
+    height: calc(var(--vh, 1vh) * 100);
+    width: 100%;
     width: 100vw;
+    width: 100dvw;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
 }
 
 /* Image Preview Styles */
@@ -528,8 +552,13 @@ body {
 
 /* Input Area */
 .input-area {
-    padding: 20px;
+    padding: 12px 20px;
+    padding-bottom: max(12px, calc(env(safe-area-inset-bottom) + 8px));
     border-top: 1px solid var(--border);
+    background: var(--bg-dark);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 30;
 }
 
 .input-container {
@@ -632,10 +661,20 @@ body {
 }
 
 @media (max-width: 680px) {
+    .input-area {
+        padding: 8px 10px;
+        padding-bottom: max(10px, calc(env(safe-area-inset-bottom) + 10px));
+    }
     .input-container {
         flex-direction: column;
         align-items: stretch;
-        gap: 8px;
+        gap: 6px;
+    }
+    .input-wrapper {
+        padding: 6px 8px;
+    }
+    #messageInput {
+        font-size: 16px !important; /* Prevents auto-zoom on iOS Safari */
     }
     .room-action-buttons {
         width: 100%;
@@ -961,6 +1000,297 @@ body {
     transform: translateX(-50%) translateY(0);
 }
 
+/* ===== PROMPTPAY SLIP CARD (Matching shop/services design) ===== */
+.promptpay-slip-card {
+    margin-top: 8px;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 12px 12px 10px 12px;
+    text-align: center;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
+    max-width: 270px;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    color: #1e293b;
+    border: 1.5px solid #e2e8f0;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.promptpay-slip-card.fade-out {
+    opacity: 0;
+    transform: scale(0.92);
+    pointer-events: none;
+}
+
+.chat-slip-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    width: 100%;
+    gap: 6px;
+}
+
+.slip-type-badge {
+    font-size: 0.7rem;
+    padding: 2px 7px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-weight: 700;
+    color: #0b1120;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.checkout-countdown-box {
+    margin: 0;
+    padding: 2px 7px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: #fff1f2;
+    color: #e11d48;
+    border: 1px solid #ffe4e6;
+    font-weight: 600;
+}
+
+.checkout-countdown-box.urgent {
+    background: #ffe4e6;
+    color: #be123c;
+    border-color: #fca5a5;
+    animation: blinkUrgent 1s infinite;
+}
+
+.checkout-countdown-box.expired {
+    background: #f1f5f9;
+    color: #64748b;
+    border-color: #cbd5e1;
+}
+
+@keyframes blinkUrgent {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(0.97); }
+}
+
+.slip-countdown-timer {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.promptpay-slip-card .qr-clean-card {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 8px 10px 8px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 240px;
+    box-sizing: border-box;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.promptpay-slip-card .qr-clean-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.12);
+    border-color: #93c5fd;
+}
+
+.promptpay-slip-card .qr-clean-card:active {
+    transform: scale(0.98);
+}
+
+.promptpay-slip-card .qr-clean-target {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 195px;
+    min-height: 195px;
+    max-width: 100%;
+}
+
+.promptpay-slip-card .qr-clean-img {
+    width: 195px;
+    height: 195px;
+    max-width: 100%;
+    object-fit: contain;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    display: block;
+    margin: 0 auto;
+    border-radius: 8px;
+}
+
+.promptpay-slip-card .qr-bank-tag {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #0b1120;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.promptpay-slip-card .qr-promptpay-logo {
+    height: 14px;
+    max-width: 65px;
+    object-fit: contain;
+}
+
+.promptpay-slip-card .qr-tap-hint {
+    font-size: 0.68rem;
+    color: #2563eb;
+    font-weight: 600;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+}
+
+.promptpay-slip-card .qr-amount-text {
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: #16a34a;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+    margin: 4px 0 6px 0;
+    text-align: center;
+    font-family: 'Kanit', sans-serif;
+}
+
+/* Polling Status Chip (Standard single line) */
+.polling-status-chip {
+    width: 100%;
+    box-sizing: border-box;
+    justify-content: center;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    margin: 0;
+    gap: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+}
+
+.clean-spinner {
+    width: 10px;
+    height: 10px;
+    border: 1.5px solid #cbd5e1;
+    border-top-color: #2563eb;
+    border-radius: 50%;
+    animation: cleanSpin 0.8s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes cleanSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* ===== ANIMATED PAYMENT SUCCESS VIEW ===== */
+@keyframes popCheckScale {
+    0% {
+        transform: scale(0.4);
+        opacity: 0;
+    }
+    60% {
+        transform: scale(1.12);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes pulseSuccessGlow {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.45);
+    }
+    50% {
+        box-shadow: 0 0 0 10px rgba(22, 163, 74, 0);
+    }
+}
+
+.chat-payment-success-card {
+    background: #ffffff;
+    border: 1.5px solid #86efac;
+    border-radius: 16px;
+    padding: 16px 14px;
+    text-align: center;
+    box-shadow: 0 4px 18px rgba(22, 163, 74, 0.15);
+    max-width: 270px;
+    width: 100%;
+    margin: 6px auto;
+    color: #0f172a;
+    animation: popCheckScale 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.chat-payment-success-card .success-circle-check {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    margin: 0 auto 10px auto;
+    box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);
+    animation: popCheckScale 0.5s ease-out, pulseSuccessGlow 2s infinite 0.6s;
+}
+
+.chat-payment-success-card .success-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #15803d;
+    margin-bottom: 2px;
+    letter-spacing: -0.3px;
+    font-family: 'Kanit', sans-serif;
+}
+
+.chat-payment-success-card .success-amount {
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: #16a34a;
+    line-height: 1.2;
+    margin-bottom: 4px;
+    font-family: 'Kanit', sans-serif;
+}
+
+.chat-payment-success-card .success-note {
+    font-size: 0.74rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.promptpay-slip-card .btn-download-qr-slip {
+    display: none; /* Replaced by clicking the qr-clean-card */
+}
+
 .qr-container {
     position: relative;
     width: 100%;
@@ -1026,79 +1356,6 @@ body {
 
 .qr-container:active .qr-download-icon {
     transform: scale(0.9);
-}
-
-/* 📱 แสดงปุ่ม Mobile Banking เฉพาะบนอุปกรณ์มือถือ */
-.mobile-banking-container {
-    display: none;
-    width: 100%;
-    flex-direction: column;
-    align-items: center;
-    margin: 6px auto 4px auto;
-}
-@media (max-width: 768px) {
-    .mobile-banking-container {
-        display: flex;
-    }
-}
-
-/* 🚀 ปุ่มกดชำระผ่านธนาคาร (Rocket Velocity Shimmer Effect) บรรทัดเดียว */
-.btn-rocket-pay {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    max-width: 250px;
-    margin: 6px auto 4px auto;
-    padding: 10px 18px;
-    font-size: 0.90rem;
-    font-weight: 700;
-    color: #ffffff !important;
-    text-decoration: none;
-    white-space: nowrap;
-    border-radius: 50px;
-    border: none;
-    cursor: pointer;
-    background: linear-gradient(135deg, #059669 0%, #10b981 50%, #047857 100%);
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.4);
-    overflow: hidden;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    box-sizing: border-box;
-}
-
-/* ลำแสงจรวดพุ่งพาดผ่านปุ่มความเร็วสูง */
-.btn-rocket-pay::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -130%;
-    width: 80%;
-    height: 100%;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.25) 20%,
-        rgba(255, 255, 255, 0.9) 50%,
-        rgba(255, 255, 255, 0.25) 80%,
-        transparent
-    );
-    transform: skewX(-25deg);
-    animation: rocketShimmer 2.2s infinite cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes rocketShimmer {
-    0% { left: -130%; }
-    40%, 100% { left: 160%; }
-}
-
-.btn-rocket-pay:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.55);
-}
-
-.btn-rocket-pay:active {
-    transform: translateY(1px) scale(0.97);
 }
 
 /* ===== Voice Broadcast System ===== */
