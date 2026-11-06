@@ -2011,7 +2011,7 @@
 
                     <!-- ภาพตัวอย่างผลงานที่ปลดล็อคแล้ว (เห็นชัดเจนทั้งบนมือถือและคอม) -->
                     <div class="unlocked-preview-card" id="unlocked-preview-card" onclick="openLightbox()"
-                        title="แตะเพื่อขยายภาพเต็ม / แตะค้างเพื่อบันทึกรูป">
+                        title="แตะเพื่อขยายภาพเต็ม / แตะค้างเพื่อบันทึกรูป" style="display: none;">
                         <img id="unlocked-preview-img" alt="ภาพผลงานที่ปลดล็อค">
                         <div class="unlocked-preview-badge">🔍 แตะเพื่อดูภาพเต็ม (หรือแตะค้างเพื่อบันทึก)</div>
                     </div>
@@ -2031,7 +2031,7 @@
                         <button class="btn btn-primary" id="download-btn" onclick="downloadFile()">
                             💾 ดาวน์โหลดไฟล์
                         </button>
-                        <button type="button" class="btn-view-full" id="btn-view-full" onclick="openLightbox()">
+                        <button type="button" class="btn-view-full" id="btn-view-full" onclick="openLightbox()" style="display: none;">
                             👁️ ขยายภาพเต็ม (แตะค้างเพื่อบันทึก)
                         </button>
                     </div>
@@ -2050,7 +2050,7 @@
 
                     <!-- ภาพตัวอย่างผลงานฟรี (เห็นชัดเจนทั้งบนมือถือและคอม) -->
                     <div class="unlocked-preview-card" id="unlocked-preview-card-free" onclick="openLightbox()"
-                        title="แตะเพื่อขยายภาพเต็ม / แตะค้างเพื่อบันทึกรูป">
+                        title="แตะเพื่อขยายภาพเต็ม / แตะค้างเพื่อบันทึกรูป" style="display: none;">
                         <img id="unlocked-preview-img-free" alt="ภาพผลงาน">
                         <div class="unlocked-preview-badge">🔍 แตะเพื่อดูภาพเต็ม (หรือแตะค้างเพื่อบันทึก)</div>
                     </div>
@@ -2059,7 +2059,7 @@
                         <button class="btn btn-primary" id="download-btn-free" onclick="downloadFile()">
                             💾 ดาวน์โหลดไฟล์
                         </button>
-                        <button type="button" class="btn-view-full" id="btn-view-full-free" onclick="openLightbox()">
+                        <button type="button" class="btn-view-full" id="btn-view-full-free" onclick="openLightbox()" style="display: none;">
                             👁️ ขยายภาพเต็ม (แตะค้างเพื่อบันทึก)
                         </button>
                     </div>
@@ -2700,16 +2700,21 @@
             const isPdf = _isPdfMode || fileType === 'pdf';
 
             let container = null;
+            let activeCard = null;
             const successSectionHidden = document.getElementById('success-section').classList.contains('hidden');
             const freeSectionHidden = document.getElementById('free-section').classList.contains('hidden');
 
             if (!successSectionHidden) {
                 container = document.getElementById('download-tutorial-container');
+                activeCard = document.getElementById('unlocked-preview-card');
             } else if (!freeSectionHidden) {
                 container = document.getElementById('download-tutorial-container-free');
+                activeCard = document.getElementById('unlocked-preview-card-free');
             }
 
             if (!container) return;
+
+            const isImageVisible = activeCard && activeCard.style.display !== 'none';
 
             let tutorialHTML = '<div class="download-tutorial">';
 
@@ -2717,17 +2722,23 @@
                 tutorialHTML += `
                     <strong>💡 คำแนะนำเอกสาร PDF:</strong> กดปุ่ม <strong>"📄 เปิดอ่านเอกสาร PDF"</strong> เพื่อเปิดอ่านหรือกดบันทึกลงเครื่อง
                 `;
-            } else if (isInAppBrowser) {
-                tutorialHTML += `
-                    <strong>💡 บนแอป LINE / แชท:</strong> สามารถ <strong>แตะค้างที่รูปภาพ</strong> ด้านบน → เลือก <strong>"บันทึกรูปภาพ"</strong> ได้ทันที 100%
-                `;
-            } else if (isMobile) {
-                tutorialHTML += `
-                    <strong>💡 คำแนะนำสำหรับมือถือ:</strong> สามารถ <strong>แตะค้างที่รูปภาพ</strong> ด้านบน → เลือก <strong>"บันทึกรูปภาพ"</strong> ลงเครื่องได้ทันที
-                `;
+            } else if (isImageVisible) {
+                if (isInAppBrowser) {
+                    tutorialHTML += `
+                        <strong>💡 บนแอป LINE / แชท:</strong> สามารถ <strong>แตะค้างที่รูปภาพ</strong> ด้านบน → เลือก <strong>"บันทึกรูปภาพ"</strong> ได้ทันที 100%
+                    `;
+                } else if (isMobile) {
+                    tutorialHTML += `
+                        <strong>💡 คำแนะนำสำหรับมือถือ:</strong> สามารถ <strong>แตะค้างที่รูปภาพ</strong> ด้านบน → เลือก <strong>"บันทึกรูปภาพ"</strong> ลงเครื่องได้ทันที
+                    `;
+                } else {
+                    tutorialHTML += `
+                        <strong>💡 คำแนะนำ:</strong> หากกดดาวน์โหลดไม่ได้ สามารถคลิกขวาที่รูปภาพตัวอย่าง → เลือก <strong>"บันทึกรูปภาพเป็น..."</strong> ได้เช่นกัน
+                    `;
+                }
             } else {
                 tutorialHTML += `
-                    <strong>💡 คำแนะนำ:</strong> หากกดดาวน์โหลดไม่ได้ สามารถคลิกขวาที่รูปภาพตัวอย่าง → เลือก <strong>"บันทึกรูปภาพเป็น..."</strong> ได้เช่นกัน
+                    <strong>💡 คำแนะนำ:</strong> สามารถกดปุ่ม <strong>"💾 ดาวน์โหลดไฟล์"</strong> เพื่อบันทึกไฟล์ลงเครื่องได้ทันที
                 `;
             }
 
@@ -3608,41 +3619,76 @@
 
         // ซิงค์รูปภาพผลงานที่ปลดล็อคแล้วเข้ากับการ์ดในหน้า Success / Free
         function syncUnlockedPreview(url) {
-            if (!url) return;
-            const img1 = document.getElementById('unlocked-preview-img');
-            const img2 = document.getElementById('unlocked-preview-img-free');
-            if (img1) img1.src = url;
-            if (img2) img2.src = url;
-
-            const isPdf = _isPdfMode || fileType === 'pdf';
             const card1 = document.getElementById('unlocked-preview-card');
             const card2 = document.getElementById('unlocked-preview-card-free');
             const btn1 = document.getElementById('btn-view-full');
             const btn2 = document.getElementById('btn-view-full-free');
+            const img1 = document.getElementById('unlocked-preview-img');
+            const img2 = document.getElementById('unlocked-preview-img-free');
+
+            if (!url) {
+                if (card1) card1.style.display = 'none';
+                if (card2) card2.style.display = 'none';
+                if (btn1) btn1.style.display = 'none';
+                if (btn2) btn2.style.display = 'none';
+                return;
+            }
+
+            const isPdf = _isPdfMode || fileType === 'pdf';
 
             if (isPdf) {
                 if (card1) card1.style.display = 'none';
                 if (card2) card2.style.display = 'none';
                 if (btn1) {
+                    btn1.style.display = '';
                     btn1.innerHTML = '📄 เปิดอ่านเอกสาร PDF (แท็บใหม่)';
                     btn1.onclick = () => window.open(url, '_blank');
                 }
                 if (btn2) {
+                    btn2.style.display = '';
                     btn2.innerHTML = '📄 เปิดอ่านเอกสาร PDF (แท็บใหม่)';
                     btn2.onclick = () => window.open(url, '_blank');
                 }
-            } else {
-                if (card1) card1.style.display = 'flex';
-                if (card2) card2.style.display = 'flex';
-                if (btn1) {
-                    btn1.innerHTML = '👁️ ขยายภาพเต็ม (แตะค้างเพื่อบันทึก)';
-                    btn1.onclick = openLightbox;
-                }
-                if (btn2) {
-                    btn2.innerHTML = '👁️ ขยายภาพเต็ม (แตะค้างเพื่อบันทึก)';
-                    btn2.onclick = openLightbox;
+                showDownloadTutorial();
+                return;
+            }
+
+            function setupPreviewCard(img, card, btn) {
+                if (!card) return;
+                card.style.display = 'none';
+                if (btn) btn.style.display = 'none';
+                if (!img) return;
+
+                img.onload = function () {
+                    card.style.display = 'flex';
+                    if (btn) {
+                        btn.style.display = '';
+                        btn.innerHTML = '👁️ ขยายภาพเต็ม (แตะค้างเพื่อบันทึก)';
+                        btn.onclick = openLightbox;
+                    }
+                    showDownloadTutorial();
+                };
+
+                img.onerror = function () {
+                    card.style.display = 'none';
+                    if (btn) btn.style.display = 'none';
+                    showDownloadTutorial();
+                };
+
+                img.src = url;
+
+                if (img.complete && img.naturalWidth > 0) {
+                    card.style.display = 'flex';
+                    if (btn) {
+                        btn.style.display = '';
+                        btn.innerHTML = '👁️ ขยายภาพเต็ม (แตะค้างเพื่อบันทึก)';
+                        btn.onclick = openLightbox;
+                    }
                 }
             }
+
+            setupPreviewCard(img1, card1, btn1);
+            setupPreviewCard(img2, card2, btn2);
         }
 
         // ซิงค์รูปภาพลงใน Mobile Thumbnail Strip
