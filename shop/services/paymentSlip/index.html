@@ -432,16 +432,76 @@
         .toast-icon {
             font-size: 2.6rem;
         }
+
+        /* ===== Responsive Mobile Layout ===== */
+        @media (max-width: 768px) {
+            html,
+            body {
+                overflow-y: auto !important;
+                height: auto !important;
+                min-height: 100% !important;
+            }
+
+            .page-shell {
+                height: auto !important;
+                min-height: 100vh !important;
+                padding: 10px 14px 40px !important;
+                overflow: visible !important;
+            }
+
+            .main-body {
+                flex-direction: column !important;
+                height: auto !important;
+                overflow: visible !important;
+                gap: 20px !important;
+            }
+
+            .input-panel {
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow: visible !important;
+            }
+
+            .preview-area {
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow: visible !important;
+                padding: 10px 0 20px !important;
+            }
+
+            #pay-card {
+                margin: 0 auto !important;
+                max-width: 280px !important;
+                width: 100% !important;
+            }
+
+            .action-bar {
+                width: 100% !important;
+                max-width: 280px !important;
+                justify-content: center !important;
+            }
+
+            .action-bar .btn-sm {
+                flex: 1 !important;
+                padding: 10px 8px !important;
+                font-size: 0.85rem !important;
+            }
+        }
     </style>
 </head>
 
 <body>
     <div class="page-shell">
 
-        <!-- Title + hint row -->
-        <div class="page-title">💳 ระบบสร้างสลิปพร้อมเพย์</div>
-        <div class="type-hint">⌨️ <strong>พิมพ์ยอดได้เลยทุกที่บนหน้านี้</strong> — ระบบจะอัปเดต QR และคัดลอกให้อัตโนมัติ
+        <!-- Top Navigation & Title Bar -->
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 4px;">
+            <a href="../../../index.html" class="btn-sm" style="text-decoration: none; display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; font-weight: 700; border-radius: 6px;" title="กลับหน้าแรก eWorker">
+                <span>◀</span> หน้าแรก
+            </a>
+            <div class="page-title" style="margin: 0;">💳 ระบบสร้างสลิปพร้อมเพย์</div>
+            <span style="font-size: 0.72rem; background: rgba(141, 235, 45, 0.15); color: var(--primary); padding: 3px 8px; border-radius: 12px; border: 1px solid rgba(141, 235, 45, 0.3); font-weight: 600;">ฟรี 100%</span>
         </div>
+        <div class="type-hint">⌨️ <strong>พิมพ์ยอดได้เลยทุกที่บนหน้านี้</strong> — ระบบจะอัปเดต QR และคัดลอกให้อัตโนมัติ</div>
 
         <div class="main-body">
 
