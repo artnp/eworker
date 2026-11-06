@@ -458,6 +458,74 @@
         @media (max-width: 900px) {
             .main-layout {
                 grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            /* Mobile Horizontal Scrollable Categories */
+            .sidebar {
+                margin-bottom: 4px;
+            }
+
+            .sidebar-card {
+                padding: 4px 0 10px 0;
+                background: transparent;
+                border: none;
+                box-shadow: none;
+            }
+
+            .sidebar-title {
+                display: none;
+            }
+
+            .sidebar-menu {
+                flex-direction: row;
+                overflow-x: auto;
+                white-space: nowrap;
+                gap: 8px;
+                padding: 4px 4px 8px 4px;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+
+            .sidebar-menu::-webkit-scrollbar {
+                display: none;
+            }
+
+            .sidebar-menu li {
+                flex-shrink: 0;
+            }
+
+            .sidebar-menu li a {
+                padding: 7px 14px;
+                background: #ffffff;
+                border: 1px solid var(--fh-border);
+                border-radius: 999px;
+                font-size: 0.82rem;
+                font-weight: 600;
+                color: var(--fh-slate);
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.2s ease;
+            }
+
+            .sidebar-menu li a.active {
+                background: var(--fh-blue);
+                color: #ffffff;
+                border-color: var(--fh-blue);
+                box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3);
+            }
+
+            .sidebar-menu li a.active .sidebar-count {
+                background: rgba(255, 255, 255, 0.25);
+                color: #ffffff;
+            }
+
+            .sidebar-count {
+                font-size: 0.72rem;
+                padding: 1px 6px;
+                border-radius: 10px;
             }
         }
 
@@ -1185,35 +1253,88 @@
                 font-size: 0.78rem;
             }
 
+            /* Mobile Top Notice Bar */
+            .top-notice-inner {
+                flex-direction: column;
+                align-items: center;
+                gap: 6px;
+                text-align: center;
+                padding: 2px 0;
+            }
+
+            .notice-left {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                justify-content: center;
+                gap: 4px;
+                font-size: 0.75rem;
+            }
+
             /* Mobile Banner Responsive */
             .trust-banner-fh {
-                padding: 14px 16px;
-                margin: 12px 0;
+                padding: 14px;
+                margin: 10px 0;
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 12px;
+                border-radius: 12px;
             }
 
             .trust-text h2 {
-                font-size: 1.15rem;
+                font-size: 1.05rem;
+                line-height: 1.4;
+            }
+
+            .trust-text p {
+                font-size: 0.78rem;
+                line-height: 1.45;
+                margin-top: 4px;
             }
 
             .trust-badges-grid {
-                gap: 8px;
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px;
                 width: 100%;
             }
 
             .badge-pill-item {
-                font-size: 0.75rem;
+                font-size: 0.72rem;
+                padding: 5px 8px;
+                justify-content: center;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            /* Mobile Content Header & Sort */
+            .content-header-bar {
+                padding: 10px 14px;
+                border-radius: 10px;
+                gap: 8px;
+            }
+
+            .content-header-title {
+                font-size: 0.95rem;
+            }
+
+            .sort-control {
+                font-size: 0.78rem;
+            }
+
+            .sort-select-fh {
                 padding: 4px 8px;
+                font-size: 0.78rem;
             }
 
             /* Mobile Program Card Responsive */
             .program-card-fh {
                 flex-direction: column;
                 align-items: stretch;
-                padding: 14px 16px;
-                gap: 12px;
+                padding: 13px 14px;
+                gap: 10px;
+                border-radius: 12px;
             }
 
             .card-left-info {
@@ -1224,6 +1345,22 @@
             .program-icon-box {
                 width: 48px;
                 height: 48px;
+                min-width: 48px;
+                border-radius: 10px;
+            }
+
+            .program-name {
+                font-size: 0.98rem;
+                line-height: 1.35;
+            }
+
+            .program-excerpt {
+                font-size: 0.78rem;
+                line-height: 1.4;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
             }
 
             .card-right-action {
@@ -1234,7 +1371,7 @@
                 align-items: center;
                 border-top: 1px dashed var(--fh-border-light);
                 padding-top: 10px;
-                margin-top: 4px;
+                margin-top: 2px;
                 gap: 10px;
             }
 
@@ -1243,12 +1380,13 @@
                 flex: 1;
                 min-width: 0;
                 max-width: none;
-                padding: 8px 12px;
-                font-size: 0.82rem;
+                padding: 9px 12px;
+                font-size: 0.84rem;
+                border-radius: 8px;
             }
 
             .card-right-action .price-badge-fh {
-                font-size: 1rem;
+                font-size: 0.95rem;
                 padding: 4px 10px;
             }
         }
@@ -4338,7 +4476,8 @@
 
                     <!-- Yesterday 11:00 AM Payout Settlement -->
                     <div class="admin-rs-tplus-box" id="admin-rs-tplus-box">
-                        <div class="admin-rs-yesterday-row" id="admin-yesterday-settle-row" title="ยอดเมื่อวาน (ตัดรอบเที่ยงคืน) โอนเข้าบัญชีวันนี้ 11:00 น. ไม่รวมกับยอดหลังเที่ยงคืน">
+                        <div class="admin-rs-yesterday-row" id="admin-yesterday-settle-row"
+                            title="ยอดเมื่อวาน (ตัดรอบเที่ยงคืน) โอนเข้าบัญชีวันนี้ 11:00 น. ไม่รวมกับยอดหลังเที่ยงคืน">
                             <div class="admin-rs-yesterday-left">
                                 <span class="admin-rs-yesterday-icon">🏦</span>
                                 <span class="admin-rs-yesterday-lbl">รอบ 11 โมงวันนี้:</span>
@@ -4367,7 +4506,8 @@
 
                 <!-- 2. Sold Products Ranking Table (ตารางรวมว่าขายอะไรได้แล้วบ้าง เหมือน admin-payment.html) -->
                 <div class="admin-rs-card" style="padding: 12px 10px; margin-top: 0;">
-                    <div style="font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                    <div
+                        style="font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
                         <span>📦 สรุปสินค้าที่ขายได้</span>
                         <span style="font-size: 0.68rem; color: #64748b; font-weight: 600;">(อันดับยอดขาย)</span>
                     </div>
@@ -6338,6 +6478,14 @@
                 } else {
                     showToast('⚠️ บริการตัดต่อรีทัชข้อความปิดรับงานชั่วคราว เนื่องจากช่าง/เซิร์ฟเวอร์ออฟไลน์', 'warning');
                 }
+                return;
+            }
+
+            // บนจอมือถือ (หน้าจอแคบ หรือ Mobile Device):
+            // ให้เปิดหน้าบริการเป็นเว็บแยกเต็มหน้าจอทันที ไม่เปิดใน iframe เพื่อให้เครื่องมือและแถบทำงานครบ 100% ไม่โดนตัดขอบจอ
+            const isMobile = window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (isMobile) {
+                window.location.href = product.serviceUrl;
                 return;
             }
 
@@ -13346,12 +13494,12 @@ ${encodedToken}
                 return { name: 'Send.html', icon: '📤', category: 'ระบบส่งงานและชี้จุดแก้ไข' };
             }
             if (id.startsWith('k') || id.startsWith('ORD-PS-') || id.includes('PrivateSend') || title.includes('PrivateSend')) {
-                return { name: 'Download.html', icon: '🛡️', category: 'ระบบส่งไฟล์ลับ' };
+                return { name: 'Download', icon: '🛡️', category: 'ระบบส่งไฟล์ลับ' };
             }
             if (item.productTitle) {
                 return { name: item.productTitle, icon: '📦', category: 'สินค้าในระบบ' };
             }
-            return { name: 'Download.html', icon: '🛡️', category: 'ระบบส่งไฟล์ลับ' };
+            return { name: 'Download', icon: '🛡️', category: 'ระบบส่งไฟล์ลับ' };
         }
 
         function formatAdminTimeAgo(timestamp) {
