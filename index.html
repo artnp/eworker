@@ -3562,63 +3562,74 @@
 
         .admin-right-sidebar {
             display: none;
+            flex-direction: column;
+            gap: 24px;
             box-sizing: border-box;
         }
 
         /* When in Admin View (127.0.0.1 / localhost):
-           - Pin sidebar strictly to the FAR RIGHT edge of viewport (right: 14px)
-           - Reserve 325px right cushion on page-body-wrap so product cards NEVER overlap
-           - Web layout proportions stay completely normal and unwarped (1200px max container)
-           - Zero border overlap
+           - In-flow side-by-side flex container centered seamlessly
+           - Header, content & footer aligned symmetrically without lopsided padding
+           - Clean 32px gap, providing comfortable breathing room between product cards & sidebar
         */
+        body.is-admin-view .site-header .container,
+        body.is-admin-view footer .container {
+            max-width: 1540px;
+        }
+
         body.is-admin-view .page-body-wrap {
-            padding-right: 335px;
+            padding-right: 0;
             box-sizing: border-box;
         }
 
         body.is-admin-view footer {
-            padding-right: 335px;
+            padding-right: 0;
             box-sizing: border-box;
         }
 
         body.is-admin-view .admin-layout-container {
-            max-width: 1200px;
+            max-width: 1540px;
             margin: 0 auto;
-            padding: 0 16px;
+            padding: 0 20px;
             box-sizing: border-box;
-            display: block;
+            display: flex;
+            gap: 32px;
+            align-items: flex-start;
+            justify-content: center;
         }
 
         body.is-admin-view .admin-main-column {
-            width: 100%;
+            flex: 1;
+            max-width: 1200px;
             min-width: 0;
         }
 
         body.is-admin-view .admin-right-sidebar {
             display: flex;
             flex-direction: column;
-            gap: 14px;
-            position: fixed;
-            top: 125px;
-            right: 10px;
-            width: 315px;
-            max-height: calc(100vh - 145px);
+            gap: 24px;
+            position: sticky;
+            top: 80px;
+            width: 310px;
+            flex-shrink: 0;
+            max-height: calc(100vh - 95px);
             overflow-y: auto;
             overflow-x: hidden;
-            padding-bottom: 20px;
-            z-index: 999;
+            padding-bottom: 24px;
+            z-index: 90;
             box-sizing: border-box;
             scrollbar-width: thin;
             scrollbar-color: #cbd5e1 transparent;
         }
 
-        @media (max-width: 1240px) {
-            body.is-admin-view .page-body-wrap {
-                padding-right: 0;
+        @media (max-width: 1140px) {
+            body.is-admin-view .admin-layout-container {
+                flex-direction: column;
             }
 
-            body.is-admin-view footer {
-                padding-right: 0;
+            body.is-admin-view .admin-main-column {
+                max-width: 100%;
+                width: 100%;
             }
 
             body.is-admin-view .admin-right-sidebar {
@@ -3730,11 +3741,13 @@
             border: 1.5px solid rgba(16, 185, 129, 0.35);
             padding: 12px 14px;
             border-radius: var(--radius-md);
-            box-shadow: var(--shadow-sm);
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.1);
             position: relative;
             overflow: hidden;
             width: 100%;
             box-sizing: border-box;
+            margin-bottom: 24px !important;
+            flex-shrink: 0 !important;
         }
 
         .admin-rs-today-card::before {
@@ -3793,6 +3806,98 @@
             line-height: 1;
         }
 
+        /* T+1 Settlement Notice & Yesterday 11:00 AM Payout */
+        .admin-rs-tplus-box {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.22);
+            border-radius: 8px;
+            padding: 7px 10px;
+            margin-bottom: 9px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .admin-rs-tplus-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            gap: 6px;
+        }
+
+        .admin-rs-tplus-chip {
+            background: #fef3c7;
+            color: #92400e;
+            font-weight: 700;
+            font-size: 0.67rem;
+            padding: 1px 7px;
+            border-radius: 6px;
+            border: 1px solid #fde68a;
+            white-space: nowrap;
+        }
+
+        .admin-rs-tplus-desc {
+            color: #047857;
+            font-weight: 600;
+            font-size: 0.7rem;
+            white-space: nowrap;
+        }
+
+        .admin-rs-yesterday-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            color: #475569;
+            gap: 6px;
+        }
+
+        .admin-rs-yesterday-left {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+
+        .admin-rs-yesterday-icon {
+            font-size: 0.78rem;
+        }
+
+        .admin-rs-yesterday-lbl {
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .admin-rs-yesterday-right {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
+        .admin-rs-yesterday-val {
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .admin-rs-settle-tag {
+            font-size: 0.64rem;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+
+        .admin-rs-settle-tag.done {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .admin-rs-settle-tag.waiting {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
         .admin-rs-today-recent-box {
             padding-top: 8px;
             border-top: 1px dashed rgba(16, 185, 129, 0.3);
@@ -3812,12 +3917,14 @@
         /* Sales Ranking Table Card */
         .admin-rs-card {
             background: #ffffff;
-            border: 1px solid var(--fh-border);
+            border: 1.5px solid rgba(226, 232, 240, 0.95);
             border-radius: var(--radius-md);
-            box-shadow: var(--shadow-sm);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
             padding: 12px 14px;
             width: 100%;
             box-sizing: border-box;
+            flex-shrink: 0 !important;
+            position: relative;
         }
 
         .admin-rs-ranking-header {
@@ -4216,17 +4323,31 @@
 
             <!-- ADMIN RIGHT SIDEBAR (127.0.0.1 Only - In-Flow Responsive Side Column) -->
             <aside class="admin-right-sidebar" id="admin-right-sidebar" style="display: none;">
-                <!-- 1. Today's Revenue Hero Card with Recent Orders (บอก รายได้ของวันนี้ + รายการโอนล่าสุด) -->
+                <!-- 1. Today's Revenue Hero Card with Recent Orders (บอก เงินค้างรอโอน + รายการโอนล่าสุด) -->
                 <div class="admin-rs-today-card">
                     <div class="admin-rs-today-top">
                         <div class="admin-rs-today-label">
-                            <span>📅 รายได้ของวันนี้</span>
+                            <span>⏳ เงินค้างรอโอน</span>
                         </div>
-                        <span class="admin-rs-today-badge" id="admin-today-date-badge">วันนี้</span>
+                        <span class="admin-rs-today-badge" id="admin-today-date-badge">วันนี้ (T+1)</span>
                     </div>
                     <div class="admin-rs-amount-row">
                         <div class="admin-rs-currency">฿</div>
                         <div class="admin-rs-today-val" id="admin-today-revenue-val">0.00</div>
+                    </div>
+
+                    <!-- Yesterday 11:00 AM Payout Settlement -->
+                    <div class="admin-rs-tplus-box" id="admin-rs-tplus-box">
+                        <div class="admin-rs-yesterday-row" id="admin-yesterday-settle-row" title="ยอดเมื่อวาน (ตัดรอบเที่ยงคืน) โอนเข้าบัญชีวันนี้ 11:00 น. ไม่รวมกับยอดหลังเที่ยงคืน">
+                            <div class="admin-rs-yesterday-left">
+                                <span class="admin-rs-yesterday-icon">🏦</span>
+                                <span class="admin-rs-yesterday-lbl">รอบ 11 โมงวันนี้:</span>
+                            </div>
+                            <div class="admin-rs-yesterday-right">
+                                <span class="admin-rs-yesterday-val" id="admin-yesterday-settle-val">฿0.00</span>
+                                <span class="admin-rs-settle-tag done" id="admin-yesterday-settle-tag">โอนแล้ว</span>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- ⚡ รายการโอนล่าสุด (รวมอยู่ในช่องรายได้ของวันนี้) -->
@@ -4245,7 +4366,11 @@
                 </div>
 
                 <!-- 2. Sold Products Ranking Table (ตารางรวมว่าขายอะไรได้แล้วบ้าง เหมือน admin-payment.html) -->
-                <div class="admin-rs-card" style="padding: 10px 8px;">
+                <div class="admin-rs-card" style="padding: 12px 10px; margin-top: 0;">
+                    <div style="font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>📦 สรุปสินค้าที่ขายได้</span>
+                        <span style="font-size: 0.68rem; color: #64748b; font-weight: 600;">(อันดับยอดขาย)</span>
+                    </div>
                     <div class="admin-rs-table-wrap">
                         <table class="admin-rs-table">
                             <thead>
@@ -13239,50 +13364,52 @@ ${encodedToken}
             return `${Math.floor(diff / 86400)} วันที่แล้ว`;
         }
 
-        // Helper: คำนวณช่วงรอบเวลาสำหรับ "รายได้ของวันนี้" (ตัดรอบและรีเซ็ตทุกวันเวลา 11:00 น.)
-        // รอบยอดของวันนี้จะนับต่อเนื่องไปจนถึงพรุ่งนี้ 11:00 น. ถึงค่อยรีเซ็ตเป็น ฿ 0.00
+        // Helper: คำนวณช่วงเวลา "รายได้ของวันนี้" (ตัดรอบเที่ยงคืน) และ "ยอดรอบโอน 11:00 น. วันนี้" (T+1)
+        // กฎการตัดรอบ:
+        // 1. วันนี้ (Today): นับตั้งแต่หลังเที่ยงคืน 00:00:00 น. จนถึงสิ้นวัน 23:59:59 น.
+        //    เงินเข้าหลังเที่ยงคืน = รายได้ของวันนี้ สถานะเป็น T+1 (ค้างรอโอนเข้าบัญชีพรุ่งนี้ 11:00 น.)
+        //    ไม่รวมกับยอดรอบโอน 11:00 น. ของวันนี้!
+        // 2. รอบโอน 11 โมงวันนี้ = ยอดของเมื่อวาน (00:00 - 23:59 น. เมื่อวาน) ที่ตัดรอบเที่ยงคืนแล้วโอนเข้าบัญชีวันนี้ 11:00 น.
         function getAdminTodayRevenueCycle(baseDate = new Date()) {
             const now = new Date(baseDate);
-            const CUTOFF_HOUR = 11;
-            let cycleStart, cycleEnd;
-            let isPastMidnightBeforeCutoff = false;
 
-            if (now.getHours() < CUTOFF_HOUR) {
-                // ก่อน 11:00 น. -> ยังอยู่ในรอบเดิมที่เริ่มเมื่อวาน 11:00 น. จนถึงวันนี้ 11:00 น. (ยังไม่รีเซ็ต)
-                cycleStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, CUTOFF_HOUR, 0, 0, 0);
-                cycleEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), CUTOFF_HOUR, 0, 0, 0);
-                isPastMidnightBeforeCutoff = true;
-            } else {
-                // ตั้งแต่ 11:00 น. เป็นต้นไป -> เริ่มรอบใหม่ของวันนี้ 11:00 น. ไปจนถึงพรุ่งนี้ 11:00 น.
-                cycleStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), CUTOFF_HOUR, 0, 0, 0);
-                cycleEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, CUTOFF_HOUR, 0, 0, 0);
-                isPastMidnightBeforeCutoff = false;
-            }
+            // วันนี้ (Today): เริ่มหลังเที่ยงคืน 00:00:00.000 ถึง 23:59:59.999
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+            const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
 
-            const startDay = cycleStart.getDate();
-            const endDay = cycleEnd.getDate();
-            const startMonth = cycleStart.toLocaleDateString('th-TH', { month: 'short' });
-            const endMonth = cycleEnd.toLocaleDateString('th-TH', { month: 'short' });
+            // เมื่อวาน (Yesterday): ยอดสำหรับรอบโอน 11:00 น. วันนี้ (00:00 - 23:59 น. เมื่อวาน)
+            const yesterdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0);
+            const yesterdayEnd = todayStart;
 
-            const badgeText = (startMonth === endMonth)
-                ? `${startDay}-${endDay} ${startMonth}`
-                : `${startDay} ${startMonth} - ${endDay} ${endMonth}`;
+            // วันพรุ่งนี้ (Tomorrow): วันที่จะได้รับโอนสำหรับยอดของวันนี้
+            const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
 
-            const cycleTitleText = isPastMidnightBeforeCutoff
-                ? `รอบ ${startDay} ${startMonth} ถึงวันนี้ 11:00 น.`
-                : `รอบวันนี้ ถึงพรุ่งนี้ 11:00 น.`;
+            const todayDay = todayStart.getDate();
+            const todayMonth = todayStart.toLocaleDateString('th-TH', { month: 'short' });
+            const tomorrowDay = tomorrow.getDate();
+            const tomorrowMonth = tomorrow.toLocaleDateString('th-TH', { month: 'short' });
+            const yesterdayDay = yesterdayStart.getDate();
+            const yesterdayMonth = yesterdayStart.toLocaleDateString('th-TH', { month: 'short' });
 
-            const fullRangeText = `${startDay} ${startMonth} 11:00 น. - ${endDay} ${endMonth} 11:00 น.`;
+            const isAfter11 = now.getHours() >= 11;
 
             return {
-                startMs: cycleStart.getTime(),
-                endMs: cycleEnd.getTime(),
-                cycleStart,
-                cycleEnd,
-                badgeText,
-                cycleTitleText,
-                fullRangeText,
-                isPastMidnightBeforeCutoff
+                todayStartMs: todayStart.getTime(),
+                todayEndMs: todayEnd.getTime(),
+                yesterdayStartMs: yesterdayStart.getTime(),
+                yesterdayEndMs: yesterdayEnd.getTime(),
+                todayDay,
+                todayMonth,
+                tomorrowDay,
+                tomorrowMonth,
+                yesterdayDay,
+                yesterdayMonth,
+                isAfter11,
+                badgeText: `${todayDay} ${todayMonth} (T+1)`,
+                settleTomorrowText: `รอบโอน ${tomorrowDay} ${tomorrowMonth} 11:00 น.`,
+                todayFullRangeText: `${todayDay} ${todayMonth} (หลังเที่ยงคืน 00:00 - 23:59 น.)`,
+                yesterdayBadgeText: `${yesterdayDay} ${yesterdayMonth}`,
+                yesterdayFullRangeText: `${yesterdayDay} ${yesterdayMonth} (00:00 - 23:59 น.)`
             };
         }
 
@@ -13329,6 +13456,8 @@ ${encodedToken}
                 let grandTotalSatang = 0;
                 let todayTotalSatang = 0;
                 let todayOrdersCount = 0;
+                let yesterdayTotalSatang = 0;
+                let yesterdayOrdersCount = 0;
                 const realBeamOrders = [];
 
                 const now = new Date();
@@ -13343,10 +13472,16 @@ ${encodedToken}
                         const fbMeta = (fbRes && fbRes[refId]) || {};
                         const timeMs = tx.transactionTime ? new Date(tx.transactionTime).getTime() : new Date(tx.createdAt).getTime();
 
-                        // สะสมยอดในรอบปัจจุบัน (11:00 น. วันนี้ จนถึง พรุ่งนี้ 11:00 น. ถึงค่อยรีเซ็ต)
-                        if (timeMs >= revenueCycle.startMs && timeMs < revenueCycle.endMs) {
+                        // 1) ยอดของวันนี้ (เงินเข้าหลังเที่ยงคืน 00:00:00 เป็นต้นไป -> T+1 ค้างรอโอนพรุ่งนี้ 11:00 น.)
+                        if (timeMs >= revenueCycle.todayStartMs && timeMs < revenueCycle.todayEndMs) {
                             todayTotalSatang += satang;
                             todayOrdersCount++;
+                        }
+
+                        // 2) ยอดของเมื่อวาน (ตัดรอบเที่ยงคืน -> รอบโอน 11:00 น. วันนี้)
+                        if (timeMs >= revenueCycle.yesterdayStartMs && timeMs < revenueCycle.yesterdayEndMs) {
+                            yesterdayTotalSatang += satang;
+                            yesterdayOrdersCount++;
                         }
 
                         realBeamOrders.push({
@@ -13385,8 +13520,9 @@ ${encodedToken}
                 adminKnownOrderKeys = currentKeys;
                 isAdminFirstLoad = false;
 
-                // 4. Update Today's Revenue & Lifetime
+                // 4. Update Today's Revenue & Lifetime & Yesterday's 11:00 AM Settlement
                 const todayRevenue = todayTotalSatang / 100;
+                const yesterdayRevenue = yesterdayTotalSatang / 100;
                 const lifetimeRevenue = grandTotalSatang / 100;
 
                 const todayValEl = document.getElementById('admin-today-revenue-val');
@@ -13395,7 +13531,7 @@ ${encodedToken}
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
                     });
-                    todayValEl.title = `ยอดขายสะสมรอบ ${revenueCycle.fullRangeText} (${todayOrdersCount} รายการ)`;
+                    todayValEl.title = `ยอดเงินค้างรอโอน (หลังเที่ยงคืน 00:00 น. เป็นต้นไป): ฿${todayRevenue.toFixed(2)} (${todayOrdersCount} รายการ) • สถานะ T+1 ค้างรอโอนพรุ่งนี้ 11:00 น. (ไม่รวมกับยอด 11 โมงวันนี้)`;
                 }
 
                 const todayOrdersEl = document.getElementById('admin-today-orders-count');
@@ -13414,12 +13550,40 @@ ${encodedToken}
                 const dateBadge = document.getElementById('admin-today-date-badge');
                 if (dateBadge) {
                     dateBadge.textContent = revenueCycle.badgeText;
-                    dateBadge.title = `รอบคำนวณรายได้: ${revenueCycle.fullRangeText} (รีเซ็ตทุกวัน 11:00 น.)`;
+                    dateBadge.title = `รอบคำนวณเงินค้างรอโอน (หลังเที่ยงคืน): ${revenueCycle.todayFullRangeText} • ยอด T+1 ค้างรอโอน ${revenueCycle.settleTomorrowText} (ไม่รวมกับยอด 11 โมงวันนี้)`;
+                }
+
+                const tplusDescEl = document.getElementById('admin-today-tplus-desc');
+                if (tplusDescEl) {
+                    tplusDescEl.textContent = `โอนพรุ่งนี้ (${revenueCycle.tomorrowDay} ${revenueCycle.tomorrowMonth}) 11:00 น.`;
+                }
+
+                const yesterdayValEl = document.getElementById('admin-yesterday-settle-val');
+                if (yesterdayValEl) {
+                    yesterdayValEl.textContent = `฿${yesterdayRevenue.toLocaleString('th-TH', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    })}`;
+                }
+
+                const yesterdayTagEl = document.getElementById('admin-yesterday-settle-tag');
+                const yesterdayRowEl = document.getElementById('admin-yesterday-settle-row');
+                if (yesterdayTagEl) {
+                    if (revenueCycle.isAfter11) {
+                        yesterdayTagEl.className = 'admin-rs-settle-tag done';
+                        yesterdayTagEl.textContent = 'โอนแล้ว';
+                    } else {
+                        yesterdayTagEl.className = 'admin-rs-settle-tag waiting';
+                        yesterdayTagEl.textContent = 'รอโอน 11:00 น.';
+                    }
+                }
+                if (yesterdayRowEl) {
+                    yesterdayRowEl.title = `ยอดของเมื่อวาน (${revenueCycle.yesterdayFullRangeText}) จำนวน ${yesterdayOrdersCount} รายการ: ฿${yesterdayRevenue.toFixed(2)} ${revenueCycle.isAfter11 ? 'โอนเข้าบัญชีแล้วเมื่อ 11:00 น.' : 'รอโอนเข้าบัญชีวันนี้ 11:00 น.'}`;
                 }
 
                 // 5. Render Ranking Table & Recent Feed
                 renderAdminSalesRankingTable(realBeamOrders, lifetimeRevenue);
-                renderAdminRecentFeed(realBeamOrders.slice(0, 5));
+                renderAdminRecentFeed(realBeamOrders.slice(0, 5), revenueCycle);
 
                 if (isManual && typeof showToast === 'function') {
                     showToast('🔄 อัปเดตข้อมูลยอดขาย Beam สำเร็จแล้ว', 'success');
@@ -13540,7 +13704,7 @@ ${encodedToken}
             }
         }
 
-        function renderAdminRecentFeed(recentOrders) {
+        function renderAdminRecentFeed(recentOrders, revenueCycle) {
             const list = document.getElementById('admin-recent-feed-list');
             const countBadge = document.getElementById('admin-recent-count');
             if (!list) return;
@@ -13553,12 +13717,16 @@ ${encodedToken}
 
             if (countBadge) countBadge.textContent = String(recentOrders.length);
 
+            const revCycle = revenueCycle || getAdminTodayRevenueCycle();
+
             list.innerHTML = recentOrders.map(item => {
                 const s = identifyAdminService(item);
                 const timeStr = formatAdminTimeAgo(item.createdAt);
                 const refShort = String(item.referenceId || item.id || '').slice(-6);
+                const isItemToday = item.createdAt >= revCycle.todayStartMs;
+                const statusTag = isItemToday ? 'T+1 ค้างโอน (พรุ่งนี้ 11:00 น.)' : (revCycle.isAfter11 ? 'รอบ 11 โมงวันนี้ (โอนแล้ว)' : 'รอบ 11 โมงวันนี้ (รอโอน)');
                 return `
-                    <div class="admin-rs-recent-item" title="${s.name} • ${timeStr} • #${refShort}">
+                    <div class="admin-rs-recent-item" title="${s.name} • ${timeStr} • #${refShort} • ${statusTag}">
                         <div class="admin-rs-recent-left">
                             <span class="admin-rs-recent-icon">${s.icon || '🛍️'}</span>
                             <span class="admin-rs-recent-title">${s.name}</span>
@@ -13585,7 +13753,12 @@ ${encodedToken}
             const dateBadge = document.getElementById('admin-today-date-badge');
             if (dateBadge) {
                 dateBadge.textContent = revenueCycle.badgeText;
-                dateBadge.title = `รอบคำนวณรายได้: ${revenueCycle.fullRangeText} (รีเซ็ตทุกวัน 11:00 น.)`;
+                dateBadge.title = `รอบคำนวณรายได้วันนี้ (หลังเที่ยงคืน): ${revenueCycle.todayFullRangeText} • ยอด T+1 ค้างรอโอน ${revenueCycle.settleTomorrowText} (ไม่รวมกับยอด 11 โมงวันนี้)`;
+            }
+
+            const tplusDescEl = document.getElementById('admin-today-tplus-desc');
+            if (tplusDescEl) {
+                tplusDescEl.textContent = `โอนพรุ่งนี้ (${revenueCycle.tomorrowDay} ${revenueCycle.tomorrowMonth}) 11:00 น.`;
             }
 
             fetchAdminRevenueData();
