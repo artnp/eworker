@@ -1581,7 +1581,7 @@ window.updateWatermarkedWorkUI = function (msgId, data) {
     }
 };
 
-// Play high-grade 3-tone chime for payment success (Web Audio API)
+// Play harmonious 5-tone celebration fanfare chime for payment success (Web Audio API เหมือน admin-payment.html)
 function playSuccessChime() {
     try {
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -1590,46 +1590,125 @@ function playSuccessChime() {
             _notifCtx = new AudioContextClass();
         }
         const ctx = _notifCtx;
+        const runChime = () => {
+            const notes = [
+                { freq: 523.25, time: 0.0, dur: 0.25 }, // C5
+                { freq: 659.25, time: 0.12, dur: 0.25 }, // E5
+                { freq: 783.99, time: 0.24, dur: 0.3 }, // G5
+                { freq: 1046.50, time: 0.36, dur: 0.55 }, // C6
+                { freq: 1318.51, time: 0.44, dur: 0.65 } // E6
+            ];
+
+            notes.forEach(note => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(note.freq, ctx.currentTime + note.time);
+
+                gain.gain.setValueAtTime(0.28, ctx.currentTime + note.time);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + note.time + note.dur);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime + note.time);
+                osc.stop(ctx.currentTime + note.time + note.dur);
+            });
+        };
+
         if (ctx.state === 'suspended') {
-            ctx.resume();
+            ctx.resume().then(runChime).catch(() => { });
+        } else {
+            runChime();
         }
-        const now = ctx.currentTime;
+    } catch (_) { }
+}
 
-        // Tone 1: C5 (523.25 Hz)
-        const osc1 = ctx.createOscillator();
-        const gain1 = ctx.createGain();
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(523.25, now);
-        gain1.gain.setValueAtTime(0.2, now);
-        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-        osc1.connect(gain1);
-        gain1.connect(ctx.destination);
-        osc1.start(now);
-        osc1.stop(now + 0.3);
+// Celebratory Confetti Launcher with Fallback เหมือน admin-payment.html
+function fireJoyfulConfetti() {
+    try {
+        if (typeof confetti === 'function') {
+            confetti({
+                particleCount: 70,
+                spread: 60,
+                origin: { x: 0.15, y: 0.85 },
+                colors: ['#0284c7', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'],
+                zIndex: 99999
+            });
+            confetti({
+                particleCount: 70,
+                spread: 60,
+                origin: { x: 0.85, y: 0.85 },
+                colors: ['#0284c7', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'],
+                zIndex: 99999
+            });
+            setTimeout(() => {
+                confetti({
+                    particleCount: 50,
+                    spread: 100,
+                    origin: { x: 0.5, y: 0.4 },
+                    scalar: 1.2,
+                    zIndex: 99999
+                });
+            }, 200);
+        } else {
+            launchFallbackConfetti();
+        }
+    } catch (_) { }
+}
 
-        // Tone 2: E5 (659.25 Hz)
-        const osc2 = ctx.createOscillator();
-        const gain2 = ctx.createGain();
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(659.25, now + 0.1);
-        gain2.gain.setValueAtTime(0.22, now + 0.1);
-        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-        osc2.connect(gain2);
-        gain2.connect(ctx.destination);
-        osc2.start(now + 0.1);
-        osc2.stop(now + 0.4);
+function launchFallbackConfetti() {
+    try {
+        const canvas = document.createElement('canvas');
+        canvas.style.position = 'fixed';
+        canvas.style.inset = '0';
+        canvas.style.width = '100vw';
+        canvas.style.height = '100vh';
+        canvas.style.pointerEvents = 'none';
+        canvas.style.zIndex = '100000';
+        document.body.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-        // Tone 3: G5 (783.99 Hz)
-        const osc3 = ctx.createOscillator();
-        const gain3 = ctx.createGain();
-        osc3.type = 'sine';
-        osc3.frequency.setValueAtTime(783.99, now + 0.2);
-        gain3.gain.setValueAtTime(0.25, now + 0.2);
-        gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
-        osc3.connect(gain3);
-        gain3.connect(ctx.destination);
-        osc3.start(now + 0.2);
-        osc3.stop(now + 0.65);
+        const particles = [];
+        const colors = ['#0284c7', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#f43f5e'];
+        for (let i = 0; i < 90; i++) {
+            particles.push({
+                x: canvas.width * 0.5 + (Math.random() - 0.5) * 200,
+                y: canvas.height * 0.5 + (Math.random() - 0.5) * 50,
+                vx: (Math.random() - 0.5) * 14,
+                vy: Math.random() * -12 - 4,
+                size: Math.random() * 8 + 5,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                rot: Math.random() * 360,
+                vrot: (Math.random() - 0.5) * 10
+            });
+        }
+
+        let start = null;
+        function step(ts) {
+            if (!start) start = ts;
+            const progress = ts - start;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.35;
+                p.rot += p.vrot;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate((p.rot * Math.PI) / 180);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                ctx.restore();
+            });
+            if (progress < 2500) {
+                requestAnimationFrame(step);
+            } else {
+                canvas.remove();
+            }
+        }
+        requestAnimationFrame(step);
     } catch (_) { }
 }
 
@@ -1667,6 +1746,7 @@ window.updateChatSlipPaidUI = function (msgId, data) {
     `;
 
     playSuccessChime();
+    fireJoyfulConfetti();
 
     if (slipCard) {
         slipCard.classList.add('fade-out');
