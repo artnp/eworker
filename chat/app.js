@@ -96,8 +96,9 @@ function updateAdminButtonsVisibility() {
             btn.style.display = isVisible ? 'inline-block' : 'none';
         });
         if (!isLocalHost && hasRoom) {
+            const hasUpload = typeof hasUploadQueryParam === 'function' ? hasUploadQueryParam() : false;
             const isWorkSubmitted = currentRoom && sessionStorage.getItem(`work_submitted_${currentRoom}`) === '1';
-            const showUpload = !isWorkSubmitted && !isRoomClosed;
+            const showUpload = hasUpload && !isWorkSubmitted && !isRoomClosed;
             if (headerUploadGuideBtn) headerUploadGuideBtn.style.display = showUpload ? 'inline-flex' : 'none';
             if (customerUploadBanner) customerUploadBanner.style.display = showUpload ? 'flex' : 'none';
         }
@@ -4716,10 +4717,140 @@ if (annotateCancelBtn) {
 }
 
 // ===== Customer Work Upload & Annotation Prompt System =====
+let uploadCountdownInterval = null;
+let uploadCountdownStartTime = null;
+
+function hasUploadQueryParam() {
+    try {
+        const p = new URLSearchParams(window.location.search);
+        return p.has('upload') || p.has('test_upload') || p.has('preview');
+    } catch (_) {
+        return false;
+    }
+}
+window.hasUploadQueryParam = hasUploadQueryParam;
+
+function stopUploadCountdown() {
+    if (uploadCountdownInterval) {
+        clearInterval(uploadCountdownInterval);
+        uploadCountdownInterval = null;
+    }
+}
+window.stopUploadCountdown = stopUploadCountdown;
+
+async function startUploadCountdown(roomId) {
+    stopUploadCountdown();
+    if (!roomId || isRoomClosed) return;
+
+    if (sessionStorage.getItem(`work_submitted_${roomId}`) === '1') {
+        const cdBar = document.getElementById('customerUploadCountdownBar');
+        if (cdBar) cdBar.style.display = 'none';
+        return;
+    }
+
+    const timerEl = document.getElementById('customerUploadTimer');
+    const cdBar = document.getElementById('customerUploadCountdownBar');
+    if (!timerEl || !cdBar) return;
+    cdBar.style.display = 'flex';
+
+    const totalDurationSec = 300; // 5 นาที (300 วินาที)
+
+    let startTime = null;
+    try {
+        const storedStart = sessionStorage.getItem(`upload_timer_start_${roomId}`);
+        if (storedStart) {
+            startTime = parseInt(storedStart, 10);
+        } else if (database) {
+            const metaSnap = await get(ref(database, `rooms/${roomId}/meta`));
+            const metaVal = metaSnap.val();
+            if (metaVal && metaVal.createdAt) {
+                startTime = metaVal.createdAt;
+                sessionStorage.setItem(`upload_timer_start_${roomId}`, String(startTime));
+            }
+        }
+    } catch (_) { }
+
+    if (!startTime || isNaN(startTime)) {
+        startTime = Date.now();
+        try {
+            sessionStorage.setItem(`upload_timer_start_${roomId}`, String(startTime));
+        } catch (_) { }
+    }
+
+    uploadCountdownStartTime = startTime;
+
+    function tick() {
+        if (isRoomClosed) {
+            stopUploadCountdown();
+            return;
+        }
+
+        if (sessionStorage.getItem(`work_submitted_${roomId}`) === '1') {
+            stopUploadCountdown();
+            if (cdBar) cdBar.style.display = 'none';
+            return;
+        }
+
+        const elapsedSec = Math.floor((Date.now() - uploadCountdownStartTime) / 1000);
+        const remainingSec = Math.max(0, totalDurationSec - elapsedSec);
+
+        const m = Math.floor(remainingSec / 60);
+        const s = remainingSec % 60;
+        timerEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+
+        if (remainingSec <= 60) {
+            cdBar.classList.add('warning');
+        } else {
+            cdBar.classList.remove('warning');
+        }
+
+        if (remainingSec <= 0) {
+            stopUploadCountdown();
+            handleUploadTimeout(roomId);
+        }
+    }
+
+    tick();
+    uploadCountdownInterval = setInterval(tick, 1000);
+}
+window.startUploadCountdown = startUploadCountdown;
+
+async function handleUploadTimeout(roomId) {
+    if (isRoomClosed) return;
+    if (sessionStorage.getItem(`work_submitted_${roomId}`) === '1') return;
+
+    console.warn(`[GenRoom] หมดเวลาส่งงาน 5 นาทีสำหรับห้อง ${roomId} -> กำลังปิดห้องอัตโนมัติ`);
+    closeCustomerUploadModal(false);
+
+    try {
+        if (database && roomId) {
+            const nowMs = Date.now();
+            await set(ref(database, `rooms/${roomId}/closed`), {
+                isClosed: true,
+                closedBy: 'system',
+                reason: 'timeout_5min',
+                timestamp: nowMs
+            });
+            await set(ref(database, `rooms/_closed_rooms/${roomId}`), nowMs);
+            await push(ref(database, `rooms/${roomId}/messages`), {
+                sender: 'system',
+                type: 'closed',
+                text: '🚫ห้องนี้ถูกปิดตัวแล้ว! โปรดติดต่อที่ต้นทาง',
+                timestamp: nowMs
+            });
+        }
+    } catch (_) { }
+
+    applyRoomClosedUI();
+}
+
 function openCustomerUploadModal() {
     if (!customerUploadModal || isRoomClosed) return;
     customerUploadModal.classList.add('active');
     document.body.style.overflow = 'hidden';
+    if (currentRoom && hasUploadQueryParam()) {
+        startUploadCountdown(currentRoom);
+    }
 }
 window.openCustomerUploadModal = openCustomerUploadModal;
 
@@ -4736,6 +4867,9 @@ function closeCustomerUploadModal(userInitiated = false) {
 window.closeCustomerUploadModal = closeCustomerUploadModal;
 
 function hideCustomerUploadPrompt(isPermanent = true) {
+    stopUploadCountdown();
+    const cdBar = document.getElementById('customerUploadCountdownBar');
+    if (cdBar) cdBar.style.display = 'none';
     if (customerUploadBanner) customerUploadBanner.style.display = 'none';
     if (headerUploadGuideBtn) headerUploadGuideBtn.style.display = 'none';
     if (customerUploadModal && customerUploadModal.classList.contains('active')) {
@@ -4876,41 +5010,47 @@ async function checkAndShowCustomerUploadPrompt(roomId) {
     }
 
     const isLocalHost = isAdminUser();
-    const isCustomer = !isLocalHost;
-    const urlParams = new URLSearchParams(window.location.search);
-    const forceShow = urlParams.has('test_upload') || urlParams.has('preview') || urlParams.has('customer');
+    const hasUpload = hasUploadQueryParam();
 
-    const isWorkSubmitted = roomId && sessionStorage.getItem(`work_submitted_${roomId}`) === '1';
-    if (isWorkSubmitted && !forceShow) {
+    // ★ ถ้าไม่มี query upload (เช่น URL ธรรมดา https://artnp.github.io/eworker/chat/?room=XZX9CTDZ)
+    // ให้เข้าห้องแชทตามปกติ ไม่ต้องแสดงกล่องอัปโหลด และไม่ต้องเริ่มนับถอยหลังล็อคห้องใน 5 นาที
+    if (!hasUpload) {
         if (customerUploadBanner) customerUploadBanner.style.display = 'none';
         if (headerUploadGuideBtn) headerUploadGuideBtn.style.display = 'none';
+        if (adminPreviewUploadBtn) adminPreviewUploadBtn.style.display = isLocalHost ? 'inline-flex' : 'none';
+        stopUploadCountdown();
         return;
     }
 
-    if (isCustomer || forceShow) {
-        if (customerUploadBanner) customerUploadBanner.style.display = 'flex';
-        if (headerUploadGuideBtn) headerUploadGuideBtn.style.display = 'inline-flex';
-        if (adminPreviewUploadBtn) adminPreviewUploadBtn.style.display = 'none';
+    const isWorkSubmitted = roomId && sessionStorage.getItem(`work_submitted_${roomId}`) === '1';
+    if (isWorkSubmitted) {
+        if (customerUploadBanner) customerUploadBanner.style.display = 'none';
+        if (headerUploadGuideBtn) headerUploadGuideBtn.style.display = 'none';
+        stopUploadCountdown();
+        return;
+    }
 
-        try {
-            const isDismissed = sessionStorage.getItem(`customer_upload_dismissed_${roomId}`) === '1';
-            if (!isDismissed) {
-                setTimeout(() => {
-                    if (isRoomClosed) return;
-                    openCustomerUploadModal();
-                }, 400);
-            }
-        } catch (_) {
+    // กรณีมี query upload: แสดงปุ่ม/แบนเนอร์ เริ่มนับถอยหลัง 5 นาที และเปิดกล่องอัปโหลด
+    if (customerUploadBanner) customerUploadBanner.style.display = 'flex';
+    if (headerUploadGuideBtn) headerUploadGuideBtn.style.display = 'inline-flex';
+    if (adminPreviewUploadBtn) adminPreviewUploadBtn.style.display = 'none';
+
+    // เริ่มนับถอยหลัง 5 นาที
+    startUploadCountdown(roomId);
+
+    try {
+        const isDismissed = sessionStorage.getItem(`customer_upload_dismissed_${roomId}`) === '1';
+        if (!isDismissed) {
             setTimeout(() => {
                 if (isRoomClosed) return;
                 openCustomerUploadModal();
-            }, 400);
+            }, 350);
         }
-    } else {
-        // Admin view on localhost
-        if (customerUploadBanner) customerUploadBanner.style.display = 'none';
-        if (headerUploadGuideBtn) headerUploadGuideBtn.style.display = 'none';
-        if (adminPreviewUploadBtn) adminPreviewUploadBtn.style.display = 'inline-flex';
+    } catch (_) {
+        setTimeout(() => {
+            if (isRoomClosed) return;
+            openCustomerUploadModal();
+        }, 350);
     }
 }
 
