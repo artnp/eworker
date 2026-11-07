@@ -25,7 +25,9 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -4050,6 +4052,157 @@
             }, 1500);
         }
 
+        // --- Sound Engine (Web Audio API Synthesizer) เหมือน admin-payment.html ---
+        let audioCtx = null;
+        function getAudioContext() {
+            try {
+                if (!audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) audioCtx = new AudioContext();
+                }
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume().catch(() => { });
+                }
+                return audioCtx;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Harmonious Coin / Money Fanfare Chime (เสียง beep / chime ฉลองการชำระเงิน)
+        function playCelebrationSound() {
+            try {
+                const ctx = getAudioContext();
+                if (!ctx) return;
+
+                const runChime = () => {
+                    const notes = [
+                        { freq: 523.25, time: 0.0, dur: 0.25 }, // C5
+                        { freq: 659.25, time: 0.12, dur: 0.25 }, // E5
+                        { freq: 783.99, time: 0.24, dur: 0.3 }, // G5
+                        { freq: 1046.50, time: 0.36, dur: 0.55 }, // C6
+                        { freq: 1318.51, time: 0.44, dur: 0.65 } // E6
+                    ];
+
+                    notes.forEach(note => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(note.freq, ctx.currentTime + note.time);
+
+                        gain.gain.setValueAtTime(0.28, ctx.currentTime + note.time);
+                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + note.time + note.dur);
+
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(ctx.currentTime + note.time);
+                        osc.stop(ctx.currentTime + note.time + note.dur);
+                    });
+                };
+
+                if (ctx.state === 'suspended') {
+                    ctx.resume().then(runChime).catch(() => { });
+                } else {
+                    runChime();
+                }
+            } catch (err) {
+                console.warn("Sound play error:", err);
+            }
+        }
+
+        // Celebratory Confetti Launcher with Custom Canvas Fallback เหมือน admin-payment.html
+        function fireJoyfulConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 70,
+                    spread: 60,
+                    origin: { x: 0.15, y: 0.85 },
+                    colors: ['#0284c7', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'],
+                    zIndex: 99999
+                });
+                confetti({
+                    particleCount: 70,
+                    spread: 60,
+                    origin: { x: 0.85, y: 0.85 },
+                    colors: ['#0284c7', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'],
+                    zIndex: 99999
+                });
+                setTimeout(() => {
+                    confetti({
+                        particleCount: 50,
+                        spread: 100,
+                        origin: { x: 0.5, y: 0.4 },
+                        scalar: 1.2,
+                        zIndex: 99999
+                    });
+                }, 200);
+            } else {
+                // Inline lightweight canvas fallback
+                launchFallbackConfetti();
+            }
+        }
+
+        function launchFallbackConfetti() {
+            const canvas = document.createElement('canvas');
+            canvas.style.position = 'fixed';
+            canvas.style.inset = '0';
+            canvas.style.width = '100vw';
+            canvas.style.height = '100vh';
+            canvas.style.pointerEvents = 'none';
+            canvas.style.zIndex = '100000';
+            document.body.appendChild(canvas);
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#0284c7', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#f43f5e'];
+            for (let i = 0; i < 90; i++) {
+                particles.push({
+                    x: canvas.width * 0.5 + (Math.random() - 0.5) * 200,
+                    y: canvas.height * 0.5 + (Math.random() - 0.5) * 50,
+                    vx: (Math.random() - 0.5) * 14,
+                    vy: Math.random() * -12 - 4,
+                    size: Math.random() * 8 + 5,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    rot: Math.random() * 360,
+                    vrot: (Math.random() - 0.5) * 10
+                });
+            }
+
+            let start = null;
+            function step(ts) {
+                if (!start) start = ts;
+                const progress = ts - start;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.35; // gravity
+                    p.rot += p.vrot;
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate((p.rot * Math.PI) / 180);
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                    ctx.restore();
+                });
+                if (progress < 2500) {
+                    requestAnimationFrame(step);
+                } else {
+                    canvas.remove();
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        // Resume AudioContext on initial interaction
+        ['click', 'mousemove', 'keydown', 'touchstart'].forEach(evt => {
+            window.addEventListener(evt, () => {
+                getAudioContext();
+            }, { once: true, passive: true });
+        });
+
         function unlockPaidStatus(immediate = false) {
             if (paymentCountdownTimer) {
                 clearInterval(paymentCountdownTimer);
@@ -4095,6 +4248,12 @@
             removeProtection();
             showDownloadTutorial();
             showToast('✨ ยืนยันยอดเงินสำเร็จ! ไฟล์พร้อมดาวน์โหลดแล้ว', 'success');
+
+            // 1. เล่นเสียงแจ้งเตือนเฉลิมฉลอง (Chime / Beep)
+            playCelebrationSound();
+
+            // 2. จุดพลุกระดาษ Confetti ฉลองการชำระเงินสำเร็จ
+            fireJoyfulConfetti();
 
             // ทำความสะอาด Address Bar เมื่อชำระเงินสำเร็จแล้วเท่านั้น
             if (window.history && window.history.replaceState) {
