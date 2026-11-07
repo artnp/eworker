@@ -2283,6 +2283,16 @@
             background: #eff6ff;
         }
 
+        /* Secure Vault Box */
+        .secure-vault-box:hover {
+            border-color: #60a5fa !important;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.12) !important;
+        }
+        .secure-vault-box input:focus {
+            border-color: #2563eb !important;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18) !important;
+        }
+
         .btn-upload-dropbox {
             background: #0061fe;
             color: #ffffff;
@@ -2397,6 +2407,36 @@
             margin-top: 8px;
             border: 1px solid var(--fh-border);
             display: none;
+        }
+
+        /* Feature Builder Rows & Drag Handles */
+        .admin-feature-input-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            margin-bottom: 6px;
+            background: #ffffff;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid #bbf7d0;
+            transition: all 0.15s ease;
+        }
+        .admin-feature-input-row:hover {
+            border-color: #4ade80;
+            box-shadow: 0 1px 4px rgba(34, 197, 94, 0.15);
+        }
+        .feature-drag-handle {
+            cursor: grab;
+            user-select: none;
+            color: #16a34a;
+            font-size: 0.95rem;
+            font-weight: bold;
+            padding: 0 4px;
+            display: inline-flex;
+            align-items: center;
+        }
+        .feature-drag-handle:active {
+            cursor: grabbing;
         }
 
         /* Admin Multi-Image Gallery */
@@ -5272,87 +5312,27 @@
                         </div>
                     </div>
 
-                    <!-- DROPBOX FILE UPLOADER & SECURE LINK -->
-                    <div class="dropbox-uploader-box admin-general-only" id="admin-dropbox-box">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                            <label class="form-label-clean"
-                                style="margin: 0; display: flex; align-items: center; gap: 6px; color: #1e40af; font-weight: 700;">
-                                ☁️ อัปโหลดไฟล์ขึ้น Dropbox ผ่าน API (จัดการได้ในหน้าเดียว)
+                    <!-- SECURE DOWNLOAD LINK (DROPBOX / DIRECT LINK) - PROTECTED VAULT BOX -->
+                    <div class="admin-general-only secure-vault-box" id="admin-dropbox-box"
+                        style="margin-top: 14px; margin-bottom: 16px; text-align: left; background: linear-gradient(180deg, #f0f7ff 0%, #ffffff 100%); border: 1.5px solid #93c5fd; border-radius: var(--radius-md); padding: 14px 16px; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.06); transition: all 0.2s ease;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                            <label class="form-label-clean" style="margin: 0; font-size: 0.84rem; font-weight: 800; color: #1e3a8a; display: flex; align-items: center; gap: 6px;">
+                                <span>🔒 ลิงก์ดาวน์โหลด (Dropbox / Direct Link)</span>
+                                <span style="color: #ef4444; font-size: 0.9rem;">*</span>
                             </label>
-                            <button type="button" class="btn-token-toggle" onclick="toggleDropboxTokenPanel()">
-                                ⚙️ ตั้งค่า Token
-                            </button>
+                            <span style="background: #eff6ff; color: #1d4ed8; font-size: 0.72rem; font-weight: 700; padding: 2px 10px; border-radius: 99px; border: 1px solid #bfdbfe; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                                🛡️ ตู้นิรภัยเข้ารหัสลับ (Vault Protected)
+                            </span>
                         </div>
-                        <p style="font-size: 0.78rem; color: #475569; margin: 0 0 10px 0;">
-                            เลือกไฟล์ดิจิทัลจากเครื่อง ระบบจะส่งผ่าน Dropbox API ไปยังโฟลเดอร์
-                            <strong>/Shop_Downloads/</strong> และสร้าง Direct Download Link ให้อัตโนมัติ
-                        </p>
-
-                        <!-- Collapsible Token Panel -->
-                        <div id="dropbox-token-panel"
-                            style="display: none; background: #ffffff; border: 1px solid #bfdbfe; border-radius: var(--radius-sm); padding: 12px; margin-bottom: 12px; text-align: left;">
-                            <div
-                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                <label style="font-size: 0.8rem; font-weight: 700; color: #1e3a8a;">
-                                    🔑 Dropbox Access Token (บันทึกในเครื่องอัตโนมัติ):
-                                </label>
-                                <a href="https://www.dropbox.com/developers/apps" target="_blank"
-                                    style="font-size: 0.72rem; color: #0061fe; text-decoration: underline;">
-                                    รับ Token จาก Dropbox Console ↗
-                                </a>
-                            </div>
-                            <div style="display: flex; gap: 8px;">
-                                <input type="password" id="admin-dropbox-token-input" class="form-control-clean"
-                                    style="font-size: 0.8rem; font-family: monospace;"
-                                    placeholder="วาง Token (เช่น sl.u.AF... หรือ Permanent Token)" autocomplete="off"
-                                    autocorrect="off" autocapitalize="off" spellcheck="false">
-                                <button type="button" class="btn-download-fh"
-                                    style="padding: 6px 14px; font-size: 0.8rem; white-space: nowrap;"
-                                    onclick="saveDropboxTokenAction()">💾 บันทึก Token</button>
-                            </div>
-                            <span id="dropbox-token-status-text"
-                                style="font-size: 0.74rem; color: #64748b; margin-top: 6px; display: block;"></span>
-                        </div>
-
-                        <!-- Upload Trigger -->
-                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                            <input type="file" id="dropbox-file-input" style="display: none;"
-                                onchange="handleDropboxFileUpload(this)">
-                            <button type="button" class="btn-upload-dropbox" id="btn-dropbox-upload"
-                                onclick="document.getElementById('dropbox-file-input').click()">
-                                📤 เลือกไฟล์จากเครื่องเพื่ออัปโหลดขึ้น Dropbox
-                            </button>
-                            <span id="dropbox-upload-status"
-                                style="font-size: 0.82rem; color: #475569; font-weight: 600;"></span>
-                        </div>
-
-                        <!-- Progress Bar -->
-                        <div id="dropbox-upload-progress-wrap" style="display: none; margin-top: 10px;">
-                            <div style="background: #e2e8f0; border-radius: 99px; height: 7px; overflow: hidden;">
-                                <div id="dropbox-upload-progress-bar"
-                                    style="background: #0061fe; width: 0%; height: 100%; transition: width 0.3s ease;">
-                                </div>
-                            </div>
-                            <div id="dropbox-progress-text"
-                                style="font-size: 0.72rem; color: #64748b; text-align: right; margin-top: 3px;">
-                                กำลังอัปโหลด...</div>
-                        </div>
-
-                        <!-- Link Input (Auto-filled or manual) -->
-                        <div style="margin-top: 12px; text-align: left;">
-                            <label class="form-label-clean" style="font-size: 0.8rem; color: #1e3a8a;">
-                                🔒 ลิงก์ดาวน์โหลด (Dropbox / Direct Link) *
-                            </label>
-                            <input type="url" id="admin-dropbox-url" class="form-control-clean" required
-                                placeholder="https://www.dropbox.com/scl/fi/..." autocomplete="off" autocorrect="off"
-                                autocapitalize="off" spellcheck="false"
-                                style="font-family: monospace; font-size: 0.82rem; background: #ffffff;"
-                                oninput="autoFixDropboxUrl(this)"
-                                onpaste="setTimeout(() => autoFixDropboxUrl(this), 50)">
-                            <span style="font-size: 0.72rem; color: #0284c7; margin-top: 3px; display: block;">
-                                🛡️ เก็บในตู้นิรภัยความปลอดภัยสูง (Vault)
-                                ซ่อนจากผู้ใช้ทั่วไปจนกว่าจะชำระเงินและบอทอนุมัติสำเร็จ
+                        <input type="url" id="admin-dropbox-url" class="form-control-clean" required
+                            placeholder="https://www.dropbox.com/scl/fi/... หรือ ลิงก์ดาวน์โหลดตรง" autocomplete="off" autocorrect="off"
+                            autocapitalize="off" spellcheck="false"
+                            style="font-family: monospace; font-size: 0.84rem; background: #ffffff; border: 1.5px solid #93c5fd; box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);"
+                            oninput="autoFixDropboxUrl(this)"
+                            onpaste="setTimeout(() => autoFixDropboxUrl(this), 50)">
+                        <div style="display: flex; align-items: flex-start; gap: 6px; margin-top: 6px;">
+                            <span style="font-size: 0.76rem; color: #0284c7; line-height: 1.45;">
+                                🛡️ <strong>ส่วนสำคัญที่ต้องระบุ:</strong> ลิงก์นี้จะถูกจัดเก็บในตู้นิรภัยความปลอดภัยสูง (Vault) และซ่อนจากผู้ใช้ทั่วไปจนกว่าจะชำระเงินและบอทอนุมัติสำเร็จเท่านั้น
                             </span>
                         </div>
                     </div>
@@ -5547,28 +5527,39 @@
                         </div>
 
 
-                        <div
-                            style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px; flex-wrap: wrap; gap: 6px;">
-                            <button type="button" class="btn-tool-sm admin-general-only" id="btn-toggle-feature-builder"
-                                onclick="toggleFeatureBuilder()"
-                                style="font-size: 0.74rem; color: var(--fh-blue); cursor: pointer;">
-                                ➕ กรอกแยกเป็นช่องข้อๆ
-                            </button>
-                        </div>
-
                         <!-- Feature Builder (List of <li> with green checkmarks) -->
                         <div id="admin-feature-builder-box" class="admin-general-only"
-                            style="display: none; margin-top: 10px; background: #f0fdf4; border: 1px dashed #86efac; border-radius: var(--radius-sm); padding: 12px;">
+                            style="display: block; margin-top: 10px; background: rgb(240, 253, 244); border: 1px dashed rgb(134, 239, 172); border-radius: var(--radius-sm); padding: 12px;">
                             <div
-                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px;">
                                 <span
                                     style="font-size: 0.8rem; font-weight: 700; color: #166534; display: flex; align-items: center; gap: 6px;">
                                     <span
                                         style="width: 18px; height: 18px; background: #16a34a; color: #ffffff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800;">✓</span>
                                     รายการคุณสมบัติสินค้า (จะแปลงเป็น &lt;li&gt; ติ๊กถูกสีเขียว)
                                 </span>
+                                <span style="font-size: 0.72rem; color: #15803d; font-weight: 600;">
+                                    (ลากสลับตำแหน่ง หรือกดปุ่ม ▲ / ▼ ได้)
+                                </span>
                             </div>
-                            <div id="admin-features-list"></div>
+                            <div id="admin-features-list">
+                                <div class="admin-feature-input-row" draggable="true" style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px; background: #ffffff; padding: 4px 8px; border-radius: 6px; border: 1px solid #bbf7d0; transition: all 0.15s ease;">
+                                    <span class="feature-drag-handle" title="ลากเพื่อสลับตำแหน่ง (หรือคลิกปุ่มลูกศร ▲ / ▼)" style="cursor: grab; user-select: none; color: #16a34a; font-size: 0.95rem; font-weight: bold; padding: 0 4px; display: inline-flex; align-items: center;">⋮⋮</span>
+                                    <span style="width:20px; height:20px; background:linear-gradient(135deg, #16a34a 0%, #22c55e 100%); color:#ffffff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.72rem; font-weight:800; flex-shrink:0; box-shadow:0 2px 4px rgba(22,163,74,0.3);">✓</span>
+                                    <input type="text" class="form-control-clean admin-feature-item-val" style="flex:1; padding:6px 10px; font-size:0.83rem; margin:0; border-color:#86efac;" placeholder="คุณสมบัติเด่น เช่น คำนวณและแสดงผลอัตโนมัติ..." value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                                    <button type="button" class="btn-tool-sm" title="สลับเลื่อนขึ้น" onclick="moveAdminFeatureRow(this, -1)" style="padding: 3px 7px; font-size: 0.72rem; cursor: pointer; color: #166534; background: #dcfce7; border: 1px solid #86efac; border-radius: 4px;">▲</button>
+                                    <button type="button" class="btn-tool-sm" title="สลับเลื่อนลง" onclick="moveAdminFeatureRow(this, 1)" style="padding: 3px 7px; font-size: 0.72rem; cursor: pointer; color: #166534; background: #dcfce7; border: 1px solid #86efac; border-radius: 4px;">▼</button>
+                                    <button type="button" class="btn-tool-sm" title="ลบข้อนี้" style="color:var(--fh-danger); padding: 3px 7px; font-size: 0.72rem; border-color: #fecaca; background: #fef2f2; border-radius: 4px;" onclick="this.closest('.admin-feature-input-row').remove();">✕</button>
+                                </div>
+                                <div class="admin-feature-input-row" draggable="true" style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px; background: #ffffff; padding: 4px 8px; border-radius: 6px; border: 1px solid #bbf7d0; transition: all 0.15s ease;">
+                                    <span class="feature-drag-handle" title="ลากเพื่อสลับตำแหน่ง (หรือคลิกปุ่มลูกศร ▲ / ▼)" style="cursor: grab; user-select: none; color: #16a34a; font-size: 0.95rem; font-weight: bold; padding: 0 4px; display: inline-flex; align-items: center;">⋮⋮</span>
+                                    <span style="width:20px; height:20px; background:linear-gradient(135deg, #16a34a 0%, #22c55e 100%); color:#ffffff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.72rem; font-weight:800; flex-shrink:0; box-shadow:0 2px 4px rgba(22,163,74,0.3);">✓</span>
+                                    <input type="text" class="form-control-clean admin-feature-item-val" style="flex:1; padding:6px 10px; font-size:0.83rem; margin:0; border-color:#86efac;" placeholder="คุณสมบัติเด่น เช่น คำนวณและแสดงผลอัตโนมัติ..." value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                                    <button type="button" class="btn-tool-sm" title="สลับเลื่อนขึ้น" onclick="moveAdminFeatureRow(this, -1)" style="padding: 3px 7px; font-size: 0.72rem; cursor: pointer; color: #166534; background: #dcfce7; border: 1px solid #86efac; border-radius: 4px;">▲</button>
+                                    <button type="button" class="btn-tool-sm" title="สลับเลื่อนลง" onclick="moveAdminFeatureRow(this, 1)" style="padding: 3px 7px; font-size: 0.72rem; cursor: pointer; color: #166534; background: #dcfce7; border: 1px solid #86efac; border-radius: 4px;">▼</button>
+                                    <button type="button" class="btn-tool-sm" title="ลบข้อนี้" style="color:var(--fh-danger); padding: 3px 7px; font-size: 0.72rem; border-color: #fecaca; background: #fef2f2; border-radius: 4px;" onclick="this.closest('.admin-feature-input-row').remove();">✕</button>
+                                </div>
+                            </div>
                             <div style="display: flex; gap: 8px; margin-top: 8px;">
                                 <button type="button" class="btn-tool-sm" onclick="addAdminFeatureRow()"
                                     style="font-size: 0.75rem; color: #166534; background: #dcfce7; border-color: #86efac; cursor: pointer;">
@@ -6055,6 +6046,11 @@
             }
 
             setupGithubImageDropZone();
+
+            // Setup drag-and-drop reordering for initial feature builder rows
+            if (typeof setupFeatureRowDragEvents === 'function') {
+                document.querySelectorAll('.admin-feature-input-row').forEach(setupFeatureRowDragEvents);
+            }
 
             // Disable browser autocomplete and suggestion popups across all inputs
             document.querySelectorAll('form, input, textarea').forEach(el => {
@@ -9159,11 +9155,55 @@ ${encodedToken}
             renderAdminImagesGallery();
         }
 
+        async function deleteImageFromServer(imgUrl) {
+            if (!imgUrl || typeof imgUrl !== 'string') return;
+            try {
+                const rawUrl = imgUrl.split('?')[0].split('#')[0];
+                const fileName = rawUrl.replace(/\\/g, '/').split('/').pop();
+                if (!fileName) return;
+
+                const protectedFiles = [
+                    'learning_course_cover.svg', 'blurcensor_cover.svg', 'fakeqr_cover.svg',
+                    'inchconvert_cover.svg', 'paymentslip_cover.svg', 'pdfmarker_cover.svg',
+                    'predictfuture_cover.svg', 'redpacket_cover.svg', 'textquality_cover.svg',
+                    'textretouch_cover.svg', 'tradingview_install_guide.svg', 'test_github_ping.png',
+                    'favicon.png', 'favicon.svg', 'promptpay_icon.png', 'promptpay_icon_raw.png',
+                    'promptpay_bill_card.png', 'promptpay_header_full.png', 'qr_code_clean.png', 'bank_logos.png'
+                ];
+                if (protectedFiles.includes(fileName) || fileName.startsWith('sample_')) {
+                    return;
+                }
+
+                await fetch('/delete-image-github', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename: fileName, url: imgUrl })
+                });
+            } catch (err) {
+                console.warn('Could not delete image file from server:', err);
+            }
+        }
+
         function removeAdminImage(idx) {
             if (idx < 0 || idx >= adminProductImages.length) return;
+            const removedUrl = adminProductImages[idx];
             adminProductImages.splice(idx, 1);
             renderAdminImagesGallery();
-            showToast('🗑️ ลบรูปภาพเรียบร้อยแล้ว', 'info');
+            if (removedUrl) {
+                deleteImageFromServer(removedUrl);
+            }
+            showToast('🗑️ ลบรูปภาพและไฟล์จริงออกจากระบบเรียบร้อยแล้ว', 'info');
+        }
+
+        function removeLessonImage(idx) {
+            if (!adminCourseLessons[idx]) return;
+            const oldUrl = adminCourseLessons[idx].imageUrl;
+            handleLessonFieldChange(idx, 'imageUrl', '');
+            renderCourseLessons();
+            if (oldUrl) {
+                deleteImageFromServer(oldUrl);
+            }
+            showToast('🗑️ ลบรูปภาพบทเรียนและไฟล์จริงเรียบร้อยแล้ว', 'info');
         }
 
         function setCourseDefaultCover() {
@@ -9649,6 +9689,78 @@ ${encodedToken}
             return html;
         }
 
+        let draggedFeatureRow = null;
+
+        function setupFeatureRowDragEvents(row) {
+            if (!row) return;
+            row.addEventListener('dragstart', (e) => {
+                draggedFeatureRow = row;
+                e.dataTransfer.effectAllowed = 'move';
+                row.style.opacity = '0.4';
+            });
+            row.addEventListener('dragend', () => {
+                if (draggedFeatureRow) {
+                    draggedFeatureRow.style.opacity = '1';
+                    draggedFeatureRow = null;
+                }
+                document.querySelectorAll('.admin-feature-input-row').forEach(r => {
+                    r.style.borderTop = '1px solid #bbf7d0';
+                    r.style.borderBottom = '1px solid #bbf7d0';
+                });
+            });
+            row.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                const rect = row.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                if (e.clientY < midY) {
+                    row.style.borderTop = '2px solid #16a34a';
+                    row.style.borderBottom = '1px solid #bbf7d0';
+                } else {
+                    row.style.borderTop = '1px solid #bbf7d0';
+                    row.style.borderBottom = '2px solid #16a34a';
+                }
+            });
+            row.addEventListener('dragleave', () => {
+                row.style.borderTop = '1px solid #bbf7d0';
+                row.style.borderBottom = '1px solid #bbf7d0';
+            });
+            row.addEventListener('drop', (e) => {
+                e.preventDefault();
+                row.style.borderTop = '1px solid #bbf7d0';
+                row.style.borderBottom = '1px solid #bbf7d0';
+                if (!draggedFeatureRow || draggedFeatureRow === row) return;
+                const list = document.getElementById('admin-features-list');
+                const rect = row.getBoundingClientRect();
+                const midY = rect.top + rect.height / 2;
+                if (e.clientY < midY) {
+                    list.insertBefore(draggedFeatureRow, row);
+                } else {
+                    list.insertBefore(draggedFeatureRow, row.nextSibling);
+                }
+            });
+        }
+
+        function moveAdminFeatureRow(btn, dir) {
+            const row = btn.closest('.admin-feature-input-row');
+            if (!row) return;
+            if (dir === -1) {
+                const prev = row.previousElementSibling;
+                if (prev && prev.classList.contains('admin-feature-input-row')) {
+                    row.parentNode.insertBefore(row, prev);
+                    row.style.background = '#dcfce7';
+                    setTimeout(() => { row.style.background = '#ffffff'; }, 250);
+                }
+            } else if (dir === 1) {
+                const next = row.nextElementSibling;
+                if (next && next.classList.contains('admin-feature-input-row')) {
+                    row.parentNode.insertBefore(next, row);
+                    row.style.background = '#dcfce7';
+                    setTimeout(() => { row.style.background = '#ffffff'; }, 250);
+                }
+            }
+        }
+
         function toggleFeatureBuilder() {
             const box = document.getElementById('admin-feature-builder-box');
             if (!box) return;
@@ -9668,12 +9780,17 @@ ${encodedToken}
             if (!list) return;
             const div = document.createElement('div');
             div.className = 'admin-feature-input-row';
-            div.style.cssText = 'display:flex; gap:8px; align-items:center; margin-bottom:6px;';
+            div.draggable = true;
+            div.style.cssText = 'display:flex; gap:6px; align-items:center; margin-bottom:6px; background:#ffffff; padding:4px 8px; border-radius:6px; border:1px solid #bbf7d0; transition:all 0.15s ease;';
             div.innerHTML = `
+                <span class="feature-drag-handle" title="ลากเพื่อสลับตำแหน่ง (หรือคลิกปุ่มลูกศร ▲ / ▼)" style="cursor:grab; user-select:none; color:#16a34a; font-size:0.95rem; font-weight:bold; padding:0 4px; display:inline-flex; align-items:center;">⋮⋮</span>
                 <span style="width:20px; height:20px; background:linear-gradient(135deg, #16a34a 0%, #22c55e 100%); color:#ffffff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.72rem; font-weight:800; flex-shrink:0; box-shadow:0 2px 4px rgba(22,163,74,0.3);">✓</span>
-                <input type="text" class="form-control-clean admin-feature-item-val" style="flex:1; padding:6px 10px; font-size:0.83rem;" placeholder="คุณสมบัติเด่น เช่น คำนวณและแสดงผลอัตโนมัติ..." value="${escapeHtml(val)}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-                <button type="button" class="btn-tool-sm" style="color:var(--fh-danger);" onclick="this.parentElement.remove();">✕</button>
+                <input type="text" class="form-control-clean admin-feature-item-val" style="flex:1; padding:6px 10px; font-size:0.83rem; margin:0; border-color:#86efac;" placeholder="คุณสมบัติเด่น เช่น คำนวณและแสดงผลอัตโนมัติ..." value="${escapeHtml(val)}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                <button type="button" class="btn-tool-sm" title="สลับเลื่อนขึ้น" onclick="moveAdminFeatureRow(this, -1)" style="padding:3px 7px; font-size:0.72rem; cursor:pointer; color:#166534; background:#dcfce7; border:1px solid #86efac; border-radius:4px;">▲</button>
+                <button type="button" class="btn-tool-sm" title="สลับเลื่อนลง" onclick="moveAdminFeatureRow(this, 1)" style="padding:3px 7px; font-size:0.72rem; cursor:pointer; color:#166534; background:#dcfce7; border:1px solid #86efac; border-radius:4px;">▼</button>
+                <button type="button" class="btn-tool-sm" title="ลบข้อนี้" style="color:var(--fh-danger); padding:3px 7px; font-size:0.72rem; border-color:#fecaca; background:#fef2f2; border-radius:4px;" onclick="this.closest('.admin-feature-input-row').remove();">✕</button>
             `;
+            setupFeatureRowDragEvents(div);
             list.appendChild(div);
         }
 
@@ -10156,11 +10273,13 @@ ${encodedToken}
             renderAdminCategoryOptions('');
 
             const featList = document.getElementById('admin-features-list');
-            if (featList) featList.innerHTML = '';
+            if (featList) {
+                featList.innerHTML = '';
+                addAdminFeatureRow();
+                addAdminFeatureRow();
+            }
             const featBox = document.getElementById('admin-feature-builder-box');
-            if (featBox) featBox.style.display = 'none';
-            const btnFeat = document.getElementById('btn-toggle-feature-builder');
-            if (btnFeat) btnFeat.textContent = '➕ กรอกแยกเป็นช่องข้อๆ';
+            if (featBox) featBox.style.display = 'block';
 
             if (!keepCourseMode) {
                 adminCourseLessons = [];
@@ -10287,15 +10406,17 @@ ${encodedToken}
             }
 
             const featList = document.getElementById('admin-features-list');
-            if (featList) featList.innerHTML = '';
-            if (Array.isArray(p.features) && p.features.length > 0) {
-                p.features.forEach(f => addAdminFeatureRow(f));
-                document.getElementById('admin-feature-builder-box').style.display = 'block';
-                document.getElementById('btn-toggle-feature-builder').textContent = '✕ ซ่อนช่องกรอกแยก';
-            } else {
-                document.getElementById('admin-feature-builder-box').style.display = 'none';
-                document.getElementById('btn-toggle-feature-builder').textContent = '➕ กรอกแยกเป็นช่องข้อๆ';
+            if (featList) {
+                featList.innerHTML = '';
+                if (Array.isArray(p.features) && p.features.length > 0) {
+                    p.features.forEach(f => addAdminFeatureRow(f));
+                } else {
+                    addAdminFeatureRow();
+                    addAdminFeatureRow();
+                }
             }
+            const featBox = document.getElementById('admin-feature-builder-box');
+            if (featBox) featBox.style.display = 'block';
 
             const dbxStatus = document.getElementById('dropbox-upload-status');
             if (dbxStatus) dbxStatus.textContent = '';
@@ -10345,9 +10466,8 @@ ${encodedToken}
         }
 
         function handleAdminModalOverlayClick(e) {
-            if (e && e.target === document.getElementById('admin-modal')) {
-                closeAdminModal(e);
-            }
+            // ป้องกันการปิด modal เมื่อคลิกด้านนอกหน้าต่าง popup เพื่อป้องกันข้อมูลที่กรอกไว้สูญหาย
+            return;
         }
 
         function handleAdminLanguageChange(val, isEditing = false, fromCategory = false) {
@@ -10632,6 +10752,11 @@ ${encodedToken}
             const editId = document.getElementById('admin-edit-product-id').value;
             if (!editId || !confirm('ยืนยันลบสินค้านี้ออกจากร้านค้าหรือไม่?')) return;
 
+            // ลบไฟล์รูปภาพจริงที่เกี่ยวข้องออกจากระบบ
+            if (Array.isArray(adminProductImages) && adminProductImages.length > 0) {
+                adminProductImages.forEach(url => deleteImageFromServer(url));
+            }
+
             try {
                 await fetch(`${PRODUCTS_ENDPOINT}/${editId}.json`, { method: 'DELETE' });
                 await fetch(`${VAULT_ENDPOINT}/${editId}.json`, { method: 'DELETE' });
@@ -10671,6 +10796,18 @@ ${encodedToken}
                 return;
             }
             if (!confirm('ยืนยันลบสินค้านี้ออกจากร้านค้าหรือไม่?')) return;
+
+            // ลบไฟล์รูปภาพจริงที่เกี่ยวข้องออกจากระบบ
+            const prodObj = products.find(x => String(x.id) === String(productId));
+            if (prodObj) {
+                const toDel = [];
+                if (prodObj.coverImage) toDel.push(prodObj.coverImage);
+                if (Array.isArray(prodObj.images)) toDel.push(...prodObj.images);
+                if (Array.isArray(prodObj.lessons)) {
+                    prodObj.lessons.forEach(l => { if (l && l.imageUrl) toDel.push(l.imageUrl); });
+                }
+                toDel.forEach(url => deleteImageFromServer(url));
+            }
 
             try {
                 await fetch(`${PRODUCTS_ENDPOINT}/${productId}.json`, { method: 'DELETE' });
@@ -12995,7 +13132,7 @@ ${encodedToken}
                                         <span>🖼️ รูปภาพประกอบบทเรียน</span>
                                         <span style="font-size: 0.68rem; font-weight: normal; color: #64748b; background: #f1f5f9; padding: 1px 6px; border-radius: 4px;">Ctrl+V ได้</span>
                                     </label>
-                                    ${lesson.imageUrl ? `<button type="button" class="btn-tool-sm" onclick="handleLessonFieldChange(${idx}, 'imageUrl', ''); renderCourseLessons();" style="font-size: 0.72rem; color: #dc2626; background: #fee2e2; border-color: #fca5a5; padding: 2px 8px;">✕ ลบรูป</button>` : ''}
+                                    ${lesson.imageUrl ? `<button type="button" class="btn-tool-sm" onclick="removeLessonImage(${idx})" style="font-size: 0.72rem; color: #dc2626; background: #fee2e2; border-color: #fca5a5; padding: 2px 8px;">✕ ลบรูป</button>` : ''}
                                 </div>
                                 <div style="display: flex; gap: 6px; align-items: center;">
                                     <input type="file" id="lesson-file-inp-${idx}" accept="image/*" style="display: none;" onchange="handleLessonImageUpload(this, ${idx})">
