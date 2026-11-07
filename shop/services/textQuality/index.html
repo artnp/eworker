@@ -2583,6 +2583,160 @@
             onPaymentSuccess();
         }
 
+        // --- Sound Engine & Confetti เหมือน admin-payment.html ---
+        let _audioCtx = null;
+        function getSharedAudioContext() {
+            try {
+                if (!_audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) _audioCtx = new AudioContext();
+                }
+                if (_audioCtx && _audioCtx.state === 'suspended') {
+                    _audioCtx.resume().catch(() => { });
+                }
+                return _audioCtx;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        ['click', 'mousemove', 'keydown', 'touchstart'].forEach(evt => {
+            window.addEventListener(evt, () => {
+                getSharedAudioContext();
+            }, { once: true, passive: true });
+        });
+
+        // Harmonious Coin / Money Fanfare Chime (5-tone beep/chime)
+        function playCelebrationSound() {
+            try {
+                const ctx = getSharedAudioContext();
+                if (!ctx) return;
+
+                const runChime = () => {
+                    const notes = [
+                        { freq: 523.25, time: 0.0, dur: 0.25 }, // C5
+                        { freq: 659.25, time: 0.12, dur: 0.25 }, // E5
+                        { freq: 783.99, time: 0.24, dur: 0.3 }, // G5
+                        { freq: 1046.50, time: 0.36, dur: 0.55 }, // C6
+                        { freq: 1318.51, time: 0.44, dur: 0.65 } // E6
+                    ];
+
+                    notes.forEach(note => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(note.freq, ctx.currentTime + note.time);
+
+                        gain.gain.setValueAtTime(0.28, ctx.currentTime + note.time);
+                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + note.time + note.dur);
+
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(ctx.currentTime + note.time);
+                        osc.stop(ctx.currentTime + note.time + note.dur);
+                    });
+                };
+
+                if (ctx.state === 'suspended') {
+                    ctx.resume().then(runChime).catch(() => { });
+                } else {
+                    runChime();
+                }
+            } catch (err) {
+                console.warn("Chime sound play error:", err);
+            }
+        }
+
+        function fireJoyfulConfetti() {
+            try {
+                if (typeof confetti === 'function') {
+                    confetti({
+                        particleCount: 70,
+                        spread: 60,
+                        origin: { x: 0.15, y: 0.85 },
+                        colors: ['#0284c7', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'],
+                        zIndex: 99999
+                    });
+                    confetti({
+                        particleCount: 70,
+                        spread: 60,
+                        origin: { x: 0.85, y: 0.85 },
+                        colors: ['#0284c7', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'],
+                        zIndex: 99999
+                    });
+                    setTimeout(() => {
+                        confetti({
+                            particleCount: 50,
+                            spread: 100,
+                            origin: { x: 0.5, y: 0.4 },
+                            scalar: 1.2,
+                            zIndex: 99999
+                        });
+                    }, 200);
+                } else {
+                    launchFallbackConfetti();
+                }
+            } catch (e) {
+                console.warn('Confetti error:', e);
+            }
+        }
+
+        function launchFallbackConfetti() {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.style.position = 'fixed';
+                canvas.style.inset = '0';
+                canvas.style.width = '100vw';
+                canvas.style.height = '100vh';
+                canvas.style.pointerEvents = 'none';
+                canvas.style.zIndex = '100000';
+                document.body.appendChild(canvas);
+                const ctx = canvas.getContext('2d');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+
+                const particles = [];
+                const colors = ['#0284c7', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#f43f5e'];
+                for (let i = 0; i < 90; i++) {
+                    particles.push({
+                        x: canvas.width * 0.5 + (Math.random() - 0.5) * 200,
+                        y: canvas.height * 0.5 + (Math.random() - 0.5) * 50,
+                        vx: (Math.random() - 0.5) * 14,
+                        vy: Math.random() * -12 - 4,
+                        size: Math.random() * 8 + 5,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        rot: Math.random() * 360,
+                        vrot: (Math.random() - 0.5) * 10
+                    });
+                }
+
+                let start = null;
+                function step(ts) {
+                    if (!start) start = ts;
+                    const progress = ts - start;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    particles.forEach(p => {
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.vy += 0.35;
+                        p.rot += p.vrot;
+                        ctx.save();
+                        ctx.translate(p.x, p.y);
+                        ctx.rotate((p.rot * Math.PI) / 180);
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                        ctx.restore();
+                    });
+                    if (progress < 2500) {
+                        requestAnimationFrame(step);
+                    } else {
+                        canvas.remove();
+                    }
+                }
+                requestAnimationFrame(step);
+            } catch (e) { }
+        }
+
         function onPaymentSuccess() {
             isPaid = true;
             if (pollingTimer) clearInterval(pollingTimer);
@@ -2591,9 +2745,9 @@
                 checkoutCountdownTimer = null;
             }
 
-            if (typeof confetti === 'function') {
-                confetti({ particleCount: 90, spread: 60, origin: { y: 0.6 } });
-            }
+            // Sound & Confetti เหมือน admin-payment.html
+            playCelebrationSound();
+            fireJoyfulConfetti();
 
             const btn = document.getElementById('btnMainPay');
             if (btn) {
