@@ -130,8 +130,8 @@
         .app-main {
             display: flex;
             width: 100vw;
-            height: calc(100vh - 52px);
-            height: calc(100dvh - 52px);
+            height: 100vh;
+            height: 100dvh;
             overflow: hidden;
             position: relative;
         }
@@ -733,8 +733,8 @@
 
             .app-main {
                 flex-direction: column-reverse;
-                height: calc(100vh - 52px);
-                height: calc(100dvh - 52px);
+                height: 100vh;
+                height: 100dvh;
             }
 
             .control-sidebar {
@@ -809,24 +809,6 @@
 </head>
 
 <body>
-    <!-- TOP APP NAVBAR (52px) -->
-    <header class="app-navbar">
-        <div class="brand-group">
-            <a href="../../../index.html" class="btn-nav-home" id="navHomeBtn" title="กลับหน้าแรก eWorker">
-                <span>◀</span> หน้าแรก
-            </a>
-            <div class="brand-title">
-                <span>💧 เบลอ Censor ภาพ & PDF</span>
-                <span class="brand-badge">ฟรี 100%</span>
-            </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <button type="button" class="btn-nav-home" onclick="document.getElementById('fileInput').click()" style="background: rgba(2, 132, 199, 0.25); border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;">
-                📂 เลือกไฟล์
-            </button>
-        </div>
-    </header>
-
     <!-- Hidden file input for file picker -->
     <input type="file" id="fileInput" accept=".pdf,image/png,image/jpeg,image/webp" style="display: none;">
 
@@ -913,6 +895,10 @@
             <!-- Stage Toolbar -->
             <div class="stage-toolbar">
                 <div class="stage-toolbar-group">
+                    <button class="btn-stage-tool" type="button" onclick="document.getElementById('fileInput').click()" title="เลือกไฟล์ภาพ หรือ PDF">
+                        <span>📂</span>
+                        <span>เลือกไฟล์</span>
+                    </button>
                     <button class="btn-stage-tool" id="btnUndo" title="เลิกทำ (Ctrl+Z)" disabled>
                         <span>↩️</span>
                         <span>เลิกทำ</span>
@@ -1919,6 +1905,15 @@
                 });
             }
         }
+
+        // Close modal when pressing ESC inside iframe
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && window.self !== window.top) {
+                try {
+                    window.parent.postMessage('CLOSE_SERVICE_MODAL_ESC', '*');
+                } catch (err) { }
+            }
+        });
     </script>
 </body>
 
