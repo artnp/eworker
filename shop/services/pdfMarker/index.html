@@ -1766,6 +1766,10 @@
 
         canvasEmptyState.addEventListener('drop', (e) => {
             e.preventDefault();
+            e.stopPropagation();
+            dragCounter = 0;
+            if (pageDragOverlay) pageDragOverlay.classList.remove('active');
+            canvasEmptyState.classList.remove('dragover');
             if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
                 fileInput.files = e.dataTransfer.files;
                 handleFileSelect();
@@ -1774,20 +1778,36 @@
         fileInput.addEventListener('change', handleFileSelect);
 
         // Load PDF File
+        let isHandlingFileSelect = false;
         async function handleFileSelect() {
+            if (isHandlingFileSelect) return;
+            isHandlingFileSelect = true;
+
             const file = fileInput.files[0];
-            if (!file) return;
+            if (!file) {
+                isHandlingFileSelect = false;
+                return;
+            }
             if (!file.name.toLowerCase().endsWith('.pdf')) {
                 showPopupAlert('กรุณาเลือกไฟล์เอกสารนามสกุล .pdf เท่านั้น', 'warning');
+                isHandlingFileSelect = false;
                 return;
             }
 
             if (!window.pdfjsLib) {
                 showPopupAlert('กำลังโหลดระบบแสดงผล PDF กรุณารอสักครู่แล้วลองใหม่อีกครั้ง', 'info');
+                isHandlingFileSelect = false;
                 return;
             }
 
             try {
+                // Cancel any previous render before loading new file
+                if (currentRenderTask) {
+                    try { currentRenderTask.cancel(); } catch (e) { }
+                    try { await currentRenderTask.promise; } catch (e) { }
+                    currentRenderTask = null;
+                }
+
                 originalFileName = file.name.replace(/\.[^/.]+$/, "");
                 const arrayBuffer = await file.arrayBuffer();
                 pdfDoc = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -1816,24 +1836,49 @@
                 currentPage = 1;
                 currentZoom = 1.0;
                 applyZoom();
+                pageAnnotations.clear();
                 await renderPage(1);
                 updateMarkerListUI();
 
             } catch (err) {
                 console.error(err);
                 showPopupAlert('เกิดข้อผิดพลาดในการเปิดไฟล์ PDF: ' + (err.message || 'ไฟล์อาจเสียหาย'), 'error');
+            } finally {
+                isHandlingFileSelect = false;
             }
         }
 
-        // Render PDF Page via Canvas
+        // Render PDF Page via Canvas with concurrency protection
+        let currentRenderTask = null;
         async function renderPage(pageNum) {
             if (!pdfDoc) return;
+
+            // If another render is running on this canvas, cancel it and wait
+            if (currentRenderTask) {
+                try {
+                    currentRenderTask.cancel();
+                } catch (e) { }
+                try {
+                    await currentRenderTask.promise;
+                } catch (e) {
+                    // RenderingCancelledException is expected on cancellation
+                }
+                currentRenderTask = null;
+            }
+
             currentPage = pageNum;
             inputPageNum.value = pageNum;
             btnPrevPage.disabled = (currentPage <= 1);
             btnNextPage.disabled = (currentPage >= totalPages);
 
-            const page = await pdfDoc.getPage(pageNum);
+            let page;
+            try {
+                page = await pdfDoc.getPage(pageNum);
+            } catch (err) {
+                console.warn('Error getting page:', err);
+                return;
+            }
+
             // Crisp scale for sharp text
             const viewport = page.getViewport({ scale: 2.0 });
 
@@ -1841,7 +1886,22 @@
             pdfCanvas.width = viewport.width;
 
             const ctx = pdfCanvas.getContext('2d');
-            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+            const renderTask = page.render({ canvasContext: ctx, viewport: viewport });
+            currentRenderTask = renderTask;
+
+            try {
+                await renderTask.promise;
+            } catch (err) {
+                if (err && (err.name === 'RenderingCancelledException' || err.message?.includes('cancelled'))) {
+                    // Render was superseded by a newer renderPage request
+                    return;
+                }
+                throw err;
+            } finally {
+                if (currentRenderTask === renderTask) {
+                    currentRenderTask = null;
+                }
+            }
 
             // Remove existing DOM box elements on canvas
             canvasContainer.querySelectorAll('.marker-box').forEach(b => b.remove());
@@ -1856,26 +1916,26 @@
         }
 
         // Page Navigation Events
-        btnPrevPage.addEventListener('click', () => {
+        btnPrevPage.addEventListener('click', async () => {
             if (currentPage > 1) {
                 saveAnnotations();
-                renderPage(currentPage - 1);
+                await renderPage(currentPage - 1);
             }
         });
 
-        btnNextPage.addEventListener('click', () => {
+        btnNextPage.addEventListener('click', async () => {
             if (currentPage < totalPages) {
                 saveAnnotations();
-                renderPage(currentPage + 1);
+                await renderPage(currentPage + 1);
             }
         });
 
-        inputPageNum.addEventListener('change', () => {
+        inputPageNum.addEventListener('change', async () => {
             let val = parseInt(inputPageNum.value);
             if (isNaN(val) || val < 1) val = 1;
             if (val > totalPages) val = totalPages;
             saveAnnotations();
-            renderPage(val);
+            await renderPage(val);
         });
 
         // Zoom Controls
