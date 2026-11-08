@@ -2159,9 +2159,23 @@
                             editorControls.classList.remove('hidden');
                             if (floatingSaveBox) floatingSaveBox.style.display = 'flex';
 
-                            // Reset payment lock state for fresh edit session
+                            // Reset payment lock state for fresh edit session (บริการต่อครั้ง)
                             isPaymentApproved = false;
                             isLocked = false;
+                            currentOrderId = null;
+                            if (checkoutCountdownTimer) {
+                                clearInterval(checkoutCountdownTimer);
+                                checkoutCountdownTimer = null;
+                            }
+                            if (checkoutPollingTimer) {
+                                clearInterval(checkoutPollingTimer);
+                                checkoutPollingTimer = null;
+                            }
+                            try { localStorage.removeItem('eworker_fakeqr_paid'); } catch (e) { }
+                            const pPending = document.getElementById('paymentViewPending');
+                            const pSuccess = document.getElementById('paymentViewSuccess');
+                            if (pPending) pPending.style.display = 'block';
+                            if (pSuccess) pSuccess.style.display = 'none';
                             const previewWatermark = document.getElementById('previewWatermark');
                             if (previewWatermark) previewWatermark.style.display = 'flex';
                             if (slipImage) slipImage.style.filter = 'none';
@@ -2465,16 +2479,9 @@
         let antiTamperInterval = null;
         let antiTamperObserver = null;
 
-        // Restore payment on reload if customer already paid within 24 hours (prevents losing money on mobile reload)
+        // ล้างค่าค้างชำระเดิมออกทันที (บริการคิดราคาต่อครั้ง ไม่บันทึกข้ามรอบหรือข้ามรีเฟรช)
         try {
-            const rawPaid = localStorage.getItem('eworker_fakeqr_paid');
-            if (rawPaid) {
-                const paidData = JSON.parse(rawPaid);
-                if (Date.now() - paidData.paidAt < 24 * 60 * 60 * 1000) {
-                    isPaymentApproved = true;
-                    currentOrderId = paidData.orderId;
-                }
-            }
+            localStorage.removeItem('eworker_fakeqr_paid');
         } catch (e) { }
 
         // Context menu & keyboard shortcut interception to prevent screen capture theft
@@ -3047,10 +3054,7 @@
         function handlePaymentApprovedSuccess() {
             isPaymentApproved = true;
             try {
-                localStorage.setItem('eworker_fakeqr_paid', JSON.stringify({
-                    orderId: currentOrderId,
-                    paidAt: Date.now()
-                }));
+                localStorage.removeItem('eworker_fakeqr_paid');
             } catch (e) { }
             isLocked = false;
 
@@ -3273,6 +3277,9 @@
                 if (securityBackdrop) securityBackdrop.classList.remove('active');
                 if (previewWatermark) previewWatermark.style.display = 'none';
                 currentOrderId = null;
+                isPaymentApproved = false;
+                isLocked = false;
+                try { localStorage.removeItem('eworker_fakeqr_paid'); } catch (e) { }
 
                 showPopupAlert(
                     `❌ คำสั่งซื้อถูกปฏิเสธ: ${reason}\n\n🔥 ระบบได้เผาทำลายรูปภาพสลิปออกจากหน่วยความจำเรียบร้อยแล้ว`,
