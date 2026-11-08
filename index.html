@@ -13803,10 +13803,13 @@ ${encodedToken}
         }
 
         function identifyAdminService(item) {
-            const title = String(item.productTitle || item.name || '').trim();
+            const rawTitle = String(item.productTitle || item.service || item.name || '').trim();
             const id = String(item.referenceId || item.id || '').trim();
             const type = String(item.type || '').trim();
+            const lowerId = id.toLowerCase();
+            const lowerTitle = rawTitle.toLowerCase();
 
+            // 1. ตรวจสอบจาก products catalog ถ้ามี productId
             if (typeof products !== 'undefined' && Array.isArray(products) && item.productId) {
                 const found = products.find(p => p.id === item.productId || p.slug === item.productId);
                 if (found) {
@@ -13814,54 +13817,110 @@ ${encodedToken}
                 }
             }
 
-            if (title.includes('ติดบัตร') || title.includes('inch-convert') || id.includes('MVXL3R') || id.includes('MVXQBZ') || id.includes('MVXQCESH')) {
+            // 2. Precise Product Title or Key Matches (บริการมาตรฐานที่รองรับ)
+            if (lowerTitle.includes('ติดบัตร') || lowerTitle.includes('inchconvert') || lowerTitle.includes('inch-convert') || lowerId.includes('inchconvert') || id.includes('MVXL3R') || id.includes('MVXQBZ') || id.includes('MVXQCESH')) {
                 return { name: 'จัดรูปติดบัตรลงกระดาษ 1-2 นิ้ว', icon: '🪪', category: 'งานเอกสารและภาพถ่าย' };
             }
-            if (title.includes('PDF') || title.includes('pdf-marker') || id.includes('ORD-PDF')) {
+            if (lowerTitle.includes('pdf') || lowerTitle.includes('pdf-marker') || lowerTitle.includes('pdfmarker') || lowerId.includes('pdfmarker') || lowerId.includes('ord-pdf')) {
                 return { name: 'มาร์คจุดแก้เอกสาร PDF', icon: '📑', category: 'งานเอกสาร PDF' };
             }
-            if (title.includes('Fake QR') || title.includes('แก้ QR') || title.includes('fake-qr') || id.includes('ORD-QR')) {
+            if (lowerTitle.includes('fake qr') || lowerTitle.includes('แก้ qr') || lowerTitle.includes('fake-qr') || lowerTitle.includes('fakeqr') || lowerId.includes('fakeqr') || lowerId.includes('ord-qr')) {
                 return { name: 'บริการแก้ QR code ให้สแกนไม่ติด', icon: '🔲', category: 'เครื่องมือและ QR' };
             }
-            if (title.includes('oldPaper') || title.includes('กระดาษเก่า') || id.includes('order_oldpaper')) {
+            if (lowerTitle.includes('blur') || lowerTitle.includes('censor') || lowerTitle.includes('เซ็นเซอร์') || lowerId.includes('blurcensor') || lowerId.includes('blur') || lowerId.includes('censor')) {
+                return { name: 'บริการเบลอ & เซ็นเซอร์เอกสาร (Blur Censor)', icon: '🔒', category: 'งานเอกสารและความเป็นส่วนตัว' };
+            }
+            if (lowerTitle.includes('oldpaper') || lowerTitle.includes('กระดาษเก่า') || lowerId.includes('order_oldpaper')) {
                 return { name: 'บริการแต่งรูปกระดาษเก่า (Old Paper)', icon: '📜', category: 'แต่งภาพวินเทจ' };
             }
-            if (title.includes('textQuality') || title.includes('ความคมชัด') || id.includes('order_textquality')) {
+            if (lowerTitle.includes('textquality') || lowerTitle.includes('ความคมชัด') || lowerId.includes('order_textquality')) {
                 return { name: 'บริการปรับความคมชัดตัวหนังสือ', icon: '🔍', category: 'ปรับคุณภาพรูปภาพ' };
             }
-            if (title.includes('Grand Super Cycle') || title.includes('TradingView') || title.includes('Bitcoin')) {
+            if (lowerTitle.includes('predict') || lowerTitle.includes('fractal') || lowerId.includes('predict') || lowerId.includes('fractal')) {
+                return { name: 'ระบบคำนวณ Fractal Time Calculator', icon: '⏳', category: 'เครื่องมือและการเงิน' };
+            }
+            if (lowerTitle.includes('grand super cycle') || lowerTitle.includes('tradingview') || lowerTitle.includes('bitcoin')) {
                 return { name: 'อินดิเคเตอร์ TradingView Grand Super Cycle', icon: '📈', category: 'โค้ด & อินดิเคเตอร์' };
             }
-            if (title.includes('เดินขึ้นเขา') || title.includes('hiking')) {
+            if (lowerTitle.includes('เดินขึ้นเขา') || lowerTitle.includes('hiking')) {
                 return { name: 'คอร์สเทคนิคเดินขึ้นเขาชัน', icon: '⛰️', category: 'คอร์สเรียนออนไลน์' };
             }
-            if (title.includes('paymentSlip') || id.includes('paymentSlip')) {
+            if (lowerTitle.includes('paymentslip') || lowerId.includes('paymentslip')) {
                 return { name: 'ระบบสร้างสลิปโอนเงิน', icon: '🧾', category: 'ระบบชำระเงิน' };
             }
-            if (title.includes('redPacket') || id.includes('redPacket')) {
+            if (lowerTitle.includes('redpacket') || lowerId.includes('redpacket')) {
                 return { name: 'ระบบซองอั่งเปาออนไลน์', icon: '🧧', category: 'กิจกรรมและการเงิน' };
             }
-            if (id.startsWith('chat_')) {
+            if (lowerId.startsWith('chat_')) {
                 return { name: 'Chat', icon: '💬', category: 'ห้องสนทนาและไฟล์' };
             }
-            if (id.startsWith('retouch_') || title.includes('retouch')) {
+            if (lowerId.startsWith('retouch_') || lowerTitle.includes('retouch') || lowerId.includes('retouch')) {
                 return { name: 'Text Retouch', icon: '✏️', category: 'งานกราฟิกและรีทัช' };
             }
-            if (id.startsWith('markpoint_') || id.includes('markpoint') || title.includes('markpoint') ||
-                id.toLowerCase().includes('send.html') || title.toLowerCase().includes('send.html') ||
-                id.startsWith('send_') || id.startsWith('ORD-SEND-') ||
+            if (lowerId.startsWith('markpoint_') || lowerId.includes('markpoint') || lowerTitle.includes('markpoint') ||
+                lowerId.includes('send.html') || lowerTitle.includes('send.html') ||
+                lowerId.startsWith('send_') || lowerId.startsWith('ord-send-') || lowerId.startsWith('ord-mp-') ||
                 type === 'markpoint' || type === 'send' ||
-                title.includes('ชี้จุด') ||
-                (title.toLowerCase().includes('send') && !title.includes('PrivateSend')) ||
-                (id.toLowerCase().includes('send') && !id.includes('PrivateSend'))) {
+                lowerTitle.includes('ชี้จุด') ||
+                (lowerTitle.includes('send') && !lowerTitle.includes('privatesend')) ||
+                (lowerId.includes('send') && !lowerId.includes('privatesend'))) {
                 return { name: 'Send.html', icon: '📤', category: 'ระบบส่งงานและชี้จุดแก้ไข' };
             }
-            if (id.startsWith('k') || id.startsWith('ORD-PS-') || id.includes('PrivateSend') || title.includes('PrivateSend')) {
+
+            // 3. ตรวจสอบ PrivateSend โดยเฉพาะ (ต้องเป็น k ตามด้วยตัวเลข หรือ ORD-PS-)
+            const isPrivateSend = /^k\d+$/i.test(id) || lowerId.startsWith('ord-ps-') || lowerId.includes('privatesend') || lowerTitle.includes('privatesend');
+            if (isPrivateSend) {
                 return { name: 'Download', icon: '🛡️', category: 'ระบบส่งไฟล์ลับ' };
             }
-            if (item.productTitle) {
-                return { name: item.productTitle, icon: '📦', category: 'สินค้าในระบบ' };
+
+            // 4. Dynamic Service Discovery (สำหรับบริการใหม่ๆ ในอนาคต)
+            if (rawTitle) {
+                let icon = '✨';
+                let category = 'บริการออนไลน์';
+
+                if (/รูป|ภาพ|photo|image|pic|face|draw|bg|background|upscale/i.test(rawTitle)) {
+                    icon = '🖼️';
+                    category = 'งานภาพถ่ายและกราฟิก';
+                } else if (/วิดีโอ|คลิป|video|vdo|reel|tiktok|mp4/i.test(rawTitle)) {
+                    icon = '🎬';
+                    category = 'งานวิดีโอและสื่อ';
+                } else if (/เอกสาร|doc|pdf|paper|หนังสือ|สัญญา|word|excel/i.test(rawTitle)) {
+                    icon = '📄';
+                    category = 'งานเอกสารและข้อมูล';
+                } else if (/ข้อความ|font|text|แปล|คำบรรยาย|subtitle/i.test(rawTitle)) {
+                    icon = '📝';
+                    category = 'งานข้อความและภาษา';
+                } else if (/เสียง|audio|mp3|voice|เพลง|sound/i.test(rawTitle)) {
+                    icon = '🎵';
+                    category = 'งานเสียงและดนตรี';
+                } else if (/qr|barcode|บาร์โค้ด|code/i.test(rawTitle)) {
+                    icon = '🔲';
+                    category = 'เครื่องมือและ QR';
+                } else if (/เงิน|pay|bill|บิล|สลิป|slip|crypto|coin|ธนาคาร/i.test(rawTitle)) {
+                    icon = '💰';
+                    category = 'ระบบการเงินและการชำระ';
+                } else if (/บอท|bot|ai|auto|script|api/i.test(rawTitle)) {
+                    icon = '🤖';
+                    category = 'ระบบอัตโนมัติ & AI';
+                }
+
+                return { name: rawTitle, icon, category };
             }
+
+            // 5. Fallback แกะชื่อจาก Prefix ของ referenceId (ถ้าไม่มี metadata ส่งมา)
+            if (id && id.includes('_')) {
+                const parts = id.split('_');
+                const prefix = (parts[0] === 'ord' || parts[0] === 'order') ? parts[1] : parts[0];
+                if (prefix && prefix.length >= 3 && !/^\d+$/.test(prefix)) {
+                    const cleanName = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+                    return {
+                        name: cleanName,
+                        icon: '📦',
+                        category: 'บริการออนไลน์ (Auto-Detected)'
+                    };
+                }
+            }
+
             return { name: 'Download', icon: '🛡️', category: 'ระบบส่งไฟล์ลับ' };
         }
 
@@ -14249,10 +14308,7 @@ ${encodedToken}
                         </td>
                         <td>
                             <div class="admin-rs-item-title" title="${srv.name}">
-                                ${srv.icon || '📦'} ${srv.name}
-                            </div>
-                            <div class="admin-rs-item-meta" title="${srv.category}">
-                                ${srv.category}
+                                ${srv.name}
                             </div>
                             <div class="admin-rs-progress" title="สัดส่วนรายได้ ${pct}%">
                                 <div class="admin-rs-fill" style="width: ${pct}%;"></div>
