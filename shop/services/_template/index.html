@@ -945,6 +945,24 @@
         });
 
         function loadFile(file) {
+            // รีเซ็ตสถานะการชำระเงินสำหรับไฟล์งานใหม่ (บริการคิดต่อครั้ง)
+            isPaid = false;
+            currentOrderId = null;
+            if (pollingTimer) {
+                clearInterval(pollingTimer);
+                pollingTimer = null;
+            }
+            if (btnMainAction) {
+                btnMainAction.className = 'btn-start-job';
+            }
+            if (btnActionText) {
+                btnActionText.textContent = `⚡ ชำระเงิน ${SERVICE_CONFIG.servicePriceThb} บาท & ดาวน์โหลด`;
+            }
+            const pPending = document.getElementById('paymentPendingView');
+            const pSuccess = document.getElementById('paymentSuccessView');
+            if (pPending) pPending.style.display = 'block';
+            if (pSuccess) pSuccess.style.display = 'none';
+
             const reader = new FileReader();
             reader.onload = (e) => {
                 const img = new Image();
