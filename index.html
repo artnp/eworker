@@ -10672,5 +10672,3524 @@ ${encodedToken}
             });
 
             // สำหรับคอร์สเรียนที่มีค่าบริการ (price > 0):
-            //
-... [truncated for diff preview]
+            // ทำการ Sanitize บทเรียนที่ต้องชำระเงิน (บทเรียนที่ 5 เป็นต้นไป หรือ index >= 4)
+            // เพื่อไม่ให้ URL วิดีโอ Catbox, ข้อความเนื้อหา หรือรูปภาพ รั่วไหลไปสู่ public API
+            let publicLessons = [];
+            if (isCourseCategory && Array.isArray(adminCourseLessons)) {
+                publicLessons = adminCourseLessons.map((l, idx) => {
+                    if (price <= 0 || idx < 4) {
+                        return { ...l, isLocked: false };
+                    }
+                    return {
+                        title: l.title || `บทเรียนที่ ${idx + 1}`,
+                        isLocked: true
+                    };
+                });
+            }
+
+            const publicProductData = {
+                id: id,
+                title: title,
+                slug: slug,
+                price: price,
+                category: category || (isPineScript ? 'TradingView / สคริปต์' : ''),
+                language: language,
+                coverImage: coverImage,
+                images: images,
+                youtubeUrl: youtubeUrl,
+                description: description,
+                features: features,
+                hasInstallGuide: hasInstallGuide,
+                installSteps: installSteps,
+                isCodeProduct: isPineScript,
+                isCourse: isCourseCategory,
+                totalLessons: isCourseCategory ? adminCourseLessons.length : 0,
+                lessons: isCourseCategory ? publicLessons : [],
+                isRecommended: isRecommended,
+                isBestSeller: isBestSeller,
+                updatedAt: Date.now(),
+                createdAt: editId ? (products.find(x => x.id === editId)?.createdAt || Date.now()) : Date.now()
+            };
+
+            const vaultData = {
+                productId: id,
+                downloadUrl: (isPineScript || isCourseCategory) ? '' : dropboxUrl,
+                sourceCode: isPineScript ? pinescriptCode : '',
+                pinescriptCode: isPineScript ? pinescriptCode : '',
+                lessons: isCourseCategory ? adminCourseLessons : [],
+                updatedAt: Date.now()
+            };
+
+            try {
+                await fetch(`${PRODUCTS_ENDPOINT}/${id}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(publicProductData)
+                });
+
+                await fetch(`${VAULT_ENDPOINT}/${id}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(vaultData)
+                });
+
+                if (isCourseCategory) {
+                    // ลบแบบร่างออกเมื่อ publish ขึ้นโฮสต์สำเร็จ
+                    localStorage.removeItem('EWORKER_course_draft');
+                    adminCourseLessons = [];
+                    updateCourseLivePreview();
+                    const pill = document.getElementById('course-draft-time-pill');
+                    if (pill) pill.style.display = 'none';
+                }
+
+                showToast(isCourseCategory ? '🎉 เผยแพร่คอร์สเรียนขึ้นโฮสต์เรียบร้อยแล้ว! (ลบแบบร่างเดิมแล้ว)' : '🎉 บันทึกสินค้าขึ้นโฮสต์เรียบร้อยแล้ว!', 'success');
+                closeAdminModal();
+                await loadProducts();
+            } catch (err) {
+                showToast('❌ ไม่สามารถบันทึกข้อมูลได้', 'warning');
+            }
+        }
+
+        async function handleAdminDeleteProduct() {
+            if (!isLocalAdmin) {
+                showToast('🔒 สงวนสิทธิ์สำหรับผู้ดูแลระบบบนเครื่อง localhost เท่านั้น', 'warning');
+                return;
+            }
+            const editId = document.getElementById('admin-edit-product-id').value;
+            if (!editId || !confirm('ยืนยันลบสินค้านี้ออกจากร้านค้าหรือไม่?')) return;
+
+            // ลบไฟล์รูปภาพจริงที่เกี่ยวข้องออกจากระบบ
+            if (Array.isArray(adminProductImages) && adminProductImages.length > 0) {
+                adminProductImages.forEach(url => deleteImageFromServer(url));
+            }
+
+            try {
+                await fetch(`${PRODUCTS_ENDPOINT}/${editId}.json`, { method: 'DELETE' });
+                await fetch(`${VAULT_ENDPOINT}/${editId}.json`, { method: 'DELETE' });
+                await fetch(`${DELETED_ENDPOINT}/${editId}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(true)
+                }).catch(() => { });
+
+                try {
+                    const localDeleted = JSON.parse(localStorage.getItem('eworker_deleted_items') || '[]');
+                    if (!localDeleted.includes(editId)) {
+                        localDeleted.push(editId);
+                        localStorage.setItem('eworker_deleted_items', JSON.stringify(localDeleted));
+                    }
+                } catch (e) { }
+
+                showToast('🗑️ ลบสินค้าเรียบร้อยแล้ว', 'success');
+                closeAdminModal();
+                await loadProducts();
+            } catch (e) {
+                showToast('❌ ไม่สามารถลบได้', 'warning');
+            }
+        }
+
+        async function handleQuickDeleteProduct(productId, event) {
+            if (!isLocalAdmin) {
+                showToast('🔒 สงวนสิทธิ์สำหรับผู้ดูแลระบบบนเครื่อง localhost เท่านั้น', 'warning');
+                return;
+            }
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            if (!productId || productId === 'undefined') {
+                showToast('⚠️ ไม่พบรหัสสินค้าที่ต้องการลบ', 'warning');
+                return;
+            }
+            if (!confirm('ยืนยันลบสินค้านี้ออกจากร้านค้าหรือไม่?')) return;
+
+            // ลบไฟล์รูปภาพจริงที่เกี่ยวข้องออกจากระบบ
+            const prodObj = products.find(x => String(x.id) === String(productId));
+            if (prodObj) {
+                const toDel = [];
+                if (prodObj.coverImage) toDel.push(prodObj.coverImage);
+                if (Array.isArray(prodObj.images)) toDel.push(...prodObj.images);
+                if (Array.isArray(prodObj.lessons)) {
+                    prodObj.lessons.forEach(l => { if (l && l.imageUrl) toDel.push(l.imageUrl); });
+                }
+                toDel.forEach(url => deleteImageFromServer(url));
+            }
+
+            try {
+                await fetch(`${PRODUCTS_ENDPOINT}/${productId}.json`, { method: 'DELETE' });
+                await fetch(`${VAULT_ENDPOINT}/${productId}.json`, { method: 'DELETE' });
+                await fetch(`${DELETED_ENDPOINT}/${productId}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(true)
+                }).catch(() => { });
+
+                try {
+                    const localDeleted = JSON.parse(localStorage.getItem('eworker_deleted_items') || '[]');
+                    if (!localDeleted.includes(productId)) {
+                        localDeleted.push(productId);
+                        localStorage.setItem('eworker_deleted_items', JSON.stringify(localDeleted));
+                    }
+                } catch (e) { }
+
+                showToast('🗑️ ลบสินค้าเรียบร้อยแล้ว', 'success');
+                await loadProducts();
+            } catch (e) {
+                showToast('❌ ไม่สามารถลบสินค้าได้', 'warning');
+            }
+        }
+
+        // --- Sound & Effects (Celebration Web Audio API & Confetti เหมือน admin-payment.html) ---
+        let _audioCtx = null;
+        function getSharedAudioContext() {
+            try {
+                if (!_audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) _audioCtx = new AudioContext();
+                }
+                if (_audioCtx && _audioCtx.state === 'suspended') {
+                    _audioCtx.resume().catch(() => { });
+                }
+                return _audioCtx;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Resume AudioContext on initial interaction
+        ['click', 'mousemove', 'keydown', 'touchstart'].forEach(evt => {
+            window.addEventListener(evt, () => {
+                getSharedAudioContext();
+            }, { once: true, passive: true });
+        });
+
+        function triggerConfettiEffect() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 70,
+                    spread: 60,
+                    origin: { x: 0.15, y: 0.85 },
+                    colors: ['#0284c7', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'],
+                    zIndex: 99999
+                });
+                confetti({
+                    particleCount: 70,
+                    spread: 60,
+                    origin: { x: 0.85, y: 0.85 },
+                    colors: ['#0284c7', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'],
+                    zIndex: 99999
+                });
+                setTimeout(() => {
+                    confetti({
+                        particleCount: 50,
+                        spread: 100,
+                        origin: { x: 0.5, y: 0.4 },
+                        scalar: 1.2,
+                        zIndex: 99999
+                    });
+                }, 200);
+            } else {
+                launchFallbackConfetti();
+            }
+        }
+
+        function launchFallbackConfetti() {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.style.position = 'fixed';
+                canvas.style.inset = '0';
+                canvas.style.width = '100vw';
+                canvas.style.height = '100vh';
+                canvas.style.pointerEvents = 'none';
+                canvas.style.zIndex = '100000';
+                document.body.appendChild(canvas);
+                const ctx = canvas.getContext('2d');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+
+                const particles = [];
+                const colors = ['#0284c7', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#f43f5e'];
+                for (let i = 0; i < 90; i++) {
+                    particles.push({
+                        x: canvas.width * 0.5 + (Math.random() - 0.5) * 200,
+                        y: canvas.height * 0.5 + (Math.random() - 0.5) * 50,
+                        vx: (Math.random() - 0.5) * 14,
+                        vy: Math.random() * -12 - 4,
+                        size: Math.random() * 8 + 5,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        rot: Math.random() * 360,
+                        vrot: (Math.random() - 0.5) * 10
+                    });
+                }
+
+                let start = null;
+                function step(ts) {
+                    if (!start) start = ts;
+                    const progress = ts - start;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    particles.forEach(p => {
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.vy += 0.35;
+                        p.rot += p.vrot;
+                        ctx.save();
+                        ctx.translate(p.x, p.y);
+                        ctx.rotate((p.rot * Math.PI) / 180);
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                        ctx.restore();
+                    });
+                    if (progress < 2500) {
+                        requestAnimationFrame(step);
+                    } else {
+                        canvas.remove();
+                    }
+                }
+                requestAnimationFrame(step);
+            } catch (e) { }
+        }
+
+        // Harmonious Coin / Money Fanfare Chime (5-tone beep/chime)
+        function playSuccessChimeSound() {
+            try {
+                const ctx = getSharedAudioContext();
+                if (!ctx) return;
+
+                const runChime = () => {
+                    const notes = [
+                        { freq: 523.25, time: 0.0, dur: 0.25 }, // C5
+                        { freq: 659.25, time: 0.12, dur: 0.25 }, // E5
+                        { freq: 783.99, time: 0.24, dur: 0.3 }, // G5
+                        { freq: 1046.50, time: 0.36, dur: 0.55 }, // C6
+                        { freq: 1318.51, time: 0.44, dur: 0.65 } // E6
+                    ];
+
+                    notes.forEach(note => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(note.freq, ctx.currentTime + note.time);
+
+                        gain.gain.setValueAtTime(0.28, ctx.currentTime + note.time);
+                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + note.time + note.dur);
+
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(ctx.currentTime + note.time);
+                        osc.stop(ctx.currentTime + note.time + note.dur);
+                    });
+                };
+
+                if (ctx.state === 'suspended') {
+                    ctx.resume().then(runChime).catch(() => { });
+                } else {
+                    runChime();
+                }
+            } catch (err) {
+                console.warn("Chime sound play error:", err);
+            }
+        }
+
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast-notify');
+            const icon = document.getElementById('toast-icon');
+            const message = document.getElementById('toast-message');
+
+            icon.textContent = type === 'success' ? '✅' : '⚠️';
+            message.textContent = msg;
+            toast.className = 'toast-clean show';
+
+            setTimeout(() => { toast.classList.remove('show'); }, 3500);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        }
+
+        window.addEventListener('keydown', (e) => {
+            // Shortcut: Ctrl+S or Cmd+S to Save Course Draft
+            if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+                const adminModal = document.getElementById('admin-modal');
+                if (adminModal && adminModal.classList.contains('active') && adminModal.classList.contains('mode-course')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    manualSaveCourseDraft();
+                    return;
+                }
+            }
+
+            if (e.key === 'Escape') {
+                closeDetailModal();
+                closeCheckoutModal();
+                closeMyOrdersModal();
+                closeAdminModal();
+                closeServiceModal();
+            }
+        });
+
+        window.addEventListener('message', (e) => {
+            if (e.data === 'CLOSE_SERVICE_MODAL_ESC') {
+                closeServiceModal();
+            }
+        });
+
+        if (document.readyState === 'loading') { window.addEventListener('DOMContentLoaded', initStore); } else { initStore(); }
+
+
+        /* ==========================================================================
+           COURSE & LEARNING SYSTEM (ทักษะเรียนรู้ - Brilliant.org Style)
+           ========================================================================== */
+        let adminCourseLessons = [];
+        let currentTargetLessonIdx = null;
+        let currentActiveCourse = null;
+        let isViewingBookmarksOnly = false;
+        let _courseScrollSaveTimer = null;
+        let _bigdataCache = [];
+        let _bigdataIsLoading = false;
+        let _activeBigdataFilter = 'all';
+
+        // --------------------------------------------------------------------------
+        // MEDIA URL PARSER & EMBED RENDERER
+        // --------------------------------------------------------------------------
+        function detectMediaType(url) {
+            if (!url) return 'none';
+            const u = String(url).trim().toLowerCase();
+            if (u.includes('youtube.com/shorts/') || u.includes('youtu.be/shorts/')) return 'shorts';
+            if (u.includes('youtube.com') || u.includes('youtu.be')) return 'youtube';
+            if (u.includes('catbox.moe')) return 'catbox';
+            if (u.includes('file.garden')) return 'filegarden';
+            if (u.endsWith('.mp4') || u.endsWith('.webm') || u.endsWith('.ogg')) return 'mp4';
+            return 'youtube'; // default fallback for raw video IDs in bigdata
+        }
+
+        function buildMediaEmbedHtml(rawUrl, title = '') {
+            if (!rawUrl) return '';
+            const trimmed = String(rawUrl).trim();
+            const type = detectMediaType(trimmed);
+
+            // 1. YouTube Shorts (Vertical 9:16)
+            if (type === 'shorts') {
+                let videoId = '';
+                const shortsMatch = trimmed.match(/shorts\/([a-zA-Z0-9_-]+)/);
+                if (shortsMatch) {
+                    videoId = shortsMatch[1];
+                } else {
+                    const fallbackMatch = trimmed.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})/);
+                    if (fallbackMatch) videoId = fallbackMatch[1];
+                }
+                if (!videoId) videoId = trimmed;
+
+                return `
+                    <div class="course-media-wrapper" style="text-align: center; background: #0b0f19; padding: 12px;">
+                        <div style="font-size: 0.72rem; color: #ef4444; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                            <span>📱 YouTube Shorts</span>
+                        </div>
+                        <div class="course-video-shorts">
+                            <iframe src="https://www.youtube.com/embed/${encodeURIComponent(videoId)}?rel=0&autoplay=0&enablejsapi=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 2. Catbox (.mp4) or File Garden (.mp4) or HTML5 Video
+            if (type === 'catbox' || type === 'filegarden' || type === 'mp4') {
+                let safeUrl = trimmed;
+                if (!safeUrl.startsWith('http://') && !safeUrl.startsWith('https://')) {
+                    safeUrl = 'https://' + safeUrl;
+                }
+                const label = type === 'catbox' ? '🐱 Catbox Video Player' : (type === 'filegarden' ? '🌿 File Garden Video Player' : '🎬 วิดีโอสื่อการสอน');
+                return `
+                    <div class="course-media-wrapper">
+                        <div style="padding: 6px 12px; background: rgba(0,0,0,0.6); font-size: 0.72rem; color: #94a3b8; display: flex; align-items: center; justify-content: space-between;">
+                            <span>${label}</span>
+                            <a href="${escapeHtml(safeUrl)}" target="_blank" style="color: #38bdf8; text-decoration: none;">เปิดลิงก์ตรง ↗</a>
+                        </div>
+                        <video controls playsinline preload="metadata" class="course-html5-video">
+                            <source src="${escapeHtml(safeUrl)}" type="video/mp4">
+                            เบราว์เซอร์ของคุณไม่รองรับการเล่นวิดีโอ HTML5
+                        </video>
+                    </div>
+                `;
+            }
+
+            // 3. Standard YouTube or BigData Video ID with start/end query
+            let ytEmbedUrl = '';
+            if (trimmed.includes('youtube.com') || trimmed.includes('youtu.be')) {
+                let idMatch = trimmed.match(/(?:v=|\/embed\/|youtu\.be\/|\/v\/)([a-zA-Z0-9_-]{11})/);
+                let vidId = idMatch ? idMatch[1] : '';
+                let query = '';
+                if (trimmed.includes('?')) {
+                    query = trimmed.substring(trimmed.indexOf('?'));
+                }
+                ytEmbedUrl = vidId ? `https://www.youtube.com/embed/${vidId}${query}` : trimmed;
+            } else {
+                // If it's a BigData ID like "UlK8ycGnWfs?start=0&end=71"
+                ytEmbedUrl = `https://www.youtube.com/embed/${trimmed}`;
+            }
+
+            // Ensure enablejsapi=1 for video pause control
+            if (ytEmbedUrl.includes('?')) {
+                if (!ytEmbedUrl.includes('enablejsapi=1')) ytEmbedUrl += '&enablejsapi=1';
+            } else {
+                ytEmbedUrl += '?enablejsapi=1';
+            }
+
+            return `
+                <div class="course-media-wrapper">
+                    <div class="course-video-standard">
+                        <iframe src="${escapeHtml(ytEmbedUrl)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --------------------------------------------------------------------------
+        // COURSE VIEWER (Brilliant.org Style Reading Mode)
+        // --------------------------------------------------------------------------
+
+        // ==========================================================================
+        // CLEAN ASCII SHORT SLUG & SHARE URL SYSTEM
+        // ==========================================================================
+        function getCleanProductSlug(product) {
+            if (!product) return '';
+            // If explicit ascii slug exists
+            if (product.slug && /^[a-zA-Z0-9_-]+$/.test(product.slug)) {
+                return product.slug;
+            }
+            // If ID is clean ascii, use it
+            if (product.id && /^[a-zA-Z0-9_-]+$/.test(product.id)) {
+                return product.id;
+            }
+            // Auto generate short hash
+            const shortId = (product.id || '').replace(/^prod_/, '').slice(0, 8);
+            return shortId || 'item';
+        }
+
+        function getFullShareUrl(productIdOrSlug) {
+            let p = null;
+            if (typeof productIdOrSlug === 'object' && productIdOrSlug) {
+                p = productIdOrSlug;
+            } else if (productIdOrSlug) {
+                p = products.find(x => x.id === productIdOrSlug || x.slug === productIdOrSlug);
+            } else if (activeDetailProduct) {
+                p = activeDetailProduct;
+            } else if (currentActiveCourse) {
+                p = currentActiveCourse;
+            }
+
+            const slug = p ? getCleanProductSlug(p) : (productIdOrSlug || '');
+            const baseUrl = window.location.origin + window.location.pathname;
+            return `${baseUrl}?p=${encodeURIComponent(slug)}`;
+        }
+
+        async function copyCleanShareUrl(productIdOrNull, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            const url = getFullShareUrl(productIdOrNull);
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(url);
+                } else {
+                    const inp = document.createElement('textarea');
+                    inp.value = url;
+                    document.body.appendChild(inp);
+                    inp.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(inp);
+                }
+                showToast(`🔗 คัดลอกลิงก์แชร์แบบสั้นแล้ว: ${url}`, 'success');
+            } catch (err) {
+                prompt('คัดลอกลิงก์แชร์แบบสั้น:', url);
+            }
+        }
+
+        function handleAdminTitleAutoSlug(val) {
+            const slugInp = document.getElementById('admin-slug');
+            if (!slugInp || slugInp.dataset.userEdited === 'true') return;
+            // ดึงคำภาษาอังกฤษและตัวเลขจากชื่อสินค้าแบบอัตโนมัติ
+            const latinMatches = (val || '').match(/[a-zA-Z0-9]+/g);
+            if (latinMatches && latinMatches.length > 0) {
+                slugInp.value = latinMatches.join('-').toLowerCase().slice(0, 35);
+            } else {
+                slugInp.value = '';
+            }
+        }
+
+        function regenerateAdminSlugFromTitle() {
+            const slugInp = document.getElementById('admin-slug');
+            const titleVal = document.getElementById('admin-title') ? document.getElementById('admin-title').value : '';
+            if (slugInp) {
+                slugInp.dataset.userEdited = 'false';
+                handleAdminTitleAutoSlug(titleVal);
+                if (slugInp.value) {
+                    showToast('✨ ดึงคำอังกฤษสร้าง Slug แล้ว: ' + slugInp.value, 'success');
+                } else {
+                    showToast('ℹ️ ไม่พบคำภาษาอังกฤษในชื่อสินค้า สามารถพิมพ์ Slug เองได้', 'info');
+                }
+            }
+        }
+
+        // ==========================================================================
+        // GLOBAL KNOWLEDGE BOOKMARKS (ความรู้บันทึก - หน้ารวมบทเรียนที่บันทึกไว้)
+        // ==========================================================================
+        function getAllCourseBookmarks() {
+            const all = [];
+            if (!Array.isArray(products)) return all;
+            products.forEach(p => {
+                if (p.category === 'ทักษะเรียนรู้' || p.isCourse || (Array.isArray(p.lessons) && p.lessons.length > 0)) {
+                    const bms = getCourseBookmarks(p.id);
+                    if (Array.isArray(bms) && bms.length > 0 && Array.isArray(p.lessons)) {
+                        bms.forEach(lessonIdx => {
+                            const lesson = p.lessons[lessonIdx];
+                            if (lesson) {
+                                all.push({
+                                    courseId: p.id,
+                                    courseTitle: p.title || 'คอร์สเรียน',
+                                    lessonIdx: lessonIdx,
+                                    lessonTitle: lesson.title || `บทเรียนที่ ${lessonIdx + 1}`,
+                                    coverImage: p.coverImage
+                                });
+                            }
+                        });
+                    }
+                }
+            });
+            return all;
+        }
+
+        function openKnowledgeDrawer() {
+            const drawer = document.getElementById('skills-knowledge-drawer');
+            const overlay = document.getElementById('knowledge-drawer-overlay');
+            if (drawer) drawer.classList.add('active');
+            if (overlay) overlay.classList.add('active');
+            renderSkillsKnowledgeDrawer();
+        }
+
+        function closeKnowledgeDrawer() {
+            const drawer = document.getElementById('skills-knowledge-drawer');
+            const overlay = document.getElementById('knowledge-drawer-overlay');
+            if (drawer) drawer.classList.remove('active');
+            if (overlay) overlay.classList.remove('active');
+        }
+
+        function toggleKnowledgeDrawer() {
+            const drawer = document.getElementById('skills-knowledge-drawer');
+            if (drawer && drawer.classList.contains('active')) {
+                closeKnowledgeDrawer();
+            } else {
+                openKnowledgeDrawer();
+            }
+        }
+
+        function renderSkillsKnowledgeDrawer() {
+            const listEl = document.getElementById('skills-knowledge-items-list');
+            const countEl = document.getElementById('skills-knowledge-count');
+            const headerCountEl = document.getElementById('header-knowledge-count');
+
+            const items = getAllCourseBookmarks();
+            if (countEl) countEl.textContent = items.length;
+            if (headerCountEl) headerCountEl.textContent = items.length;
+            if (!listEl) return;
+
+            if (items.length === 0) {
+                listEl.innerHTML = `
+                    <div class="knowledge-empty-state">
+                        <div style="font-size: 1.8rem; margin-bottom: 6px;">🌱</div>
+                        <div style="font-weight: 700; color: #92400e; font-size: 0.92rem;">ยังไม่มีความรู้บันทึก</div>
+                        <div style="font-size: 0.78rem; color: #b45309; margin-top: 6px; line-height: 1.45;">
+                            กดปุ่ม <b>"🔖 บันทึกความรู้นี้"</b> ในบทเรียนที่คุณชอบ เพื่อเก็บทบทวนที่นี่ได้ตลอดเวลา
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            listEl.innerHTML = items.map(item => `
+                <div class="knowledge-item-card" onclick="closeKnowledgeDrawer(); openCourseViewer('${item.courseId}', event, ${item.lessonIdx});">
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 6px;">
+                        <span class="knowledge-lesson-step">บทเรียนที่ ${(item.lessonIdx + 1).toString().padStart(2, '0')}</span>
+                        <button type="button" class="btn-knowledge-item-del" onclick="removeGlobalBookmark('${item.courseId}', ${item.lessonIdx}, event)" title="ลบออกจากความรู้บันทึก">✕</button>
+                    </div>
+                    <div class="knowledge-item-title">${escapeHtml(item.lessonTitle)}</div>
+                    <div class="knowledge-item-course">🎓 ${escapeHtml(item.courseTitle)}</div>
+                </div>
+            `).join('');
+        }
+
+        // Alias for backward compatibility
+        const renderSkillsKnowledgeSidebar = renderSkillsKnowledgeDrawer;
+        const scrollToKnowledgeSidebar = toggleKnowledgeDrawer;
+
+        function removeGlobalBookmark(courseId, lessonIdx, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            let list = getCourseBookmarks(courseId);
+            const pos = list.indexOf(lessonIdx);
+            if (pos >= 0) {
+                list.splice(pos, 1);
+                saveCourseBookmarks(courseId, list);
+                showToast('🗑️ นำออกจากความรู้บันทึกแล้ว', 'info');
+                renderSkillsKnowledgeDrawer();
+                if (currentActiveCourse && currentActiveCourse.id === courseId) {
+                    renderCourseViewer(isViewingBookmarksOnly);
+                }
+            }
+        }
+
+        // ==========================================================================
+        // VIDEO PLAYBACK MANAGEMENT (Auto-Pause on Scroll & Modal Close)
+        // ==========================================================================
+        let _courseLessonObserver = null;
+
+        function stopAllCourseVideos() {
+            const modal = document.getElementById('course-viewer-modal');
+            if (!modal) return;
+            // 1. Pause HTML5 videos
+            modal.querySelectorAll('video').forEach(vid => {
+                try { if (!vid.paused) vid.pause(); } catch (e) { }
+            });
+            // 2. Pause YouTube iframes via postMessage API
+            modal.querySelectorAll('iframe').forEach(ifr => {
+                try {
+                    ifr.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+                } catch (e) { }
+            });
+        }
+
+        function pauseOutOfViewVideos(bodyEl) {
+            if (!bodyEl) return;
+            const bodyRect = bodyEl.getBoundingClientRect();
+            const cards = bodyEl.querySelectorAll('.course-lesson-card');
+            cards.forEach(card => {
+                const cardRect = card.getBoundingClientRect();
+                // Card is scrolled past viewport (above or below)
+                const isOutOfView = (cardRect.bottom < bodyRect.top - 40) || (cardRect.top > bodyRect.bottom + 40);
+                if (isOutOfView) {
+                    card.querySelectorAll('video').forEach(vid => {
+                        try { if (!vid.paused) vid.pause(); } catch (e) { }
+                    });
+                    card.querySelectorAll('iframe').forEach(ifr => {
+                        try {
+                            ifr.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+                        } catch (e) { }
+                    });
+                }
+            });
+        }
+
+        function setupCourseLessonIntersectionObserver() {
+            if (_courseLessonObserver) {
+                _courseLessonObserver.disconnect();
+            }
+            const bodyEl = document.getElementById('course-viewer-body');
+            if (!bodyEl || !('IntersectionObserver' in window)) return;
+
+            _courseLessonObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (!entry.isIntersecting || entry.intersectionRatio < 0.1) {
+                        const card = entry.target;
+                        card.querySelectorAll('video').forEach(vid => {
+                            try { if (!vid.paused) vid.pause(); } catch (e) { }
+                        });
+                        card.querySelectorAll('iframe').forEach(ifr => {
+                            try {
+                                ifr.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+                            } catch (e) { }
+                        });
+                    }
+                });
+            }, {
+                root: bodyEl,
+                threshold: [0, 0.1]
+            });
+
+            document.querySelectorAll('.course-lesson-card').forEach(card => {
+                _courseLessonObserver.observe(card);
+            });
+        }
+
+        // ==========================================================================
+        // INLINE EMBEDDED PROMPTPAY QR SYSTEM (Instant Sales Conversion)
+        // ==========================================================================
+        // (_activeInlineDetailOrder, _inlineDetailPollingTimer, etc. declared at top of script)
+
+        async function setupInlinePromptPay({ product, targetQrEl, adminSimulateEl, onApprovedSuccess, type = 'detail' }) {
+            if (!product || !targetQrEl) return;
+
+            // Clear any active polling timer for this type
+            if (type === 'detail') {
+                if (_inlineDetailPollingTimer) clearInterval(_inlineDetailPollingTimer);
+                _inlineDetailPollingTimer = null;
+            } else {
+                if (_inlineCoursePollingTimer) clearInterval(_inlineCoursePollingTimer);
+                _inlineCoursePollingTimer = null;
+            }
+
+            if (!storeIsOnline) {
+                targetQrEl.innerHTML = `
+                    <div style="padding: 16px 8px; text-align: center; color: #dc2626; font-size: 0.78rem;">
+                        <div style="font-size: 1.4rem; margin-bottom: 4px;">🔴</div>
+                        <b>ร้านค้าออฟไลน์ชั่วคราว</b><br>โปรดรอเปิดระบบหรือติดต่อแอดมิน
+                    </div>
+                `;
+                return;
+            }
+
+            const orderId = `ORD-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 899 + 100)}`;
+            const secretToken = `sec_${Math.random().toString(36).substring(2)}_${Date.now()}`;
+            const expiresAt = Date.now() + 10 * 60 * 1000;
+
+            const orderObj = {
+                id: orderId,
+                orderId: orderId,
+                linkKey: orderId,
+                productId: product.id,
+                productTitle: product.title,
+                price: product.price,
+                previewUrl: product.coverImage,
+                status: 'pending',
+                secretToken: secretToken,
+                createdAt: Date.now(),
+                expiresAt: expiresAt,
+                timeStr: new Date().toLocaleTimeString('th-TH'),
+                dateStr: new Date().toLocaleDateString('th-TH'),
+                manualConfirmed: false
+            };
+
+            if (type === 'detail') _activeInlineDetailOrder = orderObj;
+            else _activeInlineCourseOrder = orderObj;
+
+            // Show loading spinner in QR target
+            targetQrEl.innerHTML = `
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; min-height:160px; color:#64748b; font-size:0.75rem; gap:6px;">
+                    <div class="qr-loading-spinner"></div>
+                    <span>กำลังสร้าง PromptPay QR...</span>
+                </div>
+            `;
+
+            // Save order to Firebase
+            try {
+                await fetch(`${PAYMENT_ENDPOINT}/${orderId}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderObj)
+                });
+            } catch (e) { }
+
+            // Request QR image from Beam worker or fallback
+            try {
+                const res = await fetch(`${BEAM_WORKER_URL}/create-charge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        linkKey: orderId,
+                        amount: product.price
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.qrImageBase64) {
+                        targetQrEl.innerHTML = `<img src="data:image/png;base64,${data.qrImageBase64}" alt="PromptPay QR" style="width:160px; height:160px; object-fit:contain; border-radius:8px;">`;
+                    } else {
+                        throw new Error('Invalid Beam response');
+                    }
+                } else {
+                    throw new Error('Beam API error');
+                }
+            } catch (err) {
+                // Fallback to direct QR image URL
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.src = `${BEAM_WORKER_URL}/qr-image?linkKey=${encodeURIComponent(orderId)}&amount=${product.price}`;
+                img.alt = "PromptPay QR";
+                img.style = "width:160px; height:160px; object-fit:contain; border-radius:8px;";
+                img.onload = () => {
+                    targetQrEl.innerHTML = '';
+                    targetQrEl.appendChild(img);
+                };
+                img.onerror = () => {
+                    targetQrEl.innerHTML = `
+                        <div style="padding:12px 6px; text-align:center; color:#b91c1c; font-size:0.75rem;">
+                            <div style="font-size:1.3rem;">⚠️</div>
+                            <b>ระบบชำระเงินขัดข้องชั่วคราว</b><br>
+                            <button type="button" class="btn-tool-sm" onclick="setupInlinePromptPay({ product, targetQrEl, adminSimulateEl, onApprovedSuccess, type })" style="margin-top:6px; font-size:0.72rem; padding:3px 8px;">🔄 ลองใหม่</button>
+                        </div>
+                    `;
+                };
+            }
+
+            // Local Admin Quick Simulation
+            if (adminSimulateEl) {
+                if (isLocalAdmin) {
+                    adminSimulateEl.style.display = 'block';
+                    const priceVal = Number(product.price || 0);
+                    const priceFormatted = priceVal % 1 === 0 ? priceVal.toFixed(0) : priceVal.toFixed(2);
+                    adminSimulateEl.innerHTML = `
+                        <div style="margin-top: 6px; padding: 4px 8px; background: #eff6ff; border: 1px dashed #93c5fd; border-radius: 6px; font-size: 0.72rem; display: flex; align-items: center; justify-content: space-between; box-sizing: border-box; width: 100%;">
+                            <span>🛠️ <strong>แอดมิน:</strong></span>
+                            <button type="button" onclick="simulateAdminPayment('${orderId}')"
+                                style="background: #2563eb; color: #ffffff; border: none; padding: 3px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; cursor: pointer;">
+                                จำลองเงินเข้า ${priceFormatted} บ.
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    adminSimulateEl.style.display = 'none';
+                    adminSimulateEl.innerHTML = '';
+                }
+            }
+
+            // Start polling for payment approval
+            const pollInterval = setInterval(async () => {
+                try {
+                    const res = await fetch(`${PAYMENT_ENDPOINT}/${orderId}.json?t=${Date.now()}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.status === 'approved') {
+                            clearInterval(pollInterval);
+                            if (type === 'detail') _inlineDetailPollingTimer = null;
+                            else _inlineCoursePollingTimer = null;
+                            handlePaymentApprovedSuccess(orderId, product, data);
+                            if (typeof onApprovedSuccess === 'function') {
+                                onApprovedSuccess(data);
+                            }
+                        }
+                    }
+                } catch (e) { }
+            }, 1500);
+
+            if (type === 'detail') _inlineDetailPollingTimer = pollInterval;
+            else _inlineCoursePollingTimer = pollInterval;
+        }
+
+        function openCourseViewer(courseId, event, targetLessonIdx = null) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
+            const p = products.find(x => String(x.id) === String(courseId) || String(x.slug) === String(courseId));
+            if (!p) {
+                showToast('⚠️ ไม่พบคอร์สเรียนนี้', 'warning');
+                return;
+            }
+
+            currentActiveCourse = p;
+            isViewingBookmarksOnly = false;
+
+            // ตั้งค่า URL เฉพาะของคอร์สเรียนทักษะเรียนรู้นี้ และอัปเดต SEO
+            const courseSlug = getCleanProductSlug(p);
+            window.history.pushState({ courseId: p.id }, '', `?p=${courseSlug}`);
+            updatePageSEO(p);
+
+            const modal = document.getElementById('course-viewer-modal');
+            if (!modal) return;
+
+            document.getElementById('course-viewer-top-title').textContent = p.title || 'คอร์สทักษะเรียนรู้';
+            document.getElementById('course-hero-title').textContent = p.title || 'คอร์สทักษะเรียนรู้';
+
+            // Clean description: format line breaks and eliminate raw <div> tags
+            const descEl = document.getElementById('course-hero-desc');
+            if (descEl) {
+                descEl.innerHTML = formatCourseDescriptionHtml(p.description || '');
+            }
+
+            // Set Course Cover Image in Course Viewer Hero Card
+            const coverImgEl = document.getElementById('course-hero-cover-img');
+            const coverWrapEl = document.getElementById('course-hero-cover-wrap');
+            const coverSrc = p.coverImage || (Array.isArray(p.images) && p.images[0]) || 'shop/images/learning_course_cover.svg';
+
+            if (coverImgEl) {
+                coverImgEl.src = coverSrc;
+                if (coverWrapEl) coverWrapEl.style.display = 'block';
+            }
+
+            const isPurchased = checkIsPurchased(p.id) || (p.price <= 0);
+            const unlockedBadge = document.getElementById('course-hero-unlocked-badge');
+            const previewBadge = document.getElementById('course-hero-preview-badge');
+            if (unlockedBadge) unlockedBadge.style.display = isPurchased ? 'inline-flex' : 'none';
+            if (previewBadge) previewBadge.style.display = isPurchased ? 'none' : 'inline-flex';
+
+            // ปุ่มแก้ไขคอร์สเรียน: แสดงเฉพาะแอดมินบน localhost/127.0.0.1 เท่านั้น
+            const editBtn = document.getElementById('btn-course-admin-edit');
+            if (editBtn) {
+                editBtn.style.display = isLocalAdmin ? 'inline-flex' : 'none';
+            }
+
+            // ถ้าชำระเงินแล้ว ให้ดึงบทเรียนตัวเต็มจาก VAULT_ENDPOINT มาแสดง
+            if (isPurchased && !p._fullLessonsLoaded) {
+                fetch(`${VAULT_ENDPOINT}/${p.id}.json`)
+                    .then(res => res.ok ? res.json() : null)
+                    .then(vaultData => {
+                        if (vaultData && Array.isArray(vaultData.lessons) && vaultData.lessons.length > 0) {
+                            p.lessons = vaultData.lessons;
+                            p._fullLessonsLoaded = true;
+                            renderCourseViewer(false);
+                        }
+                    })
+                    .catch(err => console.warn('Vault lessons fetch:', err));
+            }
+
+            cancelCourseInlineCheckout();
+            renderCourseViewer(false);
+            setupCourseLessonIntersectionObserver();
+
+            modal.classList.add('active');
+            modal.classList.add('course-modal-active');
+            modal.style.opacity = '1';
+            modal.style.pointerEvents = 'auto';
+            document.body.style.overflow = 'hidden';
+
+            // Attach scroll listener directly & restore scroll position after DOM renders
+            const bodyEl = document.getElementById('course-viewer-body');
+            if (bodyEl) {
+                bodyEl.removeEventListener('scroll', handleCourseViewerScroll);
+                bodyEl.addEventListener('scroll', handleCourseViewerScroll, { passive: true });
+            }
+
+            setTimeout(() => {
+                if (typeof targetLessonIdx === 'number') {
+                    const cardEl = document.getElementById(`course-card-idx-${targetLessonIdx}`);
+                    if (cardEl) {
+                        cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else {
+                        restoreCourseScrollPosition(p.id);
+                    }
+                } else {
+                    restoreCourseScrollPosition(p.id);
+                }
+            }, 100);
+        }
+
+        function closeCourseViewer(event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
+            // 1. สั่งหยุดเล่นวิดีโอทั้งหมดทันทีที่ปิดหน้าต่าง
+            stopAllCourseVideos();
+            if (_inlineCoursePollingTimer) { clearInterval(_inlineCoursePollingTimer); _inlineCoursePollingTimer = null; }
+            if (_courseInlineCountdownTimer) { clearInterval(_courseInlineCountdownTimer); _courseInlineCountdownTimer = null; }
+            cancelCourseInlineCheckout();
+            if (_courseLessonObserver) {
+                _courseLessonObserver.disconnect();
+            }
+
+            const modal = document.getElementById('course-viewer-modal');
+            if (modal) {
+                modal.classList.remove('active');
+                modal.classList.remove('course-modal-active');
+                modal.style.opacity = '';
+                modal.style.pointerEvents = '';
+            }
+            document.body.style.overflow = '';
+            currentActiveCourse = null;
+
+            // 2. คืนค่า URL กลับสู่หมวดหมู่หรือหน้าเดิม
+            try {
+                if (activeCategory && activeCategory !== 'all') {
+                    window.history.pushState({ category: activeCategory }, '', `?c=${encodeURIComponent(activeCategory)}`);
+                } else {
+                    window.history.pushState({}, '', window.location.pathname);
+                }
+            } catch (e) { }
+            try {
+                updatePageSEO(null);
+            } catch (e) { }
+        }
+
+        function handleCourseModalOverlayClick(event) {
+            if (event.target && event.target.id === 'course-viewer-modal') {
+                closeCourseViewer();
+            }
+        }
+
+        function getCourseBookmarks(courseId) {
+            try {
+                const raw = localStorage.getItem(`course_bookmarks_${courseId}`);
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) { return []; }
+        }
+
+        function saveCourseBookmarks(courseId, list) {
+            try {
+                localStorage.setItem(`course_bookmarks_${courseId}`, JSON.stringify(list));
+            } catch (e) { }
+        }
+
+        function getCourseCompleted(courseId) {
+            try {
+                const raw = localStorage.getItem(`course_completed_${courseId}`);
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) { return []; }
+        }
+
+        function saveCourseCompleted(courseId, list) {
+            try {
+                localStorage.setItem(`course_completed_${courseId}`, JSON.stringify(list));
+            } catch (e) { }
+        }
+
+        function renderCourseViewer(filterBookmarksOnly = false) {
+            if (!currentActiveCourse) return;
+            const p = currentActiveCourse;
+            const container = document.getElementById('course-lessons-feed');
+            const paywallBox = document.getElementById('course-paywall-box');
+            if (!container) return;
+
+            const allLessons = Array.isArray(p.lessons) && p.lessons.length > 0 ? p.lessons : [
+                {
+                    title: 'บทเรียนที่ 1: แนะนำเนื้อหาหลัก',
+
+                }
+            ];
+
+            const totalLessons = allLessons.length;
+            const isPurchased = checkIsPurchased(p.id) || (p.price <= 0);
+            const countBadge = document.getElementById('course-hero-posts-count-badge');
+            if (countBadge) countBadge.textContent = `📚 ทั้งหมด ${totalLessons} บทเรียน`;
+
+            const bookmarks = getCourseBookmarks(p.id);
+            const completed = getCourseCompleted(p.id);
+
+            const bmCountEl = document.getElementById('course-bookmark-count');
+            if (bmCountEl) bmCountEl.textContent = bookmarks.length;
+
+            const bmFilterBtn = document.getElementById('course-bookmark-filter-btn');
+            if (bmFilterBtn) {
+                if (filterBookmarksOnly) {
+                    bmFilterBtn.classList.add('bookmarked');
+                    bmFilterBtn.innerHTML = `⭐ บันทึกความรู้นี้ (${bookmarks.length}) ✕ ดูทั้งหมด`;
+                } else {
+                    bmFilterBtn.classList.remove('bookmarked');
+                    bmFilterBtn.innerHTML = `🔖 บันทึกความรู้นี้ (<span id="course-bookmark-count">${bookmarks.length}</span>)`;
+                }
+            }
+
+            // Determine visible lessons: 4 preview posts if not purchased, or all if purchased
+            let visibleLessons = allLessons;
+            let showPaywall = false;
+
+            if (!isPurchased && !filterBookmarksOnly) {
+                visibleLessons = allLessons.slice(0, 4);
+                if (allLessons.length > 4) {
+                    showPaywall = true;
+                }
+            }
+
+            if (filterBookmarksOnly) {
+                visibleLessons = allLessons.filter((_, idx) => bookmarks.includes(idx));
+            }
+
+            if (visibleLessons.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: #64748b; background: #ffffff; border-radius: 16px; border: 1px dashed #cbd5e1;">
+                        <div style="font-size: 2rem; margin-bottom: 8px;">🔖</div>
+                        <h4 style="color: #0f172a; margin: 0 0 6px 0;">ยังไม่มีบทเรียนที่คั่นไว้</h4>
+                        <p style="font-size: 0.85rem; margin: 0;">กดปุ่ม <b>"🔖 คั่นบทเรียนนี้"</b> ในบทเรียนที่คุณชื่นชอบเพื่อเรียกดูแยกได้ทันที</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = visibleLessons.map((lesson) => {
+                    const originalIdx = allLessons.indexOf(lesson);
+                    const isPreviewGold = (originalIdx < 4);
+                    const isBookmarked = bookmarks.includes(originalIdx);
+                    const isDone = completed.includes(originalIdx);
+
+                    return `
+                        <div class="course-lesson-card ${isPreviewGold ? 'is-preview-gold' : ''}" id="course-card-idx-${originalIdx}" data-lesson-idx="${originalIdx}">
+                            <div class="course-lesson-header">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span class="course-step-tag ${isPreviewGold ? 'gold' : ''}">บทเรียนที่ ${(originalIdx + 1).toString().padStart(2, '0')}</span>
+                                    ${isPreviewGold ? '<span class="badge-gold-preview">✨ โพสต์ตัวอย่างฟรี</span>' : ''}
+                                </div>
+                                <div class="course-lesson-actions">
+                                    <button type="button" class="btn-lesson-action ${isBookmarked ? 'bookmarked' : ''}" onclick="toggleLessonBookmark('${p.id}', ${originalIdx}, event)">
+                                        ${isBookmarked ? '⭐ บันทึกความรู้นี้แล้ว' : '🔖 บันทึกความรู้นี้'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <h3 class="course-lesson-title">${escapeHtml(lesson.title || `บทเรียนที่ ${originalIdx + 1}`)}</h3>
+
+                            ${lesson.imageUrl ? `
+                                <img src="${escapeHtml(lesson.imageUrl)}" alt="${escapeHtml(lesson.title || '')}" class="course-lesson-image" loading="lazy" onerror="this.style.display='none'">
+                            ` : ''}
+
+                            ${lesson.mediaUrl ? buildMediaEmbedHtml(lesson.mediaUrl, lesson.title) : ''}
+
+                            <div class="course-lesson-content">
+                                ${formatCourseLessonContent(lesson.content || '')}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Teaser for locked lessons and paywall button
+            if (paywallBox) {
+                if (showPaywall && !filterBookmarksOnly) {
+                    paywallBox.style.display = 'block';
+                    const remainingCount = totalLessons - 4;
+                    const priceFormatted = Number(p.price || 0).toFixed(2);
+
+                    // Add teaser rows of locked titles (clean duplicate "บทเรียนที่ X" prefix)
+                    const teaserHtml = allLessons.slice(4).map((l, i) => {
+                        let cleanTitle = l.title || 'เนื้อหาบทเรียนพิเศษ';
+                        cleanTitle = cleanTitle.replace(/^บทเรียนที่\s*\d+[:\s]*/i, '').trim();
+                        return `
+                            <div class="course-locked-teaser" style="padding: 10px 14px; margin-bottom: 8px; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; min-width: 0; flex: 1;">
+                                    <span style="flex-shrink: 0;">🔒</span>
+                                    <span style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">บทเรียนที่ ${i + 5}: ${escapeHtml(cleanTitle)}</span>
+                                </div>
+                                <span style="font-size: 0.7rem; color: #dc2626; background: #fee2e2; padding: 2px 7px; border-radius: 4px; font-weight: 700; white-space: nowrap; flex-shrink: 0;">ปลดล็อก</span>
+                            </div>
+                        `;
+                    }).join('');
+
+                    document.getElementById('course-paywall-title').textContent = `🔒 ปลดล็อกบทเรียนที่เหลืออีก ${remainingCount} บทเรียน`;
+                    document.getElementById('course-paywall-desc').innerHTML = `
+                        ซื้อขาดครั้งเดียว <u>ดูได้ตลอดชีพ</u>
+                    `;
+                    const priceDisp = document.getElementById('course-paywall-price-display');
+                    if (priceDisp) priceDisp.textContent = `฿ ${priceFormatted}`;
+                    const btnText = document.getElementById('course-paywall-btn-text');
+                    if (btnText) btnText.textContent = `สแกนพร้อมเพย์`;
+
+                    let teaserWrap = document.getElementById('course-teaser-list-wrap');
+                    if (teaserWrap) teaserWrap.innerHTML = teaserHtml;
+                } else {
+                    paywallBox.style.display = 'none';
+                }
+            }
+
+            updateCourseCuteProgress(p.id);
+            renderCourseRecommendations(p.id);
+        }
+
+        function formatCourseDescriptionHtml(raw) {
+            if (!raw) return '';
+            let str = String(raw).trim();
+
+            // 1. Decode double-escaped or escaped entities
+            str = str.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+
+            // 2. Convert block boundaries to newlines
+            str = str.replace(/<(div|p)[^>]*>\s*<br\s*\/?>\s*<\/(div|p)>/gi, '\n');
+            str = str.replace(/<(div|p)[^>]*>/gi, '\n');
+            str = str.replace(/<\/(div|p)>/gi, '');
+            str = str.replace(/<br\s*\/?>/gi, '\n');
+
+            // 3. Completely remove all span, font, style, header, section tags
+            str = str.replace(/<\/?(span|font|header|section|article)[^>]*>/gi, '');
+
+            // 4. Strip any inline style, class, or id attributes from any remaining tags
+            str = str.replace(/\s+(style|class|id|dir)=["'][^"']*["']/gi, '');
+
+            // 5. Compress multiple consecutive newlines (max 2)
+            str = str.replace(/\n{3,}/g, '\n\n');
+
+            // 6. Split lines and build clean readable HTML
+            const lines = str.split('\n');
+            return lines.map(line => {
+                let l = line.trim();
+                // Strip empty tags
+                l = l.replace(/<([a-z0-9]+)[^>]*><\/\1>/gi, '');
+                return l;
+            }).filter((line, i, arr) => {
+                if ((i === 0 || i === arr.length - 1) && !line) return false;
+                return true;
+            }).join('<br>');
+        }
+
+        function formatCourseLessonContent(text) {
+            if (!text) return '';
+            let safe = escapeHtml(text);
+            // Bold **text**
+            safe = safe.split('**').map((seg, i) => (i % 2 === 1 ? ('<strong>' + seg + '</strong>') : seg)).join('');
+            // Italic *text*
+            safe = safe.split('*').map((seg, i) => (i % 2 === 1 ? ('<em>' + seg + '</em>') : seg)).join('');
+            // Underline <u>text</u> or __text__
+            safe = safe.replace(/&lt;u&gt;(.*?)&lt;\/u&gt;/gi, '<span style="text-decoration: underline;">$1</span>');
+            safe = safe.split('__').map((seg, i) => (i % 2 === 1 ? ('<span style="text-decoration: underline;">' + seg + '</span>') : seg)).join('');
+            // Markdown Links [title](url)
+            safe = safe.replace(/\[(.*?)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #0284c7; text-decoration: underline; font-weight: 600;">$1</a>');
+            // Auto-link standalone URLs
+            safe = safe.replace(/(?<!href=")(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" style="color: #0284c7; text-decoration: underline;">$1</a>');
+
+            const paras = safe.split(/\r?\n\r?\n/).map(p => p.split(/\r?\n/).join('<br>')).join('</p><p>');
+            return '<p>' + paras + '</p>';
+        }
+
+        function toggleCourseBookmarksFilter() {
+            isViewingBookmarksOnly = !isViewingBookmarksOnly;
+            renderCourseViewer(isViewingBookmarksOnly);
+        }
+
+        function toggleLessonBookmark(courseId, lessonIdx, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            let list = getCourseBookmarks(courseId);
+            const idxPos = list.indexOf(lessonIdx);
+            if (idxPos >= 0) {
+                list.splice(idxPos, 1);
+                showToast('🗑️ นำออกจากความรู้บันทึกแล้ว', 'info'); renderSkillsKnowledgeSidebar();
+            } else {
+                list.push(lessonIdx);
+                showToast('⭐ บันทึกความรู้นี้แล้ว! เรียกดูได้ที่แถบความรู้บันทึก', 'success'); renderSkillsKnowledgeSidebar();
+            }
+            saveCourseBookmarks(courseId, list);
+            renderCourseViewer(isViewingBookmarksOnly);
+        }
+
+        function toggleLessonCompleted(courseId, lessonIdx, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            let list = getCourseCompleted(courseId);
+            const idxPos = list.indexOf(lessonIdx);
+            if (idxPos >= 0) {
+                list.splice(idxPos, 1);
+            } else {
+                list.push(lessonIdx);
+                showToast('🎉 เก่งมาก! บันทึกความเข้าใจบทเรียนนี้แล้ว', 'success');
+            }
+            saveCourseCompleted(courseId, list);
+            renderCourseViewer(isViewingBookmarksOnly);
+        }
+
+        // Cute Progress Bar Calculation (คำนวณ % ตามระยะการอ่าน ห้ามย้อนกลับหลัง)
+        function updateCourseCuteProgress(courseId) {
+            if (!currentActiveCourse) return;
+            const bodyEl = document.getElementById('course-viewer-body');
+
+            const allLessons = Array.isArray(currentActiveCourse.lessons) ? currentActiveCourse.lessons : [];
+            const totalLessons = allLessons.length;
+            const isPurchased = checkIsPurchased(currentActiveCourse.id) || (currentActiveCourse.price <= 0);
+
+            // คำนวณเพดาน % สูงสุดที่สามารถอ่านได้จริง
+            // หากยังไม่ได้ซื้อ จะดูได้สูงสุดแค่บทเรียนตัวอย่าง (เช่น 4 บทจาก 6 บท = 67% ห้ามเป็น 100%)
+            let maxReachablePct = 100;
+            if (!isPurchased && totalLessons > 0) {
+                const previewCount = Math.min(4, totalLessons);
+                maxReachablePct = Math.min(99, Math.round((previewCount / totalLessons) * 100));
+            }
+
+            // คำนวณ % จากระยะการเลื่อน Scroll จริงของเนื้อหา
+            let scrollRatio = 0;
+            if (bodyEl) {
+                const scrollable = bodyEl.scrollHeight - bodyEl.clientHeight;
+                if (scrollable > 0) {
+                    scrollRatio = Math.min(1, Math.max(0, bodyEl.scrollTop / scrollable));
+                }
+            }
+
+            const currentPct = Math.min(maxReachablePct, Math.round(scrollRatio * maxReachablePct));
+
+            // ดึงค่า % สูงสุดที่เคยอ่านถึง (ห้ามย้อนกลับหลัง และต้องไม่เกิน maxReachablePct หากยังไม่ซื้อ)
+            let maxPct = 0;
+            try {
+                const saved = localStorage.getItem('course_max_pct_' + courseId);
+                if (saved) maxPct = parseInt(saved, 10) || 0;
+            } catch (e) { }
+
+            // แก้ไขค่าเก่าที่เคยบันทึกผิดเป็น 100% หากยังไม่ได้ซื้อ
+            if (!isPurchased && maxPct > maxReachablePct) {
+                maxPct = maxReachablePct;
+            }
+
+            if (currentPct > maxPct) {
+                maxPct = currentPct;
+            }
+
+            try {
+                localStorage.setItem('course_max_pct_' + courseId, maxPct);
+            } catch (e) { }
+
+            const pct = maxPct;
+
+            const badge = document.getElementById('course-progress-badge');
+            const fill = document.getElementById('course-progress-fill-bar');
+
+            if (fill) fill.style.width = pct + '%';
+
+            if (badge) {
+                let milestone = '🌱 เรียนไปแล้ว 0%';
+                if (pct >= 100 && isPurchased) {
+                    milestone = '🎉 เรียนไปแล้ว 100% 🎓';
+                } else if (pct > 0) {
+                    milestone = '📖 เรียนไปแล้ว ' + pct + '%';
+                } else {
+                    milestone = '🌱 เรียนไปแล้ว 0%';
+                }
+
+                badge.textContent = milestone;
+            }
+        }
+
+        function handleCourseViewerScroll(event) {
+            if (!currentActiveCourse) return;
+            const bodyEl = document.getElementById('course-viewer-body');
+            if (!bodyEl) return;
+
+            const courseId = currentActiveCourse.id;
+            const scrollPos = bodyEl.scrollTop;
+
+            // อัปเดต % แถบ Progress ทันทีตามระยะการ Scroll แบบเรียลไทม์
+            updateCourseCuteProgress(courseId);
+
+            // เมื่อเลื่อนข้ามบทเรียน หากวิดีโอเปิดอยู่ ให้สั่งหยุดเล่นทันที
+            pauseOutOfViewVideos(bodyEl);
+
+            clearTimeout(_courseScrollSaveTimer);
+            _courseScrollSaveTimer = setTimeout(() => {
+                try {
+                    localStorage.setItem(`course_scroll_pos_${courseId}`, scrollPos);
+                } catch (e) { }
+            }, 250);
+        }
+
+        function restoreCourseScrollPosition(courseId) {
+            const bodyEl = document.getElementById('course-viewer-body');
+            if (!bodyEl) return;
+
+            const savedPos = localStorage.getItem(`course_scroll_pos_${courseId}`);
+            if (savedPos && Number(savedPos) > 40) {
+                bodyEl.scrollTop = Number(savedPos);
+
+                const toast = document.getElementById('course-pos-toast');
+                if (toast) {
+                    toast.classList.add('show');
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                    }, 3200);
+                }
+            }
+
+            // คำนวณ % แถบ Progress ให้ตรงกับตำแหน่งที่เลื่อนกลับมาทันที
+            updateCourseCuteProgress(courseId);
+        }
+
+        function triggerCoursePurchaseFromViewer() {
+            startCourseInlineCheckout();
+        }
+
+        async function startCourseInlineCheckout() {
+            if (!currentActiveCourse) return;
+            const product = currentActiveCourse;
+            const amount = parseFloat(product.price) || 0;
+            if (amount <= 0) return;
+
+            // Switch to QR view inside the card
+            const btnView = document.getElementById('course-paywall-btn-view');
+            const qrView = document.getElementById('course-paywall-qr-view');
+            if (btnView && qrView) {
+                btnView.style.display = 'none';
+                qrView.style.display = 'block';
+            }
+
+            const priceTextEl = document.getElementById('course-qr-price-text');
+            if (priceTextEl) priceTextEl.textContent = `฿ ${amount.toFixed(2)}`;
+
+            const qrTarget = document.getElementById('course-qr-image-target');
+            if (qrTarget) {
+                qrTarget.innerHTML = `
+                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; font-size:0.78rem; color:#64748b;">
+                        <div style="width:28px; height:28px; border:3px solid #bbf7d0; border-top-color:#16a34a; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
+                        <span>กำลังสร้าง QR Code...</span>
+                    </div>
+                `;
+            }
+
+            const orderId = `ORD-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 899 + 100)}`;
+            const secretToken = `sec_${Math.random().toString(36).substring(2)}_${Date.now()}`;
+            const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+            const orderObj = {
+                id: orderId,
+                orderId: orderId,
+                linkKey: orderId,
+                productId: product.id,
+                productTitle: product.title,
+                price: amount,
+                previewUrl: product.coverImage || '',
+                status: 'pending',
+                secretToken: secretToken,
+                createdAt: Date.now(),
+                expiresAt: expiresAt,
+                timeStr: new Date().toLocaleTimeString('th-TH'),
+                dateStr: new Date().toLocaleDateString('th-TH'),
+                manualConfirmed: false
+            };
+            _activeInlineCourseOrder = orderObj;
+
+            // Save order to Firebase
+            try {
+                await fetch(`${PAYMENT_ENDPOINT}/${orderId}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderObj)
+                });
+            } catch (e) { }
+
+            // Request QR image from Beam API with fallback
+            try {
+                const res = await fetch(`${BEAM_WORKER_URL}/create-charge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        linkKey: orderId,
+                        amount: amount
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.qrImageBase64) {
+                        if (qrTarget) {
+                            qrTarget.innerHTML = `<img src="data:image/png;base64,${data.qrImageBase64}" alt="PromptPay QR" style="width:205px; height:205px; object-fit:contain; border-radius:8px; display:block;">`;
+                        }
+                    } else {
+                        throw new Error('Invalid Beam response');
+                    }
+                } else {
+                    throw new Error('Beam API error ' + res.status);
+                }
+            } catch (err) {
+                console.warn('Beam QR create-charge fallback to direct QR image:', err);
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.src = `${BEAM_WORKER_URL}/qr-image?linkKey=${encodeURIComponent(orderId)}&amount=${amount}`;
+                img.alt = "PromptPay QR";
+                img.style = "width:205px; height:205px; object-fit:contain; border-radius:8px; display:block;";
+                img.onload = () => {
+                    if (qrTarget) {
+                        qrTarget.innerHTML = '';
+                        qrTarget.appendChild(img);
+                    }
+                };
+                img.onerror = () => {
+                    if (qrTarget) {
+                        qrTarget.innerHTML = `
+                            <div style="padding:16px; text-align:center; color:#b91c1c; font-size:0.75rem;">
+                                ⚠️ สร้าง QR ไม่สำเร็จ<br>
+                                <button type="button" class="btn-tool-sm" onclick="startCourseInlineCheckout()" style="margin-top:6px; font-size:0.72rem; padding:4px 8px;">🔄 ลองใหม่</button>
+                            </div>
+                        `;
+                    }
+                };
+            }
+
+            // Start 10-Minute Countdown
+            const timerBox = document.getElementById('course-qr-countdown-box');
+            const timerEl = document.getElementById('course-qr-countdown');
+            if (_courseInlineCountdownTimer) clearInterval(_courseInlineCountdownTimer);
+            function updateTimer() {
+                const remaining = Math.max(0, expiresAt - Date.now());
+                if (remaining <= 0) {
+                    clearInterval(_courseInlineCountdownTimer);
+                    _courseInlineCountdownTimer = null;
+                    cancelCourseInlineCheckout(true); // Expired -> switch back to button!
+                    return;
+                }
+                const mins = Math.floor(remaining / 60000);
+                const secs = Math.floor((remaining % 60000) / 1000);
+                if (timerEl) {
+                    timerEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                }
+                if (timerBox) {
+                    if (remaining <= 60000) {
+                        timerBox.className = 'checkout-countdown-box urgent';
+                    } else if (remaining <= 120000) {
+                        timerBox.className = 'checkout-countdown-box warning';
+                    } else {
+                        timerBox.className = 'checkout-countdown-box';
+                    }
+                }
+            }
+            updateTimer();
+            _courseInlineCountdownTimer = setInterval(updateTimer, 1000);
+
+            // Start Polling Firebase for Approval
+            if (_inlineCoursePollingTimer) clearInterval(_inlineCoursePollingTimer);
+            _inlineCoursePollingTimer = setInterval(async () => {
+                try {
+                    const res = await fetch(`${PAYMENT_ENDPOINT}/${orderId}.json?t=${Date.now()}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.status === 'approved') {
+                            clearInterval(_inlineCoursePollingTimer);
+                            _inlineCoursePollingTimer = null;
+                            if (_courseInlineCountdownTimer) {
+                                clearInterval(_courseInlineCountdownTimer);
+                                _courseInlineCountdownTimer = null;
+                            }
+                            handleCoursePaymentSuccess(orderId, product, data);
+                        }
+                    }
+                } catch (e) { }
+            }, 1500);
+
+            // Admin test button
+            const simBtn = document.getElementById('btn-admin-sim-course-pay');
+            if (simBtn) {
+                if (isLocalAdmin) {
+                    simBtn.style.display = 'inline-block';
+                    simBtn.onclick = () => simulateCoursePaymentApproval(orderId);
+                } else {
+                    simBtn.style.display = 'none';
+                }
+            }
+        }
+
+        function downloadCourseQRSlip() {
+            const qrTarget = document.getElementById('course-qr-image-target');
+            const img = qrTarget ? qrTarget.querySelector('img') : null;
+            if (!img || !img.src) {
+                showToast('ไม่พบรูปภาพ QR Code สำหรับดาวน์โหลด', 'warning');
+                return;
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 400;
+            canvas.height = 490;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, 400, 490);
+
+            ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 20px Prompt, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('พร้อมเพย์ (PromptPay)', 200, 40);
+
+            const titleText = currentActiveCourse ? currentActiveCourse.title : 'ชำระค่าคอร์สเรียน';
+            ctx.font = '13px Prompt, sans-serif';
+            ctx.fillStyle = '#64748b';
+            const displayTitle = titleText.length > 32 ? titleText.substring(0, 32) + '...' : titleText;
+            ctx.fillText(displayTitle, 200, 66);
+
+            const qrImg = new Image();
+            qrImg.crossOrigin = 'anonymous';
+            qrImg.onload = () => {
+                ctx.drawImage(qrImg, 75, 85, 250, 250);
+
+                const priceVal = currentActiveCourse ? Number(currentActiveCourse.price) : 0;
+                ctx.fillStyle = '#16a34a';
+                ctx.font = 'bold 28px Prompt, sans-serif';
+                ctx.fillText(`฿ ${priceVal.toFixed(2)}`, 200, 375);
+
+                ctx.fillStyle = '#475569';
+                ctx.font = '13px Prompt, sans-serif';
+                ctx.fillText('สแกนผ่านแอปธนาคารทุกแห่งเพื่อปลดล็อก', 200, 410);
+
+                const link = document.createElement('a');
+                link.download = `PromptPay_QR_Course_${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                showToast('📥 บันทึกรูปภาพ QR Code เรียบร้อยแล้ว', 'success');
+            };
+            qrImg.onerror = () => {
+                const link = document.createElement('a');
+                link.download = `PromptPay_QR_Course_${Date.now()}.png`;
+                link.href = img.src;
+                link.click();
+                showToast('📥 บันทึกรูปภาพ QR Code เรียบร้อยแล้ว', 'success');
+            };
+            qrImg.src = img.src;
+        }
+
+        function cancelCourseInlineCheckout(isExpired = false) {
+            if (_courseInlineCountdownTimer) {
+                clearInterval(_courseInlineCountdownTimer);
+                _courseInlineCountdownTimer = null;
+            }
+            if (_inlineCoursePollingTimer) {
+                clearInterval(_inlineCoursePollingTimer);
+                _inlineCoursePollingTimer = null;
+            }
+            const btnView = document.getElementById('course-paywall-btn-view');
+            const qrView = document.getElementById('course-paywall-qr-view');
+            if (btnView && qrView) {
+                btnView.style.display = 'block';
+                qrView.style.display = 'none';
+            }
+            if (isExpired) {
+                showToast('⏳ QR Code หมดอายุแล้ว กดใหม่อีกครั้งเพื่อสแกนจ่าย', 'warning');
+            }
+        }
+
+        async function simulateCoursePaymentApproval(orderId) {
+            try {
+                await fetch(`${PAYMENT_ENDPOINT}/${orderId}.json`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: 'approved',
+                        approvedAt: Date.now(),
+                        approvedBy: 'admin_simulate'
+                    })
+                });
+                showToast('⚡ แอดมินจำลองชำระเงินสำเร็จ (Admin Simulator)', 'success');
+            } catch (e) {
+                showToast('จำลองไม่สำเร็จ: ' + e.message, 'error');
+            }
+        }
+
+        function handleCoursePaymentSuccess(orderId, product, paymentData = null) {
+            triggerConfettiEffect();
+            playSuccessChimeSound();
+
+            savePurchaseRecord({
+                orderId: orderId,
+                productId: product.id,
+                productTitle: product.title,
+                price: product.price,
+                language: product.language,
+                coverImage: product.coverImage,
+                downloadUrl: product.downloadUrl || '',
+                sourceCode: product.sourceCode || '',
+                installSteps: product.installSteps || [],
+                purchasedAt: Date.now()
+            });
+
+            const qrTarget = document.getElementById('course-qr-image-target');
+            if (qrTarget) {
+                qrTarget.innerHTML = `
+                    <div style="text-align:center; padding:18px 10px; color:#15803d;">
+                        <div style="font-size:2.8rem; margin-bottom:4px;">🎉</div>
+                        <div style="font-weight:800; font-size:1.1rem; margin-bottom:4px;">ชำระเงินสำเร็จแล้ว!</div>
+                        <div style="font-size:0.8rem; color:#475569;">กำลังปลดล็อกบทเรียนทั้งหมด...</div>
+                    </div>
+                `;
+            }
+
+            setTimeout(() => {
+                cancelCourseInlineCheckout();
+                const unlockedBadge = document.getElementById('course-hero-unlocked-badge');
+                const previewBadge = document.getElementById('course-hero-preview-badge');
+                if (unlockedBadge) unlockedBadge.style.display = 'inline-flex';
+                if (previewBadge) previewBadge.style.display = 'none';
+
+                renderCourseViewer(false);
+                showToast('🎉 ปลดล็อกคอร์สเรียนเรียบร้อยแล้ว ขอให้มีความสุขกับการเรียนรู้!', 'success');
+            }, 1200);
+        }
+
+        // Recommendations at Course Bottom (แนะนำเฉพาะคอร์สเรียนทักษะเรียนรู้)
+        function renderCourseRecommendations(currentCourseId) {
+            const container = document.getElementById('course-recommend-grid');
+            if (!container) return;
+
+            // กรองแสดงเฉพาะคอร์สเรียนอื่น (ทักษะเรียนรู้ หรือ isCourse) ที่ไม่ใช่คอร์สปัจจุบัน
+            const otherCourses = products.filter(x =>
+                String(x.id) !== String(currentCourseId) &&
+                (x.category === 'ทักษะเรียนรู้' || !!x.isCourse || (Array.isArray(x.lessons) && x.lessons.length > 0))
+            );
+
+            if (otherCourses.length === 0) {
+                container.innerHTML = `
+                    <div style="padding: 16px; color: #64748b; font-size: 0.84rem; background: #ffffff; border-radius: 12px; border: 1px dashed #cbd5e1; text-align: center; grid-column: 1 / -1;">
+                        🎓 ยังไม่มีคอร์สเรียนอื่นในระบบขณะนี้
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = otherCourses.slice(0, 3).map(item => {
+                const lessonCount = Array.isArray(item.lessons) ? item.lessons.length : 0;
+                return `
+                    <div class="course-recommend-card" onclick="openCourseViewer('${item.id}')">
+                        <img src="${escapeHtml((item.coverImage && !item.coverImage.includes('pdfmarker_cover.svg')) ? item.coverImage : 'shop/images/learning_course_cover.svg')}" alt="" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover;">
+                        <div style="flex: 1; overflow: hidden;">
+                            <div style="font-size: 0.82rem; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(item.title)}</div>
+                            <div style="font-size: 0.74rem; color: #64748b; margin-top: 2px;">
+                                🎓 คอร์สเรียน ${lessonCount > 0 ? `(${lessonCount} บทเรียน)` : ''} • ${item.price <= 0 ? 'ฟรี' : `฿ ${Number(item.price).toFixed(2)}`}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // --------------------------------------------------------------------------
+        // BIGDATA VIDEO SEARCH & EMBED SYSTEM
+        // --------------------------------------------------------------------------
+        async function loadBigdataVideos() {
+            if (_bigdataCache && _bigdataCache.length > 0) return _bigdataCache;
+            if (_bigdataIsLoading) return [];
+            _bigdataIsLoading = true;
+
+            const loadingEl = document.getElementById('bigdata-loading-state');
+            if (loadingEl) {
+                loadingEl.style.display = 'block';
+                loadingEl.textContent = '⏳ กำลังดึงข้อมูลจาก https://artnp.github.io/bigdata/...';
+            }
+
+            const itemsCollected = [];
+            // ดึงไฟล์จาก GitHub Pages https://artnp.github.io/bigdata/ โดยตรง (มี CORS อนุญาตให้เว็บเข้าถึงได้ 100%)
+            const BIGDATA_BASE = 'https://artnp.github.io/bigdata';
+            const targetFiles = [1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+
+            try {
+                const fetchPromises = targetFiles.map(async (n) => {
+                    try {
+                        const resp = await fetch(`${BIGDATA_BASE}/bigdata${n}.json`);
+                        if (resp && resp.ok) {
+                            const json = await resp.json().catch(() => null);
+                            if (Array.isArray(json)) {
+                                return json.filter(item => item && (item.url || item.data || item.comment));
+                            }
+                        }
+                    } catch (e) { }
+                    return [];
+                });
+
+                const results = await Promise.all(fetchPromises);
+                results.forEach(arr => {
+                    if (Array.isArray(arr) && arr.length > 0) {
+                        itemsCollected.push(...arr);
+                    }
+                });
+            } catch (err) {
+                console.warn('BigData fetch error:', err);
+            }
+
+            _bigdataCache = itemsCollected;
+            _bigdataIsLoading = false;
+            if (loadingEl) loadingEl.style.display = 'none';
+
+            // Auto-trigger search after loading
+            triggerBigdataSearch();
+            return _bigdataCache;
+        }
+
+        // Search engine for BigData (https://artnp.github.io/bigdata/)
+        function searchBigdataQuery(q, maxResults = 25) {
+            if (!q || !_bigdataCache || _bigdataCache.length === 0) return [];
+
+            const rawQuery = q.trim();
+            const queryLower = rawQuery.toLowerCase();
+            const queryWords = queryLower.split(/[\s,+/]+/g).filter(w => w.length > 0);
+            if (queryWords.length === 0) return [];
+
+            const scored = [];
+
+            for (let i = 0; i < _bigdataCache.length; i++) {
+                const item = _bigdataCache[i];
+                if (!item || !item.url) continue;
+
+                const text = (item.data || item.comment || '').toLowerCase();
+                const urlStr = String(item.url || '').toLowerCase();
+
+                let score = 0;
+                let matchedWordsCount = 0;
+
+                // 1. Exact full query substring matching (Highest priority)
+                if (text.includes(queryLower)) {
+                    score += 3000;
+                    if (text === queryLower) score += 2000;
+                } else if (urlStr.includes(queryLower)) {
+                    score += 2500;
+                }
+
+                // 2. Score based on each word in query
+                for (let j = 0; j < queryWords.length; j++) {
+                    const word = queryWords[j];
+                    const pos = text.indexOf(word);
+                    if (pos !== -1) {
+                        matchedWordsCount++;
+                        score += 1000 + (100 / (pos + 1));
+                        if (j === 0) score += 200;
+                    } else if (urlStr.includes(word)) {
+                        matchedWordsCount++;
+                        score += 800;
+                    }
+                }
+
+                // 3. Partial substring matching for Thai (sub-strings of 3 chars)
+                if (score === 0 && queryLower.length >= 3) {
+                    for (let s = 0; s <= queryLower.length - 3; s++) {
+                        const sub = queryLower.substr(s, 3);
+                        if (text.includes(sub)) {
+                            score += 150;
+                            matchedWordsCount++;
+                        }
+                    }
+                }
+
+                if (score > 0) {
+                    scored.push({
+                        item: item,
+                        score: score,
+                        matchedWordsCount: matchedWordsCount
+                    });
+                }
+            }
+
+            // Sort descending by score
+            scored.sort((a, b) => b.score - a.score);
+            return scored.slice(0, maxResults).map(x => x.item);
+        }
+
+        let _lessonSearchTimers = {};
+        function handleLessonMediaInput(idx, val) {
+            const raw = (val || "").trim();
+            const resultsPanel = document.getElementById(`lesson-bigdata-results-${idx}`);
+            const badgeEl = document.getElementById(`lesson-media-badge-${idx}`);
+
+            // If empty
+            if (!raw) {
+                handleLessonFieldChange(idx, "mediaUrl", "");
+                if (badgeEl) badgeEl.innerHTML = "";
+                if (resultsPanel) resultsPanel.style.display = "none";
+                return;
+            }
+
+            // If it looks like a direct URL or video ID
+            const isDirectUrl = /^(https?:\/\/|\/\/|files\.catbox|file\.garden|www\.youtube|[a-zA-Z0-9_-]{11}$)/i.test(raw) || raw.includes(".mp4");
+            if (isDirectUrl) {
+                handleLessonFieldChange(idx, "mediaUrl", raw);
+                if (badgeEl) badgeEl.innerHTML = renderLessonMediaPreviewBadge(raw);
+                if (resultsPanel) resultsPanel.style.display = "none";
+                return;
+            }
+
+            // If bigdata cache has not been loaded yet, show button to open search modal (ไม่ดึงข้อมูลมาโหลดตลอดเวลา)
+            if (!_bigdataCache || _bigdataCache.length === 0) {
+                if (resultsPanel) {
+                    resultsPanel.style.display = "block";
+                    resultsPanel.innerHTML = `
+                        <div style="padding: 10px 14px; text-align: center; color: #8b949e; font-size: 0.84rem; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                            <span>กดปุ่มเพื่อค้นหาในคลัง:</span>
+                            <button type="button" class="btn-download-fh" onclick="openBigdataSearchModal(${idx})" style="padding: 5px 14px; font-size: 0.8rem; background: #238636; border-color: #238636; cursor: pointer;">
+                                🔍 ค้นหาคลิป "${escapeHtml(raw)}" ใน BigData
+                            </button>
+                        </div>
+                    `;
+                }
+                return;
+            }
+
+            // Otherwise, search cached BigData in memory
+            if (resultsPanel) {
+                resultsPanel.style.display = "block";
+                resultsPanel.innerHTML = '<div style="padding: 12px; text-align: center; color: #8b949e; font-size: 0.82rem;">⏳ กำลังค้นหาใน BigData...</div>';
+            }
+
+            clearTimeout(_lessonSearchTimers[idx]);
+            _lessonSearchTimers[idx] = setTimeout(() => {
+                performInlineBigdataSearch(idx, raw);
+            }, 200);
+        }
+
+        function clearLessonMedia(idx) {
+            if (adminCourseLessons[idx]) {
+                adminCourseLessons[idx].mediaUrl = '';
+                renderCourseLessons();
+                saveCourseDraft();
+            }
+        }
+
+        function performInlineBigdataSearch(idx, query) {
+            const resultsPanel = document.getElementById(`lesson-bigdata-results-${idx}`);
+            if (!resultsPanel) return;
+
+            const matches = searchBigdataQuery(query, 20);
+
+            if (matches.length === 0) {
+                resultsPanel.innerHTML = `
+                    <div style="padding: 16px; text-align: center; color: #8b949e; font-size: 0.82rem;">
+                        🔍 ไม่พบวิดีโอที่ตรงกับ "<b>${escapeHtml(query)}</b>" ใน BigData<br>
+                        <span style="font-size: 0.74rem; color: #6e7681; margin-top: 4px; display: block;">ลองค้นด้วยคำหลักอื่น</span>
+                    </div>
+                `;
+                return;
+            }
+
+            resultsPanel.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px 8px 8px; border-bottom: 1px solid #21262d; margin-bottom: 6px;">
+                    <span style="font-size: 0.74rem; color: #58a6ff; font-weight: 700;">
+                        ✨ พบ ${matches.length} วิดีโอใน BigData สำหรับ "${escapeHtml(query)}" (คลิกเพื่อเลือกทันที)
+                    </span>
+                    <button type="button" onclick="document.getElementById('lesson-bigdata-results-${idx}').style.display='none'" style="background: transparent; border: none; color: #8b949e; cursor: pointer; font-size: 0.78rem;">✕ ปิด</button>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    ${matches.map((item, mIdx) => {
+                const type = detectMediaType(item.url);
+                let typeBadge = '<span style="background:#fee2e2; color:#b91c1c; padding:2px 6px; border-radius:3px; font-size:0.68rem; font-weight:700;">🎬 YouTube</span>';
+                if (type === 'shorts') typeBadge = '<span style="background:#fef3c7; color:#b45309; padding:2px 6px; border-radius:3px; font-size:0.68rem; font-weight:700;">📱 Shorts</span>';
+                else if (type === 'catbox') typeBadge = '<span style="background:#e0f2fe; color:#0369a1; padding:2px 6px; border-radius:3px; font-size:0.68rem; font-weight:700;">🐱 Catbox (.mp4)</span>';
+                else if (type === 'filegarden') typeBadge = '<span style="background:#dcfce7; color:#15803d; padding:2px 6px; border-radius:3px; font-size:0.68rem; font-weight:700;">🌿 File Garden</span>';
+
+                const titleText = item.data || item.comment || 'วิดีโอ BigData';
+                return `
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; background: #161b22; border: 1px solid #30363d; border-radius: 6px; transition: background 0.15s ease;">
+                                <div style="flex: 1; overflow: hidden;">
+                                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                                        ${typeBadge}
+                                        <span style="font-size: 0.8rem; font-weight: 700; color: #f0f6fc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 460px;">
+                                            ${escapeHtml(titleText)}
+                                        </span>
+                                    </div>
+                                    <div style="font-size: 0.7rem; color: #8b949e; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                        ${escapeHtml(item.url)}
+                                    </div>
+                                </div>
+                                <button type="button" class="btn-tool-sm" onclick="selectBigdataVideoForLesson(${idx}, '${escapeHtml(encodeURIComponent(JSON.stringify(item)))}')"
+                                    style="padding: 4px 12px; font-size: 0.74rem; background: #238636; color: #ffffff; border: 1px solid #2ea043; border-radius: 4px; font-weight: 700; cursor: pointer; white-space: nowrap;">
+                                    ➕ ใช้วิดีโอนี้
+                                </button>
+                            </div>
+                        `;
+            }).join('')}
+                </div>
+            `;
+        }
+
+        function selectBigdataVideoForLesson(idx, encodedJson) {
+            closeBigdataSearchModal();
+            try {
+                syncLessonsFromDOM();
+                const item = JSON.parse(decodeURIComponent(encodedJson));
+                if (!adminCourseLessons[idx]) return;
+
+                let videoUrl = String(item.url || '').trim();
+                if (videoUrl.startsWith('//')) videoUrl = 'https:' + videoUrl;
+
+                // Set ONLY video URL - NEVER overwrite lesson title or content!
+                adminCourseLessons[idx].mediaUrl = videoUrl;
+
+                renderCourseLessons();
+                saveCourseDraft();
+                updateCourseLivePreview();
+                showToast('✅ นำเข้าวิดีโอจาก BigData ลงในบทเรียนเรียบร้อย!', 'success');
+            } catch (e) {
+                console.error('Error selecting video:', e);
+            }
+        }
+
+        function openBigdataSearchModal(targetLessonIdx) {
+            currentTargetLessonIdx = targetLessonIdx;
+            const modal = document.getElementById('bigdata-search-modal');
+            if (!modal) return;
+            modal.classList.add('active');
+
+            const input = document.getElementById('bigdata-search-input');
+            if (input) {
+                // If the lesson already has a title or topic, prefill search
+                const currentLesson = adminCourseLessons[targetLessonIdx];
+                let initialQuery = '';
+                if (currentLesson && currentLesson.title) {
+                    initialQuery = currentLesson.title.replace(/^บทเรียนที่\s*\d+[:\s]*/, '').trim();
+                }
+                input.value = initialQuery;
+                setTimeout(() => input.focus(), 100);
+            }
+
+            loadBigdataVideos();
+        }
+
+        function closeBigdataSearchModal() {
+            const modal = document.getElementById('bigdata-search-modal');
+            if (modal) {
+                modal.querySelectorAll('video').forEach(v => { try { v.pause(); } catch (e) { } });
+                modal.querySelectorAll('iframe').forEach(ifr => { try { ifr.src = ''; } catch (e) { } });
+                modal.classList.remove('active');
+            }
+            currentTargetLessonIdx = null;
+        }
+
+        function handleBigdataModalOverlayClick(event) {
+            if (event.target && event.target.id === 'bigdata-search-modal') {
+                closeBigdataSearchModal();
+            }
+        }
+
+        let _bigdataSearchDebounce = null;
+        function handleBigdataSearchInput(val) {
+            clearTimeout(_bigdataSearchDebounce);
+            _bigdataSearchDebounce = setTimeout(() => {
+                triggerBigdataSearch();
+            }, 250);
+        }
+
+        function setBigdataFilter(filterType) {
+            _activeBigdataFilter = filterType;
+            const chips = document.querySelectorAll('#bigdata-filter-chips .btn-cat-chip');
+            chips.forEach(c => c.classList.remove('active'));
+            if (event && event.target) event.target.classList.add('active');
+            triggerBigdataSearch();
+        }
+
+
+        function renderBigdataItemPreview(url) {
+            if (!url) return '';
+            let cleanUrl = String(url).trim();
+            if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://')) {
+                cleanUrl = 'https://' + cleanUrl;
+            }
+
+            const type = detectMediaType(cleanUrl);
+
+            // 1. YouTube or Shorts
+            if (type === 'youtube' || type === 'shorts' || cleanUrl.includes('youtube.com') || cleanUrl.includes('youtu.be')) {
+                let ytId = '';
+                const m1 = cleanUrl.match(/(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*)/);
+                if (m1 && m1[1] && m1[1].length === 11) ytId = m1[1];
+                if (!ytId) {
+                    const m2 = cleanUrl.match(/\/shorts\/([a-zA-Z0-9_-]{11})/);
+                    if (m2 && m2[1]) ytId = m2[1];
+                }
+
+                if (ytId) {
+                    return `
+                        <div class="bigdata-video-preview-wrap" style="position: relative; width: 170px; height: 105px; border-radius: 8px; overflow: hidden; background: #000; border: 1px solid #30363d; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.4);" onclick="embedBigdataYoutubePlayer(this, '${ytId}')" title="คลิกเพื่อเปิดเล่นตัวอย่าง YouTube">
+                            <img src="https://img.youtube.com/vi/${ytId}/mqdefault.jpg" alt="Preview" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.src='https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png'">
+                            <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.35); transition: background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.15)'" onmouseout="this.style.background='rgba(0,0,0,0.35)'">
+                                <div style="width: 36px; height: 36px; border-radius: 50%; background: #dc2626; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.6);">▶</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            // 2. Direct MP4 (Catbox, File Garden, or any .mp4)
+            if (cleanUrl.includes('.mp4') || type === 'catbox' || type === 'filegarden') {
+                return `
+                    <div style="position: relative; width: 170px; height: 105px; border-radius: 8px; overflow: hidden; background: #000; border: 1px solid #30363d; box-shadow: 0 2px 8px rgba(0,0,0,0.4);">
+                        <video src="${escapeHtml(cleanUrl)}" preload="metadata" controls playsinline style="width: 100%; height: 100%; object-fit: contain; background: #000; display: block;"></video>
+                    </div>
+                `;
+            }
+
+            // 3. Fallback preview
+            return `
+                <div style="width: 170px; height: 105px; border-radius: 8px; background: #21262d; border: 1px solid #30363d; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #8b949e; font-size: 0.72rem; gap: 4px;">
+                    <span style="font-size: 1.5rem;">🎬</span>
+                    <span>วิดีโอคลิป</span>
+                </div>
+            `;
+        }
+
+        function embedBigdataYoutubePlayer(container, ytId) {
+            if (!container || !ytId) return;
+            container.innerHTML = `
+                <iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            `;
+        }
+
+        function triggerBigdataSearch() {
+            const q = (document.getElementById('bigdata-search-input')?.value || '').trim();
+            const listEl = document.getElementById('bigdata-results-list');
+            const loadingEl = document.getElementById('bigdata-loading-state');
+            if (!listEl) return;
+
+            if (_bigdataIsLoading && _bigdataCache.length === 0) {
+                if (loadingEl) loadingEl.style.display = 'block';
+                return;
+            }
+            if (loadingEl) loadingEl.style.display = 'none';
+
+            let results = [];
+            if (q) {
+                results = searchBigdataQuery(q, 40);
+            } else {
+                results = _bigdataCache.slice(0, 30);
+            }
+
+            // Category filter
+            if (_activeBigdataFilter && _activeBigdataFilter !== 'all') {
+                results = results.filter(item => {
+                    const u = String(item.url || '').toLowerCase();
+                    if (_activeBigdataFilter === 'youtube' && (!u.includes('youtube.com') && !u.includes('youtu.be') && (u.includes('catbox') || u.includes('file.garden')))) return false;
+                    if (_activeBigdataFilter === 'shorts' && !u.includes('shorts')) return false;
+                    if (_activeBigdataFilter === 'catbox' && !u.includes('catbox')) return false;
+                    if (_activeBigdataFilter === 'filegarden' && !u.includes('file.garden')) return false;
+                    return true;
+                });
+            }
+
+            const sliced = results.slice(0, 30);
+
+            if (sliced.length === 0) {
+                listEl.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; color: #8b949e;">
+                        <div style="font-size: 2rem; margin-bottom: 8px;">🔍</div>
+                        <h4 style="color: #c9d1d9; margin: 0 0 4px 0;">ไม่พบวิดีโอที่ตรงกับคำค้นหา</h4>
+                        <p style="font-size: 0.8rem; margin: 0;">ลองค้นหาด้วยคำอื่น</p>
+                    </div>
+                `;
+                return;
+            }
+
+            listEl.innerHTML = sliced.map((item, idx) => {
+                const cleanUrl = String(item.url || '').trim();
+                const fullUrl = cleanUrl.startsWith('http') ? cleanUrl : 'https://' + cleanUrl;
+                const type = detectMediaType(cleanUrl);
+
+                let badge = '<span style="background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:700;">🎬 YouTube</span>';
+                if (type === 'shorts') badge = '<span style="background:#fef2f2; color:#ef4444; border:1px solid #fecaca; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:700;">📱 Shorts</span>';
+                if (type === 'catbox') badge = '<span style="background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:700;">🐱 Catbox (.mp4)</span>';
+                if (type === 'filegarden') badge = '<span style="background:#ecfdf5; color:#047857; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:700;">🌿 File Garden (.mp4)</span>';
+
+                const safeDataStr = escapeHtml(item.data || item.comment || '');
+                const safeUrlStr = escapeHtml(cleanUrl);
+
+                return `
+                    <div class="bigdata-result-card" style="display: flex; gap: 14px; align-items: flex-start; padding: 14px; margin-bottom: 12px; flex-wrap: wrap;">
+                        <!-- Video Preview (Thumbnail / HTML5 Player) -->
+                        <div class="bigdata-preview-col" style="flex-shrink: 0; width: 170px;">
+                            ${renderBigdataItemPreview(cleanUrl)}
+                        </div>
+
+                        <!-- Card Info & Import Action -->
+                        <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; justify-content: space-between; min-height: 105px;">
+                            <div>
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
+                                    ${badge}
+                                    <a href="${escapeHtml(fullUrl)}" target="_blank" rel="noopener noreferrer" style="font-size: 0.72rem; color: #58a6ff; text-decoration: none; font-family: monospace; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="เปิดดูคลิปต้นฉบับ">
+                                        🔗 ${safeUrlStr}
+                                    </a>
+                                </div>
+                                <p style="font-size: 0.88rem; color: #f0f6fc; margin: 0 0 10px 0; line-height: 1.55; word-break: break-word;">${safeDataStr}</p>
+                            </div>
+                            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: auto;">
+                                <button type="button" class="btn-tool-sm" onclick="importBigdataVideo(${idx})" style="padding: 6px 16px; font-size: 0.8rem; font-weight: 700; color: #ffffff; background: #238636; border: 1px solid #2ea043; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
+                                    ➕ นำเข้าลงในบทเรียนนี้
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Store current sliced for index retrieval
+            window._currentBigdataRendered = sliced;
+        }
+
+        function importBigdataVideo(renderedIdx) {
+            if (!window._currentBigdataRendered || !window._currentBigdataRendered[renderedIdx]) return;
+            const item = window._currentBigdataRendered[renderedIdx];
+
+            // 1. First sync existing typed inputs from DOM so we do not lose other fields
+            syncLessonsFromDOM();
+
+            let videoUrl = String(item.url || '').trim();
+            if (videoUrl.startsWith('//')) videoUrl = 'https:' + videoUrl;
+
+            if (currentTargetLessonIdx === null || currentTargetLessonIdx >= adminCourseLessons.length) {
+                // If not pointing to an existing lesson, add a new one
+                addCourseLessonRow({
+                    title: `บทเรียนที่ ${adminCourseLessons.length + 1}`,
+                    content: '',
+                    mediaUrl: videoUrl,
+                    imageUrl: ''
+                });
+            } else {
+                // Set ONLY video URL - NEVER overwrite lesson title or content!
+                const lesson = adminCourseLessons[currentTargetLessonIdx];
+                lesson.mediaUrl = videoUrl;
+                renderCourseLessons();
+            }
+
+            saveCourseDraft();
+            updateCourseLivePreview();
+            closeBigdataSearchModal();
+            showToast('✅ นำเข้าวิดีโอจาก BigData ลงในบทเรียนเรียบร้อย!', 'success');
+        }
+
+        // --------------------------------------------------------------------------
+        // ADMIN COURSE LESSONS BUILDER (เพิ่มการ์ดได้เรื่อยๆ สลับตำแหน่ง ฝังวิดีโอ BigData ลากรูปภาพ จัดรูปแบบข้อความ)
+        // --------------------------------------------------------------------------
+        function addCourseLessonRow(initialData = null) {
+            syncLessonsFromDOM();
+            const newLesson = initialData || {
+                title: `บทเรียนที่ ${adminCourseLessons.length + 1}: `,
+                content: '',
+                mediaUrl: '',
+                imageUrl: ''
+            };
+            adminCourseLessons.push(newLesson);
+            renderCourseLessons();
+            saveCourseDraft();
+
+            setTimeout(() => {
+                const inputs = document.querySelectorAll('.admin-lesson-title-inp');
+                if (inputs.length > 0) {
+                    inputs[inputs.length - 1].focus();
+                }
+            }, 60);
+        }
+
+        function removeCourseLesson(idx) {
+            syncLessonsFromDOM();
+            if (confirm(`คุณต้องการลบบทเรียนที่ ${idx + 1} ใช่หรือไม่?`)) {
+                adminCourseLessons.splice(idx, 1);
+                renderCourseLessons();
+                saveCourseDraft();
+                showToast('🗑️ ลบบทเรียนเรียบร้อย', 'info');
+            }
+        }
+
+        function duplicateCourseLesson(idx) {
+            syncLessonsFromDOM();
+            if (!adminCourseLessons[idx]) return;
+            const clone = JSON.parse(JSON.stringify(adminCourseLessons[idx]));
+            clone.title = (clone.title || '') + ' (สำเนา)';
+            adminCourseLessons.splice(idx + 1, 0, clone);
+            renderCourseLessons();
+            saveCourseDraft();
+            showToast('📋 โคลนบทเรียนเรียบร้อย', 'success');
+        }
+
+        function moveCourseLesson(idx, direction) {
+            const targetIdx = idx + direction;
+            if (targetIdx < 0 || targetIdx >= adminCourseLessons.length) return;
+            const temp = adminCourseLessons[idx];
+            adminCourseLessons[idx] = adminCourseLessons[targetIdx];
+            adminCourseLessons[targetIdx] = temp;
+            renderCourseLessons();
+            saveCourseDraft();
+        }
+
+        function handleLessonFieldChange(idx, field, val) {
+            if (adminCourseLessons[idx]) {
+                adminCourseLessons[idx][field] = val;
+                saveCourseDraft();
+            }
+        }
+
+
+        function updateLessonMediaBadge(idx, val) {
+            const badgeEl = document.getElementById(`lesson-media-badge-${idx}`);
+            if (badgeEl) {
+                badgeEl.innerHTML = renderLessonMediaPreviewBadge(val);
+            }
+        }
+
+        function getYoutubeEmbedUrl(rawUrl) {
+            if (!rawUrl) return "";
+            let trimmed = String(rawUrl).trim();
+            if (trimmed.startsWith("//")) trimmed = "https:" + trimmed;
+            const type = detectMediaType(trimmed);
+
+            if (type === "shorts") {
+                let videoId = "";
+                const m = trimmed.match(/\/shorts\/([a-zA-Z0-9_-]+)/);
+                if (m) videoId = m[1];
+                if (!videoId) {
+                    const m2 = trimmed.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})/);
+                    if (m2) videoId = m2[1];
+                }
+                if (!videoId) videoId = trimmed;
+                return `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?rel=0`;
+            }
+
+            let videoId = "";
+            const m = trimmed.match(/(?:v=|\/embed\/|youtu\.be\/|\/v\/|^)([a-zA-Z0-9_-]{11})(?:[?&]|$)/);
+            if (m) videoId = m[1];
+            if (!videoId) {
+                if (/^[a-zA-Z0-9_-]{11}/.test(trimmed)) {
+                    videoId = trimmed.substring(0, 11);
+                }
+            }
+
+            if (videoId) {
+                let extraParams = [];
+                const startMatch = trimmed.match(/[?&]start=(\d+)/);
+                if (startMatch) extraParams.push(`start=${startMatch[1]}`);
+                const endMatch = trimmed.match(/[?&]end=(\d+)/);
+                if (endMatch) extraParams.push(`end=${endMatch[1]}`);
+                const tMatch = trimmed.match(/[?&]t=(\d+)/);
+                if (tMatch && !startMatch) extraParams.push(`start=${tMatch[1]}`);
+
+                extraParams.push("rel=0");
+                return `https://www.youtube.com/embed/${videoId}?${extraParams.join("&")}`;
+            }
+
+            return trimmed.startsWith("http") ? trimmed : `https://www.youtube.com/embed/${trimmed}`;
+        }
+
+        function renderLessonMediaPreviewBadge(url) {
+            if (!url) {
+                return '<div style="font-size: 0.74rem; color: #94a3b8; margin-top: 6px;">💡 รองรับ YouTube, Shorts, Catbox (.mp4) หรือค้นหาคลิปจาก BigData</div>';
+            }
+            const cleanUrl = String(url).trim();
+            const type = detectMediaType(cleanUrl);
+
+            // 1. YouTube or Shorts (Full Embed Iframe Player)
+            if (type === "youtube" || type === "shorts") {
+                const embedUrl = getYoutubeEmbedUrl(cleanUrl);
+                const isShorts = (type === "shorts");
+                const rawYtId = (cleanUrl.match(/(?:v=|\/embed\/|youtu\.be\/|\/shorts\/|^)([a-zA-Z0-9_-]{11})/) || [])[1] || cleanUrl;
+                const externalLink = cleanUrl.startsWith("http") ? cleanUrl : `https://www.youtube.com/watch?v=${rawYtId}`;
+
+                return `
+                    <div style="margin-top: 8px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
+                            <span style="font-size: 0.74rem; background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                ${isShorts ? "📱 YouTube Shorts" : "🎬 YouTube Video"} (Embed)
+                            </span>
+                            <a href="${escapeHtml(externalLink)}" target="_blank" rel="noopener noreferrer" style="font-size: 0.72rem; color: #0284c7; text-decoration: none;" title="เปิดดูบน YouTube">
+                                เปิดดูบน YouTube ↗
+                            </a>
+                        </div>
+                        <div style="position: relative; width: 100%; aspect-ratio: 16/9; max-height: 140px; border-radius: 8px; overflow: hidden; background: #000; border: 1px solid #cbd5e1; box-shadow: 0 1px 4px rgba(0,0,0,0.15);">
+                            <iframe src="${escapeHtml(embedUrl)}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 2. Direct MP4 (Catbox, File Garden, or any HTML5 video)
+            if (type === "catbox" || type === "filegarden" || type === "mp4" || cleanUrl.includes(".mp4")) {
+                let safeUrl = cleanUrl;
+                if (!safeUrl.startsWith("http://") && !safeUrl.startsWith("https://")) {
+                    safeUrl = "https://" + safeUrl;
+                }
+                const badgeLabel = type === "catbox" ? "🐱 Catbox (.mp4)" : (type === "filegarden" ? "🌿 File Garden (.mp4)" : "🎬 วิดีโอ MP4");
+
+                return `
+                    <div style="margin-top: 8px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
+                            <span style="font-size: 0.74rem; background: #e0f2fe; color: #0284c7; padding: 2px 8px; border-radius: 4px; font-weight: 700;">
+                                ${badgeLabel}
+                            </span>
+                            <a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer" style="font-size: 0.72rem; color: #0284c7; text-decoration: none;">
+                                เปิดไฟล์ตรง ↗
+                            </a>
+                        </div>
+                        <div style="position: relative; width: 100%; max-height: 140px; border-radius: 8px; overflow: hidden; background: #000; border: 1px solid #cbd5e1; box-shadow: 0 1px 4px rgba(0,0,0,0.15);">
+                            <video src="${escapeHtml(safeUrl)}" preload="metadata" controls playsinline style="width: 100%; max-height: 140px; display: block; object-fit: contain; background: #000;"></video>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return `<div style="font-size: 0.74rem; color: #64748b; margin-top: 6px;">🎬 ตรวจพบ: ${escapeHtml(cleanUrl)}</div>`;
+        }
+
+        function applyLessonFormatting(idx, type) {
+            const textarea = document.getElementById(`lesson-content-inp-${idx}`);
+            if (!textarea) return;
+
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selected = textarea.value.substring(start, end);
+            let before = textarea.value.substring(0, start);
+            let after = textarea.value.substring(end);
+            let replacement = '';
+
+            if (type === 'bold') {
+                replacement = `**${selected || 'ข้อความตัวหนา'}**`;
+            } else if (type === 'italic') {
+                replacement = `*${selected || 'ข้อความตัวเอียง'}*`;
+            } else if (type === 'underline') {
+                replacement = `<u>${selected || 'ข้อความขีดเส้นใต้'}</u>`;
+            } else if (type === 'link') {
+                const url = prompt('กรุณาวาง URL ลิงก์ปลายทาง (https://...):', 'https://');
+                if (!url) return;
+                const linkText = selected || 'คลิกที่นี่';
+                replacement = `[${linkText}](${url})`;
+            } else if (type === 'bullet') {
+                replacement = `\n• ${selected || 'หัวข้อสำคัญ'}`;
+            }
+
+            textarea.value = before + replacement + after;
+            textarea.focus();
+            textarea.selectionStart = before.length;
+            textarea.selectionEnd = before.length + replacement.length;
+
+            handleLessonFieldChange(idx, 'content', textarea.value);
+        }
+
+        function handleLessonCardDragOver(e, idx) {
+            e.preventDefault();
+            e.stopPropagation();
+            const card = document.getElementById(`admin-lesson-row-${idx}`);
+            if (card) card.classList.add('drag-over');
+        }
+
+        function handleLessonCardDragLeave(e, idx) {
+            e.preventDefault();
+            e.stopPropagation();
+            const card = document.getElementById(`admin-lesson-row-${idx}`);
+            if (card) card.classList.remove('drag-over');
+        }
+
+        function handleLessonCardDrop(e, idx) {
+            e.preventDefault();
+            e.stopPropagation();
+            const card = document.getElementById(`admin-lesson-row-${idx}`);
+            if (card) card.classList.remove('drag-over');
+
+            const files = e.dataTransfer && e.dataTransfer.files;
+            if (files && files.length > 0) {
+                const file = files[0];
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function (ev) {
+                        if (adminCourseLessons[idx]) {
+                            adminCourseLessons[idx].imageUrl = ev.target.result;
+                            renderCourseLessons();
+                            saveCourseDraft();
+                            showToast('✅ ลากรูปภาพประกอบลงในบทเรียนสำเร็จ!', 'success');
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+
+        function syncLessonsFromDOM() {
+            if (!Array.isArray(adminCourseLessons)) return;
+            for (let idx = 0; idx < adminCourseLessons.length; idx++) {
+                const titleInp = document.querySelector(`#admin-lesson-row-${idx} .admin-lesson-title-inp`);
+                const contentInp = document.getElementById(`lesson-content-inp-${idx}`);
+                const mediaInp = document.getElementById(`lesson-media-inp-${idx}`);
+                if (titleInp && titleInp.value !== undefined) adminCourseLessons[idx].title = titleInp.value;
+                if (contentInp && contentInp.value !== undefined) adminCourseLessons[idx].content = contentInp.value;
+                if (mediaInp && mediaInp.value !== undefined) adminCourseLessons[idx].mediaUrl = mediaInp.value;
+            }
+        }
+
+        function renderCourseLessons() {
+            const container = document.getElementById('admin-course-lessons-list');
+            const countBadge = document.getElementById('admin-course-count-badge');
+            if (!container) return;
+
+            if (countBadge) {
+                countBadge.textContent = `${adminCourseLessons.length} บทเรียน`;
+            }
+
+            if (adminCourseLessons.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 28px 14px; background: #ffffff; border: 1.5px dashed #cbd5e1; border-radius: 12px; color: #64748b;">
+                        <div style="font-size: 1.8rem; margin-bottom: 6px;">🎓</div>
+                        <p style="margin: 0; font-size: 0.88rem; font-weight: 600;">ยังไม่มีการ์ดบทเรียนในคอร์สนี้</p>
+                        <p style="margin: 4px 0 12px 0; font-size: 0.78rem; color: #94a3b8;">คลิกปุ่มด้านล่างเพื่อเพิ่มบทเรียนช่องแรกของคุณ</p>
+                        <button type="button" class="btn-download-fh" onclick="addCourseLessonRow()" style="padding: 7px 18px; font-size: 0.82rem; background: #0284c7; border-color: #0284c7;">
+                            ➕ เพิ่มบทเรียนแรก
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = adminCourseLessons.map((lesson, idx) => {
+                const isPreviewGold = (idx < 4);
+                return `
+                    <div class="admin-lesson-item ${isPreviewGold ? 'is-preview-gold' : ''}" id="admin-lesson-row-${idx}" onpaste="handleLessonCardPaste(event, ${idx})">
+                        <!-- Header with badges and reorder controls -->
+                        <div class="lesson-card-header">
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span class="course-step-tag ${isPreviewGold ? 'gold' : ''}">บทเรียนที่ ${(idx + 1).toString().padStart(2, '0')}</span>
+                                ${isPreviewGold ? `
+                                    <span class="badge-gold-preview">✨ ตัวอย่างฟรี ${idx + 1} (ดูฟรีไม่ต้องซื้อ)</span>
+                                ` : `
+                                    <span style="font-size: 0.72rem; color: #dc2626; background: #fee2e2; padding: 2px 8px; border-radius: 4px; font-weight: 700;">🔒 ปลดล็อกด้วยการซื้อ</span>
+                                `}
+                            </div>
+                            <div style="display: flex; gap: 5px; align-items: center;">
+                                <button type="button" class="btn-tool-sm" onclick="moveCourseLesson(${idx}, -1)" ${idx === 0 ? 'disabled style="opacity:0.35;"' : ''} title="เลื่อนบทเรียนขึ้น">⬆️ ขึ้น</button>
+                                <button type="button" class="btn-tool-sm" onclick="moveCourseLesson(${idx}, 1)" ${idx === adminCourseLessons.length - 1 ? 'disabled style="opacity:0.35;"' : ''} title="เลื่อนบทเรียนลง">⬇️ ลง</button>
+                                <button type="button" class="btn-tool-sm" onclick="duplicateCourseLesson(${idx})" title="คัดลอกบทเรียนนี้">📋 โคลน</button>
+                                <button type="button" class="btn-tool-sm delete-btn" onclick="removeCourseLesson(${idx})" title="ลบบทเรียนนี้" style="color: #ef4444; border-color: #fecaca; background: #fff5f5;">🗑️ ลบ</button>
+                            </div>
+                        </div>
+
+                        <!-- 1. Lesson Title -->
+                        <div class="form-group-clean" style="margin-bottom: 12px;">
+                            <label class="form-label-clean" style="font-size: 0.8rem; font-weight: 700;">ชื่อบทเรียน / หัวข้อ *</label>
+                            <input type="text" class="form-control-clean admin-lesson-title-inp" value="${escapeHtml(lesson.title || '')}" placeholder="เช่น บทที่ ${idx + 1}: การเคลื่อนที่ของแขนกลและองศาอิสระ..." oninput="handleLessonFieldChange(${idx}, 'title', this.value)" style="font-size: 0.92rem; font-weight: 600;">
+                        </div>
+
+                        <!-- 2 & 3. Video & Image Row (Side-by-side 2 Columns) -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 12px; margin-bottom: 12px; align-items: stretch;">
+                            <!-- Column 1: Video & Media Embed (Dedicated BigData Button) -->
+                            <div class="form-group-clean" style="margin-bottom: 0; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; justify-content: flex-start;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                                    <label class="form-label-clean" style="font-size: 0.82rem; margin: 0; color: #1e293b; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                                        <span>🎬 วิดีโอบทเรียน</span>
+                                    </label>
+                                    <button type="button" class="btn-tool-sm" onclick="openBigdataSearchModal(${idx})"
+                                        style="padding: 5px 12px; font-size: 0.76rem; background: #eff6ff; color: #1d4ed8; border: 1.5px solid #bfdbfe; font-weight: 700; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"
+                                        title="ค้นหาคลิปวิดีโอจากคลัง BigData">
+                                        🔍 ค้นหาวิดีโอใน BigData
+                                    </button>
+                                </div>
+                                <div style="display: flex; gap: 6px; align-items: center;">
+                                    <input type="text" id="lesson-media-inp-${idx}" class="form-control-clean admin-lesson-media-inp"
+                                        value="${escapeHtml(lesson.mediaUrl || '')}"
+                                        placeholder="วาง URL วิดีโอ หรือกดค้นหา BigData"
+                                        oninput="handleLessonFieldChange(${idx}, 'mediaUrl', this.value); updateLessonMediaBadge(${idx}, this.value);"
+                                        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                                        style="font-size: 0.84rem; background: #ffffff; font-family: inherit; margin: 0;">
+                                    ${lesson.mediaUrl ? `
+                                        <button type="button" class="btn-tool-sm" onclick="handleLessonFieldChange(${idx}, 'mediaUrl', ''); renderCourseLessons();" title="ลบวิดีโอ" style="color: #dc2626; border-color: #fecaca; background: #ffffff; white-space: nowrap; padding: 6px 10px;">
+                                            ✕ ลบ
+                                        </button>
+                                    ` : ''}
+                                </div>
+                                <div id="lesson-media-badge-${idx}" style="margin-top: 6px; flex: 1;">
+                                    ${renderLessonMediaPreviewBadge(lesson.mediaUrl)}
+                                </div>
+                            </div>
+
+                            <!-- Column 2: Drag-and-Drop Image Illustration Area (Supports Ctrl+V) -->
+                            <div style="background: #ffffff; border: 1.5px dashed #cbd5e1; border-radius: 10px; padding: 12px; margin-bottom: 0; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: flex-start; outline: none;"
+                                tabindex="0"
+                                ondragover="handleLessonCardDragOver(event, ${idx})"
+                                ondragleave="handleLessonCardDragLeave(event, ${idx})"
+                                ondrop="handleLessonCardDrop(event, ${idx})"
+                                onpaste="handleLessonCardPaste(event, ${idx})"
+                                title="คลิกที่นี่แล้วกด Ctrl+V เพื่อวางรูปภาพ หรือลากไฟล์มาปล่อยได้">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
+                                    <label class="form-label-clean" style="font-size: 0.8rem; margin: 0; font-weight: 700; color: #475569; display: flex; align-items: center; gap: 6px;">
+                                        <span>🖼️ รูปภาพประกอบบทเรียน</span>
+                                        <span style="font-size: 0.68rem; font-weight: normal; color: #64748b; background: #f1f5f9; padding: 1px 6px; border-radius: 4px;">Ctrl+V ได้</span>
+                                    </label>
+                                    ${lesson.imageUrl ? `<button type="button" class="btn-tool-sm" onclick="removeLessonImage(${idx})" style="font-size: 0.72rem; color: #dc2626; background: #fee2e2; border-color: #fca5a5; padding: 2px 8px;">✕ ลบรูป</button>` : ''}
+                                </div>
+                                <div style="display: flex; gap: 6px; align-items: center;">
+                                    <input type="file" id="lesson-file-inp-${idx}" accept="image/*" style="display: none;" onchange="handleLessonImageUpload(this, ${idx})">
+                                    <button type="button" class="btn-tool-sm" onclick="document.getElementById('lesson-file-inp-' + ${idx}).click()" style="padding: 6px 12px; font-size: 0.78rem; background: #f1f5f9; cursor: pointer; white-space: nowrap; border-radius: 6px; font-weight: 600;">
+                                        📁 เลือกไฟล์รูป
+                                    </button>
+                                    <input type="text" class="form-control-clean" value="${escapeHtml(lesson.imageUrl || '')}" placeholder="วาง URL หรือคลิกแล้วกด Ctrl+V วางภาพ" oninput="handleLessonFieldChange(${idx}, 'imageUrl', this.value); renderCourseLessons();" onpaste="handleLessonCardPaste(event, ${idx})" style="font-size: 0.84rem; margin: 0;">
+                                </div>
+                                ${lesson.imageUrl ? `
+                                    <div style="margin-top: 8px;">
+                                        <img src="${escapeHtml(lesson.imageUrl)}" alt="Preview" style="max-height: 100px; border-radius: 8px; border: 1px solid #cbd5e1; object-fit: contain; background: #0f172a; display: block;" onerror="this.style.display='none'">
+                                    </div>
+                                ` : `
+                                    <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 6px;">
+                                        💡 คลิกที่กล่องนี้แล้วกด <code>Ctrl + V</code>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+
+                        <!-- 4. Content Text Editor with Formatting Toolbar -->
+                        <div class="form-group-clean" style="margin-bottom: 0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                                <label class="form-label-clean" style="font-size: 0.8rem; margin: 0; font-weight: 700;">
+                                    📝 เนื้อหาบทเรียน / คำบรรยายความรู้ *
+                                </label>
+                                <!-- Formatting Toolbar -->
+                                <div style="display: flex; align-items: center; gap: 4px;">
+                                    <button type="button" class="btn-fmt" onclick="applyLessonFormatting(${idx}, 'bold')" title="ข้อความตัวหนา (Ctrl+B)"><b>𝐁</b> ตัวหนา</button>
+                                    <button type="button" class="btn-fmt" onclick="applyLessonFormatting(${idx}, 'italic')" title="ข้อความตัวเอียง (Ctrl+I)"><i>𝑰</i> ตัวเอียง</button>
+                                    <button type="button" class="btn-fmt" onclick="applyLessonFormatting(${idx}, 'underline')" title="ขีดเส้นใต้ (Ctrl+U)"><u>𝐔</u> ขีดเส้นใต้</button>
+                                    <button type="button" class="btn-fmt" onclick="applyLessonFormatting(${idx}, 'link')" title="แทรกลิงก์คลิกได้">🔗 ลิงก์</button>
+                                    <button type="button" class="btn-fmt" onclick="applyLessonFormatting(${idx}, 'bullet')" title="แทรกหัวข้อย่อย">• หัวข้อย่อย</button>
+                                </div>
+                            </div>
+                            <textarea id="lesson-content-inp-${idx}" class="form-control-clean admin-lesson-content-inp" rows="5"
+                                oninput="handleLessonFieldChange(${idx}, 'content', this.value)"
+                                onchange="handleLessonFieldChange(${idx}, 'content', this.value)"
+                                onblur="handleLessonFieldChange(${idx}, 'content', this.value)"
+                                placeholder="พิมพ์เนื้อหาบทเรียน คำบรรยาย เทคนิค หรือความรู้ที่ต้องการถ่ายทอด..."
+                                style="font-size: 0.9rem; line-height: 1.65; resize: vertical; min-height: 110px; font-family: inherit;">${escapeHtml(lesson.content || '')}</textarea>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if (typeof updateCourseLivePreview === 'function') {
+                updateCourseLivePreview();
+            }
+        }
+
+        // Course Draft Management (localStorage)
+        let _courseLivePreviewActive = false;
+
+        function toggleCourseLivePreview(forceState = null) {
+            const previewEl = document.getElementById('admin-course-live-preview');
+            const toggleBtn = document.getElementById('btn-toggle-course-preview');
+            const toolbarBtn = document.getElementById('btn-toggle-course-preview-bar');
+            const footerBtn = document.getElementById('btn-toggle-course-preview-footer');
+            if (!previewEl) return;
+
+            if (forceState !== null) {
+                _courseLivePreviewActive = Boolean(forceState);
+            } else {
+                _courseLivePreviewActive = !_courseLivePreviewActive;
+            }
+
+            if (_courseLivePreviewActive) {
+                previewEl.style.display = 'flex';
+                const onText = '👁️ พรีวิวเล็ก (เปิดอยู่)';
+                if (toggleBtn) {
+                    toggleBtn.innerHTML = onText;
+                    toggleBtn.style.background = '#dcfce7';
+                }
+                if (toolbarBtn) {
+                    toolbarBtn.innerHTML = onText;
+                    toolbarBtn.style.background = '#dcfce7';
+                    toolbarBtn.style.color = '#15803d';
+                }
+                if (footerBtn) {
+                    footerBtn.innerHTML = '👁️ ปิดพรีวิวเล็ก';
+                    footerBtn.style.background = '#dcfce7';
+                }
+                updateCourseLivePreview();
+            } else {
+                previewEl.style.display = 'none';
+                const offText = '👁️ พรีวิวเล็ก';
+                if (toggleBtn) {
+                    toggleBtn.innerHTML = offText;
+                    toggleBtn.style.background = '#ffffff';
+                }
+                if (toolbarBtn) {
+                    toolbarBtn.innerHTML = offText;
+                    toolbarBtn.style.background = '#e0f2fe';
+                    toolbarBtn.style.color = '#0369a1';
+                }
+                if (footerBtn) {
+                    footerBtn.innerHTML = '👁️ ดูพรีวิวเล็ก';
+                    footerBtn.style.background = '#e0f2fe';
+                }
+            }
+        }
+
+        function updateCourseLivePreview() {
+            const previewEl = document.getElementById('admin-course-live-preview');
+            if (!previewEl || previewEl.style.display === 'none') return;
+
+            syncLessonsFromDOM();
+
+            const title = (document.getElementById('admin-title')?.value || '').trim() || 'ชื่อคอร์สเรียน';
+            const price = parseFloat(document.getElementById('admin-price')?.value) || 0;
+            const priceText = (price <= 0) ? '✨ ฟรีตลอดชีพ' : `฿${price.toFixed(2)}`;
+            const coverSrc = (adminProductImages && adminProductImages[0]) || document.getElementById('admin-cover-image')?.value || 'shop/images/learning_course_cover.svg';
+            const rawDesc = document.getElementById('admin-description-editor')?.innerHTML || document.getElementById('admin-description')?.value || '';
+            const descHtml = formatCourseDescriptionHtml(rawDesc);
+            const totalLessons = adminCourseLessons.length;
+
+            // 1. Render Hero Card Preview
+            const heroCard = document.getElementById('admin-preview-hero-card');
+            if (heroCard) {
+                heroCard.innerHTML = `
+                    <div style="display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap;">
+                        <div style="width: 80px; height: 80px; border-radius: 12px; overflow: hidden; background: #0f172a; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                            <img src="${escapeHtml(coverSrc)}" alt="Cover" style="width: 100%; height: 100%; object-fit: cover; display: block;" onerror="this.src='shop/images/learning_course_cover.svg'">
+                        </div>
+                        <div style="flex: 1; min-width: 200px;">
+                            <div class="course-hero-badge-row" style="margin-bottom: 6px;">
+                                <span class="badge-course-cat">🎓 ทักษะเรียนรู้</span>
+                                <span class="badge-gold-preview">✨ ตัวอย่างฟรี 4 บทเรียน</span>
+                                <span style="font-size: 0.72rem; color: #475569; font-weight: 700;">📚 ${totalLessons} บทเรียน</span>
+                                <span style="margin-left: auto; font-size: 0.88rem; font-weight: 800; color: #16a34a;">${priceText}</span>
+                            </div>
+                            <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; line-height: 1.35;">
+                                ${escapeHtml(title)}
+                            </h3>
+                            <div style="font-size: 0.82rem; color: #475569; line-height: 1.6; max-height: 100px; overflow-y: auto;">
+                                ${descHtml || '<span style="color:#94a3b8;">(ยังไม่ได้พิมพ์คำอธิบายคอร์ส)</span>'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 2. Render Lessons Feed Preview
+            const lessonsFeed = document.getElementById('admin-preview-lessons-feed');
+            if (lessonsFeed) {
+                if (adminCourseLessons.length === 0) {
+                    lessonsFeed.innerHTML = `
+                        <div style="text-align: center; padding: 30px 14px; color: #94a3b8; background: #ffffff; border-radius: 12px; border: 1px dashed #cbd5e1;">
+                            <div style="font-size: 1.8rem; margin-bottom: 6px;">🎓</div>
+                            <div style="font-size: 0.84rem; font-weight: 600; color: #64748b;">ยังไม่มีบทเรียนในคอร์สนี้</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                lessonsFeed.innerHTML = adminCourseLessons.map((lesson, idx) => {
+                    const isPreviewGold = (idx < 4);
+                    const titleText = (lesson.title || `บทเรียนที่ ${idx + 1}`).trim();
+                    const contentHtml = formatCourseLessonContent(lesson.content || '');
+
+                    return `
+                        <div class="course-lesson-card ${isPreviewGold ? 'is-preview-gold' : ''}" style="margin-bottom: 16px; padding: 16px 18px;">
+                            <div class="course-lesson-header" style="margin-bottom: 8px;">
+                                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                    <span class="course-step-tag ${isPreviewGold ? 'gold' : ''}">บทเรียนที่ ${(idx + 1).toString().padStart(2, '0')}</span>
+                                    ${isPreviewGold ? '<span class="badge-gold-preview">✨ โพสต์ตัวอย่างฟรี</span>' : '<span style="font-size: 0.68rem; color: #dc2626; background: #fee2e2; padding: 2px 6px; border-radius: 4px; font-weight: 700;">🔒 ปลดล็อกด้วยการซื้อ</span>'}
+                                </div>
+                                <span style="font-size: 0.72rem; color: #94a3b8;">🔖 บทเรียน</span>
+                            </div>
+                            <h4 style="font-size: 1rem; font-weight: 800; color: #0f172a; margin: 0 0 10px 0; line-height: 1.4;">
+                                ${escapeHtml(titleText)}
+                            </h4>
+
+                            ${lesson.mediaUrl ? `
+                                <div style="margin-bottom: 12px;">
+                                    ${buildMediaEmbedHtml(lesson.mediaUrl, titleText)}
+                                </div>
+                            ` : ''}
+
+                            ${lesson.imageUrl ? `
+                                <div style="margin-bottom: 12px; border-radius: 10px; overflow: hidden; background: #0f172a; border: 1px solid #e2e8f0;">
+                                    <img src="${escapeHtml(lesson.imageUrl)}" alt="Illustration" style="max-height: 220px; width: 100%; object-fit: contain; display: block;" onerror="this.style.display='none'">
+                                </div>
+                            ` : ''}
+
+                            <div class="course-lesson-content" style="font-size: 0.88rem; line-height: 1.65; color: #334155;">
+                                ${contentHtml || '<span style="color:#94a3b8; font-style:italic;">(ยังไม่มีเนื้อหาในบทเรียนนี้)</span>'}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function getCourseDraftData() {
+            syncLessonsFromDOM();
+            const courseId = (document.getElementById('admin-edit-product-id')?.value || '').trim();
+            const title = (document.getElementById('admin-title')?.value || '').trim();
+            const slug = (document.getElementById('admin-slug')?.value || '').trim();
+            const price = (document.getElementById('admin-price')?.value || '').trim();
+            const coverImage = (document.getElementById('admin-cover-image')?.value || '').trim() || (adminProductImages[0] || 'shop/images/learning_course_cover.svg');
+            const images = Array.isArray(adminProductImages) ? [...adminProductImages] : [];
+            const description = (document.getElementById('admin-description')?.value || '').trim();
+            const descriptionHtml = (document.getElementById('admin-description-editor')?.innerHTML || '').trim();
+
+            return {
+                courseId,
+                title,
+                slug,
+                price,
+                coverImage,
+                images,
+                description,
+                descriptionHtml,
+                lessons: Array.isArray(adminCourseLessons) ? JSON.parse(JSON.stringify(adminCourseLessons)) : [],
+                updatedAt: Date.now()
+            };
+        }
+
+        let _courseDraftDebounce = null;
+        function saveCourseDraft() {
+            const modal = document.getElementById('admin-modal');
+            if (!modal || !modal.classList.contains('mode-course')) return;
+
+            clearTimeout(_courseDraftDebounce);
+            _courseDraftDebounce = setTimeout(() => {
+                manualSaveCourseDraft(true);
+                updateCourseLivePreview();
+            }, 600);
+        }
+
+        function manualSaveCourseDraft(silent = false) {
+            try {
+                syncLessonsFromDOM();
+                const draft = getCourseDraftData();
+                localStorage.setItem('EWORKER_course_draft', JSON.stringify(draft));
+
+                const timeStr = new Date(draft.updatedAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                const pill = document.getElementById('course-draft-time-pill');
+                if (pill) {
+                    pill.textContent = `💾 บันทึกร่างล่าสุด ${timeStr} น.`;
+                    pill.style.display = 'inline-block';
+                }
+
+                const footerBtn = document.getElementById('btn-save-course-draft');
+                if (footerBtn) {
+                    footerBtn.innerHTML = `✅ บันทึกร่างแล้ว (${timeStr})`;
+                    setTimeout(() => {
+                        if (footerBtn) footerBtn.innerHTML = `📝 บันทึกแบบร่าง (Ctrl+S)`;
+                    }, 2500);
+                }
+
+                // Update live preview only if user already has it open
+                if (_courseLivePreviewActive) {
+                    updateCourseLivePreview();
+                }
+
+                if (!silent) {
+                    showToast('📝 บันทึกแบบร่างเรียบร้อยแล้ว (Ctrl+S)', 'success');
+                }
+                return true;
+            } catch (e) {
+                console.error('Save course draft failed:', e);
+                if (!silent) showToast('❌ บันทึกแบบร่างไม่สำเร็จ', 'warning');
+                return false;
+            }
+        }
+
+        function restoreCourseDraft() {
+            try {
+                const raw = localStorage.getItem('EWORKER_course_draft');
+                if (!raw) return false;
+                const draft = JSON.parse(raw);
+                if (!draft || typeof draft !== 'object') return false;
+
+                const hasLessons = Array.isArray(draft.lessons) && draft.lessons.length > 0;
+                const hasInfo = Boolean(draft.title || draft.price || draft.slug || (draft.images && draft.images.length > 0));
+
+                if (!hasLessons && !hasInfo) return false;
+
+                // 1. Title
+                const titleInp = document.getElementById('admin-title');
+                if (titleInp && draft.title) titleInp.value = draft.title;
+
+                // 2. Slug
+                const slugInp = document.getElementById('admin-slug');
+                if (slugInp && draft.slug) {
+                    slugInp.value = draft.slug;
+                    slugInp.dataset.userEdited = 'true';
+                }
+
+                // 3. Price
+                const priceInp = document.getElementById('admin-price');
+                if (priceInp && draft.price !== undefined) priceInp.value = draft.price;
+
+                // 4. Images & Cover
+                if (Array.isArray(draft.images) && draft.images.length > 0) {
+                    adminProductImages = [...draft.images];
+                } else if (draft.coverImage) {
+                    adminProductImages = [draft.coverImage];
+                } else {
+                    adminProductImages = ['shop/images/learning_course_cover.svg'];
+                }
+                const coverInput = document.getElementById('admin-cover-image');
+                if (coverInput) coverInput.value = draft.coverImage || adminProductImages[0] || 'shop/images/learning_course_cover.svg';
+                renderAdminImagesGallery();
+
+                // 5. Description
+                if (draft.description || draft.descriptionHtml) {
+                    const descInp = document.getElementById('admin-description');
+                    if (descInp) descInp.value = draft.description || '';
+                    const editorEl = document.getElementById('admin-description-editor');
+                    if (editorEl) editorEl.innerHTML = draft.descriptionHtml || (draft.description || '').replace(/\n/g, '<br>');
+                }
+
+                // 6. Lessons
+                if (hasLessons) {
+                    adminCourseLessons = JSON.parse(JSON.stringify(draft.lessons));
+                }
+                renderCourseLessons();
+
+                // 7. Time pill
+                if (draft.updatedAt) {
+                    const timeStr = new Date(draft.updatedAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                    const pill = document.getElementById('course-draft-time-pill');
+                    if (pill) {
+                        pill.textContent = `💾 กู้คืนร่างเมื่อ ${timeStr} น.`;
+                        pill.style.display = 'inline-block';
+                    }
+                }
+
+                showToast('🔄 ดึงแบบร่างคอร์สเรียนล่าสุด (ชื่อ, ราคา, รูปภาพ, บทเรียน) กลับมาให้แล้ว!', 'info');
+                return true;
+            } catch (e) {
+                console.error('Restore draft error:', e);
+                return false;
+            }
+        }
+
+        function clearCourseDraft(confirmPrompt = true) {
+            if (confirmPrompt && !confirm('คุณต้องการล้างแบบร่างทั้งหมด (ชื่อ, ราคา, รูปภาพ, เนื้อหาบทเรียน) ใช่หรือไม่?')) return;
+            try {
+                localStorage.removeItem('EWORKER_course_draft');
+                adminCourseLessons = [];
+                adminProductImages = ['shop/images/learning_course_cover.svg'];
+                renderAdminImagesGallery();
+                renderCourseLessons();
+
+                const titleInp = document.getElementById('admin-title');
+                if (titleInp) titleInp.value = '';
+                const slugInp = document.getElementById('admin-slug');
+                if (slugInp) {
+                    slugInp.value = '';
+                    slugInp.dataset.userEdited = 'false';
+                }
+                const priceInp = document.getElementById('admin-price');
+                if (priceInp) priceInp.value = '';
+                const descInp = document.getElementById('admin-description');
+                if (descInp) descInp.value = '';
+                const editorEl = document.getElementById('admin-description-editor');
+                if (editorEl) editorEl.innerHTML = '';
+                const coverInput = document.getElementById('admin-cover-image');
+                if (coverInput) coverInput.value = 'shop/images/learning_course_cover.svg';
+
+                const pill = document.getElementById('course-draft-time-pill');
+                if (pill) pill.style.display = 'none';
+
+                if (confirmPrompt) showToast('🗑️ ล้างแบบร่างคอร์สเรียนเรียบร้อย', 'info');
+            } catch (e) { }
+        }
+
+        // ===== ADMIN RIGHT SIDEBAR: REVENUE & SALES STATS (127.0.0.1) =====
+        const ADMIN_BEAM_MERCHANT_ID = "eworker-6i7xhm";
+        const ADMIN_BEAM_API_KEY = "cJZf85jmvhcKeKTB7NTr/1nGfKA/IP+6mkPrdagRMI4=";
+        const ADMIN_FIREBASE_ENDPOINT = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests.json";
+
+        let adminRankingSortMethod = 'revenue'; // 'revenue' or 'count'
+        let adminBeamOrders = [];
+        let adminKnownOrderKeys = new Set();
+        let isAdminFirstLoad = true;
+        let adminRevenuePollingTimer = null;
+        let isAdminRevenueFetching = false;
+        let isAdminSoundEnabled = true;
+
+        // Sound synthesizer for new payments
+        let adminAudioCtx = null;
+        function getAdminAudioContext() {
+            try {
+                if (!adminAudioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) adminAudioCtx = new AudioContext();
+                }
+                if (adminAudioCtx && adminAudioCtx.state === 'suspended') {
+                    adminAudioCtx.resume().catch(() => { });
+                }
+                return adminAudioCtx;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function playAdminChime() {
+            if (!isAdminSoundEnabled) return;
+            try {
+                const ctx = getAdminAudioContext();
+                if (!ctx) return;
+                const notes = [
+                    { freq: 523.25, time: 0.0, dur: 0.22 },
+                    { freq: 659.25, time: 0.10, dur: 0.22 },
+                    { freq: 783.99, time: 0.20, dur: 0.25 },
+                    { freq: 1046.50, time: 0.30, dur: 0.45 }
+                ];
+                notes.forEach(note => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(note.freq, ctx.currentTime + note.time);
+                    gain.gain.setValueAtTime(0.24, ctx.currentTime + note.time);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + note.time + note.dur);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(ctx.currentTime + note.time);
+                    osc.stop(ctx.currentTime + note.time + note.dur);
+                });
+            } catch (e) { }
+        }
+
+        function toggleAdminSound() {
+            isAdminSoundEnabled = !isAdminSoundEnabled;
+            const btn = document.getElementById('btn-admin-sound');
+            if (btn) {
+                btn.innerHTML = isAdminSoundEnabled ? '🔊' : '🔇';
+                btn.title = isAdminSoundEnabled ? 'เสียงเตือน: เปิด' : 'เสียงเตือน: ปิด';
+            }
+            if (isAdminSoundEnabled) {
+                playAdminChime();
+                if (typeof showToast === 'function') showToast('🔊 เปิดเสียงเตือนยอดเงินแล้ว', 'info');
+            } else {
+                if (typeof showToast === 'function') showToast('🔇 ปิดเสียงเตือนยอดเงินแล้ว', 'info');
+            }
+        }
+
+        function identifyAdminService(item) {
+            const title = String(item.productTitle || item.name || '').trim();
+            const id = String(item.referenceId || item.id || '').trim();
+            const type = String(item.type || '').trim();
+
+            if (typeof products !== 'undefined' && Array.isArray(products) && item.productId) {
+                const found = products.find(p => p.id === item.productId || p.slug === item.productId);
+                if (found) {
+                    return { name: found.title, icon: found.icon || '📦', category: found.category || 'สินค้าในระบบ' };
+                }
+            }
+
+            if (title.includes('ติดบัตร') || title.includes('inch-convert') || id.includes('MVXL3R') || id.includes('MVXQBZ') || id.includes('MVXQCESH')) {
+                return { name: 'จัดรูปติดบัตรลงกระดาษ 1-2 นิ้ว', icon: '🪪', category: 'งานเอกสารและภาพถ่าย' };
+            }
+            if (title.includes('PDF') || title.includes('pdf-marker') || id.includes('ORD-PDF')) {
+                return { name: 'มาร์คจุดแก้เอกสาร PDF', icon: '📑', category: 'งานเอกสาร PDF' };
+            }
+            if (title.includes('Fake QR') || title.includes('แก้ QR') || title.includes('fake-qr') || id.includes('ORD-QR')) {
+                return { name: 'บริการแก้ QR code ให้สแกนไม่ติด', icon: '🔲', category: 'เครื่องมือและ QR' };
+            }
+            if (title.includes('oldPaper') || title.includes('กระดาษเก่า') || id.includes('order_oldpaper')) {
+                return { name: 'บริการแต่งรูปกระดาษเก่า (Old Paper)', icon: '📜', category: 'แต่งภาพวินเทจ' };
+            }
+            if (title.includes('textQuality') || title.includes('ความคมชัด') || id.includes('order_textquality')) {
+                return { name: 'บริการปรับความคมชัดตัวหนังสือ', icon: '🔍', category: 'ปรับคุณภาพรูปภาพ' };
+            }
+            if (title.includes('Grand Super Cycle') || title.includes('TradingView') || title.includes('Bitcoin')) {
+                return { name: 'อินดิเคเตอร์ TradingView Grand Super Cycle', icon: '📈', category: 'โค้ด & อินดิเคเตอร์' };
+            }
+            if (title.includes('เดินขึ้นเขา') || title.includes('hiking')) {
+                return { name: 'คอร์สเทคนิคเดินขึ้นเขาชัน', icon: '⛰️', category: 'คอร์สเรียนออนไลน์' };
+            }
+            if (title.includes('paymentSlip') || id.includes('paymentSlip')) {
+                return { name: 'ระบบสร้างสลิปโอนเงิน', icon: '🧾', category: 'ระบบชำระเงิน' };
+            }
+            if (title.includes('redPacket') || id.includes('redPacket')) {
+                return { name: 'ระบบซองอั่งเปาออนไลน์', icon: '🧧', category: 'กิจกรรมและการเงิน' };
+            }
+            if (id.startsWith('chat_')) {
+                return { name: 'Chat', icon: '💬', category: 'ห้องสนทนาและไฟล์' };
+            }
+            if (id.startsWith('retouch_') || title.includes('retouch')) {
+                return { name: 'Text Retouch', icon: '✏️', category: 'งานกราฟิกและรีทัช' };
+            }
+            if (id.startsWith('markpoint_') || id.includes('markpoint') || title.includes('markpoint') ||
+                id.toLowerCase().includes('send.html') || title.toLowerCase().includes('send.html') ||
+                id.startsWith('send_') || id.startsWith('ORD-SEND-') ||
+                type === 'markpoint' || type === 'send' ||
+                title.includes('ชี้จุด') ||
+                (title.toLowerCase().includes('send') && !title.includes('PrivateSend')) ||
+                (id.toLowerCase().includes('send') && !id.includes('PrivateSend'))) {
+                return { name: 'Send.html', icon: '📤', category: 'ระบบส่งงานและชี้จุดแก้ไข' };
+            }
+            if (id.startsWith('k') || id.startsWith('ORD-PS-') || id.includes('PrivateSend') || title.includes('PrivateSend')) {
+                return { name: 'Download', icon: '🛡️', category: 'ระบบส่งไฟล์ลับ' };
+            }
+            if (item.productTitle) {
+                return { name: item.productTitle, icon: '📦', category: 'สินค้าในระบบ' };
+            }
+            return { name: 'Download', icon: '🛡️', category: 'ระบบส่งไฟล์ลับ' };
+        }
+
+        function formatAdminTimeAgo(timestamp) {
+            if (!timestamp) return 'เมื่อสักครู่';
+            const diff = Math.floor((Date.now() - timestamp) / 1000);
+            if (diff < 15) return 'เมื่อสักครู่';
+            if (diff < 60) return `${diff} วินาทีที่แล้ว`;
+            if (diff < 3600) return `${Math.floor(diff / 60)} นาทีที่แล้ว`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)} ชั่วโมงที่แล้ว`;
+            return `${Math.floor(diff / 86400)} วันที่แล้ว`;
+        }
+
+        // Helper: คำนวณช่วงเวลา "รายได้ของวันนี้" (ตัดรอบเที่ยงคืน) และ "ยอดรอบโอน 11:00 น. วันนี้" (T+1)
+        // กฎการตัดรอบ:
+        // 1. วันนี้ (Today): นับตั้งแต่หลังเที่ยงคืน 00:00:00 น. จนถึงสิ้นวัน 23:59:59 น.
+        //    เงินเข้าหลังเที่ยงคืน = รายได้ของวันนี้ สถานะเป็น T+1 (ค้างรอโอนเข้าบัญชีพรุ่งนี้ 11:00 น.)
+        //    ไม่รวมกับยอดรอบโอน 11:00 น. ของวันนี้!
+        // 2. รอบโอน 11 โมงวันนี้ = ยอดของเมื่อวาน (00:00 - 23:59 น. เมื่อวาน) ที่ตัดรอบเที่ยงคืนแล้วโอนเข้าบัญชีวันนี้ 11:00 น.
+        function getAdminTodayRevenueCycle(baseDate = new Date()) {
+            const now = new Date(baseDate);
+
+            // วันนี้ (Today): เริ่มหลังเที่ยงคืน 00:00:00.000 ถึง 23:59:59.999
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+            const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
+
+            // เมื่อวาน (Yesterday): ยอดสำหรับรอบโอน 11:00 น. วันนี้ (00:00 - 23:59 น. เมื่อวาน)
+            const yesterdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0);
+            const yesterdayEnd = todayStart;
+
+            // วันพรุ่งนี้ (Tomorrow): วันที่จะได้รับโอนสำหรับยอดของวันนี้
+            const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+
+            const todayDay = todayStart.getDate();
+            const todayMonth = todayStart.toLocaleDateString('th-TH', { month: 'short' });
+            const tomorrowDay = tomorrow.getDate();
+            const tomorrowMonth = tomorrow.toLocaleDateString('th-TH', { month: 'short' });
+            const yesterdayDay = yesterdayStart.getDate();
+            const yesterdayMonth = yesterdayStart.toLocaleDateString('th-TH', { month: 'short' });
+
+            const isAfter11 = now.getHours() >= 11;
+
+            return {
+                todayStartMs: todayStart.getTime(),
+                todayEndMs: todayEnd.getTime(),
+                yesterdayStartMs: yesterdayStart.getTime(),
+                yesterdayEndMs: yesterdayEnd.getTime(),
+                todayDay,
+                todayMonth,
+                tomorrowDay,
+                tomorrowMonth,
+                yesterdayDay,
+                yesterdayMonth,
+                isAfter11,
+                badgeText: `${todayDay} ${todayMonth} (T+1)`,
+                settleTomorrowText: `รอบโอน ${tomorrowDay} ${tomorrowMonth} 11:00 น.`,
+                todayFullRangeText: `${todayDay} ${todayMonth} (หลังเที่ยงคืน 00:00 - 23:59 น.)`,
+                yesterdayBadgeText: `${yesterdayDay} ${yesterdayMonth}`,
+                yesterdayFullRangeText: `${yesterdayDay} ${yesterdayMonth} (00:00 - 23:59 น.)`
+            };
+        }
+
+        async function fetchAdminRevenueData(isManual = false) {
+            if (!isLocalAdmin || isAdminRevenueFetching) return;
+            isAdminRevenueFetching = true;
+
+            const spin = document.getElementById('admin-refresh-spin');
+            if (spin) {
+                spin.style.display = 'inline-block';
+                spin.style.animation = 'spin 0.8s linear infinite';
+            }
+
+            try {
+                const authHeader = "Basic " + btoa(`${ADMIN_BEAM_MERCHANT_ID}:${ADMIN_BEAM_API_KEY}`);
+
+                // 1. Fetch transactions from Beam
+                let allTransactions = [];
+                let offset = 0;
+                const limit = 100;
+                let hasMore = true;
+
+                while (hasMore) {
+                    const res = await fetch(`https://api.beamcheckout.com/api/v1/transactions?limit=${limit}&offset=${offset}`, {
+                        headers: { "Authorization": authHeader }
+                    }).then(r => r.ok ? r.json() : null).catch(() => null);
+
+                    if (res && Array.isArray(res.data) && res.data.length > 0) {
+                        allTransactions.push(...res.data);
+                        offset += res.data.length;
+                        if (allTransactions.length >= (res.totalCount || 0) || res.data.length < limit) {
+                            hasMore = false;
+                        }
+                    } else {
+                        hasMore = false;
+                    }
+                }
+
+                // 2. Fetch Firebase metadata for mapping titles
+                const fbRes = await fetch(`${ADMIN_FIREBASE_ENDPOINT}?t=${Date.now()}`)
+                    .then(r => r.ok ? r.json() : null).catch(() => null);
+
+                // 3. Process Beam Transactions
+                let grandTotalSatang = 0;
+                let todayTotalSatang = 0;
+                let todayOrdersCount = 0;
+                let yesterdayTotalSatang = 0;
+                let yesterdayOrdersCount = 0;
+                const realBeamOrders = [];
+
+                const now = new Date();
+                const revenueCycle = getAdminTodayRevenueCycle(now);
+
+                allTransactions.forEach(tx => {
+                    if (tx.transactionType === 'PAYMENT' || (tx.netAmount && tx.netAmount > 0)) {
+                        const satang = Number(tx.grossAmount || tx.netAmount || 0);
+                        grandTotalSatang += satang;
+
+                        const refId = String(tx.referenceId || '');
+                        const fbMeta = (fbRes && fbRes[refId]) || {};
+                        const timeMs = tx.transactionTime ? new Date(tx.transactionTime).getTime() : new Date(tx.createdAt).getTime();
+
+                        // 1) ยอดของวันนี้ (เงินเข้าหลังเที่ยงคืน 00:00:00 เป็นต้นไป -> T+1 ค้างรอโอนพรุ่งนี้ 11:00 น.)
+                        if (timeMs >= revenueCycle.todayStartMs && timeMs < revenueCycle.todayEndMs) {
+                            todayTotalSatang += satang;
+                            todayOrdersCount++;
+                        }
+
+                        // 2) ยอดของเมื่อวาน (ตัดรอบเที่ยงคืน -> รอบโอน 11:00 น. วันนี้)
+                        if (timeMs >= revenueCycle.yesterdayStartMs && timeMs < revenueCycle.yesterdayEndMs) {
+                            yesterdayTotalSatang += satang;
+                            yesterdayOrdersCount++;
+                        }
+
+                        realBeamOrders.push({
+                            id: tx.transactionId,
+                            referenceId: refId,
+                            price: satang / 100,
+                            createdAt: timeMs,
+                            source: 'Beam',
+                            productTitle: fbMeta.productTitle || '',
+                            service: fbMeta.service || '',
+                            productId: fbMeta.productId || '',
+                            raw: tx
+                        });
+                    }
+                });
+
+                realBeamOrders.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                adminBeamOrders = realBeamOrders;
+
+                // Detect new incoming payments after initial load
+                const currentKeys = new Set(realBeamOrders.map(it => it.id || it.referenceId).filter(Boolean));
+                if (!isAdminFirstLoad) {
+                    let hasNew = false;
+                    currentKeys.forEach(k => {
+                        if (!adminKnownOrderKeys.has(k)) hasNew = true;
+                    });
+                    if (hasNew) {
+                        playAdminChime();
+                        if (typeof showToast === 'function') {
+                            const latest = realBeamOrders[0];
+                            const srv = latest ? identifyAdminService(latest) : null;
+                            showToast(`🎉 มีเงินโอนเข้า +฿${Number(latest?.price || 0).toFixed(2)} (${srv?.name || 'รายการใหม่'})`, 'success');
+                        }
+                    }
+                }
+                adminKnownOrderKeys = currentKeys;
+                isAdminFirstLoad = false;
+
+                // 4. Update Today's Revenue & Lifetime & Yesterday's 11:00 AM Settlement
+                const todayRevenue = todayTotalSatang / 100;
+                const yesterdayRevenue = yesterdayTotalSatang / 100;
+                const lifetimeRevenue = grandTotalSatang / 100;
+
+                const todayValEl = document.getElementById('admin-today-revenue-val');
+                if (todayValEl) {
+                    todayValEl.textContent = todayRevenue.toLocaleString('th-TH', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                    todayValEl.title = `ยอดเงินค้างรอโอน (หลังเที่ยงคืน 00:00 น. เป็นต้นไป): ฿${todayRevenue.toFixed(2)} (${todayOrdersCount} รายการ) • สถานะ T+1 ค้างรอโอนพรุ่งนี้ 11:00 น. (ไม่รวมกับยอด 11 โมงวันนี้)`;
+                }
+
+                const todayOrdersEl = document.getElementById('admin-today-orders-count');
+                if (todayOrdersEl) {
+                    todayOrdersEl.textContent = `${todayOrdersCount} รายการ`;
+                }
+
+                const lifetimeEl = document.getElementById('admin-lifetime-revenue-val');
+                if (lifetimeEl) {
+                    lifetimeEl.textContent = `฿${lifetimeRevenue.toLocaleString('th-TH', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    })} (${realBeamOrders.length} รายการ)`;
+                }
+
+                const dateBadge = document.getElementById('admin-today-date-badge');
+                if (dateBadge) {
+                    dateBadge.textContent = revenueCycle.badgeText;
+                    dateBadge.title = `รอบคำนวณเงินค้างรอโอน (หลังเที่ยงคืน): ${revenueCycle.todayFullRangeText} • ยอด T+1 ค้างรอโอน ${revenueCycle.settleTomorrowText} (ไม่รวมกับยอด 11 โมงวันนี้)`;
+                }
+
+                const tplusDescEl = document.getElementById('admin-today-tplus-desc');
+                if (tplusDescEl) {
+                    tplusDescEl.textContent = `โอนพรุ่งนี้ (${revenueCycle.tomorrowDay} ${revenueCycle.tomorrowMonth}) 11:00 น.`;
+                }
+
+                const yesterdayValEl = document.getElementById('admin-yesterday-settle-val');
+                if (yesterdayValEl) {
+                    yesterdayValEl.textContent = `฿${yesterdayRevenue.toLocaleString('th-TH', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    })}`;
+                }
+
+                const yesterdayTagEl = document.getElementById('admin-yesterday-settle-tag');
+                const yesterdayRowEl = document.getElementById('admin-yesterday-settle-row');
+                if (yesterdayTagEl) {
+                    if (revenueCycle.isAfter11) {
+                        yesterdayTagEl.className = 'admin-rs-settle-tag done';
+                        yesterdayTagEl.textContent = 'โอนแล้ว';
+                    } else {
+                        yesterdayTagEl.className = 'admin-rs-settle-tag waiting';
+                        yesterdayTagEl.textContent = 'รอโอน 11:00 น.';
+                    }
+                }
+                if (yesterdayRowEl) {
+                    yesterdayRowEl.title = `ยอดของเมื่อวาน (${revenueCycle.yesterdayFullRangeText}) จำนวน ${yesterdayOrdersCount} รายการ: ฿${yesterdayRevenue.toFixed(2)} ${revenueCycle.isAfter11 ? 'โอนเข้าบัญชีแล้วเมื่อ 11:00 น.' : 'รอโอนเข้าบัญชีวันนี้ 11:00 น.'}`;
+                }
+
+                // 5. Render Ranking Table & Recent Feed
+                renderAdminSalesRankingTable(realBeamOrders, lifetimeRevenue);
+                renderAdminRecentFeed(realBeamOrders.slice(0, 5), revenueCycle);
+
+                if (isManual && typeof showToast === 'function') {
+                    showToast('🔄 อัปเดตข้อมูลยอดขาย Beam สำเร็จแล้ว', 'success');
+                }
+
+            } catch (err) {
+                console.error("Admin revenue fetch error:", err);
+            } finally {
+                isAdminRevenueFetching = false;
+                if (spin) {
+                    spin.style.animation = 'none';
+                }
+            }
+        }
+
+        function renderAdminSalesRankingTable(completedList, grandTotalRevenue) {
+            const tbody = document.getElementById('admin-ranking-table-body');
+            const totalBadge = document.getElementById('admin-total-sold-count');
+            if (!tbody) return;
+
+            if (!completedList || completedList.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 22px 10px; color: var(--fh-muted);">
+                            <div style="font-size: 1.4rem; margin-bottom: 4px;">📦</div>
+                            <div style="font-size: 0.78rem;">ยังไม่มีรายการชำระเงินในระบบ</div>
+                        </td>
+                    </tr>
+                `;
+                if (totalBadge) totalBadge.textContent = '0 รายการ';
+                return;
+            }
+
+            const serviceAggMap = new Map();
+            let totalCount = 0;
+
+            completedList.forEach(item => {
+                const s = identifyAdminService(item);
+                const price = Number(item.price || 0);
+                totalCount++;
+
+                if (!serviceAggMap.has(s.name)) {
+                    serviceAggMap.set(s.name, {
+                        name: s.name,
+                        icon: s.icon,
+                        category: s.category,
+                        purchaseCount: 0,
+                        totalRevenue: 0,
+                        latestTimestamp: 0
+                    });
+                }
+
+                const agg = serviceAggMap.get(s.name);
+                agg.purchaseCount += 1;
+                agg.totalRevenue += price;
+                if ((item.createdAt || 0) > agg.latestTimestamp) {
+                    agg.latestTimestamp = item.createdAt;
+                }
+            });
+
+            if (totalBadge) totalBadge.textContent = `${totalCount} รายการ`;
+
+            const rankedServices = Array.from(serviceAggMap.values());
+
+            if (adminRankingSortMethod === 'revenue') {
+                rankedServices.sort((a, b) => b.totalRevenue - a.totalRevenue || b.purchaseCount - a.purchaseCount);
+            } else {
+                rankedServices.sort((a, b) => b.purchaseCount - a.purchaseCount || b.totalRevenue - a.totalRevenue);
+            }
+
+            tbody.innerHTML = rankedServices.map((srv, idx) => {
+                const rankNum = idx + 1;
+                let rankClass = 'rank-other';
+                if (rankNum === 1) rankClass = 'rank-1';
+                else if (rankNum === 2) rankClass = 'rank-2';
+                else if (rankNum === 3) rankClass = 'rank-3';
+
+                const pct = grandTotalRevenue > 0 ? ((srv.totalRevenue / grandTotalRevenue) * 100).toFixed(1) : 0;
+                const timeStr = formatAdminTimeAgo(srv.latestTimestamp);
+
+                return `
+                    <tr>
+                        <td style="text-align: center;">
+                            <span class="admin-rs-rank-pill ${rankClass}">#${rankNum}</span>
+                        </td>
+                        <td>
+                            <div class="admin-rs-item-title" title="${srv.name}">
+                                ${srv.icon || '📦'} ${srv.name}
+                            </div>
+                            <div class="admin-rs-item-meta" title="${srv.category}">
+                                ${srv.category}
+                            </div>
+                            <div class="admin-rs-progress" title="สัดส่วนรายได้ ${pct}%">
+                                <div class="admin-rs-fill" style="width: ${pct}%;"></div>
+                            </div>
+                        </td>
+                        <td style="text-align: center;">
+                            <span class="admin-rs-pill-count">${srv.purchaseCount} ครั้ง</span>
+                        </td>
+                        <td style="text-align: right;">
+                            <div class="admin-rs-item-revenue">฿${srv.totalRevenue.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function setAdminRankingSort(type) {
+            adminRankingSortMethod = type;
+            const btnRev = document.getElementById('admin-sort-revenue-btn');
+            const btnCnt = document.getElementById('admin-sort-count-btn');
+            if (btnRev) btnRev.classList.toggle('active', type === 'revenue');
+            if (btnCnt) btnCnt.classList.toggle('active', type === 'count');
+            if (adminBeamOrders && adminBeamOrders.length > 0) {
+                let totalRev = 0;
+                adminBeamOrders.forEach(o => totalRev += (o.price || 0));
+                renderAdminSalesRankingTable(adminBeamOrders, totalRev);
+            }
+        }
+
+        function renderAdminRecentFeed(recentOrders, revenueCycle) {
+            const list = document.getElementById('admin-recent-feed-list');
+            const countBadge = document.getElementById('admin-recent-count');
+            if (!list) return;
+
+            if (!recentOrders || recentOrders.length === 0) {
+                list.innerHTML = `<div style="text-align: center; color: var(--fh-muted); font-size: 0.72rem; padding: 10px;">ยังไม่มีรายการล่าสุด</div>`;
+                if (countBadge) countBadge.textContent = '0';
+                return;
+            }
+
+            if (countBadge) countBadge.textContent = String(recentOrders.length);
+
+            const revCycle = revenueCycle || getAdminTodayRevenueCycle();
+
+            list.innerHTML = recentOrders.map(item => {
+                const s = identifyAdminService(item);
+                const timeStr = formatAdminTimeAgo(item.createdAt);
+                const refShort = String(item.referenceId || item.id || '').slice(-6);
+                const isItemToday = item.createdAt >= revCycle.todayStartMs;
+                const statusTag = isItemToday ? 'T+1 ค้างโอน (พรุ่งนี้ 11:00 น.)' : (revCycle.isAfter11 ? 'รอบ 11 โมงวันนี้ (โอนแล้ว)' : 'รอบ 11 โมงวันนี้ (รอโอน)');
+                return `
+                    <div class="admin-rs-recent-item" title="${s.name} • ${timeStr} • #${refShort} • ${statusTag}">
+                        <div class="admin-rs-recent-left">
+                            <span class="admin-rs-recent-icon">${s.icon || '🛍️'}</span>
+                            <span class="admin-rs-recent-title">${s.name}</span>
+                            <span class="admin-rs-recent-time">(${timeStr})</span>
+                        </div>
+                        <div class="admin-rs-recent-price">+฿${Number(item.price || 0).toFixed(2)}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function initAdminRightSidebar() {
+            if (!isLocalAdmin) return;
+
+            document.body.classList.add('is-admin-view');
+
+            const sidebar = document.getElementById('admin-right-sidebar');
+            if (sidebar) {
+                sidebar.style.display = 'flex';
+            }
+
+            const now = new Date();
+            const revenueCycle = getAdminTodayRevenueCycle(now);
+            const dateBadge = document.getElementById('admin-today-date-badge');
+            if (dateBadge) {
+                dateBadge.textContent = revenueCycle.badgeText;
+                dateBadge.title = `รอบคำนวณรายได้วันนี้ (หลังเที่ยงคืน): ${revenueCycle.todayFullRangeText} • ยอด T+1 ค้างรอโอน ${revenueCycle.settleTomorrowText} (ไม่รวมกับยอด 11 โมงวันนี้)`;
+            }
+
+            const tplusDescEl = document.getElementById('admin-today-tplus-desc');
+            if (tplusDescEl) {
+                tplusDescEl.textContent = `โอนพรุ่งนี้ (${revenueCycle.tomorrowDay} ${revenueCycle.tomorrowMonth}) 11:00 น.`;
+            }
+
+            fetchAdminRevenueData();
+
+            if (adminRevenuePollingTimer) clearInterval(adminRevenuePollingTimer);
+            adminRevenuePollingTimer = setInterval(() => {
+                if (!document.hidden) {
+                    fetchAdminRevenueData(false);
+                }
+            }, 12000);
+
+            // AudioContext resume on user gesture
+            ['click', 'keydown', 'touchstart'].forEach(evt => {
+                window.addEventListener(evt, () => {
+                    getAdminAudioContext();
+                }, { once: true });
+            });
+        }
+    </script>
+</body>
+
+</html>
