@@ -1188,6 +1188,37 @@
             animation: spin 0.8s linear infinite;
         }
 
+        .detail-bottom-promptpay-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #15803d;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        .btn-tool-sm {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 7px;
+            border-radius: 5px;
+            font-size: 0.68rem;
+            cursor: pointer;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            color: #1e293b;
+            transition: all 0.15s ease;
+        }
+
+        .btn-tool-sm:hover {
+            filter: brightness(0.95);
+        }
+
         @keyframes spin {
             to {
                 transform: rotate(360deg);
@@ -1506,58 +1537,53 @@
             <button type="button" class="btn-modal-close-red" onclick="closePaymentModal()" title="ปิดหน้าต่าง">✕</button>
 
             <!-- Pending Payment View -->
-            <div id="paymentViewPending">
+            <div id="paymentViewPending" style="width: 100%;">
                 <h4 style="font-size: 1.1rem; font-weight: 800; color: #16a34a; margin: 0 0 4px 0;">🎉
                     มาร์คจุดเรียบร้อย! กรุณาชำระเงิน</h4>
                 <p style="font-size: 0.78rem; color: #64748b; margin-bottom: 8px;">
                     มาร์คตำแหน่งแก้ไขเอกสาร PDF คุณภาพสูง
                 </p>
 
-                <!-- Countdown Box -->
-                <div class="checkout-countdown-box" id="checkoutCountdownBox">
-                    <span>⏱️ กรุณาชำระเงินภายใน:</span>
-                    <strong id="checkoutCountdownTimer"
-                        style="font-family: monospace; font-size: 0.95rem; font-weight: 800;">10:00</strong>
-                    <span>นาที</span>
-                </div>
+                <div id="detail-bottom-qr-view" style="display: block; width: 100%; box-sizing: border-box; text-align: center;">
 
-                <!-- QR Code Box -->
-                <div class="qr-clean-card">
-                    <div id="qrCodeTarget"></div>
-                    <div
-                        style="font-size: 0.75rem; font-weight: 700; color: #0b1120; margin-top: 5px; display: flex; align-items: center; justify-content: center; gap: 5px;">
-                        <img src="../../../assets/promptpay_header_full.png"
-                            onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/100px-PromptPay-logo.png'; this.onerror=function(){this.style.display='none';};"
-                            style="height: 16px; max-width: 75px; object-fit: contain;">
-                        <span>สแกนผ่านทุกแอปธนาคาร</span>
+                    <!-- 1. Sleek Compact Header: PromptPay Badge + Countdown Timer -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; width: 100%; gap: 6px;">
+                        <span class="detail-bottom-promptpay-badge" style="font-size: 0.7rem; padding: 2px 7px;">
+                            <span>⚡ PromptPay</span>
+                        </span>
+                        <div class="checkout-countdown-box" id="detail-qr-countdown-box" style="margin: 0; padding: 2px 7px; border-radius: 5px; font-size: 0.72rem; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;">
+                            <span>⏱️</span>
+                            <strong class="countdown-digits" id="detail-qr-countdown">30:00</strong>
+                            <span>นาที</span>
+                        </div>
                     </div>
-                </div>
 
-                <div
-                    style="font-size: 1.6rem; font-weight: 800; color: #16a34a; margin: 2px 0 4px 0; line-height: 1.2;">
-                    ฿ 5.00
-                </div>
+                    <!-- 2. Clean QR Code Card (Click to save slip, keeps QR exact 195px size) -->
+                    <div class="qr-clean-card" onclick="downloadDetailQRSlip()" title="คลิกเพื่อบันทึกรูป QR Code" style="margin: 0 auto 6px auto; width: 100%; max-width: 240px; padding: 6px 8px 6px 8px; box-sizing: border-box; border-radius: 12px; border: 1.5px solid #e2e8f0; background: #ffffff; cursor: pointer; transition: all 0.2s ease;">
+                        <div id="detail-qr-image-target" style="display: flex; align-items: center; justify-content: center; width: 100%; min-height: 195px;"></div>
+                        <div style="font-size: 0.72rem; font-weight: 700; color: #0b1120; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                            <img src="../../../assets/promptpay_header_full.png" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/100px-PromptPay-logo.png'; this.onerror=function(){this.style.display='none';};" style="height: 14px; max-width: 65px; object-fit: contain;">
+                            <span>สแกนผ่านทุกแอปธนาคาร</span>
+                        </div>
+                        <div style="font-size: 0.68rem; color: #2563eb; font-weight: 600; margin-top: 2px; display: flex; align-items: center; justify-content: center; gap: 3px;">
+                            <span>📥 แตะ/คลิกรูปเพื่อบันทึก QR</span>
+                        </div>
+                    </div>
 
-                <!-- Button Download QR Code Image -->
-                <button type="button" class="btn btn-primary" id="btnDownloadSlip" onclick="downloadPaymentQR()"
-                    style="width: 100%; justify-content: center; padding: 8px 12px; font-size: 0.84rem; font-weight: 700; border-radius: 8px; margin: 4px 0 6px 0; gap: 6px; background: linear-gradient(135deg, #1d4ed8, #2563eb); border: none; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.25);">
-                    <span>📥 บันทึกรูป QR Code</span>
-                </button>
+                    <!-- 3. Centered Price Display -->
+                    <div id="detail-qr-price-text" style="font-size: 1.55rem; font-weight: 800; color: #16a34a; letter-spacing: -0.5px; line-height: 1.1; margin: 2px 0 6px 0; text-align: center;">฿ 5.00</div>
 
-                <!-- Polling Status -->
-                <div class="polling-status-chip">
-                    <div class="clean-spinner"></div>
-                    <span>ระบบกำลังรอรับยอดเงินอัตโนมัติ (PromptPay)...</span>
-                </div>
+                    <!-- 4. Single-line Slim Polling Status Chip -->
+                    <div class="polling-status-chip" style="width: 100%; box-sizing: border-box; justify-content: center; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; margin: 0; gap: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center;">
+                        <div class="clean-spinner" style="width: 10px; height: 10px; border-width: 1.5px; flex-shrink: 0;">
+                        </div>
+                        <span style="white-space: nowrap;">ตรวจจับยอดเงินเข้าอัตโนมัติ (PromptPay)</span>
+                    </div>
 
-                <!-- Admin Test Shortcut (localhost only) -->
-                <div id="adminTestShortcut" style="display: none; margin-top: 8px; width: 100%;">
-                    <div
-                        style="padding: 4px 8px; background: #eff6ff; border: 1px dashed #93c5fd; border-radius: 6px; font-size: 0.72rem; display: flex; align-items: center; justify-content: space-between;">
-                        <span>🛠️ <strong>แอดมิน:</strong></span>
-                        <button type="button" onclick="adminSimulateApprove()"
-                            style="background: #2563eb; color: #ffffff; border: none; padding: 3px 10px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; cursor: pointer;">
-                            จำลองเงินเข้า 5 บ.
+                    <!-- 5. Admin Simulator Only -->
+                    <div id="wrap-admin-sim-detail-pay" style="margin-top: 4px; text-align: center;">
+                        <button type="button" class="btn-tool-sm" id="btn-admin-sim-detail-pay" onclick="adminSimulateApprove()" style="display: none; font-size: 0.68rem; background: rgb(239, 246, 255); color: rgb(29, 78, 216); border: 1px solid rgb(191, 219, 254); padding: 2px 7px; border-radius: 5px; cursor: pointer;">
+                            ⚡ จำลองโอนเงิน (Admin Test)
                         </button>
                     </div>
                 </div>
@@ -1624,9 +1650,14 @@
         // ===== CONFIGURATION =====
         const FIREBASE_BASE = "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files";
         const PAYMENT_ENDPOINT = `${FIREBASE_BASE}/payment_requests`;
-        const PROMPTPAY_NUMBER = "0988573074";
+        const BEAM_WORKER_URL = "https://eworker-beam-pay.moonverse69.workers.dev";
         const SERVICE_PRICE = 5.00;
-        const isLocalAdmin = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const isLocalAdmin = (
+            window.location.hostname === '127.0.0.1' ||
+            window.location.hostname === 'localhost' ||
+            window.location.protocol === 'file:' ||
+            new URLSearchParams(window.location.search).get('admin') === 'true'
+        );
 
         // State Variables
         let pdfDoc = null;
@@ -2284,9 +2315,15 @@
             const orderId = `ORD-PDF-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 899 + 100)}`;
             currentOrderId = orderId;
             const secretToken = `sec_${Math.random().toString(36).substring(2)}_${Date.now()}`;
-            const expiresAt = Date.now() + 10 * 60 * 1000;
+            const expiresAt = Date.now() + 30 * 60 * 1000; // 30 minutes (Beam QR standard)
 
-            generatePromptPayQR(PROMPTPAY_NUMBER, SERVICE_PRICE);
+            const priceTextEl = document.getElementById('detail-qr-price-text');
+            if (priceTextEl) priceTextEl.textContent = `฿ ${SERVICE_PRICE.toFixed(2)}`;
+
+            if (isLocalAdmin) {
+                const btnSim = document.getElementById('btn-admin-sim-detail-pay');
+                if (btnSim) btnSim.style.display = 'inline-flex';
+            }
 
             try {
                 const payload = {
@@ -2312,13 +2349,10 @@
                 });
             } catch (err) { }
 
-            const adminShortcut = document.getElementById('adminTestShortcut');
-            if (adminShortcut) {
-                adminShortcut.style.display = isLocalAdmin ? 'block' : 'none';
-            }
-
             const paymentModal = document.getElementById('paymentModal');
             if (paymentModal) paymentModal.classList.add('active');
+
+            requestBeamQR(orderId, SERVICE_PRICE);
 
             startCheckoutCountdown(expiresAt);
             startCheckoutPolling(orderId);
@@ -2329,55 +2363,158 @@
             if (modal) modal.classList.remove('active');
         };
 
-        function generatePromptPayQR(id, amount) {
-            const targetEl = document.getElementById('qrCodeTarget');
-            targetEl.innerHTML = '';
-            const payload = generatePromptPayPayload(id, amount);
+        async function requestBeamQR(orderId, amount) {
+            const qrTarget = document.getElementById('detail-qr-image-target');
+            if (qrTarget) {
+                qrTarget.innerHTML = `
+                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; font-size:0.78rem; color:#64748b; min-height:195px;">
+                        <div class="clean-spinner" style="width:24px; height:24px; border-width:2.5px;"></div>
+                        <span>กำลังสร้าง QR Code จาก Beam...</span>
+                    </div>
+                `;
+            }
 
-            new QRCode(targetEl, {
-                text: payload,
-                width: 200,
-                height: 200,
-                colorDark: "#0f172a",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.M
-            });
-        }
-
-        function generatePromptPayPayload(id, amount) {
-            const crc16 = (data) => {
-                let crc = 0xFFFF;
-                for (let i = 0; i < data.length; i++) {
-                    crc ^= data.charCodeAt(i) << 8;
-                    for (let j = 0; j < 8; j++) {
-                        crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) & 0xFFFF : (crc << 1) & 0xFFFF;
+            try {
+                const res = await fetch(`${BEAM_WORKER_URL}/create-charge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        linkKey: orderId,
+                        amount: amount
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.qrImageBase64) {
+                        if (qrTarget) {
+                            qrTarget.innerHTML = `<img src="data:image/png;base64,${data.qrImageBase64}" alt="PromptPay QR" style="width:195px; height:195px; object-fit:contain; border-radius:8px; display:block;">`;
+                        }
+                        if (data.expiry) {
+                            const expiryMs = new Date(data.expiry).getTime();
+                            const remainSec = Math.max(0, Math.floor((expiryMs - Date.now()) / 1000));
+                            if (remainSec > 0) startCheckoutCountdown(Date.now() + remainSec * 1000);
+                        }
+                        return;
                     }
                 }
-                return crc.toString(16).toUpperCase().padStart(4, '0');
-            };
-
-            let target = id.replace(/[^0-9]/g, '');
-            if (target.length === 10 && target.startsWith('0')) {
-                target = '0066' + target.substring(1);
+                throw new Error('Beam API create-charge failed');
+            } catch (err) {
+                console.warn('Beam create-charge fallback to direct QR image:', err);
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.src = `${BEAM_WORKER_URL}/qr-image?linkKey=${encodeURIComponent(orderId)}&amount=${amount}`;
+                img.alt = "PromptPay QR";
+                img.style = "width:195px; height:195px; object-fit:contain; border-radius:8px; display:block;";
+                img.onload = () => {
+                    if (qrTarget) {
+                        qrTarget.innerHTML = '';
+                        qrTarget.appendChild(img);
+                    }
+                };
+                img.onerror = () => {
+                    if (qrTarget) {
+                        qrTarget.innerHTML = `
+                            <div style="padding:16px; text-align:center; color:#b91c1c; font-size:0.75rem;">
+                                ⚠️ สร้าง QR ไม่สำเร็จ<br>
+                                <button type="button" class="btn-tool-sm" onclick="openPaymentFlow()" style="margin-top:6px; font-size:0.72rem; padding:4px 8px;">🔄 ลองใหม่</button>
+                            </div>
+                        `;
+                    }
+                };
             }
-
-            let merchantInfo = '0016A000000677010111' + '01' + ('00' + target.length).slice(-2) + target;
-            let payload = '000201010211' + '29' + ('00' + merchantInfo.length).slice(-2) + merchantInfo + '5802TH5303764';
-
-            if (!isNaN(amount) && amount > 0) {
-                const amtStr = Number(amount).toFixed(2);
-                payload += '54' + ('00' + amtStr.length).slice(-2) + amtStr;
-            }
-
-            payload += '6304';
-            return payload + crc16(payload);
         }
+
+        window.downloadDetailQRSlip = function () {
+            const qrTarget = document.getElementById('detail-qr-image-target');
+            const img = qrTarget ? qrTarget.querySelector('img') : null;
+            if (!img || !img.src) {
+                alert('กรุณารอโหลด QR Code ให้เสร็จก่อนบันทึกรูป');
+                return;
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 400;
+            canvas.height = 490;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, 400, 490);
+
+            ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 20px "Prompt", -apple-system, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('พร้อมเพย์ (PromptPay)', 200, 40);
+
+            ctx.font = '13px "Prompt", -apple-system, sans-serif';
+            ctx.fillStyle = '#64748b';
+            ctx.fillText('มาร์คจุดแก้เอกสาร PDF (5 บาท)', 200, 66);
+
+            const qrImg = new Image();
+            qrImg.crossOrigin = 'anonymous';
+            qrImg.onload = () => {
+                ctx.drawImage(qrImg, 102, 85, 195, 195);
+
+                ctx.fillStyle = '#16a34a';
+                ctx.font = 'bold 28px "Prompt", -apple-system, sans-serif';
+                ctx.fillText(`฿ ${SERVICE_PRICE.toFixed(2)}`, 200, 320);
+
+                ctx.fillStyle = '#475569';
+                ctx.font = '13px "Prompt", -apple-system, sans-serif';
+                ctx.fillText('สแกนผ่านแอปธนาคารทุกแห่งเพื่อปลดล็อก', 200, 355);
+
+                if (currentOrderId) {
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.font = '11px monospace';
+                    ctx.fillText('Order Ref: ' + currentOrderId, 200, 385);
+                }
+
+                const fileName = `PromptPay_QR_PdfMarker_${Date.now()}.png`;
+
+                if (navigator.share && navigator.canShare) {
+                    canvas.toBlob(blob => {
+                        const file = new File([blob], fileName, { type: 'image/png' });
+                        if (navigator.canShare({ files: [file] })) {
+                            navigator.share({
+                                files: [file],
+                                title: 'รูป PromptPay QR 5 บาท',
+                                text: 'รูป QR Code สำหรับสแกนชำระเงิน 5 บาท'
+                            }).catch(() => { });
+                            return;
+                        }
+                        const link = document.createElement('a');
+                        link.download = fileName;
+                        link.href = canvas.toDataURL('image/png');
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }, 'image/png');
+                } else {
+                    const link = document.createElement('a');
+                    link.download = fileName;
+                    link.href = canvas.toDataURL('image/png');
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            };
+            qrImg.onerror = () => {
+                const link = document.createElement('a');
+                link.download = `PromptPay_QR_PdfMarker_${Date.now()}.png`;
+                link.href = img.src;
+                link.click();
+            };
+            qrImg.src = img.src;
+        };
+
+        window.downloadPaymentQR = function () {
+            downloadDetailQRSlip();
+        };
 
         function startCheckoutCountdown(expiresAt) {
             if (checkoutCountdownTimer) clearInterval(checkoutCountdownTimer);
 
-            const box = document.getElementById('checkoutCountdownBox');
-            const timerEl = document.getElementById('checkoutCountdownTimer');
+            const box = document.getElementById('detail-qr-countdown-box');
+            const timerEl = document.getElementById('detail-qr-countdown');
 
             const tick = () => {
                 const diffSec = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
@@ -2387,6 +2524,7 @@
                 if (timerEl) timerEl.textContent = `${m}:${s}`;
                 if (box) {
                     if (diffSec <= 60) box.className = 'checkout-countdown-box urgent';
+                    else if (diffSec <= 180) box.className = 'checkout-countdown-box warning';
                     else box.className = 'checkout-countdown-box';
                 }
 
