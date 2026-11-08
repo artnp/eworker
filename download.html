@@ -1017,41 +1017,157 @@
             background-image: url('https://raw.githubusercontent.com/casperstack/thai-banks-logo/master/icons/TTB.png');
         }
 
-        /* No Slip Alert Badge */
+        /* No Slip / Instant Unlock Alert Badge - Yellow-Red Gradient with Running Transparent Border */
         .no-slip-alert {
+            position: relative;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 5px;
-            background: linear-gradient(135deg, #ef4444, #dc2626);
+            gap: 7px;
+            padding: 5px 14px;
+            border-radius: 9999px;
             color: #ffffff;
-            font-size: 0.76rem;
+            font-size: 0.78rem;
             font-weight: 700;
-            padding: 3px 12px;
-            border-radius: 50px;
-            box-shadow: 0 2px 10px rgba(239, 68, 68, 0.45);
-            letter-spacing: 0.2px;
-            border: 1px solid rgba(255, 255, 255, 0.25);
+            letter-spacing: 0.25px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 3px 14px rgba(245, 158, 11, 0.35), 0 2px 6px rgba(220, 38, 38, 0.3);
+            overflow: hidden;
+            isolation: isolate;
             flex-shrink: 0;
+            white-space: nowrap;
+            background: rgba(255, 255, 255, 0.18);
             animation: pulseAlert 2.5s infinite ease-in-out;
+            cursor: default;
         }
 
-        .no-slip-alert .no-slip-icon {
-            font-size: 0.8rem;
-            line-height: 1;
+        /* เอฟเฟกต์กรอบใสวิ่งวนรอบขอบ (Running Transparent Border Light Beam) */
+        .no-slip-alert::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 260%;
+            aspect-ratio: 1 / 1;
+            transform: translate(-50%, -50%) rotate(0deg);
+            background: conic-gradient(
+                from 0deg,
+                transparent 0deg,
+                transparent 60deg,
+                rgba(255, 255, 255, 0.15) 75deg,
+                rgba(255, 255, 255, 0.95) 95deg,
+                rgba(255, 255, 255, 0.2) 110deg,
+                transparent 130deg,
+                transparent 240deg,
+                rgba(255, 255, 255, 0.15) 255deg,
+                rgba(255, 255, 255, 0.95) 275deg,
+                rgba(255, 255, 255, 0.2) 290deg,
+                transparent 310deg,
+                transparent 360deg
+            );
+            animation: borderBeamRun 3s linear infinite;
+            z-index: 1;
+        }
+
+        /* พื้นหลังสีเหลืองอมแดงด้านใน เว้นระยะขอบ 1.5px ให้กรอบใสวิ่งโปร่งแสงสะท้อนออกมา */
+        .no-slip-alert::after {
+            content: '';
+            position: absolute;
+            inset: 1.5px;
+            border-radius: 9999px;
+            background: linear-gradient(135deg, #f59e0b 0%, #ea580c 48%, #dc2626 100%);
+            z-index: 2;
+        }
+
+        /* ให้ข้อความและไอคอนอยู่ด้านบนสุดเหนือเอฟเฟกต์ */
+        .no-slip-alert > * {
+            position: relative;
+            z-index: 3;
+        }
+
+        @keyframes borderBeamRun {
+            from {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+            to {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
         }
 
         @keyframes pulseAlert {
-
-            0%,
-            100% {
-                box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+            0%, 100% {
+                box-shadow: 0 3px 14px rgba(245, 158, 11, 0.35), 0 2px 6px rgba(220, 38, 38, 0.3);
                 transform: scale(1);
             }
-
             50% {
-                box-shadow: 0 3px 14px rgba(239, 68, 68, 0.65);
+                box-shadow: 0 5px 20px rgba(245, 158, 11, 0.55), 0 3px 10px rgba(220, 38, 38, 0.45);
                 transform: scale(1.02);
+            }
+        }
+
+        /* Animated Scanning Mobile Phone Icon (ไอคอน animate มือถือ ทำท่ากำลังสแกนหา) */
+        .scan-phone-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 17px;
+            height: 20px;
+            flex-shrink: 0;
+            color: #ffffff;
+            animation: phoneScanSway 2.4s ease-in-out infinite;
+            transform-origin: center 80%;
+        }
+
+        .phone-scan-svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        .scan-beam-anim {
+            animation: scanLaserMove 1.5s ease-in-out infinite alternate;
+            filter: drop-shadow(0 0 2.5px #fde047);
+        }
+
+        .scan-target-dot {
+            animation: scanTargetBlink 1s ease-in-out infinite alternate;
+            transform-origin: 10px 11px;
+        }
+
+        @keyframes scanLaserMove {
+            0% {
+                transform: translateY(0px);
+                opacity: 0.6;
+            }
+            100% {
+                transform: translateY(9px);
+                opacity: 1;
+            }
+        }
+
+        @keyframes scanTargetBlink {
+            0% {
+                opacity: 0.3;
+                transform: scale(0.7);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1.2);
+            }
+        }
+
+        @keyframes phoneScanSway {
+            0%, 100% {
+                transform: rotate(-4deg) translateY(0);
+            }
+            25% {
+                transform: rotate(3deg) translateY(-0.8px) scale(1.04);
+            }
+            50% {
+                transform: rotate(-3deg) translateY(0.4px);
+            }
+            75% {
+                transform: rotate(4deg) translateY(-0.8px) scale(1.04);
             }
         }
 
@@ -1972,8 +2088,30 @@
                             <div class="bank-logo bank-ttb" title="ธนาคารทหารไทยธนชาต"></div>
                         </div>
                         <div class="no-slip-alert">
-                            <span class="no-slip-icon">⚠️</span>
-                            <span>ไม่ต้องส่งสลิปนะ</span>
+                            <span class="scan-phone-icon" aria-hidden="true">
+                                <svg class="phone-scan-svg" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <!-- Phone Chassis -->
+                                    <rect x="2.5" y="1" width="15" height="20" rx="3.5" stroke="currentColor" stroke-width="1.6" fill="rgba(255, 255, 255, 0.15)" />
+                                    <!-- Notch / Camera Dot -->
+                                    <circle cx="10" cy="2.8" r="0.75" fill="currentColor" opacity="0.9" />
+                                    <!-- Screen Area -->
+                                    <rect x="4.2" y="4.2" width="11.6" height="13.6" rx="1.5" fill="rgba(0, 0, 0, 0.3)" />
+                                    <!-- Viewfinder Target Corners -->
+                                    <path d="M6 6.5h2 M6 6.5v2" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" opacity="0.85"/>
+                                    <path d="M14 6.5h-2 M14 6.5v2" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" opacity="0.85"/>
+                                    <path d="M6 15.5h2 M6 15.5v-2" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" opacity="0.85"/>
+                                    <path d="M14 15.5h-2 M14 15.5v-2" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" opacity="0.85"/>
+                                    <!-- Target Center Dot -->
+                                    <circle cx="10" cy="11" r="0.9" fill="#fef08a" class="scan-target-dot" />
+                                    <!-- Scanning Laser Line -->
+                                    <g class="scan-beam-anim">
+                                        <line x1="4.5" y1="6.5" x2="15.5" y2="6.5" stroke="#fef08a" stroke-width="1.6" stroke-linecap="round"/>
+                                    </g>
+                                    <!-- Home Bar Indicator -->
+                                    <line x1="8" y1="19.5" x2="12" y2="19.5" stroke="currentColor" stroke-width="1" stroke-linecap="round" opacity="0.9" />
+                                </svg>
+                            </span>
+                            <span>ชำระปุ๊ปลายน้ำหายเลย</span>
                         </div>
                     </div>
 
