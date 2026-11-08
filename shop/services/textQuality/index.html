@@ -2154,6 +2154,28 @@
         });
 
         async function processFiles(fileList) {
+            // รีเซ็ตสถานะการชำระเงินสำหรับเอกสารชุดใหม่ (บริการคิดต่อครั้ง)
+            isPaid = false;
+            currentOrderId = null;
+            if (pollingTimer) {
+                clearInterval(pollingTimer);
+                pollingTimer = null;
+            }
+            if (checkoutCountdownTimer) {
+                clearInterval(checkoutCountdownTimer);
+                checkoutCountdownTimer = null;
+            }
+            const btn = document.getElementById('btnMainPay');
+            if (btn) {
+                btn.className = 'btn-start-job';
+                const btnText = document.getElementById('btnPayText');
+                if (btnText) btnText.textContent = '⚡ ชำระเงิน 20 บาท & บันทึกเอกสาร';
+            }
+            const payPending = document.getElementById('paymentPendingBox');
+            const paySuccess = document.getElementById('paymentSuccessBox');
+            if (payPending) payPending.style.display = 'block';
+            if (paySuccess) paySuccess.style.display = 'none';
+
             const files = Array.from(fileList);
             const pdfFile = files.find(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
 
