@@ -16,9 +16,9 @@
 3. **ระบบลากวางไฟล์ทั้งหน้าจอ (Full-Screen Drag & Drop)**:
    - สามารถลากไฟล์เอกสารหรือรูปภาพมาวางได้จากทุกจุดของหน้าต่างเบราว์เซอร์
    - มีหน้าต่างโอเวอร์เลย์การ์ดลอย (`pageDragOverlay`) ปรากฏขึ้นอัตโนมัติเมื่อมีการลากไฟล์เข้ามา
-4. **ระบบชำระเงิน PromptPay QR อัตโนมัติ**:
-   - สร้าง QR Code พร้อมเพย์ตามมาตรฐาน EMVCo พร้อมยอดเงินและเลขบัญชี
-   - ระบบเช็คสถานะการชำระเงินอัตโนมัติผ่าน Firebase RTDB / SlipOK
+4. **ระบบชำระเงิน Beam Payment PromptPay QR อัตโนมัติ**:
+   - สร้าง QR Code Dynamic PromptPay จาก Beam Checkout API
+   - ตรวจจับยอดเงินเข้าอัตโนมัติผ่าน Beam Webhook & Firebase RTDB
    - มีปุ่มจำลองการทดสอบชำระเงินสำเร็จ (Admin Test Bypass) สำหรับการพัฒนา
    - เอฟเฟกต์พลุกระดาษ Confetti เมื่อยอดเงินเข้า
 5. **ความปลอดภัย Client-Side**:
@@ -40,7 +40,7 @@ cp -r shop/services/_template shop/services/myNewTool
 const SERVICE_CONFIG = {
     serviceName: "MyNewTool",            // ชื่อบริการ
     servicePriceThb: 5.00,                // ราคาค่าบริการ (บาท)
-    promptPayNumber: "0988573074",        // เบอร์พร้อมเพย์
+    beamWorkerUrl: "https://eworker-beam-pay.moonverse69.workers.dev",
     firebaseBase: "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests"
 };
 ```
