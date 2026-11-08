@@ -310,6 +310,14 @@
             color: #1a1d24;
             margin: 8px 0 2px;
             letter-spacing: -0.5px;
+            max-width: 100%;
+            width: 100%;
+            word-break: break-all;
+            overflow-wrap: anywhere;
+            line-height: 1.15;
+            text-align: center;
+            box-sizing: border-box;
+            padding: 0 4px;
         }
 
         .amount-upload-label {
@@ -493,11 +501,8 @@
 <body>
     <div class="page-shell">
 
-        <!-- Top Navigation & Title Bar -->
+        <!-- Top Title Bar -->
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 4px;">
-            <a href="../../../index.html" class="btn-sm" style="text-decoration: none; display: inline-flex; align-items: center; gap: 5px; padding: 5px 12px; font-weight: 700; border-radius: 6px;" title="กลับหน้าแรก eWorker">
-                <span>◀</span> หน้าแรก
-            </a>
             <div class="page-title" style="margin: 0;">💳 ระบบสร้างสลิปพร้อมเพย์</div>
             <span style="font-size: 0.72rem; background: rgba(141, 235, 45, 0.15); color: var(--primary); padding: 3px 8px; border-radius: 12px; border: 1px solid rgba(141, 235, 45, 0.3); font-weight: 600;">ฟรี 100%</span>
         </div>
@@ -714,7 +719,9 @@
 
             // Amount
             let val = parseFloat(els.amt.value) || 0;
-            document.getElementById('txt-amount').innerText = val.toLocaleString('en-US', { minimumFractionDigits: 2 });
+            const amtEl = document.getElementById('txt-amount');
+            amtEl.innerText = val.toLocaleString('en-US', { minimumFractionDigits: 2 });
+            fitAmountSize();
 
             // Format PP
             let rawPP = els.pp.value;
@@ -751,6 +758,46 @@
                     qrContainer.innerHTML = ''; // Clear canvas
                     qrContainer.appendChild(img);
                 }
+            }
+        }
+
+        function fitAmountSize() {
+            const amtEl = document.getElementById('txt-amount');
+            if (!amtEl) return;
+            const text = (amtEl.innerText || '').trim();
+            const len = text.length;
+
+            let baseRem = 1.75;
+            let letterSpacing = -0.5;
+            if (len > 24) {
+                baseRem = 0.72;
+                letterSpacing = -0.2;
+            } else if (len > 20) {
+                baseRem = 0.82;
+                letterSpacing = -0.2;
+            } else if (len > 17) {
+                baseRem = 0.95;
+                letterSpacing = -0.3;
+            } else if (len > 14) {
+                baseRem = 1.12;
+                letterSpacing = -0.3;
+            } else if (len > 11) {
+                baseRem = 1.35;
+                letterSpacing = -0.4;
+            } else if (len > 8) {
+                baseRem = 1.55;
+                letterSpacing = -0.5;
+            }
+
+            amtEl.style.fontSize = baseRem + 'rem';
+            amtEl.style.letterSpacing = letterSpacing + 'px';
+
+            const parent = amtEl.parentElement;
+            const maxW = parent ? (parent.clientWidth - 10) : 208;
+            let currentPx = parseFloat(window.getComputedStyle(amtEl).fontSize) || (baseRem * 16);
+            while (amtEl.scrollWidth > maxW && currentPx > 9) {
+                currentPx -= 0.5;
+                amtEl.style.fontSize = currentPx + 'px';
             }
         }
 
@@ -808,6 +855,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             loadData();
             updatePreview();
+            window.addEventListener('resize', fitAmountSize);
             // Auto-focus amount field เมื่อเปิดหน้า (ใช้ได้ใน iframe)
             setTimeout(() => { els.amt.focus(); }, 100);
 
@@ -880,6 +928,15 @@
                 } catch (err) {
                     console.error('Auto copy failed', err);
                 }
+            }
+        });
+
+        // Close modal when pressing ESC inside iframe
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && window.self !== window.top) {
+                try {
+                    window.parent.postMessage('CLOSE_SERVICE_MODAL_ESC', '*');
+                } catch (err) { }
             }
         });
 
