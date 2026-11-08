@@ -6578,14 +6578,6 @@
                 return;
             }
 
-            // บนจอมือถือ (หน้าจอแคบ หรือ Mobile Device):
-            // ให้เปิดหน้าบริการเป็นเว็บแยกเต็มหน้าจอทันที ไม่เปิดใน iframe เพื่อให้เครื่องมือและแถบทำงานครบ 100% ไม่โดนตัดขอบจอ
-            const isMobile = window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            if (isMobile) {
-                window.location.href = product.serviceUrl;
-                return;
-            }
-
             const modal = document.getElementById('service-popup-modal');
             const iframe = document.getElementById('service-iframe');
             const titleEl = document.getElementById('service-modal-title');
@@ -6599,6 +6591,11 @@
             updatePageSEO(product);
 
             if (titleEl) titleEl.textContent = product.title || 'บริการออนไลน์';
+            const iconEl = modal.querySelector('.brand-logo');
+            if (iconEl && product.title) {
+                const matchIcon = product.title.match(/^(\p{Emoji})/u);
+                iconEl.textContent = matchIcon ? matchIcon[1] : '🛠️';
+            }
             if (subTitleEl) {
                 if (product.priceText) {
                     subTitleEl.textContent = `${product.description || ''} (ค่าบริการ: ${product.priceText})`;
