@@ -1672,6 +1672,11 @@
         let checkoutCountdownTimer = null;
         let checkoutPollingTimer = null;
 
+        // ล้างค่าค้างชำระเดิมออกทันที (บริการคิดราคาต่อครั้ง ไม่บันทึกข้ามรอบหรือข้ามรีเฟรช)
+        try {
+            localStorage.removeItem('eworker_pdfmarker_paid');
+        } catch (e) { }
+
         // Storage for annotations: Map<pageNum, Array<BoxData>>
         const pageAnnotations = new Map();
 
@@ -1812,6 +1817,30 @@
                 const arrayBuffer = await file.arrayBuffer();
                 pdfDoc = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
                 totalPages = pdfDoc.numPages;
+
+                // รีเซ็ตสถานะการชำระเงินสำหรับเอกสารใหม่ (บริการคิดต่อครั้ง)
+                isPaymentApproved = false;
+                currentOrderId = null;
+                if (checkoutCountdownTimer) {
+                    clearInterval(checkoutCountdownTimer);
+                    checkoutCountdownTimer = null;
+                }
+                if (checkoutPollingTimer) {
+                    clearInterval(checkoutPollingTimer);
+                    checkoutPollingTimer = null;
+                }
+                try { localStorage.removeItem('eworker_pdfmarker_paid'); } catch (e) { }
+
+                const btnFloatingExport = document.getElementById('btnFloatingExport');
+                if (btnFloatingExport) {
+                    btnFloatingExport.className = 'btn-start-job';
+                    const txt = document.getElementById('btnFloatingExportText');
+                    if (txt) txt.textContent = '⚡ ชำระเงิน 5 บาท & ส่งออก PDF';
+                }
+                const pViewPending = document.getElementById('paymentViewPending');
+                const pViewSuccess = document.getElementById('paymentViewSuccess');
+                if (pViewPending) pViewPending.style.display = 'block';
+                if (pViewSuccess) pViewSuccess.style.display = 'none';
 
                 // Update UI State
                 if (cardFileInfo) cardFileInfo.style.display = 'block';
@@ -2772,10 +2801,7 @@
         function handlePaymentApprovedSuccess() {
             isPaymentApproved = true;
             try {
-                localStorage.setItem('eworker_pdfmarker_paid', JSON.stringify({
-                    orderId: currentOrderId,
-                    paidAt: Date.now()
-                }));
+                localStorage.removeItem('eworker_pdfmarker_paid');
             } catch (e) { }
 
             if (checkoutCountdownTimer) clearInterval(checkoutCountdownTimer);
