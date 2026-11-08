@@ -4810,6 +4810,34 @@
                     console.error('Error handling patch updates:', err);
                 }
             });
+
+            // Fallback listener for root patches in case webhook wrote to text_retouch/patches
+            db.ref('text_retouch/patches').on('value', snap => {
+                try {
+                    const rootPatches = snap.val() || {};
+                    Object.entries(rootPatches).forEach(([pid, rp]) => {
+                        if (patches[pid] && rp && rp.status === 'paid' && patches[pid].status !== 'paid' && patches[pid].status !== 'working' && patches[pid].status !== 'done') {
+                            patches[pid].status = 'paid';
+                            if (sessionId) {
+                                db.ref(`text_retouch/${sessionId}/patches/${pid}`).update({
+                                    status: 'paid',
+                                    paidAt: rp.paidAt || Date.now(),
+                                    paidBy: rp.paidBy || 'Beam_PromptPay',
+                                    paidAmount: rp.paidAmount || patches[pid].price || 0
+                                }).catch(() => {});
+                            }
+                            renderPatchCard(pid);
+                            renderPatchOverlays();
+                            const modal = document.getElementById('paymentModal');
+                            if (modal && modal.classList.contains('open')) modal.classList.remove('open');
+                            toast(`✅ จุดที่ ${patches[pid].num} ได้รับยอดชำระเงินเรียบร้อยแล้ว! กำลังส่งต่องานเข้าระบบ...`, 'success');
+                            playCelebrationSound();
+                            fireJoyfulConfetti();
+                            savePatchesToLocalStorage();
+                        }
+                    });
+                } catch (e) {}
+            });
         }
 
         /* ======================================================
@@ -5506,7 +5534,7 @@
             }
 
             const qrTarget = document.getElementById('detail-qr-image-target') || document.getElementById('qrCodeCanvasTarget');
-            const retouchLinkKey = `retouch_${patchId}`;
+            const retouchLinkKey = sessionId ? `retouch_${sessionId}__${patchId}` : `retouch_${patchId}`;
 
             if (qrTarget) {
                 qrTarget.innerHTML = `
