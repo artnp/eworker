@@ -893,10 +893,12 @@
                 box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0.65);
                 transform: scale(1);
             }
+
             50% {
                 box-shadow: 0 8px 28px rgba(79, 70, 229, 0.6), 0 0 0 12px rgba(99, 102, 241, 0);
                 transform: scale(1.025);
             }
+
             100% {
                 box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0);
                 transform: scale(1);
@@ -908,10 +910,12 @@
                 box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4), 0 0 0 0 rgba(34, 197, 94, 0.65);
                 transform: scale(1);
             }
+
             50% {
                 box-shadow: 0 8px 28px rgba(16, 185, 129, 0.6), 0 0 0 12px rgba(34, 197, 94, 0);
                 transform: scale(1.025);
             }
+
             100% {
                 box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4), 0 0 0 0 rgba(34, 197, 94, 0);
                 transform: scale(1);
@@ -919,9 +923,17 @@
         }
 
         @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
         }
 
         .btn-start-job::after {
@@ -931,20 +943,24 @@
             left: -80%;
             width: 50%;
             height: 220%;
-            background: linear-gradient(
-                to right,
-                rgba(255, 255, 255, 0) 0%,
-                rgba(255, 255, 255, 0.55) 50%,
-                rgba(255, 255, 255, 0) 100%
-            );
+            background: linear-gradient(to right,
+                    rgba(255, 255, 255, 0) 0%,
+                    rgba(255, 255, 255, 0.55) 50%,
+                    rgba(255, 255, 255, 0) 100%);
             transform: rotate(25deg);
             animation: btnShimmerSweep 2.6s infinite cubic-bezier(0.4, 0, 0.2, 1);
             pointer-events: none;
         }
 
         @keyframes btnShimmerSweep {
-            0% { left: -80%; }
-            40%, 100% { left: 160%; }
+            0% {
+                left: -80%;
+            }
+
+            40%,
+            100% {
+                left: 160%;
+            }
         }
 
         .btn-start-job .btn-title-row {
@@ -966,7 +982,8 @@
             line-height: 1.1;
         }
 
-        .btn-start-job svg, .btn-start-job i {
+        .btn-start-job svg,
+        .btn-start-job i {
             font-size: 17px;
             display: inline-block;
             animation: rocketWiggle 1.8s infinite ease-in-out;
@@ -974,11 +991,27 @@
         }
 
         @keyframes rocketWiggle {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            20% { transform: translate(-1px, -2px) rotate(-10deg); }
-            40% { transform: translate(2px, -4px) rotate(8deg) scale(1.15); }
-            60% { transform: translate(-1px, -2px) rotate(-6deg); }
-            80% { transform: translate(1px, 0) rotate(2deg); }
+
+            0%,
+            100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+
+            20% {
+                transform: translate(-1px, -2px) rotate(-10deg);
+            }
+
+            40% {
+                transform: translate(2px, -4px) rotate(8deg) scale(1.15);
+            }
+
+            60% {
+                transform: translate(-1px, -2px) rotate(-6deg);
+            }
+
+            80% {
+                transform: translate(1px, 0) rotate(2deg);
+            }
         }
 
         .btn-start-job:hover {
@@ -1507,8 +1540,7 @@
             </div>
 
             <!-- Bottom Right Floating Download/Payment Action Button (Hidden until image uploaded) -->
-            <div class="floating-action-box" id="floatingActionBox"
-                style="display: none;">
+            <div class="floating-action-box" id="floatingActionBox" style="display: none;">
                 <button class="btn-start-job" id="downloadPdfBtn" type="button">
                     <div class="btn-title-row">
                         <svg style="width:18px;height:18px;flex-shrink:0;" fill="none" stroke="currentColor"
@@ -1539,21 +1571,26 @@
     <div id="paymentModal" class="payment-modal-overlay">
         <div class="payment-modal-card">
             <!-- Round Red Close Button at Top Right -->
-            <button type="button" class="btn-modal-close-red" onclick="closePaymentModal()" title="ปิดหน้าต่าง">✕</button>
+            <button type="button" class="btn-modal-close-red" onclick="closePaymentModal()"
+                title="ปิดหน้าต่าง">✕</button>
 
             <!-- Pending Payment View -->
             <div id="paymentViewPending" style="width: 100%;">
-                <h4 style="font-size: 1.08rem; font-weight: 800; color: #16a34a; margin: 0 0 4px 0;">🎉
-                    จัดหน้าสำเร็จแล้ว! กรุณาชำระเงิน</h4>
+                <h4
+                    style="font-size: 1.08rem; font-weight: 800; color: #16a34a; margin: 0 0 6px 0; text-align: center; line-height: 1.35;">
+                    🎉เสร็จแล้ว! กรุณาชำระเงิน</h4>
 
-                <div id="detail-bottom-qr-view" style="display: block; width: 100%; box-sizing: border-box; text-align: center;">
+                <div id="detail-bottom-qr-view"
+                    style="display: block; width: 100%; box-sizing: border-box; text-align: center;">
 
                     <!-- 1. Sleek Compact Header: PromptPay Badge + Countdown Timer -->
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; width: 100%; gap: 6px;">
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; width: 100%; gap: 6px;">
                         <span class="detail-bottom-promptpay-badge" style="font-size: 0.7rem; padding: 2px 7px;">
                             <span>⚡ PromptPay</span>
                         </span>
-                        <div class="checkout-countdown-box" id="detail-qr-countdown-box" style="margin: 0; padding: 2px 7px; border-radius: 5px; font-size: 0.72rem; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;">
+                        <div class="checkout-countdown-box" id="detail-qr-countdown-box"
+                            style="margin: 0; padding: 2px 7px; border-radius: 5px; font-size: 0.72rem; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;">
                             <span>⏱️</span>
                             <strong class="countdown-digits" id="detail-qr-countdown">30:00</strong>
                             <span>นาที</span>
@@ -1561,30 +1598,43 @@
                     </div>
 
                     <!-- 2. Clean QR Code Card (Click to save slip, keeps QR exact 195px size) -->
-                    <div class="qr-clean-card" onclick="downloadDetailQRSlip()" title="คลิกเพื่อบันทึกรูป QR Code" style="margin: 0 auto 6px auto; width: 100%; max-width: 240px; padding: 6px 8px 6px 8px; box-sizing: border-box; border-radius: 12px; border: 1.5px solid #e2e8f0; background: #ffffff; cursor: pointer; transition: all 0.2s ease;">
-                        <div id="detail-qr-image-target" style="display: flex; align-items: center; justify-content: center; width: 100%; min-height: 195px;"></div>
-                        <div style="font-size: 0.72rem; font-weight: 700; color: #0b1120; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 5px;">
-                            <img src="../../../assets/promptpay_header_full.png" onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/100px-PromptPay-logo.png'; this.onerror=function(){this.style.display='none';};" style="height: 14px; max-width: 65px; object-fit: contain;">
+                    <div class="qr-clean-card" onclick="downloadDetailQRSlip()" title="คลิกเพื่อบันทึกรูป QR Code"
+                        style="margin: 0 auto 6px auto; width: 100%; max-width: 240px; padding: 6px 8px 6px 8px; box-sizing: border-box; border-radius: 12px; border: 1.5px solid #e2e8f0; background: #ffffff; cursor: pointer; transition: all 0.2s ease;">
+                        <div id="detail-qr-image-target"
+                            style="display: flex; align-items: center; justify-content: center; width: 100%; min-height: 195px;">
+                        </div>
+                        <div
+                            style="font-size: 0.72rem; font-weight: 700; color: #0b1120; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                            <img src="../../../assets/promptpay_header_full.png"
+                                onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/100px-PromptPay-logo.png'; this.onerror=function(){this.style.display='none';};"
+                                style="height: 14px; max-width: 65px; object-fit: contain;">
                             <span>สแกนผ่านทุกแอปธนาคาร</span>
                         </div>
-                        <div style="font-size: 0.68rem; color: #2563eb; font-weight: 600; margin-top: 2px; display: flex; align-items: center; justify-content: center; gap: 3px;">
+                        <div
+                            style="font-size: 0.68rem; color: #2563eb; font-weight: 600; margin-top: 2px; display: flex; align-items: center; justify-content: center; gap: 3px;">
                             <span>📥 แตะ/คลิกรูปเพื่อบันทึก QR</span>
                         </div>
                     </div>
 
                     <!-- 3. Centered Price Display -->
-                    <div id="detail-qr-price-text" style="font-size: 1.55rem; font-weight: 800; color: #16a34a; letter-spacing: -0.5px; line-height: 1.1; margin: 2px 0 6px 0; text-align: center;">฿ 5.00</div>
+                    <div id="detail-qr-price-text"
+                        style="font-size: 1.55rem; font-weight: 800; color: #16a34a; letter-spacing: -0.5px; line-height: 1.1; margin: 2px 0 6px 0; text-align: center;">
+                        ฿ 5.00</div>
 
                     <!-- 4. Single-line Slim Polling Status Chip -->
-                    <div class="polling-status-chip" style="width: 100%; box-sizing: border-box; justify-content: center; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; margin: 0; gap: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center;">
-                        <div class="clean-spinner" style="width: 10px; height: 10px; border-width: 1.5px; flex-shrink: 0;">
+                    <div class="polling-status-chip"
+                        style="width: 100%; box-sizing: border-box; justify-content: center; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; margin: 0; gap: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center;">
+                        <div class="clean-spinner"
+                            style="width: 10px; height: 10px; border-width: 1.5px; flex-shrink: 0;">
                         </div>
                         <span style="white-space: nowrap;">ตรวจจับยอดเงินเข้าอัตโนมัติ (PromptPay)</span>
                     </div>
 
                     <!-- 5. Admin Simulator Only -->
                     <div id="wrap-admin-sim-detail-pay" style="margin-top: 4px; text-align: center;">
-                        <button type="button" class="btn-tool-sm" id="btn-admin-sim-detail-pay" onclick="adminSimulateApprove()" style="display: none; font-size: 0.68rem; background: rgb(239, 246, 255); color: rgb(29, 78, 216); border: 1px solid rgb(191, 219, 254); padding: 2px 7px; border-radius: 5px; cursor: pointer;">
+                        <button type="button" class="btn-tool-sm" id="btn-admin-sim-detail-pay"
+                            onclick="adminSimulateApprove()"
+                            style="display: none; font-size: 0.68rem; background: rgb(239, 246, 255); color: rgb(29, 78, 216); border: 1px solid rgb(191, 219, 254); padding: 2px 7px; border-radius: 5px; cursor: pointer;">
                             ⚡ จำลองโอนเงิน (Admin Test)
                         </button>
                     </div>
@@ -1727,16 +1777,9 @@
         const gapVal = document.getElementById('gapVal');
         const cropMarksToggle = document.getElementById('cropMarksToggle');
 
-        // Restore payment on reload if customer already paid within 24 hours (prevents losing money on mobile reload)
+        // ล้างค่าค้างชำระเดิมออกทันที (บริการคิดราคาต่อครั้ง ไม่บันทึกข้ามรอบหรือข้ามรีเฟรช)
         try {
-            const rawPaid = localStorage.getItem('eworker_inch_paid');
-            if (rawPaid) {
-                const paidData = JSON.parse(rawPaid);
-                if (Date.now() - paidData.paidAt < 24 * 60 * 60 * 1000) {
-                    isPaymentApproved = true;
-                    currentOrderId = paidData.orderId;
-                }
-            }
+            localStorage.removeItem('eworker_inch_paid');
         } catch (e) { }
 
         // State variables (Restore from localStorage)
@@ -1890,9 +1933,43 @@
                     btnChangeImage.style.display = 'inline-flex';
                     if (floatingActionBox) floatingActionBox.style.display = 'flex';
 
+                    // รีเซ็ตสถานะการชำระเงินเมื่ออัปโหลดรูปใหม่ (บริการคิดราคาต่อครั้ง)
+                    isPaymentApproved = false;
+                    isLocked = false;
+                    currentOrderId = null;
+                    if (checkoutCountdownTimer) {
+                        clearInterval(checkoutCountdownTimer);
+                        checkoutCountdownTimer = null;
+                    }
+                    if (checkoutPollingTimer) {
+                        clearInterval(checkoutPollingTimer);
+                        checkoutPollingTimer = null;
+                    }
+                    try { localStorage.removeItem('eworker_inch_paid'); } catch (e) { }
+
+                    if (downloadPdfBtn) {
+                        downloadPdfBtn.className = 'btn-start-job';
+                        downloadPdfBtn.innerHTML = `
+                            <div class="btn-title-row">
+                                <svg style="width:18px;height:18px;flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"></path>
+                                </svg>
+                                <span id="btnPdfText">⚡ ชำระเงิน 5 บาท &amp; ดาวน์โหลด PDF</span>
+                            </div>
+                            <span class="btn-subnote">✨ ปลดล็อคความคมชัดสูง ไร้ลายน้ำ 100%</span>
+                        `;
+                    }
+                    const downloadJpgBtn = document.getElementById('downloadJpgBtn');
+                    if (downloadJpgBtn) downloadJpgBtn.style.display = 'none';
+
+                    const pViewPending = document.getElementById('paymentViewPending');
+                    const pViewSuccess = document.getElementById('paymentViewSuccess');
+                    if (pViewPending) pViewPending.style.display = 'block';
+                    if (pViewSuccess) pViewSuccess.style.display = 'none';
+
                     // Show watermark overlay until paid
                     if (previewWatermark) {
-                        previewWatermark.style.display = isPaymentApproved ? 'none' : 'flex';
+                        previewWatermark.style.display = 'flex';
                     }
 
                     updateLayout(false);
@@ -2826,10 +2903,7 @@
             if (securityBackdrop) securityBackdrop.classList.remove('active');
 
             try {
-                localStorage.setItem('eworker_inch_paid', JSON.stringify({
-                    orderId: currentOrderId,
-                    paidAt: Date.now()
-                }));
+                localStorage.removeItem('eworker_inch_paid');
             } catch (e) { }
 
             if (downloadPdfBtn) {
@@ -3072,6 +3146,9 @@
                     `;
                 }
                 currentOrderId = null;
+                isPaymentApproved = false;
+                isLocked = false;
+                try { localStorage.removeItem('eworker_inch_paid'); } catch (e) { }
 
                 // Show modern popup alert
                 showPopupAlert(
