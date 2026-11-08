@@ -374,7 +374,7 @@
             transition: transform 0.25s ease, filter 0.5s ease;
         }
 
-        /* เมื่อหมดเวลาตรวจจับชำระเงิน 10 นาที: เบลอภาพตัวอย่างจนมองไม่รู้เรื่อง */
+        /* เมื่อหมดเวลาตรวจจับชำระเงิน 30 นาที: เบลอภาพตัวอย่างจนมองไม่รู้เรื่อง */
         body.payment-expired .image-container img,
         body.payment-expired #preview-image,
         body.payment-expired #mobile-preview-thumb,
@@ -813,7 +813,7 @@
             margin: 0;
         }
 
-        /* เมื่อหมดเวลาตรวจจับ 10 นาที: ซ่อนหัวข้อชำระเงิน QR code และปุ่มแจ้งเตือน */
+        /* เมื่อหมดเวลาตรวจจับ 30 นาที: ซ่อนหัวข้อชำระเงิน QR code และปุ่มแจ้งเตือน */
         #payment-section.payment-expired #payment-header,
         #payment-section.payment-expired .payment-header,
         #payment-section.payment-expired #qr-content-wrapper,
@@ -2123,7 +2123,7 @@
                                 <h4>กำลังตรวจจับยอดเงินเข้า...</h4>
                             </div>
                             <p>กรุณาชำระภายใน <span id="payment-countdown-timer"
-                                    class="payment-timer-highlight">10:00</span> นาที เพื่อรับไฟล์ทันที</p>
+                                    class="payment-timer-highlight">30:00</span> นาที เพื่อรับไฟล์ทันที</p>
                         </div>
                         <div class="waiting-text" id="waiting-text-expired" style="display: none;">
                             <div class="expired-clock-icon">⏱️</div>
@@ -2408,7 +2408,6 @@
         const expiryTimestamp = parseInt(rawExp) || 0;
         const price = parseFloat(rawPrice) || 0;
         const fileType = rawType || 'img';
-        const promptPayId = "0988573074";
 
         // ★ Early In-App Browser Redirect
         // 1) Android LINE: redirect ผ่าน intent:// ทันที
@@ -2558,28 +2557,6 @@
             toast.__timer = setTimeout(() => {
                 toast.classList.remove('active');
             }, 2600);
-        }
-
-        // คัดลอกเบอร์พร้อมเพย์
-        function copyPromptPay() {
-            const num = "0988573074";
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(num).then(() => {
-                    showToast('📋 คัดลอกเบอร์พร้อมเพย์ 098-857-3074 สำเร็จแล้ว!');
-                }).catch(() => fallbackCopy(num));
-            } else {
-                fallbackCopy(num);
-            }
-        }
-
-        function fallbackCopy(text) {
-            const input = document.createElement('input');
-            input.value = text;
-            document.body.appendChild(input);
-            input.select();
-            document.execCommand('copy');
-            document.body.removeChild(input);
-            showToast('📋 คัดลอกเบอร์พร้อมเพย์ 098-857-3074 สำเร็จแล้ว!');
         }
 
         // ตรวจสอบสถานะเซิร์ฟเวอร์ (Beam Checkout ทำงาน 24 ชม. ผ่าน Cloudflare Worker)
@@ -2788,7 +2765,8 @@
                                 __paymentCreatedAt = data.createdAt;
                                 localStorage.setItem('payment_created_' + linkKey, __paymentCreatedAt);
                                 const age = Date.now() - data.createdAt;
-                                if (age >= 10 * 60 * 1000) {
+                                const timeoutLimit = data.expiresAt ? Math.max(0, data.expiresAt - data.createdAt) : (30 * 60 * 1000);
+                                if (age >= timeoutLimit) {
                                     initialTimedOut = true;
                                 }
                             }
@@ -2797,8 +2775,8 @@
                         console.warn('Check init payment status error:', e);
                     }
 
-                    // ตรวจสอบว่าผ่านไปเกิน 10 นาทีแล้วหรือไม่
-                    if (__paymentCreatedAt && (Date.now() - __paymentCreatedAt >= 10 * 60 * 1000)) {
+                    // ตรวจสอบว่าผ่านไปเกิน 30 นาทีแล้วหรือไม่
+                    if (__paymentCreatedAt && (Date.now() - __paymentCreatedAt >= 30 * 60 * 1000)) {
                         initialTimedOut = true;
                     }
 
@@ -4020,7 +3998,7 @@
                 startPaymentPolling();
                 generateQRCode();
 
-                showToast('✨ ต่อเวลาตรวจจับยอดเงินเรียบร้อยแล้ว (10 นาที)', 'success');
+                showToast('✨ ต่อเวลาตรวจจับยอดเงินเรียบร้อยแล้ว (30 นาที)', 'success');
             } catch (err) {
                 console.error('Renew QR error:', err);
                 showToast('⚠️ เกิดข้อผิดพลาดในการต่อเวลา กรุณาลองใหม่อีกครั้ง');
@@ -4046,7 +4024,7 @@
                 }
 
                 const elapsed = Date.now() - __paymentCreatedAt;
-                const remaining = Math.max(0, (10 * 60 * 1000) - elapsed);
+                const remaining = Math.max(0, (30 * 60 * 1000) - elapsed);
                 const totalSeconds = Math.floor(remaining / 1000);
                 const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
                 const seconds = String(totalSeconds % 60).padStart(2, '0');
@@ -4106,8 +4084,8 @@
             }
             localStorage.setItem('payment_created_' + linkKey, __paymentCreatedAt);
 
-            // ตรวจสอบว่าหมดเวลา 10 นาทีหรือยังก่อนเริ่ม
-            if (Date.now() - __paymentCreatedAt >= 10 * 60 * 1000) {
+            // ตรวจสอบว่าหมดเวลา 30 นาทีหรือยังก่อนเริ่ม
+            if (Date.now() - __paymentCreatedAt >= 30 * 60 * 1000) {
                 handlePaymentTimeout();
                 return;
             }
@@ -4123,6 +4101,7 @@
                     price: price,
                     status: 'pending',
                     createdAt: __paymentCreatedAt,
+                    expiresAt: __paymentCreatedAt + 30 * 60 * 1000,
                     timeStr: new Date(__paymentCreatedAt).toLocaleTimeString('th-TH'),
                     dateStr: new Date(__paymentCreatedAt).toLocaleDateString('th-TH'),
                     autoRegistered: true
