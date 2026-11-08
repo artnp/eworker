@@ -476,9 +476,7 @@
             overflow-y: auto;
             overflow-x: auto;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
+            padding: 32px;
             position: relative;
             touch-action: none;
         }
@@ -488,6 +486,7 @@
             border-radius: 4px;
             background: #ffffff;
             margin: auto;
+            flex-shrink: 0;
             display: inline-block;
             position: relative;
             border: 1px solid #cbd5e1;
@@ -507,6 +506,21 @@
             border-radius: 4px;
             pointer-events: auto;
             cursor: crosshair;
+        }
+
+        /* Pan & Dragging Cursor States */
+        body.panning-mode,
+        body.panning-mode .stage-canvas-scroll,
+        body.panning-mode .canvas-frame,
+        body.panning-mode #overlayCanvas {
+            cursor: grab !important;
+        }
+
+        body.is-panning,
+        body.is-panning *,
+        body.panning-mode.is-panning,
+        body.panning-mode.is-panning * {
+            cursor: grabbing !important;
         }
 
         /* Tool Mode Switcher */
@@ -671,6 +685,8 @@
             padding: 40px;
             color: #64748b;
             gap: 12px;
+            margin: auto;
+            flex-shrink: 0;
         }
 
         .empty-box svg {
@@ -1513,6 +1529,36 @@
             };
         }
 
+        /* Cursor & Panning State Manager */
+        function updateCursorState(isGrabbing = false) {
+            const isPan = currentToolMode === 'pan' || isSpacePressed;
+            if (isPan) {
+                document.body.classList.add('panning-mode');
+                if (isGrabbing) {
+                    document.body.classList.add('is-panning');
+                } else {
+                    document.body.classList.remove('is-panning');
+                }
+            } else {
+                document.body.classList.remove('panning-mode', 'is-panning');
+            }
+
+            if (overlayCanvas) {
+                if (isPan) {
+                    overlayCanvas.style.cursor = isGrabbing ? 'grabbing' : 'grab';
+                } else {
+                    overlayCanvas.style.cursor = 'crosshair';
+                }
+            }
+            if (scrollBox) {
+                if (isPan) {
+                    scrollBox.style.cursor = isGrabbing ? 'grabbing' : 'grab';
+                } else {
+                    scrollBox.style.cursor = '';
+                }
+            }
+        }
+
         /* Tool Mode Switcher */
         function setToolMode(mode) {
             currentToolMode = mode;
@@ -1524,9 +1570,7 @@
             if (btnEraser) btnEraser.classList.toggle('active', mode === 'eraser');
             if (btnPan) btnPan.classList.toggle('active', mode === 'pan');
 
-            if (overlayCanvas) {
-                overlayCanvas.style.cursor = mode === 'pan' ? 'grab' : 'crosshair';
-            }
+            updateCursorState(isPanningCanvas);
             drawOverlay();
         }
 
@@ -1835,8 +1879,9 @@
             const page = documentPages[activePageIndex];
             if (!page || !scrollBox) return;
 
-            const availW = Math.max(260, scrollBox.clientWidth - 48);
-            const availH = Math.max(260, scrollBox.clientHeight - 48);
+            const padTotal = 64; // 32px padding on each side
+            const availW = Math.max(260, scrollBox.clientWidth - padTotal);
+            const availH = Math.max(260, scrollBox.clientHeight - padTotal);
 
             const scaleW = availW / page.width;
             const scaleH = availH / page.height;
@@ -1985,18 +2030,33 @@
         /* ========================================================
            MOUSE INTERACTION ENGINE (DESKTOP)
         ======================================================== */
+        function startPan(e) {
+            isPanningCanvas = true;
+            panStart = {
+                x: e.clientX,
+                y: e.clientY,
+                scrollLeft: scrollBox.scrollLeft,
+                scrollTop: scrollBox.scrollTop
+            };
+            updateCursorState(true);
+        }
+
+        scrollBox.addEventListener('mousedown', (e) => {
+            if (!documentPages || documentPages.length === 0) return;
+            if (e.target.closest('.floating-zoom-dock') || e.target.closest('.floating-action-box')) return;
+
+            if (e.button === 1 || currentToolMode === 'pan' || isSpacePressed) {
+                e.preventDefault();
+                startPan(e);
+            }
+        });
+
         overlayCanvas.addEventListener('mousedown', (e) => {
             if (!documentPages || documentPages.length === 0) return;
 
-            if (e.button === 1 || currentToolMode === 'pan') {
-                isPanningCanvas = true;
-                panStart = {
-                    x: e.clientX,
-                    y: e.clientY,
-                    scrollLeft: scrollBox.scrollLeft,
-                    scrollTop: scrollBox.scrollTop
-                };
-                overlayCanvas.style.cursor = 'grabbing';
+            if (e.button === 1 || currentToolMode === 'pan' || isSpacePressed) {
+                e.preventDefault();
+                startPan(e);
                 return;
             }
 
@@ -2025,7 +2085,9 @@
                 const rect = overlayCanvas.getBoundingClientRect();
                 if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
                     mouseCanvasPos = getCanvasCoords(e);
-                    drawOverlay();
+                    if (currentToolMode === 'brush' || currentToolMode === 'eraser') {
+                        drawOverlay();
+                    }
                 } else if (mouseCanvasPos) {
                     mouseCanvasPos = null;
                     drawOverlay();
@@ -2036,7 +2098,13 @@
         window.addEventListener('mouseup', () => {
             if (isPanningCanvas) {
                 isPanningCanvas = false;
-                overlayCanvas.style.cursor = currentToolMode === 'pan' ? 'grab' : 'crosshair';
+                if (pendingToolModeAfterPan) {
+                    const nextMode = pendingToolModeAfterPan;
+                    pendingToolModeAfterPan = null;
+                    setToolMode(nextMode);
+                } else {
+                    updateCursorState(false);
+                }
             }
             stopPaint();
         });
@@ -2243,6 +2311,7 @@
         /* Keyboard Shortcuts: B (Brush), E (Eraser), Spacebar (Hold to Pan), Q (Increase Brush), A (Decrease Brush) */
         let previousToolMode = null;
         let isSpacePressed = false;
+        let pendingToolModeAfterPan = null;
 
         function adjustBrushSize(delta) {
             const slider = document.getElementById('paramBrushSize');
@@ -2256,7 +2325,7 @@
         }
 
         window.addEventListener('keydown', (e) => {
-            if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+            if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) return;
 
             // B key -> Brush mode
             if (e.key === 'b' || e.key === 'B') {
@@ -2285,12 +2354,18 @@
             }
 
             // Spacebar -> Hold to Pan
-            if (e.code === 'Space' && !isSpacePressed) {
+            if ((e.code === 'Space' || e.key === ' ') && !isSpacePressed) {
                 e.preventDefault();
+                if (document.activeElement && document.activeElement.tagName === 'BUTTON') {
+                    document.activeElement.blur();
+                }
+
                 isSpacePressed = true;
                 if (currentToolMode !== 'pan') {
                     previousToolMode = currentToolMode;
                     setToolMode('pan');
+                } else {
+                    updateCursorState(isPanningCanvas);
                 }
                 return;
             }
@@ -2301,14 +2376,47 @@
         });
 
         window.addEventListener('keyup', (e) => {
-            if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+            if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) return;
 
-            if (e.code === 'Space' && isSpacePressed) {
+            if ((e.code === 'Space' || e.key === ' ') && isSpacePressed) {
                 e.preventDefault();
                 isSpacePressed = false;
+                if (isPanningCanvas) {
+                    if (previousToolMode) {
+                        pendingToolModeAfterPan = previousToolMode;
+                        previousToolMode = null;
+                    }
+                } else {
+                    if (previousToolMode) {
+                        const prev = previousToolMode;
+                        previousToolMode = null;
+                        setToolMode(prev);
+                    } else {
+                        updateCursorState(false);
+                    }
+                }
+            }
+        });
+
+        window.addEventListener('blur', () => {
+            if (isSpacePressed) {
+                isSpacePressed = false;
                 if (previousToolMode) {
-                    setToolMode(previousToolMode);
+                    const prev = previousToolMode;
                     previousToolMode = null;
+                    setToolMode(prev);
+                } else {
+                    updateCursorState(false);
+                }
+            }
+            if (isPanningCanvas) {
+                isPanningCanvas = false;
+                if (pendingToolModeAfterPan) {
+                    const nextMode = pendingToolModeAfterPan;
+                    pendingToolModeAfterPan = null;
+                    setToolMode(nextMode);
+                } else {
+                    updateCursorState(false);
                 }
             }
         });
