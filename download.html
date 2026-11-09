@@ -297,9 +297,64 @@
             flex-shrink: 0;
         }
 
+        /* Mobile Layout (< 768px): ให้เห็นภาพตัวอย่างชัดเจนเต็มตา คมชัด และเลื่อนจอได้ */
         @media (max-width: 767px) {
-            .mobile-preview-strip {
+            html,
+            body {
+                height: auto;
+                min-height: 100dvh;
+                max-height: none;
+                overflow-x: hidden;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            body {
+                padding: 8px 10px 32px;
+            }
+
+            .container {
+                height: auto;
+                min-height: 100%;
                 display: flex;
+                flex-direction: column;
+            }
+
+            .content-grid {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+                height: auto;
+                min-height: 0;
+                flex: none;
+            }
+
+            .image-preview {
+                display: flex !important;
+                width: 100%;
+                height: 380px;
+                min-height: 300px;
+                max-height: 52vh;
+                padding: 10px;
+                order: 1;
+            }
+
+            .mobile-preview-strip {
+                display: none !important;
+            }
+
+            .payment-card {
+                order: 2;
+                height: auto;
+                min-height: auto;
+                overflow: visible;
+                padding: 16px 14px;
+            }
+
+            .preview-wrapper {
+                max-height: 100% !important;
+                width: 100%;
+                height: 100%;
             }
         }
 
@@ -334,19 +389,13 @@
             overflow: hidden;
         }
 
-        /* Image Preview Column (Desktop) */
+        /* Image Preview Column */
         .image-preview {
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             position: relative;
-        }
-
-        @media (max-width: 767px) {
-            .image-preview {
-                display: none !important;
-            }
         }
 
         .image-container {
@@ -372,6 +421,11 @@
             border-radius: 8px;
             cursor: zoom-in;
             transition: transform 0.25s ease, filter 0.5s ease;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: auto;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            transform: translateZ(0);
         }
 
         /* เมื่อหมดเวลาตรวจจับชำระเงิน 30 นาที: เบลอภาพตัวอย่างจนมองไม่รู้เรื่อง */
@@ -461,12 +515,10 @@
             position: absolute;
             inset: 0;
             background-image:
-                repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05) 0px, transparent 1px, transparent 5px),
-                repeating-linear-gradient(90deg, rgba(239, 68, 68, 0.07) 0px, transparent 1px, transparent 5px),
-                radial-gradient(rgba(245, 158, 11, 0.15) 1px, transparent 1px);
-            background-size: 100% 100%, 100% 100%, 16px 16px;
+                repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0px, transparent 1px, transparent 6px),
+                repeating-linear-gradient(90deg, rgba(239, 68, 68, 0.04) 0px, transparent 1px, transparent 6px);
+            background-size: 100% 100%, 100% 100%;
             pointer-events: none;
-            mix-blend-mode: overlay;
         }
 
         .image-container.protected .watermark-overlay {
@@ -607,6 +659,11 @@
             max-height: 100%;
             object-fit: contain;
             border-radius: 8px;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: auto;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            transform: translateZ(0);
         }
 
         .preview-wrapper.is-zoomed, .lightbox-content.is-zoomed {
@@ -805,16 +862,17 @@
             pointer-events: none;
         }
 
-        /* เมื่อกวาด/เลื่อนเสร็จ ให้ QR Code เคลื่อนไหวเล็กน้อยและมีแสงกระจายสีฟ้า Gemini */
+        /* เมื่อกวาด/เลื่อนเสร็จ ให้ QR Code มีแสงออร่าสีฟ้า Gemini สวยงามนุ่มนวล โดยไม่เด้งหรือสั่นกระตุก */
         .qr-wrapper.gemini-highlight {
-            animation: geminiQrPop 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, geminiQrFloat 3.2s ease-in-out infinite 0.85s;
-            box-shadow: 0 0 28px rgba(56, 189, 248, 0.6), 0 0 55px rgba(99, 102, 241, 0.35), 0 14px 32px rgba(0, 0, 0, 0.45);
+            box-shadow: 0 0 28px rgba(56, 189, 248, 0.65), 0 0 55px rgba(99, 102, 241, 0.4), 0 14px 32px rgba(0, 0, 0, 0.45);
+            border-color: rgba(99, 102, 241, 0.85);
+            transition: box-shadow 0.6s ease, border-color 0.6s ease;
         }
 
         .qr-wrapper.gemini-highlight::before {
             opacity: 1;
             transform: scale(1);
-            animation: geminiAuraPulse 3.2s ease-in-out infinite 0.85s;
+            animation: geminiAuraPulse 3.2s ease-in-out infinite 0.4s;
         }
 
         @keyframes geminiQrPop {
@@ -3438,7 +3496,7 @@
             return payload + crc16(payload);
         }
 
-        // ฟังก์ชันเบิร์นลายน้ำฝังแน่นลงในพิกเซลของภาพ (Canvas Hard Watermark)
+        // ฟังก์ชันเบิร์นลายน้ำฝังแน่นลงในพิกเซลของภาพ (Canvas Hard Watermark) คมชัดสูงระดับ HD/4K
         async function bakeWatermarkToCanvas(imgSource) {
             return new Promise((resolve) => {
                 try {
@@ -3449,8 +3507,8 @@
                         return;
                     }
 
-                    // ย่อขนาดพรีวิวสูงสุดไม่เกิน 1280px เพื่อลดทอนความละเอียด ป้องกันการขโมยไฟล์คมชัดสูงก่อนชำระเงิน
-                    const maxDim = 1280;
+                    // ปรับขนาดพรีวิวรองรับสูงสุดถึง 3200px เพื่อให้ภาพคมชัดระดับ HD/4K ไม่เบลอ
+                    const maxDim = 3200;
                     let w = imgSource.naturalWidth || imgSource.width || 800;
                     let h = imgSource.naturalHeight || imgSource.height || 600;
 
@@ -3467,7 +3525,11 @@
                     canvas.width = w;
                     canvas.height = h;
 
-                    // 1. วาดรูปภาพลงบน Canvas ปรับสเกลให้ปลอดภัย
+                    // เปิดโหมด High Quality Image Smoothing เพื่อความคมชัดสูงสุด
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+
+                    // 1. วาดรูปภาพลงบน Canvas ปรับสเกลคมชัด
                     ctx.drawImage(imgSource, 0, 0, w, h);
 
                     // 2. ฝังลายน้ำเส้นตารางตาข่ายนิรภัย (Cross Grid Lines) ให้ครอบคลุมทั่วทั้งภาพ 100% ไม่มีช่องโหว่
@@ -3535,8 +3597,8 @@
                     }
                     ctx.restore();
 
-                    // ส่งออกเป็น Data URL (JPEG คุณภาพ 0.72) เพื่อไม่ให้แสดง URL ไฟล์จริงใน DOM
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+                    // ส่งออกเป็น Data URL (JPEG คุณภาพสูง 0.94) เพื่อให้ภาพตัวอย่างคมชัดสมบูรณ์แบบ
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.94);
                     resolve(dataUrl);
                 } catch (e) {
                     console.warn('Canvas watermark export error (CORS?):', e);
@@ -3574,21 +3636,21 @@
             return false;
         }
 
-        // เรนเดอร์หน้าเอกสาร PDF ออกมาเป็น Canvas และ Data URL
+        // เรนเดอร์หน้าเอกสาร PDF ออกมาเป็น Canvas และ Data URL คมชัดระดับพิมพ์
         async function renderPdfPage(pageNum) {
             if (!_pdfDoc) return null;
             const page = await _pdfDoc.getPage(pageNum);
 
-            // คำนวณความละเอียดให้คมชัด
+            // คำนวณความละเอียดให้คมชัดสูง ตัวหนังสือไม่แตก
             const unscaledViewport = page.getViewport({ scale: 1.0 });
-            let scale = 1.6;
-            if (unscaledViewport.width < 700) {
-                scale = 1200 / unscaledViewport.width;
-            } else if (unscaledViewport.width > 1600) {
-                scale = 1600 / unscaledViewport.width;
+            let scale = 2.2;
+            if (unscaledViewport.width < 1000) {
+                scale = 2200 / unscaledViewport.width;
+            } else if (unscaledViewport.width > 2200) {
+                scale = 2600 / unscaledViewport.width;
             }
-            if (unscaledViewport.height * scale > 2400) {
-                scale = 2400 / unscaledViewport.height;
+            if (unscaledViewport.height * scale > 3400) {
+                scale = 3400 / unscaledViewport.height;
             }
 
             const viewport = page.getViewport({ scale: scale });
@@ -3596,6 +3658,9 @@
             canvas.width = Math.round(viewport.width);
             canvas.height = Math.round(viewport.height);
             const ctx = canvas.getContext('2d');
+
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
 
             // เติมพื้นหลังสีขาวเสมอ เนื่องจากหน้า PDF มักโปร่งใส
             ctx.fillStyle = '#ffffff';
@@ -3606,7 +3671,7 @@
                 viewport: viewport
             }).promise;
 
-            const cleanDataUrl = canvas.toDataURL('image/jpeg', 0.90);
+            const cleanDataUrl = canvas.toDataURL('image/jpeg', 0.95);
             return { canvas, cleanDataUrl };
         }
 
@@ -3827,8 +3892,8 @@
                     }
                 }
 
-                // รูปภาพ: ดึงผ่าน images.weserv.nl proxy ที่มี CORS เปิดตลอด
-                const proxySafeUrl = `https://images.weserv.nl/?url=${encodeURIComponent(previewUrl)}&w=1200&q=65`;
+                // รูปภาพ: ดึงผ่าน images.weserv.nl proxy ที่มี CORS เปิดตลอด แบบคมชัดสูง
+                const proxySafeUrl = `https://images.weserv.nl/?url=${encodeURIComponent(previewUrl)}&w=2560&q=90`;
                 if (isNeedProtection) {
                     const tempImg = new Image();
                     tempImg.crossOrigin = 'anonymous';
@@ -4343,18 +4408,21 @@
                     { x: -maxPanX, y: -maxPanY, duration: 800, delay: 100 },
                     // กวาดแถวล่างสุด: จากขวา -> ซ้าย
                     { x: maxPanX, y: -maxPanY, duration: 2500, delay: 150 },
-                    // วิ่งกลับมาหยุดที่ตำแหน่งกึ่งกลางภาพ (สมบูรณ์แบบ)
-                    { x: 0, y: 0, duration: 1600, delay: 0 }
+                    // วิ่งกลับมาหยุดที่ตำแหน่งกึ่งกลางภาพอย่างนุ่มนวล
+                    { x: 0, y: 0, duration: 1500, delay: 0 }
                 ];
 
                 let step = 0;
                 const nextStep = () => {
                     if (!this.isScanning) return;
                     if (step >= waypoints.length) {
-                        // ครบทั้งภาพแล้ว หยุดการกวาด!
+                        // ครบทั้งภาพแล้ว หยุดการกวาดอย่างนิ่งสนิท ไม่เด้ง ไม่สั่น
                         this.isScanning = false;
+                        if (this.layer) {
+                            this.layer.style.transition = 'transform 0.25s ease-out';
+                        }
                         this.updateBadge('finished');
-                        highlightQRCodeGemini(true);
+                        highlightQRCodeGemini(false);
                         return;
                     }
 
@@ -4363,7 +4431,7 @@
 
                     this.panX = wp.x;
                     this.panY = wp.y;
-                    this.layer.style.transition = `transform ${wp.duration}ms cubic-bezier(0.33, 1, 0.68, 1)`;
+                    this.layer.style.transition = `transform ${wp.duration}ms cubic-bezier(0.25, 1, 0.5, 1)`;
                     this.applyTransform();
 
                     this.scanTimer = setTimeout(() => {
@@ -4419,25 +4487,15 @@
         let _lightboxZoomCtrl = null;
         window._previewZoomMoved = false;
 
-        // ฟังก์ชันขับเน้น QR Code ด้วยแสงกระจายสีฟ้า AI Gemini และเคลื่อนไหวเชิญชวนให้สแกน
+        // ฟังก์ชันขับเน้น QR Code ด้วยแสงกระจายสีฟ้า AI Gemini โดยไม่กระตุกหรือเด้งหน้าจอ
         function highlightQRCodeGemini(scrollIntoView = false) {
             if (__isPaid || price <= 0) return;
             const qr = document.getElementById('qr-wrapper');
             if (!qr) return;
 
-            // เลื่อนจอลงมาหา QR Code อย่างนุ่มนวลบนมือถือ หากอยู่พ้นสายตา
-            if (scrollIntoView && window.innerWidth < 1024) {
-                try {
-                    const rect = qr.getBoundingClientRect();
-                    const isVisible = (rect.top >= 0 && rect.bottom <= window.innerHeight);
-                    if (!isVisible) {
-                        qr.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                } catch (e) { }
-            }
-
+            // ไม่เลื่อนจอโดยอัตโนมัติ เพื่อไม่ให้หน้าจอกระตุกหรือเด้งดึงสายตาผู้ใช้
             qr.classList.remove('gemini-highlight');
-            void qr.offsetWidth; // บังคับ reflow เพื่อเริ่มแอนิเมชันใหม่
+            void qr.offsetWidth; // บังคับ reflow เพื่อเริ่มแสงออร่าใหม่
             qr.classList.add('gemini-highlight');
         }
 
@@ -4507,9 +4565,6 @@
         function handleImageClick() {
             if (window._previewZoomMoved) {
                 window._previewZoomMoved = false;
-                return;
-            }
-            if (_previewZoomCtrl && _previewZoomCtrl.zoom > 1.05) {
                 return;
             }
             if (document.body.classList.contains('payment-expired')) {
