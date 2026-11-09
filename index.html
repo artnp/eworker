@@ -4120,9 +4120,11 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: 0.72rem;
+            font-size: 0.71rem;
             color: #475569;
-            gap: 6px;
+            gap: 4px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .admin-rs-yesterday-left {
@@ -4130,22 +4132,27 @@
             align-items: center;
             gap: 4px;
             white-space: nowrap;
+            min-width: 0;
+            flex-shrink: 1;
         }
 
         .admin-rs-yesterday-icon {
-            font-size: 0.78rem;
+            font-size: 0.76rem;
+            flex-shrink: 0;
         }
 
         .admin-rs-yesterday-lbl {
             font-weight: 600;
             color: #334155;
+            white-space: nowrap;
         }
 
         .admin-rs-yesterday-right {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
             white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .admin-rs-yesterday-val {
@@ -4154,10 +4161,13 @@
         }
 
         .admin-rs-settle-tag {
-            font-size: 0.64rem;
+            font-size: 0.62rem;
             padding: 1px 5px;
             border-radius: 4px;
             font-weight: 700;
+            white-space: nowrap;
+            line-height: 1.2;
+            flex-shrink: 0;
         }
 
         .admin-rs-settle-tag.done {
@@ -13949,7 +13959,9 @@ ${encodedToken}
             const bkkHour = bkkNow.getHours();
 
             const isWeekend = (bkkDay === 0 || bkkDay === 6);
-            const isFridayAfter11 = (bkkDay === 5 && bkkHour >= 11);
+            const isMonday = (bkkDay === 1);
+            const isAfter11 = bkkHour >= 11;
+            const isFridayAfter11 = (bkkDay === 5 && isAfter11);
             const isWeekendRoll = isWeekend || isFridayAfter11;
 
             const getBkkMidnight = (offsetDays) => {
@@ -13962,16 +13974,63 @@ ${encodedToken}
             const yesterdayStartMs = getBkkMidnight(-1);
             const yesterdayEndMs = todayStartMs;
 
-            // Next Settlement Date
+            const weekdayFullNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+
+            // Settlement Batch logic:
+            // คำนวณช่วงเวลาของธุรกรรมในรอบโอน 11:00 น. ของวันนี้ (หรือรอบถัดไปกรณีวันหยุด)
+            let settleBatchStartMs;
+            let settleBatchEndMs;
+            let isSettleToday = false;
+            let settleBatchTitle = '';
             let nextSettleDate = new Date(bkkNow.getFullYear(), bkkNow.getMonth(), bkkNow.getDate());
-            if (bkkDay === 5 && bkkHour >= 11) {
-                nextSettleDate.setDate(bkkNow.getDate() + 3);
+
+            if (isMonday) {
+                // วันจันทร์: รอบ 11 โมงวันนี้ คือรวบยอดวันหยุด (ศุกร์ 00:00 ถึง อาทิตย์ 23:59:59)
+                settleBatchStartMs = getBkkMidnight(-3); // ศุกร์ 00:00 น.
+                settleBatchEndMs = todayStartMs;        // อาทิตย์ 23:59:59 น. (เที่ยงคืนวันจันทร์)
+                isSettleToday = true;
+                settleBatchTitle = 'รวบยอดวันหยุด (ศุกร์-เสาร์-อาทิตย์)';
+                if (isAfter11) {
+                    nextSettleDate.setDate(bkkNow.getDate() + 1); // อังคาร
+                }
+            } else if (bkkDay >= 2 && bkkDay <= 4) {
+                // อังคาร - พฤหัสบดี: รอบ 11 โมงวันนี้ คือยอดของเมื่อวาน (00:00 - 23:59 น.)
+                settleBatchStartMs = yesterdayStartMs;
+                settleBatchEndMs = yesterdayEndMs;
+                isSettleToday = true;
+                settleBatchTitle = 'ยอดของเมื่อวาน';
+                if (isAfter11) {
+                    nextSettleDate.setDate(bkkNow.getDate() + 1);
+                }
+            } else if (bkkDay === 5) {
+                // วันศุกร์: รอบ 11 โมงวันนี้ คือยอดของวันพฤหัสบดี
+                if (!isAfter11) {
+                    settleBatchStartMs = yesterdayStartMs;
+                    settleBatchEndMs = yesterdayEndMs;
+                    isSettleToday = true;
+                    settleBatchTitle = 'ยอดของวันพฤหัสบดี';
+                } else {
+                    // หลัง 11 โมงวันศุกร์: รวบยอดส่งวันจันทร์
+                    settleBatchStartMs = todayStartMs;
+                    settleBatchEndMs = todayEndMs;
+                    isSettleToday = false;
+                    settleBatchTitle = 'ยอดวันศุกร์';
+                    nextSettleDate.setDate(bkkNow.getDate() + 3); // จันทร์
+                }
             } else if (bkkDay === 6) {
-                nextSettleDate.setDate(bkkNow.getDate() + 2);
+                // วันเสาร์: ไม่มีรอบโอนวันนี้ รวบส่งวันจันทร์ (ศุกร์ + เสาร์)
+                settleBatchStartMs = getBkkMidnight(-1);
+                settleBatchEndMs = todayEndMs;
+                isSettleToday = false;
+                settleBatchTitle = 'ยอดศุกร์-เสาร์';
+                nextSettleDate.setDate(bkkNow.getDate() + 2); // จันทร์
             } else if (bkkDay === 0) {
-                nextSettleDate.setDate(bkkNow.getDate() + 1);
-            } else if (bkkHour >= 11) {
-                nextSettleDate.setDate(bkkNow.getDate() + 1);
+                // วันอาทิตย์: ไม่มีรอบโอนวันนี้ รวบส่งวันจันทร์ (ศุกร์ + เสาร์ + อาทิตย์)
+                settleBatchStartMs = getBkkMidnight(-2);
+                settleBatchEndMs = todayEndMs;
+                isSettleToday = false;
+                settleBatchTitle = 'ยอดศุกร์-เสาร์-อาทิตย์';
+                nextSettleDate.setDate(bkkNow.getDate() + 1); // จันทร์
             }
 
             const todayDay = bkkNow.getDate();
@@ -13979,13 +14038,10 @@ ${encodedToken}
             const yesterdayDateObj = new Date(bkkNow.getFullYear(), bkkNow.getMonth(), bkkNow.getDate() - 1);
             const yesterdayDay = yesterdayDateObj.getDate();
             const yesterdayMonth = yesterdayDateObj.toLocaleDateString('th-TH', { month: 'short' });
+
             const nextSettleDay = nextSettleDate.getDate();
             const nextSettleMonth = nextSettleDate.toLocaleDateString('th-TH', { month: 'short' });
-            const weekdayFullNames = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
             const nextSettleWeekday = weekdayFullNames[nextSettleDate.getDay()];
-
-            const isAfter11 = bkkHour >= 11;
-            const weekendBatchStartMs = bkkDay === 0 ? getBkkMidnight(-2) : (bkkDay === 6 ? getBkkMidnight(-1) : todayStartMs);
 
             return {
                 now,
@@ -13994,12 +14050,16 @@ ${encodedToken}
                 bkkHour,
                 isWeekend,
                 isWeekendRoll,
+                isMonday,
                 isAfter11,
+                isSettleToday,
                 todayStartMs,
                 todayEndMs,
                 yesterdayStartMs,
                 yesterdayEndMs,
-                weekendBatchStartMs,
+                settleBatchStartMs,
+                settleBatchEndMs,
+                settleBatchTitle,
                 todayDay,
                 todayMonth,
                 yesterdayDay,
@@ -14007,8 +14067,8 @@ ${encodedToken}
                 nextSettleDay,
                 nextSettleMonth,
                 nextSettleWeekday,
-                badgeText: isWeekendRoll ? `รอบ ${nextSettleDay} ${nextSettleMonth}` : `${todayDay} ${todayMonth} (T+1)`,
-                badgeTitle: isWeekendRoll ? `รอบนำส่งเงินของ Beam: วัน${nextSettleWeekday}ที่ ${nextSettleDay} ${nextSettleMonth} 11:00 น. (รวบยอดวันหยุดธนาคาร)` : `รอบคำนวณเงินค้างรอโอนวันนี้: ${todayDay} ${todayMonth} (หลังเที่ยงคืน 00:00 - 23:59 น.)`,
+                badgeText: `${todayDay} ${todayMonth} (T+1)`,
+                badgeTitle: `รอบคำนวณเงินค้างรอโอนวันนี้: ${todayDay} ${todayMonth} (สถานะตามระบบ Beam T+1)`,
                 settleScheduleDateText: `${nextSettleWeekday} ${nextSettleDay} ${nextSettleMonth}`,
                 todayDateText: `${todayDay} ${todayMonth}`,
                 yesterdayFullRangeText: `${yesterdayDay} ${yesterdayMonth} (00:00 - 23:59 น.)`
@@ -14060,8 +14120,8 @@ ${encodedToken}
                 let todayOrdersCount = 0;
                 let yesterdayTotalSatang = 0;
                 let yesterdayOrdersCount = 0;
-                let beamSettledBatchSatang = 0;
-                let beamSettledOrdersCount = 0;
+                let settleBatchSatang = 0;
+                let settleBatchOrdersCount = 0;
                 const realBeamOrders = [];
 
                 const now = new Date();
@@ -14069,8 +14129,10 @@ ${encodedToken}
 
                 allTransactions.forEach(tx => {
                     if (tx.transactionType === 'PAYMENT' || (tx.netAmount && tx.netAmount > 0)) {
-                        const satang = Number(tx.grossAmount || tx.netAmount || 0);
-                        grandTotalSatang += satang;
+                        // คำนวณจาก netAmount เพื่อให้ตรงกับยอดสุทธิที่เข้าบัญชีและตรงกับ Beam Dashboard เป๊ะ
+                        const netSatang = Number(tx.netAmount !== undefined ? tx.netAmount : (tx.grossAmount || 0));
+                        const grossSatang = Number(tx.grossAmount || tx.netAmount || 0);
+                        grandTotalSatang += grossSatang;
 
                         const refId = String(tx.referenceId || '');
                         const fbMeta = (fbRes && fbRes[refId]) || {};
@@ -14078,30 +14140,27 @@ ${encodedToken}
 
                         // 1) Today's orders (00:00 - 23:59 Bangkok time today)
                         if (timeMs >= revenueCycle.todayStartMs && timeMs < revenueCycle.todayEndMs) {
-                            todayTotalSatang += satang;
+                            todayTotalSatang += netSatang;
                             todayOrdersCount++;
                         }
 
                         // 2) Yesterday's orders
                         if (timeMs >= revenueCycle.yesterdayStartMs && timeMs < revenueCycle.yesterdayEndMs) {
-                            yesterdayTotalSatang += satang;
+                            yesterdayTotalSatang += netSatang;
                             yesterdayOrdersCount++;
                         }
 
-                        // 3) Weekend closed batch (Friday + Saturday for Sunday, or Friday for Saturday)
-                        if (revenueCycle.isWeekend) {
-                            if (timeMs >= revenueCycle.weekendBatchStartMs && timeMs < revenueCycle.todayStartMs) {
-                                if (tx.feeAmount === 0 || !tx.feeAmount) {
-                                    beamSettledBatchSatang += satang;
-                                    beamSettledOrdersCount++;
-                                }
-                            }
+                        // 3) Current Pending Settlement Batch
+                        if (timeMs >= revenueCycle.settleBatchStartMs && timeMs < revenueCycle.settleBatchEndMs) {
+                            settleBatchSatang += netSatang;
+                            settleBatchOrdersCount++;
                         }
 
                         realBeamOrders.push({
                             id: tx.transactionId,
                             referenceId: refId,
-                            price: satang / 100,
+                            price: grossSatang / 100,
+                            netPrice: netSatang / 100,
                             createdAt: timeMs,
                             source: 'Beam',
                             productTitle: fbMeta.productTitle || '',
@@ -14134,25 +14193,41 @@ ${encodedToken}
                 adminKnownOrderKeys = currentKeys;
                 isAdminFirstLoad = false;
 
-                // 4. Update Revenue Elements (Option A: Match Beam Dashboard Exactly + Realtime Breakdown)
-                const beamHeroRevenue = revenueCycle.isWeekend ? (beamSettledBatchSatang / 100) : (todayTotalSatang / 100);
+                // 4. Update Revenue Elements (Match Beam Dashboard Exactly)
                 const todayRevenue = todayTotalSatang / 100;
+                const settleBatchRevenue = settleBatchSatang / 100;
                 const yesterdayRevenue = yesterdayTotalSatang / 100;
                 const lifetimeRevenue = grandTotalSatang / 100;
-                const totalInBeam = revenueCycle.isWeekend ? (beamHeroRevenue + todayRevenue) : todayRevenue;
 
+                // คำนวณยอดคงเหลือทั้งหมดใน Beam (Total Remaining Balance in Beam)
+                let totalInBeam = 0;
+                if (revenueCycle.isWeekendRoll) {
+                    totalInBeam = settleBatchRevenue;
+                } else if (revenueCycle.isSettleToday && !revenueCycle.isAfter11) {
+                    // วันธรรมดาก่อน 11:00 น. ยอดใน Beam = ยอดที่จะโอนรอบ 11:00 น. + ยอดที่เพิ่งเข้าวันนี้
+                    totalInBeam = settleBatchRevenue + todayRevenue;
+                } else {
+                    // หลัง 11:00 น. รอบเช้าโอนไปแล้ว ยอดใน Beam = ยอดที่เข้าวันนี้
+                    totalInBeam = todayRevenue;
+                }
+
+                // กล่อง Hero: แสดงยอดคงเหลือค้างรอโอนในระบบ Beam ให้ตรงกับ Beam Dashboard
                 const todayValEl = document.getElementById('admin-today-revenue-val');
                 if (todayValEl) {
-                    todayValEl.textContent = beamHeroRevenue.toLocaleString('th-TH', {
+                    todayValEl.textContent = totalInBeam.toLocaleString('th-TH', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
                     });
-                    todayValEl.title = revenueCycle.isWeekend
-                        ? `ยอดคงเหลือตาม Beam Dashboard (รอบสรุปปิดยอด): ฿${beamHeroRevenue.toFixed(2)} • นำส่งรอบถัดไป ${revenueCycle.nextSettleDay} ${revenueCycle.nextSettleMonth} 11:00 น.`
-                        : `ยอดเงินค้างรอโอน (หลังเที่ยงคืน 00:00 น. เป็นต้นไป): ฿${todayRevenue.toFixed(2)} (${todayOrdersCount} รายการ) • สถานะ T+1 ค้างรอโอนพรุ่งนี้ 11:00 น.`;
+                    if (revenueCycle.isWeekendRoll) {
+                        todayValEl.title = `ยอดคงเหลือตาม Beam Dashboard: ฿${totalInBeam.toFixed(2)} (${settleBatchOrdersCount} รายการ) • นำส่งรอบถัดไป ${revenueCycle.settleScheduleDateText} เวลา 11:00 น.`;
+                    } else if (revenueCycle.isSettleToday && !revenueCycle.isAfter11) {
+                        todayValEl.title = `ยอดคงเหลือตาม Beam Dashboard: ฿${totalInBeam.toFixed(2)} • รอโอนรอบ 11:00 น. วันนี้ ฿${settleBatchRevenue.toFixed(2)} (${settleBatchOrdersCount} รายการ) + ยอดเข้าวันนี้ ฿${todayRevenue.toFixed(2)} (${todayOrdersCount} รายการ)`;
+                    } else {
+                        todayValEl.title = `ยอดเงินค้างรอโอน (เข้าหลังเที่ยงคืนวันนี้): ฿${todayRevenue.toFixed(2)} (${todayOrdersCount} รายการ) • สถานะ T+1 ค้างรอโอนรอบถัดไป 11:00 น.`;
+                    }
                 }
 
-                // Addon row showing today's realtime income (Clean & Compact)
+                // แถบแสดงยอดเงินเข้าเฉพาะวันนี้แบบ Realtime
                 const addonRowEl = document.getElementById('admin-rs-today-addon-row');
                 const addonLblEl = document.getElementById('admin-today-addon-lbl');
                 const addonValEl = document.getElementById('admin-today-addon-val');
@@ -14160,7 +14235,7 @@ ${encodedToken}
                     addonRowEl.style.display = 'flex';
                     if (addonLblEl) addonLblEl.textContent = '+ เข้าวันนี้:';
                     addonValEl.textContent = `+฿${todayRevenue.toFixed(2)}`;
-                    addonRowEl.title = `ยอดเงินเข้าวันนี้: ฿${todayRevenue.toFixed(2)} (${todayOrdersCount} รายการ) • รวมยอดเงินใน Beam ฿${totalInBeam.toFixed(2)}`;
+                    addonRowEl.title = `ยอดเงินเข้าวันนี้ (00:00 น. เป็นต้นไป): ฿${todayRevenue.toFixed(2)} (${todayOrdersCount} รายการ) • ยอดคงเหลือใน Beam รวม ฿${totalInBeam.toFixed(2)}`;
                 }
 
                 const todayOrdersEl = document.getElementById('admin-today-orders-count');
@@ -14188,33 +14263,36 @@ ${encodedToken}
                 const yesterdayRowEl = document.getElementById('admin-yesterday-settle-row');
 
                 if (revenueCycle.isWeekendRoll) {
+                    // วันหยุดธนาคาร (เสาร์-อาทิตย์ หรือ ศุกร์หลัง 11 โมง)
                     if (yesterdayLblEl) yesterdayLblEl.textContent = 'นำส่งเงินรอบถัดไป:';
                     if (yesterdayValEl) yesterdayValEl.textContent = `${revenueCycle.settleScheduleDateText}`;
                     if (yesterdayTagEl) {
-                        yesterdayTagEl.style.display = 'none'; // User requested no "รอโอน" tag
+                        yesterdayTagEl.style.display = 'none';
                     }
                     if (yesterdayRowEl) {
-                        yesterdayRowEl.title = `Beam รวบยอดวันหยุดนำส่งเข้าบัญชีวัน${revenueCycle.settleScheduleDateText} เวลา 11:00 น. (รวมค้างในระบบ ฿${totalInBeam.toFixed(2)})`;
+                        yesterdayRowEl.title = `Beam รวบยอดวันหยุดนำส่งเข้าบัญชีวัน${revenueCycle.settleScheduleDateText} เวลา 11:00 น. (ยอดสะสมรอโอน ฿${settleBatchRevenue.toFixed(2)})`;
                     }
                 } else {
+                    // วันทำการธนาคาร (จันทร์-ศุกร์)
                     if (yesterdayLblEl) yesterdayLblEl.textContent = 'รอบ 11 โมงวันนี้:';
                     if (yesterdayValEl) {
-                        yesterdayValEl.textContent = `฿${yesterdayRevenue.toLocaleString('th-TH', {
+                        yesterdayValEl.textContent = `฿${settleBatchRevenue.toLocaleString('th-TH', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2
                         })}`;
                     }
                     if (yesterdayTagEl) {
+                        yesterdayTagEl.style.display = 'inline-flex';
                         if (revenueCycle.isAfter11) {
                             yesterdayTagEl.className = 'admin-rs-settle-tag done';
                             yesterdayTagEl.textContent = 'โอนแล้ว';
                         } else {
                             yesterdayTagEl.className = 'admin-rs-settle-tag waiting';
-                            yesterdayTagEl.textContent = 'รอโอน 11:00 น.';
+                            yesterdayTagEl.textContent = 'รอโอน';
                         }
                     }
                     if (yesterdayRowEl) {
-                        yesterdayRowEl.title = `ยอดของเมื่อวาน (${revenueCycle.yesterdayFullRangeText}) จำนวน ${yesterdayOrdersCount} รายการ: ฿${yesterdayRevenue.toFixed(2)} ${revenueCycle.isAfter11 ? 'โอนเข้าบัญชีแล้วเมื่อ 11:00 น.' : 'รอโอนเข้าบัญชีวันนี้ 11:00 น.'}`;
+                        yesterdayRowEl.title = `รอบ 11 โมงวันนี้ (${revenueCycle.settleBatchTitle}) จำนวน ${settleBatchOrdersCount} รายการ: ฿${settleBatchRevenue.toFixed(2)} ${revenueCycle.isAfter11 ? 'โอนเข้าบัญชีธนาคารแล้วเมื่อ 11:00 น.' : 'รอโอนเข้าบัญชีวันนี้ 11:00 น.'}`;
                     }
                 }
 
