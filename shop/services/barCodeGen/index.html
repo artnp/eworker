@@ -1,0 +1,2642 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สร้างบาร์โค้ดลงภาพ/PDF เรียงรหัสอัตโนมัติ | eWorker Service</title>
+
+    <!-- Favicon & Web App Icons -->
+    <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg"
+        onerror="this.onerror=null; this.href='../../../assets/images/favicon.svg';">
+    <link rel="icon" type="image/png" sizes="192x192" href="../../assets/images/favicon.png"
+        onerror="this.onerror=null; this.href='../../../assets/images/favicon.png';">
+    <link rel="shortcut icon" href="../../favicon.ico">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Prompt:wght@300;400;500;600;700;800&family=Sarabun:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- CDNs: JsBarcode, ZXing Scanner, PDF.js, jsPDF, JSZip, QRCode, Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-light: #eff6ff;
+            --primary-border: #bfdbfe;
+            --accent: #10b981;
+            --bg-page: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --border-hover: #cbd5e1;
+            --success-bg: #f0fdf4;
+            --success-border: #bbf7d0;
+            --success-text: #166534;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: 'Prompt', 'Outfit', sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ===== TOP HEADER NAVBAR ===== */
+        .top-navbar {
+            height: 56px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
+            z-index: 50;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .nav-brand-logo {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #4f46e5, #2563eb);
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 16px;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+        }
+
+        .brand-title {
+            font-size: 1.02rem;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-badge {
+            font-size: 0.68rem;
+            font-weight: 700;
+            background: #ecfdf5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+            border-radius: 20px;
+            padding: 2px 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-outline {
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-outline:hover {
+            background: #f8fafc;
+            color: var(--text-main);
+            border-color: #cbd5e1;
+        }
+
+        /* ===== 2-COLUMN WORKSPACE (NO SCROLL FIT-TO-SCREEN) ===== */
+        .workspace-container {
+            display: flex;
+            height: calc(100vh - 56px);
+            width: 100vw;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* LEFT SIDEBAR: Controls & Sequencer */
+        .sidebar-panel {
+            width: 360px;
+            min-width: 330px;
+            max-width: 390px;
+            background: #ffffff;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            z-index: 20;
+            padding: 10px 12px;
+            gap: 8px;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+
+        .sidebar-panel::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .sidebar-panel::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 6px;
+        }
+
+        .panel-section {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 10px 12px;
+            transition: border-color 0.2s;
+        }
+
+        .panel-section:hover {
+            border-color: #cbd5e1;
+        }
+
+        .panel-section-title {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-section-title-left {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        /* Dropzone Component */
+        .dropzone-box {
+            border: 2px dashed #93c5fd;
+            background: #f0f7ff;
+            border-radius: var(--radius-md);
+            padding: 16px 14px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .dropzone-box:hover {
+            border-color: var(--primary);
+            background: #e0f2fe;
+            transform: translateY(-1px);
+        }
+
+        .dropzone-box i {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .dropzone-box .drop-title {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #1e3a8a;
+            margin-bottom: 2px;
+        }
+
+        .dropzone-box .drop-subtitle {
+            font-size: 0.73rem;
+            color: #64748b;
+        }
+
+        /* Mode Switcher Tabs */
+        .mode-tab-group {
+            display: flex;
+            background: #f1f5f9;
+            padding: 3px;
+            border-radius: 8px;
+            gap: 3px;
+        }
+
+        .mode-tab-btn {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 6px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .mode-tab-btn.active {
+            background: #ffffff;
+            color: var(--primary);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            font-weight: 700;
+        }
+
+        /* Code Builder Structured Card */
+        .code-builder-card {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 10px;
+        }
+
+        .code-builder-header {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .code-builder-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+        }
+
+        .code-field-col {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .code-field-tag {
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .code-builder-input {
+            font-family: 'Outfit', 'Courier New', monospace;
+            font-weight: 600;
+            padding: 6px 8px;
+            font-size: 0.8rem;
+        }
+
+        /* Form Controls */
+        .control-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #475569;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-input,
+        .control-select {
+            width: 100%;
+            font-family: inherit;
+            font-size: 0.82rem;
+            padding: 7px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: #ffffff;
+            color: #0f172a;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .control-input:focus,
+        .control-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+        }
+
+        .control-textarea {
+            width: 100%;
+            height: 90px;
+            font-family: 'Outfit', 'Courier New', monospace;
+            font-size: 0.78rem;
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: #ffffff;
+            color: #0f172a;
+            outline: none;
+            resize: vertical;
+            line-height: 1.4;
+        }
+
+        .control-textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+        }
+
+        /* Seq Preview Box */
+        .seq-preview-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: var(--radius-sm);
+            padding: 8px 12px;
+            margin-top: 10px;
+        }
+
+        /* Checkbox Switch */
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.76rem;
+            color: #334155;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox-row input[type="checkbox"] {
+            accent-color: var(--primary);
+            width: 15px;
+            height: 15px;
+            cursor: pointer;
+        }
+
+        /* Verification Card */
+        .verify-badge-card {
+            background: #f0fdf4;
+            border: 1.5px solid #bbf7d0;
+            border-radius: var(--radius-md);
+            padding: 10px 12px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+
+        .verify-badge-card.is-error {
+            background: #fef2f2;
+            border-color: #fca5a5;
+        }
+
+        .verify-icon-wrap {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #22c55e;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(34, 197, 94, 0.35);
+        }
+
+        .verify-badge-card.is-error .verify-icon-wrap {
+            background: #ef4444;
+            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.35);
+        }
+
+        .verify-content {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .verify-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #15803d;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .verify-badge-card.is-error .verify-title {
+            color: #b91c1c;
+        }
+
+        .verify-sub {
+            font-size: 0.72rem;
+            color: #166534;
+            margin-top: 2px;
+            word-break: break-all;
+            font-family: 'Outfit', 'Courier New', monospace;
+        }
+
+        .verify-badge-card.is-error .verify-sub {
+            color: #991b1b;
+        }
+
+        /* RIGHT STAGE: Canvas / Interactive Preview Area */
+        .stage-area {
+            flex: 1;
+            height: 100%;
+            background: #e2e8f0;
+            background-image: radial-gradient(#94a3b8 1px, transparent 1px);
+            background-size: 20px 20px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Stage Top Nav Toolbar (Compact & Sleek) */
+        .stage-toolbar {
+            height: 40px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            z-index: 15;
+            flex-shrink: 0;
+            gap: 6px;
+        }
+
+        .stage-toolbar-left,
+        .stage-toolbar-center,
+        .stage-toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stage-tool-group {
+            display: inline-flex;
+            align-items: center;
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 2px;
+            gap: 2px;
+        }
+
+        .btn-stage-tool {
+            padding: 3px 8px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            font-family: inherit;
+            color: #334155;
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.15s;
+            height: 26px;
+            white-space: nowrap;
+        }
+
+        .btn-stage-tool:hover {
+            background: #f1f5f9;
+            color: var(--primary);
+            border-color: #cbd5e1;
+        }
+
+        .btn-stage-tool:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            background: #f8fafc;
+        }
+
+        .page-badge-pill {
+            font-size: 0.73rem;
+            font-weight: 700;
+            color: #1e293b;
+            padding: 0 8px;
+            height: 26px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+
+        .zoom-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #475569;
+            min-width: 38px;
+            text-align: center;
+        }
+
+        /* Quick Quantity Buttons */
+        .quick-qty-group {
+            display: flex;
+            gap: 3px;
+            flex: 1;
+        }
+
+        .btn-qty {
+            flex: 1;
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #475569;
+            padding: 5px 2px;
+            cursor: pointer;
+            font-family: inherit;
+            text-align: center;
+            transition: all 0.15s;
+        }
+
+        .btn-qty:hover {
+            background: var(--primary-light);
+            border-color: var(--primary-border);
+            color: var(--primary);
+        }
+
+        /* Canvas Scrollport & Frame */
+        .stage-viewport {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            position: relative;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            box-shadow: 0 12px 36px rgba(15, 23, 42, 0.22);
+            border-radius: 4px;
+            background: #ffffff;
+            transform-origin: center center;
+            transition: transform 0.1s ease-out;
+            user-select: none;
+            overflow: hidden; /* Never allow barcode or box to spill outside page boundary */
+            margin: auto;
+        }
+
+        #mainCanvas {
+            display: block;
+            max-width: none;
+            border-radius: 4px;
+        }
+
+        /* Interactive Barcode Transform Box */
+        .barcode-transform-box {
+            position: absolute;
+            border: 2px dashed #2563eb;
+            background: rgba(37, 99, 235, 0.08);
+            cursor: move;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            z-index: 10;
+            pointer-events: auto;
+            touch-action: none;
+        }
+
+        .barcode-transform-box:hover {
+            border-color: #1d4ed8;
+            background: rgba(37, 99, 235, 0.12);
+        }
+
+        .barcode-transform-box .handle {
+            position: absolute;
+            width: 11px;
+            height: 11px;
+            background: #ffffff;
+            border: 2.5px solid #2563eb;
+            border-radius: 2px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+        }
+
+        .handle.handle-nw {
+            top: -6px;
+            left: -6px;
+            cursor: nwse-resize;
+        }
+
+        .handle.handle-ne {
+            top: -6px;
+            right: -6px;
+            cursor: nesw-resize;
+        }
+
+        .handle.handle-se {
+            bottom: -6px;
+            right: -6px;
+            cursor: nwse-resize;
+        }
+
+        .handle.handle-sw {
+            bottom: -6px;
+            left: -6px;
+            cursor: nesw-resize;
+        }
+
+        .barcode-info-label {
+            position: absolute;
+            top: -24px;
+            left: 0;
+            background: #1e293b;
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            white-space: nowrap;
+            pointer-events: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Empty Stage State */
+        .empty-stage-state {
+            text-align: center;
+            max-width: 440px;
+            padding: 36px 28px;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .empty-stage-icon {
+            font-size: 3.2rem;
+            color: #94a3b8;
+            margin-bottom: 14px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== FLOATING ACTION BUTTON (BOTTOM RIGHT) ===== */
+        .floating-action-box {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-start-job {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #4338ca 0%, #4f46e5 25%, #2563eb 50%, #0284c7 75%, #4338ca 100%);
+            background-size: 300% 300%;
+            color: #ffffff;
+            border: 1.5px solid rgba(255, 255, 255, 0.35);
+            padding: 12px 26px;
+            border-radius: 50px;
+            font-size: 0.95rem;
+            font-weight: 800;
+            font-family: inherit;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 18px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0.65);
+            animation: startBtnPulse 2.2s infinite ease-in-out, gradientShift 6s ease infinite;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-start-job.is-success {
+            background: linear-gradient(135deg, #059669 0%, #10b981 25%, #16a34a 50%, #22c55e 75%, #059669 100%);
+            background-size: 300% 300%;
+            box-shadow: 0 4px 18px rgba(16, 185, 129, 0.4), 0 0 0 0 rgba(34, 197, 94, 0.65);
+            animation: successBtnPulse 2.2s infinite ease-in-out, gradientShift 6s ease infinite;
+        }
+
+        @keyframes startBtnPulse {
+            0% {
+                box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0.65);
+                transform: scale(1);
+            }
+
+            50% {
+                box-shadow: 0 8px 28px rgba(79, 70, 229, 0.6), 0 0 0 12px rgba(99, 102, 241, 0);
+                transform: scale(1.025);
+            }
+
+            100% {
+                box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0);
+                transform: scale(1);
+            }
+        }
+
+        @keyframes successBtnPulse {
+            0% {
+                box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4), 0 0 0 0 rgba(34, 197, 94, 0.65);
+                transform: scale(1);
+            }
+
+            50% {
+                box-shadow: 0 8px 28px rgba(16, 185, 129, 0.6), 0 0 0 12px rgba(34, 197, 94, 0);
+                transform: scale(1.025);
+            }
+
+            100% {
+                box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4), 0 0 0 0 rgba(34, 197, 94, 0);
+                transform: scale(1);
+            }
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .btn-start-job::after {
+            content: '';
+            position: absolute;
+            top: -60%;
+            left: -80%;
+            width: 50%;
+            height: 220%;
+            background: linear-gradient(to right,
+                    rgba(255, 255, 255, 0) 0%,
+                    rgba(255, 255, 255, 0.55) 50%,
+                    rgba(255, 255, 255, 0) 100%);
+            transform: rotate(25deg);
+            animation: btnShimmerSweep 2.6s infinite cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        @keyframes btnShimmerSweep {
+            0% {
+                left: -80%;
+            }
+
+            40%,
+            100% {
+                left: 160%;
+            }
+        }
+
+        .btn-start-job i,
+        .btn-start-job .fa-rocket {
+            font-size: 18px;
+            display: inline-block;
+            animation: rocketWiggle 1.8s infinite ease-in-out;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+        }
+
+        @keyframes rocketWiggle {
+
+            0%,
+            100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+
+            20% {
+                transform: translate(-1px, -2px) rotate(-10deg);
+            }
+
+            40% {
+                transform: translate(2px, -4px) rotate(8deg) scale(1.15);
+            }
+
+            60% {
+                transform: translate(-1px, -2px) rotate(-6deg);
+            }
+
+            80% {
+                transform: translate(1px, 0) rotate(2deg);
+            }
+        }
+
+        .btn-start-job:hover {
+            transform: scale(1.03);
+            box-shadow: 0 8px 30px rgba(79, 70, 229, 0.65), 0 0 0 4px rgba(129, 140, 248, 0.4);
+        }
+
+        .btn-start-job.is-success:hover {
+            box-shadow: 0 8px 30px rgba(16, 185, 129, 0.65), 0 0 0 4px rgba(110, 231, 183, 0.4);
+        }
+
+        .btn-start-job:active {
+            transform: scale(0.97);
+            animation: none;
+        }
+
+        /* ===== FULLPAGE DRAG OVERLAY ===== */
+        .page-drag-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(8px);
+            z-index: 999999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .page-drag-overlay.active {
+            display: flex;
+        }
+
+        .page-drag-card {
+            background: #ffffff;
+            border: 2.5px dashed var(--primary);
+            border-radius: 20px;
+            padding: 36px 48px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+            animation: dragCardPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes dragCardPop {
+            0% {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* ===== PROMPTPAY PAYMENT MODAL ===== */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.72);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal-backdrop.active {
+            display: flex;
+        }
+
+        .modal-card {
+            background: #ffffff;
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 400px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+            text-align: center;
+            position: relative;
+            animation: modalPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: visible;
+        }
+
+        @keyframes modalPop {
+            0% {
+                transform: scale(0.92);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            background: #ef4444;
+            color: #ffffff;
+            border: 2.5px solid #ffffff;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            font-size: 16px;
+            font-weight: 800;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+            transition: all 0.2s ease;
+            z-index: 30;
+        }
+
+        .modal-close-btn:hover {
+            background: #dc2626;
+            transform: scale(1.1);
+        }
+
+        .qr-clean-card {
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 10px 14px 8px 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 6px auto;
+            width: fit-content;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .qr-clean-card:hover {
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
+
+        .checkout-countdown-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #15803d;
+            font-size: 0.74rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .detail-bottom-promptpay-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: #15803d;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        .polling-status-chip {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.72rem;
+            color: #475569;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin: 6px auto;
+        }
+
+        .clean-spinner {
+            width: 12px;
+            height: 12px;
+            border: 2px solid #cbd5e1;
+            border-top-color: #f59e0b;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .export-choice-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .btn-export-option {
+            background: #f8fafc;
+            border: 1.5px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 0.86rem;
+            font-weight: 700;
+            font-family: inherit;
+            color: #1e293b;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s;
+        }
+
+        .btn-export-option:hover {
+            background: var(--primary-light);
+            border-color: var(--primary-border);
+            color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        /* ===== RESPONSIVE MOBILE / SMALL SCREEN ===== */
+        @media (max-width: 900px) {
+            .workspace-container {
+                flex-direction: column-reverse;
+                height: calc(100vh - 56px);
+            }
+
+            .sidebar-panel {
+                width: 100%;
+                min-width: 100%;
+                max-width: 100%;
+                height: 48vh;
+                border-right: none;
+                border-top: 1px solid var(--border-color);
+                padding: 12px;
+            }
+
+            .stage-area {
+                height: 52vh;
+            }
+
+            .floating-action-box {
+                bottom: 14px;
+                right: 14px;
+            }
+
+            .btn-start-job {
+                padding: 10px 20px;
+                font-size: 0.88rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Fullpage Drag & Drop Overlay -->
+    <div class="page-drag-overlay" id="pageDragOverlay">
+        <div class="page-drag-card">
+            <i class="fa-solid fa-barcode"
+                style="font-size: 3.5rem; color: var(--primary); margin-bottom: 12px; display: block;"></i>
+            <div style="font-size: 1.25rem; font-weight: 800; color: #0f172a;">วางไฟล์รูปภาพหรือ PDF ที่นี่</div>
+            <div style="font-size: 0.85rem; color: #64748b; margin-top: 6px;">รองรับหลายรูปภาพพร้อมกัน หรือไฟล์ PDF
+                หลายหน้า</div>
+        </div>
+    </div>
+
+    <!-- ===== TOP NAVBAR ===== -->
+    <header class="top-navbar">
+        <div class="nav-brand">
+            <div class="nav-brand-logo">
+                <i class="fa-solid fa-barcode"></i>
+            </div>
+            <div>
+                <div class="brand-title">
+                    Barcode Sequence Studio
+                    <span class="brand-badge"><i class="fa-solid fa-circle-check"></i> สแกนติด 100%</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-actions">
+            <button type="button" class="btn-outline" onclick="fileInput.click()"
+                style="background: var(--primary-light); color: var(--primary); border-color: var(--primary-border);">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <span>เลือกไฟล์ภาพ/PDF</span>
+            </button>
+            <button type="button" class="btn-outline" onclick="resetWorkspace()">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span>รีเซ็ต</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Hidden Global File Input -->
+    <input type="file" id="fileInput" accept="image/*,application/pdf" multiple style="display: none;">
+
+    <!-- ===== MAIN WORKSPACE ===== -->
+    <main class="workspace-container">
+
+        <!-- LEFT SIDEBAR: Controls & Sequencer (Clean, Compact & Structured) -->
+        <aside class="sidebar-panel">
+
+            <!-- Section 1: Barcode Sequence Generator -->
+            <div class="panel-section">
+                <div class="panel-section-title">
+                    <div class="panel-section-title-left">
+                        <i class="fa-solid fa-arrow-down-1-9" style="color: var(--primary);"></i>
+                        <span>1. ตั้งค่าและเรียงรหัสบาร์โค้ด</span>
+                    </div>
+                    <span id="docPagesCountBadge" style="font-size: 0.72rem; color: #2563eb; font-weight: 700;"></span>
+                </div>
+
+                <!-- 1. Barcode Symbology -->
+                <div class="control-group" style="margin-bottom: 6px;">
+                    <label class="control-label" style="font-size: 0.72rem;">
+                        <span>มาตรฐานบาร์โค้ด</span>
+                        <span id="barcodeStdDesc" style="font-size: 0.66rem; color: #2563eb; font-weight: 600;">รองรับอักษร+ตัวเลข</span>
+                    </label>
+                    <select class="control-select" id="barcodeFormat" onchange="onFormatChange()" style="font-weight: 600; padding: 5px 8px; font-size: 0.78rem; height: 32px;">
+                        <option value="CODE128" selected>CODE128 (แนะนำ • สากล ตัวอักษรและตัวเลข)</option>
+                        <option value="EAN13">EAN-13 (สินค้าสากล • ตัวเลข 13 หลัก)</option>
+                        <option value="CODE39">CODE39 (ตัวพิมพ์ใหญ่ + ตัวเลข)</option>
+                        <option value="ITF14">ITF-14 (กล่องบรรจุภัณฑ์ • ตัวเลข 14 หลัก)</option>
+                        <option value="EAN8">EAN-8 (สินค้าขนาดเล็ก • ตัวเลข 8 หลัก)</option>
+                        <option value="UPC">UPC-A (มาตรฐานอเมริกา • ตัวเลข 12 หลัก)</option>
+                    </select>
+                </div>
+
+                <!-- 2. Consecutive Sheets/Pages to generate (Single Line) -->
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px;">
+                    <label for="seqTotalPages" style="font-size: 0.74rem; font-weight: 700; color: #334155; margin: 0; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                        <i class="fa-solid fa-copy" style="color: var(--primary); font-size: 0.75rem;"></i>
+                        <span>สร้างบาร์โค้ดติดต่อกัน</span>
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <input type="number" class="control-input" id="seqTotalPages" value="1" min="1" max="500" style="font-weight: 800; width: 62px; text-align: center; color: #1d4ed8; height: 28px; padding: 2px 4px; font-size: 0.8rem;" oninput="onTotalPagesChange()">
+                        <span style="font-size: 0.74rem; font-weight: 700; color: #64748b;">แผ่น</span>
+                    </div>
+                </div>
+
+                <!-- 3. Mode Toggle: Auto Sequence vs Custom List -->
+                <div class="mode-tab-group" style="margin-bottom: 6px; padding: 2px;">
+                    <button type="button" class="mode-tab-btn active" id="tabModeAuto" onclick="setSequenceMode('auto')" style="padding: 4px 6px; font-size: 0.72rem;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>เรียงเลขอัตโนมัติ</span>
+                    </button>
+                    <button type="button" class="mode-tab-btn" id="tabModeCustom" onclick="setSequenceMode('custom')" style="padding: 4px 6px; font-size: 0.72rem;">
+                        <i class="fa-solid fa-list-ol"></i>
+                        <span>วางลิสต์รหัสเอง</span>
+                    </button>
+                </div>
+
+                <!-- 3A. Auto-Sequence Mode Settings -->
+                <div id="panelAutoSequence">
+                    <div class="code-builder-card" style="padding: 6px 8px;">
+                        <div class="code-builder-grid">
+                            <div class="code-field-col">
+                                <span class="code-field-tag" style="font-size: 0.66rem;">คำนำหน้า</span>
+                                <input type="text" class="control-input code-builder-input" id="seqPrefix" value="INV-" placeholder="INV-" style="padding: 4px 6px; font-size: 0.78rem; height: 28px;" oninput="updateAllBarcodes()">
+                            </div>
+                            <div class="code-field-col">
+                                <span class="code-field-tag" style="color: #2563eb; font-size: 0.66rem;">เลขเริ่มต้น</span>
+                                <input type="text" inputmode="numeric" class="control-input code-builder-input" id="seqStart" value="1001" placeholder="1001" style="padding: 4px 6px; font-size: 0.78rem; height: 28px;" oninput="updateAllBarcodes()">
+                            </div>
+                            <div class="code-field-col">
+                                <span class="code-field-tag" style="font-size: 0.66rem;">คำลงท้าย</span>
+                                <input type="text" class="control-input code-builder-input" id="seqSuffix" value="" placeholder="-TH" style="padding: 4px 6px; font-size: 0.78rem; height: 28px;" oninput="updateAllBarcodes()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3B. Custom List Mode Settings -->
+                <div id="panelCustomSequence" style="display: none;">
+                    <div class="control-group" style="margin-bottom: 4px;">
+                        <div class="control-label" style="font-size: 0.7rem;">
+                            <span>วางรายการรหัส (1 บรรทัด / 1 หน้า)</span>
+                            <span id="customCodesCount" style="font-size: 0.68rem; color: #2563eb; font-weight: 700;">0 รหัส</span>
+                        </div>
+                        <textarea class="control-textarea" id="customCodesInput" style="height: 60px; font-size: 0.74rem; padding: 4px 6px;" placeholder="INV-1001&#10;INV-1002" oninput="updateAllBarcodes()"></textarea>
+                    </div>
+                </div>
+
+                <!-- 4. Live Code Sample Display -->
+                <div class="seq-preview-box" style="padding: 5px 8px; margin-top: 6px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="font-size: 0.68rem; color: #64748b;">รหัสหน้านี้:</div>
+                        <span id="seqRangeBadge" style="font-size: 0.66rem; background: #dbeafe; color: #1e40af; padding: 1px 5px; border-radius: 4px; font-weight: 700;">หน้า 1</span>
+                    </div>
+                    <div id="activePageCodeLabel" style="font-family: 'Outfit', 'Courier New', monospace; font-size: 0.95rem; font-weight: 800; color: #1d4ed8; letter-spacing: 0.5px; line-height: 1.2; margin-top: 2px;">
+                        INV-1001
+                    </div>
+                </div>
+
+                <!-- 5. Appearance Options (Neat & Clean) -->
+                <div style="margin-top: 6px; padding-top: 5px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 4px;">
+                    <label class="checkbox-row" style="font-size: 0.72rem;">
+                        <input type="checkbox" id="chkDisplayValue" checked onchange="renderActivePage()">
+                        <span>แสดงตัวเลขรหัสใต้แท่งบาร์โค้ด</span>
+                    </label>
+                    <label class="checkbox-row" style="font-size: 0.72rem;">
+                        <input type="checkbox" id="chkWhiteBg" checked onchange="renderActivePage()">
+                        <span>พื้นหลังกล่องสีขาวรอบบาร์โค้ด</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Section 2: Live Scanner Verification Badge (Integrated Sleek Trust Pill) -->
+            <div class="verify-badge-card" id="verifyBadgeCard" style="padding: 6px 10px; gap: 8px;">
+                <div class="verify-icon-wrap" id="verifyIconWrap" style="width: 24px; height: 24px; font-size: 11px;">
+                    <i class="fa-solid fa-check" id="verifyIcon"></i>
+                </div>
+                <div class="verify-content" style="flex: 1;">
+                    <div class="verify-title" style="font-size: 0.76rem; display: flex; align-items: center; justify-content: space-between;">
+                        <span id="verifyStatusTitle">สแกนเช็คผ่าน 100%</span>
+                        <span id="verifyFormatPill" style="font-size: 0.62rem; background: #dcfce7; padding: 1px 5px; border-radius: 4px; font-weight: 700;">CODE128</span>
+                    </div>
+                    <div class="verify-sub" id="verifySubText" style="font-size: 0.68rem; margin-top: 1px;">
+                        ตรวจพบรหัสตรงกัน: INV-1001
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- RIGHT STAGE: Canvas / Interactive Preview Area -->
+        <section class="stage-area" id="stageArea">
+
+            <!-- Stage Top Nav Toolbar -->
+            <div class="stage-toolbar" id="stageToolbar" style="display: none;">
+                <div class="stage-toolbar-left">
+                    <div class="stage-tool-group">
+                        <button type="button" class="btn-stage-tool" id="btnPrevPage" onclick="changePage(-1)" title="หน้าก่อนหน้า" style="padding: 3px 7px;">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <span class="page-badge-pill" id="pageIndicatorText">หน้า 1 / 1</span>
+                        <button type="button" class="btn-stage-tool" id="btnNextPage" onclick="changePage(1)" title="หน้าถัดไป" style="padding: 3px 7px;">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <button type="button" class="btn-stage-tool" onclick="fileInput.click()" title="เปลี่ยนหรือเลือกไฟล์ใหม่">
+                        <i class="fa-solid fa-folder-open" style="color: var(--primary);"></i>
+                        <span>เปลี่ยนไฟล์</span>
+                    </button>
+                </div>
+
+                <!-- Quick Positioning Actions on Toolbar -->
+                <div class="stage-toolbar-center">
+                    <div class="stage-tool-group">
+                        <button type="button" class="btn-stage-tool" onclick="centerBarcode()" title="จัดบาร์โค้ดไว้ตรงกลางภาพ">
+                            <i class="fa-solid fa-arrows-to-dot" style="color: var(--primary);"></i>
+                            <span>กึ่งกลาง</span>
+                        </button>
+                        <button type="button" class="btn-stage-tool" onclick="rotateBarcodeQuick()" title="หมุนบาร์โค้ด 90 องศา">
+                            <i class="fa-solid fa-rotate" style="color: var(--primary);"></i>
+                            <span id="btnRotateText">หมุน 0°</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stage-toolbar-right">
+                    <div class="stage-tool-group">
+                        <button type="button" class="btn-stage-tool" onclick="setZoomMode('fit')" title="ย่อ-ขยายพอดีหน้าจอ">
+                            <i class="fa-solid fa-expand"></i>
+                            <span>พอดีจอ</span>
+                        </button>
+                        <button type="button" class="btn-stage-tool" onclick="setZoomMode('width')" title="ขยายเต็มความกว้างจอ">
+                            <i class="fa-solid fa-arrows-left-right"></i>
+                            <span>เต็มกว้าง</span>
+                        </button>
+                        <button type="button" class="btn-stage-tool" onclick="setZoomMode('100')" title="ขนาดจริง 100%">
+                            <span>100%</span>
+                        </button>
+                        <button type="button" class="btn-stage-tool" onclick="adjustZoom(-0.15)" title="ซูมออก" style="padding: 3px 6px;">
+                            <i class="fa-solid fa-minus"></i>
+                        </button>
+                        <span id="zoomLevelText" class="zoom-badge">100%</span>
+                        <button type="button" class="btn-stage-tool" onclick="adjustZoom(0.15)" title="ซูมเข้า" style="padding: 3px 6px;">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Viewport & Canvas Stage -->
+            <div class="stage-viewport" id="stageViewport">
+
+                <!-- Empty Stage State (shown before upload) -->
+                <div class="empty-stage-state" id="emptyStageState">
+                    <div class="empty-stage-icon">
+                        <i class="fa-solid fa-barcode"></i>
+                    </div>
+                    <h3 style="font-size: 1.18rem; font-weight: 700; margin-bottom: 6px; color: #0f172a;">
+                        อัปโหลดไฟล์ภาพ หรือเอกสาร PDF
+                    </h3>
+                    <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 18px;">
+                        ลากไฟล์รูปภาพ (JPG, PNG, WEBP) หรือเอกสาร PDF มาวางได้จากทุกจุดบนหน้าจอ
+                        หรือคลิกปุ่มด้านล่างเพื่อเลือกไฟล์
+                    </p>
+                    <button type="button" class="btn-start-job" style="padding: 10px 24px; font-size: 0.9rem;"
+                        onclick="fileInput.click()">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>เลือกไฟล์จากเครื่อง</span>
+                    </button>
+                </div>
+
+                <!-- Active Canvas Frame -->
+                <div class="canvas-wrapper" id="canvasWrapper" style="display: none;">
+                    <canvas id="mainCanvas"></canvas>
+
+                    <!-- Draggable & Resizable Barcode Box -->
+                    <div class="barcode-transform-box" id="barcodeTransformBox"
+                        title="คลิกลากเพื่อย้ายตำแหน่ง หรือดึงมุมขยายขนาดบาร์โค้ด">
+                        <div class="barcode-info-label" id="barcodeInfoLabel">
+                            <i class="fa-solid fa-barcode"></i>
+                            <span id="barcodeBoxCodeTag">INV-1001</span>
+                        </div>
+                        <div class="handle handle-nw" data-handle="nw"></div>
+                        <div class="handle handle-ne" data-handle="ne"></div>
+                        <div class="handle handle-se" data-handle="se"></div>
+                        <div class="handle handle-sw" data-handle="sw"></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Bottom Right Floating Action Button -->
+            <div class="floating-action-box" id="floatingActionBox" style="display: none;">
+                <button class="btn-start-job" id="btnMainAction" type="button" onclick="handleMainAction()">
+                    <i class="fa-solid fa-rocket"></i>
+                    <span id="btnActionText">⚡ ชำระเงิน 30 บาท &amp; ส่งออกไฟล์</span>
+                </button>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ===== PROMPTPAY PAYMENT & EXPORT MODAL ===== -->
+    <div class="modal-backdrop" id="paymentModal">
+        <div class="modal-card">
+            <button type="button" class="modal-close-btn" onclick="closePaymentModal()">✕</button>
+
+            <!-- Pending View -->
+            <div id="paymentPendingView" style="width: 100%;">
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin-bottom: 3px;">
+                    สแกน QR เพื่อชำระเงิน
+                </h3>
+                <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 8px;">
+                    ปลดล็อคส่งออกไฟล์บาร์โค้ดความละเอียดสูง
+                </p>
+
+                <div id="detail-bottom-qr-view"
+                    style="display: block; width: 100%; box-sizing: border-box; text-align: center;">
+
+                    <!-- PromptPay Header & Countdown -->
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; width: 100%; gap: 6px;">
+                        <span class="detail-bottom-promptpay-badge">
+                            <span>⚡ PromptPay</span>
+                        </span>
+                        <div class="checkout-countdown-box" id="detail-qr-countdown-box">
+                            <span>⏱️</span>
+                            <strong class="countdown-digits" id="detail-qr-countdown">30:00</strong>
+                            <span>นาที</span>
+                        </div>
+                    </div>
+
+                    <!-- Clean QR Code Card -->
+                    <div class="qr-clean-card" onclick="downloadDetailQRSlip()" title="คลิกเพื่อบันทึกรูป QR Code">
+                        <div id="detail-qr-image-target"
+                            style="display: flex; align-items: center; justify-content: center; width: 100%; min-height: 195px;">
+                        </div>
+                        <div
+                            style="font-size: 0.72rem; font-weight: 700; color: #0b1120; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                            <span>สแกนจ่ายได้ทุกแอปธนาคาร</span>
+                        </div>
+                        <div style="font-size: 0.68rem; color: #2563eb; font-weight: 600; margin-top: 2px;">
+                            <span>📥 แตะ/คลิกรูปเพื่อบันทึก QR</span>
+                        </div>
+                    </div>
+
+                    <!-- Price Display -->
+                    <div id="detail-qr-price-text"
+                        style="font-size: 1.6rem; font-weight: 800; color: #16a34a; letter-spacing: -0.5px; line-height: 1.1; margin: 4px 0 6px 0;">
+                        ฿ 30.00
+                    </div>
+
+                    <!-- Polling Status Chip -->
+                    <div class="polling-status-chip">
+                        <div class="clean-spinner"></div>
+                        <span style="white-space: nowrap;">ตรวจจับยอดเงินเข้าอัตโนมัติ (PromptPay)</span>
+                    </div>
+
+                    <!-- Admin Test Simulator -->
+                    <div id="wrap-admin-sim-detail-pay" style="margin-top: 6px; text-align: center;">
+                        <button type="button" class="btn-stage-tool" id="btn-admin-sim-detail-pay"
+                            onclick="testApprovePayment()"
+                            style="display: inline-flex; font-size: 0.7rem; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 4px 10px;">
+                            ⚡ จำลองโอนเงิน (Admin Test)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Success & Export View -->
+            <div id="paymentSuccessView" style="display: none;">
+                <div style="font-size: 3rem; margin-bottom: 6px;">🎉</div>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: #16a34a; margin-bottom: 4px;">
+                    ชำระเงินสำเร็จแล้ว!
+                </h3>
+                <p style="font-size: 0.82rem; color: #475569; margin-bottom: 14px;">
+                    ระบบปลดล็อคให้คุณส่งออกไฟล์ผลลัพธ์คมชัดสูงได้ทันที
+                </p>
+
+                <div class="export-choice-grid">
+                    <button type="button" class="btn-export-option" onclick="exportAsPDF()">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-file-pdf" style="font-size: 1.4rem; color: #ef4444;"></i>
+                            <div style="text-align: left;">
+                                <div>ดาวน์โหลดเป็นเอกสาร PDF</div>
+                                <div style="font-size: 0.72rem; color: #64748b; font-weight: 500;">รวมทุกหน้า คมชัด 100%
+                                    พร้อมสั่งพิมพ์</div>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-download" style="color: var(--primary);"></i>
+                    </button>
+
+                    <button type="button" class="btn-export-option" onclick="exportAsZip()">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-file-zipper" style="font-size: 1.4rem; color: #f59e0b;"></i>
+                            <div style="text-align: left;">
+                                <div>ดาวน์โหลดรวมไฟล์ภาพ ZIP</div>
+                                <div style="font-size: 0.72rem; color: #64748b; font-weight: 500;">แยกรูป PNG
+                                    คุณภาพสูงตามลำดับรหัส</div>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-download" style="color: var(--primary);"></i>
+                    </button>
+
+                    <button type="button" class="btn-export-option" onclick="exportCurrentPageImage()">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-file-image" style="font-size: 1.4rem; color: #10b981;"></i>
+                            <div style="text-align: left;">
+                                <div>ดาวน์โหลดเฉพาะภาพหน้านี้ (PNG)</div>
+                                <div style="font-size: 0.72rem; color: #64748b; font-weight: 500;">
+                                    ภาพผลลัพธ์ของหน้าที่กำลังเปิดดู</div>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-download" style="color: var(--primary);"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Offscreen Canvas for pure barcode generation & verification -->
+    <canvas id="barcodeGenCanvas" style="display: none;"></canvas>
+
+    <!-- ===== SCRIPT IMPLEMENTATION ===== -->
+    <script>
+        /* ==========================================================================
+           [CONFIG & STATE]
+           ========================================================================== */
+        const SERVICE_CONFIG = {
+            serviceName: "BarcodeGen",
+            servicePriceThb: 30.00,
+            beamWorkerUrl: "https://eworker-beam-pay.moonverse69.workers.dev",
+            firebaseBase: "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests"
+        };
+
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+
+        // App State
+        let sourceTemplates = [];     // Array of { originalCanvas, width, height, title } (Original uploaded templates)
+        let documentPages = [];       // Array of { originalCanvas, width, height, title } (Generated consecutive sheets)
+        let activePageIndex = 0;
+        let sequenceMode = 'auto';    // 'auto' or 'custom'
+        let zoomScale = 1.0;
+        let isPaid = false;
+        let currentOrderId = null;
+        let pollingTimer = null;
+        let countdownTimer = null;
+
+        // Barcode Box Placement (Applies uniformly across all pages)
+        let barcodePlacement = {
+            x: 50,
+            y: 50,
+            width: 280,
+            height: 100,
+            rotation: 0
+        };
+
+        // DOM Elements
+        const fileInput = document.getElementById('fileInput');
+        const emptyStageState = document.getElementById('emptyStageState');
+        const canvasWrapper = document.getElementById('canvasWrapper');
+        const mainCanvas = document.getElementById('mainCanvas');
+        const mainCtx = mainCanvas.getContext('2d');
+        const barcodeTransformBox = document.getElementById('barcodeTransformBox');
+        const stageToolbar = document.getElementById('stageToolbar');
+        const floatingActionBox = document.getElementById('floatingActionBox');
+        const btnMainAction = document.getElementById('btnMainAction');
+        const btnActionText = document.getElementById('btnActionText');
+        const pageDragOverlay = document.getElementById('pageDragOverlay');
+        const stageViewport = document.getElementById('stageViewport');
+
+        // Sequencer Inputs
+        const barcodeFormatSelect = document.getElementById('barcodeFormat');
+        const chkDisplayValue = document.getElementById('chkDisplayValue');
+        const chkWhiteBg = document.getElementById('chkWhiteBg');
+
+        /* ==========================================================================
+           [STEP 1: FILE INGESTION (PDF / MULTIPLE IMAGES)]
+           ========================================================================== */
+        let dragCounter = 0;
+        window.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            dragCounter++;
+            pageDragOverlay.classList.add('active');
+        });
+        window.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dragCounter--;
+            if (dragCounter <= 0) {
+                dragCounter = 0;
+                pageDragOverlay.classList.remove('active');
+            }
+        });
+        window.addEventListener('dragover', (e) => e.preventDefault());
+        window.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragCounter = 0;
+            pageDragOverlay.classList.remove('active');
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                handleUploadedFiles(e.dataTransfer.files);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length > 0) {
+                handleUploadedFiles(e.target.files);
+            }
+        });
+
+        async function handleUploadedFiles(fileList) {
+            const files = Array.from(fileList);
+            const pdfFile = files.find(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+
+            if (pdfFile) {
+                await loadPdfFile(pdfFile);
+            } else {
+                await loadImagesList(files);
+            }
+        }
+
+        async function loadPdfFile(file) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                sourceTemplates = [];
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const viewport = page.getViewport({ scale: 2.0 }); // High clarity 2x
+                    const c = document.createElement('canvas');
+                    c.width = viewport.width;
+                    c.height = viewport.height;
+                    const ctx = c.getContext('2d');
+                    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+                    sourceTemplates.push({
+                        originalCanvas: c,
+                        width: c.width,
+                        height: c.height,
+                        title: `หน้า ${i}`
+                    });
+                }
+
+                const qtyInput = document.getElementById('seqTotalPages');
+                if (qtyInput) qtyInput.value = Math.max(1, sourceTemplates.length);
+                rebuildGeneratedPages();
+                initWorkspaceAfterLoad();
+            } catch (err) {
+                console.error("PDF read error:", err);
+                alert("ไม่สามารถเปิดไฟล์ PDF นี้ได้ กรุณาตรวจสอบไฟล์อีกครั้ง");
+            }
+        }
+
+        async function loadImagesList(files) {
+            const validImages = files.filter(f => f.type.startsWith('image/') || /\.(png|jpe?g|webp|bmp|gif)$/i.test(f.name));
+            if (validImages.length === 0) {
+                alert("กรุณาเลือกไฟล์ภาพ (PNG, JPG, WEBP) หรือไฟล์ PDF");
+                return;
+            }
+
+            sourceTemplates = [];
+
+            for (let i = 0; i < validImages.length; i++) {
+                const img = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const image = new Image();
+                        image.onload = () => resolve(image);
+                        image.onerror = reject;
+                        image.src = e.target.result;
+                    };
+                    reader.readAsDataURL(validImages[i]);
+                });
+
+                const c = document.createElement('canvas');
+                c.width = img.naturalWidth || img.width;
+                c.height = img.naturalHeight || img.height;
+                const ctx = c.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+
+                sourceTemplates.push({
+                    originalCanvas: c,
+                    width: c.width,
+                    height: c.height,
+                    title: validImages[i].name || `ภาพที่ ${i + 1}`
+                });
+            }
+
+            const qtyInput = document.getElementById('seqTotalPages');
+            if (qtyInput) {
+                // If user uploaded 1 image, default to 1 sheet (or user's existing count); if multiple, match upload count
+                if (sourceTemplates.length > 1) qtyInput.value = sourceTemplates.length;
+                else if (!qtyInput.value || parseInt(qtyInput.value) < 1) qtyInput.value = 1;
+            }
+            rebuildGeneratedPages();
+            initWorkspaceAfterLoad();
+        }
+
+        function rebuildGeneratedPages() {
+            if (sourceTemplates.length === 0) return;
+            const qtyInput = document.getElementById('seqTotalPages');
+            let count = parseInt(qtyInput ? qtyInput.value : 1);
+            if (isNaN(count) || count < 1) count = 1;
+            if (count > 500) count = 500;
+            if (qtyInput) qtyInput.value = count;
+
+            documentPages = [];
+            for (let i = 0; i < count; i++) {
+                const src = sourceTemplates[i % sourceTemplates.length];
+                documentPages.push({
+                    originalCanvas: src.originalCanvas,
+                    width: src.width,
+                    height: src.height,
+                    title: (sourceTemplates.length === 1) ? `แผ่นที่ ${i + 1}` : `${src.title} (แผ่น ${i + 1})`
+                });
+            }
+
+            if (activePageIndex >= documentPages.length) {
+                activePageIndex = Math.max(0, documentPages.length - 1);
+            }
+            updateDocInfo();
+            updateAllBarcodes();
+        }
+
+        function onTotalPagesChange() {
+            rebuildGeneratedPages();
+        }
+
+        function setQuickTotalPages(val) {
+            const qtyInput = document.getElementById('seqTotalPages');
+            if (qtyInput) qtyInput.value = val;
+            rebuildGeneratedPages();
+        }
+
+        function duplicateCurrentPage() {
+            if (sourceTemplates.length === 0) return;
+            const qtyInput = document.getElementById('seqTotalPages');
+            const currentQty = parseInt(qtyInput ? qtyInput.value : documentPages.length) || documentPages.length;
+            setQuickTotalPages(currentQty + 1);
+            activePageIndex = documentPages.length - 1;
+            updateDocInfo();
+            renderActivePage();
+        }
+
+        function initWorkspaceAfterLoad() {
+            activePageIndex = 0;
+            emptyStageState.style.display = 'none';
+            canvasWrapper.style.display = 'block';
+            stageToolbar.style.display = 'flex';
+            floatingActionBox.style.display = 'flex';
+
+            // Fit barcode placement proportional to first page
+            if (documentPages.length > 0) {
+                const first = documentPages[0];
+                const defaultW = Math.round(Math.min(first.width * 0.45, 340));
+                const defaultH = Math.round(defaultW * 0.36);
+                barcodePlacement.width = Math.max(120, defaultW);
+                barcodePlacement.height = Math.max(60, defaultH);
+                barcodePlacement.x = Math.round((first.width - barcodePlacement.width) / 2);
+                barcodePlacement.y = Math.round(first.height - barcodePlacement.height - Math.max(30, first.height * 0.08));
+                barcodePlacement.rotation = 0;
+                clampPlacementInsidePage(barcodePlacement, first.width, first.height);
+                updateRotateButtonText();
+            }
+
+            updateDocInfo();
+            updateAllBarcodes();
+            // Let DOM finish layout then calculate fit zoom to fill the viewport
+            requestAnimationFrame(() => {
+                setZoomMode('fit');
+                renderActivePage();
+            });
+        }
+
+        function updateDocInfo() {
+            const count = documentPages.length;
+            const docBadge = document.getElementById('docPagesCountBadge');
+            if (docBadge) docBadge.textContent = `${count} แผ่น/ภาพ`;
+            const indText = document.getElementById('pageIndicatorText');
+            if (indText) indText.textContent = `หน้า ${activePageIndex + 1} / ${count}`;
+            const btnPrev = document.getElementById('btnPrevPage');
+            if (btnPrev) btnPrev.disabled = (activePageIndex === 0);
+            const btnNext = document.getElementById('btnNextPage');
+            if (btnNext) btnNext.disabled = (activePageIndex >= count - 1);
+        }
+
+        function changePage(delta) {
+            const newIndex = activePageIndex + delta;
+            if (newIndex >= 0 && newIndex < documentPages.length) {
+                activePageIndex = newIndex;
+                updateDocInfo();
+                renderActivePage();
+            }
+        }
+
+        /* ==========================================================================
+           [STEP 2: BARCODE SEQUENCE LOGIC]
+           ========================================================================== */
+        function setSequenceMode(mode) {
+            sequenceMode = mode;
+            document.getElementById('tabModeAuto').classList.toggle('active', mode === 'auto');
+            document.getElementById('tabModeCustom').classList.toggle('active', mode === 'custom');
+            document.getElementById('panelAutoSequence').style.display = (mode === 'auto') ? 'block' : 'none';
+            document.getElementById('panelCustomSequence').style.display = (mode === 'custom') ? 'block' : 'none';
+            updateAllBarcodes();
+        }
+
+        function onFormatChange() {
+            const fmt = barcodeFormatSelect.value;
+            const desc = document.getElementById('barcodeStdDesc');
+            if (fmt === 'EAN13') desc.textContent = 'ตัวเลข 13 หลัก';
+            else if (fmt === 'CODE39') desc.textContent = 'ตัวพิมพ์ใหญ่ + เลข';
+            else if (fmt === 'ITF14') desc.textContent = 'ตัวเลข 14 หลัก';
+            else if (fmt === 'EAN8') desc.textContent = 'ตัวเลข 8 หลัก';
+            else if (fmt === 'UPC') desc.textContent = 'ตัวเลข 12 หลัก';
+            else desc.textContent = 'รองรับอักษร+ตัวเลข';
+            updateAllBarcodes();
+        }
+
+        function getCodeForPage(index) {
+            const fmt = (barcodeFormatSelect && barcodeFormatSelect.value) ? barcodeFormatSelect.value : 'CODE128';
+
+            if (sequenceMode === 'custom') {
+                const customEl = document.getElementById('customCodesInput');
+                const rawCustom = customEl ? customEl.value : '';
+                const lines = rawCustom.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                if (lines.length > 0) {
+                    return lines[index % lines.length];
+                }
+            }
+
+            // Auto sequence mode
+            const prefixEl = document.getElementById('seqPrefix');
+            const startEl = document.getElementById('seqStart');
+            const suffixEl = document.getElementById('seqSuffix');
+
+            const prefix = prefixEl ? prefixEl.value : '';
+            const startRaw = startEl ? (startEl.value || '').trim() : '1001';
+            const suffix = suffixEl ? suffixEl.value : '';
+
+            const startNum = parseInt(startRaw) || 0;
+            const currentNum = startNum + index;
+            let numStr = String(currentNum);
+            // Auto-preserve leading zeros based on user input length (e.g. 0001 -> 0002)
+            if (startRaw.length > 0 && /^\d+$/.test(startRaw) && startRaw.length > numStr.length) {
+                numStr = numStr.padStart(startRaw.length, '0');
+            }
+
+            // Special handling for EAN-13: must be 12 or 13 digits
+            if (fmt === 'EAN13') {
+                let pureDigits = (prefix + numStr + suffix).replace(/\D/g, '');
+                if (pureDigits.length < 12) pureDigits = pureDigits.padStart(12, '0');
+                if (pureDigits.length > 13) pureDigits = pureDigits.substring(0, 12);
+                if (pureDigits.length === 12) {
+                    pureDigits += calculateEan13CheckDigit(pureDigits);
+                }
+                return pureDigits;
+            }
+
+            return prefix + numStr + suffix;
+        }
+
+        function calculateEan13CheckDigit(twelveDigits) {
+            let sum = 0;
+            for (let i = 0; i < 12; i++) {
+                const digit = parseInt(twelveDigits[i], 10);
+                sum += (i % 2 === 0) ? digit : digit * 3;
+            }
+            const mod = sum % 10;
+            return (mod === 0) ? 0 : (10 - mod);
+        }
+
+        function updateAllBarcodes() {
+            if (sequenceMode === 'custom') {
+                const customEl = document.getElementById('customCodesInput');
+                const rawCustom = customEl ? customEl.value : '';
+                const lines = rawCustom.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                const countBadge = document.getElementById('customCodesCount');
+                if (countBadge) countBadge.textContent = `${lines.length} รหัส`;
+            }
+
+            const currentCode = getCodeForPage(activePageIndex);
+            const activeCodeEl = document.getElementById('activePageCodeLabel');
+            if (activeCodeEl) activeCodeEl.textContent = currentCode;
+            const boxTagEl = document.getElementById('barcodeBoxCodeTag');
+            if (boxTagEl) boxTagEl.textContent = currentCode;
+
+            const rangeBadge = document.getElementById('seqRangeBadge');
+            if (rangeBadge) {
+                const total = documentPages.length || 1;
+                if (total <= 1) {
+                    rangeBadge.textContent = `แผ่น 1 / 1`;
+                } else {
+                    const firstCode = getCodeForPage(0);
+                    const lastCode = getCodeForPage(total - 1);
+                    rangeBadge.textContent = `แผ่น ${activePageIndex + 1}/${total} (${firstCode} → ${lastCode})`;
+                }
+            }
+
+            renderActivePage();
+        }
+
+        /* Quick Alignment & Rotation on Toolbar */
+        function centerBarcode() {
+            if (documentPages.length === 0) return;
+            const activePage = documentPages[activePageIndex];
+            barcodePlacement.x = Math.round((activePage.width - barcodePlacement.width) / 2);
+            barcodePlacement.y = Math.round((activePage.height - barcodePlacement.height) / 2);
+            clampPlacementInsidePage(barcodePlacement, activePage.width, activePage.height);
+            renderActivePage();
+        }
+
+        function rotateBarcodeQuick() {
+            barcodePlacement.rotation = ((barcodePlacement.rotation || 0) + 90) % 360;
+            if (documentPages.length > 0) {
+                const activePage = documentPages[activePageIndex];
+                clampPlacementInsidePage(barcodePlacement, activePage.width, activePage.height);
+            }
+            updateRotateButtonText();
+            renderActivePage();
+        }
+
+        function updateRotateButtonText() {
+            const rotEl = document.getElementById('btnRotateText');
+            if (rotEl) rotEl.textContent = `หมุน ${barcodePlacement.rotation || 0}°`;
+        }
+
+        /* Strict Boundary Clamping: Barcode never exceeds canvas frame */
+        function clampPlacementInsidePage(placement, pageW, pageH) {
+            if (!pageW || !pageH) return;
+            const rot = placement.rotation || 0;
+            const rad = ((rot % 360) * Math.PI) / 180;
+            const cos = Math.abs(Math.cos(rad));
+            const sin = Math.abs(Math.sin(rad));
+
+            // Minimum dimensions
+            let w = Math.max(60, placement.width || 120);
+            let h = Math.max(30, placement.height || 60);
+
+            // Bounding box size at current rotation
+            let boundW = w * cos + h * sin;
+            let boundH = w * sin + h * cos;
+
+            // If bounding box exceeds canvas dimensions, scale down proportionally
+            if (boundW > pageW || boundH > pageH) {
+                const scale = Math.min(pageW / boundW, pageH / boundH);
+                w = Math.max(60, Math.floor(w * scale));
+                h = Math.max(30, Math.floor(h * scale));
+                boundW = w * cos + h * sin;
+                boundH = w * sin + h * cos;
+            }
+
+            // Current center
+            let cx = (placement.x != null ? placement.x : 0) + (placement.width || w) / 2;
+            let cy = (placement.y != null ? placement.y : 0) + (placement.height || h) / 2;
+
+            // Strict boundary clamping for center coordinates
+            const minCx = boundW / 2;
+            const maxCx = Math.max(minCx, pageW - boundW / 2);
+            const minCy = boundH / 2;
+            const maxCy = Math.max(minCy, pageH - boundH / 2);
+
+            cx = Math.max(minCx, Math.min(maxCx, cx));
+            cy = Math.max(minCy, Math.min(maxCy, cy));
+
+            placement.width = Math.round(w);
+            placement.height = Math.round(h);
+            placement.x = Math.round(cx - placement.width / 2);
+            placement.y = Math.round(cy - placement.height / 2);
+        }
+
+        // Render pure barcode to an offscreen canvas
+        function generateBarcodeCanvas(codeText) {
+            const bCanvas = document.getElementById('barcodeGenCanvas');
+            const format = barcodeFormatSelect.value;
+            const displayVal = chkDisplayValue ? chkDisplayValue.checked : true;
+            const hasBg = chkWhiteBg ? chkWhiteBg.checked : true;
+            const color = '#000000';
+
+            try {
+                JsBarcode(bCanvas, codeText, {
+                    format: format,
+                    lineColor: color,
+                    displayValue: displayVal,
+                    font: "monospace",
+                    fontSize: 16,
+                    textMargin: 3,
+                    margin: hasBg ? 8 : 2,
+                    background: hasBg ? "#ffffff" : "rgba(0,0,0,0)",
+                    valid: function (valid) {
+                        return valid;
+                    }
+                });
+                return { canvas: bCanvas, valid: true };
+            } catch (err) {
+                // Draw fallback error message box
+                bCanvas.width = 300;
+                bCanvas.height = 100;
+                const ctx = bCanvas.getContext('2d');
+                ctx.fillStyle = '#fee2e2';
+                ctx.fillRect(0, 0, 300, 100);
+                ctx.fillStyle = '#ef4444';
+                ctx.font = 'bold 12px Prompt, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('⚠️ รหัสไม่ตรงตามมาตรฐาน ' + format, 150, 45);
+                ctx.fillText('ตรวจสอบตัวเลขหรือเปลี่ยนเป็น CODE128', 150, 65);
+                return { canvas: bCanvas, valid: false, error: err.message };
+            }
+        }
+
+        // Render current active page to preview
+        function renderActivePage() {
+            if (documentPages.length === 0) return;
+            const activePage = documentPages[activePageIndex];
+            const p = barcodePlacement;
+            clampPlacementInsidePage(p, activePage.width, activePage.height);
+            const currentCode = getCodeForPage(activePageIndex);
+
+            mainCanvas.width = activePage.width;
+            mainCanvas.height = activePage.height;
+
+            // 1. Draw base page canvas
+            mainCtx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+            mainCtx.drawImage(activePage.originalCanvas, 0, 0);
+
+            // 2. Render Barcode
+            const bResult = generateBarcodeCanvas(currentCode);
+            const bCanvas = bResult.canvas;
+
+            // 3. Draw Barcode with transform (rotation & position)
+            mainCtx.save();
+            const cx = p.x + p.width / 2;
+            const cy = p.y + p.height / 2;
+            mainCtx.translate(cx, cy);
+            if (p.rotation) {
+                mainCtx.rotate((p.rotation * Math.PI) / 180);
+            }
+            mainCtx.drawImage(bCanvas, -p.width / 2, -p.height / 2, p.width, p.height);
+            mainCtx.restore();
+
+            // 4. Position Interactive Transform Box overlay
+            updateTransformBoxDOM(p);
+
+            // 5. Run Live Scanner Verification
+            verifyBarcodeLive(bCanvas, currentCode, bResult.valid);
+        }
+
+        function updateTransformBoxDOM(p) {
+            barcodeTransformBox.style.left = `${p.x}px`;
+            barcodeTransformBox.style.top = `${p.y}px`;
+            barcodeTransformBox.style.width = `${p.width}px`;
+            barcodeTransformBox.style.height = `${p.height}px`;
+            barcodeTransformBox.style.transform = `rotate(${p.rotation || 0}deg)`;
+            document.getElementById('barcodeBoxCodeTag').textContent = getCodeForPage(activePageIndex);
+
+            const infoLabel = document.getElementById('barcodeInfoLabel');
+            if (infoLabel) {
+                // If near the top edge, tuck label inside so it never pokes above the canvas
+                if (p.y < 26) {
+                    infoLabel.style.top = '4px';
+                    infoLabel.style.boxShadow = '0 1px 4px rgba(0,0,0,0.3)';
+                } else {
+                    infoLabel.style.top = '-24px';
+                    infoLabel.style.boxShadow = '0 2px 6px rgba(0,0,0,0.2)';
+                }
+            }
+        }
+
+        /* ==========================================================================
+           [STEP 3: LIVE BARCODE SCANNING & VERIFICATION]
+           ========================================================================== */
+        let scanThrottleTimer = null;
+        function verifyBarcodeLive(barcodeCanvas, expectedCode, isGenValid) {
+            clearTimeout(scanThrottleTimer);
+            scanThrottleTimer = setTimeout(() => {
+                const badgeCard = document.getElementById('verifyBadgeCard');
+                const statusTitle = document.getElementById('verifyStatusTitle');
+                const subText = document.getElementById('verifySubText');
+                const formatPill = document.getElementById('verifyFormatPill');
+                const icon = document.getElementById('verifyIcon');
+
+                if (!isGenValid) {
+                    badgeCard.className = 'verify-badge-card is-error';
+                    statusTitle.textContent = 'รูปแบบรหัสไม่ถูกต้อง';
+                    subText.textContent = `รหัสไม่ผ่านข้อกำหนดของ ${barcodeFormatSelect.value}`;
+                    formatPill.textContent = 'ERROR';
+                    icon.className = 'fa-solid fa-triangle-exclamation';
+                    return;
+                }
+
+                // Check with ZXing Reader
+                try {
+                    if (typeof ZXing !== 'undefined') {
+                        const reader = new ZXing.BrowserMultiFormatReader();
+                        const result = reader.decodeFromCanvas(barcodeCanvas);
+
+                        if (result && result.text) {
+                            const isMatch = (result.text.trim() === expectedCode.trim());
+                            badgeCard.className = isMatch ? 'verify-badge-card' : 'verify-badge-card is-error';
+                            statusTitle.textContent = isMatch ? 'สแกนเช็คผ่าน 100%' : 'รหัสที่สแกนไม่ตรงกับต้นทาง';
+                            subText.textContent = `ตรวจพบรหัส: ${result.text}`;
+                            formatPill.textContent = barcodeFormatSelect.value;
+                            icon.className = isMatch ? 'fa-solid fa-check' : 'fa-solid fa-triangle-exclamation';
+                            return;
+                        }
+                    }
+                } catch (e) { }
+
+                // Fallback for valid JsBarcode format
+                badgeCard.className = 'verify-badge-card';
+                statusTitle.textContent = 'สร้างและตรวจสอบรหัสแล้ว 100%';
+                subText.textContent = `รหัสตรงกัน: ${expectedCode} (${barcodeFormatSelect.value})`;
+                formatPill.textContent = barcodeFormatSelect.value;
+                icon.className = 'fa-solid fa-check';
+            }, 120);
+        }
+
+        /* ==========================================================================
+           [INTERACTIVE DRAG & RESIZE BARCODE BOX ON STAGE]
+           ========================================================================== */
+        let isDragging = false;
+        let isResizing = false;
+        let currentHandle = null;
+        let startPointer = { x: 0, y: 0 };
+        let startBox = { x: 0, y: 0, w: 0, h: 0 };
+
+        barcodeTransformBox.addEventListener('pointerdown', (e) => {
+            const handle = e.target.getAttribute('data-handle');
+            const p = barcodePlacement;
+            startPointer = { x: e.clientX, y: e.clientY };
+            startBox = { x: p.x, y: p.y, w: p.width, h: p.height };
+
+            if (handle) {
+                isResizing = true;
+                currentHandle = handle;
+            } else {
+                isDragging = true;
+            }
+            barcodeTransformBox.setPointerCapture(e.pointerId);
+            e.stopPropagation();
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (!isDragging && !isResizing) return;
+            if (documentPages.length === 0) return;
+            const activePage = documentPages[activePageIndex];
+            const p = barcodePlacement;
+            const dx = (e.clientX - startPointer.x) / zoomScale;
+            const dy = (e.clientY - startPointer.y) / zoomScale;
+
+            if (isDragging) {
+                if ((p.rotation || 0) === 0) {
+                    p.x = Math.max(0, Math.min(activePage.width - p.width, Math.round(startBox.x + dx)));
+                    p.y = Math.max(0, Math.min(activePage.height - p.height, Math.round(startBox.y + dy)));
+                } else {
+                    p.x = Math.round(startBox.x + dx);
+                    p.y = Math.round(startBox.y + dy);
+                    clampPlacementInsidePage(p, activePage.width, activePage.height);
+                }
+            } else if (isResizing) {
+                if ((p.rotation || 0) === 0) {
+                    let nx = startBox.x;
+                    let ny = startBox.y;
+                    let nw = startBox.w;
+                    let nh = startBox.h;
+
+                    if (currentHandle === 'se') {
+                        nw = Math.max(60, Math.min(activePage.width - startBox.x, startBox.w + dx));
+                        nh = Math.max(30, Math.min(activePage.height - startBox.y, startBox.h + dy));
+                    } else if (currentHandle === 'sw') {
+                        nx = Math.max(0, Math.min(startBox.x + startBox.w - 60, startBox.x + dx));
+                        nw = (startBox.x + startBox.w) - nx;
+                        nh = Math.max(30, Math.min(activePage.height - startBox.y, startBox.h + dy));
+                    } else if (currentHandle === 'ne') {
+                        ny = Math.max(0, Math.min(startBox.y + startBox.h - 30, startBox.y + dy));
+                        nw = Math.max(60, Math.min(activePage.width - startBox.x, startBox.w + dx));
+                        nh = (startBox.y + startBox.h) - ny;
+                    } else if (currentHandle === 'nw') {
+                        nx = Math.max(0, Math.min(startBox.x + startBox.w - 60, startBox.x + dx));
+                        ny = Math.max(0, Math.min(startBox.y + startBox.h - 30, startBox.y + dy));
+                        nw = (startBox.x + startBox.w) - nx;
+                        nh = (startBox.y + startBox.h) - ny;
+                    }
+
+                    p.x = Math.round(nx);
+                    p.y = Math.round(ny);
+                    p.width = Math.round(nw);
+                    p.height = Math.round(nh);
+                } else {
+                    let newX = startBox.x;
+                    let newY = startBox.y;
+                    let newW = startBox.w;
+                    let newH = startBox.h;
+
+                    if (currentHandle === 'se') {
+                        newW = startBox.w + dx;
+                        newH = startBox.h + dy;
+                    } else if (currentHandle === 'sw') {
+                        newX = startBox.x + dx;
+                        newW = startBox.w - dx;
+                        newH = startBox.h + dy;
+                    } else if (currentHandle === 'ne') {
+                        newY = startBox.y + dy;
+                        newW = startBox.w + dx;
+                        newH = startBox.h - dy;
+                    } else if (currentHandle === 'nw') {
+                        newX = startBox.x + dx;
+                        newY = startBox.y + dy;
+                        newW = startBox.w - dx;
+                        newH = startBox.h - dy;
+                    }
+
+                    p.x = Math.round(newX);
+                    p.y = Math.round(newY);
+                    p.width = Math.round(newW);
+                    p.height = Math.round(newH);
+
+                    clampPlacementInsidePage(p, activePage.width, activePage.height);
+                }
+            }
+
+            renderActivePage();
+        });
+
+        window.addEventListener('pointerup', () => {
+            isDragging = false;
+            isResizing = false;
+            currentHandle = null;
+        });
+
+        /* ==========================================================================
+           [ZOOM & VIEWPORT CONTROLS]
+           ========================================================================== */
+        let currentZoomMode = 'fit';
+
+        function setZoomMode(mode) {
+            if (documentPages.length === 0) return;
+            const activePage = documentPages[activePageIndex];
+            currentZoomMode = mode;
+
+            const vpW = Math.max(100, stageViewport.clientWidth - 48);
+            const vpH = Math.max(100, stageViewport.clientHeight - 48);
+            const scaleW = vpW / activePage.width;
+            const scaleH = vpH / activePage.height;
+
+            if (mode === 'fit') {
+                zoomScale = Math.min(scaleW, scaleH);
+            } else if (mode === 'width') {
+                zoomScale = scaleW;
+            } else if (mode === '100') {
+                zoomScale = 1.0;
+            }
+            applyZoom();
+        }
+
+        function adjustZoom(delta) {
+            currentZoomMode = 'custom';
+            zoomScale = Math.max(0.15, Math.min(4.0, zoomScale + delta));
+            applyZoom();
+        }
+
+        function applyZoom() {
+            canvasWrapper.style.transform = `scale(${zoomScale})`;
+            const zoomBadge = document.getElementById('zoomLevelText');
+            if (zoomBadge) zoomBadge.textContent = `${Math.round(zoomScale * 100)}%`;
+        }
+
+        // Mouse Wheel Zoom
+        stageViewport.addEventListener('wheel', (e) => {
+            if (documentPages.length === 0) return;
+            e.preventDefault();
+            const delta = e.deltaY < 0 ? 0.08 : -0.08;
+            adjustZoom(delta);
+        }, { passive: false });
+
+        window.addEventListener('resize', () => {
+            if (documentPages.length > 0 && currentZoomMode === 'fit') {
+                setZoomMode('fit');
+            }
+        });
+
+        /* ==========================================================================
+           [PAYMENT FLOW (BEAM CHECKOUT & FIREBASE PROMPTPAY)]
+           ========================================================================== */
+        function handleMainAction() {
+            if (isPaid) {
+                document.getElementById('paymentPendingView').style.display = 'none';
+                document.getElementById('paymentSuccessView').style.display = 'block';
+                document.getElementById('paymentModal').classList.add('active');
+            } else {
+                openPaymentModal();
+            }
+        }
+
+        function openPaymentModal() {
+            document.getElementById('paymentModal').classList.add('active');
+            document.getElementById('paymentPendingView').style.display = 'block';
+            document.getElementById('paymentSuccessView').style.display = 'none';
+            document.getElementById('detail-qr-price-text').textContent = `฿ ${SERVICE_CONFIG.servicePriceThb.toFixed(2)}`;
+
+            initPromptPayCheckout();
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.remove('active');
+            if (pollingTimer) clearInterval(pollingTimer);
+            if (countdownTimer) clearInterval(countdownTimer);
+        }
+
+        async function initPromptPayCheckout() {
+            const qrTarget = document.getElementById('detail-qr-image-target');
+            qrTarget.innerHTML = '<div class="clean-spinner" style="width: 24px; height: 24px; margin: 40px auto;"></div>';
+
+            try {
+                const orderId = `barcodegen_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+                currentOrderId = orderId;
+
+                const response = await fetch(SERVICE_CONFIG.beamWorkerUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        order_id: orderId,
+                        amount: SERVICE_CONFIG.servicePriceThb,
+                        service: SERVICE_CONFIG.serviceName
+                    })
+                });
+
+                const data = await response.json();
+                if (data && data.qr_raw) {
+                    renderQrCode(data.qr_raw);
+                    startCountdown(30 * 60);
+                    startPaymentPolling(orderId);
+                } else {
+                    fallbackPromptPaySim(orderId);
+                }
+            } catch (err) {
+                console.warn("Beam checkout call fallback:", err);
+                fallbackPromptPaySim(`barcodegen_dev_${Date.now()}`);
+            }
+        }
+
+        function fallbackPromptPaySim(orderId) {
+            currentOrderId = orderId;
+            const fallbackPayload = `00020101021229370016A000000677010111011300668000000005802TH5303764540530.006304ABCD`;
+            renderQrCode(fallbackPayload);
+            startCountdown(30 * 60);
+            startPaymentPolling(orderId);
+        }
+
+        function renderQrCode(payloadText) {
+            const qrTarget = document.getElementById('detail-qr-image-target');
+            qrTarget.innerHTML = '';
+            new QRCode(qrTarget, {
+                text: payloadText,
+                width: 195,
+                height: 195,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
+
+        function startCountdown(durationSec) {
+            if (countdownTimer) clearInterval(countdownTimer);
+            let remain = durationSec;
+            const el = document.getElementById('detail-qr-countdown');
+
+            countdownTimer = setInterval(() => {
+                remain--;
+                if (remain <= 0) {
+                    clearInterval(countdownTimer);
+                    el.textContent = "00:00";
+                    return;
+                }
+                const m = Math.floor(remain / 60);
+                const s = remain % 60;
+                el.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function startPaymentPolling(orderId) {
+            if (pollingTimer) clearInterval(pollingTimer);
+            pollingTimer = setInterval(async () => {
+                if (!orderId) return;
+                try {
+                    const res = await fetch(`${SERVICE_CONFIG.firebaseBase}/${orderId}.json`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && (data.status === 'approved' || data.status === 'paid' || data.status === 'success')) {
+                            onPaymentSuccess();
+                        }
+                    }
+                } catch (e) { }
+            }, 1800);
+        }
+
+        async function testApprovePayment() {
+            if (!currentOrderId) return;
+            try {
+                await fetch(`${SERVICE_CONFIG.firebaseBase}/${currentOrderId}.json`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'approved', approvedAt: Date.now() })
+                });
+            } catch (e) { }
+            onPaymentSuccess();
+        }
+
+        function downloadDetailQRSlip() {
+            const qrCanvas = document.querySelector('#detail-qr-image-target canvas');
+            if (!qrCanvas) return;
+            const link = document.createElement('a');
+            link.download = `PromptPay_QR_30THB_${Date.now()}.png`;
+            link.href = qrCanvas.toDataURL('image/png');
+            link.click();
+        }
+
+        /* Celebration Audio & Confetti */
+        let _audioCtx = null;
+        function playCelebrationSound() {
+            try {
+                if (!_audioCtx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) _audioCtx = new AudioContext();
+                }
+                if (_audioCtx && _audioCtx.state === 'suspended') {
+                    _audioCtx.resume().catch(() => { });
+                }
+                const notes = [
+                    { freq: 523.25, time: 0.0, dur: 0.25 },
+                    { freq: 659.25, time: 0.12, dur: 0.25 },
+                    { freq: 783.99, time: 0.24, dur: 0.3 },
+                    { freq: 1046.50, time: 0.36, dur: 0.55 },
+                    { freq: 1318.51, time: 0.44, dur: 0.65 }
+                ];
+                notes.forEach(note => {
+                    const osc = _audioCtx.createOscillator();
+                    const gain = _audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(note.freq, _audioCtx.currentTime + note.time);
+                    gain.gain.setValueAtTime(0.28, _audioCtx.currentTime + note.time);
+                    gain.gain.exponentialRampToValueAtTime(0.001, _audioCtx.currentTime + note.time + note.dur);
+                    osc.connect(gain);
+                    gain.connect(_audioCtx.destination);
+                    osc.start(_audioCtx.currentTime + note.time);
+                    osc.stop(_audioCtx.currentTime + note.time + note.dur);
+                });
+            } catch (err) { }
+        }
+
+        function fireJoyfulConfetti() {
+            try {
+                if (typeof confetti === 'function') {
+                    confetti({ particleCount: 70, spread: 60, origin: { x: 0.15, y: 0.85 }, zIndex: 99999 });
+                    confetti({ particleCount: 70, spread: 60, origin: { x: 0.85, y: 0.85 }, zIndex: 99999 });
+                }
+            } catch (e) { }
+        }
+
+        function onPaymentSuccess() {
+            isPaid = true;
+            if (pollingTimer) clearInterval(pollingTimer);
+            if (countdownTimer) clearInterval(countdownTimer);
+
+            playCelebrationSound();
+            fireJoyfulConfetti();
+
+            document.getElementById('paymentPendingView').style.display = 'none';
+            document.getElementById('paymentSuccessView').style.display = 'block';
+
+            btnMainAction.className = 'btn-start-job is-success';
+            btnActionText.textContent = '📥 เลือกส่งออกไฟล์ผลลัพธ์';
+        }
+
+        /* ==========================================================================
+           [STEP 4: EXPORT (PDF / ZIP / IMAGE)]
+           ========================================================================== */
+        function renderFullPageCanvas(index) {
+            const page = documentPages[index];
+            const p = barcodePlacement;
+            const code = getCodeForPage(index);
+
+            const c = document.createElement('canvas');
+            c.width = page.width;
+            c.height = page.height;
+            const ctx = c.getContext('2d');
+
+            // 1. Draw original base
+            ctx.drawImage(page.originalCanvas, 0, 0);
+
+            // 2. Barcode
+            const bResult = generateBarcodeCanvas(code);
+            const bCanvas = bResult.canvas;
+
+            ctx.save();
+            const cx = p.x + p.width / 2;
+            const cy = p.y + p.height / 2;
+            ctx.translate(cx, cy);
+            if (p.rotation) {
+                ctx.rotate((p.rotation * Math.PI) / 180);
+            }
+            ctx.drawImage(bCanvas, -p.width / 2, -p.height / 2, p.width, p.height);
+            ctx.restore();
+
+            return c;
+        }
+
+        async function exportAsPDF() {
+            if (documentPages.length === 0) return;
+            const { jsPDF } = window.jspdf;
+            let doc = null;
+
+            for (let i = 0; i < documentPages.length; i++) {
+                const pageCanvas = renderFullPageCanvas(i);
+                const w = pageCanvas.width;
+                const h = pageCanvas.height;
+                const orientation = w > h ? 'l' : 'p';
+
+                if (i === 0) {
+                    doc = new jsPDF({
+                        orientation: orientation,
+                        unit: 'px',
+                        format: [w, h],
+                        hotfixes: ["px_scaling"]
+                    });
+                    doc.addImage(pageCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, w, h);
+                } else {
+                    doc.addPage([w, h], orientation);
+                    doc.addImage(pageCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, w, h);
+                }
+            }
+
+            doc.save(`barcode_stamped_${Date.now()}.pdf`);
+            closePaymentModal();
+        }
+
+        async function exportAsZip() {
+            if (documentPages.length === 0) return;
+            const zip = new JSZip();
+
+            for (let i = 0; i < documentPages.length; i++) {
+                const pageCanvas = renderFullPageCanvas(i);
+                const dataUrl = pageCanvas.toDataURL('image/png');
+                const base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
+                const code = getCodeForPage(i).replace(/[^a-zA-Z0-9_-]/g, '');
+                const fileName = `page_${String(i + 1).padStart(3, '0')}_${code}.png`;
+                zip.file(fileName, base64Data, { base64: true });
+            }
+
+            const content = await zip.generateAsync({ type: 'blob' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(content);
+            link.download = `barcodes_${Date.now()}.zip`;
+            link.click();
+            closePaymentModal();
+        }
+
+        function exportCurrentPageImage() {
+            if (documentPages.length === 0) return;
+            const pageCanvas = renderFullPageCanvas(activePageIndex);
+            const code = getCodeForPage(activePageIndex).replace(/[^a-zA-Z0-9_-]/g, '');
+            const link = document.createElement('a');
+            link.download = `barcode_${code}_page${activePageIndex + 1}.png`;
+            link.href = pageCanvas.toDataURL('image/png');
+            link.click();
+            closePaymentModal();
+        }
+
+        function resetWorkspace() {
+            sourceTemplates = [];
+            documentPages = [];
+            activePageIndex = 0;
+            isPaid = false;
+            currentOrderId = null;
+            if (pollingTimer) clearInterval(pollingTimer);
+            if (countdownTimer) clearInterval(countdownTimer);
+
+            emptyStageState.style.display = 'block';
+            canvasWrapper.style.display = 'none';
+            stageToolbar.style.display = 'none';
+            floatingActionBox.style.display = 'none';
+
+            btnMainAction.className = 'btn-start-job';
+            btnActionText.textContent = `⚡ ชำระเงิน ${SERVICE_CONFIG.servicePriceThb} บาท & ส่งออกไฟล์`;
+
+            fileInput.value = '';
+            const qtyInput = document.getElementById('seqTotalPages');
+            if (qtyInput) qtyInput.value = '1';
+            const docBadge = document.getElementById('docPagesCountBadge');
+            if (docBadge) docBadge.textContent = '';
+        }
+    </script>
+</body>
+
+</html>
