@@ -1533,6 +1533,255 @@
             line-height: 1.4;
         }
 
+        /* ===== MODERN PRICE BAR STYLING ===== */
+        .price-bar-customer-waiting {
+            margin-top: 10px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1.5px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            transition: all 0.25s ease;
+        }
+        .price-waiting-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #334155;
+            font-size: 12.5px;
+            font-weight: 700;
+        }
+        .pulsing-blue-dot {
+            width: 8px;
+            height: 8px;
+            background: #6366f1;
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7);
+            animation: pulseBlueDot 1.8s infinite;
+            flex-shrink: 0;
+        }
+        @keyframes pulseBlueDot {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 7px rgba(99, 102, 241, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+        }
+        .price-waiting-hint {
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 500;
+            padding-left: 16px;
+        }
+
+        /* Quoted Offer Bar */
+        .price-bar-customer-quoted {
+            margin-top: 10px;
+            background: #ffffff;
+            border: 1.5px solid #e0e7ff;
+            border-radius: 12px;
+            padding: 12px 14px;
+            box-shadow: 0 4px 16px -2px rgba(99, 102, 241, 0.12);
+            transition: all 0.25s ease;
+        }
+        .quoted-price-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .quoted-price-label {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: #6366f1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .quoted-price-amount {
+            display: flex;
+            align-items: baseline;
+            gap: 2px;
+            font-family: Outfit, sans-serif;
+            color: #0f172a;
+            font-weight: 900;
+        }
+        .quoted-price-amount .currency {
+            font-size: 14px;
+            color: #6366f1;
+            font-weight: 800;
+        }
+        .quoted-price-amount .val {
+            font-size: 24px;
+            letter-spacing: -0.5px;
+        }
+        .quoted-price-amount .unit {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 700;
+            margin-left: 3px;
+        }
+        .quoted-price-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-accept-point {
+            flex: 1;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #ffffff;
+            border: none;
+            padding: 9px 14px;
+            border-radius: 8px;
+            font-size: 13.5px;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            box-shadow: 0 3px 10px rgba(16, 185, 129, 0.35);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .btn-accept-point:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 14px rgba(16, 185, 129, 0.45);
+        }
+        .btn-reject-point {
+            background: #fff;
+            border: 1px solid #fca5a5;
+            color: #dc2626;
+            border-radius: 8px;
+            padding: 9px 12px;
+            font-size: 12.5px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: all 0.15s;
+        }
+        .btn-reject-point:hover {
+            background: #fef2f2;
+            border-color: #ef4444;
+        }
+
+        /* Admin Price Editor Bar */
+        .admin-price-bar-container {
+            margin-top: 10px;
+            background: #ffffff;
+            border: 1.5px solid #c7d2fe;
+            border-radius: 12px;
+            padding: 12px 14px;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.08);
+        }
+        .admin-price-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .admin-price-title {
+            font-size: 12.5px;
+            font-weight: 800;
+            color: #3730a3;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .admin-price-hint {
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        .admin-price-input-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .admin-price-input-wrap {
+            position: relative;
+            flex: 1;
+            display: flex;
+            align-items: center;
+        }
+        .admin-price-input-wrap .currency-prefix {
+            position: absolute;
+            left: 10px;
+            font-size: 14px;
+            font-weight: 800;
+            color: #6366f1;
+            pointer-events: none;
+        }
+        .admin-price-input {
+            width: 100%;
+            padding: 8px 12px 8px 24px;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 800;
+            color: #0f172a;
+            background: #f8fafc;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .admin-price-input:focus {
+            border-color: #6366f1;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+        .btn-save-admin-price {
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+            color: #ffffff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 3px 8px rgba(79, 70, 229, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .btn-save-admin-price:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 12px rgba(79, 70, 229, 0.4);
+        }
+        .admin-price-chips-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        .chips-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            margin-right: 2px;
+        }
+        .chip-price {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 3px 10px;
+            font-size: 11.5px;
+            font-weight: 800;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .chip-price:hover {
+            background: #6366f1;
+            color: #ffffff;
+            border-color: #6366f1;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+        }
+
         /* Floating Bottom Right Download Button */
         .floating-download-box {
             position: fixed;
@@ -1541,24 +1790,60 @@
             z-index: 1000;
         }
         .btn-floating-download {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            background: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%);
             color: #ffffff;
             border: none;
             border-radius: 50px;
-            padding: 14px 24px;
+            padding: 12px 22px;
             font-size: 14px;
             font-weight: 800;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
-            transition: transform 0.2s, box-shadow 0.2s;
-            animation: downloadFloatAnim 2s infinite ease-in-out;
+            gap: 12px;
+            box-shadow: 0 10px 30px -4px rgba(16, 185, 129, 0.55), 0 0 0 1.5px rgba(255, 255, 255, 0.28) inset;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: downloadFloatAnim 2.5s infinite ease-in-out;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
         }
         .btn-floating-download:hover {
-            transform: translateY(-2px) scale(1.03);
-            box-shadow: 0 10px 26px rgba(16, 185, 129, 0.65);
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 14px 34px rgba(16, 185, 129, 0.7), 0 0 0 2px rgba(255, 255, 255, 0.4) inset;
+        }
+        .btn-floating-download:active {
+            transform: translateY(-1px) scale(0.98);
+        }
+        .floating-download-icon-wrap {
+            width: 34px;
+            height: 34px;
+            background: rgba(255, 255, 255, 0.22);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        .floating-download-text-wrap {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+            line-height: 1.25;
+        }
+        .floating-download-title {
+            font-size: 13.5px;
+            font-weight: 900;
+            letter-spacing: -0.2px;
+        }
+        .floating-download-sub {
+            font-size: 10.5px;
+            font-weight: 600;
+            opacity: 0.88;
+        }
+        .floating-download-arrow {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-left: 2px;
         }
         @keyframes downloadFloatAnim {
             0%, 100% { transform: translateY(0); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45); }
@@ -1670,33 +1955,26 @@
                     <!-- QR Image -->
                     <img id="paymentQrImg" class="qr-img" src="" alt="Beam PromptPay QR" style="display: none; width: 210px; height: 210px; object-fit: contain; border-radius: 8px; margin: 0 auto; background: #fff; padding: 6px;">
 
-                    <div style="font-size: 12.5px; font-weight: 800; color: #1e293b; margin-top: 8px;">
-                        ชำระเข้าบัญชี: <span id="promptPayNumberText" style="color: #003764;">098-857-3074</span>
+                    <div style="font-size: 13px; font-weight: 800; color: #003764; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="fa-solid fa-qrcode"></i> Beam Payment (PromptPay QR)
                     </div>
                     <div style="font-size: 11px; color: #64748b; margin-top: 2px;">(สแกนจ่ายผ่านแอปธนาคารทุกแห่ง • ยอดระบุให้อัตโนมัติ)</div>
 
-                    <!-- Action buttons under QR -->
-                    <div style="display: flex; gap: 8px; margin-top: 10px; width: 100%;">
-                        <button id="btnDownloadPointQr" style="flex: 1; background: #f1f5f9; border: 1px solid #cbd5e1; padding: 7px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: #1e293b; transition: all 0.2s;">
+                    <!-- Action button under QR -->
+                    <div style="margin-top: 10px; width: 100%;">
+                        <button id="btnDownloadPointQr" style="width: 100%; background: #f1f5f9; border: 1px solid #cbd5e1; padding: 9px 12px; border-radius: 8px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; color: #1e293b; transition: all 0.2s;">
                             <i class="fa-solid fa-download"></i> บันทึกสลิป QR
-                        </button>
-                        <button id="btnCopyPromptPayNo" style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 7px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 5px; color: #1e293b; transition: all 0.2s;">
-                            <i class="fa-solid fa-copy"></i> คัดลอกเบอร์
                         </button>
                     </div>
                 </div>
 
-                <!-- Bottom Notify / Confirmation -->
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <button id="btnCustomerNotifyTransfer" style="width: 100%; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border: none; padding: 11px 14px; border-radius: 10px; font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(16,185,129,0.3); display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
-                        <i class="fa-solid fa-circle-check"></i> แจ้งโอนเงินแล้ว (ไม่ต้องส่งสลิป)
-                    </button>
-                    <div id="paymentNotifyPending" class="hidden" style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 9px 12px; border-radius: 8px; text-align: center; font-size: 12px; font-weight: 700; color: #15803d;">
-                        <i class="fa-solid fa-hourglass-half fa-spin-pulse"></i> ได้แจ้งโอนเงินแล้ว ระบบกำลังตรวจจับยอดโอนจาก Beam อัตโนมัติ...
-                    </div>
+                <!-- Automatic Payment Detection Badge -->
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 11px 14px; border-radius: 10px; text-align: center; font-size: 12.5px; font-weight: 700; color: #15803d; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fa-solid fa-bolt" style="color: #16a34a;"></i> ระบบชำระเงินอัตโนมัติ (ตรวจจับยอดโอนทันที ไม่ต้องส่งสลิป)
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     <!-- Project Paused Modal (Shown to Client when Admin pauses project) -->
@@ -1885,7 +2163,6 @@
 
         // Beam Payment Config
         const BEAM_WORKER_URL = "https://eworker-beam-pay.moonverse69.workers.dev";
-        const PROMPTPAY_NUMBER = "0988573074";
 
         // PDF.js Configuration
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -2386,6 +2663,7 @@
                 // Start countdown
                 startExpiryCountdown(data.expiresAt);
                 
+                updateFloatingDownloadButton();
                 console.log('✅ Everything loaded successfully!');
             } catch (err) {
                 hideLoading();
@@ -3471,6 +3749,11 @@
                             done: true,
                             completedAt: Date.now()
                         });
+                        if (unfinished.length === 1) {
+                            await database.ref(`annotations/${sessionId}`).update({
+                                jobStatus: 'completed'
+                            });
+                        }
                     }
 
                     // โหลดภาพใหม่มาแสดงผลทันที
@@ -3542,7 +3825,7 @@
             // Price & Action Area
             let priceHtml = '';
             if (isAdmin) {
-                // ฝั่งแอดมิน:
+                // ฝั่งแอดมิน: กรอกราคาได้ทันทีทุกจุด ไม่ต้องรอลูกค้ากดส่งประเมินราคา
                 if (marker.priceQuoted && !marker.isEditingPrice) {
                     priceHtml = `
                         <div class="admin-price-area" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;margin:8px 0;">
@@ -3565,19 +3848,25 @@
                             </div>
                         ` : ''}
                     `;
-                } else if (marker.submittedForQuote || marker.isEditingPrice) {
-                    // ลูกค้ากดส่งประเมินราคาแล้ว -> แอดมินจึงจะเห็นกล่องใส่ราคาและชิปตัวเลือก
+                } else {
+                    // ยังไม่ได้กำหนดราคา หรือกำลังแก้ไขราคา -> แสดงแถบกำหนดราคาสวยงามและชิปด่วน
                     priceHtml = `
-                        <div class="admin-price-area" style="background:#f8fafc;border:1.5px solid #c7d2fe;border-radius:12px;padding:10px 12px;margin:8px 0;box-shadow:0 2px 8px rgba(99,102,241,0.08);">
-                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                                <span style="font-size:12px;font-weight:800;color:#3730a3;"><i class="fa-solid fa-tag"></i> กำหนดราคาจุดนี้:</span>
-                                <span style="background:#dcfce7;color:#15803d;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:6px;display:inline-flex;align-items:center;gap:4px;"><i class="fa-solid fa-paper-plane"></i> ลูกค้าส่งประเมินแล้ว</span>
+                        <div class="admin-price-bar-container">
+                            <div class="admin-price-header">
+                                <span class="admin-price-title"><i class="fa-solid fa-tag"></i> กำหนดราคาจุดนี้:</span>
+                                <span class="admin-price-hint">กด Enter เพื่อส่งราคา</span>
                             </div>
-                            <div style="display:flex;gap:6px;align-items:center;">
-                                <input type="number" class="admin-price-input" min="0" step="5" placeholder="ราคา (บาท)..." value="${marker.price || ''}" style="width:110px;padding:6px 10px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:13.5px;font-weight:700;">
-                                <button class="btn-save-admin-price" style="background:linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);color:#fff;border:none;padding:6px 14px;border-radius:8px;font-size:12.5px;font-weight:800;cursor:pointer;box-shadow:0 2px 6px rgba(79,70,229,0.3);"><i class="fa-solid fa-check"></i> ส่งราคา</button>
+                            <div class="admin-price-input-row">
+                                <div class="admin-price-input-wrap">
+                                    <span class="currency-prefix">฿</span>
+                                    <input type="number" class="admin-price-input" min="0" step="5" placeholder="0" value="${marker.price || ''}">
+                                </div>
+                                <button class="btn-save-admin-price">
+                                    <i class="fa-solid fa-paper-plane"></i> ส่งราคา
+                                </button>
                             </div>
-                            <div style="display:flex;gap:4px;margin-top:7px;flex-wrap:wrap;">
+                            <div class="admin-price-chips-row">
+                                <span class="chips-label">เลือกด่วน:</span>
                                 <button class="chip-price" data-val="20">20฿</button>
                                 <button class="chip-price" data-val="30">30฿</button>
                                 <button class="chip-price" data-val="50">50฿</button>
@@ -3585,14 +3874,6 @@
                                 <button class="chip-price" data-val="100">100฿</button>
                                 <button class="chip-price" data-val="150">150฿</button>
                             </div>
-                        </div>
-                    `;
-                } else {
-                    // ลูกค้ายังไม่กดส่งประเมินราคา -> แอดมินจะไม่เห็นช่องใส่ราคา
-                    priceHtml = `
-                        <div style="background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:8px 12px;margin:8px 0;display:flex;align-items:center;gap:6px;color:#64748b;font-size:12px;font-weight:600;">
-                            <i class="fa-regular fa-clock" style="color:#94a3b8;"></i>
-                            <span>รอลูกค้าพิมพ์รายละเอียดและกดส่งประเมินราคา</span>
                         </div>
                     `;
                 }
@@ -3644,24 +3925,18 @@
                                                 <span>กำลังสร้าง QR จาก Beam...</span>
                                             </div>
                                             <img id="inlineQrImg_${marker.id}" src="" alt="Beam PromptPay QR" style="display:none;width:180px;height:180px;object-fit:contain;margin:0 auto;background:#fff;border-radius:8px;padding:4px;">
-                                            <div style="font-size:12.5px;font-weight:800;color:#1e293b;margin-top:8px;">
-                                                ชำระเข้าบัญชี: <span style="color:#003764;">098-857-3074</span>
+                                            <div style="font-size:12.5px;font-weight:800;color:#003764;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px;">
+                                                <i class="fa-solid fa-qrcode"></i> Beam Payment (PromptPay QR)
                                             </div>
                                             <div style="font-size:11px;color:#64748b;margin-top:2px;">(สแกนจ่ายผ่านแอปธนาคารทุกแห่ง • ยอดระบุให้อัตโนมัติ)</div>
-                                            <div style="display:flex;gap:6px;margin-top:8px;">
-                                                <button class="btn-inline-download-slip" data-id="${marker.id}" style="flex:1;background:#f1f5f9;border:1px solid #cbd5e1;padding:7px;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;color:#1e293b;">
+                                            <div style="margin-top:8px;">
+                                                <button class="btn-inline-download-slip" data-id="${marker.id}" style="width:100%;background:#f1f5f9;border:1px solid #cbd5e1;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;color:#1e293b;">
                                                     <i class="fa-solid fa-download"></i> บันทึกสลิป QR
-                                                </button>
-                                                <button class="btn-inline-copy-no" style="background:#f1f5f9;border:1px solid #cbd5e1;padding:7px 12px;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;color:#1e293b;" title="คัดลอกเบอร์">
-                                                    <i class="fa-solid fa-copy"></i>
                                                 </button>
                                             </div>
                                         </div>
-                                        <button class="btn-inline-notify-paid" data-id="${marker.id}" style="width:100%;background:linear-gradient(135deg, #10b981 0%, #059669 100%);color:#fff;border:none;padding:10px;border-radius:8px;font-size:13.5px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 8px rgba(16,185,129,0.3);">
-                                            <i class="fa-solid fa-circle-check"></i> แจ้งโอนเงินแล้ว (ไม่ต้องส่งสลิป)
-                                        </button>
-                                        <div id="inlinePending_${marker.id}" class="${marker.slipNotified ? '' : 'hidden'}" style="margin-top:6px;background:#f0fdf4;border:1px solid #bbf7d0;padding:6px 10px;border-radius:6px;text-align:center;font-size:11.5px;font-weight:700;color:#15803d;">
-                                            <i class="fa-solid fa-hourglass-half fa-spin-pulse"></i> กำลังตรวจจับยอดโอนจาก Beam อัตโนมัติ...
+                                        <div style="margin-top:8px;background:#f0fdf4;border:1px solid #bbf7d0;padding:8px 10px;border-radius:8px;text-align:center;font-size:12px;font-weight:700;color:#15803d;display:flex;align-items:center;justify-content:center;gap:6px;">
+                                            <i class="fa-solid fa-bolt" style="color:#16a34a;"></i> ระบบตรวจจับยอดโอนอัตโนมัติ ไม่ต้องส่งสลิป
                                         </div>
                                     </div>
                                 </div>
@@ -3688,43 +3963,36 @@
                         </div>
                     `;
                 } else if (marker.priceQuoted) {
-                    // แอดมินส่งราคามาแล้ว -> แสดงราคา พร้อมปุ่ม "ตกลง" (มี animate pulse) และ "ยกเลิกงาน"
+                    // แอดมินส่งราคามาแล้ว -> แสดงแถบราคาพร้อมปุ่มสั่งทำสวยงามน่าเชื่อถือ
                     priceHtml = `
-                        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin-top:8px;">
-                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                                <span style="font-size:13px;font-weight:700;color:#64748b;"><i class="fa-solid fa-tag" style="color:#6366f1;"></i> ราคาจุดนี้:</span>
-                                <span style="font-size:18px;font-weight:900;color:#0f172a;">${marker.price} บาท</span>
+                        <div class="price-bar-customer-quoted">
+                            <div class="quoted-price-header">
+                                <div class="quoted-price-label">
+                                    <i class="fa-solid fa-receipt"></i> ค่าบริการจุดนี้
+                                </div>
+                                <div class="quoted-price-amount">
+                                    <span class="currency">฿</span><span class="val">${marker.price}</span><span class="unit">บาท</span>
+                                </div>
                             </div>
-                            <div style="display:flex;gap:8px;">
-                                <button class="btn-accept-point btn-pulse-animate" style="flex:1;background:linear-gradient(135deg, #10b981 0%, #059669 100%);color:#fff;border:none;padding:10px 14px;border-radius:8px;font-size:13.5px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;">
-                                    <i class="fa-solid fa-check"></i> ตกลง
+                            <div class="quoted-price-actions">
+                                <button class="btn-accept-point btn-pulse-animate">
+                                    <i class="fa-solid fa-check"></i> ตกลงสั่งทำจุดนี้
                                 </button>
-                                <button class="btn-reject-point" style="background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;">
-                                    <i class="fa-solid fa-xmark"></i> ยกเลิกงาน
+                                <button class="btn-reject-point">
+                                    <i class="fa-solid fa-xmark"></i> ยกเลิก
                                 </button>
                             </div>
-                        </div>
-                    `;
-                } else if (marker.submittedForQuote) {
-                    // ส่งประเมินราคาแล้ว กำลังรอแอดมินส่งราคา
-                    priceHtml = `
-                        <div style="background:#fffbeb;border:1px solid #fef3c7;border-radius:8px;padding:9px 12px;font-size:12px;font-weight:700;color:#b45309;display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
-                            <div style="display:flex;align-items:center;gap:6px;">
-                                <i class="fa-solid fa-hourglass-half fa-spin-pulse" style="color:#d97706;"></i>
-                                <span>ส่งประเมินราคาแล้ว รอแอดมินส่งราคา...</span>
-                            </div>
-                            <button class="btn-cancel-quote-submit" style="background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;color:#64748b;cursor:pointer;" title="แก้ไขข้อความใหม่">
-                                <i class="fa-solid fa-pen"></i> แก้ไข
-                            </button>
                         </div>
                     `;
                 } else {
-                    // ลูกค้าพิมพ์จบแล้ว มีปุ่มเขียวให้กด "ส่งประเมินราคา"
+                    // แอดมินยังไม่กำหนดราคา -> แสดงแถบรอดำเนินการแบบโมเดิร์น
                     priceHtml = `
-                        <div style="margin-top:8px;">
-                            <button class="btn-submit-quote" style="width:100%;background:linear-gradient(135deg, #10b981 0%, #059669 100%);color:#ffffff;border:none;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 8px rgba(16,185,129,0.35);transition:all 0.2s;">
-                                <i class="fa-solid fa-paper-plane"></i> ส่งประเมินราคา
-                            </button>
+                        <div class="price-bar-customer-waiting">
+                            <div class="price-waiting-pill">
+                                <span class="pulsing-blue-dot"></span>
+                                <span class="price-waiting-text">ช่างกำลังตรวจสอบเพื่อประเมินราคา...</span>
+                            </div>
+                            <span class="price-waiting-hint">เมื่อแจ้งราคาแล้ว จะมีปุ่มยืนยันสั่งทำปรากฏที่นี่</span>
                         </div>
                     `;
                 }
@@ -3751,6 +4019,19 @@
             if (isAdmin) {
                 const priceInput = card.querySelector('.admin-price-input');
                 const btnSavePrice = card.querySelector('.btn-save-admin-price');
+                
+                if (priceInput) {
+                    priceInput.addEventListener('click', (e) => e.stopPropagation());
+                    priceInput.addEventListener('mousedown', (e) => e.stopPropagation());
+                    priceInput.addEventListener('focus', (e) => e.stopPropagation());
+                    priceInput.addEventListener('keydown', (e) => {
+                        e.stopPropagation();
+                        if (e.key === 'Enter') {
+                            savePrice(priceInput.value);
+                        }
+                    });
+                }
+
                 const savePrice = async (pVal) => {
                     const priceNum = parseFloat(pVal) || 0;
                     if (priceNum <= 0) {
@@ -3970,16 +4251,6 @@
                     });
                 }
 
-                const btnInlineCopy = card.querySelector('.btn-inline-copy-no');
-                if (btnInlineCopy) {
-                    btnInlineCopy.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        navigator.clipboard.writeText('0988573074').then(() => {
-                            alert('📋 คัดลอกเบอร์พร้อมเพย์ 098-857-3074 เรียบร้อยแล้ว');
-                        });
-                    });
-                }
-
                 const btnInlineNotify = card.querySelector('.btn-inline-notify-paid');
                 if (btnInlineNotify) {
                     btnInlineNotify.addEventListener('click', async (e) => {
@@ -4038,7 +4309,8 @@
                 }
             });
 
-            card.addEventListener('click', async () => {
+            card.addEventListener('click', async (e) => {
+                if (e.target.closest('input, button, textarea, label, .chip-price')) return;
                 if (marker.page && marker.page !== currentPage) {
                     await gotoPage(marker.page);
                 }
@@ -4073,35 +4345,14 @@
                 return;
             }
 
-            // แสดงเมื่อมีจุดที่ลูกค้ากด "ส่งประเมินราคา" แล้ว และแอดมินยังใส่ราคาไม่ครบ
-            const hasWaitingQuote = activeMarkers.some(m => m.submittedForQuote && !m.priceQuoted);
-
-            if (hasWaitingQuote) {
-                jobStatusBanner.classList.remove('hidden');
-                if (jobReadyView) {
-                    jobReadyView.innerHTML = `
-                        <div class="quote-waiting-card">
-                            <div class="quote-waiting-spinner">
-                                <i class="fa-solid fa-hourglass-half fa-spin-pulse"></i>
-                            </div>
-                            <div class="quote-waiting-text">
-                                <div class="quote-waiting-title">แอดมินกำลังประเมินราคาทีละจุด...</div>
-                                <div class="quote-waiting-sub">โปรดรอสักครู่ เมื่อใส่ราคาครบแล้ว คุณสามารถตรวจสอบและกดสั่งเริ่มงานได้ที่นี่</div>
-                            </div>
-                        </div>
-                    `;
-                    jobReadyView.classList.remove('hidden');
-                }
-            } else {
-                // ไม่มีจุดที่รอประเมินราคา -> ซ่อนแบนเนอร์ (ไม่ต้องมีปุ่มรวม "ยืนยันราคาและสั่งให้เริ่มงาน" เพราะลูกค้ากดสั่งเริ่มงานที่แต่ละจุดได้โดยตรง)
-                if (jobReadyView) {
-                    jobReadyView.innerHTML = '';
-                    jobReadyView.classList.add('hidden');
-                }
-                const anyProcessing = activeMarkers.some(m => m.accepted && !m.done);
-                if (!anyProcessing) {
-                    jobStatusBanner.classList.add('hidden');
-                }
+            // ไม่ต้องมีแบนเนอร์ "แอดมินกำลังประเมินราคาทีละจุด..." ซ่อน jobReadyView ตลอดเวลา
+            if (jobReadyView) {
+                jobReadyView.innerHTML = '';
+                jobReadyView.classList.add('hidden');
+            }
+            const anyProcessing = activeMarkers.some(m => m.accepted && !m.done);
+            if (!anyProcessing) {
+                jobStatusBanner.classList.add('hidden');
             }
         }
 
@@ -4282,7 +4533,7 @@
 
                 ctx.fillStyle = '#334155';
                 ctx.font = 'bold 14px Prompt, Sarabun, sans-serif';
-                ctx.fillText('ชำระเข้าบัญชี: 098-857-3074', 200, 435);
+                ctx.fillText('ระบบชำระเงินอัตโนมัติ Beam Payment', 200, 435);
 
                 ctx.fillStyle = '#94a3b8';
                 ctx.font = '12px Prompt, Sarabun, sans-serif';
@@ -4311,9 +4562,10 @@
             const floatingBox = document.getElementById('floatingDownloadBox');
             if (!floatingBox) return;
 
-            // ผู้ใช้ระบุ: "คือให้ลูกค้าเห็นงานก่อนนะ => สแกนจ่าย => ถึงขึ้นปุ่มให้ ดาวน์โหลดงาน ได้"
-            // "เหมือนเสร็จทีละจุดให้ดาวน์โหลดเก็บไว้เลย"
-            const hasPaidCompleted = Object.values(annotations).some(m => m.done && m.paid);
+            // แสดงฝั่งลูกค้า (และแอดมิน) เมื่อมีงานที่เสร็จและชำระเงินแล้ว หรือมี completedFileUrl ที่ชำระแล้ว
+            const markers = Object.values(annotations);
+            const hasPaidCompleted = markers.some(m => m.done && m.paid) ||
+                                     (fileUrl && markers.some(m => m.done) && markers.every(m => !m.accepted || m.paid));
             if (hasPaidCompleted) {
                 floatingBox.classList.remove('hidden');
             } else {
@@ -4465,6 +4717,7 @@
         }
 
         function checkCompletionStatus() {
+            updateFloatingDownloadButton();
             const markers = Object.values(annotations).filter(m => !m.rejected);
             if (markers.length === 0) {
                 hideCompletionPopup();
@@ -4472,12 +4725,16 @@
             }
             const allDone = markers.every(m => !!m.done);
             if (allDone) {
-                if (!userDismissedCompletion) {
-                    showCompletionPopup();
-                } else if (jobProcessingView) {
+                if (jobProcessingView) {
                     jobProcessingView.classList.add('completed');
                 }
+                if (!userDismissedCompletion) {
+                    showCompletionPopup();
+                }
             } else {
+                if (jobProcessingView) {
+                    jobProcessingView.classList.remove('completed');
+                }
                 userDismissedCompletion = false;
                 hideCompletionPopup();
             }
@@ -4511,7 +4768,11 @@ function setActiveMarker(markerId) {
                 card.classList.toggle('active', card.dataset.id === markerId);
                 if (card.dataset.id === markerId) {
                     card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    card.querySelector('.annotation-text').focus();
+                    const activeEl = document.activeElement;
+                    if (!activeEl || (activeEl.tagName !== 'INPUT' && activeEl.tagName !== 'TEXTAREA')) {
+                        const txt = card.querySelector('.annotation-text');
+                        if (txt && !txt.readOnly) txt.focus();
+                    }
                 }
             });
 
@@ -4614,17 +4875,19 @@ function setActiveMarker(markerId) {
                 const status = snapshot.val();
                 updateJobStatusUI(status === 'processing');
 
-                // If admin on 127.0.0.1 and client ordered job -> launch Photoshop!
+                // If admin on 127.0.0.1 and client ordered job -> launch Photoshop only if there is an unfinished point!
                 if (status === 'processing' && isAdmin && !window.__psAutoOpened) {
-                    window.__psAutoOpened = true;
-                    const activeP = Object.values(annotations).find(m => m.accepted && !m.done) || { number: 1 };
-                    fetch('http://127.0.0.1:5000/markpoints-open-photoshop', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ sessionId, fileUrl, page: currentPage, pointNumber: activeP.number })
-                    }).then(r => r.json()).then(d => {
-                        if (d.success) console.log('🎨 Photoshop auto-launched with layers:', d.path);
-                    }).catch(e => console.warn('Could not auto-open Photoshop:', e));
+                    const activeP = Object.values(annotations).find(m => m.accepted && !m.done);
+                    if (activeP) {
+                        window.__psAutoOpened = true;
+                        fetch('http://127.0.0.1:5000/markpoints-open-photoshop', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ sessionId, fileUrl, page: activeP.page || currentPage, pointNumber: activeP.number })
+                        }).then(r => r.json()).then(d => {
+                            if (d.success) console.log('🎨 Photoshop auto-launched with layers:', d.path);
+                        }).catch(e => console.warn('Could not auto-open Photoshop:', e));
+                    }
                 }
 
                 // If paused (unpaid client)
@@ -4654,6 +4917,7 @@ function setActiveMarker(markerId) {
                         await loadFile(newCompletedUrl, fileType);
                         hideLoading();
                         renderAllMarkers();
+                        updateFloatingDownloadButton();
                         setTimeout(renderArrows, 100);
                     } catch (err) {
                         hideLoading();
@@ -4843,8 +5107,14 @@ function setActiveMarker(markerId) {
     <!-- Floating Bottom-Right Download Button (Shown after payment) -->
     <div class="floating-download-box hidden" id="floatingDownloadBox">
         <button class="btn-floating-download" id="btnFloatingDownload" title="ดาวน์โหลดผลงานล่าสุด">
-            <i class="fa-solid fa-cloud-arrow-down fa-bounce" style="--fa-bounce-height: -4px;"></i>
-            <span>ดาวน์โหลดงานเสร็จแล้ว</span>
+            <div class="floating-download-icon-wrap">
+                <i class="fa-solid fa-cloud-arrow-down fa-bounce" style="--fa-bounce-height: -3px;"></i>
+            </div>
+            <div class="floating-download-text-wrap">
+                <span class="floating-download-title">ดาวน์โหลดงานเสร็จแล้ว</span>
+                <span class="floating-download-sub">ไฟล์ความละเอียดสูงล่าสุด</span>
+            </div>
+            <i class="fa-solid fa-chevron-right floating-download-arrow"></i>
         </button>
     </div>
 
