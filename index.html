@@ -6216,6 +6216,23 @@
 
         const BUILTIN_SERVICES = [
             {
+                id: 'service-barcode-gen',
+                slug: 'barcode-gen',
+                title: 'สร้างบาร์โค้ดลงภาพ/PDF เรียงรหัสอัตโนมัติ',
+                price: 30,
+                category: 'บริการออนไลน์',
+                isService: true,
+                serviceUrl: 'shop/services/barCodeGen/index.html',
+                payPerUse: true,
+                language: '',
+                coverImage: 'shop/images/barcodegen_cover.svg',
+                description: 'เครื่องมือสร้างบาร์โค้ดลงภาพและเอกสาร PDF กำหนดขนาดตำแหน่งอิสระ เรียงรหัสต่อเนื่องหลายภาพ/หน้า พร้อมระบบตรวจเช็คสแกนติด 100%',
+                hasInstallGuide: false,
+                installSteps: [],
+                isRecommended: true,
+                createdAt: 1762761000000
+            },
+            {
                 id: 'service-blur-censor',
                 slug: 'blur-censor',
                 title: 'เบลอ Censor ข้อมูลในภาพและ PDF',
@@ -10965,8 +10982,8 @@ ${encodedToken}
             }
         }
 
-        // Resume AudioContext on initial interaction
-        ['click', 'mousemove', 'keydown', 'touchstart'].forEach(evt => {
+        // Resume AudioContext on initial user gesture (click, keydown, touch)
+        ['click', 'keydown', 'touchstart'].forEach(evt => {
             window.addEventListener(evt, () => {
                 getSharedAudioContext();
             }, { once: true, passive: true });
