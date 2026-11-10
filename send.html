@@ -693,6 +693,13 @@
             display: none;
         }
 
+        /* ฝั่งแอดมิน ไม่ต้องแสดงแบนเนอร์สถานะและปุ่มกดสั่งเริ่มงาน */
+        body.is-admin #jobStatusBanner,
+        body.is-admin #jobReadyView,
+        body.is-admin .btn-start-job {
+            display: none !important;
+        }
+
         /* Job Status Banner & Start Job */
         .job-status-banner {
             padding: 12px 0 28px 0;
@@ -2026,6 +2033,9 @@
                     </button>
                     <a id="btnMobileDirectDownloadLink" href="#" download style="text-decoration:none;background:#f1f5f9;color:#1e293b;border:1px solid #cbd5e1;padding:11px;border-radius:10px;font-size:14px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:8px;">
                         <i class="fa-solid fa-download"></i> ดาวน์โหลดไฟล์โดยตรง
+                    </a>
+                    <a id="btnMobileOpenInTab" href="#" target="_blank" style="text-decoration:none;background:#f8fafc;color:#4f46e5;border:1.5px solid #c7d2fe;padding:11px;border-radius:10px;font-size:14px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:8px;">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดดูไฟล์ขนาดเต็มในแท็บใหม่
                     </a>
                 </div>
             </div>
@@ -3426,7 +3436,7 @@
                 return;
             }
 
-            if (jobStatusBanner) jobStatusBanner.classList.remove('hidden');
+            if (jobStatusBanner && !isAdmin) jobStatusBanner.classList.remove('hidden');
 
             const sortedMarkers = allMarkers.sort((a, b) => a.number - b.number);
             
@@ -3825,7 +3835,7 @@
             // Price & Action Area
             let priceHtml = '';
             if (isAdmin) {
-                // ฝั่งแอดมิน: กรอกราคาได้ทันทีทุกจุด ไม่ต้องรอลูกค้ากดส่งประเมินราคา
+                // ฝั่งแอดมิน:
                 if (marker.priceQuoted && !marker.isEditingPrice) {
                     priceHtml = `
                         <div class="admin-price-area" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;margin:8px 0;">
@@ -3835,11 +3845,7 @@
                                 ${marker.accepted ? '<span style="background:#dcfce7;color:#15803d;font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;margin-left:6px;"><i class="fa-solid fa-check"></i> ลูกค้าตกลงแล้ว</span>' : '<span style="color:#f59e0b;font-size:11px;font-weight:700;margin-left:6px;">(รอลูกค้าตกลง)</span>'}
                                 ${marker.rejected ? '<span style="background:#fee2e2;color:#b91c1c;font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;margin-left:6px;"><i class="fa-solid fa-ban"></i> ลูกค้ายกเลิกงาน</span>' : ''}
                             </div>
-                            ${!marker.done ? `
-                                <button class="btn-edit-admin-price" style="background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;color:#475569;">
-                                    <i class="fa-solid fa-pen"></i> แก้ไขราคา
-                                </button>
-                            ` : ''}
+
                         </div>
                         ${marker.slipNotified && !marker.paid ? `
                             <div style="margin-top:6px;background:#fef3c7;border:1px solid #fde047;border-radius:6px;padding:6px 10px;display:flex;align-items:center;justify-content:space-between;">
@@ -3848,8 +3854,8 @@
                             </div>
                         ` : ''}
                     `;
-                } else {
-                    // ยังไม่ได้กำหนดราคา หรือกำลังแก้ไขราคา -> แสดงแถบกำหนดราคาสวยงามและชิปด่วน
+                } else if (marker.submittedForQuote || marker.isEditingPrice) {
+                    // ลูกค้ากดส่งประเมินราคาแล้ว หรือแอดมินกดแก้ไขราคา -> แสดงแถบกำหนดราคาสวยงามและชิปด่วน
                     priceHtml = `
                         <div class="admin-price-bar-container">
                             <div class="admin-price-header">
@@ -3874,6 +3880,14 @@
                                 <button class="chip-price" data-val="100">100฿</button>
                                 <button class="chip-price" data-val="150">150฿</button>
                             </div>
+                        </div>
+                    `;
+                } else {
+                    // ลูกค้ายังไม่กดส่งประเมินราคา
+                    priceHtml = `
+                        <div style="margin-top:10px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:6px;color:#64748b;font-size:12px;font-weight:600;">
+                            <i class="fa-regular fa-clock" style="color:#94a3b8;"></i>
+                            <span>รอลูกค้าพิมพ์รายละเอียดและกดส่งประเมินราคา...</span>
                         </div>
                     `;
                 }
@@ -3984,15 +3998,27 @@
                             </div>
                         </div>
                     `;
-                } else {
-                    // แอดมินยังไม่กำหนดราคา -> แสดงแถบรอดำเนินการแบบโมเดิร์น
+                } else if (marker.submittedForQuote) {
+                    // ลูกค้ากดส่งประเมินราคาแล้ว -> รอแอดมินแจ้งราคา พร้อมปุ่มแก้ไขข้อความ
                     priceHtml = `
                         <div class="price-bar-customer-waiting">
                             <div class="price-waiting-pill">
                                 <span class="pulsing-blue-dot"></span>
-                                <span class="price-waiting-text">ช่างกำลังตรวจสอบเพื่อประเมินราคา...</span>
+                                <span class="price-waiting-text">ส่งประเมินราคาแล้ว • รอแอดมินแจ้งราคา...</span>
+                                <button class="btn-cancel-quote-submit" style="background:#fff;border:1px solid #cbd5e1;border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;color:#64748b;cursor:pointer;margin-left:auto;display:inline-flex;align-items:center;gap:4px;" title="แก้ไขข้อความ">
+                                    <i class="fa-solid fa-pen"></i> แก้ไข
+                                </button>
                             </div>
                             <span class="price-waiting-hint">เมื่อแจ้งราคาแล้ว จะมีปุ่มยืนยันสั่งทำปรากฏที่นี่</span>
+                        </div>
+                    `;
+                } else {
+                    // ลูกค้าพิมพ์รายละเอียดแล้ว -> แสดงปุ่ม "ส่งประเมินราคา" ให้ลูกค้ากดส่งให้แอดมินตรวจสอบก่อน
+                    priceHtml = `
+                        <div style="margin-top:10px;">
+                            <button class="btn-submit-quote" style="width:100%;background:linear-gradient(135deg, #10b981 0%, #059669 100%);color:#ffffff;border:none;padding:11px 16px;border-radius:10px;font-size:13.5px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 3px 12px rgba(16,185,129,0.35);transition:all 0.2s;">
+                                <i class="fa-solid fa-paper-plane"></i> ส่งประเมินราคา
+                            </button>
                         </div>
                     `;
                 }
@@ -4072,14 +4098,7 @@
                     });
                 });
 
-                const btnEditPrice = card.querySelector('.btn-edit-admin-price');
-                if (btnEditPrice) {
-                    btnEditPrice.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        marker.isEditingPrice = true;
-                        renderAnnotationCard(marker);
-                    });
-                }
+
 
                 const btnConfirmPay = card.querySelector('.btn-admin-confirm-pay');
                 if (btnConfirmPay) {
@@ -4360,12 +4379,24 @@
             if (isProcessing) {
                 document.body.classList.add('job-started');
                 if (jobReadyView) jobReadyView.classList.add('hidden');
-                if (jobProcessingView) jobProcessingView.classList.remove('hidden');
+                if (jobProcessingView) {
+                    if (isAdmin) {
+                        jobProcessingView.classList.add('hidden');
+                    } else {
+                        jobProcessingView.classList.remove('hidden');
+                    }
+                }
             } else {
                 document.body.classList.remove('job-started');
                 document.body.classList.add('session-loaded');
                 updateJobStatusBanner();
-                if (jobReadyView) jobReadyView.classList.remove('hidden');
+                if (jobReadyView) {
+                    if (isAdmin) {
+                        jobReadyView.classList.add('hidden');
+                    } else {
+                        jobReadyView.classList.remove('hidden');
+                    }
+                }
                 if (jobProcessingView) jobProcessingView.classList.add('hidden');
             }
         }
@@ -4415,9 +4446,7 @@
                     }
                     playCelebrationSound();
                     triggerConfetti();
-                    setTimeout(() => {
-                        alert(`🎉 ได้รับยอดเงินโอน ฿${marker.price} บาท จาก Beam เรียบร้อยแล้ว! ขอบคุณครับ`);
-                    }, 50);
+                    
                 }
             });
 
@@ -4599,92 +4628,164 @@
             });
         }
 
+        async function fetchFileBlob(url, type) {
+            if (!url) throw new Error('ไม่พบ URL ไฟล์');
+
+            // 1. Blob URL
+            if (url.startsWith('blob:')) {
+                const r = await fetch(url);
+                return await r.blob();
+            }
+
+            // 2. Firebase Internal ID (fb_...)
+            if (url.startsWith('fb_')) {
+                const fileId = url.substring(3);
+                let fileData = null;
+                if (typeof database !== 'undefined') {
+                    const snap = await database.ref(`temp_files/${fileId}`).once('value');
+                    fileData = snap.val();
+                }
+                if (!fileData) {
+                    const resp = await fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/${fileId}.json`);
+                    fileData = await resp.json();
+                }
+                if (!fileData || !fileData.data) {
+                    throw new Error('ไม่พบไฟล์ใน Firebase');
+                }
+                const binary = atob(fileData.data);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                const isPdf = type === 'pdf' || (fileData.filename && fileData.filename.endsWith('.pdf'));
+                return new Blob([bytes], { type: isPdf ? 'application/pdf' : 'image/jpeg' });
+            }
+
+            // 3. Direct Fetch
+            try {
+                const resp = await fetch(url);
+                if (resp.ok) {
+                    return await resp.blob();
+                }
+            } catch (e) {
+                console.warn('Direct fetch failed:', e);
+            }
+
+            // 4. Proxies fallback
+            const proxies = [
+                'https://corsproxy.io/?' + encodeURIComponent(url),
+                'https://api.allorigins.win/raw?url=' + encodeURIComponent(url)
+            ];
+            for (const p of proxies) {
+                try {
+                    const r = await fetch(p);
+                    if (r.ok) return await r.blob();
+                } catch (e) {}
+            }
+
+            return null;
+        }
+
         async function downloadCompletedWork() {
             showLoading('กำลังเตรียมไฟล์สำหรับดาวน์โหลด...');
             try {
-                const isPdf = fileType === 'pdf';
-                const filename = `eworker_result_${sessionId || 'work'}.${isPdf ? 'pdf' : 'png'}`;
+                const targetUrl = fileUrl;
+                if (!targetUrl) {
+                    throw new Error('ไม่พบ URL ไฟล์งาน');
+                }
+
+                const isPdf = fileType === 'pdf' || (targetUrl && targetUrl.toLowerCase().includes('.pdf'));
+                let ext = isPdf ? 'pdf' : 'png';
+                if (targetUrl.match(/\.(png|jpe?g|webp)/i)) {
+                    ext = targetUrl.match(/\.(png|jpe?g|webp)/i)[1].toLowerCase();
+                    if (ext === 'jpeg') ext = 'jpg';
+                }
+                const filename = `eworker_${sessionId || 'work'}_complete.${ext}`;
                 currentDownloadFilename = filename;
 
-                if (isPdf) {
-                    // Multi-page PDF Merging with pdf-lib
-                    if (typeof PDFLib === 'undefined') {
-                        throw new Error('ไม่พบไลบรารี PDF-Lib');
-                    }
-
-                    // โหลด arrayBuffer ต้นฉบับ
-                    let pdfBytes = window.__rawPdfBytes;
-                    if (!pdfBytes) {
-                        const resp = await fetch(fileUrl);
-                        pdfBytes = await resp.arrayBuffer();
-                    }
-
-                    const pdfDocLib = await PDFLib.PDFDocument.load(pdfBytes);
-                    const pages = pdfDocLib.getPages();
-
-                    // ถ้ามี canvas หรือภาพที่แก้ไขในหน้าปัจจุบัน ให้นำมา embed ทับหน้านั้น
-                    if (pdfCanvas && pdfCanvas.style.display !== 'none') {
-                        const pageIdx = Math.max(0, Math.min(pages.length - 1, currentPage - 1));
-                        const page = pages[pageIdx];
-                        const pngDataUrl = pdfCanvas.toDataURL('image/png');
-                        const embeddedPng = await pdfDocLib.embedPng(pngDataUrl);
-                        const { width, height } = page.getSize();
-                        page.drawImage(embeddedPng, { x: 0, y: 0, width, height });
-                    }
-
-                    const mergedPdfBytes = await pdfDocLib.save();
-                    currentDownloadBlob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
-                } else {
-                    // Image download
-                    const img = mainImage;
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.naturalWidth || img.width || 1200;
-                    canvas.height = img.naturalHeight || img.height || 800;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                    currentDownloadBlob = await new Promise(res => canvas.toBlob(res, 'image/png'));
-                }
+                // ดึงไฟล์เป็น Blob โดยตรง ไม่ผ่าน Canvas เด็ดขาดเพื่อป้องกัน Tainted Canvas 100%
+                let blob = await fetchFileBlob(targetUrl, isPdf ? 'pdf' : 'image');
+                currentDownloadBlob = blob;
 
                 hideLoading();
 
-                // ตรวจสอบว่าเปิดบนมือถือหรือ in-app browser (LINE, Facebook) หรือไม่
                 const isMobile = /Android|iPhone|iPad|iPod|Line|FBAN|FBAV|Instagram/i.test(navigator.userAgent) || window.innerWidth <= 768;
 
-                if (isMobile) {
-                    // เปิด Mobile Modal เพื่อรองรับ LINE/Facebook
-                    const blobUrl = URL.createObjectURL(currentDownloadBlob);
-                    if (fileType === 'pdf') {
-                        if (mobileDownloadPdfNotice) mobileDownloadPdfNotice.style.display = 'block';
-                        if (mobileDownloadPreviewImg) mobileDownloadPreviewImg.style.display = 'none';
-                    } else {
-                        if (mobileDownloadPdfNotice) mobileDownloadPdfNotice.style.display = 'none';
-                        if (mobileDownloadPreviewImg) {
-                            mobileDownloadPreviewImg.src = blobUrl;
-                            mobileDownloadPreviewImg.style.display = 'block';
+                if (blob) {
+                    const blobUrl = URL.createObjectURL(blob);
+
+                    if (isMobile) {
+                        // บนมือถือ / LINE / FB: แสดง Mobile Modal ให้ลูกค้าเลือกกดเซฟ / แชร์ / ดาวน์โหลด
+                        if (isPdf) {
+                            if (mobileDownloadPdfNotice) mobileDownloadPdfNotice.style.display = 'block';
+                            if (mobileDownloadPreviewImg) mobileDownloadPreviewImg.style.display = 'none';
+                        } else {
+                            if (mobileDownloadPdfNotice) mobileDownloadPdfNotice.style.display = 'none';
+                            if (mobileDownloadPreviewImg) {
+                                mobileDownloadPreviewImg.src = blobUrl;
+                                mobileDownloadPreviewImg.style.display = 'block';
+                            }
                         }
+
+                        if (btnMobileDirectDownloadLink) {
+                            btnMobileDirectDownloadLink.href = blobUrl;
+                            btnMobileDirectDownloadLink.download = filename;
+                        }
+
+                        const btnMobileOpenInTab = document.getElementById('btnMobileOpenInTab');
+                        if (btnMobileOpenInTab) {
+                            btnMobileOpenInTab.href = targetUrl.startsWith('http') ? targetUrl : blobUrl;
+                        }
+
+                        if (mobileDownloadModal) {
+                            mobileDownloadModal.classList.remove('hidden');
+                        }
+
+                        // พยายาม trigger ดาวน์โหลดโดยตรงด้วยถ้าเบราว์เซอร์ยอมรับ
+                        try {
+                            const a = document.createElement('a');
+                            a.href = blobUrl;
+                            a.download = filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                        } catch (e) {}
+                    } else {
+                        // บน Desktop: ดาวน์โหลดทันที
+                        const a = document.createElement('a');
+                        a.href = blobUrl;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        setTimeout(() => {
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(blobUrl);
+                        }, 5000);
                     }
-                    if (btnMobileDirectDownloadLink) {
-                        btnMobileDirectDownloadLink.href = blobUrl;
-                        btnMobileDirectDownloadLink.download = filename;
-                    }
-                    if (mobileDownloadModal) mobileDownloadModal.classList.remove('hidden');
                 } else {
-                    // Desktop: Direct browser download
-                    const blobUrl = URL.createObjectURL(currentDownloadBlob);
-                    const a = document.createElement('a');
-                    a.href = blobUrl;
-                    a.download = filename;
-                    document.body.appendChild(a);
-                    a.click();
-                    setTimeout(() => {
+                    // หากไม่สามารถดึงเป็น Blob ได้ ให้เปิด URL ตรงในแท็บใหม่
+                    if (isMobile) {
+                        const btnMobileOpenInTab = document.getElementById('btnMobileOpenInTab');
+                        if (btnMobileOpenInTab) btnMobileOpenInTab.href = targetUrl;
+                        if (btnMobileDirectDownloadLink) {
+                            btnMobileDirectDownloadLink.href = targetUrl;
+                            btnMobileDirectDownloadLink.download = filename;
+                        }
+                        if (mobileDownloadModal) mobileDownloadModal.classList.remove('hidden');
+                        window.open(targetUrl, '_blank');
+                    } else {
+                        const a = document.createElement('a');
+                        a.href = targetUrl;
+                        a.download = filename;
+                        a.target = '_blank';
+                        document.body.appendChild(a);
+                        a.click();
                         document.body.removeChild(a);
-                        URL.revokeObjectURL(blobUrl);
-                    }, 2000);
+                    }
                 }
             } catch (err) {
                 hideLoading();
-                console.error(err);
+                console.error('Download error:', err);
                 alert('❌ ดาวน์โหลดไม่สำเร็จ: ' + err.message);
             }
         }
@@ -4953,7 +5054,7 @@ function setActiveMarker(markerId) {
                 if (!isInitialLoad) {
                     const emptyEl = annotationsCards ? annotationsCards.querySelector('.empty-state') : null;
                     if (emptyEl) emptyEl.remove();
-                    if (jobStatusBanner) jobStatusBanner.classList.remove('hidden');
+                    if (jobStatusBanner && !isAdmin) jobStatusBanner.classList.remove('hidden');
 
                     if (!marker.page || marker.page === currentPage) {
                         renderMarker(marker);
@@ -4990,7 +5091,7 @@ function setActiveMarker(markerId) {
                         return;
                     }
 
-                    if (jobStatusBanner) jobStatusBanner.classList.remove('hidden');
+                    if (jobStatusBanner && !isAdmin) jobStatusBanner.classList.remove('hidden');
 
                     const sorted = Object.values(annotations).sort((a, b) => a.number - b.number);
                     sorted.forEach(marker => {
@@ -5038,15 +5139,34 @@ function setActiveMarker(markerId) {
                     markerEl.classList.toggle('rejected', !!updated.rejected);
                 }
 
-                // รีเรนเดอร์การ์ดทันทีเมื่อมีการอัปเดตราคาหรือสถานะจากอีกฝั่ง (เว้นแต่กำลังพิมพ์อยู่ในช่องนั้น เพื่อไม่ให้หลุดโฟกัส)
+                // รีเรนเดอร์การ์ดทันทีเมื่อมีการอัปเดตราคาหรือสถานะจาก Firebase
                 const cardBefore = document.querySelector(`.annotation-card[data-id="${updated.id}"]`);
-                const isTypingInThisCard = cardBefore && cardBefore.querySelector('.annotation-text') === document.activeElement;
+                const activeEl = document.activeElement;
+                const isTypingText = cardBefore && cardBefore.querySelector('.annotation-text') === activeEl;
+                const isTypingPrice = cardBefore && cardBefore.querySelector('.admin-price-input') === activeEl;
 
-                if (!isTypingInThisCard) {
-                    renderAnnotationCard(updated);
-                } else {
-                    cardBefore.classList.toggle('completed', !!updated.done);
-                    cardBefore.classList.toggle('is-rejected', !!updated.rejected);
+                // บันทึกตำแหน่งเคอร์เซอร์ถ้ากำลังพิมพ์อยู่ เพื่อไม่ให้หลุดโฟกัส
+                let selStart = null, selEnd = null;
+                if (isTypingText && activeEl) {
+                    selStart = activeEl.selectionStart;
+                    selEnd = activeEl.selectionEnd;
+                }
+
+                renderAnnotationCard(updated);
+
+                // คืนค่าโฟกัสและตำแหน่งเคอร์เซอร์เดิมทันที ให้พิมพ์ต่อได้ลื่นไหลไม่มีสะดุด
+                if (isTypingText) {
+                    const newCard = document.querySelector(`.annotation-card[data-id="${updated.id}"]`);
+                    const newText = newCard?.querySelector('.annotation-text');
+                    if (newText) {
+                        newText.focus();
+                        if (selStart !== null && selEnd !== null) {
+                            try { newText.setSelectionRange(selStart, selEnd); } catch (e) {}
+                        }
+                    }
+                } else if (isTypingPrice) {
+                    const newCard = document.querySelector(`.annotation-card[data-id="${updated.id}"]`);
+                    newCard?.querySelector('.admin-price-input')?.focus();
                 }
 
                 checkCompletionStatus();
