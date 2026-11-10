@@ -2348,7 +2348,7 @@
                 }
 
                 sessionId = id;
-                fileUrl = data.fileUrl;
+                fileUrl = data.completedFileUrl || data.fileUrl;
                 fileType = data.fileType;
                 annotations = data.markers || {};
 
@@ -4645,17 +4645,24 @@ function setActiveMarker(markerId) {
             });
 
             // Sync updated / overwritten file from Photoshop or Admin
-            database.ref(`annotations/${sessionId}/completedFileUrl`).on('value', (snapshot) => {
+            database.ref(`annotations/${sessionId}/completedFileUrl`).on('value', async (snapshot) => {
                 const newCompletedUrl = snapshot.val();
                 if (newCompletedUrl && newCompletedUrl !== fileUrl && !window.__loadingNewImage) {
                     window.__loadingNewImage = true;
                     fileUrl = newCompletedUrl;
-                    loadFile(newCompletedUrl, fileType).finally(() => {
+                    try {
+                        await loadFile(newCompletedUrl, fileType);
+                        hideLoading();
+                        renderAllMarkers();
+                        setTimeout(renderArrows, 100);
+                    } catch (err) {
+                        hideLoading();
+                        console.error('❌ Error loading completed file:', err);
+                    } finally {
                         window.__loadingNewImage = false;
-                    });
+                    }
                 }
             });
-
             const markersRef = database.ref(`annotations/${sessionId}/markers`);
 
             const hasExistingData = Object.keys(annotations).length > 0;
