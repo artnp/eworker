@@ -619,12 +619,22 @@
             flex: 1;
             width: 100%;
             height: 100%;
-            overflow: auto;
+            overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 24px;
             position: relative;
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .stage-viewport.is-panning {
+            cursor: grabbing !important;
+        }
+
+        .stage-viewport.is-panning * {
+            cursor: grabbing !important;
         }
 
         .canvas-wrapper {
@@ -633,7 +643,6 @@
             border-radius: 4px;
             background: #ffffff;
             transform-origin: center center;
-            transition: transform 0.1s ease-out;
             user-select: none;
             overflow: hidden; /* Never allow barcode or box to spill outside page boundary */
             margin: auto;
@@ -2171,6 +2180,27 @@
         let startPointer = { x: 0, y: 0 };
         let startBox = { x: 0, y: 0, w: 0, h: 0 };
 
+        // Drag to Pan Canvas Viewport State
+        let panX = 0;
+        let panY = 0;
+        let isPanning = false;
+        let startPan = { x: 0, y: 0 };
+        let startPanOffset = { x: 0, y: 0 };
+
+        // Viewport Drag-to-Pan (Hand Tool)
+        stageViewport.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('#barcodeTransformBox')) return;
+            if (documentPages.length === 0) return;
+            if (e.button !== 0) return; // Left mouse button only
+
+            e.preventDefault();
+            isPanning = true;
+            startPan = { x: e.clientX, y: e.clientY };
+            startPanOffset = { x: panX, y: panY };
+            stageViewport.classList.add('is-panning');
+            try { stageViewport.setPointerCapture(e.pointerId); } catch (err) { }
+        });
+
         barcodeTransformBox.addEventListener('pointerdown', (e) => {
             const handle = e.target.getAttribute('data-handle');
             const p = barcodePlacement;
@@ -2188,6 +2218,15 @@
         });
 
         window.addEventListener('pointermove', (e) => {
+            // 1. Viewport Pan Dragging
+            if (isPanning) {
+                panX = Math.round(startPanOffset.x + (e.clientX - startPan.x));
+                panY = Math.round(startPanOffset.y + (e.clientY - startPan.y));
+                applyZoom();
+                return;
+            }
+
+            // 2. Barcode Dragging or Resizing
             if (!isDragging && !isResizing) return;
             if (documentPages.length === 0) return;
             const activePage = documentPages[activePageIndex];
@@ -2270,6 +2309,10 @@
         });
 
         window.addEventListener('pointerup', () => {
+            if (isPanning) {
+                isPanning = false;
+                stageViewport.classList.remove('is-panning');
+            }
             isDragging = false;
             isResizing = false;
             currentHandle = null;
@@ -2292,10 +2335,16 @@
 
             if (mode === 'fit') {
                 zoomScale = Math.min(scaleW, scaleH);
+                panX = 0;
+                panY = 0;
             } else if (mode === 'width') {
                 zoomScale = scaleW;
+                panX = 0;
+                panY = 0;
             } else if (mode === '100') {
                 zoomScale = 1.0;
+                panX = 0;
+                panY = 0;
             }
             applyZoom();
         }
@@ -2307,17 +2356,30 @@
         }
 
         function applyZoom() {
-            canvasWrapper.style.transform = `scale(${zoomScale})`;
+            canvasWrapper.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomScale})`;
             const zoomBadge = document.getElementById('zoomLevelText');
             if (zoomBadge) zoomBadge.textContent = `${Math.round(zoomScale * 100)}%`;
         }
 
-        // Mouse Wheel Zoom
+        // Mouse Wheel Zoom (Smoothly zooms towards cursor position)
         stageViewport.addEventListener('wheel', (e) => {
             if (documentPages.length === 0) return;
             e.preventDefault();
-            const delta = e.deltaY < 0 ? 0.08 : -0.08;
-            adjustZoom(delta);
+            const delta = e.deltaY < 0 ? 0.12 : -0.12;
+            const newScale = Math.max(0.15, Math.min(4.0, zoomScale + delta));
+            if (newScale === zoomScale) return;
+
+            const rect = stageViewport.getBoundingClientRect();
+            const mouseX = e.clientX - (rect.left + rect.width / 2);
+            const mouseY = e.clientY - (rect.top + rect.height / 2);
+
+            const ratio = newScale / zoomScale;
+            panX = Math.round(mouseX - ratio * (mouseX - panX));
+            panY = Math.round(mouseY - ratio * (mouseY - panY));
+
+            zoomScale = newScale;
+            currentZoomMode = 'custom';
+            applyZoom();
         }, { passive: false });
 
         window.addEventListener('resize', () => {
@@ -2617,6 +2679,8 @@
             sourceTemplates = [];
             documentPages = [];
             activePageIndex = 0;
+            panX = 0;
+            panY = 0;
             isPaid = false;
             currentOrderId = null;
             if (pollingTimer) clearInterval(pollingTimer);
