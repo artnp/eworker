@@ -1509,15 +1509,6 @@
                         <div class="clean-spinner"></div>
                         <span style="white-space: nowrap;">ตรวจจับยอดเงินเข้าอัตโนมัติ (PromptPay)</span>
                     </div>
-
-                    <!-- Admin Test Simulator -->
-                    <div id="wrap-admin-sim-detail-pay" style="margin-top: 6px; text-align: center;">
-                        <button type="button" class="btn-stage-tool" id="btn-admin-sim-detail-pay"
-                            onclick="testApprovePayment()"
-                            style="display: inline-flex; font-size: 0.7rem; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 4px 10px;">
-                            ⚡ จำลองโอนเงิน (Admin Test)
-                        </button>
-                    </div>
                 </div>
             </div>
 
@@ -2501,18 +2492,6 @@
                     }
                 } catch (e) { }
             }, 1800);
-        }
-
-        async function testApprovePayment() {
-            if (!currentOrderId) return;
-            try {
-                await fetch(`${SERVICE_CONFIG.firebaseBase}/${currentOrderId}.json`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: 'approved', approvedAt: Date.now() })
-                });
-            } catch (e) { }
-            onPaymentSuccess();
         }
 
         function downloadDetailQRSlip() {
