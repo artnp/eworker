@@ -1011,6 +1011,13 @@
                     <div class="clean-spinner"></div>
                     <span>ตรวจจับยอดเงินเข้าอัตโนมัติ</span>
                 </div>
+
+                <!-- Dev Mode Bypass (เฉพาะเครื่องแอดมินที่เปิดสวิตช์ไว้) -->
+                <div id="wrap-dev-bypass" style="display: none; margin-top: 6px; text-align: center;">
+                    <button type="button" onclick="onPaymentSuccess()" style="font-size: 0.68rem; font-weight: 700; background: #eff6ff; color: #1d4ed8; border: 1px dashed #60a5fa; padding: 4px 10px; border-radius: 6px; cursor: pointer;">
+                        ⚡ Dev Bypass (เครื่องแอดมิน)
+                    </button>
+                </div>
             </div>
 
             <!-- Success View -->
@@ -1510,10 +1517,41 @@
             }
         }
 
+        function checkDevMode() {
+            try {
+                const isDevEnvironment = (
+                    window.location.hostname === '127.0.0.1' &&
+                    window.location.port === '5000'
+                );
+
+                const urlParams = new URLSearchParams(window.location.search);
+                if (isDevEnvironment && urlParams.get('dev') === 'eworker999') {
+                    localStorage.setItem('eworker_dev', 'true');
+                    urlParams.delete('dev');
+                    const cleanUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                    window.history.replaceState({}, '', cleanUrl);
+                } else if (urlParams.get('dev') === 'off') {
+                    localStorage.removeItem('eworker_dev');
+                    urlParams.delete('dev');
+                    const cleanUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                    window.history.replaceState({}, '', cleanUrl);
+                }
+
+                return isDevEnvironment && localStorage.getItem('eworker_dev') === 'true';
+            } catch (e) {
+                return false;
+            }
+        }
+
         function openPaymentModal() {
             currentOrderId = `wm_${Date.now()}`;
             document.getElementById('paymentPendingView').style.display = 'block';
             document.getElementById('paymentSuccessView').style.display = 'none';
+
+            if (checkDevMode()) {
+                const devBox = document.getElementById('wrap-dev-bypass');
+                if (devBox) devBox.style.display = 'block';
+            }
 
             registerOrderInFirebase(currentOrderId);
             paymentModal.classList.add('active');
