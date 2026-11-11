@@ -1806,37 +1806,88 @@
             const opacity = wmSettings.opacityPercent / 100;
 
             pages.forEach((page) => {
-                const { width, height } = page.getSize();
-                const wmWidth = width * (wmSettings.scalePercent / 100);
+                const box = (page.node && page.node.CropBox()) ? page.getCropBox() : page.getMediaBox();
+                const originX = box.x || 0;
+                const originY = box.y || 0;
+                const rawW = box.width || page.getWidth();
+                const rawH = box.height || page.getHeight();
+
+                const pageRot = ((page.getRotation().angle % 360) + 360) % 360;
+
+                let visW = rawW;
+                let visH = rawH;
+                if (pageRot === 90 || pageRot === 270) {
+                    visW = rawH;
+                    visH = rawW;
+                }
+
+                const wmWidth = visW * (wmSettings.scalePercent / 100);
                 const wmHeight = wmWidth * wmAspect;
+
+                function getPdfCoordsAndAngle(visX, visY, visAngleDeg) {
+                    let tx = 0;
+                    let ty = 0;
+                    let pAngle = 0;
+
+                    if (pageRot === 0) {
+                        tx = visX;
+                        ty = rawH - visY;
+                        pAngle = -visAngleDeg;
+                    } else if (pageRot === 90) {
+                        tx = visY;
+                        ty = visX;
+                        pAngle = -visAngleDeg + 90;
+                    } else if (pageRot === 180) {
+                        tx = rawW - visX;
+                        ty = visY;
+                        pAngle = -visAngleDeg + 180;
+                    } else if (pageRot === 270) {
+                        tx = rawW - visY;
+                        ty = rawH - visX;
+                        pAngle = -visAngleDeg + 270;
+                    }
+
+                    pAngle = ((pAngle % 360) + 360) % 360;
+                    return {
+                        targetX: tx + originX,
+                        targetY: ty + originY,
+                        pdfAngle: pAngle
+                    };
+                }
+
+                function drawSingleWatermarkAt(visX, visY) {
+                    const { targetX, targetY, pdfAngle } = getPdfCoordsAndAngle(visX, visY, wmSettings.rotationDeg);
+                    const rad = (pdfAngle * Math.PI) / 180;
+                    const cos = Math.cos(rad);
+                    const sin = Math.sin(rad);
+
+                    // pdf-lib's drawImage rotates around its (x, y) lower-left anchor.
+                    // Compensate so the center of the rotated watermark sits precisely at (targetX, targetY):
+                    const drawX = targetX - ((wmWidth / 2) * cos - (wmHeight / 2) * sin);
+                    const drawY = targetY - ((wmWidth / 2) * sin + (wmHeight / 2) * cos);
+
+                    page.drawImage(embeddedWm, {
+                        x: drawX,
+                        y: drawY,
+                        width: wmWidth,
+                        height: wmHeight,
+                        opacity: opacity,
+                        rotate: degrees(pdfAngle)
+                    });
+                }
 
                 if (wmSettings.isTile) {
                     const stepX = wmWidth * 1.6;
                     const stepY = wmHeight * 1.8;
-                    for (let y = -stepY; y < height + stepY * 2; y += stepY) {
-                        for (let x = -stepX; x < width + stepX * 2; x += stepX) {
-                            page.drawImage(embeddedWm, {
-                                x: x - wmWidth / 2,
-                                y: y - wmHeight / 2,
-                                width: wmWidth,
-                                height: wmHeight,
-                                opacity: opacity,
-                                rotate: degrees(wmSettings.rotationDeg)
-                            });
+                    for (let y = -stepY; y < visH + stepY * 2; y += stepY) {
+                        for (let x = -stepX; x < visW + stepX * 2; x += stepX) {
+                            drawSingleWatermarkAt(x, y);
                         }
                     }
                 } else {
-                    const targetX = wmSettings.normX * width;
-                    const targetY = (1 - wmSettings.normY) * height; // Invert Y for PDF
-
-                    page.drawImage(embeddedWm, {
-                        x: targetX - wmWidth / 2,
-                        y: targetY - wmHeight / 2,
-                        width: wmWidth,
-                        height: wmHeight,
-                        opacity: opacity,
-                        rotate: degrees(wmSettings.rotationDeg)
-                    });
+                    const visCenterX = wmSettings.normX * visW;
+                    const visCenterY = wmSettings.normY * visH;
+                    drawSingleWatermarkAt(visCenterX, visCenterY);
                 }
             });
 
