@@ -6191,6 +6191,38 @@
 
         const BEAM_WORKER_URL = "https://eworker-beam-pay.moonverse69.workers.dev";
 
+        // Global Dev Mode Switch (http://127.0.0.1:5000/index.html?dev=eworker999)
+        (function initGlobalDevMode() {
+            try {
+                const isDevEnvironment = (
+                    window.location.hostname === '127.0.0.1' &&
+                    window.location.port === '5000'
+                );
+                const urlParams = new URLSearchParams(window.location.search);
+                if (isDevEnvironment && urlParams.get('dev') === 'eworker999') {
+                    localStorage.setItem('eworker_dev', 'true');
+                    urlParams.delete('dev');
+                    const cleanUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                    window.history.replaceState({}, '', cleanUrl);
+                    setTimeout(() => {
+                        if (typeof showToast === 'function') {
+                            showToast('⚡ เปิดสิทธิ์ Dev Bypass ทุกบริการสำหรับพอร์ต 5000 เรียบร้อย', 'success');
+                        }
+                    }, 500);
+                } else if (urlParams.get('dev') === 'off') {
+                    localStorage.removeItem('eworker_dev');
+                    urlParams.delete('dev');
+                    const cleanUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                    window.history.replaceState({}, '', cleanUrl);
+                    setTimeout(() => {
+                        if (typeof showToast === 'function') {
+                            showToast('🔒 ปิดสิทธิ์ Dev Bypass เรียบร้อย', 'info');
+                        }
+                    }, 500);
+                }
+            } catch (e) { }
+        })();
+
         const isLocalAdmin = (
             window.location.hostname === '127.0.0.1' ||
             window.location.hostname === 'localhost' ||
