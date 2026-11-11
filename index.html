@@ -2371,6 +2371,7 @@
             border-color: #60a5fa !important;
             box-shadow: 0 4px 14px rgba(37, 99, 235, 0.12) !important;
         }
+
         .secure-vault-box input:focus {
             border-color: #2563eb !important;
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18) !important;
@@ -2504,10 +2505,12 @@
             border: 1px solid #bbf7d0;
             transition: all 0.15s ease;
         }
+
         .admin-feature-input-row:hover {
             border-color: #4ade80;
             box-shadow: 0 1px 4px rgba(34, 197, 94, 0.15);
         }
+
         .feature-drag-handle {
             cursor: grab;
             user-select: none;
@@ -2518,6 +2521,7 @@
             display: inline-flex;
             align-items: center;
         }
+
         .feature-drag-handle:active {
             cursor: grabbing;
         }
@@ -4632,11 +4636,14 @@
                             title="รอบนำส่งเงินเข้าบัญชีธนาคาร">
                             <div class="admin-rs-yesterday-left">
                                 <span class="admin-rs-yesterday-icon">🏦</span>
-                                <span class="admin-rs-yesterday-lbl" id="admin-yesterday-settle-lbl">นำส่งเงินรอบถัดไป:</span>
+                                <span class="admin-rs-yesterday-lbl"
+                                    id="admin-yesterday-settle-lbl">นำส่งเงินรอบถัดไป:</span>
                             </div>
                             <div class="admin-rs-yesterday-right">
-                                <span class="admin-rs-yesterday-val" id="admin-yesterday-settle-val">จันทร์ 9 พ.ย.</span>
-                                <span class="admin-rs-settle-tag" id="admin-yesterday-settle-tag" style="display: none;"></span>
+                                <span class="admin-rs-yesterday-val" id="admin-yesterday-settle-val">จันทร์ 9
+                                    พ.ย.</span>
+                                <span class="admin-rs-settle-tag" id="admin-yesterday-settle-tag"
+                                    style="display: none;"></span>
                             </div>
                         </div>
                     </div>
@@ -4653,6 +4660,38 @@
                                 กำลังโหลด...
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- 1.5 e-Payment Tax Monitoring Mini Card (Progress Bar รวมอันเดียว ดูง่าย) -->
+                <div class="admin-rs-card" id="admin-tax-card" style="padding: 10px 12px; margin-top: 0;"
+                    title="เกณฑ์ภาษี e-Payment: 3,000 ครั้ง หรือ 400 ครั้ง + 2 ล้านบาท/ปี">
+                    <div
+                        style="font-size: 0.78rem; font-weight: 700; color: #334155; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                        <span style="display: flex; align-items: center; gap: 5px;">
+                            <span>⚖️ เสี่ยงภาษี</span>
+                            <span id="admin-tax-year-badge"
+                                style="font-size: 0.68rem; color: #64748b; font-weight: 600;">(ปีนี้)</span>
+                        </span>
+                        <span id="admin-tax-status-badge"
+                            style="font-size: 0.64rem; font-weight: 700; padding: 1.5px 6px; border-radius: 4px; background: #dcfce7; color: #166534;">ปลอดภัย
+                            0%</span>
+                    </div>
+
+                    <!-- Single Combined Progress Bar -->
+                    <div
+                        style="width: 100%; height: 7px; background: #e2e8f0; border-radius: 99px; overflow: hidden; margin: 6px 0 5px 0;">
+                        <div id="admin-tax-progress-bar"
+                            style="width: 0%; height: 100%; background: #10b981; border-radius: 99px; transition: width 0.4s ease, background-color 0.4s ease;">
+                        </div>
+                    </div>
+
+                    <!-- Minimal 1-line stats -->
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; font-size: 0.7rem; color: #64748b; margin-top: 2px;">
+                        <span>สะสม: <b id="admin-tax-summary-text" style="color: #1e293b; font-weight: 700;">0 ครั้ง •
+                                ฿0.00</b></span>
+                        <span style="font-size: 0.65rem; color: #94a3b8;">เกณฑ์ 3k ครั้ง / 2M</span>
                     </div>
                 </div>
 
@@ -5427,24 +5466,27 @@
                     <!-- SECURE DOWNLOAD LINK (DROPBOX / DIRECT LINK) - PROTECTED VAULT BOX -->
                     <div class="admin-general-only secure-vault-box" id="admin-dropbox-box"
                         style="margin-top: 14px; margin-bottom: 16px; text-align: left; background: linear-gradient(180deg, #f0f7ff 0%, #ffffff 100%); border: 1.5px solid #93c5fd; border-radius: var(--radius-md); padding: 14px 16px; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.06); transition: all 0.2s ease;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
-                            <label class="form-label-clean" style="margin: 0; font-size: 0.84rem; font-weight: 800; color: #1e3a8a; display: flex; align-items: center; gap: 6px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                            <label class="form-label-clean"
+                                style="margin: 0; font-size: 0.84rem; font-weight: 800; color: #1e3a8a; display: flex; align-items: center; gap: 6px;">
                                 <span>🔒 ลิงก์ดาวน์โหลด (Dropbox / Direct Link)</span>
                                 <span style="color: #ef4444; font-size: 0.9rem;">*</span>
                             </label>
-                            <span style="background: #eff6ff; color: #1d4ed8; font-size: 0.72rem; font-weight: 700; padding: 2px 10px; border-radius: 99px; border: 1px solid #bfdbfe; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                            <span
+                                style="background: #eff6ff; color: #1d4ed8; font-size: 0.72rem; font-weight: 700; padding: 2px 10px; border-radius: 99px; border: 1px solid #bfdbfe; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
                                 🛡️ ตู้นิรภัยเข้ารหัสลับ (Vault Protected)
                             </span>
                         </div>
                         <input type="url" id="admin-dropbox-url" class="form-control-clean" required
-                            placeholder="https://www.dropbox.com/scl/fi/... หรือ ลิงก์ดาวน์โหลดตรง" autocomplete="off" autocorrect="off"
-                            autocapitalize="off" spellcheck="false"
+                            placeholder="https://www.dropbox.com/scl/fi/... หรือ ลิงก์ดาวน์โหลดตรง" autocomplete="off"
+                            autocorrect="off" autocapitalize="off" spellcheck="false"
                             style="font-family: monospace; font-size: 0.84rem; background: #ffffff; border: 1.5px solid #93c5fd; box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);"
-                            oninput="autoFixDropboxUrl(this)"
-                            onpaste="setTimeout(() => autoFixDropboxUrl(this), 50)">
+                            oninput="autoFixDropboxUrl(this)" onpaste="setTimeout(() => autoFixDropboxUrl(this), 50)">
                         <div style="display: flex; align-items: flex-start; gap: 6px; margin-top: 6px;">
                             <span style="font-size: 0.76rem; color: #0284c7; line-height: 1.45;">
-                                🛡️ <strong>ส่วนสำคัญที่ต้องระบุ:</strong> ลิงก์นี้จะถูกจัดเก็บในตู้นิรภัยความปลอดภัยสูง (Vault) และซ่อนจากผู้ใช้ทั่วไปจนกว่าจะชำระเงินและบอทอนุมัติสำเร็จเท่านั้น
+                                🛡️ <strong>ส่วนสำคัญที่ต้องระบุ:</strong> ลิงก์นี้จะถูกจัดเก็บในตู้นิรภัยความปลอดภัยสูง
+                                (Vault) และซ่อนจากผู้ใช้ทั่วไปจนกว่าจะชำระเงินและบอทอนุมัติสำเร็จเท่านั้น
                             </span>
                         </div>
                     </div>
@@ -5655,21 +5697,47 @@
                                 </span>
                             </div>
                             <div id="admin-features-list">
-                                <div class="admin-feature-input-row" draggable="true" style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px; background: #ffffff; padding: 4px 8px; border-radius: 6px; border: 1px solid #bbf7d0; transition: all 0.15s ease;">
-                                    <span class="feature-drag-handle" title="ลากเพื่อสลับตำแหน่ง (หรือคลิกปุ่มลูกศร ▲ / ▼)" style="cursor: grab; user-select: none; color: #16a34a; font-size: 0.95rem; font-weight: bold; padding: 0 4px; display: inline-flex; align-items: center;">⋮⋮</span>
-                                    <span style="width:20px; height:20px; background:linear-gradient(135deg, #16a34a 0%, #22c55e 100%); color:#ffffff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.72rem; font-weight:800; flex-shrink:0; box-shadow:0 2px 4px rgba(22,163,74,0.3);">✓</span>
-                                    <input type="text" class="form-control-clean admin-feature-item-val" style="flex:1; padding:6px 10px; font-size:0.83rem; margin:0; border-color:#86efac;" placeholder="คุณสมบัติเด่น เช่น คำนวณและแสดงผลอัตโนมัติ..." value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-                                    <button type="button" class="btn-tool-sm" title="สลับเลื่อนขึ้น" onclick="moveAdminFeatureRow(this, -1)" style="padding: 3px 7px; font-size: 0.72rem; cursor: pointer; color: #166534; background: #dcfce7; border: 1px solid #86efac; border-radius: 4px;">▲</button>
-                                    <button type="button" class="btn-tool-sm" title="สลับเลื่อนลง" onclick="moveAdminFeatureRow(this, 1)" style="padding: 3px 7px; font-size: 0.72rem; cursor: pointer; color: #166534; background: #dcfce7; border: 1px solid #86efac; border-radius: 4px;">▼</button>
-                                    <button type="button" class="btn-tool-sm" title="ลบข้อนี้" style="color:var(--fh-danger); padding: 3px 7px; font-size: 0.72rem; border-color: #fecaca; background: #fef2f2; border-radius: 4px;" onclick="this.closest('.admin-feature-input-row').remove();">✕</button>
+                                <div class="admin-feature-input-row" draggable="true"
+                                    style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px; background: #ffffff; padding: 4px 8px; border-radius: 6px; border: 1px solid #bbf7d0; transition: all 0.15s ease;">
+                                    <span class="feature-drag-handle"
+                                        title="ลากเพื่อสลับตำแหน่ง (หรือคลิกปุ่มลูกศร ▲ / ▼)"
+                                        style="cursor: grab; user-select: none; color: #16a34a; font-size: 0.95rem; font-weight: bold; padding: 0 4px; display: inline-flex; align-items: center;">⋮⋮</span>
+                                    <span
+                                        style="width:20px; height:20px; background:linear-gradient(135deg, #16a34a 0%, #22c55e 100%); color:#ffffff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.72rem; font-weight:800; flex-shrink:0; box-shadow:0 2px 4px rgba(22,163,74,0.3);">✓</span>
+                                    <input type="text" class="form-control-clean admin-feature-item-val"
+                                        style="flex:1; padding:6px 10px; font-size:0.83rem; margin:0; border-color:#86efac;"
+                                        placeholder="คุณสมบัติเด่น เช่น คำนวณและแสดงผลอัตโนมัติ..." value=""
+                                        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                                    <button type="button" class="btn-tool-sm" title="สลับเลื่อนขึ้น"
+                                        onclick="moveAdminFeatureRow(this, -1)"
+                                        style="padding: 3px 7px; font-size: 0.72rem; cursor: pointer; color: #166534; background: #dcfce7; border: 1px solid #86efac; border-radius: 4px;">▲</button>
+                                    <button type="button" class="btn-tool-sm" title="สลับเลื่อนลง"
+                                        onclick="moveAdminFeatureRow(this, 1)"
+                                        style="padding: 3px 7px; font-size: 0.72rem; cursor: pointer; color: #166534; background: #dcfce7; border: 1px solid #86efac; border-radius: 4px;">▼</button>
+                                    <button type="button" class="btn-tool-sm" title="ลบข้อนี้"
+                                        style="color:var(--fh-danger); padding: 3px 7px; font-size: 0.72rem; border-color: #fecaca; background: #fef2f2; border-radius: 4px;"
+                                        onclick="this.closest('.admin-feature-input-row').remove();">✕</button>
                                 </div>
-                                <div class="admin-feature-input-row" draggable="true" style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px; background: #ffffff; padding: 4px 8px; border-radius: 6px; border: 1px solid #bbf7d0; transition: all 0.15s ease;">
-                                    <span class="feature-drag-handle" title="ลากเพื่อสลับตำแหน่ง (หรือคลิกปุ่มลูกศร ▲ / ▼)" style="cursor: grab; user-select: none; color: #16a34a; font-size: 0.95rem; font-weight: bold; padding: 0 4px; display: inline-flex; align-items: center;">⋮⋮</span>
-                                    <span style="width:20px; height:20px; background:linear-gradient(135deg, #16a34a 0%, #22c55e 100%); color:#ffffff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.72rem; font-weight:800; flex-shrink:0; box-shadow:0 2px 4px rgba(22,163,74,0.3);">✓</span>
-                                    <input type="text" class="form-control-clean admin-feature-item-val" style="flex:1; padding:6px 10px; font-size:0.83rem; margin:0; border-color:#86efac;" placeholder="คุณสมบัติเด่น เช่น คำนวณและแสดงผลอัตโนมัติ..." value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-                                    <button type="button" class="btn-tool-sm" title="สลับเลื่อนขึ้น" onclick="moveAdminFeatureRow(this, -1)" style="padding: 3px 7px; font-size: 0.72rem; cursor: pointer; color: #166534; background: #dcfce7; border: 1px solid #86efac; border-radius: 4px;">▲</button>
-                                    <button type="button" class="btn-tool-sm" title="สลับเลื่อนลง" onclick="moveAdminFeatureRow(this, 1)" style="padding: 3px 7px; font-size: 0.72rem; cursor: pointer; color: #166534; background: #dcfce7; border: 1px solid #86efac; border-radius: 4px;">▼</button>
-                                    <button type="button" class="btn-tool-sm" title="ลบข้อนี้" style="color:var(--fh-danger); padding: 3px 7px; font-size: 0.72rem; border-color: #fecaca; background: #fef2f2; border-radius: 4px;" onclick="this.closest('.admin-feature-input-row').remove();">✕</button>
+                                <div class="admin-feature-input-row" draggable="true"
+                                    style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px; background: #ffffff; padding: 4px 8px; border-radius: 6px; border: 1px solid #bbf7d0; transition: all 0.15s ease;">
+                                    <span class="feature-drag-handle"
+                                        title="ลากเพื่อสลับตำแหน่ง (หรือคลิกปุ่มลูกศร ▲ / ▼)"
+                                        style="cursor: grab; user-select: none; color: #16a34a; font-size: 0.95rem; font-weight: bold; padding: 0 4px; display: inline-flex; align-items: center;">⋮⋮</span>
+                                    <span
+                                        style="width:20px; height:20px; background:linear-gradient(135deg, #16a34a 0%, #22c55e 100%); color:#ffffff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.72rem; font-weight:800; flex-shrink:0; box-shadow:0 2px 4px rgba(22,163,74,0.3);">✓</span>
+                                    <input type="text" class="form-control-clean admin-feature-item-val"
+                                        style="flex:1; padding:6px 10px; font-size:0.83rem; margin:0; border-color:#86efac;"
+                                        placeholder="คุณสมบัติเด่น เช่น คำนวณและแสดงผลอัตโนมัติ..." value=""
+                                        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                                    <button type="button" class="btn-tool-sm" title="สลับเลื่อนขึ้น"
+                                        onclick="moveAdminFeatureRow(this, -1)"
+                                        style="padding: 3px 7px; font-size: 0.72rem; cursor: pointer; color: #166534; background: #dcfce7; border: 1px solid #86efac; border-radius: 4px;">▲</button>
+                                    <button type="button" class="btn-tool-sm" title="สลับเลื่อนลง"
+                                        onclick="moveAdminFeatureRow(this, 1)"
+                                        style="padding: 3px 7px; font-size: 0.72rem; cursor: pointer; color: #166534; background: #dcfce7; border: 1px solid #86efac; border-radius: 4px;">▼</button>
+                                    <button type="button" class="btn-tool-sm" title="ลบข้อนี้"
+                                        style="color:var(--fh-danger); padding: 3px 7px; font-size: 0.72rem; border-color: #fecaca; background: #fef2f2; border-radius: 4px;"
+                                        onclick="this.closest('.admin-feature-input-row').remove();">✕</button>
                                 </div>
                             </div>
                             <div style="display: flex; gap: 8px; margin-top: 8px;">
@@ -14139,9 +14207,12 @@ ${encodedToken}
                 let yesterdayOrdersCount = 0;
                 let settleBatchSatang = 0;
                 let settleBatchOrdersCount = 0;
+                let yearTotalSatang = 0;
+                let yearOrdersCount = 0;
                 const realBeamOrders = [];
 
                 const now = new Date();
+                const currentYear = now.getFullYear();
                 const revenueCycle = getAdminTodayRevenueCycle(now);
 
                 allTransactions.forEach(tx => {
@@ -14154,6 +14225,13 @@ ${encodedToken}
                         const refId = String(tx.referenceId || '');
                         const fbMeta = (fbRes && fbRes[refId]) || {};
                         const timeMs = tx.transactionTime ? new Date(tx.transactionTime).getTime() : new Date(tx.createdAt).getTime();
+
+                        // Current Calendar Year (ตรวจสอบเกณฑ์ภาษี e-Payment สรรพากร)
+                        const txDate = new Date(timeMs);
+                        if (txDate.getFullYear() === currentYear) {
+                            yearTotalSatang += grossSatang;
+                            yearOrdersCount++;
+                        }
 
                         // 1) Today's orders (00:00 - 23:59 Bangkok time today)
                         if (timeMs >= revenueCycle.todayStartMs && timeMs < revenueCycle.todayEndMs) {
@@ -14316,6 +14394,8 @@ ${encodedToken}
                 // 5. Render Ranking Table & Recent Feed
                 renderAdminSalesRankingTable(realBeamOrders, lifetimeRevenue);
                 renderAdminRecentFeed(realBeamOrders.slice(0, 5), revenueCycle);
+                const yearRevenue = yearTotalSatang / 100;
+                renderAdminTaxMonitoring(yearOrdersCount, yearRevenue, currentYear);
 
                 if (isManual && typeof showToast === 'function') {
                     showToast('🔄 อัปเดตข้อมูลยอดขาย Beam สำเร็จแล้ว', 'success');
@@ -14467,6 +14547,67 @@ ${encodedToken}
             }).join('');
         }
 
+        function renderAdminTaxMonitoring(yearCount, yearRevenue, currentYear) {
+            const yearBadgeEl = document.getElementById('admin-tax-year-badge');
+            const statusBadgeEl = document.getElementById('admin-tax-status-badge');
+            const progressBarEl = document.getElementById('admin-tax-progress-bar');
+            const summaryTextEl = document.getElementById('admin-tax-summary-text');
+            const cardEl = document.getElementById('admin-tax-card');
+
+            if (yearBadgeEl) yearBadgeEl.textContent = `(ปี ${currentYear})`;
+            if (summaryTextEl) {
+                summaryTextEl.textContent = `${yearCount.toLocaleString('th-TH')} ครั้ง • ฿${yearRevenue.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            }
+
+            // คำนวณความเสี่ยงรวม (e-Payment Combined Risk Progress):
+            // เกณฑ์ 1: โอนเข้า 3,000 ครั้ง/ปี
+            const pct1 = (yearCount / 3000) * 100;
+            // เกณฑ์ 2: โอนเข้า 400 ครั้ง/ปี ร่วมกับ 2,000,000 บาท/ปี (ต้องครบทั้งสองเงื่อนไขจึงจะเข้าเกณฑ์)
+            const pct2 = Math.min((yearCount / 400) * 100, (yearRevenue / 2000000) * 100);
+            // ความคืบหน้ารวม = เกณฑ์ใดเกณฑ์หนึ่งแตะ 100%
+            const overallPct = Math.max(pct1, pct2);
+            const clampedBarWidth = Math.min(Math.max(overallPct, yearCount > 0 ? 1.5 : 0), 100);
+
+            let statusText = 'ปลอดภัย';
+            let badgeBg = '#dcfce7';
+            let badgeColor = '#166534';
+            let barColor = '#10b981';
+
+            if (overallPct >= 100) {
+                statusText = 'เข้าเกณฑ์';
+                badgeBg = '#fee2e2';
+                badgeColor = '#991b1b';
+                barColor = '#ef4444';
+            } else if (overallPct >= 75) {
+                statusText = 'เสี่ยงสูง';
+                badgeBg = '#fee2e2';
+                badgeColor = '#b91c1c';
+                barColor = '#f87171';
+            } else if (overallPct >= 50) {
+                statusText = 'เฝ้าระวัง';
+                badgeBg = '#fef3c7';
+                badgeColor = '#92400e';
+                barColor = '#f59e0b';
+            }
+
+            const pctFormatted = overallPct >= 10 ? Math.round(overallPct) : overallPct.toFixed(1);
+
+            if (statusBadgeEl) {
+                statusBadgeEl.textContent = `${statusText} ${pctFormatted}%`;
+                statusBadgeEl.style.background = badgeBg;
+                statusBadgeEl.style.color = badgeColor;
+            }
+
+            if (progressBarEl) {
+                progressBarEl.style.width = `${clampedBarWidth}%`;
+                progressBarEl.style.backgroundColor = barColor;
+            }
+
+            if (cardEl) {
+                cardEl.title = `เกณฑ์ภาษี e-Payment (${currentYear}):\n• รับโอนเข้า ${yearCount.toLocaleString()}/3,000 ครั้ง (${pct1.toFixed(1)}%)\n• รับโอนร่วม ${yearCount.toLocaleString()}/400 ครั้ง & ฿${yearRevenue.toLocaleString()}/2,000,000 (${pct2.toFixed(1)}%)`;
+            }
+        }
+
         function initAdminRightSidebar() {
             if (!isLocalAdmin) return;
 
@@ -14483,6 +14624,11 @@ ${encodedToken}
             if (dateBadge) {
                 dateBadge.textContent = revenueCycle.badgeText;
                 dateBadge.title = `รอบคำนวณรายได้วันนี้ (หลังเที่ยงคืน): ${revenueCycle.todayFullRangeText} • ยอด T+1 ค้างรอโอน ${revenueCycle.settleTomorrowText} (ไม่รวมกับยอด 11 โมงวันนี้)`;
+            }
+
+            const taxYearBadge = document.getElementById('admin-tax-year-badge');
+            if (taxYearBadge) {
+                taxYearBadge.textContent = `(ปี ${now.getFullYear()})`;
             }
 
             const tplusDescEl = document.getElementById('admin-today-tplus-desc');
