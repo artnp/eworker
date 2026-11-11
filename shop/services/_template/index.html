@@ -820,11 +820,6 @@
                     </div>
 
                     <!-- 5. Admin Simulator Only -->
-                    <div id="wrap-admin-sim-detail-pay" style="margin-top: 4px; text-align: center;">
-                        <button type="button" class="btn-tool-sm" id="btn-admin-sim-detail-pay" onclick="testApprovePayment()" style="display: none; font-size: 0.68rem; background: rgb(239, 246, 255); color: rgb(29, 78, 216); border: 1px solid rgb(191, 219, 254); padding: 2px 7px; border-radius: 5px; cursor: pointer;">
-                            ⚡ จำลองโอนเงิน (Admin Test)
-                        </button>
-                    </div>
                 </div>
             </div>
 
@@ -857,13 +852,6 @@
             beamWorkerUrl: "https://eworker-beam-pay.moonverse69.workers.dev",
             firebaseBase: "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests"
         };
-
-        const isLocalAdmin = (
-            window.location.hostname === '127.0.0.1' ||
-            window.location.hostname === 'localhost' ||
-            window.location.protocol === 'file:' ||
-            new URLSearchParams(window.location.search).get('admin') === 'true'
-        );
 
         // DOM Elements
         const fileInput = document.getElementById('fileInput');
@@ -1024,11 +1012,6 @@
 
             const priceTextEl = document.getElementById('detail-qr-price-text');
             if (priceTextEl) priceTextEl.textContent = `฿ ${SERVICE_CONFIG.servicePriceThb.toFixed(2)}`;
-
-            if (isLocalAdmin) {
-                const btnSim = document.getElementById('btn-admin-sim-detail-pay');
-                if (btnSim) btnSim.style.display = 'inline-flex';
-            }
 
             // บันทึก Order ID ลง Firebase
             registerOrderInFirebase(currentOrderId);
@@ -1250,18 +1233,6 @@
                     }
                 } catch (e) { }
             }, 1800);
-        }
-
-        async function testApprovePayment() {
-            if (!currentOrderId) return;
-            try {
-                await fetch(`${SERVICE_CONFIG.firebaseBase}/${currentOrderId}.json`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ status: 'approved', approvedAt: Date.now() })
-                });
-            } catch (e) { }
-            onPaymentSuccess();
         }
 
         // --- Sound Engine & Confetti เหมือน admin-payment.html ---
