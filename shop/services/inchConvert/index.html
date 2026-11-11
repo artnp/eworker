@@ -1627,6 +1627,12 @@
                         <div class="clean-spinner"
                             style="width: 10px; height: 10px; border-width: 1.5px; flex-shrink: 0;">
                         </div>
+                    <!-- Dev Mode Bypass (เฉพาะเครื่องแอดมิน 127.0.0.1:5000 เท่านั้น) -->
+                    <div id="wrap-dev-bypass" style="display: none; margin-top: 6px; text-align: center;">
+                        <button type="button" onclick="handlePaymentApprovedSuccess()" style="font-size: 0.68rem; font-weight: 700; background: #eff6ff; color: #1d4ed8; border: 1px dashed #60a5fa; padding: 4px 10px; border-radius: 6px; cursor: pointer;">
+                            ⚡ Dev Bypass (เครื่องแอดมิน)
+                        </button>
+                    </div>
                         <span style="white-space: nowrap;">ตรวจจับยอดเงินเข้าอัตโนมัติ (PromptPay)</span>
                     </div>
 
@@ -2445,7 +2451,38 @@
         downloadPdfBtn.addEventListener('click', triggerDownload);
 
         // ===== PROMPTPAY PAYMENT SYSTEM (BEAM CHECKOUT) =====
+        
+        function checkDevMode() {
+            try {
+                const isDevEnvironment = (
+                    window.location.hostname === '127.0.0.1' &&
+                    window.location.port === '5000'
+                );
+
+                const urlParams = new URLSearchParams(window.location.search);
+                if (isDevEnvironment && urlParams.get('dev') === 'eworker999') {
+                    localStorage.setItem('eworker_dev', 'true');
+                    urlParams.delete('dev');
+                    const cleanUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                    window.history.replaceState({}, '', cleanUrl);
+                } else if (urlParams.get('dev') === 'off') {
+                    localStorage.removeItem('eworker_dev');
+                    urlParams.delete('dev');
+                    const cleanUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                    window.history.replaceState({}, '', cleanUrl);
+                }
+
+                return isDevEnvironment && localStorage.getItem('eworker_dev') === 'true';
+            } catch (e) {
+                return false;
+            }
+        }
+
         async function openPaymentFlow() {
+            if (checkDevMode()) {
+                const devBox = document.getElementById('wrap-dev-bypass');
+                if (devBox) devBox.style.display = 'block';
+            }
             if (!uploadedImage) return;
 
             isLocked = true;
