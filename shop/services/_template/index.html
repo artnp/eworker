@@ -821,10 +821,10 @@
 
                     <!-- 5. Dev Mode Bypass (เฉพาะเครื่องแอดมินที่เปิดสวิตช์ไว้) -->
                     <div id="wrap-dev-bypass" style="display: none; margin-top: 6px; text-align: center;">
-                    <button type="button" onclick="onPaymentSuccess()" style="font-size: 0.68rem; font-weight: 700; background: #eff6ff; color: #1d4ed8; border: 1px dashed #60a5fa; padding: 4px 10px; border-radius: 6px; cursor: pointer;">
-                        ⚡ Dev Bypass (เครื่องแอดมิน)
-                    </button>
-                </div>
+                        <button type="button" onclick="onPaymentSuccess()" style="font-size: 0.68rem; font-weight: 700; background: #eff6ff; color: #1d4ed8; border: 1px dashed #60a5fa; padding: 4px 10px; border-radius: 6px; cursor: pointer; white-space: nowrap;">
+                            ⚡ Dev Bypass (เครื่องแอดมิน)
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -1013,8 +1013,9 @@
         function checkDevMode() {
             try {
                 const isDevEnvironment = (
-                    window.location.hostname === '127.0.0.1' &&
-                    window.location.port === '5000'
+                    window.location.hostname === '127.0.0.1' ||
+                    window.location.hostname === 'localhost' ||
+                    window.location.protocol === 'file:'
                 );
 
                 const urlParams = new URLSearchParams(window.location.search);
@@ -1035,6 +1036,7 @@
                 return false;
             }
         }
+        checkDevMode();
 
         function openPaymentModal() {
             currentOrderId = `${SERVICE_CONFIG.serviceName.toLowerCase()}_${Date.now()}`;
