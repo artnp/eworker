@@ -129,6 +129,71 @@
             font-weight: 500;
         }
 
+        /* Store Status Pill & Closed State */
+        .store-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 20px;
+            border-radius: 999px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1.5px solid rgba(16, 185, 129, 0.35);
+            color: #065f46;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 22px;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+        }
+
+        .store-status-pill.is-closed {
+            background: rgba(244, 63, 94, 0.1);
+            border-color: rgba(244, 63, 94, 0.35);
+            color: #9f1239;
+            box-shadow: 0 4px 12px rgba(244, 63, 94, 0.12);
+        }
+
+        .status-pulse-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            animation: pulse-green 2s infinite;
+        }
+
+        .store-status-pill.is-closed .status-pulse-dot {
+            background: #f43f5e;
+            box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7);
+            animation: pulse-red 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(244, 63, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+        }
+
+        .upload-area.store-closed {
+            opacity: 0.58;
+            cursor: not-allowed !important;
+            border-color: #fca5a5 !important;
+            background: #fff1f2 !important;
+        }
+
+        .upload-area.store-closed:hover {
+            transform: none !important;
+            box-shadow: none !important;
+            border-color: #fca5a5 !important;
+            background: #fff1f2 !important;
+        }
+
         .upload-card {
             width: 100%;
             max-width: 640px;
@@ -2721,32 +2786,288 @@
             margin-top: 4px;
         }
 
-        .watermark-payment-panel {
-            margin-top: 6px;
+        /* ===== PAYMENT CARD STYLED LIKE DOWNLOAD.HTML ===== */
+        .dl-payment-card {
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 18px;
+            padding: 14px 16px;
+            box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 4px;
         }
 
-        .watermark-notice-header {
-            background: #fffbeb;
-            border: 1.5px solid #fde68a;
-            border-radius: 12px;
-            padding: 10px 14px;
-            margin-bottom: 10px;
+        .dl-payment-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 8px;
         }
 
-        .wm-badge {
-            font-size: 12px;
+        .dl-header-left {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .dl-header-title {
+            font-size: 13px;
             font-weight: 800;
-            color: #b45309;
+            color: #1e293b;
             display: flex;
             align-items: center;
             gap: 6px;
         }
 
-        .wm-desc {
-            font-size: 12px;
-            color: #92400e;
-            margin-top: 3px;
+        .dl-header-sub {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .dl-payment-amount {
+            display: flex;
+            align-items: baseline;
+            gap: 2px;
+            color: #16a34a;
+            font-weight: 900;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .dl-currency {
+            font-size: 16px;
+        }
+
+        .dl-amount-val {
+            font-size: 26px;
+            letter-spacing: -0.5px;
+        }
+
+        .dl-qr-content-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            gap: 8px;
+        }
+
+        .qr-wrapper {
+            background: #ffffff;
+            padding: 8px;
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+            border: 1px solid #e2e8f0;
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+            position: relative;
+        }
+
+        .qr-wrapper:hover {
+            transform: scale(1.02);
+            box-shadow: 0 12px 28px rgba(99, 102, 241, 0.25);
+        }
+
+        .dl-qr-loading {
+            width: 170px;
+            height: 170px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 11.5px;
+            color: #64748b;
             font-weight: 600;
+        }
+
+        .dl-spinner {
+            width: 26px;
+            height: 26px;
+            border: 3px solid rgba(99, 102, 241, 0.18);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .btn-save-qr-mini {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 11.5px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s ease;
+        }
+        .btn-save-qr-mini:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        /* No Slip / Instant Unlock Alert Badge - Yellow-Red Gradient with Running Transparent Border */
+        .no-slip-alert {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 5px 14px;
+            border-radius: 9999px;
+            color: #ffffff;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.25px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 3px 14px rgba(245, 158, 11, 0.35), 0 2px 6px rgba(220, 38, 38, 0.3);
+            overflow: hidden;
+            isolation: isolate;
+            flex-shrink: 0;
+            white-space: nowrap;
+            background: rgba(255, 255, 255, 0.18);
+            animation: pulseAlert 2.5s infinite ease-in-out;
+            cursor: default;
+        }
+
+        .no-slip-alert::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 260%;
+            aspect-ratio: 1 / 1;
+            transform: translate(-50%, -50%) rotate(0deg);
+            background: conic-gradient(
+                from 0deg,
+                transparent 0deg,
+                transparent 60deg,
+                rgba(255, 255, 255, 0.15) 75deg,
+                rgba(255, 255, 255, 0.95) 95deg,
+                rgba(255, 255, 255, 0.2) 110deg,
+                transparent 130deg,
+                transparent 240deg,
+                rgba(255, 255, 255, 0.15) 255deg,
+                rgba(255, 255, 255, 0.95) 275deg,
+                rgba(255, 255, 255, 0.2) 290deg,
+                transparent 310deg,
+                transparent 360deg
+            );
+            animation: borderBeamRun 3s linear infinite;
+            z-index: 1;
+        }
+
+        .no-slip-alert::after {
+            content: '';
+            position: absolute;
+            inset: 1.5px;
+            border-radius: 9999px;
+            background: linear-gradient(135deg, #f59e0b 0%, #ea580c 48%, #dc2626 100%);
+            z-index: 2;
+        }
+
+        .no-slip-alert > * {
+            position: relative;
+            z-index: 3;
+        }
+
+        @keyframes borderBeamRun {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        @keyframes pulseAlert {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .dl-waiting-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .dl-waiting-pulse {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #0f766e;
+        }
+
+        .dl-pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #0d9488;
+            box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.7);
+            animation: pulse-green 1.8s infinite;
+        }
+
+        .dl-waiting-timer {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .dl-timer-val {
+            color: #e11d48;
+            font-weight: 800;
+        }
+
+        /* Floating Alert Toast Notification */
+        .toast-container {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 99999;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .toast-item {
+            background: rgba(15, 23, 42, 0.95);
+            color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 999px;
+            font-size: 13.5px;
+            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            animation: toastPop 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toast-item.success {
+            background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+            border-color: #34d399;
+        }
+
+        @keyframes toastPop {
+            0% { transform: translateY(-20px) scale(0.95); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
         }
 
         .paid-unlocked-panel {
@@ -2933,6 +3254,12 @@
                 </p>
             </div>
 
+            <!-- Store Status Banner -->
+            <div class="store-status-pill" id="storeStatusPill">
+                <span class="status-pulse-dot" id="storeStatusDot"></span>
+                <span class="status-status-text" id="storeStatusText">🟢 ร้านเปิดรับงานตามปกติ (ส่งงานได้ทันที)</span>
+            </div>
+
             <!-- Upload Drop Card -->
             <div class="upload-card">
                 <div class="upload-area" id="uploadArea">
@@ -2983,10 +3310,6 @@
                 title="ส่งงานผ่านระบบส่งไฟล์ลับ (PrivateSend.ps1)">
                 <i class="fa-solid fa-shield-halved"></i> <span>ส่งงานลับ (PrivateSend)</span>
             </button>
-            <button class="btn-nav btn-nav-success hidden" id="btnAdminConfirmPay"
-                title="ยืนยันรับเงิน (แอดมินยืนยันยอด)">
-                <i class="fa-solid fa-circle-check"></i> <span>ยืนยันรับเงิน</span>
-            </button>
             <button class="btn-nav btn-nav-outline hidden" id="btnAdminDeclineTop" title="ปฏิเสธไม่รับงานนี้ (เสี่ยงทางกฎหมาย)" style="border-color:#f43f5e;color:#e11d48;">
                 <i class="fa-solid fa-ban"></i> <span>ไม่รับงานนี้</span>
             </button>
@@ -2996,6 +3319,9 @@
             <button class="btn-nav btn-nav-outline hidden" id="btnAdminCopyCustomerLink"
                 title="คัดลอกลิงก์สำหรับส่งให้ลูกค้า">
                 <i class="fa-solid fa-link"></i> <span>ก๊อปลิงก์ลูกค้า</span>
+            </button>
+            <button class="btn-nav btn-nav-outline hidden" id="btnAdminShopToggle" title="คลิกเพื่อสลับเปิด/ปิดร้าน">
+                <i class="fa-solid fa-store"></i> <span id="labelAdminShop">ร้านเปิดอยู่</span>
             </button>
 
             <!-- Download Button -->
@@ -3666,13 +3992,172 @@
             loadExistingSession(existingSession);
         }
 
+        // ===== AUDIO BEEP & TOAST SYSTEM =====
+        function playJobCompletedBeep() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+                const playTone = (freq, start, dur) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, start);
+                    gain.gain.setValueAtTime(0.22, start);
+                    gain.gain.exponentialRampToValueAtTime(0.001, start + dur);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(start);
+                    osc.stop(start + dur);
+                };
+                const now = ctx.currentTime;
+                playTone(784, now, 0.12);           // G5
+                playTone(1046.5, now + 0.12, 0.14); // C6
+                playTone(1318.5, now + 0.26, 0.38); // E6
+            } catch (e) {
+                console.warn('Audio playback not ready:', e);
+            }
+        }
+
+        function showToast(message, type = 'info', duration = 5000) {
+            let container = document.getElementById('toastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'toast-container';
+                container.id = 'toastContainer';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            toast.className = `toast-item ${type}`;
+            const icon = type === 'success'
+                ? '<i class="fa-solid fa-circle-check" style="color:#34d399;"></i>'
+                : '<i class="fa-solid fa-bell" style="color:#60a5fa;"></i>';
+            toast.innerHTML = `${icon} <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-10px)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 350);
+            }, duration);
+        }
+
+        // ===== STORE STATUS (OPEN/CLOSED) SYSTEM =====
+        let isStoreOpen = true;
+
+        function initStoreStatus() {
+            try {
+                database.ref('annotations/_shop_status').on('value', (snap) => {
+                    const data = snap.val();
+                    if (data && (data.isOpen === false || data.status === 'closed' || data.status === 'offline')) {
+                        isStoreOpen = false;
+                    } else {
+                        isStoreOpen = true;
+                    }
+                    updateStoreStatusUI();
+                });
+            } catch (err) {
+                console.error('initStoreStatus error:', err);
+            }
+        }
+
+        function updateStoreStatusUI() {
+            const pill = document.getElementById('storeStatusPill');
+            const txt = document.getElementById('storeStatusText');
+            const area = document.getElementById('uploadArea');
+            const btnUpload = document.getElementById('btnUploadTrigger');
+            const btnShopToggle = document.getElementById('btnAdminShopToggle');
+            const labelShop = document.getElementById('labelAdminShop');
+
+            if (pill && txt) {
+                if (isStoreOpen) {
+                    pill.classList.remove('is-closed');
+                    txt.textContent = '🟢 ร้านเปิดรับงานตามปกติ (ส่งงานได้ทันที)';
+                } else {
+                    pill.classList.add('is-closed');
+                    txt.textContent = '🔴 ขณะนี้ร้านปิดรับงานชั่วคราว (ช่างไม่อยู่หน้าร้าน)';
+                }
+            }
+
+            if (area && btnUpload) {
+                if (isStoreOpen) {
+                    area.classList.remove('store-closed');
+                    btnUpload.disabled = false;
+                    btnUpload.innerHTML = '<i class="fa-solid fa-folder-open"></i> <span>เลือกรูปภาพ หรือ PDF จากเครื่อง</span>';
+                    btnUpload.style.background = '';
+                    btnUpload.style.cursor = 'pointer';
+                } else {
+                    area.classList.add('store-closed');
+                    btnUpload.disabled = true;
+                    btnUpload.innerHTML = '<i class="fa-solid fa-lock"></i> <span>ร้านปิดรับงานชั่วคราว</span>';
+                    btnUpload.style.background = '#94a3b8';
+                    btnUpload.style.cursor = 'not-allowed';
+                }
+            }
+
+            if (isAdmin && btnShopToggle && labelShop) {
+                btnShopToggle.classList.remove('hidden');
+                if (isStoreOpen) {
+                    labelShop.textContent = 'ร้านเปิดอยู่ (คลิกเพื่อปิด)';
+                    btnShopToggle.style.borderColor = '#10b981';
+                    btnShopToggle.style.color = '#10b981';
+                } else {
+                    labelShop.textContent = 'ร้านปิดอยู่ (คลิกเพื่อเปิด)';
+                    btnShopToggle.style.borderColor = '#f43f5e';
+                    btnShopToggle.style.color = '#f43f5e';
+                }
+            }
+        }
+
+        async function toggleStoreStatus() {
+            if (!isAdmin) return;
+            const targetState = !isStoreOpen;
+            const confirmMsg = targetState
+                ? 'ต้องการ "เปิดร้าน" เพื่อรับงานใช่หรือไม่?'
+                : 'ต้องการ "ปิดร้าน" ชั่วคราว (ลูกค้าจะอัปโหลดงานไม่ได้) ใช่หรือไม่?';
+            if (!confirm(confirmMsg)) return;
+
+            showLoading(targetState ? 'กำลังเปิดร้าน...' : 'กำลังปิดร้าน...');
+            try {
+                await database.ref('annotations/_shop_status').update({
+                    isOpen: targetState,
+                    status: targetState ? 'open' : 'closed',
+                    updatedAt: Date.now()
+                });
+                hideLoading();
+            } catch (err) {
+                hideLoading();
+                alert('เกิดข้อผิดพลาดในการเปลี่ยนสถานะร้าน: ' + err.message);
+            }
+        }
+
+        const btnAdminShopToggle = document.getElementById('btnAdminShopToggle');
+        if (btnAdminShopToggle) {
+            btnAdminShopToggle.addEventListener('click', toggleStoreStatus);
+        }
+
+        initStoreStatus();
+
         // Upload handlers
-        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('click', () => {
+            if (!isStoreOpen) {
+                alert('ขณะนี้ร้านปิดรับงานชั่วคราว ไม่สามารถส่งงานได้ กรุณากลับมาใหม่ในภายหลัง');
+                return;
+            }
+            fileInput.click();
+        });
 
         const btnUploadTrigger = document.getElementById('btnUploadTrigger');
         if (btnUploadTrigger) {
             btnUploadTrigger.addEventListener('click', (e) => {
                 e.stopPropagation();
+                if (!isStoreOpen) {
+                    alert('ขณะนี้ร้านปิดรับงานชั่วคราว ไม่สามารถส่งงานได้ กรุณากลับมาใหม่ในภายหลัง');
+                    return;
+                }
                 fileInput.click();
             });
         }
@@ -3715,6 +4200,10 @@
             uploadArea.style.borderColor = '';
             uploadArea.style.background = '';
             uploadArea.style.transform = '';
+            if (!isStoreOpen) {
+                alert('ขณะนี้ร้านปิดรับงานชั่วคราว ไม่สามารถอัปโหลดไฟล์ได้ กรุณากลับมาใหม่ในภายหลัง');
+                return;
+            }
             if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
                 fileInput.files = e.dataTransfer.files;
                 handleFileSelect();
@@ -3722,6 +4211,11 @@
         });
 
         async function handleFileSelect() {
+            if (!isStoreOpen) {
+                alert('ขณะนี้ร้านปิดรับงานชั่วคราว ไม่สามารถอัปโหลดไฟล์ได้');
+                fileInput.value = '';
+                return;
+            }
             const file = fileInput.files[0];
             if (!file) return;
 
@@ -4933,18 +5427,18 @@
 
             const btnAdminOpenPs = document.getElementById('btnAdminOpenPs');
             const btnAdminPrivateSend = document.getElementById('btnAdminPrivateSend');
-            const btnAdminConfirmPay = document.getElementById('btnAdminConfirmPay');
             const btnAdminDeleteJob = document.getElementById('btnAdminDeleteJob');
             const btnAdminDeclineTop = document.getElementById('btnAdminDeclineTop');
             const btnAdminCopyCustomerLink = document.getElementById('btnAdminCopyCustomerLink');
+            const btnAdminShopToggle = document.getElementById('btnAdminShopToggle');
 
             if (isAdmin) {
                 btnAdminOpenPs?.classList.remove('hidden');
                 btnAdminPrivateSend?.classList.remove('hidden');
-                btnAdminConfirmPay?.classList.toggle('hidden', !currentSessionData.hasWatermark || currentSessionData.isPaid);
                 btnAdminDeleteJob?.classList.remove('hidden');
                 btnAdminDeclineTop?.classList.toggle('hidden', currentSessionData.isPaid || currentSessionData.jobStatus === 'rejected');
                 btnAdminCopyCustomerLink?.classList.remove('hidden');
+                btnAdminShopToggle?.classList.remove('hidden');
             }
         }
         updateTopNav();
@@ -5399,65 +5893,68 @@
             // 2. STATE: WAITING PAYMENT / WATERMARKED PREVIEW (งานทำเสร็จ ติดลายน้ำ -> สแกนจ่าย)
             if (currentSessionData.hasWatermark && !currentSessionData.isPaid) {
                 container.innerHTML = `
-                    <div class="watermark-payment-panel">
-                        <div class="watermark-notice-header">
-                            <div class="wm-badge"><i class="fa-solid fa-eye"></i> ภาพตัวอย่างติดลายน้ำ</div>
-                            <div class="wm-desc">ช่างแก้ไขงานเสร็จสมบูรณ์แล้ว! สแกนจ่ายเพื่อปลดล็อคลายน้ำและดาวน์โหลดไฟล์เต็มทันที</div>
-                        </div>
-
-                        <div class="inline-beam-slip-card" style="margin-top:0;">
-                            <div style="background:linear-gradient(135deg, #003764 0%, #005696 100%);color:#fff;padding:10px 14px;border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:space-between;">
-                                <div style="display:flex;align-items:center;gap:8px;">
-                                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/100px-PromptPay-logo.png" style="height:18px;filter:brightness(0) invert(1);" onerror="this.style.display='none';">
-                                    <span style="font-size:13px;font-weight:800;letter-spacing:0.3px;">พร้อมเพย์ (PromptPay)</span>
-                                </div>
-                                <span style="background:rgba(255,255,255,0.22);padding:2px 7px;border-radius:6px;font-size:11px;font-weight:700;">Beam QR</span>
+                    <div class="dl-payment-card" id="dlPaymentCard">
+                        <div class="dl-payment-header">
+                            <div class="dl-header-left">
+                                <span class="dl-header-title">
+                                    <i class="fa-solid fa-qrcode" style="color:#6366f1;"></i> ชำระค่าบริการ
+                                </span>
+                                <span class="dl-header-sub">งานเสร็จแล้ว • สแกนจ่ายเพื่อปลดล็อคไฟล์</span>
                             </div>
-                            <div style="background:#fff;border:1.5px solid #005696;border-top:none;border-radius:0 0 12px 12px;padding:12px;box-shadow:0 4px 14px rgba(0,55,100,0.12);">
-                                <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px;">
-                                    <span style="font-size:12px;color:#64748b;font-weight:700;">ยอดที่ต้องชำระ:</span>
-                                    <span style="font-size:26px;font-weight:900;color:#16a34a;font-family:Outfit,sans-serif;">฿ ${price}.00</span>
-                                </div>
-                                <div style="font-size:11.5px;color:#e11d48;font-weight:700;text-align:center;margin-bottom:8px;">
-                                    ⏱️ กรุณาชำระเงินภายใน: <strong id="mainSlipTimer">10:00</strong> นาที
-                                </div>
-                                <div style="text-align:center;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:10px;padding:10px;margin-bottom:8px;">
-                                    <div id="mainSlipLoading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:180px;gap:6px;font-size:12px;color:#64748b;font-weight:700;">
-                                        <div style="width:26px;height:26px;border:3px solid rgba(16,185,129,0.2);border-top-color:#10b981;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-                                        <span>กำลังสร้าง QR Code จาก Beam...</span>
-                                    </div>
-                                    <img id="mainSlipQrImg" src="" alt="PromptPay QR" style="display:none;width:180px;height:180px;object-fit:contain;margin:0 auto;background:#fff;border-radius:8px;padding:4px;">
-                                    <div style="font-size:12.5px;font-weight:800;color:#003764;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px;">
-                                        <i class="fa-solid fa-qrcode"></i> Beam Payment (PromptPay QR)
-                                    </div>
-                                    <div style="font-size:11px;color:#64748b;margin-top:2px;">(สแกนจ่ายผ่านแอปธนาคารทุกแห่ง • ยอดระบุให้อัตโนมัติ)</div>
-                                    <div style="margin-top:8px;">
-                                        <button class="btn-download-main-slip" id="btnDownloadMainSlip" style="width:100%;background:#f1f5f9;border:1px solid #cbd5e1;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;color:#1e293b;">
-                                            <i class="fa-solid fa-download"></i> บันทึกสลิป QR Code
-                                        </button>
-                                    </div>
-                                </div>
-                                <div style="margin-top:8px;background:#f0fdf4;border:1px solid #bbf7d0;padding:8px 10px;border-radius:8px;text-align:center;font-size:12px;font-weight:700;color:#15803d;display:flex;align-items:center;justify-content:center;gap:6px;">
-                                    <i class="fa-solid fa-bolt" style="color:#16a34a;"></i> ระบบตรวจจับยอดโอนอัตโนมัติ ลายน้ำจะปลดล็อคทันที
-                                </div>
+                            <div class="dl-payment-amount">
+                                <span class="dl-currency">฿</span>
+                                <span class="dl-amount-val">${price}.00</span>
                             </div>
                         </div>
 
-                        ${isAdmin ? `
-                            <div style="margin-top:10px;text-align:center;">
-                                <button id="btnAdminConfirmPayInline" style="width:100%;background:#16a34a;color:#fff;border:none;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;">
-                                    <i class="fa-solid fa-check"></i> แอดมิน: ยืนยันว่าได้รับเงินแล้ว
+                        <!-- QR Content Wrapper -->
+                        <div class="dl-qr-content-wrapper">
+                            <div class="qr-wrapper" id="mainQrWrapper" onclick="downloadTotalBeamSlip()" title="แตะที่ QR เพื่อบันทึกภาพ">
+                                <div id="mainSlipLoading" class="dl-qr-loading">
+                                    <div class="dl-spinner"></div>
+                                    <span>กำลังสร้าง QR Code...</span>
+                                </div>
+                                <img id="mainSlipQrImg" src="" alt="PromptPay QR" style="display:none;width:170px;height:170px;object-fit:contain;border-radius:8px;">
+                            </div>
+
+                            <div class="dl-save-qr-btn-wrap">
+                                <button class="btn-save-qr-mini" id="btnDownloadMainSlip" type="button">
+                                    <i class="fa-solid fa-arrow-down-to-bracket"></i> แตะเพื่อบันทึก QR Code
                                 </button>
                             </div>
-                        ` : ''}
+
+                            <div class="no-slip-alert">
+                                <span class="scan-phone-icon" aria-hidden="true">
+                                    <svg class="phone-scan-svg" viewBox="0 0 20 22" fill="none" style="width:14px;height:15px;display:inline-block;vertical-align:middle;" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="2.5" y="1" width="15" height="20" rx="3.5" stroke="currentColor" stroke-width="1.6" fill="rgba(255, 255, 255, 0.15)" />
+                                        <circle cx="10" cy="2.8" r="0.75" fill="currentColor" opacity="0.9" />
+                                        <rect x="4.2" y="4.2" width="11.6" height="13.6" rx="1.5" fill="rgba(0, 0, 0, 0.3)" />
+                                        <path d="M6 6.5h2 M6 6.5v2" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" opacity="0.85"/>
+                                        <path d="M14 6.5h-2 M14 6.5v2" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" opacity="0.85"/>
+                                        <path d="M6 15.5h2 M6 15.5v-2" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" opacity="0.85"/>
+                                        <path d="M14 15.5h-2 M14 15.5v-2" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" opacity="0.85"/>
+                                        <circle cx="10" cy="11" r="0.9" fill="#fef08a" />
+                                    </svg>
+                                </span>
+                                <span>สแกนปุ๊ป ลายน้ำหายทันที • ไม่ต้องส่งสลิป</span>
+                            </div>
+                        </div>
+
+                        <!-- Waiting Live Status -->
+                        <div class="dl-waiting-box">
+                            <div class="dl-waiting-pulse">
+                                <span class="dl-pulse-dot"></span>
+                                <span class="dl-waiting-title">กำลังตรวจจับยอดเงินเข้า...</span>
+                            </div>
+                            <div class="dl-waiting-timer">
+                                ⏱️ กรุณาชำระภายใน <strong id="mainSlipTimer" class="dl-timer-val">10:00</strong> นาที
+                            </div>
+                        </div>
                     </div>
                 `;
 
                 loadTotalBeamPayment(price);
                 document.getElementById('btnDownloadMainSlip')?.addEventListener('click', downloadTotalBeamSlip);
-                document.getElementById('btnAdminConfirmPayInline')?.addEventListener('click', () => {
-                    document.getElementById('btnAdminConfirmPay')?.click();
-                });
                 updateFloatingDownloadButton();
                 updateTopNav();
                 return;
@@ -6299,6 +6796,21 @@
                     paidAt: sData.paidAt || null,
                     expiresAt: sData.expiresAt || null
                 };
+
+                // ตรวจสอบการส่งงานเสร็จติดลายน้ำ เพื่อแจ้งเตือนพร้อมเสียง Beep
+                if (sData.hasWatermark && !sData.isPaid) {
+                    if (!window.__hasAlertedWorkCompleted) {
+                        window.__hasAlertedWorkCompleted = true;
+                        playJobCompletedBeep();
+                        showToast('🎉 ช่างแก้ไขงานเสร็จสมบูรณ์แล้ว! สแกนจ่ายเพื่อปลดล็อคลายน้ำและรับไฟล์ทันที', 'success', 7000);
+                    }
+                } else if (sData.isPaid) {
+                    if (!window.__hasAlertedPaidUnlocked) {
+                        window.__hasAlertedPaidUnlocked = true;
+                        playJobCompletedBeep();
+                        showToast('✨ ได้รับยอดชำระเงินเรียบร้อยแล้ว! ปลดล็อคลายน้ำสำเร็จ ดาวน์โหลดไฟล์คมชัดได้ทันที', 'success', 8000);
+                    }
+                }
 
                 // Admin: auto open Photoshop when accepted
                 if (sData.jobStatus === 'processing' && isAdmin && !window.__psAutoOpened) {
