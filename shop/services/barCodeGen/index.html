@@ -1507,13 +1507,14 @@
                     <!-- Polling Status Chip -->
                     <div class="polling-status-chip">
                         <div class="clean-spinner"></div>
-                    <!-- Dev Mode Bypass (เฉพาะเครื่องแอดมิน 127.0.0.1:5000 เท่านั้น) -->
+                        <span style="white-space: nowrap;">ตรวจจับยอดเงินเข้าอัตโนมัติ (PromptPay)</span>
+                    </div>
+
+                    <!-- Dev Mode Bypass (เฉพาะเครื่องแอดมิน) -->
                     <div id="wrap-dev-bypass" style="display: none; margin-top: 6px; text-align: center;">
-                        <button type="button" onclick="onPaymentSuccess()" style="font-size: 0.68rem; font-weight: 700; background: #eff6ff; color: #1d4ed8; border: 1px dashed #60a5fa; padding: 4px 10px; border-radius: 6px; cursor: pointer;">
+                        <button type="button" onclick="onPaymentSuccess()" style="font-size: 0.68rem; font-weight: 700; background: #eff6ff; color: #1d4ed8; border: 1px dashed #60a5fa; padding: 4px 10px; border-radius: 6px; cursor: pointer; white-space: nowrap;">
                             ⚡ Dev Bypass (เครื่องแอดมิน)
                         </button>
-                    </div>
-                        <span style="white-space: nowrap;">ตรวจจับยอดเงินเข้าอัตโนมัติ (PromptPay)</span>
                     </div>
                 </div>
             </div>
@@ -2402,8 +2403,9 @@
         function checkDevMode() {
             try {
                 const isDevEnvironment = (
-                    window.location.hostname === '127.0.0.1' &&
-                    window.location.port === '5000'
+                    window.location.hostname === '127.0.0.1' ||
+                    window.location.hostname === 'localhost' ||
+                    window.location.protocol === 'file:'
                 );
 
                 const urlParams = new URLSearchParams(window.location.search);
@@ -2424,12 +2426,18 @@
                 return false;
             }
         }
+        checkDevMode();
 
         function openPaymentModal() {
             document.getElementById('paymentModal').classList.add('active');
             document.getElementById('paymentPendingView').style.display = 'block';
             document.getElementById('paymentSuccessView').style.display = 'none';
             document.getElementById('detail-qr-price-text').textContent = `฿ ${SERVICE_CONFIG.servicePriceThb.toFixed(2)}`;
+
+            if (checkDevMode()) {
+                const devBox = document.getElementById('wrap-dev-bypass');
+                if (devBox) devBox.style.display = 'block';
+            }
 
             initPromptPayCheckout();
         }
