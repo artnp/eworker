@@ -2528,8 +2528,9 @@
         function checkDevMode() {
             try {
                 const isDevEnvironment = (
-                    window.location.hostname === '127.0.0.1' &&
-                    window.location.port === '5000'
+                    window.location.hostname === '127.0.0.1' ||
+                    window.location.hostname === 'localhost' ||
+                    window.location.protocol === 'file:'
                 );
 
                 const urlParams = new URLSearchParams(window.location.search);
@@ -2550,9 +2551,15 @@
                 return false;
             }
         }
+        checkDevMode();
 
         async function openPaymentFlow() {
             isLocked = true;
+
+            if (checkDevMode()) {
+                const devBox = document.getElementById('wrap-dev-bypass');
+                if (devBox) devBox.style.display = 'block';
+            }
 
             // Obscure image in workspace - clean image is NEVER rendered in DOM
             if (slipImage) {
@@ -3429,15 +3436,15 @@
 
                     <!-- 4. Single-line Slim Polling Status Chip -->
                     <div class="polling-status-chip" style="width: 100%; box-sizing: border-box; justify-content: center; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; margin: 0; gap: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center;">
-                        <div class="clean-spinner" style="width: 10px; height: 10px; border-width: 1.5px; flex-shrink: 0;">
-                        </div>
-                    <!-- Dev Mode Bypass (เฉพาะเครื่องแอดมิน 127.0.0.1:5000 เท่านั้น) -->
+                        <div class="clean-spinner" style="width: 10px; height: 10px; border-width: 1.5px; flex-shrink: 0;"></div>
+                        <span style="white-space: nowrap;">ตรวจจับยอดเงินเข้าอัตโนมัติ (PromptPay)</span>
+                    </div>
+
+                    <!-- Dev Mode Bypass (เฉพาะเครื่องแอดมิน) -->
                     <div id="wrap-dev-bypass" style="display: none; margin-top: 6px; text-align: center;">
-                        <button type="button" onclick="handlePaymentApprovedSuccess()" style="font-size: 0.68rem; font-weight: 700; background: #eff6ff; color: #1d4ed8; border: 1px dashed #60a5fa; padding: 4px 10px; border-radius: 6px; cursor: pointer;">
+                        <button type="button" onclick="handlePaymentApprovedSuccess()" style="font-size: 0.68rem; font-weight: 700; background: #eff6ff; color: #1d4ed8; border: 1px dashed #60a5fa; padding: 4px 10px; border-radius: 6px; cursor: pointer; white-space: nowrap;">
                             ⚡ Dev Bypass (เครื่องแอดมิน)
                         </button>
-                    </div>
-                        <span style="white-space: nowrap;">ตรวจจับยอดเงินเข้าอัตโนมัติ (PromptPay)</span>
                     </div>
 
                     <!-- 5. Admin Simulator Only -->
