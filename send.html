@@ -169,15 +169,31 @@
         }
 
         @keyframes pulse-green {
-            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-            70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
         }
 
         @keyframes pulse-red {
-            0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
-            70% { box-shadow: 0 0 0 8px rgba(244, 63, 94, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+            0% {
+                box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 8px rgba(244, 63, 94, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(244, 63, 94, 0);
+            }
         }
 
         .upload-area.store-closed {
@@ -2786,37 +2802,64 @@
             margin-top: 4px;
         }
 
-        /* ===== PAYMENT CARD STYLED LIKE DOWNLOAD.HTML ===== */
+        /* ===== PAYMENT CARD STYLED LIKE PROMPTPAY SLIP ===== */
         .dl-payment-card {
             background: #ffffff;
-            border: 1.5px solid #e2e8f0;
+            border: 2px solid #6366f1;
             border-radius: 18px;
-            padding: 14px 16px;
-            box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+            padding: 16px;
+            box-shadow: 0 12px 35px -6px rgba(99, 102, 241, 0.22), 0 0 0 1px rgba(99, 102, 241, 0.1);
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
             margin-top: 4px;
+            position: relative;
+        }
+
+        .dl-destroy-timer-banner {
+            background: #fff1f2;
+            border: 1.5px solid #fecdd3;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #9f1239;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .dl-destroy-timer-banner strong {
+            font-family: 'Outfit', monospace;
+            font-size: 14px;
+            color: #e11d48;
+        }
+
+        .promptpay-mini-logo {
+            height: 22px;
+            width: auto;
+            object-fit: contain;
         }
 
         .dl-payment-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 1px solid #f1f5f9;
-            padding-bottom: 8px;
+            border-bottom: 1.5px dashed #e2e8f0;
+            padding-bottom: 10px;
         }
 
         .dl-header-left {
             display: flex;
-            flex-direction: column;
-            gap: 2px;
+            align-items: center;
+            gap: 8px;
         }
 
         .dl-header-title {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 800;
-            color: #1e293b;
+            color: #0f172a;
             display: flex;
             align-items: center;
             gap: 6px;
@@ -2838,11 +2881,11 @@
         }
 
         .dl-currency {
-            font-size: 16px;
+            font-size: 17px;
         }
 
         .dl-amount-val {
-            font-size: 26px;
+            font-size: 28px;
             letter-spacing: -0.5px;
         }
 
@@ -2852,19 +2895,19 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            gap: 8px;
+            gap: 10px;
         }
 
         .qr-wrapper {
             background: #ffffff;
-            padding: 8px;
+            padding: 10px;
             border-radius: 16px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
-            border: 1px solid #e2e8f0;
+            border: 2px solid #e2e8f0;
             transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
             position: relative;
         }
@@ -2872,11 +2915,12 @@
         .qr-wrapper:hover {
             transform: scale(1.02);
             box-shadow: 0 12px 28px rgba(99, 102, 241, 0.25);
+            border-color: #a5b4fc;
         }
 
         .dl-qr-loading {
-            width: 170px;
-            height: 170px;
+            width: 180px;
+            height: 180px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -2897,22 +2941,24 @@
         }
 
         .btn-save-qr-mini {
-            background: #f8fafc;
+            background: #f1f5f9;
             border: 1px solid #cbd5e1;
-            color: #334155;
-            padding: 5px 12px;
+            color: #1e293b;
+            padding: 7px 18px;
             border-radius: 999px;
-            font-size: 11.5px;
+            font-size: 12px;
             font-weight: 700;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
             transition: all 0.2s ease;
         }
+
         .btn-save-qr-mini:hover {
             background: #e2e8f0;
             color: #0f172a;
+            transform: translateY(-1px);
         }
 
         /* No Slip / Instant Unlock Alert Badge - Yellow-Red Gradient with Running Transparent Border */
@@ -2947,21 +2993,19 @@
             width: 260%;
             aspect-ratio: 1 / 1;
             transform: translate(-50%, -50%) rotate(0deg);
-            background: conic-gradient(
-                from 0deg,
-                transparent 0deg,
-                transparent 60deg,
-                rgba(255, 255, 255, 0.15) 75deg,
-                rgba(255, 255, 255, 0.95) 95deg,
-                rgba(255, 255, 255, 0.2) 110deg,
-                transparent 130deg,
-                transparent 240deg,
-                rgba(255, 255, 255, 0.15) 255deg,
-                rgba(255, 255, 255, 0.95) 275deg,
-                rgba(255, 255, 255, 0.2) 290deg,
-                transparent 310deg,
-                transparent 360deg
-            );
+            background: conic-gradient(from 0deg,
+                    transparent 0deg,
+                    transparent 60deg,
+                    rgba(255, 255, 255, 0.15) 75deg,
+                    rgba(255, 255, 255, 0.95) 95deg,
+                    rgba(255, 255, 255, 0.2) 110deg,
+                    transparent 130deg,
+                    transparent 240deg,
+                    rgba(255, 255, 255, 0.15) 255deg,
+                    rgba(255, 255, 255, 0.95) 275deg,
+                    rgba(255, 255, 255, 0.2) 290deg,
+                    transparent 310deg,
+                    transparent 360deg);
             animation: borderBeamRun 3s linear infinite;
             z-index: 1;
         }
@@ -2975,19 +3019,31 @@
             z-index: 2;
         }
 
-        .no-slip-alert > * {
+        .no-slip-alert>* {
             position: relative;
             z-index: 3;
         }
 
         @keyframes borderBeamRun {
-            from { transform: translate(-50%, -50%) rotate(0deg); }
-            to { transform: translate(-50%, -50%) rotate(360deg); }
+            from {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+
+            to {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
         }
 
         @keyframes pulseAlert {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.02); }
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.02);
+            }
         }
 
         .dl-waiting-box {
@@ -3066,8 +3122,15 @@
         }
 
         @keyframes toastPop {
-            0% { transform: translateY(-20px) scale(0.95); opacity: 0; }
-            100% { transform: translateY(0) scale(1); opacity: 1; }
+            0% {
+                transform: translateY(-20px) scale(0.95);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
         }
 
         .paid-unlocked-panel {
@@ -3310,7 +3373,8 @@
                 title="ส่งงานผ่านระบบส่งไฟล์ลับ (PrivateSend.ps1)">
                 <i class="fa-solid fa-shield-halved"></i> <span>ส่งงานลับ (PrivateSend)</span>
             </button>
-            <button class="btn-nav btn-nav-outline hidden" id="btnAdminDeclineTop" title="ปฏิเสธไม่รับงานนี้ (เสี่ยงทางกฎหมาย)" style="border-color:#f43f5e;color:#e11d48;">
+            <button class="btn-nav btn-nav-outline hidden" id="btnAdminDeclineTop"
+                title="ปฏิเสธไม่รับงานนี้ (เสี่ยงทางกฎหมาย)" style="border-color:#f43f5e;color:#e11d48;">
                 <i class="fa-solid fa-ban"></i> <span>ไม่รับงานนี้</span>
             </button>
             <button class="btn-nav btn-nav-danger hidden" id="btnAdminDeleteJob" title="ลบงานนี้และทำลายหลักฐานทั้งหมด">
@@ -3442,8 +3506,7 @@
                 <!-- Automatic Payment Detection Badge -->
                 <div
                     style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 11px 14px; border-radius: 10px; text-align: center; font-size: 12.5px; font-weight: 700; color: #15803d; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <i class="fa-solid fa-bolt" style="color: #16a34a;"></i> ระบบชำระเงินอัตโนมัติ (ตรวจจับยอดโอนทันที
-                    ไม่ต้องส่งสลิป)
+                    <i class="fa-solid fa-bolt" style="color: #16a34a;"></i> ระบบชำระเงินอัตโนมัติ
                 </div>
             </div>
         </div>
@@ -3587,6 +3650,9 @@
             </div>
 
             <div class="annotations-list" id="annotationsList">
+                <!-- Total Job Card & Payment Action Container (แสดงสลิป QR Code และแอคชันหลักอยู่ด้านบนสุด) -->
+                <div class="total-job-card-container" id="totalJobCardContainer"></div>
+
                 <div id="annotationsCards">
                     <div class="empty-state">
                         <div class="empty-state-icon-wrap">
@@ -3601,9 +3667,6 @@
                         </button>
                     </div>
                 </div>
-
-                <!-- Total Job Card & Payment Action Container (One-time payment when finished) -->
-                <div class="total-job-card-container" id="totalJobCardContainer"></div>
             </div>
         </div>
     </div>
@@ -4310,14 +4373,17 @@
                     throw new Error('ไม่พบข้อมูล');
                 }
 
-                // Check if expired (1 hour after payment)
-                if (data.isPaid && data.paidAt && (Date.now() - data.paidAt > 3600 * 1000)) {
-                    console.warn('⏰ Session expired (1 hr after payment)');
+                // Check if expired (1 hour after completion or payment)
+                const completionTime = data.completedAt || data.lastCompletedAt || data.paidAt;
+                const isOverOneHour = (data.expiresAt && Date.now() > data.expiresAt) ||
+                                      (completionTime && (Date.now() - completionTime > 3600 * 1000));
+                if ((data.hasWatermark || data.isPaid) && isOverOneHour) {
+                    console.warn('⏰ Session expired (1 hr after completion/payment)');
                     await database.ref(`annotations/${id}`).remove();
                     if (data.fileUrl && data.fileUrl.startsWith('fb_')) {
                         deleteFirebaseFile(data.fileUrl.substring(3));
                     }
-                    throw new Error('เซสชันหมดอายุแล้ว (1 ชม. หลังชำระเงิน)');
+                    throw new Error('เซสชันและภาพหมดอายุแล้ว (ระบบทำลายภาพอัตโนมัติใน 1 ชม.)');
                 }
 
                 sessionId = id;
@@ -4342,6 +4408,8 @@
                     cleanFileUrl: data.cleanFileUrl || data.completedFileUrl || data.fileUrl || '',
                     isPaid: isPaid,
                     paidAt: data.paidAt || null,
+                    completedAt: data.completedAt || data.lastCompletedAt || null,
+                    lastCompletedAt: data.lastCompletedAt || data.completedAt || null,
                     expiresAt: data.expiresAt || null
                 };
 
@@ -4371,9 +4439,10 @@
                 // Listen for changes (realtime sync)
                 listenToChanges();
 
-                // Start countdown if already paid
-                if (data.isPaid && data.paidAt) {
-                    startPaidLifespanCountdown(data.expiresAt || (data.paidAt + 3600000));
+                // Start 1-hour auto-destroy countdown if finished (waiting payment or already paid)
+                if (data.hasWatermark || data.isPaid || data.completedAt || data.lastCompletedAt) {
+                    const exp = data.expiresAt || ((data.completedAt || data.lastCompletedAt || data.paidAt || Date.now()) + 3600000);
+                    startJobDestructionCountdown(exp);
                 }
 
                 updateFloatingDownloadButton();
@@ -5894,12 +5963,17 @@
             if (currentSessionData.hasWatermark && !currentSessionData.isPaid) {
                 container.innerHTML = `
                     <div class="dl-payment-card" id="dlPaymentCard">
+                        <!-- 1-Hour Auto-Destroy Countdown Notice -->
+                        <div class="dl-destroy-timer-banner">
+                            <i class="fa-solid fa-fire-flame-curved" style="color:#ef4444;"></i>
+                            <span>ไฟล์ภาพนี้จะถูกทำลายอัตโนมัติใน 1 ชม. (เหลือเวลา <strong id="destroyCountdownTimer">--:--</strong> นาที)</span>
+                        </div>
+
+                        <!-- PromptPay Header -->
                         <div class="dl-payment-header">
                             <div class="dl-header-left">
-                                <span class="dl-header-title">
-                                    <i class="fa-solid fa-qrcode" style="color:#6366f1;"></i> ชำระค่าบริการ
-                                </span>
-                                <span class="dl-header-sub">งานเสร็จแล้ว • สแกนจ่ายเพื่อปลดล็อคไฟล์</span>
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/100px-PromptPay-logo.png" alt="PromptPay" class="promptpay-mini-logo">
+                                <span class="dl-header-title">พร้อมเพย์ (PromptPay)</span>
                             </div>
                             <div class="dl-payment-amount">
                                 <span class="dl-currency">฿</span>
@@ -5914,40 +5988,19 @@
                                     <div class="dl-spinner"></div>
                                     <span>กำลังสร้าง QR Code...</span>
                                 </div>
-                                <img id="mainSlipQrImg" src="" alt="PromptPay QR" style="display:none;width:170px;height:170px;object-fit:contain;border-radius:8px;">
+                                <img id="mainSlipQrImg" src="" alt="PromptPay QR" style="display:none;width:180px;height:180px;object-fit:contain;border-radius:10px;">
                             </div>
 
-                            <div class="dl-save-qr-btn-wrap">
-                                <button class="btn-save-qr-mini" id="btnDownloadMainSlip" type="button">
-                                    <i class="fa-solid fa-arrow-down-to-bracket"></i> แตะเพื่อบันทึก QR Code
-                                </button>
-                            </div>
-
-                            <div class="no-slip-alert">
-                                <span class="scan-phone-icon" aria-hidden="true">
-                                    <svg class="phone-scan-svg" viewBox="0 0 20 22" fill="none" style="width:14px;height:15px;display:inline-block;vertical-align:middle;" xmlns="http://www.w3.org/2000/svg">
-                                        <rect x="2.5" y="1" width="15" height="20" rx="3.5" stroke="currentColor" stroke-width="1.6" fill="rgba(255, 255, 255, 0.15)" />
-                                        <circle cx="10" cy="2.8" r="0.75" fill="currentColor" opacity="0.9" />
-                                        <rect x="4.2" y="4.2" width="11.6" height="13.6" rx="1.5" fill="rgba(0, 0, 0, 0.3)" />
-                                        <path d="M6 6.5h2 M6 6.5v2" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" opacity="0.85"/>
-                                        <path d="M14 6.5h-2 M14 6.5v2" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" opacity="0.85"/>
-                                        <path d="M6 15.5h2 M6 15.5v-2" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" opacity="0.85"/>
-                                        <path d="M14 15.5h-2 M14 15.5v-2" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" opacity="0.85"/>
-                                        <circle cx="10" cy="11" r="0.9" fill="#fef08a" />
-                                    </svg>
-                                </span>
-                                <span>สแกนปุ๊ป ลายน้ำหายทันที • ไม่ต้องส่งสลิป</span>
-                            </div>
+                            <button class="btn-save-qr-mini" id="btnDownloadMainSlip" type="button">
+                                <i class="fa-solid fa-arrow-down-to-bracket"></i> แตะเพื่อบันทึก QR Code
+                            </button>
                         </div>
 
-                        <!-- Waiting Live Status -->
+                        <!-- Live Detection Status -->
                         <div class="dl-waiting-box">
                             <div class="dl-waiting-pulse">
                                 <span class="dl-pulse-dot"></span>
-                                <span class="dl-waiting-title">กำลังตรวจจับยอดเงินเข้า...</span>
-                            </div>
-                            <div class="dl-waiting-timer">
-                                ⏱️ กรุณาชำระภายใน <strong id="mainSlipTimer" class="dl-timer-val">10:00</strong> นาที
+                                <span class="dl-waiting-title">กำลังตรวจจับยอดเงินเข้าอัตโนมัติ (ชำระแล้วปลดล็อคทันที)</span>
                             </div>
                         </div>
                     </div>
@@ -5955,6 +6008,11 @@
 
                 loadTotalBeamPayment(price);
                 document.getElementById('btnDownloadMainSlip')?.addEventListener('click', downloadTotalBeamSlip);
+
+                // Start 1-hour self-destruct countdown
+                const exp = currentSessionData.expiresAt || ((currentSessionData.completedAt || currentSessionData.lastCompletedAt || Date.now()) + 3600000);
+                startJobDestructionCountdown(exp);
+
                 updateFloatingDownloadButton();
                 updateTopNav();
                 return;
@@ -6096,28 +6154,20 @@
                 return;
             }
 
-            // 6. STATE: DRAFT (ลูกค้ากำลังมาร์คจุด ยังไม่ได้ส่งประเมินราคา)
+            // 6. STATE: DRAFT (ลูกค้ากำลังมาร์คจุด ยังไม่ได้กดยืนยันส่งประเมินราคา)
             if (isAdmin) {
+                // ฝั่งแอดมิน: รอลูกค้ากดยืนยันส่งจุดแก้ไขก่อน ถึงค่อยแสดงแถบกำหนดส่งราคางาน
                 container.innerHTML = `
-                    <div class="admin-total-price-panel">
-                        <div class="admin-price-header">
-                            <span class="admin-price-title"><i class="fa-solid fa-tags"></i> กำหนดราคางานนี้ (${totalMarkers} จุด):</span>
-                            <span class="admin-price-hint">ชิปด่วน: 70, 100, 150</span>
+                    <div class="admin-waiting-customer-panel" style="background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:14px;padding:16px;text-align:center;">
+                        <div style="font-size:24px;color:#6366f1;margin-bottom:6px;">
+                            <i class="fa-solid fa-user-pen"></i>
                         </div>
-                        <div class="admin-price-input-row">
-                            <div class="admin-price-input-wrap">
-                                <span class="currency-prefix">฿</span>
-                                <input type="number" id="adminTotalInputPrice" class="admin-price-input" min="0" step="5" placeholder="0" value="${price}">
-                            </div>
-                            <button id="btnAdminSendTotalPrice" class="btn-save-admin-price">
-                                <i class="fa-solid fa-paper-plane"></i> ส่งราคา
-                            </button>
+                        <div style="font-size:13.5px;font-weight:800;color:#1e293b;">
+                            รอลูกค้าระบุตำแหน่งแก้ไขและกดยืนยัน...
                         </div>
-                        <div class="admin-price-chips-row" style="margin-top:10px;">
-                            <span class="chips-label">เลือกด่วน:</span>
-                            <button class="chip-total-price ${price == 70 ? 'active' : ''}" data-val="70">70฿</button>
-                            <button class="chip-total-price ${price == 100 ? 'active' : ''}" data-val="100">100฿</button>
-                            <button class="chip-total-price ${price == 150 ? 'active' : ''}" data-val="150">150฿</button>
+                        <div style="font-size:11.5px;color:#64748b;margin-top:4px;line-height:1.4;">
+                            ขณะนี้ลูกค้ากำลังระบุจุดแก้ไข (${totalMarkers} จุด)<br>
+                            เมื่อลูกค้าระบุเสร็จและกดยืนยัน แถบกำหนดราคาจะปรากฏขึ้นทันที
                         </div>
                         <div style="margin-top:12px;padding-top:10px;border-top:1px dashed #cbd5e1;display:flex;align-items:center;justify-content:space-between;">
                             <span style="font-size:11.5px;color:#64748b;"><i class="fa-solid fa-shield-halved"></i> เอกสารเสี่ยงกฎหมาย:</span>
@@ -6127,32 +6177,16 @@
                         </div>
                     </div>
                 `;
-                const priceInp = document.getElementById('adminTotalInputPrice');
-                const btnSend = document.getElementById('btnAdminSendTotalPrice');
                 document.getElementById('btnAdminDeclineInlineDraft')?.addEventListener('click', adminDeclineJob);
-                container.querySelectorAll('.chip-total-price').forEach(chip => {
-                    chip.addEventListener('click', () => {
-                        const val = chip.dataset.val;
-                        if (priceInp) priceInp.value = val;
-                        container.querySelectorAll('.chip-total-price').forEach(c => c.classList.remove('active'));
-                        chip.classList.add('active');
-                        sendTotalPriceQuote(val);
-                    });
-                });
-                btnSend?.addEventListener('click', () => {
-                    sendTotalPriceQuote(priceInp.value);
-                });
-                priceInp?.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') sendTotalPriceQuote(priceInp.value);
-                });
             } else {
+                // ฝั่งลูกค้า: แสดงปุ่มกดยืนยันจุดแก้ไขเพื่อส่งให้ช่างประเมินราคา
                 container.innerHTML = `
-                    <div style="margin-top:10px;">
+                    <div style="margin-top:4px;">
                         <button class="btn-submit-all-quotes" id="btnSubmitAllQuotes" ${totalMarkers === 0 ? 'disabled style="opacity:0.6;cursor:not-allowed;"' : ''}>
-                            <i class="fa-solid fa-paper-plane"></i> ส่งให้ช่างประเมินราคา (${totalMarkers} จุด)
+                            <i class="fa-solid fa-circle-check"></i> ยืนยันจุดแก้ไข (${totalMarkers} จุด) & ส่งให้ช่างประเมินราคา
                         </button>
                         <div style="font-size:11.5px;color:#64748b;text-align:center;margin-top:6px;">
-                            วงจุดและพิมพ์รายละเอียดให้ครบ จากนั้นกดส่งประเมินราคา
+                            ${totalMarkers === 0 ? 'คลิกบนรูปภาพเพื่อเพิ่มจุดแก้ไข' : 'ระบุตำแหน่งและรายละเอียดครบแล้ว กดยืนยันเพื่อให้ช่างประเมินราคา'}
                         </div>
                     </div>
                 `;
@@ -6403,13 +6437,17 @@
             img.src = qrImg.src;
         }
 
-        // ===== 1-HOUR LIFESPAN COUNTDOWN AFTER PAYMENT =====
+        // ===== 1-HOUR AUTO-DESTRUCT COUNTDOWN (หลังช่างทำเสร็จ / ชำระเงิน) =====
         let paidExpiryInterval = null;
-        function startPaidLifespanCountdown(expiresAt) {
-            if (!expiresAt) return;
+        function startJobDestructionCountdown(expiresAt) {
+            if (!expiresAt) {
+                const baseTime = (currentSessionData && (currentSessionData.completedAt || currentSessionData.lastCompletedAt || currentSessionData.paidAt)) || Date.now();
+                expiresAt = baseTime + 3600000;
+            }
             if (paidExpiryInterval) clearInterval(paidExpiryInterval);
 
-            const displayEl = document.getElementById('paidCountdownDisplay');
+            const paidDisplayEl = document.getElementById('paidCountdownDisplay');
+            const destroyDisplayEl = document.getElementById('destroyCountdownTimer');
             const expiryTimer = document.getElementById('expiryTimer');
             const expiryTime = document.getElementById('expiryTime');
             if (expiryTimer) expiryTimer.style.display = 'block';
@@ -6418,7 +6456,8 @@
                 const remaining = expiresAt - Date.now();
                 if (remaining <= 0) {
                     clearInterval(paidExpiryInterval);
-                    if (displayEl) displayEl.textContent = '00:00 (หมดอายุ)';
+                    if (paidDisplayEl) paidDisplayEl.textContent = '00:00 (หมดอายุ)';
+                    if (destroyDisplayEl) destroyDisplayEl.textContent = '00:00 (หมดอายุ)';
                     if (expiryTime) expiryTime.textContent = 'หมดอายุแล้ว';
 
                     if (sessionId) {
@@ -6434,7 +6473,7 @@
                             }
                         } catch (e) { }
                     }
-                    alert('⏱️ ไฟล์นี้มีอายุ 1 ชั่วโมงหลังชำระเงิน และระบบได้ทำการลบตัวเองอัตโนมัติเรียบร้อยแล้ว');
+                    alert('⏱️ ไฟล์นี้มีอายุ 1 ชั่วโมงหลังแก้ไขเสร็จ และระบบได้ทำลายไฟล์ภาพและข้อมูลทั้งหมดเรียบร้อยแล้ว');
                     window.location.href = window.location.pathname;
                     return;
                 }
@@ -6442,13 +6481,15 @@
                 const mins = Math.floor(remaining / 60000);
                 const secs = Math.floor((remaining % 60000) / 1000);
                 const str = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-                if (displayEl) displayEl.textContent = str;
+                if (paidDisplayEl) paidDisplayEl.textContent = str;
+                if (destroyDisplayEl) destroyDisplayEl.textContent = str;
                 if (expiryTime) expiryTime.textContent = str;
             };
 
             update();
             paidExpiryInterval = setInterval(update, 1000);
         }
+        const startPaidLifespanCountdown = startJobDestructionCountdown;
 
         // ===== SWITCH DISPLAYED IMAGE (WATERMARK VS CLEAN) =====
         let currentLoadedDisplayUrl = null;
@@ -6794,22 +6835,28 @@
                     cleanFileUrl: sData.cleanFileUrl || sData.completedFileUrl || sData.fileUrl || '',
                     isPaid: !!sData.isPaid,
                     paidAt: sData.paidAt || null,
+                    completedAt: sData.completedAt || sData.lastCompletedAt || null,
+                    lastCompletedAt: sData.lastCompletedAt || sData.completedAt || null,
                     expiresAt: sData.expiresAt || null
                 };
 
-                // ตรวจสอบการส่งงานเสร็จติดลายน้ำ เพื่อแจ้งเตือนพร้อมเสียง Beep
+                // ตรวจสอบการส่งงานเสร็จติดลายน้ำ เพื่อแจ้งเตือนพร้อมเสียง Beep และเริ่มนับถอยหลัง 1 ชม.
                 if (sData.hasWatermark && !sData.isPaid) {
                     if (!window.__hasAlertedWorkCompleted) {
                         window.__hasAlertedWorkCompleted = true;
                         playJobCompletedBeep();
                         showToast('🎉 ช่างแก้ไขงานเสร็จสมบูรณ์แล้ว! สแกนจ่ายเพื่อปลดล็อคลายน้ำและรับไฟล์ทันที', 'success', 7000);
                     }
+                    const exp = sData.expiresAt || ((sData.completedAt || sData.lastCompletedAt || Date.now()) + 3600000);
+                    startJobDestructionCountdown(exp);
                 } else if (sData.isPaid) {
                     if (!window.__hasAlertedPaidUnlocked) {
                         window.__hasAlertedPaidUnlocked = true;
                         playJobCompletedBeep();
                         showToast('✨ ได้รับยอดชำระเงินเรียบร้อยแล้ว! ปลดล็อคลายน้ำสำเร็จ ดาวน์โหลดไฟล์คมชัดได้ทันที', 'success', 8000);
                     }
+                    const exp = sData.expiresAt || ((sData.completedAt || sData.lastCompletedAt || sData.paidAt || Date.now()) + 3600000);
+                    startJobDestructionCountdown(exp);
                 }
 
                 // Admin: auto open Photoshop when accepted
