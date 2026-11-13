@@ -5700,7 +5700,18 @@
         }
 
         // ===== ANNOTATION CARDS & ROLE HANDLING =====
-        const isAdmin = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' || urlParams.get('role') === 'admin';
+        const urlRole = urlParams.get('role');
+        if (urlRole === 'admin') {
+            localStorage.setItem('eworker_admin_mode', 'true');
+        } else if (urlRole === 'client') {
+            localStorage.removeItem('eworker_admin_mode');
+        }
+
+        const isAdmin = window.location.hostname === '127.0.0.1' || 
+                        window.location.hostname === 'localhost' || 
+                        urlRole === 'admin' || 
+                        localStorage.getItem('eworker_admin_mode') === 'true';
+
         document.body.classList.toggle('is-admin', isAdmin);
         document.body.classList.toggle('is-client', !isAdmin);
 
@@ -5723,7 +5734,20 @@
             const navRolePill = document.getElementById('navRolePill');
             if (navRolePill) {
                 navRolePill.className = 'role-pill ' + (isAdmin ? 'admin' : 'client');
-                navRolePill.innerHTML = isAdmin ? '<i class="fa-solid fa-shield-halved"></i> แอดมิน (127.0.0.1)' : '<i class="fa-solid fa-user"></i> ฝั่งลูกค้า';
+                navRolePill.innerHTML = isAdmin ? '<i class="fa-solid fa-shield-halved"></i> แอดมิน (คลิกเพื่อสลับ)' : '<i class="fa-solid fa-user"></i> ฝั่งลูกค้า (คลิกเพื่อสลับ)';
+                navRolePill.style.cursor = 'pointer';
+                navRolePill.title = 'แตะเพื่อสลับมุมมอง แอดมิน / ลูกค้า';
+                navRolePill.onclick = () => {
+                    const u = new URL(window.location.href);
+                    if (isAdmin) {
+                        localStorage.removeItem('eworker_admin_mode');
+                        u.searchParams.set('role', 'client');
+                    } else {
+                        localStorage.setItem('eworker_admin_mode', 'true');
+                        u.searchParams.set('role', 'admin');
+                    }
+                    window.location.href = u.toString();
+                };
             }
 
             const btnAdminOpenPs = document.getElementById('btnAdminOpenPs');
@@ -6457,6 +6481,11 @@
                             <div style="font-size:22px;color:#6366f1;margin-bottom:6px;"><i class="fa-solid fa-paper-plane"></i></div>
                             <div class="waiting-quote-text">ส่งจุดที่ต้องการแก้ให้ช่างแล้ว • รอช่างประเมินราคา...</div>
                             <div class="waiting-quote-sub">ช่างจะประเมินราคาให้ทราบสักครู่ (70, 100 หรือ 150 บาท)</div>
+                            <div style="margin-top:14px;padding-top:10px;border-top:1px dashed #cbd5e1;">
+                                <a href="?id=${sessionId}&role=admin" class="btn-switch-admin-view" style="display:inline-flex;align-items:center;gap:6px;background:#e0e7ff;color:#4338ca;padding:7px 16px;border-radius:999px;font-size:12px;font-weight:700;text-decoration:none;transition:all 0.2s;box-shadow:0 2px 6px rgba(99,102,241,0.15);">
+                                    <i class="fa-solid fa-user-shield"></i> คุณคือแอดมินใช่ไหม? (คลิกเพื่อเปิดแถบกำหนดราคา)
+                                </a>
+                            </div>
                         </div>
                     `;
                 }
@@ -6522,6 +6551,11 @@
                     submittedAt: Date.now(),
                     jobStatus: 'quote_pending'
                 });
+                await database.ref(`temp_files/markpoint_queue/${sessionId}`).set({
+                    sessionId: sessionId,
+                    submittedAt: Date.now(),
+                    jobStatus: 'quote_pending'
+                }).catch(() => {});
                 hideLoading();
             } catch (e) {
                 hideLoading();
@@ -6545,6 +6579,7 @@
                     jobStatus: 'quoted',
                     quotedAt: Date.now()
                 });
+                await database.ref(`temp_files/markpoint_queue/${sessionId}`).remove().catch(() => {});
                 hideLoading();
                 renderTotalJobCard();
             } catch (e) {
