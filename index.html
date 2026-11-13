@@ -1531,15 +1531,14 @@
 
         /* ===== PROGRAM DETAIL MODAL ( Dedicated Style) ===== */
         .detail-header-block {
-            padding: 16px 68px 14px 68px;
+            padding: 12px 52px 12px 18px;
             border-bottom: 1px solid var(--fh-border);
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
-            justify-content: center;
-            text-align: center;
-            gap: 10px;
-            background: #f8fafc;
+            justify-content: space-between;
+            gap: 16px;
+            background: #ffffff;
             position: relative;
             border-top-left-radius: var(--radius-md);
             border-top-right-radius: var(--radius-md);
@@ -1548,35 +1547,36 @@
         .detail-brand-title {
             display: flex;
             align-items: center;
-            justify-content: center;
-            width: 100%;
-            max-width: 100%;
+            justify-content: flex-start;
+            flex: 1;
+            min-width: 0;
+            text-align: left;
         }
 
         .detail-hgroup {
-            display: inline-flex;
+            display: flex;
             align-items: center;
             gap: 10px;
             flex-wrap: wrap;
-            justify-content: center;
-            text-align: center;
+            justify-content: flex-start;
+            text-align: left;
             min-width: 0;
             max-width: 100%;
         }
 
         .detail-hgroup h2 {
-            font-size: 1.15rem;
+            font-size: 1.08rem;
             font-weight: 800;
             color: var(--fh-dark);
-            text-align: center;
+            text-align: left;
             margin: 0;
-            line-height: 1.4;
+            line-height: 1.35;
             display: inline;
             word-break: break-word;
         }
 
         .detail-sub-meta {
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             color: var(--fh-muted);
             display: inline-flex;
             align-items: center;
@@ -1599,35 +1599,75 @@
             flex-shrink: 0;
         }
 
-        @media (max-width: 640px) {
-            .detail-header-block {
-                padding: 14px 20px;
-            }
-
-            .detail-brand-title {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-
-            .detail-hgroup {
-                justify-content: center;
-                text-align: center;
-            }
-
-            .detail-hgroup h2 {
-                text-align: center;
-            }
-        }
-
         .detail-cta-box {
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: flex-end;
             justify-content: center;
-            text-align: center;
-            gap: 6px;
-            width: 100%;
-            margin: 0 auto;
+            text-align: right;
+            gap: 3px;
+            width: auto;
+            margin: 0;
+            flex-shrink: 0;
+        }
+
+        .detail-cta-box .btn-big-download {
+            padding: 8px 18px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            border-radius: 6px;
+            min-width: auto;
+            max-width: none;
+            width: auto;
+            height: 38px;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
+            margin: 0;
+        }
+
+        .detail-cta-box span {
+            font-size: 0.72rem;
+            color: var(--fh-muted);
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 768px) {
+            .detail-header-block {
+                padding: 10px 42px 10px 14px;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+
+            .detail-brand-title {
+                justify-content: flex-start;
+                text-align: left;
+            }
+
+            .detail-hgroup {
+                justify-content: flex-start;
+                text-align: left;
+            }
+
+            .detail-hgroup h2 {
+                text-align: left;
+                font-size: 1rem;
+            }
+
+            .detail-cta-box {
+                align-items: stretch;
+                width: 100%;
+            }
+
+            .detail-cta-box .btn-big-download {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .detail-cta-box span {
+                text-align: center;
+            }
         }
 
         .btn-big-download {
@@ -5128,14 +5168,12 @@
                         <div id="detail-bottom-btn-view"
                             style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; min-height: 155px; width: 100%; box-sizing: border-box;">
                             <div>
-                                <div class="detail-bottom-checkout-header">
-                                    <span class="detail-bottom-promptpay-badge">
+                                <div class="detail-bottom-checkout-header" style="display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: nowrap; margin-bottom: 6px;">
+                                    <span class="detail-bottom-promptpay-badge" style="white-space: nowrap; flex-shrink: 0;">
                                         <span>⚡ PromptPay</span>
                                     </span>
-                                    <span style="font-size: 0.76rem; color: var(--fh-muted);"
-                                        id="detail-bottom-status-note">
-                                        สแกนผ่านทุกแอปธนาคาร
-                                    </span>
+                                    <span style="font-size: 0.74rem; color: var(--fh-muted); white-space: nowrap; text-align: right;"
+                                        id="detail-bottom-status-note">สแกนผ่านทุกแอปธนาคาร เพื่อปลดล็อก</span>
                                 </div>
                                 <div
                                     style="display: flex; align-items: center; justify-content: center; margin: 10px 0 16px 0; text-align: center;">
@@ -6101,7 +6139,7 @@
     </div>
 
     <!-- ===== ADMIN FONT ARCHIVE MODAL (เพิ่ม/จัดการคลังฟอนต์) ===== -->
-    <div class="modal-overlay" id="admin-font-modal" onclick="handleAdminFontModalOverlayClick(event)">
+    <div class="modal-overlay" id="admin-font-modal">
         <div class="modal-container" style="max-width: 600px; width: 95%;">
             <button type="button" class="modal-close-fh" onclick="closeAdminFontModal(event)" title="ปิดหน้าต่าง"
                 aria-label="ปิดหน้าต่าง">✕</button>
@@ -6114,7 +6152,7 @@
             </div>
 
             <div class="admin-form-body" style="padding: 18px 20px;">
-                <form id="admin-font-form" onsubmit="handleAdminFontFormSubmit(event)" autocomplete="off">
+                <form id="admin-font-form" onsubmit="handleAdminFontFormSubmit(event)" autocomplete="off" onkeydown="if(event.key==='Enter'&&event.target.tagName==='INPUT'&&event.target.type!=='submit'){event.preventDefault();}">
                     <input type="hidden" id="admin-font-edit-id" value="">
 
                     <!-- Image Section (Drag & Drop / Ctrl+V / URL / Upload) -->
@@ -10671,32 +10709,7 @@ ${encodedToken}
                 });
             }
 
-            const catList = Array.from(catSet);
-
-            if (datalist) {
-                datalist.innerHTML = catList.map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
-            }
-
-            if (chipsList) {
-                const targetVal = (currentVal || (document.getElementById('admin-category-input') ? document.getElementById('admin-category-input').value : '')).trim();
-                chipsList.innerHTML = catList.map(c => {
-                    const isActive = (targetVal === c);
-                    return `<button type="button" class="btn-cat-chip ${isActive ? 'active' : ''}" onclick="selectAdminCategory('${escapeHtml(c)}')">🏷️ ${escapeHtml(c)}</button>`;
-                }).join('');
-            }
-        }
-
-        function areCurrentStepsTradingView() {
-            const rows = document.querySelectorAll('.admin-step-item-val');
-            for (let r of rows) {
-                const val = r.value || '';
-                if (val.includes('TradingView') || val.includes('Pine Editor') || val.includes('สคริปต์')) return true;
-            }
-            return false;
-        }
-
-        function areCurrentStepsChromeAddon() {
-            const rows = document.querySelectorAll('.admin-step-item-val');
+            
             for (let r of rows) {
                 const val = r.value || '';
                 if (val.includes('chrome://extensions') || val.includes('Developer mode') || val.includes('Load unpacked') || val.includes('ส่วนขยาย')) return true;
@@ -11058,9 +11071,8 @@ ${encodedToken}
         }
 
         function handleAdminFontModalOverlayClick(e) {
-            if (e && e.target === document.getElementById('admin-font-modal')) {
-                closeAdminFontModal(e);
-            }
+            // ป้องกันปิดหน้าต่างอัตโนมัติ ให้กดปุ่มกากบาท [✕] หรือปุ่มยกเลิกเท่านั้น
+            return;
         }
 
         async function handleAdminFontImageUpload(input) {
@@ -12496,7 +12508,7 @@ ${encodedToken}
                 closeCheckoutModal();
                 closeMyOrdersModal();
                 closeAdminModal();
-                closeAdminFontModal();
+                // Font modal: ป้องกันเผลอปิดตอนกดพิมพ์ ต้องกดปุ่มกากบาท [✕] เท่านั้น
                 closeServiceModal();
             }
         });
