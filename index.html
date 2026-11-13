@@ -1707,13 +1707,14 @@
             font-size: inherit;
             font-weight: inherit;
         }
-            justify-content: center;
-            text-align: center;
-            gap: 10px;
-            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
-            margin: 0 auto;
-            min-width: 280px;
-            max-width: 440px;
+
+        justify-content: center;
+        text-align: center;
+        gap: 10px;
+        box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+        margin: 0 auto;
+        min-width: 280px;
+        max-width: 440px;
         }
 
         .btn-big-download:hover {
@@ -5201,7 +5202,8 @@
                                     <span class="detail-bottom-promptpay-badge">
                                         <span>⚡ PromptPay</span>
                                     </span>
-                                    <span style="font-size: 0.72rem; color: var(--fh-muted); white-space: nowrap; text-align: right;"
+                                    <span
+                                        style="font-size: 0.72rem; color: var(--fh-muted); white-space: nowrap; text-align: right;"
                                         id="detail-bottom-status-note">สแกนผ่านทุกแอปธนาคาร</span>
                                 </div>
                                 <div
@@ -7754,7 +7756,7 @@
                 } else if (isFont) {
                     langBadge.style.display = 'inline-flex';
                     langBadge.style.alignItems = 'center';
-                    langBadge.textContent = '🔤 คลังฟอนต์ (เฉลยฟอนต์ภาพ)';
+                    langBadge.textContent = '🔤 คลังฟอนต์ (ดูชื่อฟอนต์)';
                     langBadge.style.background = '#ede9fe';
                     langBadge.style.color = '#6d28d9';
                     langBadge.style.border = '1px solid #ddd6fe';
@@ -7789,7 +7791,7 @@
                 if (p.isService) {
                     specLang.textContent = '🌐 บริการออนไลน์ (Web Service / ไม่ต้องติดตั้ง)';
                 } else if (isFont) {
-                    specLang.textContent = '🔤 คลังฟอนต์ (เฉลยชื่อฟอนต์ + แหล่งแจกฟอนต์)';
+                    specLang.textContent = '🔤 Font';
                 } else if (p.language === 'pinescript') {
                     specLang.textContent = '🌲 Pine Script';
                 } else if (isDigitalDownload) {
@@ -8003,7 +8005,7 @@
                     if (btn) {
                         btn.className = 'btn-big-download';
                         btn.style.background = 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)';
-                        btn.innerHTML = `<span>⛶ สแกนพร้อมเพย์ ( ${priceNum.toFixed(2)} ฿) ปลดล็อกฟอนต์</span>`;
+                        btn.innerHTML = `<span>⛶ สแกนพร้อมเพย์ ( ${priceNum.toFixed(2)} ฿) ดูชื่อฟอนต์</span>`;
                         btn.onclick = () => handleDetailCheckoutClick();
                     }
                     if (btnBottom) {
@@ -11375,12 +11377,11 @@ ${encodedToken}
                 if (isText) {
                     sectionsHtml += `
                         <div style="margin-top: 10px; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 10px 12px;">
-                            <div style="font-size: 0.82rem; font-weight: 800; color: #5b21b6; margin-bottom: 6px;">📝 ฟอนต์ข้อความ:</div>
                             <div style="font-size: 0.78rem; font-weight: 700; color: #475569; margin-bottom: 3px;">🔤 ชื่อฟอนต์ข้อความ:</div>
                             <div class="censor-blur-container">
                                 <span class="censor-blur-text">KanitSecretFontNameText2026</span>
                                 <div class="censor-lock-overlay">
-                                    <span>🔒 เข้ารหัสซ่อนชื่อฟอนต์ข้อความ (สแกน ฿${Number(p.price || 10).toFixed(2)} เพื่อดู)</span>
+                                    <span>🔒 เข้ารหัสซ่อนชื่อฟอนต์</span>
                                 </div>
                             </div>
                             <div style="font-size: 0.78rem; font-weight: 700; color: #475569; margin-top: 6px; margin-bottom: 3px;">🔗 ลิ้งค์เว็บแจกฟอนต์ข้อความ:</div>
@@ -11402,7 +11403,7 @@ ${encodedToken}
                             <div class="censor-blur-container">
                                 <span class="censor-blur-text">BebasNeueSecretNumberFont2026</span>
                                 <div class="censor-lock-overlay">
-                                    <span>🔒 เข้ารหัสซ่อนชื่อฟอนต์ตัวเลข (สแกน ฿${Number(p.price || 10).toFixed(2)} เพื่อดู)</span>
+                                    <span>🔒 เข้ารหัสซ่อนชื่อฟอนต์ตัวเลข</span>
                                 </div>
                             </div>
                             <div style="font-size: 0.78rem; font-weight: 700; color: #475569; margin-top: 6px; margin-bottom: 3px;">🔗 ลิ้งค์เว็บแจกฟอนต์ตัวเลข:</div>
@@ -11420,7 +11421,7 @@ ${encodedToken}
                     <div class="font-secret-card locked">
                         <div class="font-secret-header">
                             <div class="font-secret-badge">
-                                <span>🔒 ข้อมูลฟอนต์ลับ (Censor Blur ความปลอดภัยสูง)</span>
+                                <span>🔒 ภาพตัวอย่างนี้ใช้ฟอนต์:</span>
                             </div>
                             <div class="font-secret-pill-price">ค่าบริการ ฿${Number(p.price || 10).toFixed(2)}</div>
                         </div>
