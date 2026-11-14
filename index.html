@@ -6621,7 +6621,7 @@
                         style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
                         <div>
                             <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0;">🎉
-                                ยินดีด้วยที่คุณได้เรียนรู้!</h3>
+                                เผื่อจะถูกใจนายท่านอีก!</h3>
                             <p style="font-size: 0.84rem; color: #64748b; margin: 4px 0 0 0;">แนะนำคอร์สเรียนอื่นๆ
                                 ที่คุณอาจสนใจเพื่อพัฒนาทักษะต่อเนื่อง</p>
                         </div>
@@ -6816,7 +6816,7 @@
                 freePreviewCount: 5,
                 language: 'digital_download',
                 coverImage: 'shop/images/mixtape_cover.svg',
-                description: 'คอลเลกชันสุดพิเศษ Mixtape ที่มาฟังไม่ได้ที่ไหน #Volume1 \n🎧 เปิดให้ทดลองฟังฟรี 5 ชุดแรก (แทร็ก 1 - 5)\n💎 สแกนพร้อมเพย์ 99 บาท (จ่ายครั้งเดียว) ปลดล็อกฟังได้ครบทุกแทร็กตลอดชีพ',
+                description: 'คอลเลกชันสุดพิเศษ Mixtape ที่หาฟังไม่ได้ที่ไหน #Volume1\n🎧 เปิดให้ทดลองฟังฟรี 5 เพลงแรก (แทร็ก 1 - 5)\n💎 สแกนพร้อมเพย์ 99 บาท (จ่ายครั้งเดียว) ปลดล็อกฟังได้ครบทุกแทร็กตลอดชีพ',
                 hasInstallGuide: false,
                 installSteps: [],
                 isRecommended: true,
@@ -6850,22 +6850,22 @@
                     },
                     {
                         title: 'Track 06',
-                        mediaUrl: 'https://www.dropbox.com/scl/fi/0ngwk15vrkarkrr1sv6as/6.mp4?rlkey=2hwtigraiwv9mh4e13kvw1vl2&st=ikk9vutt&dl=0',
+                        mediaUrl: '',
                         content: ''
                     },
                     {
                         title: 'Track 07',
-                        mediaUrl: 'https://www.dropbox.com/scl/fi/xps42b7n0gh04bfgfi211/7.mp4?rlkey=7ym7x3k4l2dy963kb9x1wr2g6&st=kcvchpa8&dl=0',
+                        mediaUrl: '',
                         content: ''
                     },
                     {
                         title: 'Track 08',
-                        mediaUrl: 'https://www.dropbox.com/scl/fi/80wt9bibe0tqa54849xot/8.mp4?rlkey=2cxwzdtlo939xlb2gg7l6hn2u&st=3pdm3qzl&dl=0',
+                        mediaUrl: '',
                         content: ''
                     },
                     {
                         title: 'Track 09',
-                        mediaUrl: 'https://www.dropbox.com/scl/fi/e9iohklzfbiqafagw62o0/9.mp4?rlkey=z2n2g65uckj3o640hrhp7nn69&st=48mmg7gv&dl=0',
+                        mediaUrl: '',
                         content: ''
                     }
                 ]
@@ -7466,8 +7466,8 @@
                                         ${isUserPurchased ? '<span style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-weight:700;">🔓 ปลดล็อกชื่อฟอนต์แล้ว</span>' : '<span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; font-weight:600;"><span class="font-mini-censor-blur">Kanit</span> 🔒 ซ่อนชื่อฟอนต์</span>'}
                                     ` : ''}
                                     ${isCourse ? `
-                                        <span style="background:${isMixtape ? '#fdf2f8' : '#eff6ff'}; color:${isMixtape ? '#be185d' : '#1d4ed8'}; border:1px solid ${isMixtape ? '#fbcfe8' : '#bfdbfe'}; font-weight:700;">${isMixtape ? `🎵 ${totalLessonsCount} ชุด` : `📚 ${totalLessonsCount} บทเรียนทั้งหมด`}</span>
-                                        ${isUserPurchased ? '<span style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-weight:700;">🛡️ ปลดล็อกตลอดชีพแล้ว</span>' : (isMixtape ? '<span style="background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; font-weight:600;">✨ ฟังฟรี 5 ชุดแรก</span>' : '')}
+                                        <span style="background:${isMixtape ? '#fdf2f8' : '#eff6ff'}; color:${isMixtape ? '#be185d' : '#1d4ed8'}; border:1px solid ${isMixtape ? '#fbcfe8' : '#bfdbfe'}; font-weight:700;">${isMixtape ? `🎵 ${totalLessonsCount} เพลงทั้งหมด` : `📚 ${totalLessonsCount} บทเรียนทั้งหมด`}</span>
+                                        ${isUserPurchased ? '<span style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-weight:700;">🛡️ ปลดล็อกตลอดชีพแล้ว</span>' : (isMixtape ? '<span style="background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; font-weight:600;">✨ ฟังฟรี 1 - 5</span>' : '')}
                                     ` : ''}
                                     ${isService ? `
                                         <span>${p.category === 'แรงงาน' ? '🔨 หมวดแรงงาน' : '🌐 บริการออนไลน์'}</span>
@@ -8017,7 +8017,7 @@
                 if (btn) {
                     btn.className = 'btn-big-download btn-service-fh';
                     btn.style.background = isPurchased ? 'linear-gradient(135deg, #059669 0%, #10b981 100%)' : (isMixtape ? 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)' : 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)');
-                    btn.innerHTML = `<span>${isMixtape ? (isPurchased ? '🎵 ฟังเพลงทั้งหมด (ปลดล็อกแล้ว)' : '🎧 ฟังฟรี 5 ชุดแรก (แทร็ก 1-5)') : (isPurchased ? '🎓 เข้าเรียนทันที (ปลดล็อกตลอดชีพ)' : 'เข้าสู่หน้าคอร์สเรียน (ดูตัวอย่างฟรี 4 บทเรียน)')}</span>`;
+                    btn.innerHTML = `<span>${isMixtape ? (isPurchased ? '🎵 ฟังเพลงทั้งหมด (ปลดล็อกแล้ว)' : '🎧 ฟังฟรี 5 เพลงแรก (แทร็ก 1-5)') : (isPurchased ? '🎓 เข้าเรียนทันที (ปลดล็อกตลอดชีพ)' : 'เข้าสู่หน้าคอร์สเรียน (ดูตัวอย่างฟรี 4 บทเรียน)')}</span>`;
                     btn.onclick = () => {
                         const cid = activeDetailProduct.id;
                         closeDetailModal();
@@ -10796,6 +10796,7 @@ ${encodedToken}
             }
             return false;
         }
+
         function selectAdminCategory(cat) {
             const input = document.getElementById('admin-category-input');
             if (input) {
@@ -13380,10 +13381,10 @@ ${encodedToken}
             if (bmFilterBtn) {
                 if (filterBookmarksOnly) {
                     bmFilterBtn.classList.add('bookmarked');
-                    bmFilterBtn.innerHTML = isMixtape ? `⭐ แทร็กที่บันทึกไว้ (${bookmarks.length}) ✕ ดูทั้งหมด` : `⭐ บันทึกความรู้นี้ (${bookmarks.length}) ✕ ดูทั้งหมด`;
+                    bmFilterBtn.innerHTML = isMixtape ? `⭐ เพลงที่บันทึกไว้ (${bookmarks.length}) ✕ ดูทั้งหมด` : `⭐ บันทึกความรู้นี้ (${bookmarks.length}) ✕ ดูทั้งหมด`;
                 } else {
                     bmFilterBtn.classList.remove('bookmarked');
-                    bmFilterBtn.innerHTML = isMixtape ? `🔖 แทร๊กที่บันทึกไว้ (<span id="course-bookmark-count">${bookmarks.length}</span>)` : `🔖 บันทึกความรู้นี้ (<span id="course-bookmark-count">${bookmarks.length}</span>)`;
+                    bmFilterBtn.innerHTML = isMixtape ? `🔖 เพลงที่บันทึกไว้ (<span id="course-bookmark-count">${bookmarks.length}</span>)` : `🔖 บันทึกความรู้นี้ (<span id="course-bookmark-count">${bookmarks.length}</span>)`;
                 }
             }
 
@@ -13407,7 +13408,7 @@ ${encodedToken}
                     <div style="text-align: center; padding: 40px 20px; color: #64748b; background: #ffffff; border-radius: 16px; border: 1px dashed #cbd5e1;">
                         <div style="font-size: 2rem; margin-bottom: 8px;">🔖</div>
                         <h4 style="color: #0f172a; margin: 0 0 6px 0;">${isMixtape ? 'ยังไม่มีเพลงที่บันทึกไว้' : 'ยังไม่มีบทเรียนที่คั่นไว้'}</h4>
-                        <p style="font-size: 0.85rem; margin: 0;">${isMixtape ? 'กดปุ่ม <b>"🔖 บันทึกเพลงนี้"</b> ในเพลงที่คุณชื่นชอบเพื่อเรียกดูแยกได้ทันที' : 'กดปุ่ม <b>"🔖 คั่นบทเรียนนี้"</b> ในบทเรียนที่คุณชื่นชอบเพื่อเรียกดูแยกได้ทันที'}</p>
+                        <p style="font-size: 0.85rem; margin: 0;">${isMixtape ? 'กดปุ่ม <b>"🔖 บันทึกแทร็กนี้"</b> ในเพลงที่คุณชื่นชอบเพื่อเรียกดูแยกได้ทันที' : 'กดปุ่ม <b>"🔖 คั่นบทเรียนนี้"</b> ในบทเรียนที่คุณชื่นชอบเพื่อเรียกดูแยกได้ทันที'}</p>
                     </div>
                 `;
             } else {
@@ -13419,7 +13420,7 @@ ${encodedToken}
 
                     const stepText = isMixtape ? `แทร็กที่ ${(originalIdx + 1).toString().padStart(2, '0')}` : `บทเรียนที่ ${(originalIdx + 1).toString().padStart(2, '0')}`;
                     const previewText = isMixtape ? '✨ ฟังฟรี' : '✨ โพสต์ตัวอย่างฟรี';
-                    const bmText = isBookmarked ? (isMixtape ? '⭐ บันทึกเพลงนี้แล้ว' : '⭐ บันทึกความรู้นี้แล้ว') : (isMixtape ? '🔖 บันทึกเพลงนี้' : '🔖 บันทึกความรู้นี้');
+                    const bmText = isBookmarked ? (isMixtape ? '⭐ บันทึกแทร็กนี้แล้ว' : '⭐ บันทึกความรู้นี้แล้ว') : (isMixtape ? '🔖 บันทึกแทร็กนี้' : '🔖 บันทึกความรู้นี้');
 
                     return `
                         <div class="course-lesson-card ${isPreviewGold ? 'is-preview-gold' : ''}" id="course-card-idx-${originalIdx}" data-lesson-idx="${originalIdx}">
@@ -13435,18 +13436,17 @@ ${encodedToken}
                                 </div>
                             </div>
 
-                            <h3 class="course-lesson-title">${escapeHtml(lesson.title || (isMixtape ? `แทร็กที่ ${originalIdx + 1}` : `บทเรียนที่ ${originalIdx + 1}`))}</h3>
+                            <h3 class="course-lesson-title">${escapeHtml(lesson.title || (isMixtape ? `เพลงที่ ${originalIdx + 1}` : `บทเรียนที่ ${originalIdx + 1}`))}</h3>
+
                             ${lesson.imageUrl ? `
                                 <img src="${escapeHtml(lesson.imageUrl)}" alt="${escapeHtml(lesson.title || '')}" class="course-lesson-image" loading="lazy" onerror="this.style.display='none'">
                             ` : ''}
 
                             ${lesson.mediaUrl ? buildMediaEmbedHtml(lesson.mediaUrl, lesson.title) : ''}
 
-                            ${(lesson.content && lesson.content.trim()) ? `
-                                <div class="course-lesson-content">
-                                    ${formatCourseLessonContent(lesson.content)}
-                                </div>
-                            ` : ''}
+                            <div class="course-lesson-content">
+                                ${formatCourseLessonContent(lesson.content || '')}
+                            </div>
                         </div>
                     `;
                 }).join('');
@@ -13478,10 +13478,11 @@ ${encodedToken}
                             <div class="course-locked-teaser" style="padding: 10px 14px; margin-bottom: 8px; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
                                 <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; min-width: 0; flex: 1;">
                                     <span style="flex-shrink: 0;">🔒</span>
-                                    <span style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">${prefix} ${escapeHtml(cleanTitle)}</span>
-                                </div>
-                                <span style="font-size: 0.7rem; color: #dc2626; background: #fee2e2; padding: 2px 7px; border-radius: 4px; font-weight: 700; white-space: nowrap; flex-shrink: 0;">ปลดล็อก</span>
-                            </div>
+                                    <span style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">${prefix}</span >
+                                    
+                                </div >
+                        <span style="font-size: 0.7rem; color: #dc2626; background: #fee2e2; padding: 2px 7px; border-radius: 4px; font-weight: 700; white-space: nowrap; flex-shrink: 0;">ปลดล็อก</span>
+                            </div >
                         `;
                     }).join('');
 
@@ -13489,10 +13490,10 @@ ${encodedToken}
                         ? `🔒 ปลดล็อกเพลงที่เหลืออีก ${remainingCount} เพลง`
                         : `🔒 ปลดล็อกบทเรียนที่เหลืออีก ${remainingCount} บทเรียน`;
                     document.getElementById('course-paywall-desc').innerHTML = isMixtape
-                        ? `ซื้อขาดครั้งเดียว ฿${priceFormatted} (จ่ายครั้งเดียว) <u>ฟังได้ครบทุกเพลงตลอดชีพ</u>`
-                        : `ซื้อขาดครั้งเดียว <u>ดูได้ตลอดชีพ</u>`;
+                        ? `ซื้อขาดครั้งเดียว ฿${priceFormatted} (จ่ายครั้งเดียว) < u > ฟังได้ครบทุกเพลงตลอดชีพ</u > `
+                        : `ซื้อขาดครั้งเดียว < u > ดูได้ตลอดชีพ</u > `;
                     const priceDisp = document.getElementById('course-paywall-price-display');
-                    if (priceDisp) priceDisp.textContent = `฿ ${priceFormatted}`;
+                    if (priceDisp) priceDisp.textContent = `฿ ${priceFormatted} `;
                     const btnText = document.getElementById('course-paywall-btn-text');
                     if (btnText) btnText.textContent = `สแกนพร้อมเพย์`;
 
@@ -13688,7 +13689,7 @@ ${encodedToken}
             clearTimeout(_courseScrollSaveTimer);
             _courseScrollSaveTimer = setTimeout(() => {
                 try {
-                    localStorage.setItem(`course_scroll_pos_${courseId}`, scrollPos);
+                    localStorage.setItem(`course_scroll_pos_${courseId} `, scrollPos);
                 } catch (e) { }
             }, 250);
         }
@@ -13697,7 +13698,7 @@ ${encodedToken}
             const bodyEl = document.getElementById('course-viewer-body');
             if (!bodyEl) return;
 
-            const savedPos = localStorage.getItem(`course_scroll_pos_${courseId}`);
+            const savedPos = localStorage.getItem(`course_scroll_pos_${courseId} `);
             if (savedPos && Number(savedPos) > 40) {
                 bodyEl.scrollTop = Number(savedPos);
 
@@ -13733,20 +13734,20 @@ ${encodedToken}
             }
 
             const priceTextEl = document.getElementById('course-qr-price-text');
-            if (priceTextEl) priceTextEl.textContent = `฿ ${amount.toFixed(2)}`;
+            if (priceTextEl) priceTextEl.textContent = `฿ ${amount.toFixed(2)} `;
 
             const qrTarget = document.getElementById('course-qr-image-target');
             if (qrTarget) {
                 qrTarget.innerHTML = `
-                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; font-size:0.78rem; color:#64748b;">
+                        < div style = "display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; font-size:0.78rem; color:#64748b;" >
                         <div style="width:28px; height:28px; border:3px solid #bbf7d0; border-top-color:#16a34a; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
                         <span>กำลังสร้าง QR Code...</span>
-                    </div>
-                `;
+                    </div >
+                        `;
             }
 
-            const orderId = `ORD-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 899 + 100)}`;
-            const secretToken = `sec_${Math.random().toString(36).substring(2)}_${Date.now()}`;
+            const orderId = `ORD - ${Date.now().toString(36).toUpperCase()} -${Math.floor(Math.random() * 899 + 100)} `;
+            const secretToken = `sec_${Math.random().toString(36).substring(2)}_${Date.now()} `;
             const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
             const orderObj = {
