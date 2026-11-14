@@ -6476,7 +6476,7 @@
                         <!-- Course Info -->
                         <div style="flex: 1; min-width: 260px;">
                             <div class="course-hero-badge-row" style="margin-bottom: 8px;">
-                                <span class="badge-course-cat">🎓 ทักษะเรียนรู้</span>
+                                <span class="badge-course-cat" id="course-hero-cat-badge">🎓 ทักษะเรียนรู้</span>
                                 <span class="badge-gold-preview" id="course-hero-preview-badge">✨ ตัวอย่างฟรี 4
                                     บทเรียน</span>
                                 <span id="course-hero-unlocked-badge" class="badge-course-unlocked"
@@ -6806,6 +6806,71 @@
 
         const BUILTIN_SERVICES = [
             {
+                id: 'prod_mixtape_vol1',
+                slug: 'volume1',
+                title: '#Volume1',
+                price: 99,
+                priceText: '฿ 99.00',
+                category: 'Mixtape',
+                isCourse: true,
+                freePreviewCount: 5,
+                language: 'digital_download',
+                coverImage: 'shop/images/mixtape_cover.svg',
+                description: 'คอลเลกชันสุดพิเศษ Mixtape ที่มาฟังไม่ได้ที่ไหน #Volume1 \n🎧 เปิดให้ทดลองฟังฟรี 5 ชุดแรก (แทร็ก 1 - 5)\n💎 สแกนพร้อมเพย์ 99 บาท (จ่ายครั้งเดียว) ปลดล็อกฟังได้ครบทุกแทร็กตลอดชีพ',
+                hasInstallGuide: false,
+                installSteps: [],
+                isRecommended: true,
+                createdAt: 1763100000000,
+                totalLessons: 9,
+                lessons: [
+                    {
+                        title: 'Track 01',
+                        mediaUrl: 'https://www.dropbox.com/scl/fi/703wfbvcb2ja05f42ouw5/1.mp4?rlkey=bubmmf0et4o8bpuqfs1e5hcoe&st=36ffgdbw&dl=0',
+                        content: ''
+                    },
+                    {
+                        title: 'Track 02',
+                        mediaUrl: 'https://www.dropbox.com/scl/fi/z24knekpqg93or2u6jcz4/2.mp4?rlkey=6s86grr6p7g7f3esne4c69hvh&st=xw51dx9c&dl=0',
+                        content: ''
+                    },
+                    {
+                        title: 'Track 03',
+                        mediaUrl: 'https://www.dropbox.com/scl/fi/qekwklzplqqvv7rx49cqk/3.mp4?rlkey=d8um48jauirs7wjufyzck1rpw&st=91fr8g4h&dl=0',
+                        content: ''
+                    },
+                    {
+                        title: 'Track 04',
+                        mediaUrl: 'https://www.dropbox.com/scl/fi/t1tylu51hca0dkshiwrbm/4.mp4?rlkey=85emqwuk1ke2zmkbp6x1os7v5&st=o0pfvzjw&dl=0',
+                        content: ''
+                    },
+                    {
+                        title: 'Track 05',
+                        mediaUrl: 'https://www.dropbox.com/scl/fi/ueuchmvq989jz01rm6qc6/5.mp4?rlkey=kp96s5zfm9edd15tfvhsk1jmm&st=remwedc0&dl=0',
+                        content: ''
+                    },
+                    {
+                        title: 'Track 06',
+                        mediaUrl: 'https://www.dropbox.com/scl/fi/0ngwk15vrkarkrr1sv6as/6.mp4?rlkey=2hwtigraiwv9mh4e13kvw1vl2&st=ikk9vutt&dl=0',
+                        content: ''
+                    },
+                    {
+                        title: 'Track 07',
+                        mediaUrl: 'https://www.dropbox.com/scl/fi/xps42b7n0gh04bfgfi211/7.mp4?rlkey=7ym7x3k4l2dy963kb9x1wr2g6&st=kcvchpa8&dl=0',
+                        content: ''
+                    },
+                    {
+                        title: 'Track 08',
+                        mediaUrl: 'https://www.dropbox.com/scl/fi/80wt9bibe0tqa54849xot/8.mp4?rlkey=2cxwzdtlo939xlb2gg7l6hn2u&st=3pdm3qzl&dl=0',
+                        content: ''
+                    },
+                    {
+                        title: 'Track 09',
+                        mediaUrl: 'https://www.dropbox.com/scl/fi/e9iohklzfbiqafagw62o0/9.mp4?rlkey=z2n2g65uckj3o640hrhp7nn69&st=48mmg7gv&dl=0',
+                        content: ''
+                    }
+                ]
+            },
+            {
                 id: 'service-watermark',
                 slug: 'watermark',
                 title: 'ปั๊มลายน้ำเอกสาร & รูปภาพ (ทุกหน้าในคลิกเดียว)',
@@ -7123,6 +7188,7 @@
 
             // Group products by category
             const catMap = {};
+            catMap['Mixtape'] = 0; // ensure Mixtape is always available
             catMap['Chrome Addon'] = 0; // ensure Chrome Addon is always available
             catMap['คลังฟอนต์'] = 0; // ensure font archive is always available
             catMap['ทักษะเรียนรู้'] = 0; // ensure skills & courses category is always available
@@ -7146,8 +7212,10 @@
                 </li>
             `;
 
-            // Sort with 'Chrome Addon' prominent, then 'คลังฟอนต์', 'ทักษะเรียนรู้', 'บริการออนไลน์', 'แรงงาน', then other categories alphabetically
+            // Sort with 'Mixtape' and 'Chrome Addon' prominent, then 'คลังฟอนต์', 'ทักษะเรียนรู้', 'บริการออนไลน์', 'แรงงาน', then other categories alphabetically
             const cats = Object.keys(catMap).sort((a, b) => {
+                if (a === 'Mixtape') return -1;
+                if (b === 'Mixtape') return 1;
                 if (a === 'Chrome Addon') return -1;
                 if (b === 'Chrome Addon') return 1;
                 if (a === 'คลังฟอนต์') return -1;
@@ -7163,14 +7231,15 @@
 
             cats.forEach(cat => {
                 const count = catMap[cat];
-                if (count === 0 && cat !== 'บริการออนไลน์' && cat !== 'บริการ' && cat !== 'แรงงาน' && cat !== 'Chrome Addon' && cat !== 'คลังฟอนต์') return;
+                if (count === 0 && cat !== 'บริการออนไลน์' && cat !== 'บริการ' && cat !== 'แรงงาน' && cat !== 'Chrome Addon' && cat !== 'คลังฟอนต์' && cat !== 'Mixtape') return;
                 const isActive = (activeCategory === cat || (activeCategory === 'บริการ' && cat === 'บริการออนไลน์') || (activeCategory === 'บริการออนไลน์' && cat === 'บริการ'));
+                const isMixtapeCat = (cat === 'Mixtape');
                 const isChromeAddon = (cat === 'Chrome Addon' || cat === 'Chrome Extension');
                 const isFontCat = (cat === 'คลังฟอนต์');
                 const isSkillsCat = (cat === 'ทักษะเรียนรู้');
                 const isServiceCat = (cat === 'บริการ' || cat === 'บริการออนไลน์');
                 const isLaborCat = (cat === 'แรงงาน');
-                const icon = isChromeAddon ? '🧩' : (isFontCat ? '🔤' : (isSkillsCat ? '🎓' : (isServiceCat ? '🛠️' : (isLaborCat ? '🔨' : '📁'))));
+                const icon = isMixtapeCat ? '🎵' : (isChromeAddon ? '🧩' : (isFontCat ? '🔤' : (isSkillsCat ? '🎓' : (isServiceCat ? '🛠️' : (isLaborCat ? '🔨' : '📁')))));
                 const label = isServiceCat ? 'บริการออนไลน์' : escapeHtml(cat);
                 html += `
                     <li>
@@ -7369,7 +7438,8 @@
                 const isUserPurchased = checkIsPurchased(p.id);
                 const langMeta = getLanguageMeta(p.language);
                 const isFont = (p.category === 'คลังฟอนต์' || !!p.isFontProduct);
-                const isCourse = !isFont && (p.category === 'ทักษะเรียนรู้' || !!p.isCourse);
+                const isMixtape = (p.category === 'Mixtape');
+                const isCourse = !isFont && (p.category === 'ทักษะเรียนรู้' || isMixtape || !!p.isCourse);
                 const isService = !isFont && !isCourse && (!!p.isService || p.category === 'บริการ' || p.category === 'บริการออนไลน์' || p.category === 'แรงงาน');
 
                 const totalLessonsCount = p.totalLessons || (Array.isArray(p.lessons) ? p.lessons.length : 0) || 4;
@@ -7377,13 +7447,13 @@
                     <div class="program-card-fh ${isCourse ? 'course-product-card' : ''} ${isFont ? 'font-product-card' : ''}" id="card-${p.id}">
                         <div class="card-left-info" onclick="${isCourse ? `openCourseViewer('${p.id}', event)` : (isService ? `handleServiceClick('${p.id}', event)` : `openProductDetail('${p.id}')`)}">
                             <div class="program-icon-box">
-                                <img src="${escapeHtml((isCourse && (!p.coverImage || p.coverImage.includes('pdfmarker_cover.svg'))) ? 'shop/images/learning_course_cover.svg' : (p.coverImage || (isCourse ? 'shop/images/learning_course_cover.svg' : 'https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png')))}" alt="Icon" loading="lazy">
+                                <img src="${escapeHtml((isCourse && !isMixtape && (!p.coverImage || p.coverImage.includes('pdfmarker_cover.svg'))) ? 'shop/images/learning_course_cover.svg' : (p.coverImage || (isMixtape ? 'shop/images/mixtape_cover.svg' : (isCourse ? 'shop/images/learning_course_cover.svg' : 'https://cdn.jsdelivr.net/gh/artnp/eworker@main/assets/images/test_github_ping.png'))))}" alt="Icon" loading="lazy">
                             </div>
                             <div class="program-details">
                                 <div class="program-title-row">
                                     <a href="?p=${getCleanProductSlug(p)}" class="program-name program-title-link" onclick="event.preventDefault(); ${isCourse ? `openCourseViewer('${p.id}', event)` : (isService ? `handleServiceClick('${p.id}', event)` : `openProductDetail('${p.id}')`)}">${escapeHtml(p.title)}</a>
                                     ${isFont ? '<span class="badge-service-pill" style="background:#ede9fe; color:#6d28d9; border-color:#ddd6fe;">🔤 คลังฟอนต์</span>' : ''}
-                                    ${isCourse ? '<span class="badge-service-pill" style="background:#fef3c7; color:#b45309; border-color:#fde68a;">🎓 ทักษะเรียนรู้</span>' : ''}
+                                    ${isMixtape ? '<span class="badge-service-pill" style="background:#fce7f3; color:#be185d; border-color:#fbcfe8;">🎵 Mixtape</span>' : (isCourse ? '<span class="badge-service-pill" style="background:#fef3c7; color:#b45309; border-color:#fde68a;">🎓 ทักษะเรียนรู้</span>' : '')}
                                     ${isService ? `<span class="badge-service-pill">${p.category === 'แรงงาน' ? '🔨 แรงงาน' : '🛠️ บริการออนไลน์'}</span>` : ''}
                                     ${hasAtLeastOneBuyer(p) ? '<span class="badge-recommended">⭐ แนะนำ</span>' : ''}
                                 </div>
@@ -7396,8 +7466,8 @@
                                         ${isUserPurchased ? '<span style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-weight:700;">🔓 ปลดล็อกชื่อฟอนต์แล้ว</span>' : '<span style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; font-weight:600;"><span class="font-mini-censor-blur">Kanit</span> 🔒 ซ่อนชื่อฟอนต์</span>'}
                                     ` : ''}
                                     ${isCourse ? `
-                                        <span style="background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; font-weight:700;">📚 ${totalLessonsCount} บทเรียนทั้งหมด</span>
-                                        ${isUserPurchased ? '<span style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-weight:700;">🛡️ ปลดล็อกตลอดชีพแล้ว</span>' : ''}
+                                        <span style="background:${isMixtape ? '#fdf2f8' : '#eff6ff'}; color:${isMixtape ? '#be185d' : '#1d4ed8'}; border:1px solid ${isMixtape ? '#fbcfe8' : '#bfdbfe'}; font-weight:700;">${isMixtape ? `🎵 ${totalLessonsCount} ชุด` : `📚 ${totalLessonsCount} บทเรียนทั้งหมด`}</span>
+                                        ${isUserPurchased ? '<span style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-weight:700;">🛡️ ปลดล็อกตลอดชีพแล้ว</span>' : (isMixtape ? '<span style="background:#fff1f2; color:#e11d48; border:1px solid #fecdd3; font-weight:600;">✨ ฟังฟรี 5 ชุดแรก</span>' : '')}
                                     ` : ''}
                                     ${isService ? `
                                         <span>${p.category === 'แรงงาน' ? '🔨 หมวดแรงงาน' : '🌐 บริการออนไลน์'}</span>
@@ -7426,8 +7496,8 @@
                                     ${isUserPurchased ? '🔓 เช็คฟอนต์นี้' : '🔍 ดูฟอนต์นี้'}
                                 </button>
                             ` : (isCourse ? `
-                                <button class="btn-service-fh" style="${isUserPurchased ? 'background:linear-gradient(135deg, #059669 0%, #10b981 100%); border-color:#059669;' : 'background:linear-gradient(135deg, #d97706 0%, #f59e0b 100%); border-color:#d97706;'}" onclick="openCourseViewer('${p.id}', event)">
-                                    ${isUserPurchased ? '🎓 ซื้อคอร์สแล้ว' : '🎓 ดูตัวอย่าง'}
+                                <button class="btn-service-fh" style="${isUserPurchased ? 'background:linear-gradient(135deg, #059669 0%, #10b981 100%); border-color:#059669;' : (isMixtape ? 'background:linear-gradient(135deg, #ec4899 0%, #db2777 100%); border-color:#db2777;' : 'background:linear-gradient(135deg, #d97706 0%, #f59e0b 100%); border-color:#d97706;')}" onclick="openCourseViewer('${p.id}', event)">
+                                    ${isUserPurchased ? (isMixtape ? '🎵 ฟังเพลงทั้งหมด' : '🎓 ซื้อคอร์สแล้ว') : (isMixtape ? '🎧 ฟังฟรี 1-5' : '🎓 ดูตัวอย่าง')}
                                 </button>
                             ` : (isService ? `
                                 ${(!storeIsOnline && isServiceRequiringServer(p)) ? `
@@ -7942,11 +8012,12 @@
                 return;
             }
 
-            if (activeDetailProduct.category === 'ทักษะเรียนรู้' || activeDetailProduct.isCourse) {
+            if (activeDetailProduct.category === 'ทักษะเรียนรู้' || activeDetailProduct.category === 'Mixtape' || activeDetailProduct.isCourse) {
+                const isMixtape = (activeDetailProduct.category === 'Mixtape');
                 if (btn) {
                     btn.className = 'btn-big-download btn-service-fh';
-                    btn.style.background = isPurchased ? 'linear-gradient(135deg, #059669 0%, #10b981 100%)' : 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)';
-                    btn.innerHTML = `<span>🎓 ${isPurchased ? 'เข้าเรียนทันที (ปลดล็อกตลอดชีพ)' : 'เข้าสู่หน้าคอร์สเรียน (ดูตัวอย่างฟรี 4 บทเรียน)'}</span>`;
+                    btn.style.background = isPurchased ? 'linear-gradient(135deg, #059669 0%, #10b981 100%)' : (isMixtape ? 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)' : 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)');
+                    btn.innerHTML = `<span>${isMixtape ? (isPurchased ? '🎵 ฟังเพลงทั้งหมด (ปลดล็อกแล้ว)' : '🎧 ฟังฟรี 5 ชุดแรก (แทร็ก 1-5)') : (isPurchased ? '🎓 เข้าเรียนทันที (ปลดล็อกตลอดชีพ)' : 'เข้าสู่หน้าคอร์สเรียน (ดูตัวอย่างฟรี 4 บทเรียน)')}</span>`;
                     btn.onclick = () => {
                         const cid = activeDetailProduct.id;
                         closeDetailModal();
@@ -7955,8 +8026,8 @@
                 }
                 if (btnBottom) {
                     btnBottom.className = 'btn-big-download btn-service-fh';
-                    btnBottom.style.background = isPurchased ? 'linear-gradient(135deg, #059669 0%, #10b981 100%)' : 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)';
-                    btnBottom.innerHTML = `<span>🎓 ${isPurchased ? 'เข้าสู่หน้าเรียนรู้' : 'เริ่มเรียน / ปลดล็อกคอร์ส'}</span>`;
+                    btnBottom.style.background = isPurchased ? 'linear-gradient(135deg, #059669 0%, #10b981 100%)' : (isMixtape ? 'linear-gradient(135deg, #ec4899 0%, #db2777 100%)' : 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)');
+                    btnBottom.innerHTML = `<span>${isMixtape ? (isPurchased ? '🎵 เข้าสู่หน้าอัลบั้ม Mixtape' : '🎧 ฟังฟรี / ปลดล็อก 99 บาท') : (isPurchased ? '🎓 เข้าสู่หน้าเรียนรู้' : 'เริ่มเรียน / ปลดล็อกคอร์ส')}</span>`;
                     btnBottom.onclick = () => {
                         const cid = activeDetailProduct.id;
                         closeDetailModal();
@@ -10679,80 +10750,13 @@ ${encodedToken}
             showToast('🎉 ซิงค์คุณสมบัติ (ตัวหนา) เรียบร้อยแล้ว', 'success');
         }
 
-        function formatInstallStep(text) {
-            if (!text) return '';
-            let s = escapeHtml(text);
-            // Replace chrome://extensions with stylish pill badge like screenshot
-            s = s.replace(/chrome:\/\/extensions/g, '<code class="url-code-pill" style="display:inline-block; background:#0f172a; color:#38bdf8; font-family:Consolas, monospace; font-size:0.86rem; font-weight:700; padding:2px 8px; border-radius:5px; border:1px solid #1e293b; box-shadow:0 1px 3px rgba(0,0,0,0.2); vertical-align:middle; margin:0 3px;">chrome://extensions</code>');
-            // Bold key terms
-            s = s.replace(/Developer mode/g, '<b>Developer mode</b>');
-            s = s.replace(/Load unpacked/g, '<b>Load unpacked</b>');
-            s = s.replace(/\.zip/gi, '<b style="color:#0284c7;">.zip</b>');
-            s = s.replace(/\n/g, '<br>');
-            return s;
-        }
-
-        // --- CHROME ADDON DEFAULT STEPS & HANDLERS ---
-        const CHROME_ADDON_DEFAULT_STEPS = [
-            "เปิดหน้าจัดการส่วนขยายใน Chrome โดยเปิด Google Chrome แล้วพิมพ์ URL ดังนี้ลงในช่องใส่ที่อยู่เว็บด้านบน: chrome://extensions แล้วกด Enter",
-            "มองที่มุมขวาบน เปิดสวิตช์ Developer mode (โหมดนักพัฒนา) ให้เป็นสีฟ้า",
-            "กดปุ่ม Load unpacked (โหลดส่วนขยายที่ยังไม่ได้แพ็ก) ที่มุมซ้ายบน",
-            "อัปโหลด ไฟล์ .zip (หรือเลือกโฟลเดอร์ไฟล์ส่วนขยายที่แตกจาก .zip) เพื่อติดตั้งและเริ่มใช้งานทันที"
-        ];
-
-        function loadDefaultChromeAddonSteps() {
-            const list = document.getElementById('admin-steps-list');
-            if (!list) return;
-            list.innerHTML = '';
-            CHROME_ADDON_DEFAULT_STEPS.forEach(s => addAdminStepRow(s));
-            const guideCb = document.getElementById('admin-has-install-guide');
-            if (guideCb) guideCb.checked = true;
-            const container = document.getElementById('admin-steps-container');
-            if (container) container.style.display = 'block';
-            showToast('✅ โหลดคู่มือการติดตั้ง Chrome Addon เริ่มต้นเรียบร้อย', 'info');
-        }
-
-        // --- TRADINGVIEW DEFAULT STEPS & HANDLERS ---
-        const TRADINGVIEW_DEFAULT_STEPS = [
-            "เข้าสู่เว็บไซต์ TradingView.com แล้วเข้าสู่ระบบ เปิดหน้าต่างกราฟ (Chart) คู่เหรียญหรือหุ้นที่ต้องการใช้งาน",
-            "มองหาแถบเครื่องมือแถวล่างสุดของกราฟ แล้วคลิกที่แท็บ 'Pine Editor' (ตัวแก้ไข Pine) เพื่อเปิดหน้าต่างเขียนโค้ด",
-            "ลบโค้ดเริ่มต้นในหน้าต่างแก้ไขออกทั้งหมด (กด Ctrl+A แล้ว Delete) จากนั้นคลิกขวาแล้วเลือก 'วาง (Paste)' หรือกด Ctrl+V เพื่อวางโค้ดสคริปต์ที่คัดลอกมา",
-            "คลิกปุ่ม 'บันทึก (Save)' ตั้งชื่อสคริปต์ และคลิกปุ่ม 'เพิ่มลงในชาร์ต (Add to chart)' เพื่ออัปเดตกราฟและเริ่มใช้งานอินดิเคเตอร์ทันที"
-        ];
-
-        function loadDefaultTradingViewSteps() {
-            const list = document.getElementById('admin-steps-list');
-            if (!list) return;
-            list.innerHTML = '';
-            TRADINGVIEW_DEFAULT_STEPS.forEach(s => addAdminStepRow(s));
-            document.getElementById('admin-has-install-guide').checked = true;
-            document.getElementById('admin-steps-container').style.display = 'block';
-            showToast('✅ โหลดคู่มือการติดตั้ง TradingView เริ่มต้นเรียบร้อย', 'info');
-        }
-
-        async function pasteClipboardToPineEditor() {
-            try {
-                const text = await navigator.clipboard.readText();
-                if (text && text.trim()) {
-                    document.getElementById('admin-pinescript-code').value = text;
-                    showToast('📋 วางโค้ดจากคลิปบอร์ดเรียบร้อยแล้ว', 'success');
-                } else {
-                    showToast('⚠️ ไม่พบข้อความในคลิปบอร์ด', 'warning');
-                }
-            } catch (e) {
-                showToast('⚠️ โปรดกดคลิกในช่องแล้วกด Ctrl + V เพื่อวางโค้ด', 'info');
-                document.getElementById('admin-pinescript-code').focus();
-            }
-        }
-
         // --- ADMIN CATEGORY SUGGESTIONS & CHIPS ---
         function renderAdminCategoryOptions(currentVal = '') {
             const datalist = document.getElementById('admin-category-datalist');
             const chipsList = document.getElementById('admin-category-chips-list');
             if (!datalist && !chipsList) return;
 
-            // Collect unique categories in the system
-            const catSet = new Set(['คลังฟอนต์', 'ขายไฟล์', 'Chrome Addon', 'TradingView / สคริปต์', 'เครื่องมือ', 'บอท', 'โปรแกรม', 'บริการออนไลน์', 'แรงงาน']);
+            const catSet = new Set(['Mixtape', 'คลังฟอนต์', 'ขายไฟล์', 'Chrome Addon', 'TradingView / สคริปต์', 'เครื่องมือ', 'บอท', 'โปรแกรม', 'บริการออนไลน์', 'แรงงาน']);
             if (Array.isArray(products)) {
                 products.forEach(p => {
                     const c = (p.category || '').trim();
@@ -10760,14 +10764,38 @@ ${encodedToken}
                 });
             }
 
+            const catList = Array.from(catSet);
 
+            if (datalist) {
+                datalist.innerHTML = catList.map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
+            }
+
+            if (chipsList) {
+                const targetVal = (currentVal || (document.getElementById('admin-category-input') ? document.getElementById('admin-category-input').value : '')).trim();
+                chipsList.innerHTML = catList.map(c => {
+                    const isActive = (targetVal === c);
+                    return `<button type="button" class="btn-cat-chip ${isActive ? 'active' : ''}" onclick="selectAdminCategory('${escapeHtml(c)}')">🏷️ ${escapeHtml(c)}</button>`;
+                }).join('');
+            }
+        }
+
+        function areCurrentStepsTradingView() {
+            const rows = document.querySelectorAll('.admin-step-item-val');
+            for (let r of rows) {
+                const val = r.value || '';
+                if (val.includes('TradingView') || val.includes('Pine Editor') || val.includes('สคริปต์')) return true;
+            }
+            return false;
+        }
+
+        function areCurrentStepsChromeAddon() {
+            const rows = document.querySelectorAll('.admin-step-item-val');
             for (let r of rows) {
                 const val = r.value || '';
                 if (val.includes('chrome://extensions') || val.includes('Developer mode') || val.includes('Load unpacked') || val.includes('ส่วนขยาย')) return true;
             }
             return false;
         }
-
         function selectAdminCategory(cat) {
             const input = document.getElementById('admin-category-input');
             if (input) {
@@ -12594,7 +12622,8 @@ ${encodedToken}
             if (u.includes('youtube.com') || u.includes('youtu.be')) return 'youtube';
             if (u.includes('catbox.moe')) return 'catbox';
             if (u.includes('file.garden')) return 'filegarden';
-            if (u.endsWith('.mp4') || u.endsWith('.webm') || u.endsWith('.ogg')) return 'mp4';
+            if (u.includes('dropbox.com')) return 'dropbox';
+            if (u.endsWith('.mp4') || u.endsWith('.webm') || u.endsWith('.ogg') || u.includes('.mp4?') || u.includes('.mp4/')) return 'mp4';
             return 'youtube'; // default fallback for raw video IDs in bigdata
         }
 
@@ -12627,7 +12656,32 @@ ${encodedToken}
                 `;
             }
 
-            // 2. Catbox (.mp4) or File Garden (.mp4) or HTML5 Video
+            // 2. Dropbox (.mp4) Video / Audio Direct Stream
+            if (type === 'dropbox') {
+                let streamUrl = trimmed;
+                streamUrl = streamUrl.replace(/[?&]dl=0/, '').replace(/[?&]raw=1/, '');
+                streamUrl += (streamUrl.includes('?') ? '&raw=1' : '?raw=1');
+
+                return `
+                    <div class="course-media-wrapper" style="background:#090d16; border-radius:12px; overflow:hidden; border:1px solid #1e293b; margin:12px 0; box-shadow:0 4px 16px rgba(0,0,0,0.35);">
+                        <div style="padding: 8px 14px; background: rgba(15,23,42,0.9); font-size: 0.76rem; color: #94a3b8; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                            <span style="font-weight:700; color:#cbd5e1; display:flex; align-items:center; gap:6px;">
+                                <span>🎵</span> ${escapeHtml(title || 'เพลง Mixtape')}
+                            </span>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <a href="${escapeHtml(streamUrl)}" target="_blank" rel="noopener noreferrer" style="color: #38bdf8; text-decoration: none; font-weight:600; font-size:0.72rem;">เล่น/ดาวน์โหลดตรง ↗</a>
+                                <a href="${escapeHtml(trimmed)}" target="_blank" rel="noopener noreferrer" style="color: #94a3b8; text-decoration: none; font-weight:600; font-size:0.72rem;">เปิดบน Dropbox ↗</a>
+                            </div>
+                        </div>
+                        <video controls playsinline preload="metadata" class="course-html5-video" style="width: 100%; display: block; max-height: 480px; background: #000; outline: none;">
+                            <source src="${escapeHtml(streamUrl)}" type="video/mp4">
+                            เบราว์เซอร์ของคุณไม่รองรับการเล่นวิดีโอ HTML5
+                        </video>
+                    </div>
+                `;
+            }
+
+            // 3. Catbox (.mp4) or File Garden (.mp4) or HTML5 Video
             if (type === 'catbox' || type === 'filegarden' || type === 'mp4') {
                 let safeUrl = trimmed;
                 if (!safeUrl.startsWith('http://') && !safeUrl.startsWith('https://')) {
@@ -13125,8 +13179,24 @@ ${encodedToken}
             const modal = document.getElementById('course-viewer-modal');
             if (!modal) return;
 
-            document.getElementById('course-viewer-top-title').textContent = p.title || 'คอร์สทักษะเรียนรู้';
-            document.getElementById('course-hero-title').textContent = p.title || 'คอร์สทักษะเรียนรู้';
+            const isMixtape = (p.category === 'Mixtape');
+            document.getElementById('course-viewer-top-title').textContent = isMixtape ? (p.title || 'Mixtape') : (p.title || 'คอร์สทักษะเรียนรู้');
+            document.getElementById('course-hero-title').textContent = p.title || (isMixtape ? '#Volume1' : 'คอร์สทักษะเรียนรู้');
+
+            const catBadge = document.getElementById('course-hero-cat-badge');
+            if (catBadge) {
+                if (isMixtape) {
+                    catBadge.textContent = '🎵 Mixtape';
+                    catBadge.style.background = '#fce7f3';
+                    catBadge.style.color = '#be185d';
+                    catBadge.style.borderColor = '#fbcfe8';
+                } else {
+                    catBadge.textContent = '🎓 ทักษะเรียนรู้';
+                    catBadge.style.background = '';
+                    catBadge.style.color = '';
+                    catBadge.style.borderColor = '';
+                }
+            }
 
             // Clean description: format line breaks and eliminate raw <div> tags
             const descEl = document.getElementById('course-hero-desc');
@@ -13137,7 +13207,7 @@ ${encodedToken}
             // Set Course Cover Image in Course Viewer Hero Card
             const coverImgEl = document.getElementById('course-hero-cover-img');
             const coverWrapEl = document.getElementById('course-hero-cover-wrap');
-            const coverSrc = p.coverImage || (Array.isArray(p.images) && p.images[0]) || 'shop/images/learning_course_cover.svg';
+            const coverSrc = p.coverImage || (Array.isArray(p.images) && p.images[0]) || (isMixtape ? 'shop/images/mixtape_cover.svg' : 'shop/images/learning_course_cover.svg');
 
             if (coverImgEl) {
                 coverImgEl.src = coverSrc;
@@ -13147,8 +13217,16 @@ ${encodedToken}
             const isPurchased = checkIsPurchased(p.id) || (p.price <= 0);
             const unlockedBadge = document.getElementById('course-hero-unlocked-badge');
             const previewBadge = document.getElementById('course-hero-preview-badge');
-            if (unlockedBadge) unlockedBadge.style.display = isPurchased ? 'inline-flex' : 'none';
-            if (previewBadge) previewBadge.style.display = isPurchased ? 'none' : 'inline-flex';
+            const freeCount = (typeof p.freePreviewCount === 'number') ? p.freePreviewCount : (isMixtape ? 5 : 4);
+
+            if (unlockedBadge) {
+                unlockedBadge.style.display = isPurchased ? 'inline-flex' : 'none';
+                unlockedBadge.textContent = isMixtape ? '🛡️ ซื้อแล้ว • ฟังได้ตลอดชีพ' : '🛡️ ซื้อขาดแล้ว • ดูได้ตลอดชีพ';
+            }
+            if (previewBadge) {
+                previewBadge.style.display = isPurchased ? 'none' : 'inline-flex';
+                previewBadge.textContent = isMixtape ? `✨ ฟังฟรี ${freeCount} เพลงแรก` : `✨ ตัวอย่างฟรี ${freeCount} บทเรียน`;
+            }
 
             // ปุ่มแก้ไขคอร์สเรียน: แสดงเฉพาะแอดมินบน localhost/127.0.0.1 เท่านั้น
             const editBtn = document.getElementById('btn-course-admin-edit');
@@ -13285,10 +13363,12 @@ ${encodedToken}
                 }
             ];
 
+            const isMixtape = (p.category === 'Mixtape');
+            const freeCount = (typeof p.freePreviewCount === 'number') ? p.freePreviewCount : (isMixtape ? 5 : 4);
             const totalLessons = allLessons.length;
             const isPurchased = checkIsPurchased(p.id) || (p.price <= 0);
             const countBadge = document.getElementById('course-hero-posts-count-badge');
-            if (countBadge) countBadge.textContent = `📚 ทั้งหมด ${totalLessons} บทเรียน`;
+            if (countBadge) countBadge.textContent = isMixtape ? `🎵 ทั้งหมด ${totalLessons} เพลง` : `📚 ทั้งหมด ${totalLessons} บทเรียน`;
 
             const bookmarks = getCourseBookmarks(p.id);
             const completed = getCourseCompleted(p.id);
@@ -13300,20 +13380,20 @@ ${encodedToken}
             if (bmFilterBtn) {
                 if (filterBookmarksOnly) {
                     bmFilterBtn.classList.add('bookmarked');
-                    bmFilterBtn.innerHTML = `⭐ บันทึกความรู้นี้ (${bookmarks.length}) ✕ ดูทั้งหมด`;
+                    bmFilterBtn.innerHTML = isMixtape ? `⭐ แทร็กที่บันทึกไว้ (${bookmarks.length}) ✕ ดูทั้งหมด` : `⭐ บันทึกความรู้นี้ (${bookmarks.length}) ✕ ดูทั้งหมด`;
                 } else {
                     bmFilterBtn.classList.remove('bookmarked');
-                    bmFilterBtn.innerHTML = `🔖 บันทึกความรู้นี้ (<span id="course-bookmark-count">${bookmarks.length}</span>)`;
+                    bmFilterBtn.innerHTML = isMixtape ? `🔖 แทร๊กที่บันทึกไว้ (<span id="course-bookmark-count">${bookmarks.length}</span>)` : `🔖 บันทึกความรู้นี้ (<span id="course-bookmark-count">${bookmarks.length}</span>)`;
                 }
             }
 
-            // Determine visible lessons: 4 preview posts if not purchased, or all if purchased
+            // Determine visible lessons: freeCount preview posts if not purchased, or all if purchased
             let visibleLessons = allLessons;
             let showPaywall = false;
 
             if (!isPurchased && !filterBookmarksOnly) {
-                visibleLessons = allLessons.slice(0, 4);
-                if (allLessons.length > 4) {
+                visibleLessons = allLessons.slice(0, freeCount);
+                if (allLessons.length > freeCount) {
                     showPaywall = true;
                 }
             }
@@ -13326,73 +13406,91 @@ ${encodedToken}
                 container.innerHTML = `
                     <div style="text-align: center; padding: 40px 20px; color: #64748b; background: #ffffff; border-radius: 16px; border: 1px dashed #cbd5e1;">
                         <div style="font-size: 2rem; margin-bottom: 8px;">🔖</div>
-                        <h4 style="color: #0f172a; margin: 0 0 6px 0;">ยังไม่มีบทเรียนที่คั่นไว้</h4>
-                        <p style="font-size: 0.85rem; margin: 0;">กดปุ่ม <b>"🔖 คั่นบทเรียนนี้"</b> ในบทเรียนที่คุณชื่นชอบเพื่อเรียกดูแยกได้ทันที</p>
+                        <h4 style="color: #0f172a; margin: 0 0 6px 0;">${isMixtape ? 'ยังไม่มีเพลงที่บันทึกไว้' : 'ยังไม่มีบทเรียนที่คั่นไว้'}</h4>
+                        <p style="font-size: 0.85rem; margin: 0;">${isMixtape ? 'กดปุ่ม <b>"🔖 บันทึกเพลงนี้"</b> ในเพลงที่คุณชื่นชอบเพื่อเรียกดูแยกได้ทันที' : 'กดปุ่ม <b>"🔖 คั่นบทเรียนนี้"</b> ในบทเรียนที่คุณชื่นชอบเพื่อเรียกดูแยกได้ทันที'}</p>
                     </div>
                 `;
             } else {
                 container.innerHTML = visibleLessons.map((lesson) => {
                     const originalIdx = allLessons.indexOf(lesson);
-                    const isPreviewGold = (originalIdx < 4);
+                    const isPreviewGold = (originalIdx < freeCount);
                     const isBookmarked = bookmarks.includes(originalIdx);
                     const isDone = completed.includes(originalIdx);
+
+                    const stepText = isMixtape ? `แทร็กที่ ${(originalIdx + 1).toString().padStart(2, '0')}` : `บทเรียนที่ ${(originalIdx + 1).toString().padStart(2, '0')}`;
+                    const previewText = isMixtape ? '✨ ฟังฟรี' : '✨ โพสต์ตัวอย่างฟรี';
+                    const bmText = isBookmarked ? (isMixtape ? '⭐ บันทึกเพลงนี้แล้ว' : '⭐ บันทึกความรู้นี้แล้ว') : (isMixtape ? '🔖 บันทึกเพลงนี้' : '🔖 บันทึกความรู้นี้');
 
                     return `
                         <div class="course-lesson-card ${isPreviewGold ? 'is-preview-gold' : ''}" id="course-card-idx-${originalIdx}" data-lesson-idx="${originalIdx}">
                             <div class="course-lesson-header">
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span class="course-step-tag ${isPreviewGold ? 'gold' : ''}">บทเรียนที่ ${(originalIdx + 1).toString().padStart(2, '0')}</span>
-                                    ${isPreviewGold ? '<span class="badge-gold-preview">✨ โพสต์ตัวอย่างฟรี</span>' : ''}
+                                    <span class="course-step-tag ${isPreviewGold ? 'gold' : ''}">${stepText}</span>
+                                    ${isPreviewGold ? `<span class="badge-gold-preview">${previewText}</span>` : ''}
                                 </div>
                                 <div class="course-lesson-actions">
                                     <button type="button" class="btn-lesson-action ${isBookmarked ? 'bookmarked' : ''}" onclick="toggleLessonBookmark('${p.id}', ${originalIdx}, event)">
-                                        ${isBookmarked ? '⭐ บันทึกความรู้นี้แล้ว' : '🔖 บันทึกความรู้นี้'}
+                                        ${bmText}
                                     </button>
                                 </div>
                             </div>
 
-                            <h3 class="course-lesson-title">${escapeHtml(lesson.title || `บทเรียนที่ ${originalIdx + 1}`)}</h3>
-
+                            <h3 class="course-lesson-title">${escapeHtml(lesson.title || (isMixtape ? `แทร็กที่ ${originalIdx + 1}` : `บทเรียนที่ ${originalIdx + 1}`))}</h3>
                             ${lesson.imageUrl ? `
                                 <img src="${escapeHtml(lesson.imageUrl)}" alt="${escapeHtml(lesson.title || '')}" class="course-lesson-image" loading="lazy" onerror="this.style.display='none'">
                             ` : ''}
 
                             ${lesson.mediaUrl ? buildMediaEmbedHtml(lesson.mediaUrl, lesson.title) : ''}
 
-                            <div class="course-lesson-content">
-                                ${formatCourseLessonContent(lesson.content || '')}
-                            </div>
+                            ${(lesson.content && lesson.content.trim()) ? `
+                                <div class="course-lesson-content">
+                                    ${formatCourseLessonContent(lesson.content)}
+                                </div>
+                            ` : ''}
                         </div>
                     `;
                 }).join('');
+
+                // Auto pause other videos when any video plays
+                container.querySelectorAll('video').forEach(vid => {
+                    vid.addEventListener('play', () => {
+                        container.querySelectorAll('video').forEach(other => {
+                            if (other !== vid && !other.paused) other.pause();
+                        });
+                    });
+                });
             }
 
             // Teaser for locked lessons and paywall button
             if (paywallBox) {
                 if (showPaywall && !filterBookmarksOnly) {
                     paywallBox.style.display = 'block';
-                    const remainingCount = totalLessons - 4;
+                    const remainingCount = totalLessons - freeCount;
                     const priceFormatted = Number(p.price || 0).toFixed(2);
 
-                    // Add teaser rows of locked titles (clean duplicate "บทเรียนที่ X" prefix)
-                    const teaserHtml = allLessons.slice(4).map((l, i) => {
-                        let cleanTitle = l.title || 'เนื้อหาบทเรียนพิเศษ';
-                        cleanTitle = cleanTitle.replace(/^บทเรียนที่\s*\d+[:\s]*/i, '').trim();
+                    // Add teaser rows of locked titles (clean duplicate prefixes)
+                    const teaserHtml = allLessons.slice(freeCount).map((l, i) => {
+                        let cleanTitle = l.title || (isMixtape ? 'เพลงพิเศษในอัลบั้ม' : 'เนื้อหาบทเรียนพิเศษ');
+                        cleanTitle = cleanTitle.replace(/^(บทเรียน|เพลง|แทร็ก|track)\s*(ที่)?\s*\d+[:\s]*/i, '').trim();
+                        const trackNum = i + freeCount + 1;
+                        const prefix = isMixtape ? `🎵 แทร็กที่ ${trackNum}` : `บทเรียนที่ ${trackNum}`;
                         return `
                             <div class="course-locked-teaser" style="padding: 10px 14px; margin-bottom: 8px; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
                                 <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; min-width: 0; flex: 1;">
                                     <span style="flex-shrink: 0;">🔒</span>
-                                    <span style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">บทเรียนที่ ${i + 5}: ${escapeHtml(cleanTitle)}</span>
+                                    <span style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">${prefix} ${escapeHtml(cleanTitle)}</span>
                                 </div>
                                 <span style="font-size: 0.7rem; color: #dc2626; background: #fee2e2; padding: 2px 7px; border-radius: 4px; font-weight: 700; white-space: nowrap; flex-shrink: 0;">ปลดล็อก</span>
                             </div>
                         `;
                     }).join('');
 
-                    document.getElementById('course-paywall-title').textContent = `🔒 ปลดล็อกบทเรียนที่เหลืออีก ${remainingCount} บทเรียน`;
-                    document.getElementById('course-paywall-desc').innerHTML = `
-                        ซื้อขาดครั้งเดียว <u>ดูได้ตลอดชีพ</u>
-                    `;
+                    document.getElementById('course-paywall-title').textContent = isMixtape
+                        ? `🔒 ปลดล็อกเพลงที่เหลืออีก ${remainingCount} เพลง`
+                        : `🔒 ปลดล็อกบทเรียนที่เหลืออีก ${remainingCount} บทเรียน`;
+                    document.getElementById('course-paywall-desc').innerHTML = isMixtape
+                        ? `ซื้อขาดครั้งเดียว ฿${priceFormatted} (จ่ายครั้งเดียว) <u>ฟังได้ครบทุกเพลงตลอดชีพ</u>`
+                        : `ซื้อขาดครั้งเดียว <u>ดูได้ตลอดชีพ</u>`;
                     const priceDisp = document.getElementById('course-paywall-price-display');
                     if (priceDisp) priceDisp.textContent = `฿ ${priceFormatted}`;
                     const btnText = document.getElementById('course-paywall-btn-text');
@@ -13513,10 +13611,11 @@ ${encodedToken}
             const isPurchased = checkIsPurchased(currentActiveCourse.id) || (currentActiveCourse.price <= 0);
 
             // คำนวณเพดาน % สูงสุดที่สามารถอ่านได้จริง
-            // หากยังไม่ได้ซื้อ จะดูได้สูงสุดแค่บทเรียนตัวอย่าง (เช่น 4 บทจาก 6 บท = 67% ห้ามเป็น 100%)
+            // หากยังไม่ได้ซื้อ จะดูได้สูงสุดแค่บทเรียนตัวอย่าง (เช่น 5 แทร็กแรก หรือ 4 บทเรียน)
             let maxReachablePct = 100;
             if (!isPurchased && totalLessons > 0) {
-                const previewCount = Math.min(4, totalLessons);
+                const freeCount = (typeof currentActiveCourse.freePreviewCount === 'number') ? currentActiveCourse.freePreviewCount : (currentActiveCourse.category === 'Mixtape' ? 5 : 4);
+                const previewCount = Math.min(freeCount, totalLessons);
                 maxReachablePct = Math.min(99, Math.round((previewCount / totalLessons) * 100));
             }
 
@@ -13948,7 +14047,7 @@ ${encodedToken}
                         <div style="flex: 1; overflow: hidden;">
                             <div style="font-size: 0.82rem; font-weight: 700; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(item.title)}</div>
                             <div style="font-size: 0.74rem; color: #64748b; margin-top: 2px;">
-                                🎓 คอร์สเรียน ${lessonCount > 0 ? `(${lessonCount} บทเรียน)` : ''} • ${item.price <= 0 ? 'ฟรี' : `฿ ${Number(item.price).toFixed(2)}`}
+                                ${item.category === 'Mixtape' ? '🎵 อัลบั้ม Mixtape' : '🎓 คอร์สเรียน'} ${lessonCount > 0 ? (item.category === 'Mixtape' ? `(${lessonCount} เพลง)` : `(${lessonCount} บทเรียน)`) : ''} • ${item.price <= 0 ? 'ฟรี' : `฿ ${Number(item.price).toFixed(2)}`}
                             </div>
                         </div>
                     </div>
