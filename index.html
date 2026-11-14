@@ -52,7 +52,8 @@
         "query-input": "required name=search_term_string"
       }
     }
-    </script>
+    
+        </script>
 
     <!-- Google Fonts: Inter & Prompt -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1122,9 +1123,40 @@
             justify-content: center;
             padding: 28px 20px;
             opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease;
+            visibility: hidden;
+            pointer-events: none !important;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
             overflow-y: auto;
+        }
+
+        .modal-overlay:not(.active):not(.course-modal-active) {
+            display: none !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+        }
+
+        .modal-overlay:not(.active):not(.course-modal-active) * {
+            pointer-events: none !important;
+        }
+
+        .modal-overlay.active,
+        .modal-overlay.course-modal-active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto !important;
+            display: flex !important;
+        }
+
+        #code-viewer-modal {
+            z-index: 2200 !important;
+        }
+
+        #checkout-modal {
+            z-index: 2100 !important;
+        }
+
+        #my-orders-modal {
+            z-index: 2300 !important;
         }
 
         /* 10-Minute Countdown Badge */
@@ -1496,7 +1528,6 @@
             z-index: 10000;
             box-shadow: 0 4px 14px rgba(220, 38, 38, 0.45), 0 2px 6px rgba(0, 0, 0, 0.2);
             transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
-            pointer-events: auto !important;
             user-select: none;
             -webkit-user-select: none;
             touch-action: manipulation;
@@ -1944,12 +1975,12 @@
         .overview-promo-lead p,
         .overview-promo-lead div,
         .overview-promo-lead span {
-            text-align: center;
+            text-align: left;
         }
 
         .overview-promo-lead {
-            text-align: center;
-            margin: 10px auto 20px auto;
+            text-align: left;
+            margin: 10px 0 20px 0;
             font-size: 0.94rem;
             font-weight: 400;
             color: #334155;
@@ -4785,6 +4816,366 @@
             text-align: right;
             white-space: nowrap;
         }
+
+        /* Data Product Cards & Embeds */
+        .data-product-card {
+            background: #ffffff;
+            border: 1.5px solid #bae6fd;
+            border-radius: 12px;
+            padding: 14px 16px;
+            box-shadow: 0 2px 12px rgba(2, 132, 199, 0.06);
+            margin-bottom: 20px;
+        }
+
+        .data-product-card.locked {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+        }
+
+        .data-product-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .data-header-meta {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .data-meta-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .data-meta-badge.time {
+            background: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
+
+        .data-meta-badge.count {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+        }
+
+        .data-meta-badge.sync {
+            background: #fef3c7;
+            color: #b45309;
+            border: 1px solid #fde68a;
+        }
+
+        .data-live-feed-card {
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+            border: 1.5px solid #86efac;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+        }
+
+        .data-live-feed-header {
+            margin-bottom: 10px;
+        }
+
+        .data-live-feed-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.92rem;
+            font-weight: 800;
+            color: #166534;
+        }
+
+        .live-pill {
+            background: #22c55e;
+            color: #ffffff;
+            font-size: 0.68rem;
+            font-weight: 800;
+            padding: 2px 7px;
+            border-radius: 999px;
+            box-shadow: 0 1px 4px rgba(34, 197, 94, 0.35);
+        }
+
+        .data-live-feed-desc {
+            font-size: 0.78rem;
+            color: #334155;
+            margin: 4px 0 0 0;
+            line-height: 1.45;
+        }
+
+        .data-feed-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .data-feed-item {
+            background: #ffffff;
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            padding: 10px 12px;
+        }
+
+        .feed-item-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            color: #1e293b;
+            margin-bottom: 6px;
+        }
+
+        .feed-badge {
+            font-size: 0.68rem;
+            font-weight: 800;
+            padding: 1px 6px;
+            border-radius: 4px;
+        }
+
+        .feed-badge.txt {
+            background: #dbeafe;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+        }
+
+        .feed-badge.sheets {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+        }
+
+        .feed-input-group {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .feed-input-group input {
+            flex: 1;
+            padding: 6px 10px;
+            font-size: 0.76rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            color: #0f172a;
+        }
+
+        .btn-copy-feed {
+            background: #0284c7;
+            color: #ffffff;
+            border: none;
+            padding: 6px 12px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .btn-copy-feed:hover {
+            background: #0369a1;
+        }
+
+        .btn-open-feed {
+            background: #f1f5f9;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+            padding: 6px 10px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            border-radius: 6px;
+            text-decoration: none;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .feed-item-hint {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .feed-links-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-chip-feed {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.73rem;
+            font-weight: 600;
+            color: #334155;
+            cursor: pointer;
+        }
+
+        .btn-chip-feed:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+
+        .data-sheet-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-bottom: none;
+            border-radius: 8px 8px 0 0;
+            flex-wrap: wrap;
+        }
+
+        .data-toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .btn-data-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .btn-data-action.txt {
+            background: #f1f5f9;
+            color: #334155;
+            border-color: #cbd5e1;
+        }
+
+        .btn-data-action.csv {
+            background: #ecfdf5;
+            color: #047857;
+            border-color: #a7f3d0;
+        }
+
+        .btn-data-action.copy {
+            background: #e0f2fe;
+            color: #0369a1;
+            border-color: #7dd3fc;
+        }
+
+        .btn-data-action.refresh {
+            background: #ffffff;
+            color: #64748b;
+            border-color: #e2e8f0;
+        }
+
+        .data-table-container {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            overflow-x: auto;
+            background: #ffffff;
+            position: relative;
+        }
+
+        .data-sheet-toolbar+.data-table-container {
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .data-table-container.scrollable {
+            max-height: 380px;
+            overflow-y: auto;
+        }
+
+        .data-excel-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+            text-align: left;
+        }
+
+        .data-excel-table th {
+            background: #f8fafc;
+            color: #475569;
+            font-weight: 700;
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            border: 1px solid #e2e8f0;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            white-space: nowrap;
+        }
+
+        .data-excel-table td {
+            padding: 6px 12px;
+            border: 1px solid #f1f5f9;
+            color: #334155;
+            vertical-align: middle;
+            font-size: 0.78rem;
+            line-height: 1.35;
+        }
+
+        .data-excel-table tr:hover td {
+            background: #f8fafc;
+        }
+
+        .data-cell-url {
+            color: #0284c7;
+            font-weight: 500;
+            font-size: 0.78rem;
+            font-family: 'Inter', monospace;
+            word-break: break-all;
+            text-decoration: none;
+        }
+
+        .data-cell-url:hover {
+            text-decoration: underline;
+        }
+
+        .data-locked-overlay-box {
+            padding: 12px 16px;
+            background: linear-gradient(180deg, rgba(241, 245, 249, 0.85) 0%, #f1f5f9 100%);
+            border-top: 1px dashed #cbd5e1;
+        }
+
+        .data-locked-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .detail-bottom-grid.no-specs {
+            display: flex;
+            justify-content: center;
+        }
+
+        .detail-bottom-grid.no-specs .detail-bottom-checkout-card {
+            width: 100%;
+            max-width: 440px;
+        }
     </style>
 </head>
 
@@ -5140,7 +5531,12 @@
                 </div>
 
                 <!-- Font Revelation & High-Security Censor Blur Box (สำหรับหมวดหมู่คลังฟอนต์) -->
+
+                <!-- Font Revelation & High-Security Censor Blur Box (สำหรับหมวดหมู่คลังฟอนต์) -->
                 <div id="detail-font-secret-box" style="display: none; margin-bottom: 22px;"></div>
+
+                <!-- Data Product Spreadsheet Embed Table (สำหรับหมวดขายข้อมูล เช่น กลุ่ม Facebook) -->
+                <div id="detail-data-product-box" style="display: none; margin-bottom: 22px;"></div>
 
                 <!-- Description / Overview -->
                 <div style="margin-bottom: 20px;">
@@ -6621,7 +7017,7 @@
                         style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
                         <div>
                             <h3 style="font-size: 1.15rem; font-weight: 800; color: #0f172a; margin: 0;">🎉
-                                เผื่อจะถูกใจนายท่านอีก!</h3>
+                                ยินดีด้วยที่คุณได้เรียนรู้!</h3>
                             <p style="font-size: 0.84rem; color: #64748b; margin: 4px 0 0 0;">แนะนำคอร์สเรียนอื่นๆ
                                 ที่คุณอาจสนใจเพื่อพัฒนาทักษะต่อเนื่อง</p>
                         </div>
@@ -6806,6 +7202,22 @@
 
         const BUILTIN_SERVICES = [
             {
+                id: 'prod_fb_public_groups',
+                slug: 'fb-approved-groups',
+                title: 'รายชื่อกลุ่ม Facebook โพสต์อนุมัติทันที ติด Google SEO',
+                price: 100,
+                priceText: '฿ 100.00',
+                category: 'ขายข้อมูล',
+                isDataProduct: true,
+                language: 'data_feed',
+                coverImage: 'shop/images/fb_groups_data_cover.svg',
+                description: '🔥 รวมรายชื่อกลุ่ม Facebook สาธารณะ (Public Group) ที่ผ่านการทดสอบจริง โพสต์แล้วอนุมัติทันที ไม่ต้องรอแอดมิน\n🌐 ตรวจสอบผ่านโหมดไม่ระบุตัวตน (Incognito) ทุกกลุ่ม ยืนยันว่าคนภายนอกและ Google Search Engine มองเห็นเนื้อหาได้ทันที ช่วยดัน SEO\n💎 ซื้อครั้งเดียว อัปเดตรายชื่อกลุ่มใหม่ฟรีตลอดชีพ ซิงค์ตรงจากบอทคัดกรอง Facebook อัตโนมัติ\n📥 พร้อมระบบแสดงผลแบบตาราง Embed เสมือน Excel / CSV, ปุ่มดาวน์โหลด .TXT, .CSV และปุ่มคัดลอกทุกลิงก์ในคลิกเดียว',
+                hasInstallGuide: false,
+                installSteps: [],
+                isRecommended: true,
+                createdAt: 1763150000000
+            },
+            {
                 id: 'prod_mixtape_vol1',
                 slug: 'volume1',
                 title: '#Volume1',
@@ -6816,7 +7228,7 @@
                 freePreviewCount: 5,
                 language: 'digital_download',
                 coverImage: 'shop/images/mixtape_cover.svg',
-                description: 'คอลเลกชันสุดพิเศษ Mixtape ที่หาฟังไม่ได้ที่ไหน #Volume1\n🎧 เปิดให้ทดลองฟังฟรี 5 เพลงแรก (แทร็ก 1 - 5)\n💎 สแกนพร้อมเพย์ 99 บาท (จ่ายครั้งเดียว) ปลดล็อกฟังได้ครบทุกแทร็กตลอดชีพ',
+                description: 'คอลเลกชันเพลงสุดพิเศษ Mixtape #Volume1 รวม 9 เพลงคุณภาพ\n🎧 เปิดให้ทดลองฟังฟรี 5 เพลงแรก (แทร็ก 1 - 5)\n💎 สแกนพร้อมเพย์ 99 บาท (จ่ายครั้งเดียว) ปปลดล็อกฟังได้ครบทุกแทร็กตลอดชีพ',
                 hasInstallGuide: false,
                 installSteps: [],
                 isRecommended: true,
@@ -6824,49 +7236,49 @@
                 totalLessons: 9,
                 lessons: [
                     {
-                        title: 'Track 01',
+                        title: 'Track 01: เพลงที่ 1',
                         mediaUrl: 'https://www.dropbox.com/scl/fi/703wfbvcb2ja05f42ouw5/1.mp4?rlkey=bubmmf0et4o8bpuqfs1e5hcoe&st=36ffgdbw&dl=0',
-                        content: ''
+                        content: 'รับฟังเพลง Track 01 จากอัลบั้ม Mixtape #Volume1 (เปิดให้ฟังฟรี)'
                     },
                     {
-                        title: 'Track 02',
+                        title: 'Track 02: เพลงที่ 2',
                         mediaUrl: 'https://www.dropbox.com/scl/fi/z24knekpqg93or2u6jcz4/2.mp4?rlkey=6s86grr6p7g7f3esne4c69hvh&st=xw51dx9c&dl=0',
-                        content: ''
+                        content: 'รับฟังเพลง Track 02 จากอัลบั้ม Mixtape #Volume1 (เปิดให้ฟังฟรี)'
                     },
                     {
-                        title: 'Track 03',
+                        title: 'Track 03: เพลงที่ 3',
                         mediaUrl: 'https://www.dropbox.com/scl/fi/qekwklzplqqvv7rx49cqk/3.mp4?rlkey=d8um48jauirs7wjufyzck1rpw&st=91fr8g4h&dl=0',
-                        content: ''
+                        content: 'รับฟังเพลง Track 03 จากอัลบั้ม Mixtape #Volume1 (เปิดให้ฟังฟรี)'
                     },
                     {
-                        title: 'Track 04',
+                        title: 'Track 04: เพลงที่ 4',
                         mediaUrl: 'https://www.dropbox.com/scl/fi/t1tylu51hca0dkshiwrbm/4.mp4?rlkey=85emqwuk1ke2zmkbp6x1os7v5&st=o0pfvzjw&dl=0',
-                        content: ''
+                        content: 'รับฟังเพลง Track 04 จากอัลบั้ม Mixtape #Volume1 (เปิดให้ฟังฟรี)'
                     },
                     {
-                        title: 'Track 05',
+                        title: 'Track 05: เพลงที่ 5',
                         mediaUrl: 'https://www.dropbox.com/scl/fi/ueuchmvq989jz01rm6qc6/5.mp4?rlkey=kp96s5zfm9edd15tfvhsk1jmm&st=remwedc0&dl=0',
-                        content: ''
+                        content: 'รับฟังเพลง Track 05 จากอัลบั้ม Mixtape #Volume1 (เปิดให้ฟังฟรี)'
                     },
                     {
-                        title: 'Track 06',
-                        mediaUrl: '',
-                        content: ''
+                        title: 'Track 06: เพลงที่ 6',
+                        mediaUrl: 'https://www.dropbox.com/scl/fi/0ngwk15vrkarkrr1sv6as/6.mp4?rlkey=2hwtigraiwv9mh4e13kvw1vl2&st=ikk9vutt&dl=0',
+                        content: 'รับฟังเพลง Track 06 จากอัลบั้ม Mixtape #Volume1 (แทร็กพิเศษ ปลดล็อกเมื่อซื้อขาด 99 บาท)'
                     },
                     {
-                        title: 'Track 07',
-                        mediaUrl: '',
-                        content: ''
+                        title: 'Track 07: เพลงที่ 7',
+                        mediaUrl: 'https://www.dropbox.com/scl/fi/xps42b7n0gh04bfgfi211/7.mp4?rlkey=7ym7x3k4l2dy963kb9x1wr2g6&st=kcvchpa8&dl=0',
+                        content: 'รับฟังเพลง Track 07 จากอัลบั้ม Mixtape #Volume1 (แทร็กพิเศษ ปลดล็อกเมื่อซื้อขาด 99 บาท)'
                     },
                     {
-                        title: 'Track 08',
-                        mediaUrl: '',
-                        content: ''
+                        title: 'Track 08: เพลงที่ 8',
+                        mediaUrl: 'https://www.dropbox.com/scl/fi/80wt9bibe0tqa54849xot/8.mp4?rlkey=2cxwzdtlo939xlb2gg7l6hn2u&st=3pdm3qzl&dl=0',
+                        content: 'รับฟังเพลง Track 08 จากอัลบั้ม Mixtape #Volume1 (แทร็กพิเศษ ปลดล็อกเมื่อซื้อขาด 99 บาท)'
                     },
                     {
-                        title: 'Track 09',
-                        mediaUrl: '',
-                        content: ''
+                        title: 'Track 09: เพลงที่ 9',
+                        mediaUrl: 'https://www.dropbox.com/scl/fi/e9iohklzfbiqafagw62o0/9.mp4?rlkey=z2n2g65uckj3o640hrhp7nn69&st=48mmg7gv&dl=0',
+                        content: 'รับฟังเพลง Track 09 จากอัลบั้ม Mixtape #Volume1 (แทร็กพิเศษ ปลดล็อกเมื่อซื้อขาด 99 บาท)'
                     }
                 ]
             },
@@ -7231,7 +7643,7 @@
 
             cats.forEach(cat => {
                 const count = catMap[cat];
-                if (count === 0 && cat !== 'บริการออนไลน์' && cat !== 'บริการ' && cat !== 'แรงงาน' && cat !== 'Chrome Addon' && cat !== 'คลังฟอนต์' && cat !== 'Mixtape') return;
+                if (count === 0 && cat !== 'ขายข้อมูล' && cat !== 'บริการออนไลน์' && cat !== 'บริการ' && cat !== 'แรงงาน' && cat !== 'Chrome Addon' && cat !== 'คลังฟอนต์' && cat !== 'Mixtape') return;
                 const isActive = (activeCategory === cat || (activeCategory === 'บริการ' && cat === 'บริการออนไลน์') || (activeCategory === 'บริการออนไลน์' && cat === 'บริการ'));
                 const isMixtapeCat = (cat === 'Mixtape');
                 const isChromeAddon = (cat === 'Chrome Addon' || cat === 'Chrome Extension');
@@ -7433,6 +7845,7 @@
             const pageItems = filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
             container.innerHTML = pageItems.map(p => {
+                const isDataProduct = Boolean(p && (p.category === 'ขายข้อมูล' || p.isDataProduct));
                 const priceFormatted = Number(p.price || 0).toFixed(2);
                 const isFree = (p.price <= 0) && !p.priceText;
                 const isUserPurchased = checkIsPurchased(p.id);
@@ -7452,6 +7865,7 @@
                             <div class="program-details">
                                 <div class="program-title-row">
                                     <a href="?p=${getCleanProductSlug(p)}" class="program-name program-title-link" onclick="event.preventDefault(); ${isCourse ? `openCourseViewer('${p.id}', event)` : (isService ? `handleServiceClick('${p.id}', event)` : `openProductDetail('${p.id}')`)}">${escapeHtml(p.title)}</a>
+                                    ${isDataProduct ? '<span class="badge-service-pill" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">📊 ขายข้อมูล</span>' : ''}
                                     ${isFont ? '<span class="badge-service-pill" style="background:#ede9fe; color:#6d28d9; border-color:#ddd6fe;">🔤 คลังฟอนต์</span>' : ''}
                                     ${isMixtape ? '<span class="badge-service-pill" style="background:#fce7f3; color:#be185d; border-color:#fbcfe8;">🎵 Mixtape</span>' : (isCourse ? '<span class="badge-service-pill" style="background:#fef3c7; color:#b45309; border-color:#fde68a;">🎓 ทักษะเรียนรู้</span>' : '')}
                                     ${isService ? `<span class="badge-service-pill">${p.category === 'แรงงาน' ? '🔨 แรงงาน' : '🛠️ บริการออนไลน์'}</span>` : ''}
@@ -7742,6 +8156,7 @@
             }
 
             activeDetailProduct = p;
+            const isDataProduct = Boolean(p && (p.category === 'ขายข้อมูล' || p.isDataProduct));
 
             window.history.pushState({ productId: p.id }, '', `?p=${getCleanProductSlug(p)}`);
             updatePageSEO(p);
@@ -7775,7 +8190,9 @@
             detailProductImageIdx = 0;
 
             if (showcaseBox) {
-                if (detailSliderItems.length > 0) {
+                if (isDataProduct || p.hideCoverShowcase) {
+                    showcaseBox.style.display = 'none';
+                } else if (detailSliderItems.length > 0) {
                     showcaseBox.style.display = 'block';
 
                     if (detailSliderItems.length > 1) {
@@ -7856,6 +8273,18 @@
                     langBadge.style.display = 'none';
                 }
             }
+            const specsBox = document.getElementById('detail-specs-box');
+            const bottomGrid = document.getElementById('detail-bottom-section');
+            if (specsBox) {
+                if (isDataProduct) {
+                    specsBox.style.display = 'none';
+                    if (bottomGrid) bottomGrid.classList.add('no-specs');
+                } else {
+                    specsBox.style.display = 'block';
+                    if (bottomGrid) bottomGrid.classList.remove('no-specs');
+                }
+            }
+
             const specLang = document.getElementById('detail-spec-language');
             if (specLang) {
                 if (p.isService) {
@@ -7914,6 +8343,9 @@
 
             // Render Font Revelation & Censor Box (if font product)
             renderDetailFontSecretBox(p);
+            if (typeof renderDetailDataProductBox === 'function') {
+                renderDetailDataProductBox(p);
+            }
 
             updateDetailCTAState();
             const modalEl = document.getElementById('detail-modal');
@@ -7970,9 +8402,18 @@
             const priceNum = Number(activeDetailProduct.price || 0);
             const priceFormatted = priceNum <= 0 ? 'ฟรี (Free)' : `฿ ${priceNum.toFixed(2)}`;
 
-            if (isPurchased || isService) {
+            if (isService) {
                 if (bottomCard) bottomCard.style.display = 'none';
                 if (bottomGrid) bottomGrid.classList.add('no-checkout');
+            } else if (isPurchased) {
+                if (bottomCard) bottomCard.style.display = 'flex';
+                if (bottomGrid) bottomGrid.classList.remove('no-checkout');
+                const btnView = document.getElementById('detail-bottom-btn-view');
+                const qrView = document.getElementById('detail-bottom-qr-view');
+                const successView = document.getElementById('detail-bottom-success-view');
+                if (btnView) btnView.style.display = 'none';
+                if (qrView) qrView.style.display = 'none';
+                if (successView) successView.style.display = 'block';
             } else {
                 if (bottomCard) bottomCard.style.display = 'flex';
                 if (bottomGrid) bottomGrid.classList.remove('no-checkout');
@@ -8091,19 +8532,63 @@
             }
 
             if (isPurchased) {
-                if (activeDetailProduct.language === 'pinescript') {
+                const downloadBtn = document.getElementById('btn-detail-success-download');
+                const isDataProduct = Boolean(activeDetailProduct && (activeDetailProduct.category === 'ขายข้อมูล' || activeDetailProduct.isDataProduct));
+                const isPine = (activeDetailProduct.language === 'pinescript' || activeDetailProduct.isCodeProduct);
+
+                if (isPine) {
                     if (btn) {
                         btn.className = 'btn-big-download unlocked';
                         btn.style.background = 'linear-gradient(135deg, #059669 0%, #10b981 100%)';
                         btn.innerHTML = '<span>🌲 ดูและคัดลอกโค้ด Pine Script</span>';
                         btn.onclick = () => openPurchasedCodeModal(activeDetailProduct.id);
                     }
+                    if (downloadBtn) {
+                        downloadBtn.className = 'btn-big-download unlocked';
+                        downloadBtn.style.background = 'linear-gradient(135deg, #059669 0%, #10b981 100%)';
+                        downloadBtn.innerHTML = '<span>🌲 ดูและคัดลอกโค้ด Pine Script</span>';
+                        downloadBtn.removeAttribute('href');
+                        downloadBtn.onclick = (e) => {
+                            e.preventDefault();
+                            openPurchasedCodeModal(activeDetailProduct.id);
+                        };
+                    }
+                } else if (isDataProduct) {
+                    if (btn) {
+                        btn.className = 'btn-big-download unlocked';
+                        btn.style.background = 'linear-gradient(135deg, #059669 0%, #10b981 100%)';
+                        btn.innerHTML = '<span>📊 ดูตารางข้อมูลและรับ Live Feed</span>';
+                        btn.onclick = () => {
+                            const box = document.getElementById('detail-data-product-box');
+                            if (box) box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        };
+                    }
+                    if (downloadBtn) {
+                        downloadBtn.className = 'btn-big-download unlocked';
+                        downloadBtn.style.background = 'linear-gradient(135deg, #059669 0%, #10b981 100%)';
+                        downloadBtn.innerHTML = '<span>📊 ดูตารางข้อมูลและรับ Live Feed</span>';
+                        downloadBtn.removeAttribute('href');
+                        downloadBtn.onclick = (e) => {
+                            e.preventDefault();
+                            const box = document.getElementById('detail-data-product-box');
+                            if (box) box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        };
+                    }
                 } else {
                     if (btn) {
                         btn.className = 'btn-big-download unlocked';
                         btn.style.background = '';
-                        btn.innerHTML = '<span>📥 ดาวน์โหลดไฟล์ของคุณ (Dropbox)</span>';
+                        btn.innerHTML = '<span>📥 ดาวน์โหลดไฟล์ของคุณ</span>';
                         btn.onclick = () => downloadPurchasedProduct(activeDetailProduct.id);
+                    }
+                    if (downloadBtn) {
+                        downloadBtn.className = 'btn-big-download unlocked';
+                        downloadBtn.style.background = '';
+                        downloadBtn.innerHTML = '<span>📥 ดาวน์โหลดไฟล์ของคุณ</span>';
+                        downloadBtn.onclick = (e) => {
+                            e.preventDefault();
+                            downloadPurchasedProduct(activeDetailProduct.id);
+                        };
                     }
                 }
             } else if (!storeIsOnline) {
@@ -8143,14 +8628,26 @@
         }
 
         function handleDetailCheckoutClick() {
-            if (!storeIsOnline) {
-                showToast('⚠️ ระบบชำระเงินต้องใช้เซิร์ฟเวอร์ออนไลน์ โปรดรอเปิดระบบ', 'warning');
+            if (!activeDetailProduct) return;
+
+            const isPurchased = isProductPurchased(activeDetailProduct.id);
+            if (isPurchased) {
+                const isPine = (activeDetailProduct.language === 'pinescript' || activeDetailProduct.isCodeProduct);
+                if (isPine) {
+                    openPurchasedCodeModal(activeDetailProduct.id);
+                    return;
+                }
+                downloadPurchasedProduct(activeDetailProduct.id);
                 return;
             }
-            if (!activeDetailProduct) return;
 
             if (activeDetailProduct.price <= 0) {
                 triggerFreeDownload(activeDetailProduct);
+                return;
+            }
+
+            if (!storeIsOnline) {
+                showToast('⚠️ ระบบชำระเงินต้องใช้เซิร์ฟเวอร์ออนไลน์ โปรดรอเปิดระบบ', 'warning');
                 return;
             }
 
@@ -8498,6 +8995,54 @@
             }
 
             updateDetailCTAState();
+
+            // --- SMART ACTION / HYBRID SCROLL & BUTTON ADAPTATION ---
+            const isDataProduct = Boolean(product && (product.category === 'ขายข้อมูล' || product.isDataProduct));
+            const isFontProd = Boolean(product && (product.category === 'คลังฟอนต์' || product.isFontProduct));
+            const isCourse = Boolean(product && (product.category === 'ทักษะเรียนรู้' || product.category === 'Mixtape' || product.isCourse));
+
+            const downloadBtn = document.getElementById('btn-detail-success-download');
+            if (downloadBtn) {
+                if (isDataProduct) {
+                    downloadBtn.innerHTML = '<span>📊 ดูตารางข้อมูลและรับ Live Feed</span>';
+                    downloadBtn.onclick = (e) => {
+                        e.preventDefault();
+                        const box = document.getElementById('detail-data-product-box');
+                        if (box) box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    };
+                } else if (isFontProd) {
+                    downloadBtn.innerHTML = '<span>🔤 ดูเฉลยชื่อฟอนต์ที่ปลดล็อก</span>';
+                    downloadBtn.onclick = (e) => {
+                        e.preventDefault();
+                        const box = document.getElementById('detail-font-secret-box');
+                        if (box) box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    };
+                } else if (isCourse) {
+                    downloadBtn.innerHTML = '<span>🎓 เข้าสู่ห้องเรียน (ปลดล็อกแล้ว)</span>';
+                    downloadBtn.onclick = (e) => {
+                        e.preventDefault();
+                        closeDetailModal();
+                        openCourseViewer(product.id, e);
+                    };
+                }
+            }
+
+            // Smart Auto-Scroll for on-page content products
+            setTimeout(() => {
+                if (isDataProduct) {
+                    const dataBox = document.getElementById('detail-data-product-box');
+                    if (dataBox) {
+                        dataBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        showToast('🎉 ปลดล็อกข้อมูลกลุ่มและ Live Feed เรียบร้อยแล้ว!', 'success');
+                    }
+                } else if (isFontProd) {
+                    const fontBox = document.getElementById('detail-font-secret-box');
+                    if (fontBox) {
+                        fontBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        showToast('🔓 ปลดล็อกชื่อฟอนต์เรียบร้อยแล้ว!', 'success');
+                    }
+                }
+            }, 600);
         }
 
         // --- SEO Updater (Dynamic Meta, OpenGraph & Schema.org JSON-LD for Google Index) ---
@@ -10723,10 +11268,10 @@ ${encodedToken}
                 <input type="text" class="form-control-clean admin-feature-item-val" style="flex:1; padding:6px 10px; font-size:0.83rem; margin:0; border-color:#86efac;" placeholder="คุณสมบัติเด่น เช่น คำนวณและแสดงผลอัตโนมัติ..." value="${escapeHtml(val)}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
                 <button type="button" class="btn-tool-sm" title="สลับเลื่อนขึ้น" onclick="moveAdminFeatureRow(this, -1)" style="padding:3px 7px; font-size:0.72rem; cursor:pointer; color:#166534; background:#dcfce7; border:1px solid #86efac; border-radius:4px;">▲</button>
                 <button type="button" class="btn-tool-sm" title="สลับเลื่อนลง" onclick="moveAdminFeatureRow(this, 1)" style="padding:3px 7px; font-size:0.72rem; cursor:pointer; color:#166534; background:#dcfce7; border:1px solid #86efac; border-radius:4px;">▼</button>
-                <button type="button" class="btn-tool-sm" title="ลบข้อนี้" style="color:var(--fh-danger); padding:3px 7px; font-size:0.72rem; border-color:#fecaca; background:#fef2f2; border-radius:4px;" onclick="this.closest('.admin-feature-input-row').remove();">✕</button>
+                <button type="button" class="btn-tool-sm" style="color:var(--fh-danger);" onclick="this.parentElement.remove();" title="ลบรายการนี้">✕</button>
             `;
-            setupFeatureRowDragEvents(div);
             list.appendChild(div);
+            if (typeof setupFeatureRowDragEvents === "function") setupFeatureRowDragEvents(div);
         }
 
         function syncFeaturesToDescription() {
@@ -10796,10 +11341,8 @@ ${encodedToken}
             if (!list) return;
             list.innerHTML = '';
             TRADINGVIEW_DEFAULT_STEPS.forEach(s => addAdminStepRow(s));
-            const guideCb = document.getElementById('admin-has-install-guide');
-            if (guideCb) guideCb.checked = true;
-            const container = document.getElementById('admin-steps-container');
-            if (container) container.style.display = 'block';
+            document.getElementById('admin-has-install-guide').checked = true;
+            document.getElementById('admin-steps-container').style.display = 'block';
             showToast('✅ โหลดคู่มือการติดตั้ง TradingView เริ่มต้นเรียบร้อย', 'info');
         }
 
@@ -10819,33 +11362,6 @@ ${encodedToken}
         }
 
         // --- ADMIN CATEGORY SUGGESTIONS & CHIPS ---
-        function renderAdminCategoryOptions(currentVal = '') {
-            const datalist = document.getElementById('admin-category-datalist');
-            const chipsList = document.getElementById('admin-category-chips-list');
-            if (!datalist && !chipsList) return;
-
-            const catSet = new Set(['Mixtape', 'คลังฟอนต์', 'ขายไฟล์', 'Chrome Addon', 'TradingView / สคริปต์', 'เครื่องมือ', 'บอท', 'โปรแกรม', 'บริการออนไลน์', 'แรงงาน']);
-            if (Array.isArray(products)) {
-                products.forEach(p => {
-                    const c = (p.category || '').trim();
-                    if (c && c !== 'บริการ' && c !== 'ทักษะเรียนรู้') catSet.add(c);
-                });
-            }
-
-            const catList = Array.from(catSet);
-
-            if (datalist) {
-                datalist.innerHTML = catList.map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
-            }
-
-            if (chipsList) {
-                const targetVal = (currentVal || (document.getElementById('admin-category-input') ? document.getElementById('admin-category-input').value : '')).trim();
-                chipsList.innerHTML = catList.map(c => {
-                    const isActive = (targetVal === c);
-                    return `<button type="button" class="btn-cat-chip ${isActive ? 'active' : ''}" onclick="selectAdminCategory('${escapeHtml(c)}')">🏷️ ${escapeHtml(c)}</button>`;
-                }).join('');
-            }
-        }
 
         function areCurrentStepsTradingView() {
             const rows = document.querySelectorAll('.admin-step-item-val');
@@ -10858,6 +11374,30 @@ ${encodedToken}
 
         function areCurrentStepsChromeAddon() {
             const rows = document.querySelectorAll('.admin-step-item-val');
+            for (let r of rows) {
+                const val = r.value || '';
+                if (val.includes('chrome://extensions') || val.includes('Developer mode') || val.includes('Load unpacked') || val.includes('ส่วนขยาย')) return true;
+            }
+            return false;
+        }
+
+
+        // --- ADMIN CATEGORY SUGGESTIONS & CHIPS ---
+        function renderAdminCategoryOptions(currentVal = '') {
+            const datalist = document.getElementById('admin-category-datalist');
+            const chipsList = document.getElementById('admin-category-chips-list');
+            if (!datalist && !chipsList) return;
+
+            // Collect unique categories in the system
+            const catSet = new Set(['Mixtape', 'คลังฟอนต์', 'ขายไฟล์', 'Chrome Addon', 'TradingView / สคริปต์', 'เครื่องมือ', 'บอท', 'โปรแกรม', 'บริการออนไลน์', 'แรงงาน']);
+            if (Array.isArray(products)) {
+                products.forEach(p => {
+                    const c = (p.category || '').trim();
+                    if (c && c !== 'บริการ' && c !== 'ทักษะเรียนรู้') catSet.add(c);
+                });
+            }
+
+
             for (let r of rows) {
                 const val = r.value || '';
                 if (val.includes('chrome://extensions') || val.includes('Developer mode') || val.includes('Load unpacked') || val.includes('ส่วนขยาย')) return true;
@@ -12651,6 +13191,16 @@ ${encodedToken}
             }
 
             if (e.key === 'Escape') {
+                const codeModal = document.getElementById('code-viewer-modal');
+                if (codeModal && codeModal.classList.contains('active')) {
+                    closeCodeViewerModal();
+                    return;
+                }
+                const courseModal = document.getElementById('course-viewer-modal');
+                if (courseModal && (courseModal.classList.contains('active') || courseModal.classList.contains('course-modal-active'))) {
+                    closeCourseViewer();
+                    return;
+                }
                 closeDetailModal();
                 closeCheckoutModal();
                 closeMyOrdersModal();
@@ -13476,7 +14026,7 @@ ${encodedToken}
                     <div style="text-align: center; padding: 40px 20px; color: #64748b; background: #ffffff; border-radius: 16px; border: 1px dashed #cbd5e1;">
                         <div style="font-size: 2rem; margin-bottom: 8px;">🔖</div>
                         <h4 style="color: #0f172a; margin: 0 0 6px 0;">${isMixtape ? 'ยังไม่มีเพลงที่บันทึกไว้' : 'ยังไม่มีบทเรียนที่คั่นไว้'}</h4>
-                        <p style="font-size: 0.85rem; margin: 0;">${isMixtape ? 'กดปุ่ม <b>"🔖 บันทึกแทร็กนี้"</b> ในเพลงที่คุณชื่นชอบเพื่อเรียกดูแยกได้ทันที' : 'กดปุ่ม <b>"🔖 คั่นบทเรียนนี้"</b> ในบทเรียนที่คุณชื่นชอบเพื่อเรียกดูแยกได้ทันที'}</p>
+                        <p style="font-size: 0.85rem; margin: 0;">${isMixtape ? 'กดปุ่ม <b>"🔖 บันทึกเพลงนี้"</b> ในเพลงที่คุณชื่นชอบเพื่อเรียกดูแยกได้ทันที' : 'กดปุ่ม <b>"🔖 คั่นบทเรียนนี้"</b> ในบทเรียนที่คุณชื่นชอบเพื่อเรียกดูแยกได้ทันที'}</p>
                     </div>
                 `;
             } else {
@@ -13488,7 +14038,7 @@ ${encodedToken}
 
                     const stepText = isMixtape ? `แทร็กที่ ${(originalIdx + 1).toString().padStart(2, '0')}` : `บทเรียนที่ ${(originalIdx + 1).toString().padStart(2, '0')}`;
                     const previewText = isMixtape ? '✨ ฟังฟรี' : '✨ โพสต์ตัวอย่างฟรี';
-                    const bmText = isBookmarked ? (isMixtape ? '⭐ บันทึกแทร็กนี้แล้ว' : '⭐ บันทึกความรู้นี้แล้ว') : (isMixtape ? '🔖 บันทึกแทร็กนี้' : '🔖 บันทึกความรู้นี้');
+                    const bmText = isBookmarked ? (isMixtape ? '⭐ บันทึกเพลงนี้แล้ว' : '⭐ บันทึกความรู้นี้แล้ว') : (isMixtape ? '🔖 บันทึกเพลงนี้' : '🔖 บันทึกความรู้นี้');
 
                     return `
                         <div class="course-lesson-card ${isPreviewGold ? 'is-preview-gold' : ''}" id="course-card-idx-${originalIdx}" data-lesson-idx="${originalIdx}">
@@ -13546,11 +14096,10 @@ ${encodedToken}
                             <div class="course-locked-teaser" style="padding: 10px 14px; margin-bottom: 8px; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
                                 <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; min-width: 0; flex: 1;">
                                     <span style="flex-shrink: 0;">🔒</span>
-                                    <span style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">${prefix}</span >
-                                    
-                                </div >
-                        <span style="font-size: 0.7rem; color: #dc2626; background: #fee2e2; padding: 2px 7px; border-radius: 4px; font-weight: 700; white-space: nowrap; flex-shrink: 0;">ปลดล็อก</span>
-                            </div >
+                                    <span style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">${prefix}: ${escapeHtml(cleanTitle || `เพลงที่ ${trackNum}`)}</span>
+                                </div>
+                                <span style="font-size: 0.7rem; color: #dc2626; background: #fee2e2; padding: 2px 7px; border-radius: 4px; font-weight: 700; white-space: nowrap; flex-shrink: 0;">ปลดล็อก</span>
+                            </div>
                         `;
                     }).join('');
 
@@ -13558,10 +14107,10 @@ ${encodedToken}
                         ? `🔒 ปลดล็อกเพลงที่เหลืออีก ${remainingCount} เพลง`
                         : `🔒 ปลดล็อกบทเรียนที่เหลืออีก ${remainingCount} บทเรียน`;
                     document.getElementById('course-paywall-desc').innerHTML = isMixtape
-                        ? `ซื้อขาดครั้งเดียว ฿${priceFormatted} (จ่ายครั้งเดียว) < u > ฟังได้ครบทุกเพลงตลอดชีพ</u > `
-                        : `ซื้อขาดครั้งเดียว < u > ดูได้ตลอดชีพ</u > `;
+                        ? `ซื้อขาดครั้งเดียว ฿${priceFormatted} (จ่ายครั้งเดียว) <u>ฟังได้ครบทุกเพลงตลอดชีพ</u>`
+                        : `ซื้อขาดครั้งเดียว <u>ดูได้ตลอดชีพ</u>`;
                     const priceDisp = document.getElementById('course-paywall-price-display');
-                    if (priceDisp) priceDisp.textContent = `฿ ${priceFormatted} `;
+                    if (priceDisp) priceDisp.textContent = `฿ ${priceFormatted}`;
                     const btnText = document.getElementById('course-paywall-btn-text');
                     if (btnText) btnText.textContent = `สแกนพร้อมเพย์`;
 
@@ -13757,7 +14306,7 @@ ${encodedToken}
             clearTimeout(_courseScrollSaveTimer);
             _courseScrollSaveTimer = setTimeout(() => {
                 try {
-                    localStorage.setItem(`course_scroll_pos_${courseId} `, scrollPos);
+                    localStorage.setItem(`course_scroll_pos_${courseId}`, scrollPos);
                 } catch (e) { }
             }, 250);
         }
@@ -13766,7 +14315,7 @@ ${encodedToken}
             const bodyEl = document.getElementById('course-viewer-body');
             if (!bodyEl) return;
 
-            const savedPos = localStorage.getItem(`course_scroll_pos_${courseId} `);
+            const savedPos = localStorage.getItem(`course_scroll_pos_${courseId}`);
             if (savedPos && Number(savedPos) > 40) {
                 bodyEl.scrollTop = Number(savedPos);
 
@@ -13802,20 +14351,20 @@ ${encodedToken}
             }
 
             const priceTextEl = document.getElementById('course-qr-price-text');
-            if (priceTextEl) priceTextEl.textContent = `฿ ${amount.toFixed(2)} `;
+            if (priceTextEl) priceTextEl.textContent = `฿ ${amount.toFixed(2)}`;
 
             const qrTarget = document.getElementById('course-qr-image-target');
             if (qrTarget) {
                 qrTarget.innerHTML = `
-                        < div style = "display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; font-size:0.78rem; color:#64748b;" >
+                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; font-size:0.78rem; color:#64748b;">
                         <div style="width:28px; height:28px; border:3px solid #bbf7d0; border-top-color:#16a34a; border-radius:50%; animation:spin 0.8s linear infinite;"></div>
                         <span>กำลังสร้าง QR Code...</span>
-                    </div >
-                        `;
+                    </div>
+                `;
             }
 
-            const orderId = `ORD - ${Date.now().toString(36).toUpperCase()} -${Math.floor(Math.random() * 899 + 100)} `;
-            const secretToken = `sec_${Math.random().toString(36).substring(2)}_${Date.now()} `;
+            const orderId = `ORD-${Date.now().toString(36).toUpperCase()}-${Math.floor(Math.random() * 899 + 100)}`;
+            const secretToken = `sec_${Math.random().toString(36).substring(2)}_${Date.now()}`;
             const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
             const orderObj = {
@@ -16161,6 +16710,388 @@ ${encodedToken}
                 }, { once: true });
             });
         }
+
+
+        // --- DATA PRODUCT HELPERS & SYNC ENGINE ---
+        function formatRelativeTime(dateInput, includeTime = true) {
+            if (!dateInput) return 'ล่าสุด';
+            let d = null;
+            if (typeof dateInput === 'string' && dateInput.includes('/')) {
+                const parts = dateInput.trim().split(' ');
+                const dateParts = parts[0].split('/');
+                if (dateParts.length === 3) {
+                    let day = parseInt(dateParts[0], 10);
+                    let month = parseInt(dateParts[1], 10) - 1;
+                    let year = parseInt(dateParts[2], 10);
+                    if (year > 2500) year -= 543;
+                    let hour = 0, min = 0, sec = 0;
+                    if (parts[1]) {
+                        const tParts = parts[1].split(':');
+                        hour = parseInt(tParts[0], 10) || 0;
+                        min = parseInt(tParts[1], 10) || 0;
+                        sec = parseInt(tParts[2], 10) || 0;
+                    }
+                    d = new Date(year, month, day, hour, min, sec);
+                }
+            }
+            if (!d || isNaN(d.getTime())) {
+                d = new Date(dateInput);
+            }
+            if (isNaN(d.getTime())) return typeof dateInput === 'string' ? dateInput : 'ล่าสุด';
+
+            const now = new Date();
+            const diffMs = now.getTime() - d.getTime();
+            const diffSec = Math.floor(diffMs / 1000);
+            const diffMin = Math.floor(diffSec / 60);
+            const diffHour = Math.floor(diffMin / 60);
+            const diffDay = Math.floor(diffHour / 24);
+
+            let timeStr = '';
+            if (includeTime) {
+                const hh = String(d.getHours()).padStart(2, '0');
+                const mm = String(d.getMinutes()).padStart(2, '0');
+                timeStr = ' ' + hh + ':' + mm;
+            }
+
+            if (diffSec < 60) return 'เมื่อสักครู่';
+            if (diffMin < 60) return diffMin + ' นาทีที่แล้ว';
+            if (diffHour < 24 && now.getDate() === d.getDate()) return 'วันนี้' + timeStr;
+            if (diffDay === 1 || (diffHour < 48 && (now.getDate() - d.getDate() === 1 || now.getDate() - d.getDate() < 0))) {
+                return 'เมื่อวานนี้' + timeStr;
+            }
+            if (diffDay < 7) return diffDay + ' วันที่แล้ว';
+            if (diffDay < 30) return Math.floor(diffDay / 7) + ' สัปดาห์ที่แล้ว';
+            return Math.floor(diffDay / 30) + ' เดือนที่แล้ว';
+        }
+
+        function parseGroupDateToMs(dateInput) {
+            if (!dateInput) return 0;
+            if (typeof dateInput === 'number') return dateInput;
+            if (typeof dateInput === 'string' && dateInput.includes('/')) {
+                const parts = dateInput.trim().split(' ');
+                const dateParts = parts[0].split('/');
+                if (dateParts.length === 3) {
+                    let day = parseInt(dateParts[0], 10);
+                    let month = parseInt(dateParts[1], 10) - 1;
+                    let year = parseInt(dateParts[2], 10);
+                    if (year > 2500) year -= 543;
+                    let hour = 0, min = 0, sec = 0;
+                    if (parts[1]) {
+                        const tParts = parts[1].split(':');
+                        hour = parseInt(tParts[0], 10) || 0;
+                        min = parseInt(tParts[1], 10) || 0;
+                        sec = parseInt(tParts[2], 10) || 0;
+                    }
+                    const d = new Date(year, month, day, hour, min, sec);
+                    if (!isNaN(d.getTime())) return d.getTime();
+                }
+            }
+            const d = new Date(dateInput);
+            return isNaN(d.getTime()) ? 0 : d.getTime();
+        }
+
+        let cachedFbApprovedGroupsData = null;
+        async function fetchApprovedGroupsData() {
+            if (cachedFbApprovedGroupsData) return cachedFbApprovedGroupsData;
+            try {
+                const res = await fetch('data/fb_approved_groups.json?t=' + Date.now());
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json && Array.isArray(json.groups)) {
+                        json.groups.sort((a, b) => {
+                            const timeA = parseGroupDateToMs(a.verifiedAt);
+                            const timeB = parseGroupDateToMs(b.verifiedAt);
+                            if (timeB !== timeA) return timeB - timeA;
+                            return (b.no || 0) - (a.no || 0);
+                        });
+                        cachedFbApprovedGroupsData = json;
+                        return json;
+                    }
+                }
+            } catch (err) {
+                console.warn('Load local json error, using fallback:', err);
+            }
+            cachedFbApprovedGroupsData = {
+                productName: "FB Public Groups Approved List",
+                lastUpdated: "14/11/2569 20:31:13",
+                totalGroups: 8,
+                groups: [
+                    { id: 8, url: "https://www.facebook.com/groups/351176138718403/", verifiedAt: "14/11/2569 20:31:13", postStatus: "อนุมัติทันที" },
+                    { id: 7, url: "https://www.facebook.com/groups/2484957515066550/", verifiedAt: "14/11/2569 20:20:53", postStatus: "อนุมัติทันที" },
+                    { id: 6, url: "https://www.facebook.com/groups/289860164532056/", verifiedAt: "14/11/2569 20:13:55", postStatus: "อนุมัติทันที" },
+                    { id: 5, url: "https://www.facebook.com/groups/672675949590427/", verifiedAt: "14/11/2569 18:36:20", postStatus: "อนุมัติทันที" },
+                    { id: 4, url: "https://www.facebook.com/groups/1716633128563789/", verifiedAt: "14/11/2569 18:25:00", postStatus: "อนุมัติทันที" },
+                    { id: 3, url: "https://www.facebook.com/groups/276818940082266/", verifiedAt: "14/11/2569 18:13:44", postStatus: "อนุมัติทันที" },
+                    { id: 2, url: "https://www.facebook.com/groups/1984976375078379/", verifiedAt: "14/11/2569 16:45:27", postStatus: "อนุมัติทันที" },
+                    { id: 1, url: "https://www.facebook.com/groups/3931443163822898/", verifiedAt: "14/11/2569 16:10:37", postStatus: "อนุมัติทันที" }
+                ]
+            };
+            return cachedFbApprovedGroupsData;
+        }
+
+        async function renderDetailDataProductBox(p) {
+            const box = document.getElementById('detail-data-product-box');
+            if (!box) return;
+
+            const isDataProduct = Boolean(p && (p.category === 'ขายข้อมูล' || p.isDataProduct));
+            if (!isDataProduct) {
+                box.style.display = 'none';
+                box.innerHTML = '';
+                return;
+            }
+
+            box.style.display = 'block';
+            const data = await fetchApprovedGroupsData();
+            const isPurchased = checkIsPurchased(p.id);
+            const total = data.totalGroups || data.groups.length;
+            const updated = data.lastUpdated || 'ล่าสุด';
+            const updatedRelative = formatRelativeTime(updated, true);
+
+            // จัดเรียงกลุ่ม Facebook โดยเอาเวลาตรวจสอบล่าสุดไว้ตำแหน่งแรก (Descending order)
+            const allGroups = (data && Array.isArray(data.groups)) ? [...data.groups] : [];
+            allGroups.sort((a, b) => {
+                const timeA = parseGroupDateToMs(a.verifiedAt);
+                const timeB = parseGroupDateToMs(b.verifiedAt);
+                if (timeB !== timeA) return timeB - timeA;
+                return (b.no || 0) - (a.no || 0);
+            });
+
+            const displayLimit = 50;
+            const displayGroups = isPurchased
+                ? allGroups.slice(0, displayLimit)
+                : allGroups.slice(0, 5);
+
+            let rowsHtml = '';
+            displayGroups.forEach(item => {
+                const itemTimeRelative = formatRelativeTime(item.verifiedAt, true);
+                rowsHtml += `
+                    <tr class="data-row-item" data-url="${escapeHtml(item.url.toLowerCase())}">
+                        <td>
+                            <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" class="data-cell-url">
+                                🔗 ${escapeHtml(item.url)}
+                            </a>
+                        </td>
+                        <td style="text-align: right; color: #64748b; font-size: 0.74rem; white-space: nowrap;" title="ตรวจสอบเมื่อ: ${escapeHtml(item.verifiedAt || '-')}">
+                            ${escapeHtml(itemTimeRelative)}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            box.innerHTML = `
+                <div class="data-product-card ${isPurchased ? 'unlocked' : 'locked'}">
+                    <div class="data-product-header">
+                        <div class="data-header-meta">
+                            <span class="data-meta-badge time" title="วันเวลาที่อัปเดตตรวจสอบล่าสุด: ${escapeHtml(updated)}">
+                                🕒 อัปเดต: <strong id="data-meta-time-text">${escapeHtml(updatedRelative)}</strong>
+                            </span>
+                            <span class="data-meta-badge count" title="จำนวนกลุ่มที่ผ่านเกณฑ์">
+                                🎯 รวมทั้งหมด: <strong id="data-meta-count-text">${total}</strong> กลุ่ม
+                            </span>
+                            <span class="data-meta-badge sync">
+                                🔄 อัปเดตฟรีตลอดชีพ
+                            </span>
+                        </div>
+                    </div>
+
+                    ${isPurchased ? `
+                        <div class="data-live-feed-card">
+                            <div class="data-live-feed-header">
+                                <div class="data-live-feed-title">
+                                    <span>🚀 ลิงก์ดึงข้อมูลสดอัตโนมัติ (Live Feed URLs)</span>
+                                    <span class="live-pill">⚡ อัปเดตสด 24 ชม.</span>
+                                </div>
+                                <p class="data-live-feed-desc">
+                                    คุณสามารถนำ URL ด้านล่างไปใส่ในบอทโพสต์ หรือ Google Sheets เพื่อรับรายชื่อกลุ่มใหม่แบบเรียลไทม์ โดยไม่ต้องกลับเข้ามาเปิดหน้าเว็บนี้อีกต่อไป
+                                </p>
+                            </div>
+
+                            <div class="data-feed-grid">
+                                <div class="data-feed-item">
+                                    <div class="feed-item-label">
+                                        <span class="feed-badge txt">บอทโพสต์ / Script</span>
+                                        <strong>🔗 Raw TXT Live URL (เฉพาะ URL บรรทัดละกลุ่ม)</strong>
+                                    </div>
+                                    <div class="feed-input-group">
+                                        <input type="text" readonly value="https://artnp.github.io/eworker/data/fb_groups.txt" id="modal-live-txt-url">
+                                        <button type="button" class="btn-copy-feed" onclick="copyFeedUrl('https://artnp.github.io/eworker/data/fb_groups.txt', 'Raw TXT Live URL')">📋 คัดลอกลิงก์</button>
+                                        <a href="https://artnp.github.io/eworker/data/fb_groups.txt" target="_blank" class="btn-open-feed" title="เปิดดูข้อมูลสด">🔗 เปิด</a>
+                                    </div>
+                                    <div class="feed-item-hint">💡 นำ URL นี้ไปใส่ในโค้ดบอทโพสต์ (Python, Node.js หรือ curl) เพื่อดึงกลุ่มสดทุกครั้งก่อนเริ่มงาน</div>
+                                </div>
+
+                                <div class="data-feed-item">
+                                    <div class="feed-item-label">
+                                        <span class="feed-badge sheets">Google Sheets</span>
+                                        <strong>📊 สูตรเชื่อมต่อ Google Sheets สดอัตโนมัติ (Live Sync)</strong>
+                                    </div>
+                                    <div class="feed-input-group">
+                                        <input type="text" readonly value='=IMPORTDATA("https://artnp.github.io/eworker/data/fb_groups.csv")' id="modal-live-sheets-formula">
+                                        <button type="button" class="btn-copy-feed" onclick="copyFeedUrl('=IMPORTDATA(\"https://artnp.github.io/eworker/data/fb_groups.csv\")', 'สูตร Google Sheets')">📋 คัดลอกสูตร</button>
+                                    </div>
+                                    <div class="feed-item-hint">💡 วางสูตรนี้ใน Google Sheets ช่อง A1 รายชื่อกลุ่มใหม่จะไหลเข้าตารางชีตของคุณอัตโนมัติ 24 ชม.</div>
+                                </div>
+
+                                <div class="data-feed-item" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                                    <div class="feed-links-row">
+                                        <button type="button" class="btn-chip-feed" onclick="copyFeedUrl('https://artnp.github.io/eworker/data/fb_groups.csv', 'Live CSV URL')">
+                                            📄 คัดลอก Live CSV URL
+                                        </button>
+                                        <button type="button" class="btn-chip-feed" onclick="copyFeedUrl('https://artnp.github.io/eworker/data/fb_approved_groups.json', 'Live JSON API')">
+                                            🔌 คัดลอก Live JSON API
+                                        </button>
+                                    </div>
+                                    <span style="font-size: 0.72rem; color: #166534; font-weight: 600;">✨ ซิงค์ตรงจากบอท Facebook อัตโนมัติ</span>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${isPurchased ? `
+                        <div class="data-sheet-toolbar">
+                            <div class="data-toolbar-actions">
+                                <button type="button" class="btn-data-action txt" onclick="handleDataDownloadTxt('${p.id}')" title="ดาวน์โหลดเป็นไฟล์ข้อความ .txt (เฉพาะ URL)">
+                                    📥 ดาวน์โหลด .TXT
+                                </button>
+                                <button type="button" class="btn-data-action csv" onclick="handleDataDownloadCsv('${p.id}')" title="ดาวน์โหลดเป็นไฟล์ตาราง .csv (สำหรับ Excel)">
+                                    📊 ดาวน์โหลด .CSV
+                                </button>
+                                <button type="button" class="btn-data-action copy" onclick="handleDataCopyAll('${p.id}')" title="คัดลอก URL ทั้งหมดลงคลิปบอร์ด">
+                                    📋 คัดลอกทั้งหมด
+                                </button>
+                                <button type="button" class="btn-data-action refresh" onclick="handleDataRefresh('${p.id}')" title="ดึงข้อมูลอัปเดตล่าสุดจากระบบ">
+                                    🔄 ดึงข้อมูลสด
+                                </button>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <div class="data-table-container ${isPurchased ? 'scrollable' : ''}">
+                        <table class="data-excel-table">
+                            <thead>
+                                <tr>
+                                    <th>URL กลุ่ม Facebook (Public Group) ${isPurchased ? `<span style="font-size:0.7rem; font-weight:normal; color:#64748b; margin-left:6px;">(แสดง 50 กลุ่มล่าสุด)</span>` : ''}</th>
+                                    <th style="width: 105px; text-align: right;">ตรวจสอบล่าสุด</th>
+                                </tr>
+                            </thead>
+                            <tbody id="data-excel-tbody">
+                                ${rowsHtml}
+                            </tbody>
+                        </table>
+
+                        ${!isPurchased ? `
+                            <div class="data-locked-overlay-box">
+                                <div class="data-locked-banner">
+                                    <div style="flex: 1; min-width: 240px;">
+                                        <div style="font-weight: 800; color: #1e3a8a; font-size: 0.92rem; margin-bottom: 2px;">
+                                            🔒 ตัวอย่าง 5 กลุ่มแรก (จากฐานข้อมูลจริงทั้งหมด ${total} กลุ่ม)
+                                        </div>
+                                        <div style="font-size: 0.8rem; color: #475569; line-height: 1.45;">
+                                            สแกนชำระเงิน <strong>฿100 บาท</strong> (จ่ายครั้งเดียว) ปลดล็อกครบทุกกลุ่ม + <strong>รับ Live Feed URLs & สูตร Google Sheets</strong> ดึงกลุ่มใหม่เข้าบอทและตารางชีตอัตโนมัติ 24 ชม. ไม่ต้องคอยเข้ามาเปิดดูในเว็บ!
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function copyFeedUrl(text, title) {
+            if (!navigator.clipboard) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showToast('📋 คัดลอก ' + title + ' เรียบร้อย!', 'success');
+                return;
+            }
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('📋 คัดลอก ' + title + ' เรียบร้อย!', 'success');
+            }).catch(() => {
+                showToast('❌ ไม่สามารถคัดลอกได้', 'error');
+            });
+        }
+
+        async function handleDataDownloadTxt(productId) {
+            const data = await fetchApprovedGroupsData();
+            const sorted = [...(data.groups || [])].sort((a, b) => {
+                const timeA = parseGroupDateToMs(a.verifiedAt);
+                const timeB = parseGroupDateToMs(b.verifiedAt);
+                return timeB !== timeA ? timeB - timeA : (b.no || 0) - (a.no || 0);
+            });
+            const urls = sorted.map(g => g.url).join('\n');
+            const blob = new Blob([urls], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'fb_approved_public_groups.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('📥 ดาวน์โหลดไฟล์ .TXT (เรียงล่าสุดไว้ก่อน) เรียบร้อย!', 'success');
+        }
+
+        async function handleDataDownloadCsv(productId) {
+            const data = await fetchApprovedGroupsData();
+            const sorted = [...(data.groups || [])].sort((a, b) => {
+                const timeA = parseGroupDateToMs(a.verifiedAt);
+                const timeB = parseGroupDateToMs(b.verifiedAt);
+                return timeB !== timeA ? timeB - timeA : (b.no || 0) - (a.no || 0);
+            });
+            let csv = '\uFEFFNo,Facebook_Group_URL,PostStatus,VerifiedAt\n';
+            sorted.forEach((g, idx) => {
+                csv += `${idx + 1},"${g.url}","${g.postStatus || 'อนุมัติทันที'}","${g.verifiedAt || ''}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'fb_approved_public_groups.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('📊 ดาวน์โหลดไฟล์ .CSV (เรียงล่าสุดไว้ก่อน) เรียบร้อย!', 'success');
+        }
+
+        async function handleDataCopyAll(productId) {
+            const data = await fetchApprovedGroupsData();
+            const sorted = [...(data.groups || [])].sort((a, b) => {
+                const timeA = parseGroupDateToMs(a.verifiedAt);
+                const timeB = parseGroupDateToMs(b.verifiedAt);
+                return timeB !== timeA ? timeB - timeA : (b.no || 0) - (a.no || 0);
+            });
+            const urls = sorted.map(g => g.url).join('\n');
+            if (navigator.clipboard) {
+                await navigator.clipboard.writeText(urls);
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = urls;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+            }
+            showToast('📋 คัดลอก URL ทั้งหมด ' + sorted.length + ' กลุ่ม (เรียงล่าสุดไว้ก่อน) ลงคลิปบอร์ดแล้ว!', 'success');
+        }
+
+        async function handleDataRefresh(productId) {
+            showToast('🔄 กำลังดึงข้อมูลอัปเดตล่าสุด...', 'info');
+            cachedFbApprovedGroupsData = null;
+            const data = await fetchApprovedGroupsData();
+            const prod = products.find(x => x.id === productId || x.slug === 'fb-approved-groups');
+            if (prod) {
+                renderDetailDataProductBox(prod);
+            }
+            showToast('✅ อัปเดตข้อมูลสดสำเร็จ! รวม ' + (data.totalGroups || data.groups.length) + ' กลุ่ม', 'success');
+        }
+
+
     </script>
 </body>
 
