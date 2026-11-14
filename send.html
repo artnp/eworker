@@ -4715,15 +4715,28 @@
                     size: file.size
                 };
 
+                const metaPayload = {
+                    fileId: fileId,
+                    filename: file.name,
+                    size: file.size,
+                    created: Date.now()
+                };
+
                 updateLoadingProgress(stepName, 70);
                 if (typeof database !== 'undefined') {
                     await database.ref(`temp_files/${fileId}`).set(payload);
+                    await database.ref(`temp_files/file_registry/${fileId}`).set(metaPayload).catch(() => {});
                 } else {
                     await fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/${fileId}.json`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
                     });
+                    await fetch(`https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/file_registry/${fileId}.json`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(metaPayload)
+                    }).catch(() => {});
                 }
 
                 updateLoadingProgress(stepName, 100);
@@ -6476,18 +6489,84 @@
                         if (e.key === 'Enter') sendTotalPriceQuote(priceInp.value);
                     });
                 } else {
-                    container.innerHTML = `
-                        <div class="customer-waiting-quote-panel">
-                            <div style="font-size:22px;color:#6366f1;margin-bottom:6px;"><i class="fa-solid fa-paper-plane"></i></div>
-                            <div class="waiting-quote-text">ส่งจุดที่ต้องการแก้ให้ช่างแล้ว • รอช่างประเมินราคา...</div>
-                            <div class="waiting-quote-sub">ช่างจะประเมินราคาให้ทราบสักครู่ (70, 100 หรือ 150 บาท)</div>
-                            <div style="margin-top:14px;padding-top:10px;border-top:1px dashed #cbd5e1;">
-                                <a href="?id=${sessionId}&role=admin" class="btn-switch-admin-view" style="display:inline-flex;align-items:center;gap:6px;background:#e0e7ff;color:#4338ca;padding:7px 16px;border-radius:999px;font-size:12px;font-weight:700;text-decoration:none;transition:all 0.2s;box-shadow:0 2px 6px rgba(99,102,241,0.15);">
-                                    <i class="fa-solid fa-user-shield"></i> คุณคือแอดมินใช่ไหม? (คลิกเพื่อเปิดแถบกำหนดราคา)
-                                </a>
+                    // ฝั่งลูกค้า: รอกำหนดราคา + แจ้งเตือนเมื่อช่างยังไม่ประเมินราคาเกิน 5 นาที
+                    if (currentSessionData.sendViaFacebook) {
+                        container.innerHTML = `
+                            <div class="customer-waiting-quote-panel" style="border-color:#bfdbfe;background:#eff6ff;">
+                                <div style="font-size:26px;color:#1877f2;margin-bottom:6px;"><i class="fa-brands fa-facebook"></i></div>
+                                <div class="waiting-quote-text" style="color:#1d4ed8;">บันทึกคำขอส่งงานทาง Facebook แล้ว</div>
+                                <div class="waiting-quote-sub" style="color:#475569;margin-top:4px;">
+                                    ช่องทางติดต่อ: <strong style="color:#1e293b;">${escapeHtml(currentSessionData.facebookContact || 'ทางแชท Facebook')}</strong><br>
+                                    ช่างจะรีบประเมินราคาและส่งงานให้ทางแชททันทีที่มาถึงหน้าจอครับ
+                                </div>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    } else if (currentSessionData.cancelled) {
+                        container.innerHTML = `
+                            <div style="background:#fff1f2;border:1.5px solid #fecdd3;border-radius:14px;padding:20px;text-align:center;color:#e11d48;">
+                                <div style="font-size:28px;margin-bottom:8px;"><i class="fa-solid fa-trash-can"></i></div>
+                                <div style="font-weight:800;font-size:15px;">ยกเลิกงานและลบไฟล์เรียบร้อยแล้ว</div>
+                                <div style="font-size:12px;color:#64748b;margin-top:4px;">ระบบได้ทำลายไฟล์และลบข้อมูลทั้งหมดเรียบร้อยแล้วครับ</div>
+                            </div>
+                        `;
+                    } else {
+                        const submittedTime = currentSessionData.submittedAt || Date.now();
+                        const elapsed = Date.now() - submittedTime;
+                        const isOver5Min = elapsed >= (5 * 60 * 1000);
+
+                        container.innerHTML = `
+                            <div class="customer-waiting-quote-panel">
+                                <div style="font-size:22px;color:#6366f1;margin-bottom:6px;"><i class="fa-solid fa-paper-plane"></i></div>
+                                <div class="waiting-quote-text">ส่งจุดที่ต้องการแก้ให้ช่างแล้ว • รอช่างประเมินราคา...</div>
+                                <div class="waiting-quote-sub">ช่างจะประเมินราคาให้ทราบสักครู่ (70, 100 หรือ 150 บาท)</div>
+
+                                <!-- กล่องแจ้งเตือนเมื่อเกิน 5 นาที -->
+                                <div id="quoteTimeoutCard" style="display:${isOver5Min ? 'block' : 'none'};margin-top:16px;background:#fff1f2;border:1.5px solid #fecdd3;border-radius:14px;padding:16px;text-align:left;">
+                                    <div style="display:flex;align-items:flex-start;gap:12px;">
+                                        <div style="font-size:24px;color:#e11d48;line-height:1;"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                                        <div style="flex:1;">
+                                            <div style="font-size:13.5px;font-weight:800;color:#9f1239;margin-bottom:4px;">
+                                                ตอนนี้ช่างอาจไม่อยู่หน้าจอ..
+                                            </div>
+                                            <div style="font-size:12.5px;color:#475569;line-height:1.5;">
+                                                เมื่อช่างมาแล้วต้องการให้ช่างส่งงานกลับให้ทางแชท Facebook เลยไหม?
+                                            </div>
+
+                                            <div id="fbContactInputWrap" style="margin-top:10px;display:none;">
+                                                <input type="text" id="inputFbContact" placeholder="พิมพ์ชื่อบัญชี Facebook หรือวางลิงก์โปรไฟล์ของคุณ..." style="width:100%;padding:8px 12px;border:1.5px solid #cbd5e1;border-radius:8px;font-size:13px;box-sizing:border-box;">
+                                                <div style="margin-top:8px;display:flex;gap:6px;">
+                                                    <button id="btnConfirmSendFb" type="button" style="background:#1877f2;color:#fff;border:none;padding:7px 14px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
+                                                        <i class="fa-brands fa-facebook"></i> ยืนยันส่งทาง Facebook
+                                                    </button>
+                                                    <button id="btnBackFromFbInput" type="button" style="background:#f1f5f9;color:#64748b;border:none;padding:7px 12px;border-radius:8px;font-size:12px;cursor:pointer;">
+                                                        ย้อนกลับ
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div id="timeoutActionButtons" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+                                                <button id="btnAcceptFbDelivery" type="button" style="background:#1877f2;color:#ffffff;border:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;">
+                                                    <i class="fa-brands fa-facebook"></i> ใช่ (ส่งให้ทาง Facebook)
+                                                </button>
+                                                <button id="btnCancelAndDestroyJob" type="button" style="background:#ffffff;color:#e11d48;border:1.5px solid #fecdd3;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;">
+                                                    <i class="fa-solid fa-trash-can"></i> ไม่ (ยกเลิกงาน & ลบไฟล์ทิ้ง)
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-top:14px;padding-top:10px;border-top:1px dashed #cbd5e1;">
+                                    <a href="?id=${sessionId}&role=admin" class="btn-switch-admin-view" style="display:inline-flex;align-items:center;gap:6px;background:#e0e7ff;color:#4338ca;padding:7px 16px;border-radius:999px;font-size:12px;font-weight:700;text-decoration:none;transition:all 0.2s;box-shadow:0 2px 6px rgba(99,102,241,0.15);">
+                                        <i class="fa-solid fa-user-shield"></i> คุณคือแอดมินใช่ไหม? (คลิกเพื่อเปิดแถบกำหนดราคา)
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+
+                        // ผูกอีเวนต์ปุ่มของ Timeout Card
+                        bindWaitingTimeoutEvents(submittedTime);
+                    }
                 }
                 updateFloatingDownloadButton();
                 updateTopNav();
@@ -6534,6 +6613,90 @@
             }
             updateFloatingDownloadButton();
             updateTopNav();
+        }
+
+        let quoteTimeoutInterval = null;
+        function bindWaitingTimeoutEvents(submittedTime) {
+            if (quoteTimeoutInterval) clearInterval(quoteTimeoutInterval);
+            const timeoutCard = document.getElementById('quoteTimeoutCard');
+            const fbInputWrap = document.getElementById('fbContactInputWrap');
+            const actionBtns = document.getElementById('timeoutActionButtons');
+            const btnAcceptFb = document.getElementById('btnAcceptFbDelivery');
+            const btnCancelDestroy = document.getElementById('btnCancelAndDestroyJob');
+            const btnConfirmFb = document.getElementById('btnConfirmSendFb');
+            const btnBackFb = document.getElementById('btnBackFromFbInput');
+            const inputFb = document.getElementById('inputFbContact');
+
+            // ตรวจสอบเวลา 5 นาที (300,000 ms)
+            const checkTimer = () => {
+                const elapsed = Date.now() - submittedTime;
+                if (elapsed >= 5 * 60 * 1000) {
+                    if (timeoutCard) timeoutCard.style.display = 'block';
+                    if (quoteTimeoutInterval) clearInterval(quoteTimeoutInterval);
+                }
+            };
+            checkTimer();
+            quoteTimeoutInterval = setInterval(checkTimer, 3000);
+
+            // ปุ่ม "ใช่ (ส่งให้ทาง Facebook)"
+            btnAcceptFb?.addEventListener('click', () => {
+                if (actionBtns) actionBtns.style.display = 'none';
+                if (fbInputWrap) fbInputWrap.style.display = 'block';
+                inputFb?.focus();
+            });
+
+            // ปุ่ม "ย้อนกลับ"
+            btnBackFb?.addEventListener('click', () => {
+                if (fbInputWrap) fbInputWrap.style.display = 'none';
+                if (actionBtns) actionBtns.style.display = 'flex';
+            });
+
+            // ปุ่ม "ยืนยันส่งทาง Facebook"
+            btnConfirmFb?.addEventListener('click', async () => {
+                const contact = inputFb?.value.trim() || 'ผ่านแชท Facebook';
+                showLoading('กำลังบันทึกข้อมูล...');
+                try {
+                    await database.ref(`annotations/${sessionId}`).update({
+                        sendViaFacebook: true,
+                        facebookContact: contact,
+                        fbRequestedAt: Date.now()
+                    });
+                    await database.ref(`temp_files/markpoint_queue/${sessionId}`).update({
+                        sendViaFacebook: true,
+                        facebookContact: contact
+                    }).catch(() => {});
+                    currentSessionData.sendViaFacebook = true;
+                    currentSessionData.facebookContact = contact;
+                    hideLoading();
+                    renderTotalJobCard();
+                } catch (e) {
+                    hideLoading();
+                    alert('บันทึกไม่สำเร็จ: ' + e.message);
+                }
+            });
+
+            // ปุ่ม "ไม่ (ยกเลิกงาน & ลบไฟล์ทิ้ง)"
+            btnCancelDestroy?.addEventListener('click', async () => {
+                if (!confirm('ยืนยันยกเลิกงานนี้และสั่งลบไฟล์ทั้งหมดออกจากระบบใช่หรือไม่?\n(ข้อมูลจุดแก้ไขและไฟล์ภาพจะถูกทำลายทิ้งทันที)')) return;
+                showLoading('กำลังยกเลิกงานและทำลายไฟล์...');
+                try {
+                    await database.ref(`annotations/${sessionId}`).remove();
+                    await database.ref(`temp_files/markpoint_queue/${sessionId}`).remove().catch(() => {});
+                    try {
+                        await fetch('http://127.0.0.1:5000/markpoints-delete-session', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ sessionId })
+                        });
+                    } catch (e) {}
+                    currentSessionData.cancelled = true;
+                    hideLoading();
+                    renderTotalJobCard();
+                } catch (err) {
+                    hideLoading();
+                    alert('เกิดข้อผิดพลาด: ' + err.message);
+                }
+            });
         }
 
         // ===== ACTION HANDLERS =====
