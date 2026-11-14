@@ -772,6 +772,13 @@ function initChatListeners() {
         const data = snapshot.val();
         renderMessage(data, snapshot.key);
 
+        // If any non-system message exists or arrives, chat is active -> stop upload countdown
+        if (data && data.sender !== 'system') {
+            if (typeof hideCustomerUploadPrompt === 'function') {
+                hideCustomerUploadPrompt(true);
+            }
+        }
+
         // Mark as read if the message is from the other user and not yet read
         if (data.sender !== currentUser && !data.read) {
             set(ref(database, `rooms/${currentRoom}/messages/${snapshot.key}/read`), true);
@@ -2891,6 +2898,11 @@ async function sendMessage(text = null, fileData = null) {
     if (!text && !fileData) return;
     if (!currentRoom) return;
 
+    // Customer or user sent a message -> room is active! Stop upload countdown
+    if (typeof hideCustomerUploadPrompt === 'function') {
+        hideCustomerUploadPrompt(true);
+    }
+
     const messagesRef = ref(database, `rooms/${currentRoom}/messages`);
     await push(messagesRef, {
         sender: currentUser,
@@ -4899,6 +4911,23 @@ async function handleUploadTimeout(roomId) {
     if (isRoomClosed) return;
     if (sessionStorage.getItem(`work_submitted_${roomId}`) === '1') return;
 
+    // Safety: ถ้าในห้องมีการสนทนาหรือส่งข้อความเข้ามาแล้ว ไม่ต้องปิดห้องอัตโนมัติ
+    if (database && roomId) {
+        try {
+            const msgsSnap = await get(ref(database, `rooms/${roomId}/messages`));
+            if (msgsSnap.exists()) {
+                const msgs = msgsSnap.val();
+                const hasValidMsg = Object.values(msgs).some(m => m && m.sender !== 'system');
+                if (hasValidMsg) {
+                    if (typeof hideCustomerUploadPrompt === 'function') {
+                        hideCustomerUploadPrompt(true);
+                    }
+                    return;
+                }
+            }
+        } catch (_) { }
+    }
+
     console.warn(`[GenRoom] หมดเวลาส่งงาน 5 นาทีสำหรับห้อง ${roomId} -> กำลังปิดห้องอัตโนมัติ`);
     closeCustomerUploadModal(false);
 
@@ -4988,7 +5017,12 @@ if (customerUploadBackdrop) {
     customerUploadBackdrop.addEventListener('click', () => closeCustomerUploadModal(true));
 }
 if (customerSkipToChatBtn) {
-    customerSkipToChatBtn.addEventListener('click', () => closeCustomerUploadModal(true));
+    customerSkipToChatBtn.addEventListener('click', () => {
+        closeCustomerUploadModal(true);
+        if (messageInput) {
+            setTimeout(() => messageInput.focus(), 150);
+        }
+    });
 }
 
 if (customerDropzone && customerWorkFileInput) {
