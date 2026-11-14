@@ -3350,6 +3350,21 @@
             border-color: #34d399;
         }
 
+        .toast-item.warning {
+            background: linear-gradient(135deg, #78350f 0%, #b45309 100%);
+            border-color: #fbbf24;
+        }
+
+        .toast-item.danger {
+            background: linear-gradient(135deg, #7f1d1d 0%, #b91c1c 100%);
+            border-color: #f87171;
+        }
+
+        .toast-item.info {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%);
+            border-color: #60a5fa;
+        }
+
         @keyframes toastPop {
             0% {
                 transform: translateY(-20px) scale(0.95);
@@ -4066,8 +4081,8 @@
                         deleteFirebaseFile(window.__firebaseFileId);
                     }
 
-                    alert('⚠️ เซสชันหมดอายุแล้ว\n\nไฟล์และข้อมูลทั้งหมดถูกลบแล้ว\nกรุณาอัพโหลดใหม่');
-                    location.reload();
+                    showToast('⚠️ เซสชันหมดอายุแล้ว\n\nไฟล์และข้อมูลทั้งหมดถูกลบแล้ว\nกรุณาอัพโหลดใหม่', 'warning', 6000);
+                    setTimeout(() => location.reload(), 1500);
                     return;
                 }
 
@@ -4327,10 +4342,16 @@
             }
             const toast = document.createElement('div');
             toast.className = `toast-item ${type}`;
-            const icon = type === 'success'
-                ? '<i class="fa-solid fa-circle-check" style="color:#34d399;"></i>'
-                : '<i class="fa-solid fa-bell" style="color:#60a5fa;"></i>';
-            toast.innerHTML = `${icon} <span>${message}</span>`;
+            let icon = '<i class="fa-solid fa-circle-info" style="color:#60a5fa;"></i>';
+            if (type === 'success') {
+                icon = '<i class="fa-solid fa-circle-check" style="color:#34d399;"></i>';
+            } else if (type === 'warning') {
+                icon = '<i class="fa-solid fa-triangle-exclamation" style="color:#fbbf24;"></i>';
+            } else if (type === 'danger' || type === 'error') {
+                icon = '<i class="fa-solid fa-circle-xmark" style="color:#f87171;"></i>';
+            }
+            const formatted = String(message).replace(/\n/g, '<br>');
+            toast.innerHTML = `${icon} <span>${formatted}</span>`;
             container.appendChild(toast);
             setTimeout(() => {
                 toast.style.opacity = '0';
@@ -4339,6 +4360,12 @@
                 setTimeout(() => toast.remove(), 350);
             }, duration);
         }
+
+        // Override native alert to show non-blocking toast notifications instead
+        window.alert = function(msg) {
+            console.warn('Native alert redirected to showToast:', msg);
+            showToast(msg, 'info', 6000);
+        };
 
         // ===== STORE STATUS (OPEN/CLOSED) SYSTEM =====
         let isStoreOpen = true;
@@ -4425,7 +4452,7 @@
                 hideLoading();
             } catch (err) {
                 hideLoading();
-                alert('เกิดข้อผิดพลาดในการเปลี่ยนสถานะร้าน: ' + err.message);
+                showToast('เกิดข้อผิดพลาดในการเปลี่ยนสถานะร้าน: ' + err.message, 'danger');
             }
         }
 
@@ -4439,7 +4466,7 @@
         // Upload handlers
         uploadArea.addEventListener('click', () => {
             if (!isStoreOpen) {
-                alert('ขณะนี้ร้านปิดรับงานชั่วคราว ไม่สามารถส่งงานได้ กรุณากลับมาใหม่ในภายหลัง');
+                showToast('ขณะนี้ร้านปิดรับงานชั่วคราว ไม่สามารถส่งงานได้ กรุณากลับมาใหม่ในภายหลัง', 'warning');
                 return;
             }
             fileInput.click();
@@ -4450,7 +4477,7 @@
             btnUploadTrigger.addEventListener('click', (e) => {
                 e.stopPropagation();
                 if (!isStoreOpen) {
-                    alert('ขณะนี้ร้านปิดรับงานชั่วคราว ไม่สามารถส่งงานได้ กรุณากลับมาใหม่ในภายหลัง');
+                    showToast('ขณะนี้ร้านปิดรับงานชั่วคราว ไม่สามารถส่งงานได้ กรุณากลับมาใหม่ในภายหลัง', 'warning');
                     return;
                 }
                 fileInput.click();
@@ -4496,7 +4523,7 @@
             uploadArea.style.background = '';
             uploadArea.style.transform = '';
             if (!isStoreOpen) {
-                alert('ขณะนี้ร้านปิดรับงานชั่วคราว ไม่สามารถอัปโหลดไฟล์ได้ กรุณากลับมาใหม่ในภายหลัง');
+                showToast('ขณะนี้ร้านปิดรับงานชั่วคราว ไม่สามารถอัปโหลดไฟล์ได้ กรุณากลับมาใหม่ในภายหลัง', 'warning');
                 return;
             }
             if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) {
@@ -4507,7 +4534,7 @@
 
         async function handleFileSelect() {
             if (!isStoreOpen) {
-                alert('ขณะนี้ร้านปิดรับงานชั่วคราว ไม่สามารถอัปโหลดไฟล์ได้');
+                showToast('ขณะนี้ร้านปิดรับงานชั่วคราว ไม่สามารถอัปโหลดไฟล์ได้', 'warning');
                 fileInput.value = '';
                 return;
             }
@@ -4518,7 +4545,7 @@
             const isImage = file.type.startsWith('image/');
 
             if (!isPDF && !isImage) {
-                alert('กรุณาเลือกไฟล์รูปภาพหรือ PDF เท่านั้น');
+                showToast('กรุณาเลือกไฟล์รูปภาพหรือ PDF เท่านั้น', 'warning');
                 return;
             }
 
@@ -4587,7 +4614,7 @@
             } catch (err) {
                 hideLoading();
                 console.error(err);
-                alert('เกิดข้อผิดพลาด: ' + err.message);
+                showToast('เกิดข้อผิดพลาด: ' + err.message, 'danger');
             }
         }
 
@@ -4682,7 +4709,7 @@
             } catch (err) {
                 hideLoading();
                 console.error('❌ Load error:', err);
-                alert('เกิดข้อผิดพลาดในการโหลด: ' + err.message);
+                showToast('เกิดข้อผิดพลาดในการโหลด: ' + err.message, 'danger');
 
                 // Reset to upload screen
                 uploadContainer.classList.remove('hidden');
@@ -5786,20 +5813,23 @@
         if (btnAdminOpenPs) {
             btnAdminOpenPs.addEventListener('click', async () => {
                 if (!sessionId) return;
+                showToast('🎨 กำลังเปิดไฟล์ใน Photoshop...', 'info', 3000);
                 try {
+                    const candidatePath = (currentSessionData && (currentSessionData.localFilePath || currentSessionData.targetFile || currentSessionData.filePath)) || '';
+                    const candidateUrl = (currentSessionData && (currentSessionData.cleanFileUrl || currentSessionData.completedFileUrl || currentSessionData.fileUrl)) || fileUrl || '';
                     const res = await fetch('http://127.0.0.1:5000/markpoints-open-photoshop', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ sessionId, fileUrl, page: currentPage })
+                        body: JSON.stringify({ sessionId, filePath: candidatePath, fileUrl: candidateUrl, page: currentPage, force: true })
                     });
                     const d = await res.json().catch(() => ({}));
                     if (d.success) {
-                        alert('🎨 เปิดไฟล์ใน Photoshop เรียบร้อยแล้ว: ' + d.path);
+                        showToast('🎨 เปิดไฟล์ใน Photoshop เรียบร้อยแล้ว: ' + (d.path || ''), 'success', 5000);
                     } else {
-                        alert('⚠️ ไม่สามารถเปิด Photoshop ได้: ' + (d.error || 'โปรดตรวจสอบ'));
+                        showToast('⚠️ ไม่สามารถเปิด Photoshop ได้: ' + (d.error || 'โปรดตรวจสอบ'), 'warning', 6000);
                     }
                 } catch (e) {
-                    alert('⚠️ ไม่สามารถเชื่อมต่อ local service: ' + e.message);
+                    showToast('⚠️ ไม่สามารถเชื่อมต่อ local service: ' + e.message, 'danger', 6000);
                 }
             });
         }
@@ -5826,13 +5856,13 @@
                     const d = await res.json().catch(() => ({}));
                     hideLoading();
                     if (d.success) {
-                        alert('🚀 เปิดระบบส่งไฟล์ลับ (PrivateSend.ps1) เรียบร้อยแล้ว!\n\nไฟล์งาน: ' + (d.filePath || candidatePath));
+                        showToast('🚀 เปิดระบบส่งไฟล์ลับ (PrivateSend.ps1) เรียบร้อยแล้ว!\n\nไฟล์งาน: ' + (d.filePath || candidatePath), 'success', 6000);
                     } else {
-                        alert('⚠️ ' + (d.error || 'ไม่สามารถเปิด PrivateSend.ps1 ได้'));
+                        showToast('⚠️ ' + (d.error || 'ไม่สามารถเปิด PrivateSend.ps1 ได้'), 'warning');
                     }
                 } catch (err) {
                     hideLoading();
-                    alert('❌ เกิดข้อผิดพลาด: ' + err.message);
+                    showToast('❌ เกิดข้อผิดพลาด: ' + err.message, 'danger');
                 }
             });
         }
@@ -5871,10 +5901,10 @@
                     });
 
                     hideLoading();
-                    alert('✅ ยืนยันยอดรับเงินเรียบร้อยแล้ว! ลายน้ำถูกปลดล็อคให้ลูกค้าทันที');
+                    showToast('✅ ยืนยันยอดรับเงินเรียบร้อยแล้ว! ลายน้ำถูกปลดล็อคให้ลูกค้าทันที', 'success', 6000);
                 } catch (err) {
                     hideLoading();
-                    alert('❌ ยืนยันยอดเงินไม่สำเร็จ: ' + err.message);
+                    showToast('❌ ยืนยันยอดเงินไม่สำเร็จ: ' + err.message, 'danger');
                 }
             });
         }
@@ -5895,10 +5925,10 @@
                     rejectedAt: Date.now()
                 });
                 hideLoading();
-                alert('บันทึกการปฏิเสธไม่รับงานเรียบร้อยแล้ว\nสถานะบนหน้าจอลูกค้าจะอัปเดตแจ้งเตือนทันที');
+                showToast('บันทึกการปฏิเสธไม่รับงานเรียบร้อยแล้ว\nสถานะบนหน้าจอลูกค้าจะอัปเดตแจ้งเตือนทันที', 'info', 6000);
             } catch (err) {
                 hideLoading();
-                alert('เกิดข้อผิดพลาด: ' + err.message);
+                showToast('เกิดข้อผิดพลาด: ' + err.message, 'danger');
             }
         }
 
@@ -5930,11 +5960,13 @@
                     await database.ref(`temp_files/payment_requests/markpoint_${sessionId}`).remove();
 
                     hideLoading();
-                    alert('✨ ทำลายหลักฐานและลบงานเรียบร้อยแล้ว ไม่หลงเหลือข้อมูลใดๆ ทิ้งไว้');
-                    window.location.href = window.location.pathname;
+                    showToast('✨ ทำลายหลักฐานและลบงานเรียบร้อยแล้ว ไม่หลงเหลือข้อมูลใดๆ ทิ้งไว้', 'success', 5000);
+                    setTimeout(() => {
+                        window.location.href = window.location.pathname;
+                    }, 1200);
                 } catch (err) {
                     hideLoading();
-                    alert('❌ เกิดข้อผิดพลาดในการลบงาน: ' + err.message);
+                    showToast('❌ เกิดข้อผิดพลาดในการลบงาน: ' + err.message, 'danger');
                 }
             });
         }
@@ -5945,7 +5977,7 @@
             btnAdminCopyCustomerLink.addEventListener('click', () => {
                 const custUrl = `https://artnp.github.io/eworker/send.html?id=${sessionId}`;
                 navigator.clipboard.writeText(custUrl).then(() => {
-                    alert('📋 คัดลอกลิงก์สำหรับส่งให้ลูกค้าแล้ว:\n' + custUrl);
+                    showToast('📋 คัดลอกลิงก์สำหรับส่งให้ลูกค้าแล้ว:\n' + custUrl, 'success', 6000);
                 }).catch(() => {
                     prompt('คัดลอกลิงก์นี้ส่งให้ลูกค้า:', custUrl);
                 });
@@ -6263,8 +6295,8 @@
                         <div class="paid-header">
                             <i class="fa-solid fa-circle-check"></i>
                             <div>
-                                <div class="paid-title">ชำระเงินเรียบร้อยแล้ว (ลายน้ำปลดล็อคแล้ว)</div>
-                                <div class="paid-sub">คุณสามารถดาวน์โหลดผลงานต้นฉบับความละเอียดสูงได้ทันที</div>
+                                <div class="paid-title">${currentSessionData.isRevision ? 'อัปเดตงานแก้ไขใหม่เรียบร้อยแล้ว (ลายน้ำปลดล็อคแล้ว)' : 'ชำระเงินเรียบร้อยแล้ว (ลายน้ำปลดล็อคแล้ว)'}</div>
+                                <div class="paid-sub">${currentSessionData.isRevision ? 'ช่างได้อัปเดตไฟล์งานแก้ไขใหม่ให้แล้ว คุณสามารถดาวน์โหลดไฟล์ต้นฉบับคมชัดล่าสุดได้ทันที' : 'คุณสามารถดาวน์โหลดผลงานต้นฉบับความละเอียดสูงได้ทันที'}</div>
                             </div>
                         </div>
                         <div class="paid-countdown-bar">
@@ -6370,14 +6402,23 @@
             if (currentSessionData.accepted) {
                 container.innerHTML = `
                     <div class="job-processing-panel">
+                        ${isAdmin ? `
+                            <div style="background:#ecfdf5;border:1.5px solid #10b981;padding:12px 14px;border-radius:10px;margin-bottom:12px;text-align:left;display:flex;align-items:center;gap:10px;">
+                                <i class="fa-solid fa-circle-check" style="color:#059669;font-size:22px;"></i>
+                                <div style="flex:1;">
+                                    <div style="font-weight:800;color:#065f46;font-size:13.5px;">ลูกค้าตกลงจ่ายราคานี้แล้ว (฿${price})</div>
+                                    <div style="font-size:12px;color:#047857;">ลูกค้ากดยืนยันรับราคาแล้ว สามารถแก้ไขงานใน Photoshop ได้เลย</div>
+                                </div>
+                            </div>
+                        ` : ''}
                         <div class="processing-glow-wrap">
                             <i class="fa-solid fa-spinner fa-spin"></i>
                         </div>
                         <div class="processing-title">ช่างกำลังดำเนินการแก้ไขงานใน Photoshop</div>
                         <div class="processing-sub">เมื่อช่างแก้ไขเสร็จ ระบบจะแสดงภาพพรีวิวติดลายน้ำให้ตรวจสอบและชำระเงินทันที</div>
                         ${isAdmin ? `
-                            <button id="btnReopenPs" style="margin-top:10px;background:#4f46e5;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">
-                                <i class="fa-solid fa-paint-brush"></i> เปิดไฟล์ใน Photoshop อีกครั้ง
+                            <button id="btnReopenPs" style="margin-top:10px;background:#059669;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(5,150,105,0.25);">
+                                <i class="fa-solid fa-paint-brush"></i> เปิดไฟล์ใน Photoshop
                             </button>
                         ` : ''}
                     </div>
@@ -6671,7 +6712,7 @@
                     renderTotalJobCard();
                 } catch (e) {
                     hideLoading();
-                    alert('บันทึกไม่สำเร็จ: ' + e.message);
+                    showToast('บันทึกไม่สำเร็จ: ' + e.message, 'danger');
                 }
             });
 
@@ -6694,7 +6735,7 @@
                     renderTotalJobCard();
                 } catch (err) {
                     hideLoading();
-                    alert('เกิดข้อผิดพลาด: ' + err.message);
+                    showToast('เกิดข้อผิดพลาด: ' + err.message, 'danger');
                 }
             });
         }
@@ -6704,7 +6745,7 @@
             if (!sessionId) return;
             const markersCount = Object.keys(annotations).length;
             if (markersCount === 0) {
-                alert('กรุณามาร์คจุดที่ต้องการแก้ไขอย่างน้อย 1 จุด');
+                showToast('กรุณามาร์คจุดที่ต้องการแก้ไขอย่างน้อย 1 จุด', 'warning');
                 return;
             }
             showLoading('กำลังส่งจุดให้ช่างประเมินราคา...');
@@ -6722,14 +6763,14 @@
                 hideLoading();
             } catch (e) {
                 hideLoading();
-                alert('เกิดข้อผิดพลาด: ' + e.message);
+                showToast('เกิดข้อผิดพลาด: ' + e.message, 'danger');
             }
         }
 
         async function sendTotalPriceQuote(val) {
             const pNum = parseFloat(val) || 0;
             if (pNum <= 0) {
-                alert('กรุณาระบุราคาที่มากกว่า 0 บาท');
+                showToast('กรุณาระบุราคาที่มากกว่า 0 บาท', 'warning');
                 return;
             }
             showLoading('กำลังส่งราคา...');
@@ -6747,7 +6788,7 @@
                 renderTotalJobCard();
             } catch (e) {
                 hideLoading();
-                alert('เกิดข้อผิดพลาด: ' + e.message);
+                showToast('เกิดข้อผิดพลาด: ' + e.message, 'danger');
             }
         }
 
@@ -6762,16 +6803,19 @@
                     jobStatus: 'processing'
                 });
                 try {
+                    const candidatePath = (currentSessionData && (currentSessionData.localFilePath || currentSessionData.targetFile || currentSessionData.filePath)) || '';
+                    const candidateUrl = (currentSessionData && (currentSessionData.cleanFileUrl || currentSessionData.completedFileUrl || currentSessionData.fileUrl)) || fileUrl || '';
                     await fetch('http://127.0.0.1:5000/markpoints-open-photoshop', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ sessionId, fileUrl, page: currentPage })
+                        body: JSON.stringify({ sessionId, filePath: candidatePath, fileUrl: candidateUrl, page: currentPage, force: true })
                     });
                 } catch (e) { }
                 hideLoading();
+                showToast('🎉 ยืนยันรับราคาเรียบร้อยแล้ว ช่างกำลังเปิด Photoshop เพื่อเริ่มแก้ไขงาน', 'success', 6000);
             } catch (e) {
                 hideLoading();
-                alert('เกิดข้อผิดพลาด: ' + e.message);
+                showToast('เกิดข้อผิดพลาด: ' + e.message, 'danger');
             }
         }
 
@@ -6882,7 +6926,7 @@
         function downloadTotalBeamSlip() {
             const qrImg = document.getElementById('mainSlipQrImg');
             if (!qrImg || !qrImg.src) {
-                alert('กำลังโหลดภาพ QR Code กรุณารอสักครู่...');
+                showToast('กำลังโหลดภาพ QR Code กรุณารอสักครู่...', 'info', 3000);
                 return;
             }
 
@@ -6982,8 +7026,10 @@
                             }
                         } catch (e) { }
                     }
-                    alert('⏱️ ไฟล์นี้มีอายุ 1 ชั่วโมงหลังแก้ไขเสร็จ และระบบได้ทำลายไฟล์ภาพและข้อมูลทั้งหมดเรียบร้อยแล้ว');
-                    window.location.href = window.location.pathname;
+                    showToast('⏱️ ไฟล์นี้มีอายุ 1 ชั่วโมงหลังแก้ไขเสร็จ และระบบได้ทำลายไฟล์ภาพและข้อมูลทั้งหมดเรียบร้อยแล้ว', 'warning', 6000);
+                    setTimeout(() => {
+                        window.location.href = window.location.pathname;
+                    }, 1500);
                     return;
                 }
 
@@ -7057,7 +7103,7 @@
         // Download completed clean work
         async function downloadCompletedWork() {
             if (currentSessionData.hasWatermark && !currentSessionData.isPaid) {
-                alert('🔒 กรุณาสแกนจ่ายเงินเพื่อปลดล็อคลายน้ำและดาวน์โหลดไฟล์ต้นฉบับคมชัด');
+                showToast('🔒 กรุณาสแกนจ่ายเงินเพื่อปลดล็อคลายน้ำและดาวน์โหลดไฟล์ต้นฉบับคมชัด', 'warning');
                 document.getElementById('totalJobCardContainer')?.scrollIntoView({ behavior: 'smooth' });
                 return;
             }
@@ -7139,7 +7185,7 @@
             } catch (err) {
                 hideLoading();
                 console.error('Download error:', err);
-                alert('❌ ดาวน์โหลดไม่สำเร็จ: ' + err.message);
+                showToast('❌ ดาวน์โหลดไม่สำเร็จ: ' + err.message, 'danger');
             }
         }
 
@@ -7219,10 +7265,10 @@
                             text: 'ดาวน์โหลดไฟล์งานจาก มาร์คจุดที'
                         });
                     } else {
-                        alert('⚠️ อุปกรณ์นี้ไม่รองรับ Web Share โปรดแตะปุ่ม "ดาวน์โหลดไฟล์โดยตรง" หรือแตะภาพค้างไว้เพื่อบันทึก');
+                        showToast('⚠️ อุปกรณ์นี้ไม่รองรับ Web Share โปรดแตะปุ่ม "ดาวน์โหลดไฟล์โดยตรง" หรือแตะภาพค้างไว้เพื่อบันทึก', 'warning');
                     }
                 } catch (e) {
-                    if (e.name !== 'AbortError') alert('แชร์ไม่สำเร็จ: ' + e.message);
+                    if (e.name !== 'AbortError') showToast('แชร์ไม่สำเร็จ: ' + e.message, 'warning');
                 }
             });
         }
@@ -7328,8 +7374,10 @@
             database.ref(`annotations/${sessionId}`).on('value', async (snapshot) => {
                 const sData = snapshot.val();
                 if (!sData) {
-                    alert('⚠️ งานนี้ถูกลบหรือยกเลิกออกจากระบบแล้ว');
-                    window.location.href = window.location.pathname;
+                    showToast('⚠️ งานนี้ถูกลบหรือยกเลิกออกจากระบบแล้ว', 'warning', 5000);
+                    setTimeout(() => {
+                        window.location.href = window.location.pathname;
+                    }, 1500);
                     return;
                 }
 
@@ -7342,12 +7390,24 @@
                     hasWatermark: !!sData.hasWatermark,
                     watermarkUrl: sData.watermarkUrl || '',
                     cleanFileUrl: sData.cleanFileUrl || sData.completedFileUrl || sData.fileUrl || '',
+                    localFilePath: sData.localFilePath || sData.filePath || sData.targetFile || '',
                     isPaid: !!sData.isPaid,
+                    isRevision: !!sData.isRevision,
                     paidAt: sData.paidAt || null,
                     completedAt: sData.completedAt || sData.lastCompletedAt || null,
                     lastCompletedAt: sData.lastCompletedAt || sData.completedAt || null,
+                    revisionCompletedAt: sData.revisionCompletedAt || null,
                     expiresAt: sData.expiresAt || null
                 };
+
+                // แจ้งเตือนเมื่อลูกค้ากดยืนยันรับราคา (ตกลงจ่ายราคานี้)
+                if ((sData.accepted || sData.jobStatus === 'processing') && !window.__hasAlertedPriceAccepted) {
+                    window.__hasAlertedPriceAccepted = true;
+                    playJobCompletedBeep();
+                    const agreedPrice = sData.price || currentSessionData.price || '';
+                    const priceText = agreedPrice ? ` ฿${agreedPrice}` : '';
+                    showToast(`🎉 ลูกค้าตกลงจ่ายราคานี้แล้ว${priceText}! ช่างสามารถแก้ไขงานใน Photoshop ได้เลย`, 'success', 10000);
+                }
 
                 // ตรวจสอบการส่งงานเสร็จติดลายน้ำ เพื่อแจ้งเตือนพร้อมเสียง Beep และเริ่มนับถอยหลัง 1 ชม.
                 if (sData.hasWatermark && !sData.isPaid) {
@@ -7359,7 +7419,11 @@
                     const exp = sData.expiresAt || ((sData.completedAt || sData.lastCompletedAt || Date.now()) + 3600000);
                     startJobDestructionCountdown(exp);
                 } else if (sData.isPaid) {
-                    if (!window.__hasAlertedPaidUnlocked) {
+                    if (sData.isRevision && sData.revisionCompletedAt && window.__lastRevisionTime !== sData.revisionCompletedAt) {
+                        window.__lastRevisionTime = sData.revisionCompletedAt;
+                        playJobCompletedBeep();
+                        showToast('🎨 ช่างได้อัปเดตงานแก้ไขใหม่เรียบร้อยแล้ว! ดาวน์โหลดไฟล์คมชัดได้ทันที', 'success', 8000);
+                    } else if (!window.__hasAlertedPaidUnlocked) {
                         window.__hasAlertedPaidUnlocked = true;
                         playJobCompletedBeep();
                         showToast('✨ ได้รับยอดชำระเงินเรียบร้อยแล้ว! ปลดล็อคลายน้ำสำเร็จ ดาวน์โหลดไฟล์คมชัดได้ทันที', 'success', 8000);
@@ -7369,12 +7433,14 @@
                 }
 
                 // Admin: auto open Photoshop when accepted
-                if (sData.jobStatus === 'processing' && isAdmin && !window.__psAutoOpened) {
+                if ((sData.jobStatus === 'processing' || sData.accepted) && isAdmin && !window.__psAutoOpened) {
                     window.__psAutoOpened = true;
+                    const candidatePath = (currentSessionData && (currentSessionData.localFilePath || currentSessionData.targetFile || currentSessionData.filePath)) || '';
+                    const candidateUrl = (currentSessionData && (currentSessionData.cleanFileUrl || currentSessionData.completedFileUrl || currentSessionData.fileUrl)) || fileUrl || '';
                     fetch('http://127.0.0.1:5000/markpoints-open-photoshop', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ sessionId, fileUrl, page: currentPage })
+                        body: JSON.stringify({ sessionId, filePath: candidatePath, fileUrl: candidateUrl, page: currentPage, force: true })
                     }).catch(e => console.warn('Could not auto-open Photoshop:', e));
                 }
 
