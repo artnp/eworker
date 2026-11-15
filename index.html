@@ -7204,14 +7204,14 @@
             {
                 id: 'prod_fb_public_groups',
                 slug: 'fb-approved-groups',
-                title: 'รายชื่อกลุ่ม Facebook โพสต์อนุมัติทันที ติด Google SEO',
+                title: 'กลุ่ม Facebook โพสต์อนุมัติทันที ติด Google SEO แรง',
                 price: 100,
                 priceText: '฿ 100.00',
                 category: 'ขายข้อมูล',
                 isDataProduct: true,
                 language: 'data_feed',
                 coverImage: 'shop/images/fb_groups_data_cover.svg',
-                description: '🔥 รวมรายชื่อกลุ่ม Facebook สาธารณะ (Public Group) ที่ผ่านการทดสอบจริง โพสต์แล้วอนุมัติทันที ไม่ต้องรอแอดมิน\n🌐 ตรวจสอบผ่านโหมดไม่ระบุตัวตน (Incognito) ทุกกลุ่ม ยืนยันว่าคนภายนอกและ Google Search Engine มองเห็นเนื้อหาได้ทันที ช่วยดัน SEO\n💎 ซื้อครั้งเดียว อัปเดตรายชื่อกลุ่มใหม่ฟรีตลอดชีพ ซิงค์ตรงจากบอทคัดกรอง Facebook อัตโนมัติ\n📥 พร้อมระบบแสดงผลแบบตาราง Embed เสมือน Excel / CSV, ปุ่มดาวน์โหลด .TXT, .CSV และปุ่มคัดลอกทุกลิงก์ในคลิกเดียว',
+                description: '🔥 รวมรายชื่อกลุ่ม Facebook สาธารณะ ที่ผ่านการทดสอบจริง โพสต์แล้วอนุมัติทันทีและติด SEO\n🌐 ตรวจสอบผ่านโหมดไม่ระบุตัวตน (Incognito) ทุกกลุ่ม ยืนยันว่าคนภายนอกและ Google Search Engine มองเห็นเนื้อหาได้ทันที ช่วยดัน SEO\n💎 ซื้อครั้งเดียว อัปเดตรายชื่อกลุ่มใหม่ฟรีตลอดชีพ ซิงค์ตรงจากบอทคัดกรอง Facebook อัตโนมัติ\n📥 พร้อมระบบแสดงผลแบบตาราง Embed เสมือน Excel / CSV, ปุ่มดาวน์โหลด .TXT, .CSV และปุ่มคัดลอกทุกลิงก์ในคลิกเดียว',
                 hasInstallGuide: false,
                 installSteps: [],
                 isRecommended: true,
@@ -7919,7 +7919,7 @@
                                     ${isUserPurchased ? '📥 รับไฟล์ของคุณ' : '⚡ ดาวน์โหลด'}
                                 </button>
                             `))}
-                            ${(isLocalAdmin && !isService) ? `
+                            ${(isLocalAdmin && !isService && !isDataProduct && p.id !== 'prod_fb_public_groups') ? `
                                 <div class="card-admin-tools">
                                     <button class="btn-tool-sm" title="แก้ไขสินค้า" onclick="${isFont ? `openAdminFontModal('${p.id}', event)` : (isCourse ? `openAdminCourseModal('${p.id}')` : `openAdminEditProduct('${p.id}', event)`)}">✏️ แก้ไข</button>
                                     <button class="btn-tool-sm delete-btn" title="ลบสินค้า" onclick="handleQuickDeleteProduct('${p.id}', event)">🗑️ ลบ</button>
@@ -8621,7 +8621,7 @@
         function handleDetailCheckoutClick() {
             if (!activeDetailProduct) return;
 
-            const isPurchased = isProductPurchased(activeDetailProduct.id);
+            const isPurchased = checkIsPurchased(activeDetailProduct.id);
             if (isPurchased) {
                 const isPine = (activeDetailProduct.language === 'pinescript' || activeDetailProduct.isCodeProduct);
                 if (isPine) {
@@ -9960,6 +9960,7 @@
         function checkIsPurchased(productId) {
             return getPurchasedRecords().some(x => x.productId === productId);
         }
+        const isProductPurchased = checkIsPurchased;
 
         async function downloadPurchasedProduct(productId) {
             const p = products.find(x => x.id === productId);
@@ -10688,7 +10689,6 @@ ${encodedToken}
                     adminProductImages.unshift(defaultCover);
                 }
             }
-            const coverInput = document.getElementById('admin-cover-image');
             if (coverInput) coverInput.value = defaultCover;
             renderAdminImagesGallery();
             if (typeof saveCourseDraft === 'function') saveCourseDraft();
@@ -11388,12 +11388,18 @@ ${encodedToken}
                 });
             }
 
+            const catList = Array.from(catSet);
 
-            for (let r of rows) {
-                const val = r.value || '';
-                if (val.includes('chrome://extensions') || val.includes('Developer mode') || val.includes('Load unpacked') || val.includes('ส่วนขยาย')) return true;
+            if (datalist) {
+                datalist.innerHTML = catList.map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
             }
-            return false;
+
+            if (chipsList) {
+                chipsList.innerHTML = catList.map(c => {
+                    const isActive = (c === (currentVal || '').trim());
+                    return `<button type="button" class="btn-cat-chip ${isActive ? 'active' : ''}" data-cat="${escapeHtml(c)}" onclick="selectAdminCategory(this.getAttribute('data-cat'))">🏷️ ${escapeHtml(c)}</button>`;
+                }).join('');
+            }
         }
 
         function selectAdminCategory(cat) {
@@ -12469,6 +12475,10 @@ ${encodedToken}
                 showToast('⚠️ ไม่พบข้อมูลสินค้า (รหัสไม่ถูกต้อง)', 'warning');
                 return;
             }
+            if (p.id === 'prod_fb_public_groups' || !!p.isDataProduct || p.category === 'ขายข้อมูล') {
+                showToast('🛡️ รายการนี้เป็นข้อมูลของระบบ สงวนสิทธิ์ไม่เปิดแก้ไข', 'info');
+                return;
+            }
             if (p.category === 'ทักษะเรียนรู้' || !!p.isCourse) {
                 openAdminCourseModal(p.id);
                 return;
@@ -12961,6 +12971,10 @@ ${encodedToken}
             }
             if (!productId || productId === 'undefined') {
                 showToast('⚠️ ไม่พบรหัสสินค้าที่ต้องการลบ', 'warning');
+                return;
+            }
+            if (productId === 'prod_fb_public_groups') {
+                showToast('🛡️ รายการนี้เป็นข้อมูลของระบบ ไม่สามารถลบได้', 'warning');
                 return;
             }
             if (!confirm('ยืนยันลบสินค้านี้ออกจากร้านค้าหรือไม่?')) return;
