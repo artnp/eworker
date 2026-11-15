@@ -7210,6 +7210,7 @@
                 category: 'ขายข้อมูล',
                 isDataProduct: true,
                 language: 'data_feed',
+                totalGroups: 15,
                 coverImage: 'shop/images/fb_groups_data_cover.svg',
                 description: '🔥 รวมรายชื่อกลุ่ม Facebook สาธารณะ ที่ผ่านการทดสอบจริง โพสต์แล้วอนุมัติทันทีและติด SEO\n🌐 ตรวจสอบผ่านโหมดไม่ระบุตัวตน (Incognito) ทุกกลุ่ม ยืนยันว่าคนภายนอกและ Google Search Engine มองเห็นเนื้อหาได้ทันที ช่วยดัน SEO\n💎 ซื้อครั้งเดียว อัปเดตรายชื่อกลุ่มใหม่ฟรีตลอดชีพ ซิงค์ตรงจากบอทคัดกรอง Facebook อัตโนมัติ\n📥 พร้อมระบบแสดงผลแบบตาราง Embed เสมือน Excel / CSV, ปุ่มดาวน์โหลด .TXT, .CSV และปุ่มคัดลอกทุกลิงก์ในคลิกเดียว',
                 hasInstallGuide: false,
@@ -7554,6 +7555,22 @@
                     }
                 });
             }
+
+            // Sync dynamic group count for data products
+            try {
+                if (typeof fetchApprovedGroupsData === 'function') {
+                    const fbData = await fetchApprovedGroupsData();
+                    const fbCount = fbData ? (fbData.totalGroups || (Array.isArray(fbData.groups) ? fbData.groups.length : 0)) : 15;
+                    if (fbCount && Array.isArray(products)) {
+                        products.forEach(p => {
+                            if (p.isDataProduct || p.category === 'ขายข้อมูล' || p.id === 'prod_fb_public_groups' || p.slug === 'fb-approved-groups') {
+                                p.totalGroups = fbCount;
+                            }
+                        });
+                    }
+                }
+            } catch (err) { }
+
             updateCategoryCounts();
             renderCatalog();
         }
@@ -7886,6 +7903,9 @@
                                             <span style="background:#e0f2fe; color:#0284c7; border:1px solid #7dd3fc; font-weight:700; padding:2px 8px; border-radius:4px; white-space:nowrap;">🔗Digital Download / Extension</span>
                                         ` : (langMeta ? `<span style="background:${langMeta.bg}; color:${langMeta.color}; border:1px solid ${langMeta.border}; font-weight:700; padding:2px 8px; border-radius:4px; white-space:nowrap;">💻 เขียนด้วย: ${langMeta.icon} ${escapeHtml(langMeta.name)}</span>` : '')}
                                         ${p.category ? `<span>📁 ${escapeHtml(p.category)}</span>` : ''}
+                                        ${isDataProduct ? `
+                                            <span style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-weight:700; padding:2px 8px; border-radius:4px; white-space:nowrap;">👥 อัปเดตล่าสุด: ${p.totalGroups || (cachedFbApprovedGroupsData?.totalGroups || cachedFbApprovedGroupsData?.groups?.length) || 15} กลุ่ม</span>
+                                        ` : ''}
                                         ${p.hasInstallGuide ? '<span>🛠️ มีคู่มือติดตั้ง</span>' : ''}
                                     ` : '')}
                                 </div>
@@ -10660,35 +10680,6 @@ ${encodedToken}
             if (idx < 0 || idx >= adminProductImages.length) return;
             const removedUrl = adminProductImages[idx];
             adminProductImages.splice(idx, 1);
-            renderAdminImagesGallery();
-            if (removedUrl) {
-                deleteImageFromServer(removedUrl);
-            }
-            showToast('🗑️ ลบรูปภาพและไฟล์จริงออกจากระบบเรียบร้อยแล้ว', 'info');
-        }
-
-        function removeLessonImage(idx) {
-            if (!adminCourseLessons[idx]) return;
-            const oldUrl = adminCourseLessons[idx].imageUrl;
-            handleLessonFieldChange(idx, 'imageUrl', '');
-            renderCourseLessons();
-            if (oldUrl) {
-                deleteImageFromServer(oldUrl);
-            }
-            showToast('🗑️ ลบรูปภาพบทเรียนและไฟล์จริงเรียบร้อยแล้ว', 'info');
-        }
-
-        function setCourseDefaultCover() {
-            const defaultCover = 'shop/images/learning_course_cover.svg';
-            if (!adminProductImages.includes(defaultCover)) {
-                adminProductImages.unshift(defaultCover);
-            } else {
-                const idx = adminProductImages.indexOf(defaultCover);
-                if (idx > 0) {
-                    adminProductImages.splice(idx, 1);
-                    adminProductImages.unshift(defaultCover);
-                }
-            }
             if (coverInput) coverInput.value = defaultCover;
             renderAdminImagesGallery();
             if (typeof saveCourseDraft === 'function') saveCourseDraft();
@@ -16818,8 +16809,8 @@ ${encodedToken}
             }
             cachedFbApprovedGroupsData = {
                 productName: "FB Public Groups Approved List",
-                lastUpdated: "14/11/2569 20:31:13",
-                totalGroups: 8,
+                lastUpdated: "15/11/2569 13:28:28",
+                totalGroups: 15,
                 groups: [
                     { id: 8, url: "https://www.facebook.com/groups/351176138718403/", verifiedAt: "14/11/2569 20:31:13", postStatus: "อนุมัติทันที" },
                     { id: 7, url: "https://www.facebook.com/groups/2484957515066550/", verifiedAt: "14/11/2569 20:20:53", postStatus: "อนุมัติทันที" },
@@ -16869,18 +16860,34 @@ ${encodedToken}
             let rowsHtml = '';
             displayGroups.forEach(item => {
                 const itemTimeRelative = formatRelativeTime(item.verifiedAt, true);
-                rowsHtml += `
-                    <tr class="data-row-item" data-url="${escapeHtml(item.url.toLowerCase())}">
-                        <td>
-                            <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" class="data-cell-url">
-                                🔗 ${escapeHtml(item.url)}
-                            </a>
-                        </td>
-                        <td style="text-align: right; color: #64748b; font-size: 0.74rem; white-space: nowrap;" title="ตรวจสอบเมื่อ: ${escapeHtml(item.verifiedAt || '-')}">
-                            ${escapeHtml(itemTimeRelative)}
-                        </td>
-                    </tr>
-                `;
+                if (isPurchased) {
+                    rowsHtml += `
+                        <tr class="data-row-item" data-url="${escapeHtml(item.url.toLowerCase())}">
+                            <td>
+                                <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" class="data-cell-url">
+                                    🔗 ${escapeHtml(item.url)}
+                                </a>
+                            </td>
+                            <td style="text-align: right; color: #64748b; font-size: 0.74rem; white-space: nowrap;" title="ตรวจสอบเมื่อ: ${escapeHtml(item.verifiedAt || '-')}">
+                                ${escapeHtml(itemTimeRelative)}
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    const dummyUrl = 'https://www.facebook.com/groups/xxxxxx';
+                    rowsHtml += `
+                        <tr class="data-row-item dummy-locked" data-url="${dummyUrl}">
+                            <td>
+                                <a href="javascript:void(0)" onclick="handleDetailCheckoutClick()" class="data-cell-url" style="color: #64748b; text-decoration: none;" title="ชำระเงินเพื่อปลดล็อก URL จริง">
+                                    🔗 ${dummyUrl}
+                                </a>
+                            </td>
+                            <td style="text-align: right; color: #64748b; font-size: 0.74rem; white-space: nowrap;" title="ตรวจสอบเมื่อ: ${escapeHtml(item.verifiedAt || '-')}">
+                                ${escapeHtml(itemTimeRelative)}
+                            </td>
+                        </tr>
+                    `;
+                }
             });
 
             box.innerHTML = `
@@ -16975,7 +16982,7 @@ ${encodedToken}
                         <table class="data-excel-table">
                             <thead>
                                 <tr>
-                                    <th>URL กลุ่ม Facebook (Public Group) ${isPurchased ? `<span style="font-size:0.7rem; font-weight:normal; color:#64748b; margin-left:6px;">(แสดง 50 กลุ่มล่าสุด)</span>` : ''}</th>
+                                    <th>URL กลุ่ม Facebook (Public Group) ${isPurchased ? `<span style="font-size:0.7rem; font-weight:normal; color:#64748b; margin-left:6px;">(แสดง 50 กลุ่มล่าสุด)</span>` : `<span style="font-size:0.7rem; font-weight:normal; color:#94a3b8; margin-left:6px;">(🔒 แสดง URL จำลอง)</span>`}</th>
                                     <th style="width: 105px; text-align: right;">ตรวจสอบล่าสุด</th>
                                 </tr>
                             </thead>
@@ -16989,7 +16996,7 @@ ${encodedToken}
                                 <div class="data-locked-banner">
                                     <div style="flex: 1; min-width: 240px;">
                                         <div style="font-weight: 800; color: #1e3a8a; font-size: 0.92rem; margin-bottom: 2px;">
-                                            🔒 ตัวอย่าง 5 กลุ่มแรก (จากฐานข้อมูลจริงทั้งหมด ${total} กลุ่ม)
+                                            🔒 ตัวอย่างกลุ่ม (ฐานข้อมูลจริงมีทั้งหมด ${total} กลุ่ม)
                                         </div>
                                         <div style="font-size: 0.8rem; color: #475569; line-height: 1.45;">
                                             สแกนชำระเงิน <strong>฿100 บาท</strong> (จ่ายครั้งเดียว) ปลดล็อกครบทุกกลุ่ม + <strong>รับ Live Feed URLs & สูตร Google Sheets</strong> ดึงกลุ่มใหม่เข้าบอทและตารางชีตอัตโนมัติ 24 ชม. ไม่ต้องคอยเข้ามาเปิดดูในเว็บ!
@@ -17022,6 +17029,10 @@ ${encodedToken}
         }
 
         async function handleDataDownloadTxt(productId) {
+            if (!checkIsPurchased(productId)) {
+                showToast('🔒 กรุณาชำระเงินเพื่อดาวน์โหลดข้อมูลจริง', 'warning');
+                return;
+            }
             const data = await fetchApprovedGroupsData();
             const sorted = [...(data.groups || [])].sort((a, b) => {
                 const timeA = parseGroupDateToMs(a.verifiedAt);
@@ -17042,6 +17053,10 @@ ${encodedToken}
         }
 
         async function handleDataDownloadCsv(productId) {
+            if (!checkIsPurchased(productId)) {
+                showToast('🔒 กรุณาชำระเงินเพื่อดาวน์โหลดข้อมูลจริง', 'warning');
+                return;
+            }
             const data = await fetchApprovedGroupsData();
             const sorted = [...(data.groups || [])].sort((a, b) => {
                 const timeA = parseGroupDateToMs(a.verifiedAt);
@@ -17065,6 +17080,10 @@ ${encodedToken}
         }
 
         async function handleDataCopyAll(productId) {
+            if (!checkIsPurchased(productId)) {
+                showToast('🔒 กรุณาชำระเงินเพื่อคัดลอกข้อมูลจริง', 'warning');
+                return;
+            }
             const data = await fetchApprovedGroupsData();
             const sorted = [...(data.groups || [])].sort((a, b) => {
                 const timeA = parseGroupDateToMs(a.verifiedAt);
@@ -17089,11 +17108,14 @@ ${encodedToken}
             showToast('🔄 กำลังดึงข้อมูลอัปเดตล่าสุด...', 'info');
             cachedFbApprovedGroupsData = null;
             const data = await fetchApprovedGroupsData();
+            const count = data.totalGroups || (Array.isArray(data.groups) ? data.groups.length : 0);
             const prod = products.find(x => x.id === productId || x.slug === 'fb-approved-groups');
             if (prod) {
+                prod.totalGroups = count;
                 renderDetailDataProductBox(prod);
+                renderCatalog();
             }
-            showToast('✅ อัปเดตข้อมูลสดสำเร็จ! รวม ' + (data.totalGroups || data.groups.length) + ' กลุ่ม', 'success');
+            showToast('✅ อัปเดตข้อมูลสดสำเร็จ! รวม ' + count + ' กลุ่ม', 'success');
         }
 
 
