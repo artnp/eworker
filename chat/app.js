@@ -475,7 +475,7 @@ function applyRoomClosedUI() {
     if (cancelContactBtn) {
         cancelContactBtn.classList.add('is-closed');
         cancelContactBtn.disabled = true;
-        cancelContactBtn.innerHTML = '<i class="fa-solid fa-ban"></i> <span>ห้องนี้ถูกปิดแล้ว</span>';
+        cancelContactBtn.innerHTML = '<i class="fa-solid fa-ban"></i> <span>ห้องปิดแล้ว</span>';
         cancelContactBtn.title = 'ตัดการเชื่อมต่อ';
     }
 
