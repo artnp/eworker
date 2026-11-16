@@ -17,7 +17,21 @@
     <meta name="twitter:description" content="พื้นที่คุยส่วนตัว ข้อความหายไปใน 10 นาที">
     <meta name="twitter:image" content="https://cdn-icons-png.flaticon.com/128/18675/18675812.png">
 
-    <script>if (location.search.includes('mini=1')) document.title = 'MiniChat';</script>
+    <script>
+        if (location.search.includes('mini=1')) {
+            document.title = 'MiniChat';
+            document.documentElement.classList.add('is-mini');
+        }
+    </script>
+    <style>
+        html.is-mini .chat-header {
+            padding: 8px 14px;
+            min-height: 44px;
+        }
+        html.is-mini .app-container {
+            height: 100%;
+        }
+    </style>
     <link rel="icon" type="image/x-icon" href="https://cdn-icons-png.flaticon.com/128/2058/2058065.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
