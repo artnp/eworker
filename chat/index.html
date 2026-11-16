@@ -24,10 +24,6 @@
         }
     </script>
     <style>
-        html.is-mini .chat-header {
-            padding: 8px 14px;
-            min-height: 44px;
-        }
         html.is-mini .app-container {
             height: 100%;
         }
@@ -71,32 +67,6 @@
 
             <!-- Screen 2: Chat Room -->
             <div id="chatScreen" class="screen">
-                <header class="chat-header">
-                    <div class="room-status">
-                        <span class="dot"></span>
-                        <div id="shareLinkContainer" class="share-link-mini">
-                            <span id="shareLinkText">กำลังสร้างห้อง...</span>
-                            <button id="copyBtn">คัดลอก</button>
-                        </div>
-                    </div>
-                </header>
-
-                <!-- Voice Broadcast Listener Bar -->
-                <div id="voiceListenerBar" class="voice-listener-bar hidden">
-                    <div class="voice-listener-inner">
-                        <div class="voice-wave-container">
-                            <span class="wave-bar"></span>
-                            <span class="wave-bar"></span>
-                            <span class="wave-bar"></span>
-                            <span class="wave-bar"></span>
-                            <span class="wave-bar"></span>
-                        </div>
-                        <span id="voiceListenerText" class="voice-listener-text">👽 กำลังรับเสียง...</span>
-                        <canvas id="voiceVisualizer" width="120" height="30" style="cursor:pointer;"
-                            title="คลิกเพื่อเปิดเสียง (หากไม่ได้ยิน)"></canvas>
-                    </div>
-                    <audio id="remoteAudio" autoplay></audio>
-                </div>
 
                 <div id="messagesContainer" class="messages-area">
                     <!-- Customer Work Upload Guidance Banner -->
@@ -178,10 +148,6 @@
                                 </svg>
                             </button>
                             <textarea id="messageInput" placeholder="พิมพ์ข้อความที่นี่..." rows="1"></textarea>
-                            <button id="micBtn" class="notify-btn voice-broadcast-btn" title="ถ่ายทอดเสียงสด"
-                                style="color:#8b5cf6;">
-                                <span style="font-size:18px; line-height:1;">📞</span>
-                            </button>
                             <button id="notifyBtn" class="notify-btn" title="เรียกคู่สนทนา">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -383,19 +349,22 @@
         </div>
     </div>
 
-    <!-- LINE / In-App Browser Save Image Modal -->
+    <!-- LINE / Mobile Save Image Modal -->
     <div id="lineSaveModal" class="line-save-modal">
         <div class="line-save-card">
             <div class="line-save-header">
-                <h3><i class="fa-solid fa-download"></i> บันทึกรูปภาพ</h3>
-                <p>แตะค้างที่รูปภาพด้านล่าง แล้วเลือก <strong>"บันทึกรูปภาพ" (Save Image)</strong></p>
+                <h3><i class="fa-solid fa-cloud-arrow-down"></i> บันทึกรูปภาพ</h3>
+                <p>แตะค้างที่รูปภาพด้านล่าง แล้วเลือก <strong>"บันทึกรูปภาพ" (Save Image)</strong> หรือ <strong>"เพิ่มลงในรูปภาพ"</strong></p>
             </div>
             <div class="line-save-img-wrapper">
-                <img id="lineSaveImg" src="" alt="Save Image" draggable="false">
+                <img id="lineSaveImg" src="" alt="Save Image">
             </div>
             <div class="line-save-actions">
+                <button type="button" class="line-save-btn-share" id="lineShareBtn" style="display: none;">
+                    <i class="fa-solid fa-share-nodes"></i> บันทึกภาพลงเครื่อง
+                </button>
                 <button type="button" class="line-save-btn-browser" id="lineOpenBrowserBtn">
-                    <i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดในเบราว์เซอร์
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> เปิดรูปเต็ม
                 </button>
                 <button type="button" class="line-save-btn-close" id="lineSaveCloseBtn">
                     ปิด
