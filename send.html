@@ -1964,6 +1964,19 @@
             background: rgba(255, 255, 255, 0.2);
         }
 
+        .btn-nav-new-job {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(79, 70, 229, 0.25));
+            color: #e0e7ff;
+            border: 1px solid rgba(99, 102, 241, 0.45);
+        }
+
+        .btn-nav-new-job:hover {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            border-color: #818cf8;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+        }
+
         /* Marker Card Extras */
         .admin-price-area {
             background: #f8fafc;
@@ -4405,6 +4418,11 @@
             <button class="btn-nav btn-nav-chat hidden" id="btnTopNavChat" title="เปิดห้องแชทสื่อสาร">
                 <i class="fa-solid fa-comments"></i> <span>แชทสื่อสาร</span>
                 <span class="nav-chat-pulse hidden" id="navChatPulse"></span>
+            </button>
+
+            <!-- New Job Button -->
+            <button class="btn-nav btn-nav-new-job" id="btnTopNewJob" title="เริ่มส่งงานใหม่ / อัปโหลดไฟล์ใหม่">
+                <i class="fa-solid fa-circle-plus"></i> <span>ส่งงานใหม่</span>
             </button>
 
             <!-- Download Button -->
@@ -7557,7 +7575,7 @@
                     <div class="customer-offer-card">
                         <div class="offer-input-header">
                             <i class="fa-solid fa-coins" style="color:#eab308;font-size:18px;"></i>
-                            <span>เสนอราคาจ้างทำงานนี้ (เหมาทั้งงาน)</span>
+                            <span>เสนอราคาจ้างทำงานนี้</span>
                         </div>
                         <div class="offer-input-box-wrap" style="${totalMarkers === 0 ? 'opacity:0.6;background:#f1f5f9;cursor:not-allowed;' : ''}">
                             <span class="offer-currency-sign">฿</span>
@@ -7566,10 +7584,10 @@
                         </div>
 
                         <!-- 🛡️ Customer Warranty & Indemnity Checkbox -->
-                        <div class="customer-warranty-check-wrap" id="wrapCustomerLegalWarranty" style="margin: 12px 0 14px; text-align: left; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; transition: all 0.2s;">
-                            <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; user-select: none;">
-                                <input type="checkbox" id="chkCustomerLegalWarranty" ${totalMarkers === 0 ? 'disabled' : ''} style="margin-top: 2.5px; accent-color: #4f46e5; width: 16px; height: 16px; cursor: pointer; flex-shrink: 0;">
-                                <span style="font-size: 11.5px; color: #334155; line-height: 1.55;">
+                        <div class="customer-warranty-check-wrap" id="wrapCustomerLegalWarranty" style="margin: 12px 0 14px; text-align: left; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; transition: all 0.2s; cursor: pointer;">
+                            <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; user-select: none;">
+                                <input type="checkbox" id="chkCustomerLegalWarranty" ${totalMarkers === 0 ? 'disabled' : ''} style="margin-top: 2px; accent-color: #4f46e5; width: 22px; height: 22px; min-width: 22px; min-height: 22px; cursor: pointer; flex-shrink: 0;">
+                                <span style="font-size: 12px; color: #334155; line-height: 1.55;">
                                     <strong>ข้าพเจ้ารับรองว่าภาพนี้เป็นสิทธิ์ของข้าพเจ้า</strong> และจ้างทำเพื่อการศึกษา/งานกราฟิกส่วนบุคคล มิได้นำไปใช้ในการฉ้อโกง ปลอมแปลง หรือกระทำความผิดใดๆ หากนำไปใช้ผิดกฎหมาย ข้าพเจ้าขอรับผิดชอบแต่เพียงผู้เดียวทั้งสิ้น
                                 </span>
                             </label>
@@ -7593,6 +7611,18 @@
                 const footnote = document.getElementById('offerFootnote');
                 const chkWarranty = document.getElementById('chkCustomerLegalWarranty');
                 const wrapWarranty = document.getElementById('wrapCustomerLegalWarranty');
+
+                chkWarranty?.addEventListener('change', () => {
+                    if (wrapWarranty) {
+                        if (chkWarranty.checked) {
+                            wrapWarranty.style.borderColor = '#6366f1';
+                            wrapWarranty.style.background = '#eef2ff';
+                        } else {
+                            wrapWarranty.style.borderColor = '#cbd5e1';
+                            wrapWarranty.style.background = '#f8fafc';
+                        }
+                    }
+                });
 
                 inpPrice?.addEventListener('input', () => {
                     const raw = inpPrice.value.trim();
@@ -8502,6 +8532,28 @@
         const btnTopDownload = document.getElementById('btnTopDownload');
         if (btnTopDownload) {
             btnTopDownload.addEventListener('click', downloadCompletedWork);
+        }
+
+        // New Job Button handler
+        function handleNewJobClick() {
+            if (!fileUrl && !sessionId && (!annotations || Object.keys(annotations).length === 0)) {
+                showToast('หน้านี้พร้อมสำหรับการอัปโหลดภาพส่งงานใหม่อยู่แล้วครับ', 'info', 3000);
+                return;
+            }
+            if (confirm('ต้องการเริ่มส่งงานใหม่ใช่หรือไม่?\n\n(ระบบจะเริ่มรายการใหม่เพื่อให้คุณสามารถอัปโหลดไฟล์ใหม่ได้ทันที)')) {
+                const u = new URL(window.location.href);
+                const role = u.searchParams.get('role');
+                const newUrl = new URL(window.location.pathname, window.location.origin);
+                if (role) {
+                    newUrl.searchParams.set('role', role);
+                }
+                window.location.href = newUrl.toString();
+            }
+        }
+
+        const btnTopNewJob = document.getElementById('btnTopNewJob');
+        if (btnTopNewJob) {
+            btnTopNewJob.addEventListener('click', handleNewJobClick);
         }
 
         // ===== MOBILE DOWNLOAD MODAL CONTROLS =====
