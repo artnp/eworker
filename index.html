@@ -7154,12 +7154,17 @@
             }
 
             try {
+                await checkStoreStatus();
+            } catch (err) {
+                console.error("checkStoreStatus error:", err);
+            }
+
+            try {
                 checkUrlRoute();
             } catch (err) {
                 console.error("checkUrlRoute error:", err);
             }
 
-            checkStoreStatus();
             setInterval(checkStoreStatus, 8000);
         }
 
@@ -7188,7 +7193,7 @@
                         banner.innerHTML = `
                             <div style="display:inline-flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;">
                                 <span>🌐 <strong>เซิร์ฟเวอร์หลักออฟไลน์ชั่วคราว:</strong> บริการเว็บอัตโนมัติ<strong>ยังเปิดใช้งานได้ตามปกติ 24 ชม.</strong></span>
-                                <span style="background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); padding:2px 8px; border-radius:12px; font-size:0.78rem;">ยกเว้นแจกเหรียญ Red Packet & รีทัชข้อความ ที่ต้องรอเซิร์ฟเวอร์ออนไลน์</span>
+                                <span style="background:rgba(239,68,68,0.2); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); padding:2px 8px; border-radius:12px; font-size:0.78rem;">ยกเว้นบริการแจกเหรียญ Red Packet ที่ต้องรอเซิร์ฟเวอร์ออนไลน์</span>
                             </div>
                         `;
                     }
@@ -7676,7 +7681,7 @@
 
         function isServiceRequiringServer(p) {
             if (!p) return false;
-            return (p.id === 'service-red-packet' || p.id === 'service-text-retouch' || p.slug === 'red-packet' || p.slug === 'text-retouch');
+            return (p.id === 'service-red-packet' || p.slug === 'red-packet');
         }
 
         function handleServiceClick(id, event) {
