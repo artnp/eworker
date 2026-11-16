@@ -1358,161 +1358,9 @@ body {
     transform: scale(0.9);
 }
 
-/* ===== Voice Broadcast System ===== */
 
-/* Broadcast Button */
-.voice-broadcast-btn {
-    position: relative;
-    transition: all 0.3s ease !important;
-}
 
-.voice-broadcast-btn.broadcasting {
-    color: #a855f7 !important;
-    background: rgba(168, 85, 247, 0.15) !important;
-    border-radius: 50% !important;
-    box-shadow: 0 0 15px rgba(168, 85, 247, 0.4), 0 0 30px rgba(168, 85, 247, 0.2);
-}
 
-@keyframes broadcastPulse {
-
-    0%,
-    100% {
-        transform: scale(1);
-        box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
-    }
-
-    50% {
-        transform: scale(1.12);
-        box-shadow: 0 0 25px rgba(168, 85, 247, 0.6), 0 0 50px rgba(168, 85, 247, 0.3);
-    }
-}
-
-.voice-broadcast-btn.broadcasting {
-    animation: broadcastPulse 1.5s ease-in-out infinite;
-}
-
-/* Voice Listener Bar */
-.voice-listener-bar {
-    overflow: hidden;
-    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, padding 0.4s ease;
-    max-height: 60px;
-    opacity: 1;
-    padding: 0 20px;
-    background: linear-gradient(135deg, rgba(120, 0, 255, 0.12), rgba(0, 220, 180, 0.08));
-    border-bottom: 1px solid rgba(168, 85, 247, 0.25);
-}
-
-.voice-listener-bar.hidden {
-    display: none !important;
-}
-
-.voice-listener-inner {
-    max-width: 800px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 0;
-    height: 50px;
-}
-
-.voice-listener-text {
-    font-size: 0.82rem;
-    color: #c084fc;
-    font-weight: 500;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-    animation: listenerTextGlow 2s ease-in-out infinite alternate;
-}
-
-@keyframes listenerTextGlow {
-    from {
-        text-shadow: 0 0 5px rgba(192, 132, 252, 0.3);
-    }
-
-    to {
-        text-shadow: 0 0 15px rgba(192, 132, 252, 0.7), 0 0 30px rgba(168, 85, 247, 0.3);
-    }
-}
-
-/* Animated Wave Bars */
-.voice-wave-container {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    height: 24px;
-}
-
-.voice-wave-container .wave-bar {
-    width: 3px;
-    background: linear-gradient(180deg, #a855f7, #06d6a0);
-    border-radius: 3px;
-    animation: waveAnim 1s ease-in-out infinite;
-}
-
-.voice-wave-container .wave-bar:nth-child(1) {
-    height: 8px;
-    animation-delay: 0s;
-}
-
-.voice-wave-container .wave-bar:nth-child(2) {
-    height: 16px;
-    animation-delay: 0.12s;
-}
-
-.voice-wave-container .wave-bar:nth-child(3) {
-    height: 22px;
-    animation-delay: 0.24s;
-}
-
-.voice-wave-container .wave-bar:nth-child(4) {
-    height: 14px;
-    animation-delay: 0.36s;
-}
-
-.voice-wave-container .wave-bar:nth-child(5) {
-    height: 10px;
-    animation-delay: 0.48s;
-}
-
-@keyframes waveAnim {
-
-    0%,
-    100% {
-        transform: scaleY(0.4);
-        opacity: 0.6;
-    }
-
-    50% {
-        transform: scaleY(1);
-        opacity: 1;
-    }
-}
-
-/* Voice Visualizer Canvas */
-#voiceVisualizer {
-    border-radius: 6px;
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(168, 85, 247, 0.2);
-}
-
-/* Broadcast Active Indicator in Chat Header */
-.dot.broadcasting {
-    background: #a855f7 !important;
-    animation: dotBroadcast 1s ease-in-out infinite;
-}
-
-@keyframes dotBroadcast {
-
-    0%,
-    100% {
-        box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.6);
-    }
-
-    50% {
-        box-shadow: 0 0 0 6px rgba(168, 85, 247, 0);
-    }
-}
 
 /* ===== Annotation Mark Modal ===== */
 /* ============================================================
@@ -3410,9 +3258,10 @@ body {
     display: block;
     max-width: 90vw;
     max-height: calc(100vh - 120px);
-    user-select: none;
-    -webkit-user-drag: none;
-    pointer-events: none;
+    user-select: auto;
+    -webkit-user-select: auto;
+    -webkit-touch-callout: default;
+    pointer-events: auto;
 }
 
 .lightbox-body.zoomed .lightbox-viewport img {
@@ -4383,6 +4232,15 @@ body {
 
 .line-save-btn-browser:hover {
     background: #0284c7;
+}
+
+.line-save-btn-share {
+    background: #10b981;
+    color: #ffffff;
+}
+
+.line-save-btn-share:hover {
+    background: #059669;
 }
 
 /* ============================================================
