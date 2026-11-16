@@ -4311,7 +4311,7 @@
 
                 <ul style="margin: 0; padding-left: 18px; font-size: 11.5px; color: #64748b; line-height: 1.6;">
                     <li><strong>🚫 ห้ามงานผิดกฎหมายเด็ดขาด:</strong> ไม่รับแก้ บัตรประชาชน, ใบขับขี่,
-                        เอกสารราชการมีตราครุฑ, หรือสื่อลามกอนาจารเด็ก</li>
+                        เอกสารราชการมีตราครุฑ, หรือสื่อลามกอนาจาร</li>
                     <li><strong>🔒 ลบข้อมูลอัตโนมัติ:</strong> ไฟล์ภาพทั้งหมดจะถูกทำลายทิ้งอัตโนมัติภายใน 1
                         ชั่วโมงหลังเสร็จสิ้นรายการเพื่อความเป็นส่วนตัวสูงสุด</li>
                 </ul>
@@ -4347,7 +4347,7 @@
                     ผู้ใช้บริการตกลงว่าจะไม่ส่งหรืออัปโหลดไฟล์ที่มีลักษณะดังต่อไปนี้เข้าสู่ระบบ:</p>
                 <ul style="margin:0 0 14px;padding-left:20px;color:#dc2626;">
                     <li>เอกสารปลอมแปลงทางราชการทุกชนิด เช่น เอกสารมีตราครุฑ</li>
-                    <li>สื่อลามกอนาจารเด็ก (CSAM) หรือเนื้อหาที่ขัดต่อความสงบเรียบร้อยและศีลธรรมอันดี</li>
+                    <li>สื่อลามกอนาจาร หรือเนื้อหาที่ขัดต่อความสงบเรียบร้อยและศีลธรรมอันดี</li>
                     <li>ไฟล์ที่มีเจตนานำไปใช้เพื่อการฉ้อโกง หลอกลวง หรือละเมิดลิขสิทธิ์ของบุคคลอื่น</li>
                 </ul>
 
@@ -7165,7 +7165,7 @@
                                 <strong>เหตุผล:</strong> ${escapeHtml(currentSessionData.rejectReason || 'มีความเสี่ยงทางด้านกฎหมาย')}
                             </div>
                             <div style="font-size:12px;color:#881337;margin-bottom:16px;line-height:1.5;">
-                                เอกสารหรือภาพดังกล่าวอาจมีความเสี่ยงหรือขัดต่อข้อกฎหมาย<br>ระบบได้ทำการยกเลิกรายการนี้แล้ว คุณสามารถอัปโหลดไฟล์งานอื่นได้
+                                เอกสารหรือภาพดังกล่าวอาจมีความเสี่ยงหรือขัดต่อข้อกฎหมาย<br>ระบบได้ทำการยกเลิกรายการนี้แล้ว นายท่านสามารถอัปโหลดไฟล์งานอื่นได้
                             </div>
                             <button onclick="window.location.href = window.location.pathname;" style="background:#e11d48;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(225,29,72,0.3);">
                                 <i class="fa-solid fa-arrow-rotate-left"></i> เริ่มต้นทำรายการใหม่
@@ -7184,7 +7184,7 @@
                     container.innerHTML = `
                         <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:16px;text-align:center;">
                             <div style="font-size:14px;font-weight:800;color:#92400e;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px;">
-                                <i class="fa-solid fa-handshake-slash"></i> คุณได้ปฏิเสธไม่รับข้อเสนอราคานี้ (฿${price})
+                                <i class="fa-solid fa-handshake-slash"></i> นายท่านได้ปฏิเสธไม่รับข้อเสนอราคานี้ (฿${price})
                             </div>
                             <div style="font-size:12px;color:#b45309;margin-bottom:12px;background:#fff;padding:8px 10px;border-radius:8px;border:1px dashed #f59e0b;">
                                 สถานะบนหน้าจอลูกค้ากำลังแนะนำให้ปรับเพิ่มราคาข้อเสนอใหม่
@@ -7245,7 +7245,7 @@
                             <i class="fa-solid fa-circle-check"></i>
                             <div>
                                 <div class="paid-title">${currentSessionData.isRevision ? 'อัปเดตงานแก้ไขใหม่เรียบร้อยแล้ว (ลายน้ำปลดล็อคแล้ว)' : 'ชำระเงินเรียบร้อยแล้ว (ลายน้ำปลดล็อคแล้ว)'}</div>
-                                <div class="paid-sub">${currentSessionData.isRevision ? 'ช่างได้อัปเดตไฟล์งานแก้ไขใหม่ให้แล้ว คุณสามารถดาวน์โหลดไฟล์ต้นฉบับคมชัดล่าสุดได้ทันที' : 'คุณสามารถดาวน์โหลดผลงานต้นฉบับความละเอียดสูงได้ทันที'}</div>
+                                <div class="paid-sub">${currentSessionData.isRevision ? 'ช่างได้อัปเดตไฟล์งานแก้ไขใหม่ให้แล้ว นายท่านสามารถดาวน์โหลดไฟล์ต้นฉบับคมชัดล่าสุดได้ทันที' : 'นายท่านสามารถดาวน์โหลดผลงานต้นฉบับความละเอียดสูงได้ทันที'}</div>
                             </div>
                         </div>
                         <div class="paid-countdown-bar">
@@ -7488,7 +7488,7 @@
                                 <div style="font-size:12.5px;color:#64748b;line-height:1.55;max-width:320px;margin:0 auto 16px;">
                                     ขณะนี้ช่างอาจติดภารกิจชั่วคราว<br>
                                     <span style="color:#059669;font-weight:700;"><i class="fa-solid fa-circle-check"></i> ไม่ต้องอัพโหลดภาพหรือวงจุดใหม่!</span><br>
-                                    จุดแก้ไขทั้งหมด (${totalMarkers} จุด) ยังคงอยู่ครบถ้วน คุณสามารถกดส่งข้อเสนออีกครั้งได้ทันที
+                                    จุดแก้ไขทั้งหมด (${totalMarkers} จุด) ยังคงอยู่ครบถ้วน นายท่านสามารถกดส่งข้อเสนออีกครั้งได้ทันที
                                 </div>
                                 <div style="display:flex;flex-direction:column;gap:8px;">
                                     <button id="btnCustomerRetryOffer" style="background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%);color:#fff;border:none;padding:13px 18px;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(217,119,6,0.3);letter-spacing:0.2px;">
@@ -7514,7 +7514,7 @@
                                     ส่งข้อเสนอจ้างทำงานแล้ว (฿${price}) • รอช่างพิจารณา...
                                 </div>
                                 <div class="waiting-quote-sub" style="font-size:12px;color:#64748b;margin-top:4px;">
-                                    ช่างกำลังตรวจสอบจุดแก้ไข (${totalMarkers} จุด) และข้อเสนอราคาที่คุณกำหนด
+                                    ช่างกำลังตรวจสอบจุดแก้ไข (${totalMarkers} จุด) และข้อเสนอราคาที่นายท่านกำหนด
                                 </div>
 
                                 <div style="margin:12px auto;background:#f8fafc;border:1.5px solid #cbd5e1;padding:6px 14px;border-radius:20px;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#475569;">
@@ -7635,23 +7635,23 @@
 
                 btnSubmit?.addEventListener('click', () => {
                     if (totalMarkers === 0) {
-                        showToast('กรุณากดปุ่ม "เพิ่มจุดแก้ไข" บนภาพก่อนส่งข้อเสนอจ้างครับ', 'warning');
+                        showToast('กรุณากดปุ่ม "เพิ่มจุดแก้ไข" บนภาพก่อนส่งข้อเสนอจ้างขอรับ', 'warning');
                         updateMarkerAttentionState();
                         return;
                     }
                     const val = parseFloat(inpPrice?.value) || 0;
                     if (val <= 0) {
-                        showToast('กรุณากรอกยอดราคาเสนอจ้างทำงานก่อนครับ', 'warning');
+                        showToast('กรุณากรอกยอดราคาเสนอจ้างทำงานก่อนขอรับ', 'warning');
                         inpPrice?.focus();
                         return;
                     }
                     if (val < 100) {
-                        showToast('ช่างไม่รับข้อเสนอที่ต่ำกว่า 100 บาทครับ กรุณาปรับเพิ่มราคาเสนอจ้าง', 'warning');
+                        showToast('ช่างไม่รับข้อเสนอที่ต่ำกว่า 100 บาทขอรับ กรุณาปรับเพิ่มราคาเสนอจ้าง', 'warning');
                         inpPrice?.focus();
                         return;
                     }
                     if (!chkWarranty?.checked) {
-                        showToast('กรุณากดติ๊กรับรองว่าภาพเป็นสิทธิ์ของคุณและไม่ใช่การปลอมแปลงก่อนส่งข้อเสนอครับ', 'warning', 7000);
+                        showToast('กรุณากดติ๊กรับรองว่าภาพเป็นสิทธิ์ของนายท่านและไม่ใช่การปลอมแปลงก่อนส่งข้อเสนอขอรับ', 'warning', 7000);
                         if (wrapWarranty) {
                             wrapWarranty.style.borderColor = '#ef4444';
                             wrapWarranty.style.background = '#fef2f2';
@@ -7770,7 +7770,7 @@
             }
             const val = parseFloat(amount) || 0;
             if (val < 100) {
-                showToast('ยอดราคาเสนอจ้างขั้นต่ำเริ่มต้นที่ 100 บาทครับ (ไม่รับงานต่ำกว่า 100฿)', 'warning');
+                showToast('ยอดราคาเสนอจ้างขั้นต่ำเริ่มต้นที่ 100 บาทขอรับ (ไม่รับงานต่ำกว่า 100฿)', 'warning');
                 return;
             }
 
@@ -7967,7 +7967,7 @@
 
         async function rejectTotalPriceQuote() {
             if (!sessionId) return;
-            if (confirm('คุณต้องการยกเลิกงานนี้ใช่ไหม?')) {
+            if (confirm('นายท่านต้องการยกเลิกงานนี้ใช่ไหม?')) {
                 await database.ref(`annotations/${sessionId}`).update({
                     rejected: true,
                     accepted: false,
@@ -8089,7 +8089,7 @@
             }
 
             if (!canAccessChat()) {
-                showToast('กรุณาระบุจุดแก้ไขและกด "ส่งข้อเสนอจ้างทำงาน" ก่อน เพื่อเริ่มแชทสื่อสารกับช่างครับ', 'warning', 4500);
+                showToast('กรุณาระบุจุดแก้ไขและกด "ส่งข้อเสนอจ้างทำงาน" ก่อน เพื่อเริ่มแชทสื่อสารกับช่างขอรับ', 'warning', 4500);
                 return;
             }
 
@@ -8537,10 +8537,10 @@
         // New Job Button handler
         function handleNewJobClick() {
             if (!fileUrl && !sessionId && (!annotations || Object.keys(annotations).length === 0)) {
-                showToast('หน้านี้พร้อมสำหรับการอัปโหลดภาพส่งงานใหม่อยู่แล้วครับ', 'info', 3000);
+                showToast('หน้านี้พร้อมสำหรับการอัปโหลดภาพส่งงานใหม่อยู่แล้วขอรับ', 'info', 3000);
                 return;
             }
-            if (confirm('ต้องการเริ่มส่งงานใหม่ใช่หรือไม่?\n\n(ระบบจะเริ่มรายการใหม่เพื่อให้คุณสามารถอัปโหลดไฟล์ใหม่ได้ทันที)')) {
+            if (confirm('ต้องการเริ่มส่งงานใหม่ใช่หรือไม่?\n\n(ระบบจะเริ่มรายการใหม่เพื่อให้นายท่านสามารถอัปโหลดไฟล์ใหม่ได้ทันที)')) {
                 const u = new URL(window.location.href);
                 const role = u.searchParams.get('role');
                 const newUrl = new URL(window.location.pathname, window.location.origin);
