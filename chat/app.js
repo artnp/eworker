@@ -41,7 +41,6 @@ const chatDropZone = document.getElementById('chatDropZone');
 const inputAttachBtn = document.getElementById('inputAttachBtn');
 const mainFileInput = document.getElementById('mainFileInput');
 const notifyBtn = document.getElementById('notifyBtn');
-const micBtn = document.getElementById('micBtn');
 const startProcessBtn = document.getElementById('startProcessBtn');
 const cancelContactBtn = document.getElementById('cancelContactBtn');
 const changeRoomBtn = document.getElementById('changeRoomBtn');
@@ -223,7 +222,7 @@ function joinRoom(roomId) {
 
     const isLocalHost = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' || window.location.href.includes('127.0.0.1');
     const publicUrl = isLocalHost ? `https://artnp.github.io/eworker/chat/?room=${roomId}` : window.location.href;
-    shareLinkText.textContent = publicUrl;
+    if (shareLinkText) shareLinkText.textContent = publicUrl;
 
     loginScreen.classList.remove('active');
     chatScreen.classList.add('active');
@@ -464,10 +463,6 @@ function applyRoomClosedUI() {
         screenshotBtnEl.disabled = true;
         screenshotBtnEl.style.pointerEvents = 'none';
     }
-    if (micBtn) {
-        micBtn.disabled = true;
-        micBtn.style.pointerEvents = 'none';
-    }
     if (notifyBtn) {
         notifyBtn.disabled = true;
         notifyBtn.style.pointerEvents = 'none';
@@ -486,7 +481,6 @@ function applyRoomClosedUI() {
 
     const dot = document.querySelector('.dot');
     if (dot) {
-        dot.classList.remove('broadcasting');
         dot.classList.add('closed');
     }
 
@@ -507,15 +501,7 @@ function applyRoomClosedUI() {
     if (headerUploadGuideBtn) headerUploadGuideBtn.style.display = 'none';
     if (adminPreviewUploadBtn) adminPreviewUploadBtn.style.display = 'none';
 
-    // 4. Stop voice broadcast if active
-    if (typeof stopBroadcast === 'function' && typeof isBroadcasting !== 'undefined' && isBroadcasting) {
-        stopBroadcast();
-    }
-    if (typeof stopListening === 'function') {
-        stopListening();
-    }
-
-    // 5. Ensure the closed notice is shown in the chat (only if not already displayed)
+    // 4. Ensure the closed notice is shown in the chat (only if not already displayed)
     if (!document.querySelector('.message-room-closed')) {
         renderRoomClosedMessage();
     }
@@ -703,29 +689,30 @@ async function uploadToCloud(file) {
         let result = null;
 
         // 1. ลอง Litterbox เป็นหลักสำหรับทุกไฟล์ (ผ่าน CORS Proxy)
-        const litterboxData = new FormData();
-        litterboxData.append('reqtype', 'fileupload');
-        litterboxData.append('time', '1h');
-        litterboxData.append('fileToUpload', file);
-
-        const LITTERBOX_API = 'https://litterbox.catbox.moe/resources/internals/api.php';
-        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(LITTERBOX_API)}`;
+        // 1. ใช้ Tempfile เป็นหลัก (รองรับ CORS และดาวน์โหลดได้โดยตรง)
+        const tempfileData = new FormData();
+        tempfileData.append('files', file);
+        tempfileData.append('expiryHours', 1);
 
         try {
-            result = await tryUpload(proxyUrl, litterboxData, true);
+            result = await tryUpload('https://tempfile.org/api/upload/local', tempfileData, false);
         } catch (err) {
-            console.warn('Litterbox upload failed, falling back to Tempfile...', err);
+            console.warn('Tempfile upload failed, falling back...', err);
             barFile.style.width = '0%';
             percentFile.textContent = 'ระบบสำรอง...';
         }
 
-        // 2. ถ้า Litterbox ล้มเหลว ให้ใช้ Tempfile เป็นตัวสำรอง (สำหรับทุกไฟล์)
+        // 2. ถ้า Tempfile ล้มเหลว ให้ลอง Litterbox
         if (!result) {
-            const tempfileData = new FormData();
-            tempfileData.append('files', file);
-            tempfileData.append('expiryHours', 1);
-
-            result = await tryUpload('https://tempfile.org/api/upload/local', tempfileData, false);
+            const litterboxData = new FormData();
+            litterboxData.append('reqtype', 'fileupload');
+            litterboxData.append('time', '1h');
+            litterboxData.append('fileToUpload', file);
+            try {
+                result = await tryUpload('https://litterbox.catbox.moe/resources/internals/api.php', litterboxData, true);
+            } catch (e) {
+                console.warn('Litterbox upload also failed:', e);
+            }
         }
 
         if (result) {
@@ -837,18 +824,6 @@ function initChatListeners() {
 
     // Countdown UI Update Loop
     setInterval(updateCountdowns, 1000);
-
-    // Listen for Voice Broadcast Offers
-    const voiceOfferRef = ref(database, `rooms/${currentRoom}/voice/offer`);
-    onValue(voiceOfferRef, (snap) => {
-        const offerData = snap.val();
-        if (offerData && offerData.sdp) {
-            startListening(offerData);
-        } else {
-            // Offer removed, stop listening
-            stopListening();
-        }
-    });
 
     // Listen for payment status (per-bill status is managed strictly on each message)
     const paymentStatusRef = ref(database, `rooms/${currentRoom}/paymentStatus`);
@@ -2684,15 +2659,22 @@ function isImageFile(filename) {
     return /\.(jpe?g|png|gif|webp|bmp|svg|ico)$/i.test(filename);
 }
 
-// Helper to open LINE / In-App Browser Save Modal
-window.showLineSaveModal = function (url) {
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+        || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(navigator.userAgent))
+        || (window.matchMedia && window.matchMedia('(max-width: 768px)').matches);
+}
+
+// Universal mobile image save modal
+window.showLineSaveModal = function (displayUrl, origUrl, filename, blob) {
     const modal = document.getElementById("lineSaveModal");
     const img = document.getElementById("lineSaveImg");
     const closeBtn = document.getElementById("lineSaveCloseBtn");
     const openBrowserBtn = document.getElementById("lineOpenBrowserBtn");
+    const shareBtn = document.getElementById("lineShareBtn");
     if (!modal || !img) return;
 
-    img.src = url;
+    img.src = displayUrl;
     modal.classList.add("active");
     document.body.style.overflow = "hidden";
 
@@ -2706,17 +2688,43 @@ window.showLineSaveModal = function (url) {
         if (e.target === modal) closeModal();
     };
 
+    if (shareBtn) {
+        if (blob && navigator.share && navigator.canShare) {
+            shareBtn.style.display = "inline-flex";
+            shareBtn.onclick = async () => {
+                try {
+                    const mime = blob.type || 'image/png';
+                    const file = new File([blob], filename || 'image.png', { type: mime });
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: filename || 'image.png'
+                        });
+                    }
+                } catch (e) {
+                    if (e.name !== 'AbortError') console.warn(e);
+                }
+            };
+        } else {
+            shareBtn.style.display = "none";
+        }
+    }
+
     if (openBrowserBtn) {
         openBrowserBtn.onclick = () => {
-            if (url && url.startsWith("http")) {
-                const sep = url.includes("?") ? "&" : "?";
-                window.location.href = url + sep + "openExternalBrowser=1";
+            const targetUrl = origUrl || displayUrl;
+            if (targetUrl && targetUrl.startsWith("http")) {
+                const sep = targetUrl.includes("?") ? "&" : "?";
+                const isLine = typeof isLineInAppBrowser === 'function' && isLineInAppBrowser();
+                if (isLine) {
+                    window.location.href = targetUrl + sep + "openExternalBrowser=1";
+                } else {
+                    const win = window.open(targetUrl, "_blank");
+                    if (!win) window.location.href = targetUrl;
+                }
             } else {
-                const sep = window.location.href.includes("?") ? "&" : "?";
-                const targetUrl = window.location.href.includes("openExternalBrowser=1")
-                    ? window.location.href
-                    : (window.location.href + sep + "openExternalBrowser=1");
-                window.location.href = targetUrl;
+                const win = window.open(displayUrl, "_blank");
+                if (!win) window.location.href = displayUrl;
             }
         };
     }
@@ -2725,103 +2733,100 @@ window.showLineSaveModal = function (url) {
 window.forceDownload = async function (url, filename) {
     if (!url) return;
     filename = filename || 'download.png';
-    const isInApp = isInAppBrowser();
+    const isMobile = isMobileDevice() || isInAppBrowser();
 
-    // Strategy 1: If inside in-app browser (LINE, FB, IG) and image: show save modal with long-press instructions
-    if (isInApp) {
-        if (isImageFile(filename) || url.startsWith("data:image")) {
-            window.showLineSaveModal(url);
-            return;
-        } else {
-            // For non-images in LINE, open in external browser
-            const sep = window.location.href.includes("?") ? "&" : "?";
-            window.location.href = window.location.href + sep + "openExternalBrowser=1";
-            return;
-        }
-    }
+    showDownloadToast("กำลังเริ่มดาวน์โหลด...", 2500);
 
-    // Strategy 2: data: URL -> convert to Blob URL for fast and reliable download across all browsers
+    let blob = null;
+
+    // 1. If data: URL
     if (url.startsWith("data:")) {
-        showDownloadToast("กำลังเริ่มดาวน์โหลด...", 1500);
+        blob = dataURLtoBlob(url);
+        if (!blob && typeof fetch === 'function') {
+            try {
+                const res = await fetch(url);
+                if (res.ok) blob = await res.blob();
+            } catch (_) { }
+        }
+    }
+
+    // 2. If blob: URL
+    if (!blob && url.startsWith("blob:")) {
         try {
-            let blob = null;
-            if (typeof fetch === 'function') {
-                try {
-                    const res = await fetch(url);
-                    if (res.ok) blob = await res.blob();
-                } catch (_) { }
-            }
-            if (!blob) {
-                blob = dataURLtoBlob(url);
-            }
-            if (blob) {
-                const blobUrl = URL.createObjectURL(blob);
-                triggerDownload(blobUrl, filename);
-                showDownloadToast("ดาวน์โหลดสำเร็จ ✓", 2500);
-                return;
-            }
-        } catch (err) {
-            console.error("dataURL to blob failed:", err);
-        }
-        // Fallback directly
-        triggerDownload(url, filename);
-        return;
+            const res = await fetch(url);
+            if (res.ok) blob = await res.blob();
+        } catch (_) { }
     }
 
-    // Strategy 3: blob: URL -> already a Blob URL
-    if (url.startsWith("blob:")) {
-        triggerDownload(url, filename);
-        showDownloadToast("ดาวน์โหลดสำเร็จ ✓", 2000);
-        return;
+    // 3. Try direct fetch with CORS (works on tempfile.org, local, same origin)
+    if (!blob && (url.startsWith("http://") || url.startsWith("https://"))) {
+        try {
+            const res = await fetch(url, { mode: 'cors' });
+            if (res.ok) blob = await res.blob();
+        } catch (_) { }
     }
 
-    showDownloadToast("กำลังดาวน์โหลด...", 4000);
-
-    // Strategy 4: Try direct fetch with CORS (same origin or CORS enabled)
-    try {
-        const res = await fetch(url, { mode: 'cors' });
-        if (res.ok) {
-            const blob = await res.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            triggerDownload(blobUrl, filename);
-            showDownloadToast("ดาวน์โหลดสำเร็จ ✓", 2000);
-            return;
-        }
-    } catch (_) { }
-
-    // Strategy 5: CORS proxy -> blob download
-    try {
-        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-        const res = await fetch(proxyUrl);
-        if (res.ok) {
-            const blob = await res.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            triggerDownload(blobUrl, filename);
-            showDownloadToast("ดาวน์โหลดสำเร็จ ✓", 2000);
-            return;
-        }
-    } catch (e) { }
-
-    // Strategy 6: For images, use canvas as fallback
-    if (isImageFile(filename)) {
+    // 4. Try canvas extraction if image
+    if (!blob && isImageFile(filename)) {
         try {
             const img = new Image();
             img.crossOrigin = "anonymous";
-            await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; img.src = url; });
-            const c = document.createElement("canvas");
-            c.width = img.naturalWidth; c.height = img.naturalHeight;
-            c.getContext("2d").drawImage(img, 0, 0);
-            c.toBlob(blob => {
-                if (blob) {
-                    triggerDownload(URL.createObjectURL(blob), filename);
-                    showDownloadToast("ดาวน์โหลดสำเร็จ ✓", 2000);
-                }
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+                img.src = url;
             });
-            return;
-        } catch (e) { }
+            const c = document.createElement("canvas");
+            c.width = img.naturalWidth;
+            c.height = img.naturalHeight;
+            c.getContext("2d").drawImage(img, 0, 0);
+            blob = await new Promise(resolve => c.toBlob(resolve, 'image/png'));
+        } catch (_) { }
     }
 
-    // Fallback: direct download link
+    // Strategy 1: Mobile Web Share API (Save Image to Gallery on iOS/Android mobile)
+    if (isMobile && blob && navigator.share && navigator.canShare) {
+        try {
+            const mimeType = blob.type || (filename.endsWith('.png') ? 'image/png' : 'image/jpeg');
+            const file = new File([blob], filename, { type: mimeType });
+            if (navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: filename,
+                    text: 'บันทึกรูปภาพ'
+                });
+                showDownloadToast("บันทึกภาพสำเร็จ ✓", 2500);
+                return;
+            }
+        } catch (shareErr) {
+            if (shareErr.name === 'AbortError') return; // User closed sheet
+            console.warn("Web Share API error, using mobile save modal:", shareErr);
+        }
+    }
+
+    // Strategy 2: Mobile Save Modal (Long-press to save or open in new tab)
+    if (isMobile) {
+        if (isImageFile(filename) || url.startsWith("data:image") || (blob && blob.type && blob.type.startsWith("image/"))) {
+            const displayUrl = blob ? URL.createObjectURL(blob) : url;
+            window.showLineSaveModal(displayUrl, url, filename, blob);
+            return;
+        } else {
+            const sep = url.includes("?") ? "&" : "?";
+            const targetUrl = url.startsWith("http") ? (url + sep + "openExternalBrowser=1") : url;
+            window.open(targetUrl, '_blank') || (window.location.href = targetUrl);
+            return;
+        }
+    }
+
+    // Strategy 3: Desktop browser with blob
+    if (blob) {
+        const blobUrl = URL.createObjectURL(blob);
+        triggerDownload(blobUrl, filename);
+        showDownloadToast("ดาวน์โหลดสำเร็จ ✓", 2500);
+        return;
+    }
+
+    // Strategy 4: Fallback direct download
     triggerDownload(url, filename);
 };
 
@@ -3412,12 +3417,14 @@ function scrollToBottom() {
     container.scrollTop = container.scrollHeight;
 }
 
-copyBtn.addEventListener('click', () => {
-    navigator.clipboard.writeText(shareLinkText.textContent);
-    const orig = copyBtn.textContent;
-    copyBtn.textContent = 'คัดลอกแล้ว!';
-    setTimeout(() => copyBtn.textContent = orig, 2000);
-});
+if (copyBtn && shareLinkText) {
+    copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(shareLinkText.textContent);
+        const orig = copyBtn.textContent;
+        copyBtn.textContent = 'คัดลอกแล้ว!';
+        setTimeout(() => copyBtn.textContent = orig, 2000);
+    });
+}
 
 // Dynamic Viewport Height & Mobile Bar Compensation
 function updateAppViewportHeight() {
@@ -3448,13 +3455,15 @@ messageInput.addEventListener('click', function () {
     if (this.value.length > 0) this.select();
 });
 
-shareLinkText.addEventListener('click', function () {
-    const range = document.createRange();
-    range.selectNodeContents(this);
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-});
+if (shareLinkText) {
+    shareLinkText.addEventListener('click', function () {
+        const range = document.createRange();
+        range.selectNodeContents(this);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    });
+}
 
 messageInput.addEventListener('input', function () {
     this.style.height = 'auto';
@@ -3756,521 +3765,7 @@ window.downloadQRCode = async function (url, amount) {
     }
 };
 
-// ===== Live Voice Broadcast System (WebRTC + Alien Voice) =====
-
-const ICE_SERVERS = {
-    iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' }
-    ]
-};
-
-let isBroadcasting = false;
-let broadcastPC = null;       // RTCPeerConnection for broadcaster
-let listenerPC = null;        // RTCPeerConnection for listener
-let broadcastStream = null;   // Original mic stream
-let broadcastAudioCtx = null; // AudioContext for voice effects
-let visualizerRAF = null;     // requestAnimationFrame ID for visualizer
-
-// DOM elements for broadcast
-const voiceListenerBar = document.getElementById('voiceListenerBar');
-const remoteAudio = document.getElementById('remoteAudio');
-const voiceVisualizer = document.getElementById('voiceVisualizer');
-
-// ===== WebRTC Signaling via Firebase =====
-function getVoiceSignalRef() {
-    return ref(database, `rooms/${currentRoom}/voice`);
-}
-
-// ===== Demon / Scammer Voice FX Engine (Menacing yet Crystal Clear) =====
-function makeDemonDistortionCurve(amount = 2.0) {
-    const n = 44100;
-    const curve = new Float32Array(n);
-    for (let i = 0; i < n; i++) {
-        const x = (i * 2) / n - 1;
-        // Analog tube saturation curve (smooth hyperbolic tangent)
-        curve[i] = Math.tanh(amount * x) / Math.tanh(amount);
-    }
-    return curve;
-}
-
-function createDemonVoiceStream(inputStream) {
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!broadcastAudioCtx || broadcastAudioCtx.state === 'closed') {
-        broadcastAudioCtx = new AudioContextClass({ latencyHint: 'interactive' });
-    } else if (broadcastAudioCtx.state === 'suspended') {
-        broadcastAudioCtx.resume();
-    }
-    const ctx = broadcastAudioCtx;
-
-    const source = ctx.createMediaStreamSource(inputStream);
-    const destination = ctx.createMediaStreamDestination();
-
-    // 1. Pre-Filtering: Clean up rumble below 85Hz
-    const highpass = ctx.createBiquadFilter();
-    highpass.type = 'highpass';
-    highpass.frequency.value = 85;
-
-    // Speech presence booster (3.2kHz) to keep consonants (p, t, k, s, ch) razor-sharp
-    const presenceFilter = ctx.createBiquadFilter();
-    presenceFilter.type = 'peaking';
-    presenceFilter.frequency.value = 3200;
-    presenceFilter.Q.value = 1.2;
-    presenceFilter.gain.value = 5.0; // +5dB for 100% speech intelligibility
-
-    source.connect(highpass);
-    highpass.connect(presenceFilter);
-
-    // 2. PARALLEL PATH A: Clean Vocal Intelligibility Core (Dry/Crisp vocal)
-    // Ensures speech is immediately understood without muffling
-    const directGain = ctx.createGain();
-    directGain.gain.value = 0.55;
-    presenceFilter.connect(directGain);
-
-    // 3. PARALLEL PATH B: Demon Sub-Harmonic & Guttural Growl Engine
-    // Twin Delay LFO Modulation for menacing demonic double-voice (possession chorus)
-    const delayA = ctx.createDelay();
-    delayA.delayTime.value = 0.026; // 26ms
-    const lfoA = ctx.createOscillator();
-    lfoA.type = 'sine';
-    lfoA.frequency.value = 3.8; // 3.8Hz throat flutter
-    const lfoGainA = ctx.createGain();
-    lfoGainA.gain.value = 0.003;
-    lfoA.connect(lfoGainA);
-    lfoGainA.connect(delayA.delayTime);
-    lfoA.start();
-
-    const delayB = ctx.createDelay();
-    delayB.delayTime.value = 0.045; // 45ms
-    const lfoB = ctx.createOscillator();
-    lfoB.type = 'sine';
-    lfoB.frequency.value = 5.5; // 5.5Hz overtone
-    const lfoGainB = ctx.createGain();
-    lfoGainB.gain.value = 0.0025;
-    lfoB.connect(lfoGainB);
-    lfoGainB.connect(delayB.delayTime);
-    lfoB.start();
-
-    // Deep chest resonance (low-shelf 145Hz +7.5dB, solid punch without blowing out speakers)
-    const demonChest = ctx.createBiquadFilter();
-    demonChest.type = 'lowshelf';
-    demonChest.frequency.value = 145;
-    demonChest.gain.value = 7.5;
-
-    // Throat growl peak (360Hz +5.5dB)
-    const throatGrowl = ctx.createBiquadFilter();
-    throatGrowl.type = 'peaking';
-    throatGrowl.frequency.value = 360;
-    throatGrowl.Q.value = 1.8;
-    throatGrowl.gain.value = 5.5;
-
-    // Tube saturation for demonic grit (smooth tanh curve, no digital clipping or harshness)
-    const demonDrive = ctx.createWaveShaper();
-    demonDrive.curve = makeDemonDistortionCurve(2.0);
-    demonDrive.oversample = '2x';
-
-    const demonGain = ctx.createGain();
-    demonGain.gain.value = 0.65;
-
-    presenceFilter.connect(delayA);
-    presenceFilter.connect(delayB);
-    delayA.connect(demonChest);
-    delayB.connect(demonChest);
-    demonChest.connect(throatGrowl);
-    throatGrowl.connect(demonDrive);
-    demonDrive.connect(demonGain);
-
-    // 4. Master Summing & Dynamics Control
-    const sumBus = ctx.createGain();
-    directGain.connect(sumBus);
-    demonGain.connect(sumBus);
-
-    // High-shelf filter to tame harsh electronic hiss (8kHz -2dB)
-    const postHighShelf = ctx.createBiquadFilter();
-    postHighShelf.type = 'highshelf';
-    postHighShelf.frequency.value = 8000;
-    postHighShelf.gain.value = -2.0;
-
-    // Dynamics Compressor: In-your-face presence, cinematic trailer punch
-    const compressor = ctx.createDynamicsCompressor();
-    compressor.threshold.setValueAtTime(-18, ctx.currentTime);
-    compressor.knee.setValueAtTime(8, ctx.currentTime);
-    compressor.ratio.setValueAtTime(4, ctx.currentTime);
-    compressor.attack.setValueAtTime(0.003, ctx.currentTime);
-    compressor.release.setValueAtTime(0.18, ctx.currentTime);
-
-    const masterGain = ctx.createGain();
-    masterGain.gain.value = 1.15;
-
-    sumBus.connect(postHighShelf);
-    postHighShelf.connect(compressor);
-    compressor.connect(masterGain);
-    masterGain.connect(destination);
-
-    return destination.stream;
-}
-
-// Alias for backwards compatibility with user naming
-const createScammerVoiceStream = createDemonVoiceStream;
-window.createDemonVoiceStream = createDemonVoiceStream;
-window.createScammerVoiceStream = createScammerVoiceStream;
-
-async function startBroadcast() {
-    if (!currentRoom) {
-        alert('กรุณาเข้าร่วมห้องแชทก่อน');
-        return;
-    }
-
-    try {
-        // Get mic with crystal-clear voice clarity (AEC, ANS, AGC)
-        broadcastStream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-                autoGainControl: true,
-                channelCount: 1,
-                sampleRate: 48000
-            }
-        });
-
-        // Create peer connection
-        broadcastPC = new RTCPeerConnection(ICE_SERVERS);
-
-        // Apply Demon Voice Filter (Ominous yet crystal-clear speech)
-        const demonVoiceStream = createDemonVoiceStream(broadcastStream);
-
-        // Add processed demon voice track to WebRTC
-        demonVoiceStream.getAudioTracks().forEach(track => {
-            broadcastPC.addTrack(track, demonVoiceStream);
-        });
-
-        // ICE Candidates → Firebase
-        broadcastPC.onicecandidate = (e) => {
-            if (e.candidate) {
-                const candidatesRef = ref(database, `rooms/${currentRoom}/voice/broadcasterCandidates`);
-                push(candidatesRef, e.candidate.toJSON());
-            }
-        };
-
-        // Create offer
-        const offer = await broadcastPC.createOffer();
-        await broadcastPC.setLocalDescription(offer);
-
-        // Write offer to Firebase
-        const voiceRef = getVoiceSignalRef();
-        await set(ref(database, `rooms/${currentRoom}/voice/offer`), {
-            type: offer.type,
-            sdp: offer.sdp,
-            broadcaster: currentUser,
-            timestamp: Date.now()
-        });
-
-        // Auto-cleanup on disconnect
-        fbOnDisconnect(voiceRef).remove();
-
-        let listenerCandidatesQueue = [];
-
-        // Listen for answer
-        onValue(ref(database, `rooms/${currentRoom}/voice/answer`), async (snap) => {
-            const answer = snap.val();
-            if (answer && broadcastPC && broadcastPC.signalingState === 'have-local-offer') {
-                await broadcastPC.setRemoteDescription(new RTCSessionDescription(answer));
-
-                // Process queued listener candidates
-                while (listenerCandidatesQueue.length > 0) {
-                    const c = listenerCandidatesQueue.shift();
-                    await broadcastPC.addIceCandidate(new RTCIceCandidate(c)).catch(() => { });
-                }
-            }
-        });
-
-        // Listen for listener ICE candidates immediately (queue if needed)
-        onChildAdded(
-            query(ref(database, `rooms/${currentRoom}/voice/listenerCandidates`)),
-            async (snap) => {
-                if (broadcastPC) {
-                    if (broadcastPC.remoteDescription) {
-                        await broadcastPC.addIceCandidate(new RTCIceCandidate(snap.val())).catch(() => { });
-                    } else {
-                        listenerCandidatesQueue.push(snap.val());
-                    }
-                }
-            }
-        );
-
-        // UI
-        isBroadcasting = true;
-        micBtn.classList.add('broadcasting');
-        micBtn.innerHTML = '<span style="font-size:18px; line-height:1;">⏹️</span>';
-        micBtn.title = "หยุดถ่ายทอดสด";
-        document.querySelector('.dot').classList.add('broadcasting');
-
-        // Notify in chat
-        const messagesRef = ref(database, `rooms/${currentRoom}/messages`);
-        await push(messagesRef, {
-            sender: currentUser,
-            type: 'notification',
-            text: '🔊',
-            timestamp: Date.now()
-        });
-
-    } catch (err) {
-        console.error('Broadcast error:', err);
-        alert('ไม่สามารถเปิดไมโครโฟนได้: ' + err.message);
-        stopBroadcast();
-    }
-}
-
-function stopBroadcast() {
-    // Close peer connection
-    if (broadcastPC) {
-        broadcastPC.close();
-        broadcastPC = null;
-    }
-
-    // Stop mic
-    if (broadcastStream) {
-        broadcastStream.getTracks().forEach(t => t.stop());
-        broadcastStream = null;
-    }
-
-    // Close audio context
-    if (broadcastAudioCtx && broadcastAudioCtx.state !== 'closed') {
-        broadcastAudioCtx.close();
-        broadcastAudioCtx = null;
-    }
-
-    // Clean Firebase signaling data
-    if (currentRoom) {
-        remove(ref(database, `rooms/${currentRoom}/voice`)).catch(() => { });
-
-        // Notify in chat that broadcast stopped explicitly
-        // Only if it was currently broadcasting
-        if (isBroadcasting) {
-            const messagesRef = ref(database, `rooms/${currentRoom}/messages`);
-            push(messagesRef, {
-                sender: currentUser,
-                type: 'notification',
-                text: '🔇',
-                timestamp: Date.now()
-            }).catch(() => { });
-        }
-    }
-
-    // UI
-    isBroadcasting = false;
-    micBtn.classList.remove('broadcasting');
-    micBtn.innerHTML = '<span style="font-size:18px; line-height:1;">📞</span>';
-    micBtn.title = "ถ่ายทอดเสียงสด";
-    document.querySelector('.dot').classList.remove('broadcasting');
-}
-
-// ===== Listener Side =====
-function startListening(offerData) {
-    // Don't listen to your own broadcast
-    if (offerData.broadcaster === currentUser) return;
-
-    // Cleanup previous listener
-    if (listenerPC) {
-        listenerPC.close();
-        listenerPC = null;
-    }
-
-    listenerPC = new RTCPeerConnection(ICE_SERVERS);
-
-    // Receive audio
-    listenerPC.ontrack = (e) => {
-        if (e.streams && e.streams[0]) {
-            remoteAudio.srcObject = e.streams[0];
-            remoteAudio.volume = 1.0;
-
-            const playPromise = remoteAudio.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(err => {
-                    console.warn("Autoplay blocked. User needs to tap screen.", err);
-                });
-            }
-
-            // Show listener bar
-            voiceListenerBar.classList.remove('hidden');
-            if (document.getElementById('voiceListenerText')) {
-                document.getElementById('voiceListenerText').innerHTML = "📞 กำลังคุยสายเสียงสด...";
-                document.getElementById('voiceListenerText').style.color = "#10b981";
-            }
-
-            // Start visualizer
-            startVisualizer(e.streams[0]);
-        }
-    };
-
-    // ICE candidates → Firebase
-    listenerPC.onicecandidate = (e) => {
-        if (e.candidate) {
-            push(ref(database, `rooms/${currentRoom}/voice/listenerCandidates`), e.candidate.toJSON());
-        }
-    };
-
-    listenerPC.onconnectionstatechange = () => {
-        if (listenerPC && (listenerPC.connectionState === 'disconnected' || listenerPC.connectionState === 'failed' || listenerPC.connectionState === 'closed')) {
-            stopListening();
-        }
-    };
-
-    // Set remote description and create answer
-    (async () => {
-        try {
-            await listenerPC.setRemoteDescription(new RTCSessionDescription(offerData));
-            const answer = await listenerPC.createAnswer();
-            await listenerPC.setLocalDescription(answer);
-
-            await set(ref(database, `rooms/${currentRoom}/voice/answer`), {
-                type: answer.type,
-                sdp: answer.sdp
-            });
-
-            // Listen for broadcaster ICE candidates
-            onChildAdded(
-                query(ref(database, `rooms/${currentRoom}/voice/broadcasterCandidates`)),
-                async (snap) => {
-                    if (listenerPC && listenerPC.remoteDescription) {
-                        try {
-                            await listenerPC.addIceCandidate(new RTCIceCandidate(snap.val()));
-                        } catch (e) { /* ignore */ }
-                    }
-                }
-            );
-        } catch (err) {
-            console.error('Listener setup error:', err);
-        }
-    })();
-}
-
-function stopListening() {
-    if (listenerPC) {
-        listenerPC.close();
-        listenerPC = null;
-    }
-
-    remoteAudio.srcObject = null;
-    voiceListenerBar.classList.add('hidden');
-
-    if (visualizerRAF) {
-        cancelAnimationFrame(visualizerRAF);
-        visualizerRAF = null;
-    }
-
-    // Clear canvas
-    if (voiceVisualizer) {
-        const vCtx = voiceVisualizer.getContext('2d');
-        vCtx.clearRect(0, 0, voiceVisualizer.width, voiceVisualizer.height);
-    }
-}
-
-// ===== Audio Visualizer (Receiver) =====
-function startVisualizer(stream) {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 64;
-    const source = audioCtx.createMediaStreamSource(stream);
-    source.connect(analyser);
-
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    const canvas = voiceVisualizer;
-    const ctx = canvas.getContext('2d');
-    const barWidth = canvas.width / bufferLength;
-
-    function draw() {
-        visualizerRAF = requestAnimationFrame(draw);
-        analyser.getByteFrequencyData(dataArray);
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        for (let i = 0; i < bufferLength; i++) {
-            const barHeight = (dataArray[i] / 255) * canvas.height;
-            const hue = 270 + (i / bufferLength) * 60; // Purple to pink
-            ctx.fillStyle = `hsla(${hue}, 80%, 65%, 0.9)`;
-            ctx.fillRect(i * barWidth, canvas.height - barHeight, barWidth - 1, barHeight);
-        }
-    }
-
-    draw();
-}
-
-// ===== Watch for Voice Signals (Listener auto-detect) =====
-function initVoiceListener() {
-    if (!currentRoom) return;
-
-    // Watch for new broadcast offers
-    onValue(ref(database, `rooms/${currentRoom}/voice/offer`), (snap) => {
-        const offerData = snap.val();
-        if (offerData && offerData.broadcaster !== currentUser) {
-            startListening(offerData);
-        } else if (!offerData) {
-            // Broadcast ended
-            stopListening();
-        }
-    });
-}
-
-// ===== Mic Button Click Handler =====
-if (micBtn) {
-    micBtn.addEventListener('click', () => {
-        if (isRoomClosed) return;
-        if (isBroadcasting) {
-            stopBroadcast();
-        } else {
-            startBroadcast();
-        }
-    });
-}
-
-// Hook into room join to start voice listener
-const _originalJoinRoom = joinRoom;
-// We need to init voice listener after joining room, override done below
-// since joinRoom is called from window.load, we add a MutationObserver-style hook
-
-// Watch for chatScreen becoming active, then init voice listener
-const chatScreenObserver = new MutationObserver(() => {
-    if (chatScreen.classList.contains('active') && currentRoom) {
-        initVoiceListener();
-        chatScreenObserver.disconnect();
-    }
-});
-chatScreenObserver.observe(chatScreen, { attributes: true, attributeFilter: ['class'] });
-
-// Cleanup on page unload
-window.addEventListener('beforeunload', () => {
-    if (isBroadcasting) stopBroadcast();
-    if (listenerPC) stopListening();
-});
-
-// Autoplay policy bypass for listener
-document.body.addEventListener('click', () => {
-    if (remoteAudio && remoteAudio.paused && remoteAudio.srcObject) {
-        remoteAudio.play().then(() => {
-            if (voiceListenerBar && !voiceListenerBar.classList.contains('hidden') && document.getElementById('voiceListenerText')) {
-                document.getElementById('voiceListenerText').innerHTML = "👽 กำลังรับเสียง (ออนไลน์)...";
-                document.getElementById('voiceListenerText').style.color = "#10b981";
-            }
-        }).catch(() => { });
-    }
-}, { capture: true });
-
-voiceListenerBar?.addEventListener('click', () => {
-    if (remoteAudio && remoteAudio.paused && remoteAudio.srcObject) {
-        remoteAudio.play().then(() => {
-            if (document.getElementById('voiceListenerText')) {
-                document.getElementById('voiceListenerText').innerHTML = "👽 กำลังรับเสียง (ออนไลน์)...";
-                document.getElementById('voiceListenerText').style.color = "#10b981";
-            }
-        }).catch(() => { });
-    }
-});
-
-
-
+// ===== Annotation Mark Modal =====
 
 const annotateModal = document.getElementById('annotateModal');
 const annotateCanvasContainer = document.getElementById('annotateCanvasContainer');
