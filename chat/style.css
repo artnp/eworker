@@ -607,20 +607,19 @@ body {
 .room-action-buttons {
     display: none;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     flex-shrink: 0;
 }
 
 .room-action-buttons button,
-.start-process-btn,
 .cancel-contact-btn,
 .change-room-btn-outer {
-    height: 34px !important;
-    padding: 0 10px !important;
-    border-radius: 8px !important;
-    font-size: 0.78rem !important;
+    height: 28px !important;
+    padding: 0 8px !important;
+    border-radius: 6px !important;
+    font-size: 0.72rem !important;
     font-weight: 600 !important;
-    gap: 5px !important;
+    gap: 4px !important;
     box-sizing: border-box;
     display: inline-flex;
     align-items: center;
@@ -632,12 +631,11 @@ body {
 
 .room-action-buttons button i,
 .room-action-buttons button img,
-.start-process-btn i,
 .cancel-contact-btn i,
 .change-room-btn-outer img {
-    font-size: 0.82rem !important;
-    width: 14px !important;
-    height: 14px !important;
+    font-size: 0.75rem !important;
+    width: 12px !important;
+    height: 12px !important;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -650,13 +648,12 @@ body {
         gap: 4px;
     }
     .room-action-buttons button,
-    .start-process-btn,
     .cancel-contact-btn,
     .change-room-btn-outer {
-        height: 32px !important;
-        padding: 0 8px !important;
-        font-size: 0.74rem !important;
-        gap: 4px !important;
+        height: 26px !important;
+        padding: 0 6px !important;
+        font-size: 0.68rem !important;
+        gap: 3px !important;
     }
 }
 
@@ -683,14 +680,13 @@ body {
         gap: 4px;
     }
     .room-action-buttons button,
-    .start-process-btn,
     .cancel-contact-btn,
     .change-room-btn-outer {
         flex: 1;
         min-width: 0;
         padding: 0 4px !important;
-        font-size: 0.72rem !important;
-        height: 30px !important;
+        font-size: 0.68rem !important;
+        height: 26px !important;
     }
     .room-action-buttons span {
         overflow: hidden;
@@ -702,25 +698,25 @@ body {
 .change-room-btn-outer {
     background: var(--sidebar-bg);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    height: 34px;
+    border-radius: 6px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 0 10px;
+    gap: 4px;
+    padding: 0 8px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     flex-shrink: 0;
     color: var(--text-main);
     font-family: inherit;
-    font-size: 0.9rem;
+    font-size: 0.72rem;
     font-weight: 600;
 }
 
 .change-room-btn-outer img {
-    width: 20px;
-    height: 20px;
+    width: 12px;
+    height: 12px;
     object-fit: contain;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -3707,16 +3703,16 @@ body {
 .cancel-contact-btn {
     background: rgba(239, 68, 68, 0.1);
     border: 1px solid rgba(239, 68, 68, 0.45);
-    border-radius: 10px;
-    height: 34px;
+    border-radius: 6px;
+    height: 28px;
     display: none;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 0 10px;
+    gap: 4px;
+    padding: 0 8px;
     color: #f87171;
     font-family: inherit;
-    font-size: 0.9rem;
+    font-size: 0.72rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -3889,38 +3885,6 @@ body {
     transform: translateY(-1px);
 }
 
-/* ===== Start Process Button (Admin Green Button) ===== */
-.start-process-btn {
-    background: rgba(16, 185, 129, 0.12);
-    border: 1px solid rgba(16, 185, 129, 0.45);
-    border-radius: 10px;
-    height: 34px;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 0 10px;
-    color: #34d399;
-    font-family: inherit;
-    font-size: 0.9rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
-.start-process-btn:hover {
-    background: rgba(16, 185, 129, 0.22);
-    border-color: #10b981;
-    color: #ffffff;
-    box-shadow: 0 0 14px rgba(16, 185, 129, 0.4);
-    transform: translateY(-1px);
-}
-
-.start-process-btn:active {
-    transform: scale(0.96);
-}
 
 /* ===== Process Task Card in Chat ===== */
 .process-task-card {
