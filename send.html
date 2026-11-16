@@ -6959,7 +6959,7 @@
             }
         }
 
-        let currentOfferInputVal = 100;
+        let currentOfferInputVal = null;
 
         function renderTotalJobCard() {
             updateWorkflowStepper();
@@ -7409,10 +7409,9 @@
                 `;
                 document.getElementById('btnAdminDeclineInlineDraft')?.addEventListener('click', adminDeclineIllegalOffer);
             } else {
-                // ฝั่งลูกค้า: กล่องกรอกยอดเสนอจ้างทำงานนี้ตามที่ผู้ใช้ต้องการ (ล็อคขั้นต่ำ 100 บาท)
-                const offerVal = (currentOfferInputVal && currentOfferInputVal >= 100) ? currentOfferInputVal : 100;
-                const isBelowMin = (offerVal < 100);
-                const isInvalid = (totalMarkers === 0 || isBelowMin);
+                // ฝั่งลูกค้า: กล่องกรอกยอดเสนอจ้างทำงานนี้ตามที่ผู้ใช้ต้องการ (ไม่บอกยอด 100 ล่วงหน้า ป้องกัน Anchoring)
+                const offerVal = (currentOfferInputVal !== null && currentOfferInputVal !== undefined && currentOfferInputVal !== '') ? currentOfferInputVal : '';
+                const btnAmountText = offerVal ? ` (฿${offerVal})` : '';
 
                 container.innerHTML = `
                     <div class="customer-offer-card">
@@ -7420,24 +7419,18 @@
                             <i class="fa-solid fa-coins" style="color:#eab308;font-size:18px;"></i>
                             <span>เสนอราคาจ้างทำงานนี้ (เหมาทั้งงาน)</span>
                         </div>
-                        <div style="font-size:12px;color:#059669;font-weight:700;margin-top:-4px;margin-bottom:12px;">
-                            <i class="fa-solid fa-tag"></i> ราคาเริ่มต้นขั้นต่ำ 100 บาท (ไม่คิดเป็นรายจุด)
-                        </div>
                         <div class="offer-input-box-wrap" style="${totalMarkers === 0 ? 'opacity:0.6;background:#f1f5f9;cursor:not-allowed;' : ''}">
                             <span class="offer-currency-sign">฿</span>
-                            <input type="number" id="inputCustomerOfferPrice" class="input-customer-offer" min="100" step="10" placeholder="${totalMarkers === 0 ? 'เพิ่มจุดก่อน' : 'ขั้นต่ำ 100'}" value="${totalMarkers === 0 ? '' : offerVal}" ${totalMarkers === 0 ? 'disabled' : ''}>
+                            <input type="number" id="inputCustomerOfferPrice" class="input-customer-offer" min="1" step="10" placeholder="0" value="${offerVal}" ${totalMarkers === 0 ? 'disabled' : ''}>
                             <span class="offer-unit-txt">บาท</span>
                         </div>
-                        <button class="btn-submit-all-quotes" id="btnSubmitCustomerOffer" ${isInvalid ? 'disabled style="opacity:0.6;cursor:not-allowed;white-space:nowrap;"' : 'style="white-space:nowrap;"'}>
-                            <i class="fa-solid fa-paper-plane"></i> ส่งข้อเสนอจ้างทำงาน (<span id="txtBtnOfferAmount">฿${offerVal}</span>)
+                        <button class="btn-submit-all-quotes" id="btnSubmitCustomerOffer" ${totalMarkers === 0 ? 'disabled style="opacity:0.6;cursor:not-allowed;white-space:nowrap;"' : 'style="white-space:nowrap;"'}>
+                            <i class="fa-solid fa-paper-plane"></i> ส่งข้อเสนอจ้างทำงาน<span id="txtBtnOfferAmount">${btnAmountText}</span>
                         </button>
                         <div class="offer-footnote" id="offerFootnote" style="margin-top:10px;font-size:12px;line-height:1.4;">
                             ${totalMarkers === 0
                                 ? '<span style="color:#d97706;font-weight:700;"><i class="fa-solid fa-circle-exclamation"></i> กรุณากดปุ่ม <b>"เพิ่มจุดแก้ไข"</b> บนภาพอย่างน้อย 1 จุดก่อนเสนอราคาจ้าง</span>'
-                                : (isBelowMin
-                                    ? '<span style="color:#e11d48;font-weight:700;"><i class="fa-solid fa-circle-xmark"></i> ยอดเสนอจ้างขั้นต่ำเริ่มต้นที่ 100 บาท (ไม่รับงานต่ำกว่า 100฿)</span>'
-                                    : '<span style="color:#059669;"><i class="fa-solid fa-circle-check"></i> ราคาเสนอจ้างเหมาจบงาน ช่างจะพิจารณาข้อเสนอและเริ่มงานทันที</span>'
-                                )
+                                : '<span style="color:#64748b;"><i class="fa-solid fa-circle-info"></i> ระบุราคาจ้างตามความเหมาะสม ช่างจะพิจารณาข้อเสนอและเริ่มงานทันที</span>'
                             }
                         </div>
                     </div>
@@ -7449,25 +7442,11 @@
                 const footnote = document.getElementById('offerFootnote');
 
                 inpPrice?.addEventListener('input', () => {
-                    const val = parseFloat(inpPrice.value) || 0;
-                    currentOfferInputVal = val;
-                    if (txtBtn) txtBtn.textContent = `฿${val}`;
-
-                    if (totalMarkers === 0) {
-                        btnSubmit.disabled = true;
-                        btnSubmit.style.opacity = '0.6';
-                        btnSubmit.style.cursor = 'not-allowed';
-                        if (footnote) footnote.innerHTML = '<span style="color:#d97706;font-weight:700;"><i class="fa-solid fa-circle-exclamation"></i> กรุณากดปุ่ม <b>"เพิ่มจุดแก้ไข"</b> บนภาพอย่างน้อย 1 จุดก่อนเสนอราคาจ้าง</span>';
-                    } else if (val < 100) {
-                        btnSubmit.disabled = true;
-                        btnSubmit.style.opacity = '0.6';
-                        btnSubmit.style.cursor = 'not-allowed';
-                        if (footnote) footnote.innerHTML = '<span style="color:#e11d48;font-weight:700;"><i class="fa-solid fa-circle-xmark"></i> ยอดเสนอจ้างขั้นต่ำเริ่มต้นที่ 100 บาท (ไม่รับงานต่ำกว่า 100฿)</span>';
-                    } else {
-                        btnSubmit.disabled = false;
-                        btnSubmit.style.opacity = '1';
-                        btnSubmit.style.cursor = 'pointer';
-                        if (footnote) footnote.innerHTML = '<span style="color:#059669;"><i class="fa-solid fa-circle-check"></i> ราคาเสนอจ้างเหมาจบงาน ช่างจะพิจารณาข้อเสนอและเริ่มงานทันที</span>';
+                    const raw = inpPrice.value.trim();
+                    const val = parseFloat(raw);
+                    currentOfferInputVal = (!isNaN(val) && raw !== '') ? val : null;
+                    if (txtBtn) {
+                        txtBtn.textContent = currentOfferInputVal !== null ? ` (฿${currentOfferInputVal})` : '';
                     }
                 });
 
@@ -7477,9 +7456,14 @@
                         updateMarkerAttentionState();
                         return;
                     }
-                    const val = parseFloat(inpPrice?.value) || currentOfferInputVal || 100;
+                    const val = parseFloat(inpPrice?.value) || 0;
+                    if (val <= 0) {
+                        showToast('กรุณากรอกยอดราคาเสนอจ้างทำงานก่อนครับ', 'warning');
+                        inpPrice?.focus();
+                        return;
+                    }
                     if (val < 100) {
-                        showToast('ยอดเสนอจ้างขั้นต่ำเริ่มต้นที่ 100 บาทครับ (ไม่รับงานต่ำกว่า 100฿)', 'warning');
+                        showToast('ช่างไม่รับข้อเสนอที่ต่ำกว่า 100 บาทครับ กรุณาปรับเพิ่มราคาเสนอจ้าง', 'warning');
                         inpPrice?.focus();
                         return;
                     }
