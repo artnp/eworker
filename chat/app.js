@@ -16,7 +16,8 @@ const database = getDatabase(app);
 
 // State
 let currentRoom = null;
-let currentUser = 'User_' + Math.floor(Math.random() * 1000);
+const _urlUser = new URLSearchParams(window.location.search).get('user');
+let currentUser = _urlUser ? (_urlUser.toLowerCase() === 'admin' ? 'ช่าง (แอดมิน)' : 'ลูกค้า') : ('User_' + Math.floor(Math.random() * 1000));
 const DELETION_TIME_MS = 10 * 60 * 1000; // 10 minutes
 const SMALL_MAX_SIZE = 3 * 1024 * 1024; // 3MB
 let pendingImageData = null; // Store pasted image data
