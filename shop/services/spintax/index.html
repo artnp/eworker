@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spintax Studio | เครื่องมือแปลงประโยค Spintax อัจฉริยะ (Intl.Segmenter + PyThaiNLP)</title>
+
+    <!-- Favicon & Icons -->
+    <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg"
+        onerror="this.onerror=null; this.href='../../../assets/images/favicon.svg';">
+    <link rel="icon" type="image/png" sizes="192x192" href="../../assets/images/favicon.png"
+        onerror="this.onerror=null; this.href='../../../assets/images/favicon.png';">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Prompt:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+
+    <!-- Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #eef2ff;
+            --accent: #0ea5e9;
+            --pythainlp: #059669;
+            --chatgpt: #10a37f;
+            --chatgpt-hover: #0d8a6b;
+            --bg-page: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            font-family: 'Prompt', 'Outfit', sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ===== TOP NAVBAR ===== */
+        .top-navbar {
+            height: 52px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
+            z-index: 50;
+            position: relative;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-icon-box {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #4f46e5, #0ea5e9);
+            color: #ffffff;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+        }
+
+        .brand-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: #ecfdf5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+            border-radius: 20px;
+            padding: 2px 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-header {
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s;
+        }
+
+        .btn-header:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+            border-color: #cbd5e1;
+        }
+
+        .btn-chatgpt-top {
+            background: linear-gradient(135deg, #10a37f, #059669);
+            color: #ffffff;
+            border: none;
+            padding: 6px 14px;
+            box-shadow: 0 2px 6px rgba(16, 163, 127, 0.25);
+        }
+
+        .btn-chatgpt-top:hover {
+            background: linear-gradient(135deg, #0d8a6b, #047857);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        /* ===== WORKSPACE CONTAINER (FITS 100VH) ===== */
+        .workspace-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            height: calc(100vh - 52px);
+            width: 100vw;
+            overflow: hidden;
+            background: var(--bg-page);
+        }
+
+        /* ===== PANELS ===== */
+        .editor-panel,
+        .result-panel {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: #ffffff;
+            padding: 16px;
+            gap: 12px;
+        }
+
+        .editor-panel {
+            border-right: 1px solid var(--border-color);
+            background: #fcfdfd;
+        }
+
+        .card-header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            gap: 8px;
+        }
+
+        .panel-heading {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-subheading {
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* Textarea Wrapper */
+        .textarea-box {
+            flex: 1;
+            display: flex;
+            position: relative;
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: #ffffff;
+            transition: all 0.2s ease;
+            overflow: hidden;
+        }
+
+        .textarea-box:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .editor-textarea {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            resize: none;
+            padding: 14px;
+            font-family: 'Prompt', sans-serif;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #0f172a;
+            background: transparent;
+        }
+
+        .spintax-output-textarea {
+            font-family: 'JetBrains Mono', 'Prompt', monospace;
+            font-size: 0.92rem;
+            line-height: 1.6;
+            color: #312e81;
+            background: #faf5ff;
+        }
+
+        /* Footer Info Bar */
+        .card-footer-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .stat-badge {
+            font-size: 0.74rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: #f1f5f9;
+            color: #475569;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stat-badge.success {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        /* Right Panel Cards */
+        .result-panel {
+            background: #f8fafc;
+            overflow-y: auto;
+        }
+
+        .output-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+            flex-shrink: 0;
+        }
+
+        .output-card.spintax-card {
+            flex: 1;
+            min-height: 200px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .output-card.preview-card {
+            border-left: 4px solid #10b981;
+        }
+
+        .live-preview-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            font-size: 0.98rem;
+            line-height: 1.6;
+            color: #166534;
+            min-height: 60px;
+            word-break: break-word;
+            white-space: pre-wrap;
+            user-select: text;
+        }
+
+        /* Action Buttons */
+        .btn-action {
+            font-size: 0.8rem;
+            font-weight: 700;
+            font-family: inherit;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            background: #ffffff;
+            color: #334155;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.15s;
+        }
+
+        .btn-action:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+            border-color: #cbd5e1;
+        }
+
+        .btn-action.primary {
+            background: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
+            box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+        }
+
+        .btn-action.primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-action.success {
+            background: #10b981;
+            color: #ffffff;
+            border-color: #10b981;
+        }
+
+        .btn-action.success:hover {
+            background: #059669;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(40px);
+            background: #0f172a;
+            color: #ffffff;
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 9999;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* Responsive */
+        @media (max-width: 860px) {
+            body {
+                overflow: auto;
+                height: auto;
+            }
+
+            .workspace-container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .editor-panel,
+            .result-panel {
+                height: auto;
+                border-right: none;
+            }
+
+            .textarea-box {
+                min-height: 220px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ===== TOP HEADER NAVBAR ===== -->
+    <header class="top-navbar">
+        <div class="nav-brand">
+            <div class="brand-icon-box">
+                <i class="fa-solid fa-arrows-split-up-and-left"></i>
+            </div>
+            <div class="brand-title">
+                Spintax Studio
+                <span class="brand-badge" id="pythainlpBadge">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>ระบบตัดคำ Intl.Segmenter + PyThaiNLP พร้อมทำงาน</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="nav-actions">
+            <button type="button" class="btn-header" onclick="clearAll()" title="ล้างข้อความทั้งหมด">
+                <i class="fa-solid fa-trash-can"></i>
+                <span>ล้าง</span>
+            </button>
+            <button type="button" class="btn-header btn-chatgpt-top" onclick="sendToChatGPT()" title="เปิด ChatGPT พร้อมส่งข้อความช่วยเรียบเรียง">
+                <i class="fa-solid fa-robot"></i>
+                <span>ส่งให้ ChatGPT</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ===== MAIN WORKSPACE ===== -->
+    <main class="workspace-container">
+
+        <!-- LEFT PANEL: Real-time Plain Text Typing -->
+        <section class="editor-panel">
+            <div class="card-header-bar">
+                <div>
+                    <div class="panel-heading">
+                        <i class="fa-solid fa-pen-to-square" style="color: var(--primary);"></i>
+                        <span>พิมพ์ข้อความของคุณที่นี่</span>
+                    </div>
+                    <div class="panel-subheading">พิมพ์ตามปกติได้เลย ระบบแยกคำด้วย Intl.Segmenter และแปลงเป็น Spintax ตรงตามบริบททันที</div>
+                </div>
+            </div>
+
+            <!-- Typing Textarea -->
+            <div class="textarea-box">
+                <textarea id="plainInput" class="editor-textarea"
+                    placeholder="ลองพิมพ์ เช่น 'สวัสดีดี วันนี้อากาศดีจัง เหมาะแก่การแก้ไขภาพหน้าจอคอมพิวเตอร์' หรือ 'ผีเสื้อดมดอกไม้'..."
+                    oninput="handleTyping()"></textarea>
+            </div>
+
+            <div class="card-footer-bar">
+                <span class="stat-badge" id="wordCountBadge">
+                    <i class="fa-solid fa-keyboard"></i>
+                    <span id="wordCountText">0 คำ | 0 ตัวอักษร</span>
+                </span>
+                <span class="stat-badge success" id="autoDetectedBadge">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span id="detectedCountText">พร้อมทำงาน</span>
+                </span>
+            </div>
+        </section>
+
+        <!-- RIGHT PANEL: Auto Spintax & Live Randomized Result -->
+        <section class="result-panel">
+
+            <!-- Card 1: Generated Spintax Output -->
+            <div class="output-card spintax-card">
+                <div class="card-header-bar">
+                    <div>
+                        <div class="panel-heading">
+                            <i class="fa-solid fa-brackets-curly" style="color: var(--primary);"></i>
+                            <span>โค้ด Spintax อัตโนมัติ</span>
+                        </div>
+                        <div class="panel-subheading" id="permutationLabel">สุ่มได้ 0 รูปแบบ</div>
+                    </div>
+                    <button type="button" class="btn-action primary" onclick="copySpintax()" title="คัดลอก Spintax ทั้งหมด">
+                        <i class="fa-regular fa-copy"></i>
+                        <span>คัดลอก Spintax</span>
+                    </button>
+                </div>
+
+                <div class="textarea-box" style="background: #faf5ff; border-color: #e9d5ff;">
+                    <textarea id="spintaxOutput" class="editor-textarea spintax-output-textarea"
+                        placeholder="{ตัวอย่าง Spintax จะแสดงที่นี่อัตโนมัติขณะที่คุณพิมพ์...}"
+                        oninput="handleSpintaxManualEdit()"></textarea>
+                </div>
+            </div>
+
+            <!-- Card 2: Live Random Preview -->
+            <div class="output-card preview-card">
+                <div class="card-header-bar">
+                    <div>
+                        <div class="panel-heading">
+                            <i class="fa-solid fa-dice" style="color: #10b981;"></i>
+                            <span>ตัวอย่างประโยคสุ่มสด (Live Preview)</span>
+                        </div>
+                        <div class="panel-subheading">ผลลัพธ์ที่ได้จากการสุ่ม Spintax ด้านบน</div>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                        <button type="button" class="btn-action" onclick="shufflePreview()" title="กดสุ่มประโยคใหม่">
+                            <i class="fa-solid fa-rotate"></i>
+                            <span>สุ่มใหม่</span>
+                        </button>
+                        <button type="button" class="btn-action success" onclick="copyPreviewText()" title="คัดลอกตัวอย่างผลลัพธ์นี้">
+                            <i class="fa-regular fa-clone"></i>
+                            <span>คัดลอกผลลัพธ์</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="live-preview-box" id="previewBox">พิมพ์ข้อความทางซ้ายเพื่อเริ่มต้นดูการสุ่มประโยค</div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toastBox">
+        <i class="fa-solid fa-check-circle" style="color: #4ade80;"></i>
+        <span id="toastMsg">คัดลอกแล้ว!</span>
+    </div>
+
+    <!-- ===== JAVASCRIPT: Accurate Token Segmenter + Thesaurus Engine ===== -->
+    <script>
+        // DOM Elements
+        const plainInput = document.getElementById('plainInput');
+        const spintaxOutput = document.getElementById('spintaxOutput');
+        const previewBox = document.getElementById('previewBox');
+        const wordCountText = document.getElementById('wordCountText');
+        const detectedCountText = document.getElementById('detectedCountText');
+        const permutationLabel = document.getElementById('permutationLabel');
+        const pythainlpBadge = document.getElementById('pythainlpBadge');
+        const toastBox = document.getElementById('toastBox');
+
+        let toastTimer = null;
+
+        // Browser Native Thai Segmenter (Segments full words without regex substring collisions)
+        let thaiSegmenter = null;
+        try {
+            if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+                thaiSegmenter = new Intl.Segmenter('th', { granularity: 'word' });
+            }
+        } catch (e) {
+            console.warn('Intl.Segmenter not supported');
+        }
+
+        // Dangerous / Ambiguous single-token blacklist (Words with archaic/unnatural meanings in PyThaiNLP)
+        const BLACKLIST = new Set([
+            'จอ', 'อร', 'หน', 'แก่', 'ตา', 'โต', 'มา', 'ลา', 'พา', 'ว่า', 'ขา', 'กา',
+            'สา', 'หา', 'นา', 'ทก', 'ฉมา', 'โดย', 'ทราม', 'ถี', 'กุน', 'ชวด', 'ขาล', 'เถาะ'
+        ]);
+
+        // ===== 1. CURATED NATURAL THESAURUS (Context-Accurate Thai & English) =====
+        let synonymMap = {
+            // คำทักทาย & คำทั่วไป
+            'สวัสดี': ['กราบเรียน', 'ยินดีต้อนรับ', 'หวัดดี'],
+            'วัน': ['ทิวา', 'ทิน', 'ทิพา', 'ทิวะ'],
+            'ดี': ['ยอดเยี่ยม', 'แจ่มใส', 'เป็นเลิศ', 'โอเค'],
+            'ดีมาก': ['ยอดเยี่ยมมาก', 'ดีเลิศ', 'ดีสุดๆ', 'เจ๋งมาก'],
+            'วันนี้': ['ตอนนี้', 'เวลานี้', 'ณ ขณะนี้'],
+            'อากาศ': ['บรรยากาศ', 'สภาพอากาศ'],
+            'จัง': ['จริงๆ', 'เหลือเกิน', 'แท้ๆ'],
+
+            // การทำงาน, คอมพิวเตอร์, เทคโนโลยี & หน้าจอ
+            'คอมพิวเตอร์': ['คอม', 'PC', 'เครื่องคอมพิวเตอร์'],
+            'หน้าจอ': ['จอภาพ', 'จอมอนิเตอร์', 'หน้าจอดิสเพลย์'],
+            'ภาพ': ['รูปภาพ', 'รูป', 'ภาพถ่าย', 'ชิ้นงาน'],
+            'การแก้ไข': ['การปรับปรุง', 'การรีทัช', 'การตกแต่ง', 'การปรับแต่ง'],
+            'แก้ไข': ['ปรับปรุง', 'รีทัช', 'ตกแต่ง', 'ปรับแต่ง'],
+            'เหมาะแก่': ['เหมาะสำหรับ', 'เอื้อต่อ', 'เหมาะเจาะกับ'],
+            'เหมาะ': ['เหมาะสม', 'เข้ากัน', 'คู่ควร'],
+            'มือถือ': ['สมาร์ตโฟน', 'โทรศัพท์มือถือ', 'เครื่องโปรด'],
+
+            // ธรรมชาติ, สัตว์ & พืช
+            'ผีเสื้อ': ['เจ้าผีเสื้อ', 'แมลงปีกสวย', 'ผีเสื้อแสนสวย'],
+            'ดม': ['ดอมดม', 'สูดดม', 'เชยชม', 'ตอม'],
+            'ดอกไม้': ['เกสรดอกไม้', 'มวลดอกไม้', 'บุปผา', 'มาลี'],
+            'ตอม': ['บินตอม', 'รุมตอม', 'เชยชม'],
+            'เกสร': ['ละอองเกสร', 'เกสรดอกไม้', 'น้ำหวาน'],
+            'แมว': ['น้องแมว', 'เจ้าเหมียว', 'เหมียวน้อย', 'ทาสแมว'],
+            'หมา': ['สุนัข', 'น้องหมา', 'เจ้าตูบ'],
+            'สุนัข': ['หมา', 'น้องหมา', 'เจ้าตูบ'],
+            'ลูกแมว': ['น้องแมวตัวน้อย', 'เหมียวตัวจิ๋ว', 'เจ้าตัวเล็ก'],
+            'ลูกหมา': ['น้องหมาตัวน้อย', 'เจ้าตูบวัยซน', 'ลูกสุนัข'],
+            'สัตว์เลี้ยง': ['น้องๆ', 'เจ้าก้อนขน', 'เพื่อนสี่ขา'],
+            'นก': ['น้องนก', 'สกุณา', 'วิหค', 'นกน้อย'],
+            'ปลา': ['น้องปลา', 'มัจฉา', 'ฝูงปลา'],
+            'ต้นไม้': ['แมกไม้', 'พฤกษา', 'ต้นไม้น้อยใหญ่'],
+            'ใบไม้': ['ใบไม้เขียวขจี', 'กิ่งก้านใบ'],
+            'สวน': ['สวนสวย', 'สวนธรรมชาติ', 'แมกไม้'],
+            'ป่า': ['พงไพร', 'ผืนป่า', 'ป่าไม้'],
+            'ภูเขา': ['ขุนเขา', 'เทือกเขา', 'ยอดดอย'],
+            'ทะเล': ['ท้องทะเล', 'มหาสมุทร', 'ชายหาด'],
+            'แม่น้ำ': ['สายน้ำ', 'ลำธาร', 'ธารน้ำ'],
+            'ท้องฟ้า': ['ฟากฟ้า', 'เวหา', 'นภากาศ'],
+            'พระอาทิตย์': ['ดวงอาทิตย์', 'แสงตะวัน', 'แสงสุริยา'],
+            'แดด': ['แสงแดด', 'ไออุ่น', 'แสงตะวัน'],
+            'ฝน': ['สายฝน', 'หยาดฝน', 'เม็ดฝน'],
+            'ลม': ['สายลม', 'ลมพัด', 'ลมเย็น'],
+            'ธรรมชาติ': ['ความงดงามตามธรรมชาติ', 'สิ่งแวดล้อม'],
+
+            // สรรพนาม & อารมณ์
+            'ฉัน': ['เรา', 'ตัวเรา', 'ผม'],
+            'ผม': ['กระผม', 'ทางผม', 'เรา'],
+            'เรา': ['พวกเรา', 'ทางเรา', 'ทีมงาน'],
+            'คุณ': ['ท่าน', 'คุณลูกค้า', 'คุณเพื่อน'],
+            'ลูกค้า': ['คุณลูกค้า', 'ผู้มีอุปการคุณ', 'ผู้ใช้บริการ'],
+            'ขอบคุณ': ['ขอบพระคุณ', 'ซาบซึ้งใจ', 'ขอบคุณมากๆ'],
+            'น่ารักมาก': ['น่ารักสุดๆ', 'คิ้วท์มาก', 'น่าเอ็นดูจริงๆ'],
+            'น่ารัก': ['น่าเอ็นดู', 'คิ้วท์', 'ตะมุตะมิ', 'น่าชัง'],
+            'สวย': ['งดงาม', 'ดูดี', 'สะดุดตา', 'เลอค่า'],
+            'หล่อ': ['หน้าตาดี', 'สมาร์ท', 'ดูเท่', 'มีเสน่ห์'],
+            'เท่': ['คูล', 'ดูดีมีสไตล์', 'เฟี้ยว'],
+            'เก่ง': ['มีความสามารถ', 'เชี่ยวชาญ', 'ชำนาญ', 'โปร'],
+            'ฉลาด': ['มีไหวพริบ', 'หัวไว', 'ฉลาดล้ำ', 'อัจฉริยะ'],
+            'ขี้อ้อน': ['อ้อนเก่ง', 'ชอบคลอเคลีย', 'น่ารักน่าชัง'],
+            'แสนรู้': ['ฉลาดแสนรู้', 'เข้าใจภาษาคน', 'ว่านอนสอนง่าย'],
+            'ซน': ['แสบซน', 'ซุกซน', 'ดื้อตาใส'],
+            'อ้วน': ['อ้วนจ้ำม่ำ', 'อวบอ้วน', 'อ้วนท้วน'],
+            'อาหาร': ['กับข้าว', 'ของกิน', 'เสบียง'],
+            'กิน': ['รับประทาน', 'ทาน', 'หม่ำ'],
+            'อร่อย': ['รสชาติดี', 'แซ่บ', 'กลมกล่อม', 'ถูกปาก'],
+            'นอน': ['หลับ', 'พักผ่อน', 'งีบ'],
+            'บิน': ['ร่อน', 'โผบิน', 'บินว่อน', 'โบยบิน'],
+            'รัก': ['หลงรัก', 'โปรดปราน', 'เอ็นดู', 'ผูกพัน'],
+            'ชอบ': ['ถูกใจ', 'โปรดปราน', 'ติดใจ'],
+            'คิดถึง': ['นึกถึง', 'โหยหา', 'คำนึงถึง'],
+            'มีความสุข': ['แฮปปี้', 'สุขใจ', 'อิ่มเอมใจ'],
+            'สบายใจ': ['โล่งใจ', 'ไร้กังวล', 'ผ่อนคลาย'],
+            'สนุก': ['เพลิน', 'มันส์', 'บันเทิงใจ'],
+            'เร็ว': ['ว่องไว', 'ทันใจ', 'ฉับไว', 'รวดเร็ว'],
+            'ง่าย': ['สะดวก', 'ไม่ยุ่งยาก', 'ราบรื่น', 'สบายๆ'],
+            'คุ้มค่า': ['สุดคุ้ม', 'เกินราคา', 'คุ้มราคา'],
+            'พิเศษ': ['สุดพิเศษ', 'พรีเมียม', 'เอ็กซ์คลูซีฟ'],
+            'และ': ['รวมถึง', 'พร้อมทั้ง', 'อีกทั้ง', 'แถมยัง'],
+            'มาก': ['ยิ่ง', 'เป็นอันมาก', 'สุดๆ'],
+            'จริงๆ': ['แท้จริง', 'คอนเฟิร์ม', 'ชัวร์'],
+
+            // English Words
+            'butterfly': ['beautiful butterfly', 'winged insect', 'gentle butterfly'],
+            'flower': ['blossom', 'bloom', 'floral petal'],
+            'cat': ['kitty', 'feline', 'little cat', 'furry friend'],
+            'dog': ['puppy', 'canine', 'pooch', 'doggy'],
+            'computer': ['PC', 'machine', 'desktop'],
+            'screen': ['display', 'monitor'],
+            'photo': ['picture', 'image', 'snapshot'],
+            'love': ['adore', 'cherish', 'treasure'],
+            'good': ['great', 'fine', 'wonderful'],
+            'beautiful': ['gorgeous', 'stunning', 'lovely'],
+            'fast': ['quick', 'rapid', 'speedy', 'instant'],
+            'easy': ['simple', 'effortless', 'smooth']
+        };
+
+        // ===== 2. ASYNC FETCH PyThaiNLP (thai-synonym) OPEN DATA WITH SAFETY FILTER =====
+        async function loadPyThaiNLPSynonyms() {
+            const url = 'https://raw.githubusercontent.com/PyThaiNLP/thai-synonym/master/data.csv';
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('Fetch failed: ' + res.status);
+                const csvText = await res.text();
+                const lines = csvText.split('\n').slice(1);
+
+                lines.forEach(line => {
+                    if (!line || !line.trim()) return;
+                    const cols = line.split(',');
+                    if (cols.length >= 2) {
+                        const mainWord = cols[0].trim();
+                        // Ignore blacklisted ambiguous terms (like จอ, อร, หน)
+                        if (BLACKLIST.has(mainWord)) return;
+
+                        const synList = cols[cols.length - 1].split('|')
+                            .map(w => w.trim())
+                            .filter(w => w && !BLACKLIST.has(w));
+
+                        // Only add if not already in curated dictionary (we prefer natural daily Thai)
+                        if (!synonymMap[mainWord] && synList.length > 0) {
+                            synonymMap[mainWord] = synList.slice(0, 4);
+                        }
+                    }
+                });
+
+                const totalTerms = Object.keys(synonymMap).length;
+                pythainlpBadge.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>Intl.Segmenter + PyThaiNLP (${totalTerms.toLocaleString()} คำ)</span>`;
+
+                if (plainInput.value.trim()) {
+                    handleTyping();
+                }
+            } catch (err) {
+                console.warn('PyThaiNLP load notice:', err);
+                const totalTerms = Object.keys(synonymMap).length;
+                pythainlpBadge.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>Intl.Segmenter พร้อมใช้งาน (${totalTerms.toLocaleString()} คำ)</span>`;
+            }
+        }
+
+        // ===== 3. TOKEN-BASED SEGMENTATION & N-GRAM MERGING =====
+        // Ensures full word integrity (e.g. 'เหมาะ' is recognized as 'เหมาะ', never broken by 'หมา')
+        function tokenizeAndMerge(text) {
+            if (!thaiSegmenter) {
+                return text.split(/\s+/);
+            }
+
+            const rawSegments = Array.from(thaiSegmenter.segment(text)).map(s => s.segment);
+            let merged = [];
+
+            for (let i = 0; i < rawSegments.length; i++) {
+                // Check 3-word n-gram (e.g. 'การ' + 'แก้' + 'ไข' -> 'การแก้ไข')
+                if (i < rawSegments.length - 2) {
+                    const tri = rawSegments[i] + rawSegments[i + 1] + rawSegments[i + 2];
+                    if (synonymMap[tri]) {
+                        merged.push(tri);
+                        i += 2;
+                        continue;
+                    }
+                }
+
+                // Check 2-word n-gram (e.g. 'วัน' + 'นี้' -> 'วันนี้', 'หน้า' + 'จอ' -> 'หน้าจอ', 'เหมาะ' + 'แก่' -> 'เหมาะแก่')
+                if (i < rawSegments.length - 1) {
+                    const bi = rawSegments[i] + rawSegments[i + 1];
+                    if (synonymMap[bi]) {
+                        merged.push(bi);
+                        i += 1;
+                        continue;
+                    }
+                }
+
+                merged.push(rawSegments[i]);
+            }
+
+            return merged;
+        }
+
+        // ===== 4. SPINTAX CONVERSION ENGINE =====
+        function convertToSpintax(rawText) {
+            if (!rawText || !rawText.trim()) return { spintax: '', matches: 0 };
+
+            // Protect pre-existing {a|b} spintax blocks already typed by user
+            let protectedTokens = [];
+            let workingText = rawText.replace(/\{[^{}]+\}/g, (match) => {
+                const token = `__PRE_SPIN_${protectedTokens.length}__`;
+                protectedTokens.push(match);
+                return token;
+            });
+
+            // Segment text into tokens safely
+            const tokens = tokenizeAndMerge(workingText);
+            let matchCount = 0;
+
+            const transformed = tokens.map(token => {
+                // If it's a protected token or whitespace/punctuation, leave untouched
+                if (token.startsWith('__PRE_SPIN_') || !token.trim()) return token;
+
+                // Lookup exact full token in synonymMap
+                if (synonymMap[token] && synonymMap[token].length > 0) {
+                    matchCount++;
+                    const choices = [token, ...synonymMap[token].slice(0, 4)];
+                    return '{' + choices.join('|') + '}';
+                }
+
+                return token;
+            }).join('');
+
+            // Restore user's protected spintax
+            let finalSpintax = transformed;
+            protectedTokens.forEach((original, idx) => {
+                finalSpintax = finalSpintax.replace(new RegExp(`__PRE_SPIN_${idx}__`, 'g'), original);
+            });
+
+            return {
+                spintax: finalSpintax,
+                matches: matchCount
+            };
+        }
+
+        // Spin text to resolve random sample
+        function spinText(spintax) {
+            if (!spintax || !spintax.trim()) return '';
+            let text = spintax;
+            const regex = /\{([^{}]+)\}/;
+            let iterations = 0;
+            const maxIterations = 2000;
+
+            while (regex.test(text) && iterations < maxIterations) {
+                text = text.replace(regex, (match, choices) => {
+                    const parts = choices.split('|');
+                    const randomIndex = Math.floor(Math.random() * parts.length);
+                    return parts[randomIndex];
+                });
+                iterations++;
+            }
+            return text;
+        }
+
+        // Count possible variations
+        function countVariations(text) {
+            if (!text || !text.trim()) return 0;
+            let pos = 0;
+
+            function parseSequence() {
+                let count = 1;
+                while (pos < text.length) {
+                    if (text[pos] === '{') {
+                        pos++;
+                        count *= parseChoice();
+                    } else if (text[pos] === '}' || text[pos] === '|') {
+                        break;
+                    } else {
+                        pos++;
+                    }
+                }
+                return count;
+            }
+
+            function parseChoice() {
+                let total = 0;
+                while (pos < text.length) {
+                    const seqCount = parseSequence();
+                    total += seqCount;
+                    if (pos < text.length && text[pos] === '|') {
+                        pos++;
+                    } else if (pos < text.length && text[pos] === '}') {
+                        pos++;
+                        break;
+                    } else {
+                        break;
+                    }
+                }
+                return Math.max(1, total);
+            }
+
+            try {
+                return parseSequence();
+            } catch (e) {
+                return 1;
+            }
+        }
+
+        function formatNumber(num) {
+            if (num > 1000000000000) {
+                return num.toExponential(2).replace('e+', ' × 10^') + ' รูปแบบ';
+            }
+            return num.toLocaleString() + ' รูปแบบ';
+        }
+
+        // ===== REAL-TIME INPUT HANDLER =====
+        function handleTyping() {
+            const raw = plainInput.value;
+            const words = raw.trim() ? raw.trim().split(/\s+/).length : 0;
+            const chars = raw.length;
+            wordCountText.textContent = `${words} คำ | ${chars} ตัวอักษร`;
+
+            if (!raw.trim()) {
+                spintaxOutput.value = '';
+                previewBox.textContent = 'พิมพ์ข้อความทางซ้ายเพื่อเริ่มต้นดูการสุ่มประโยค';
+                permutationLabel.textContent = 'สุ่มได้ 0 รูปแบบ';
+                detectedCountText.textContent = 'พร้อมทำงาน';
+                return;
+            }
+
+            // Convert to Spintax automatically using token segmentation
+            const result = convertToSpintax(raw);
+            spintaxOutput.value = result.spintax;
+
+            if (result.matches > 0) {
+                detectedCountText.textContent = `ปั่นคำอัตโนมัติ ${result.matches} จุด`;
+            } else {
+                detectedCountText.textContent = `ข้อความทั่วไป`;
+            }
+
+            // Permutations
+            const total = countVariations(result.spintax);
+            permutationLabel.textContent = `สุ่มได้ ${formatNumber(total)}`;
+
+            // Generate single live preview
+            shufflePreview();
+        }
+
+        // Allow user to also edit the spintax directly if they want
+        function handleSpintaxManualEdit() {
+            const spintax = spintaxOutput.value;
+            const total = countVariations(spintax);
+            permutationLabel.textContent = `สุ่มได้ ${formatNumber(total)}`;
+            shufflePreview();
+        }
+
+        // Shuffle preview
+        function shufflePreview() {
+            const spintax = spintaxOutput.value;
+            if (!spintax.trim()) {
+                previewBox.textContent = 'พิมพ์ข้อความทางซ้ายเพื่อเริ่มต้นดูการสุ่มประโยค';
+                return;
+            }
+            previewBox.textContent = spinText(spintax);
+        }
+
+        // Send to ChatGPT
+        function sendToChatGPT() {
+            // ดึงข้อความ Spintax ที่แปลงเสร็จแล้วเป็นหลัก
+            let spintaxText = spintaxOutput.value.trim();
+
+            // หากช่อง Spintax ยังว่างแต่มีข้อความพิมพ์ไว้ ให้แปลงทันที
+            if (!spintaxText && plainInput.value.trim()) {
+                const res = convertToSpintax(plainInput.value);
+                spintaxText = res.spintax.trim();
+                spintaxOutput.value = spintaxText;
+            }
+
+            if (!spintaxText) {
+                showToast('กรุณาพิมพ์ข้อความก่อนส่งให้ ChatGPT');
+                plainInput.focus();
+                return;
+            }
+
+            const prompt = `จัดให้ในรูปแบบ Nested Spintax ที่ขยายโครงสร้างประโยคให้สุ่มได้หลากหลายและอ่านเป็นธรรมชาติที่สุดคนใช้จริง ตัดคำแปลกๆออก ให้เข้ากับบริบท และลดการซ้ำคำ และสร้างรูปแบบประโยคให้ซ้ำซ้อนออกมาเป็นหลายรูปแบบสูงสุด โดยอิงจากข้อความดังนี้:\n\n${spintaxText}`;
+
+            const url = 'https://chatgpt.com/?q=' + encodeURIComponent(prompt);
+            window.open(url, '_blank');
+        }
+
+        // Copy Spintax
+        function copySpintax() {
+            const text = spintaxOutput.value;
+            if (!text.trim()) {
+                showToast('ยังไม่มีโค้ด Spintax');
+                return;
+            }
+            copyToClipboard(text, 'คัดลอก Spintax เรียบร้อยแล้ว!');
+            triggerConfetti();
+        }
+
+        // Copy Preview Text
+        function copyPreviewText() {
+            const text = previewBox.textContent;
+            if (!text.trim() || text.startsWith('พิมพ์ข้อความทางซ้าย')) {
+                showToast('ยังไม่มีผลลัพธ์ให้คัดลอก');
+                return;
+            }
+            copyToClipboard(text, 'คัดลอกผลลัพธ์สุ่มเรียบร้อยแล้ว!');
+            triggerConfetti();
+        }
+
+        // Clear All
+        function clearAll() {
+            plainInput.value = '';
+            spintaxOutput.value = '';
+            previewBox.textContent = 'พิมพ์ข้อความทางซ้ายเพื่อเริ่มต้นดูการสุ่มประโยค';
+            wordCountText.textContent = '0 คำ | 0 ตัวอักษร';
+            detectedCountText.textContent = 'พร้อมทำงาน';
+            permutationLabel.textContent = 'สุ่มได้ 0 รูปแบบ';
+            plainInput.focus();
+            showToast('ล้างข้อมูลเรียบร้อย');
+        }
+
+        // Generic Clipboard Helper
+        function copyToClipboard(text, successMsg) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast(successMsg);
+                }).catch(() => {
+                    fallbackCopy(text, successMsg);
+                });
+            } else {
+                fallbackCopy(text, successMsg);
+            }
+        }
+
+        function fallbackCopy(text, successMsg) {
+            const temp = document.createElement('textarea');
+            temp.value = text;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            showToast(successMsg);
+        }
+
+        // Toast
+        function showToast(msg) {
+            clearTimeout(toastTimer);
+            document.getElementById('toastMsg').textContent = msg;
+            toastBox.classList.add('show');
+            toastTimer = setTimeout(() => {
+                toastBox.classList.remove('show');
+            }, 2000);
+        }
+
+        // Confetti
+        function triggerConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 30,
+                    spread: 50,
+                    origin: { y: 0.85 }
+                });
+            }
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            plainInput.focus();
+            loadPyThaiNLPSynonyms();
+        });
+    </script>
+</body>
+
+</html>
