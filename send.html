@@ -5091,6 +5091,81 @@
             }
         }
 
+        // ===== CUSTOMER SESSION PERSISTENCE & AUTO-RESTORE =====
+        const CUSTOMER_SESSION_KEY = 'eworker_customer_active_session';
+        const CUSTOMER_FB_CONTACT_KEY = 'eworker_customer_fb_contact';
+        let isStartingNewJob = false;
+
+        function saveCustomerSessionToStorage(overrideId = null) {
+            if (isAdmin) return;
+            const targetId = overrideId || sessionId;
+            if (!targetId) return;
+            try {
+                const sessionPayload = {
+                    sessionId: targetId,
+                    savedAt: Date.now(),
+                    offerPrice: (currentSessionData && (currentSessionData.offerPrice || currentSessionData.price)) || null,
+                    sendViaFacebook: (currentSessionData && currentSessionData.sendViaFacebook !== undefined) ? !!currentSessionData.sendViaFacebook : true,
+                    facebookContact: (currentSessionData && currentSessionData.facebookContact) || localStorage.getItem(CUSTOMER_FB_CONTACT_KEY) || ''
+                };
+                localStorage.setItem(CUSTOMER_SESSION_KEY, JSON.stringify(sessionPayload));
+                localStorage.setItem('eworker_last_session_id', targetId);
+            } catch (e) {
+                console.warn('LocalStorage save error:', e);
+            }
+        }
+
+        function clearSavedCustomerSession() {
+            try {
+                localStorage.removeItem(CUSTOMER_SESSION_KEY);
+                localStorage.removeItem('eworker_last_session_id');
+            } catch (e) {
+                console.warn('LocalStorage clear error:', e);
+            }
+        }
+
+        function getSavedCustomerSession() {
+            try {
+                const raw = localStorage.getItem(CUSTOMER_SESSION_KEY);
+                if (raw) return JSON.parse(raw);
+                const fallbackId = localStorage.getItem('eworker_last_session_id');
+                if (fallbackId) return { sessionId: fallbackId, savedAt: Date.now() };
+            } catch (e) {
+                console.warn('LocalStorage read error:', e);
+            }
+            return null;
+        }
+
+        async function tryAutoRestoreLastSession() {
+            const saved = getSavedCustomerSession();
+            if (!saved || !saved.sessionId) return;
+            console.log('🔄 Checking saved customer session from localStorage:', saved.sessionId);
+            try {
+                const snap = await database.ref(`annotations/${saved.sessionId}`).once('value');
+                const data = snap.val();
+                if (!data) {
+                    clearSavedCustomerSession();
+                    return;
+                }
+                const completionTime = data.completedAt || data.lastCompletedAt || data.paidAt;
+                const isOverOneHour = (data.expiresAt && Date.now() > data.expiresAt) ||
+                    (completionTime && (Date.now() - completionTime > 3600 * 1000));
+                if ((data.hasWatermark || data.isPaid) && isOverOneHour) {
+                    clearSavedCustomerSession();
+                    return;
+                }
+
+                // Restore session into URL
+                const newUrl = `${window.location.origin}${window.location.pathname}?id=${saved.sessionId}`;
+                window.history.replaceState({}, '', newUrl);
+
+                await loadExistingSession(saved.sessionId);
+                showToast('✨ กู้คืนข้อมูลงานล่าสุดของคุณเรียบร้อยแล้ว (ข้อมูลไม่หาย)', 'success', 6000);
+            } catch (e) {
+                console.warn('Auto restore session warning:', e);
+            }
+        }
+
         // Check URL for existing session
         const urlParams = new URLSearchParams(window.location.search);
         const existingSession = urlParams.get('id');
@@ -5100,7 +5175,36 @@
 
         if (existingSession) {
             loadExistingSession(existingSession);
+        } else if (!isAdmin) {
+            tryAutoRestoreLastSession();
         }
+
+        // ===== LEAVE PAGE WARNING (แจ้งเตือนจะออกจากหน้า & บันทึกข้อมูล) =====
+        window.addEventListener('beforeunload', (e) => {
+            if (isStartingNewJob) return;
+            if (!isAdmin && sessionId && uploadContainer && uploadContainer.classList.contains('hidden')) {
+                const hasWork = (markers && markers.length > 0) ||
+                    (annotations && Object.keys(annotations).length > 0) ||
+                    (currentSessionData && (
+                        currentSessionData.customerOffered ||
+                        currentSessionData.jobStatus === 'offer_pending' ||
+                        currentSessionData.jobStatus === 'processing' ||
+                        (currentSessionData.hasWatermark && !currentSessionData.isPaid)
+                    ));
+                if (hasWork) {
+                    saveCustomerSessionToStorage();
+                    e.preventDefault();
+                    e.returnValue = 'คุณมีรายการงานที่กำลังดำเนินการอยู่ ข้อมูลงานของคุณจะถูกจดจำไว้ แต่ขอแนะนำให้อยู่ในหน้านี้จนกว่างานจะเสร็จ ต้องการออกจากหน้านี้หรือไม่?';
+                    return e.returnValue;
+                }
+            }
+        });
+
+        window.addEventListener('pagehide', () => {
+            if (!isStartingNewJob && !isAdmin && sessionId) {
+                saveCustomerSessionToStorage();
+            }
+        });
 
         // ===== AUDIO BEEP & TOAST SYSTEM =====
         function playJobCompletedBeep() {
@@ -5423,9 +5527,10 @@
                     markers: {}
                 });
 
-                // Update URL
+                // Update URL & Save customer session to storage
                 const newUrl = `${window.location.origin}${window.location.pathname}?id=${sessionId}`;
                 window.history.pushState({}, '', newUrl);
+                saveCustomerSessionToStorage(sessionId);
 
                 // Load file
                 await loadFile(fileUrl, fileType);
@@ -5507,8 +5612,14 @@
                     paidAt: data.paidAt || null,
                     completedAt: data.completedAt || data.lastCompletedAt || null,
                     lastCompletedAt: data.lastCompletedAt || data.completedAt || null,
-                    expiresAt: data.expiresAt || null
+                    expiresAt: data.expiresAt || null,
+                    sendViaFacebook: data.sendViaFacebook !== undefined ? !!data.sendViaFacebook : true,
+                    facebookContact: data.facebookContact || localStorage.getItem(CUSTOMER_FB_CONTACT_KEY) || ''
                 };
+
+                if (!isAdmin) {
+                    saveCustomerSessionToStorage(id);
+                }
 
                 initChatbox();
                 updateTopNav();
@@ -6811,6 +6922,7 @@
                         console.warn('Local service delete warning:', e);
                     }
 
+                    clearSavedCustomerSession();
                     await database.ref(`annotations/${sessionId}`).remove();
                     await database.ref(`temp_files/payment_requests/markpoint_${sessionId}`).remove();
 
@@ -7383,6 +7495,38 @@
                             เมื่อช่างแก้ไขเสร็จ ระบบจะแจ้งเตือนพร้อมแสดงภาพพรีวิวติดลายน้ำและ QR Code พร้อมเพย์ให้ตรวจสอบและชำระเงินทันที
                         </div>
 
+                        ${isAdmin ? (currentSessionData.sendViaFacebook ? `
+                            <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin:12px auto;max-width:340px;text-align:left;">
+                                <div style="font-weight:800;color:#1d4ed8;font-size:13px;display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+                                    <i class="fa-brands fa-facebook-messenger" style="color:#0084ff;font-size:16px;"></i> ลูกค้าขอให้ส่งงานในแชท Facebook:
+                                </div>
+                                <div style="font-weight:700;color:#0f172a;font-size:13px;word-break:break-all;margin-bottom:6px;">
+                                    ${escapeHtml(currentSessionData.facebookContact || '(ลูกค้าติ๊กส่งทาง FB แต่ไม่ได้ระบุชื่อ)')}
+                                </div>
+                                ${currentSessionData.facebookContact ? `
+                                    <button onclick="navigator.clipboard.writeText('${escapeHtml(currentSessionData.facebookContact)}'); showToast('คัดลอกชื่อเฟสบุ๊กลูกค้าแล้ว', 'success');" style="background:#3b82f6;color:#fff;border:none;padding:5px 10px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+                                        <i class="fa-solid fa-copy"></i> คัดลอกชื่อ Facebook
+                                    </button>
+                                ` : ''}
+                            </div>
+                        ` : `
+                            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:6px 12px;margin:10px auto;max-width:340px;text-align:left;font-size:11.5px;color:#64748b;">
+                                <i class="fa-solid fa-globe"></i> ช่องทางส่งงาน: ลูกค้ารอรับงานผ่านหน้าเว็บนี้
+                            </div>
+                        `) : `
+                            <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 12px;margin:12px auto;max-width:340px;text-align:left;font-size:12px;">
+                                <div style="font-weight:700;color:#334155;display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+                                    <i class="fa-solid fa-shield-halved" style="color:#6366f1;"></i> ข้อมูลงานของคุณปลอดภัย
+                                </div>
+                                <div style="color:#475569;line-height:1.45;">
+                                    ${currentSessionData.sendViaFacebook && currentSessionData.facebookContact
+                                        ? `ช่างจะส่งงานให้ทางแชท Facebook (<strong>${escapeHtml(currentSessionData.facebookContact)}</strong>) หรือเปิดดูบนหน้านี้ได้ตลอดเวลา ข้อมูลถูกบันทึกไว้ในเครื่องแล้ว ไม่ต้องกลัวหายแม้ปิดหน้าเว็บ`
+                                        : `คุณสามารถรอรับงานบนหน้านี้ได้เลย หรือหากเผลอปิดหน้าเว็บไป สามารถเปิดกลับมาดูความคืบหน้าได้ตลอดเวลา (ระบบจำข้อมูลไว้ให้อัตโนมัติ)`
+                                    }
+                                </div>
+                            </div>
+                        `}
+
                         <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
                             ${isAdmin ? `
                                 <button id="btnReopenPs" style="background:#059669;color:#fff;border:none;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 4px 12px rgba(5,150,105,0.25);">
@@ -7450,6 +7594,25 @@
                                     <span class="currency">฿</span><span class="num">${price}</span><span class="thb">บาท</span>
                                 </div>
                             </div>
+                            ${currentSessionData.sendViaFacebook ? `
+                                <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:9px 12px;margin:10px 0;text-align:left;font-size:12.5px;">
+                                    <div style="font-weight:700;color:#1e40af;display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+                                        <i class="fa-brands fa-facebook-messenger" style="color:#0084ff;"></i> ลูกค้าขอให้ส่งงานในแชท Facebook:
+                                    </div>
+                                    <div style="color:#1e293b;font-weight:700;word-break:break-all;">
+                                        ${escapeHtml(currentSessionData.facebookContact || '(ลูกค้าไม่ได้ระบุชื่อเฟสบุ๊ก - โปรดทักแชทสอบถาม)')}
+                                    </div>
+                                    ${currentSessionData.facebookContact ? `
+                                        <button onclick="navigator.clipboard.writeText('${escapeHtml(currentSessionData.facebookContact)}'); showToast('คัดลอกชื่อเฟสบุ๊กลูกค้าแล้ว', 'success');" style="margin-top:5px;background:#3b82f6;color:#fff;border:none;padding:4px 9px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+                                            <i class="fa-solid fa-copy"></i> คัดลอกชื่อ Facebook
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            ` : `
+                                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;margin:8px 0;text-align:left;font-size:11.5px;color:#64748b;">
+                                    <i class="fa-solid fa-globe"></i> ช่องทางส่งงาน: ลูกค้ารอรับงานผ่านหน้าเว็บนี้
+                                </div>
+                            `}
                             <div class="offer-action-buttons">
                                 <button id="btnAdminAcceptOffer" class="btn-action-accept-offer">
                                     <i class="fa-solid fa-check"></i> ยอมรับข้อเสนอ (฿${price}) &amp; ส่งเข้า Photoshop
@@ -7518,6 +7681,24 @@
                                     <span>รอช่างตอบรับภายใน: <strong id="customerOfferCountdownTimer" style="color:#1e293b;font-family:monospace;font-size:13.5px;">05:00</strong> นาที</span>
                                 </div>
 
+                                ${currentSessionData.sendViaFacebook && currentSessionData.facebookContact ? `
+                                    <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:8px 12px;margin:8px auto;max-width:320px;text-align:left;font-size:12px;color:#166534;">
+                                        <div style="font-weight:700;display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+                                            <i class="fa-brands fa-facebook-messenger" style="color:#0084ff;"></i> ส่งงานทางแชท Facebook:
+                                        </div>
+                                        <div style="color:#15803d;word-break:break-all;">
+                                            <strong>${escapeHtml(currentSessionData.facebookContact)}</strong>
+                                        </div>
+                                        <div style="font-size:11px;color:#16a34a;margin-top:2px;">
+                                            💡 หากเผลอปิดหน้านี้ ช่างจะส่งงานให้ทาง Facebook และข้อมูลยังคงอยู่ครบ
+                                        </div>
+                                    </div>
+                                ` : `
+                                    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:6px 12px;margin:8px auto;max-width:320px;text-align:center;font-size:11.5px;color:#64748b;">
+                                        <i class="fa-solid fa-shield-check" style="color:#10b981;"></i> ระบบจำข้อมูลงานนี้ไว้แล้ว หากเผลอปิดหน้านี้ สามารถเปิดกลับมาทำต่อได้ทันที
+                                    </div>
+                                `}
+
                                 <div style="margin-top:8px;display:flex;gap:6px;justify-content:center;">
                                     <button id="btnCustomerEditOfferInWaiting" style="background:#f8fafc;border:1px solid #cbd5e1;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;color:#475569;">
                                         <i class="fa-solid fa-pen"></i> แก้ไขราคาเสนอ
@@ -7566,6 +7747,8 @@
                 // ฝั่งลูกค้า: กล่องกรอกยอดเสนอจ้างทำงานนี้ตามที่ผู้ใช้ต้องการ (ไม่บอกยอด 100 ล่วงหน้า ป้องกัน Anchoring)
                 const offerVal = (currentOfferInputVal !== null && currentOfferInputVal !== undefined && currentOfferInputVal !== '') ? currentOfferInputVal : '';
                 const btnAmountText = offerVal ? ` (฿${offerVal})` : '';
+                const savedFbDelivery = currentSessionData && currentSessionData.sendViaFacebook !== undefined ? !!currentSessionData.sendViaFacebook : true;
+                const savedFbContact = (currentSessionData && currentSessionData.facebookContact) || localStorage.getItem(CUSTOMER_FB_CONTACT_KEY) || '';
 
                 container.innerHTML = `
                     <div class="customer-offer-card">
@@ -7589,6 +7772,33 @@
                             </label>
                         </div>
 
+                        <!-- 💬 Facebook Delivery Option (ถามว่าจะให้ส่งงานให้ในแชท Facebook หรือไม่) -->
+                        <div class="customer-fb-delivery-wrap" style="margin: 12px 0 14px; text-align: left; background: #f0fdf4; border: 1.5px solid #86efac; border-radius: 12px; padding: 12px 14px; box-shadow: 0 2px 8px rgba(34,197,94,0.08); transition: all 0.2s;">
+                            <label style="display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; user-select: none;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-brands fa-facebook-messenger" style="color: #0084ff; font-size: 20px;"></i>
+                                    <span style="font-size: 13px; font-weight: 800; color: #166534;">
+                                        ต้องการให้ส่งงานให้ในแชท Facebook หรือไม่?
+                                    </span>
+                                </div>
+                                <input type="checkbox" id="chkCustomerFbDelivery" ${savedFbDelivery ? 'checked' : ''} ${totalMarkers === 0 ? 'disabled' : ''} style="width: 20px; height: 20px; accent-color: #0084ff; cursor: pointer;">
+                            </label>
+                            
+                            <div id="wrapFbDeliveryInput" style="margin-top: 10px; ${savedFbDelivery ? '' : 'display: none;'}">
+                                <div style="font-size: 11.5px; color: #15803d; margin-bottom: 6px; line-height: 1.45;">
+                                    <i class="fa-solid fa-circle-check" style="color: #16a34a;"></i> <strong>แนะนำเปิดไว้:</strong> หากเผลอปิดหน้านี้ ช่างจะส่งไฟล์งานที่ทำเสร็จแล้วให้ทางแชท Facebook ได้ทันที!
+                                </div>
+                                <div style="position: relative;">
+                                    <input type="text" id="inputCustomerFbContact" 
+                                           placeholder="พิมพ์ชื่อโปรไฟล์ Facebook หรือลิงก์โปรไฟล์ / m.me ของคุณ" 
+                                           value="${escapeHtml(savedFbContact)}"
+                                           ${totalMarkers === 0 ? 'disabled' : ''}
+                                           style="width: 100%; box-sizing: border-box; padding: 9px 12px 9px 36px; border: 1.5px solid #86efac; border-radius: 8px; font-size: 12.5px; outline: none; background: #ffffff; color: #1e293b;">
+                                    <i class="fa-brands fa-facebook" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #0084ff; font-size: 15px;"></i>
+                                </div>
+                            </div>
+                        </div>
+
                         <button class="btn-submit-all-quotes" id="btnSubmitCustomerOffer" ${totalMarkers === 0 ? 'disabled style="opacity:0.6;cursor:not-allowed;white-space:nowrap;"' : 'style="white-space:nowrap;"'}>
                             <i class="fa-solid fa-paper-plane"></i> ส่งข้อเสนอจ้างทำงาน<span id="txtBtnOfferAmount">${btnAmountText}</span>
                         </button>
@@ -7607,6 +7817,28 @@
                 const footnote = document.getElementById('offerFootnote');
                 const chkWarranty = document.getElementById('chkCustomerLegalWarranty');
                 const wrapWarranty = document.getElementById('wrapCustomerLegalWarranty');
+                const chkFb = document.getElementById('chkCustomerFbDelivery');
+                const wrapFb = document.getElementById('wrapFbDeliveryInput');
+                const inpFb = document.getElementById('inputCustomerFbContact');
+
+                chkFb?.addEventListener('change', () => {
+                    if (wrapFb) {
+                        wrapFb.style.display = chkFb.checked ? 'block' : 'none';
+                    }
+                    if (currentSessionData) {
+                        currentSessionData.sendViaFacebook = chkFb.checked;
+                    }
+                });
+
+                inpFb?.addEventListener('input', () => {
+                    const fbVal = inpFb.value.trim();
+                    try {
+                        localStorage.setItem(CUSTOMER_FB_CONTACT_KEY, fbVal);
+                    } catch (e) { }
+                    if (currentSessionData) {
+                        currentSessionData.facebookContact = fbVal;
+                    }
+                });
 
                 chkWarranty?.addEventListener('change', () => {
                     if (wrapWarranty) {
@@ -7659,7 +7891,9 @@
                         chkWarranty?.focus();
                         return;
                     }
-                    submitCustomerOffer(val);
+                    const sendViaFb = chkFb ? chkFb.checked : true;
+                    const fbContact = inpFb ? inpFb.value.trim() : '';
+                    submitCustomerOffer(val, sendViaFb, fbContact);
                 });
             }
             updateFloatingDownloadButton();
@@ -7757,7 +7991,7 @@
         }
 
         // ===== CUSTOMER & ADMIN OFFER ACTION HANDLERS =====
-        async function submitCustomerOffer(amount) {
+        async function submitCustomerOffer(amount, sendViaFbParam = null, fbContactParam = null) {
             if (!sessionId) return;
             const markersCount = Object.keys(annotations).length;
             if (markersCount === 0) {
@@ -7770,6 +8004,11 @@
                 return;
             }
 
+            const chkFb = document.getElementById('chkCustomerFbDelivery');
+            const inpFb = document.getElementById('inputCustomerFbContact');
+            const sendViaFb = sendViaFbParam !== null ? !!sendViaFbParam : (chkFb ? chkFb.checked : true);
+            const fbContact = fbContactParam !== null ? String(fbContactParam).trim() : (inpFb ? inpFb.value.trim() : (localStorage.getItem(CUSTOMER_FB_CONTACT_KEY) || ''));
+
             showLoading('กำลังส่งข้อเสนอจ้างให้ช่าง...');
             try {
                 currentSessionData.price = val;
@@ -7781,6 +8020,12 @@
                 currentSessionData.submittedAt = Date.now();
                 currentSessionData.customerWarrantyAccepted = true;
                 currentSessionData.customerWarrantyAt = Date.now();
+                currentSessionData.sendViaFacebook = sendViaFb;
+                currentSessionData.facebookContact = fbContact;
+
+                if (fbContact) {
+                    try { localStorage.setItem(CUSTOMER_FB_CONTACT_KEY, fbContact); } catch (e) { }
+                }
 
                 const warrantyLegalStatement = 'ข้าพเจ้ารับรองว่าภาพนี้เป็นสิทธิ์ของข้าพเจ้า และจ้างทำเพื่อการศึกษา/งานกราฟิกส่วนบุคคล มิได้นำไปใช้ในการฉ้อโกง ปลอมแปลง หรือกระทำความผิดใดๆ หากนำไปใช้ผิดกฎหมาย ข้าพเจ้าขอรับผิดชอบแต่เพียงผู้เดียวทั้งสิ้น';
 
@@ -7794,7 +8039,10 @@
                     rejected: false,
                     customerWarrantyAccepted: true,
                     customerWarrantyText: warrantyLegalStatement,
-                    customerWarrantyAt: Date.now()
+                    customerWarrantyAt: Date.now(),
+                    sendViaFacebook: sendViaFb,
+                    facebookContact: fbContact,
+                    deliveryChannel: sendViaFb ? 'facebook' : 'web'
                 });
 
                 await database.ref(`temp_files/markpoint_queue/${sessionId}`).set({
@@ -7803,8 +8051,12 @@
                     offerPrice: val,
                     customerOffered: true,
                     submittedAt: Date.now(),
-                    jobStatus: 'offer_pending'
+                    jobStatus: 'offer_pending',
+                    sendViaFacebook: sendViaFb,
+                    facebookContact: fbContact
                 }).catch(() => { });
+
+                saveCustomerSessionToStorage();
 
                 hideLoading();
                 playJobCompletedBeep();
@@ -8537,6 +8789,8 @@
                 return;
             }
             if (confirm('ต้องการเริ่มส่งงานใหม่ใช่หรือไม่?\n\n(ระบบจะเริ่มรายการใหม่เพื่อให้นายท่านสามารถอัปโหลดไฟล์ใหม่ได้ทันที)')) {
+                clearSavedCustomerSession();
+                isStartingNewJob = true;
                 const u = new URL(window.location.href);
                 const role = u.searchParams.get('role');
                 const newUrl = new URL(window.location.pathname, window.location.origin);
@@ -8732,6 +8986,7 @@
             database.ref(`annotations/${sessionId}`).on('value', async (snapshot) => {
                 const sData = snapshot.val();
                 if (!sData) {
+                    clearSavedCustomerSession();
                     showToast('⚠️ งานนี้ถูกลบหรือยกเลิกออกจากระบบแล้ว', 'warning', 5000);
                     setTimeout(() => {
                         window.location.href = window.location.pathname;
@@ -8760,8 +9015,14 @@
                     completedAt: sData.completedAt || sData.lastCompletedAt || null,
                     lastCompletedAt: sData.lastCompletedAt || sData.completedAt || null,
                     revisionCompletedAt: sData.revisionCompletedAt || null,
-                    expiresAt: sData.expiresAt || null
+                    expiresAt: sData.expiresAt || null,
+                    sendViaFacebook: sData.sendViaFacebook !== undefined ? !!sData.sendViaFacebook : true,
+                    facebookContact: sData.facebookContact || (currentSessionData && currentSessionData.facebookContact) || localStorage.getItem(CUSTOMER_FB_CONTACT_KEY) || ''
                 };
+
+                if (!isAdmin) {
+                    saveCustomerSessionToStorage();
+                }
 
                 initChatbox();
 
