@@ -4815,6 +4815,47 @@
         let totalPages = 0;
         let userDismissedCompletion = false;
 
+        // Role & URL Parameters (Declared early to prevent TDZ ReferenceErrors)
+        const urlParams = new URLSearchParams(window.location.search);
+        const existingSession = urlParams.get('id');
+        const urlRole = urlParams.get('role');
+        if (urlRole === 'admin') {
+            localStorage.setItem('eworker_admin_mode', 'true');
+        } else if (urlRole === 'client') {
+            localStorage.removeItem('eworker_admin_mode');
+        }
+
+        const isAdmin = window.location.hostname === '127.0.0.1' ||
+            window.location.hostname === 'localhost' ||
+            urlRole === 'admin' ||
+            localStorage.getItem('eworker_admin_mode') === 'true';
+
+        document.body.classList.toggle('is-admin', isAdmin);
+        document.body.classList.toggle('is-client', !isAdmin);
+
+        let currentSessionData = {
+            price: 100,
+            offerPrice: 100,
+            customerOffered: false,
+            priceQuoted: false,
+            submittedForQuote: false,
+            accepted: false,
+            jobStatus: 'pending',
+            rejectType: '',
+            rejectReason: '',
+            rejected: false,
+            hasWatermark: false,
+            watermarkUrl: '',
+            cleanFileUrl: '',
+            isPaid: false,
+            paidAt: null,
+            completedAt: null,
+            lastCompletedAt: null,
+            expiresAt: null,
+            sendViaFacebook: true,
+            facebookContact: ''
+        };
+
         // Zoom & Pan State
         let scale = 1;
         let translateX = 0;
@@ -5155,6 +5196,22 @@
                     return;
                 }
 
+                // กู้คืนเฉพาะงานที่กำลังทำค้างอยู่ (มีมาร์คเกอร์ หรือส่งข้อเสนอแล้ว หรือกำลังทำใน Photoshop)
+                const hasPendingWork = (
+                    data.customerOffered ||
+                    data.submittedForQuote ||
+                    data.jobStatus === 'offer_pending' ||
+                    data.jobStatus === 'processing' ||
+                    (data.hasWatermark && !data.isPaid) ||
+                    (data.markers && Object.keys(data.markers).length > 0)
+                ) && !data.isPaid && data.jobStatus !== 'completed';
+
+                if (!hasPendingWork) {
+                    // หากงานจ่ายเงินแล้ว เสร็จสิ้นแล้ว หรือไม่มีจุดแก้ไขค้าง ให้เคลียร์และพร้อมรับงานใหม่
+                    clearSavedCustomerSession();
+                    return;
+                }
+
                 // Restore session into URL
                 const newUrl = `${window.location.origin}${window.location.pathname}?id=${saved.sessionId}`;
                 window.history.replaceState({}, '', newUrl);
@@ -5165,10 +5222,6 @@
                 console.warn('Auto restore session warning:', e);
             }
         }
-
-        // Check URL for existing session
-        const urlParams = new URLSearchParams(window.location.search);
-        const existingSession = urlParams.get('id');
 
         // ลบ session หมดอายุทุกครั้งที่เปิดหน้า (ไม่ว่าจะมี ?id หรือเปล่า)
         cleanupExpiredSessions();
@@ -6692,34 +6745,7 @@
         }
 
         // ===== ANNOTATION CARDS & ROLE HANDLING =====
-        const urlRole = urlParams.get('role');
-        if (urlRole === 'admin') {
-            localStorage.setItem('eworker_admin_mode', 'true');
-        } else if (urlRole === 'client') {
-            localStorage.removeItem('eworker_admin_mode');
-        }
-
-        const isAdmin = window.location.hostname === '127.0.0.1' ||
-            window.location.hostname === 'localhost' ||
-            urlRole === 'admin' ||
-            localStorage.getItem('eworker_admin_mode') === 'true';
-
-        document.body.classList.toggle('is-admin', isAdmin);
-        document.body.classList.toggle('is-client', !isAdmin);
-
-        let currentSessionData = {
-            price: 100,
-            priceQuoted: false,
-            submittedForQuote: false,
-            accepted: false,
-            jobStatus: 'pending',
-            hasWatermark: false,
-            watermarkUrl: '',
-            cleanFileUrl: '',
-            isPaid: false,
-            paidAt: null,
-            expiresAt: null
-        };
+        // (urlRole, isAdmin, and currentSessionData initialized at top of script)
 
         function canAccessChat() {
             if (isAdmin) return true;
