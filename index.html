@@ -7166,6 +7166,15 @@
                             <input type="url" id="admin-font-download-url-text" class="form-control-clean"
                                 style="font-family: monospace; font-size: 0.82rem; background: #ffffff;">
                         </div>
+
+                        <!-- เพิ่มรายการฟอนต์ข้อความตัวถัดไป -->
+                        <div id="admin-font-extra-text-container" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;"></div>
+                        <div style="margin-top: 10px; display: flex; justify-content: flex-end;">
+                            <button type="button" class="btn-tool-sm" onclick="addAdminExtraFont('text')"
+                                style="background: #ede9fe; color: #6d28d9; border: 1px dashed #a78bfa; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                ➕ เพิ่มชื่อฟอนต์ข้อความอีกตัว
+                            </button>
+                        </div>
                     </div>
 
                     <!-- SEPARATE SECRET SECTION 2: ข้อมูลเฉลยฟอนต์ตัวเลข -->
@@ -7187,6 +7196,30 @@
                             <input type="url" id="admin-font-download-url-number" class="form-control-clean"
                                 style="font-family: monospace; font-size: 0.82rem; background: #ffffff;">
                         </div>
+
+                        <!-- เพิ่มรายการฟอนต์ตัวเลขตัวถัดไป -->
+                        <div id="admin-font-extra-number-container" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;"></div>
+                        <div style="margin-top: 10px; display: flex; justify-content: flex-end;">
+                            <button type="button" class="btn-tool-sm" onclick="addAdminExtraFont('number')"
+                                style="background: #dcfce7; color: #15803d; border: 1px dashed #86efac; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                ➕ เพิ่มชื่อฟอนต์ตัวเลขอีกตัว
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- เพิ่มฟอนต์อื่นๆ เพิ่มเติม -->
+                    <div id="admin-font-section-other"
+                        style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.86rem; font-weight: 800; color: #334155;">
+                                🔤 ฟอนต์เพิ่มเติมอื่นๆ (เช่น ภาษาอังกฤษ / โลโก้ / สัญลักษณ์)
+                            </span>
+                            <button type="button" class="btn-tool-sm" onclick="addAdminExtraFont('other')"
+                                style="background: #ffffff; color: #475569; border: 1px dashed #94a3b8; font-weight: 700; padding: 5px 12px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                ➕ เพิ่มฟอนต์อื่นๆ
+                            </button>
+                        </div>
+                        <div id="admin-font-extra-other-container" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;"></div>
                     </div>
 
                     <!-- Action Buttons -->
@@ -10832,6 +10865,8 @@
             let fontNameNumber = (paymentData && paymentData.fontNameNumber) || (vaultData && vaultData.fontNameNumber) || product?.fontNameNumber || '';
             let fontUrlNumber = (paymentData && (paymentData.fontUrlNumber || paymentData.downloadUrlNumber)) || (vaultData && (vaultData.fontUrlNumber || vaultData.downloadUrlNumber)) || product?.downloadUrlNumber || product?.fontUrlNumber || '';
             let fontContentType = (vaultData && vaultData.fontContentType) || product?.fontContentType || { isText: true, isNumber: false };
+            let allFonts = (paymentData && paymentData.allFonts) || (vaultData && vaultData.allFonts) || product?.allFonts || null;
+            let extraFonts = (paymentData && paymentData.extraFonts) || (vaultData && vaultData.extraFonts) || product?.extraFonts || null;
             let hasFontLink = Boolean(fontUrl || fontUrlText || fontUrlNumber || (vaultData && vaultData.hasFontLink) || product?.hasFontLink);
 
             savePurchaseRecord({
@@ -10848,6 +10883,8 @@
                 fontUrlText: fontUrlText,
                 fontNameNumber: fontNameNumber,
                 fontUrlNumber: fontUrlNumber,
+                allFonts: allFonts,
+                extraFonts: extraFonts,
                 hasFontLink: hasFontLink,
                 fontContentType: fontContentType,
                 coverImage: product.coverImage,
@@ -12576,6 +12613,103 @@ ${encodedToken}
         // --- ADMIN PRODUCT MANAGER (127.0.0.1:5000) ---
 
         // --- ADMIN FONT ARCHIVE MANAGER (หมวดคลังฟอนต์) ---
+        let adminExtraFontCounter = 0;
+
+        function addAdminExtraFont(type = 'text', data = null) {
+            adminExtraFontCounter++;
+            const rowId = `admin-extra-font-row-${adminExtraFontCounter}`;
+            
+            let containerId = 'admin-font-extra-text-container';
+            let defaultLabel = 'ฟอนต์ข้อความตัวที่ 2';
+            let borderColor = '#ddd6fe';
+            let bgColor = '#ffffff';
+            let titleColor = '#5b21b6';
+            let icon = '📝';
+            
+            if (type === 'number') {
+                containerId = 'admin-font-extra-number-container';
+                defaultLabel = 'ฟอนต์ตัวเลขตัวที่ 2';
+                borderColor = '#bbf7d0';
+                titleColor = '#166534';
+                icon = '🔢';
+            } else if (type === 'other') {
+                containerId = 'admin-font-extra-other-container';
+                defaultLabel = 'ฟอนต์เพิ่มเติม';
+                borderColor = '#cbd5e1';
+                titleColor = '#334155';
+                bgColor = '#ffffff';
+                icon = '🔤';
+            }
+            
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const existingCount = container.children.length;
+            if (!data) {
+                if (type === 'text') defaultLabel = `ฟอนต์ข้อความตัวที่ ${existingCount + 2}`;
+                if (type === 'number') defaultLabel = `ฟอนต์ตัวเลขตัวที่ ${existingCount + 2}`;
+                if (type === 'other') defaultLabel = `ฟอนต์เพิ่มเติม ${existingCount + 1}`;
+            }
+
+            const initialName = data?.name || '';
+            const initialLabel = data?.label || defaultLabel;
+            const initialUrl = data?.url || data?.downloadUrl || '';
+
+            const row = document.createElement('div');
+            row.id = rowId;
+            row.className = 'admin-extra-font-row';
+            row.dataset.type = type;
+            row.style.cssText = `background: ${bgColor}; border: 1.5px solid ${borderColor}; border-radius: 8px; padding: 12px; position: relative; box-shadow: 0 1px 3px rgba(0,0,0,0.04);`;
+
+            row.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+                        <span style="font-size: 0.95rem;">${icon}</span>
+                        <input type="text" class="form-control-clean extra-font-label" value="${escapeHtml(initialLabel)}" 
+                            placeholder="ป้ายกำกับ เช่น ${defaultLabel}"
+                            style="font-size: 0.82rem; font-weight: 800; color: ${titleColor}; padding: 3px 8px; border: 1px dashed ${borderColor}; background: transparent; border-radius: 4px; max-width: 220px;"
+                            title="คลิกเพื่อแก้ไขป้ายกำกับฟอนต์นี้ได้">
+                    </div>
+                    <button type="button" onclick="removeAdminExtraFontRow('${rowId}')" 
+                        style="background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; border-radius: 6px; padding: 3px 10px; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;"
+                        title="ลบฟอนต์ตัวนี้ออก">
+                        🗑️ ลบตัวนี้
+                    </button>
+                </div>
+                <div class="form-group-clean" style="margin-bottom: 8px;">
+                    <label class="form-label-clean" style="font-weight: 700; font-size: 0.8rem; color: #1e293b; margin-bottom: 3px;">
+                        ชื่อฟอนต์ *
+                    </label>
+                    <input type="text" class="form-control-clean extra-font-name" value="${escapeHtml(initialName)}" required
+                        placeholder="ระบุชื่อฟอนต์..."
+                        style="font-weight: 700; font-size: 0.92rem; color: #0f172a; background: #ffffff;">
+                </div>
+                <div class="form-group-clean" style="margin-bottom: 0;">
+                    <label class="form-label-clean" style="font-weight: 700; font-size: 0.78rem; color: #64748b; margin-bottom: 3px;">
+                        🔗 ลิ้งค์เว็บแจกฟอนต์ / แหล่งดาวน์โหลด (ไม่บังคับใส่)
+                    </label>
+                    <input type="url" class="form-control-clean extra-font-url" value="${escapeHtml(initialUrl)}"
+                        placeholder="https://..."
+                        style="font-family: monospace; font-size: 0.82rem; background: #ffffff;">
+                </div>
+            `;
+
+            container.appendChild(row);
+            return row;
+        }
+
+        function removeAdminExtraFontRow(rowId) {
+            const row = document.getElementById(rowId);
+            if (row) row.remove();
+        }
+
+        function clearAllAdminExtraFonts() {
+            ['admin-font-extra-text-container', 'admin-font-extra-number-container', 'admin-font-extra-other-container'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = '';
+            });
+        }
+
         function toggleAdminFontSections() {
             const checkText = document.getElementById('admin-font-check-text');
             const checkNum = document.getElementById('admin-font-check-number');
@@ -12589,9 +12723,11 @@ ${encodedToken}
 
             if (secText) {
                 secText.style.display = isText ? 'block' : 'none';
+                secText.querySelectorAll('.extra-font-name').forEach(inp => inp.required = isText);
             }
             if (secNum) {
                 secNum.style.display = isNum ? 'block' : 'none';
+                secNum.querySelectorAll('.extra-font-name').forEach(inp => inp.required = isNum);
             }
             if (nameTextInput) {
                 nameTextInput.required = isText;
@@ -12724,6 +12860,7 @@ ${encodedToken}
             const fontUrlNumInput = document.getElementById('admin-font-download-url-number');
             const headerText = document.getElementById('admin-font-form-header-text');
             const btnDelete = document.getElementById('btn-admin-font-delete');
+            clearAllAdminExtraFonts();
 
             if (fontId) {
                 const p = products.find(x => String(x.id) === String(fontId));
@@ -12769,6 +12906,14 @@ ${encodedToken}
                             if (vaultData.fontContentType) {
                                 if (typeof vaultData.fontContentType.isText === 'boolean') checkText.checked = vaultData.fontContentType.isText;
                                 if (typeof vaultData.fontContentType.isNumber === 'boolean') checkNum.checked = vaultData.fontContentType.isNumber;
+                            }
+
+                            // Populate extra fonts if stored in vault
+                            if (Array.isArray(vaultData.extraFonts) && vaultData.extraFonts.length > 0) {
+                                clearAllAdminExtraFonts();
+                                vaultData.extraFonts.forEach(ef => {
+                                    addAdminExtraFont(ef.type || 'text', ef);
+                                });
                             }
                         }
                     }
@@ -12870,6 +13015,64 @@ ${encodedToken}
                 return;
             }
 
+            // Collect extra fonts
+            const extraFontRows = document.querySelectorAll('.admin-extra-font-row');
+            const extraFonts = [];
+            let extraMissingName = false;
+            extraFontRows.forEach(row => {
+                const type = row.dataset.type || 'text';
+                if (type === 'text' && !isText) return;
+                if (type === 'number' && !isNumber) return;
+
+                const label = (row.querySelector('.extra-font-label')?.value || '').trim();
+                const name = (row.querySelector('.extra-font-name')?.value || '').trim();
+                const url = (row.querySelector('.extra-font-url')?.value || '').trim();
+                if (!name) {
+                    extraMissingName = true;
+                    return;
+                }
+                extraFonts.push({
+                    type: type,
+                    label: label || (type === 'number' ? 'ฟอนต์ตัวเลข' : (type === 'other' ? 'ฟอนต์อื่นๆ' : 'ฟอนต์ข้อความ')),
+                    name: name,
+                    url: url,
+                    downloadUrl: url,
+                    hasLink: Boolean(url)
+                });
+            });
+
+            if (extraMissingName) {
+                showToast('⚠️ กรุณาระบุชื่อฟอนต์ในรายการเพิ่มเติมให้ครบ หรือลบแถวที่ไม่ได้ใช้ออก', 'warning');
+                return;
+            }
+
+            const allFontItems = [];
+            if (isText && fontNameText) {
+                allFontItems.push({
+                    type: 'text',
+                    label: 'ฟอนต์ข้อความ',
+                    name: fontNameText,
+                    url: downloadUrlText,
+                    downloadUrl: downloadUrlText,
+                    hasLink: Boolean(downloadUrlText)
+                });
+            }
+            extraFonts.filter(f => f.type === 'text').forEach(f => allFontItems.push(f));
+
+            if (isNumber && fontNameNumber) {
+                allFontItems.push({
+                    type: 'number',
+                    label: 'ฟอนต์ตัวเลข',
+                    name: fontNameNumber,
+                    url: downloadUrlNumber,
+                    downloadUrl: downloadUrlNumber,
+                    hasLink: Boolean(downloadUrlNumber)
+                });
+            }
+            extraFonts.filter(f => f.type === 'number').forEach(f => allFontItems.push(f));
+
+            extraFonts.filter(f => f.type === 'other').forEach(f => allFontItems.push(f));
+
             const id = editId || `font_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 6)}`;
 
             // Build clean slug
@@ -12884,9 +13087,18 @@ ${encodedToken}
 
             const hasFontLinkText = Boolean(downloadUrlText);
             const hasFontLinkNumber = Boolean(downloadUrlNumber);
-            const hasFontLink = hasFontLinkText || hasFontLinkNumber;
-            const combinedFontName = [isText ? fontNameText : null, isNumber ? fontNameNumber : null].filter(Boolean).join(' / ');
-            const primaryDownloadUrl = downloadUrlText || downloadUrlNumber || '';
+            const hasFontLink = allFontItems.some(f => f.hasLink);
+            const combinedFontName = allFontItems.map(f => f.name).join(' / ');
+            const primaryDownloadUrl = downloadUrlText || downloadUrlNumber || (extraFonts.find(f => f.url)?.url || '');
+
+            let descDetail = '';
+            if (allFontItems.length === 1) {
+                descDetail = isText ? 'เฉพาะข้อความ' : 'เฉพาะตัวเลข';
+            } else if (allFontItems.length === 2 && isText && isNumber && extraFonts.length === 0) {
+                descDetail = 'มีทั้งข้อความและตัวเลข';
+            } else {
+                descDetail = `มีฟอนต์ทั้งหมด ${allFontItems.length} ตัว`;
+            }
 
             // 1. PUBLIC PRODUCT DATA (Censored / High Security)
             const publicProductData = {
@@ -12898,15 +13110,17 @@ ${encodedToken}
                 language: 'digital_download',
                 coverImage: coverImage,
                 images: [coverImage],
-                description: `บริการตรวจสอบและเฉลยชื่อฟอนต์ที่ใช้ในภาพนี้ (${isText && isNumber ? 'มีทั้งข้อความและตัวเลข' : (isText ? 'เฉพาะข้อความ' : 'เฉพาะตัวเลข')}) ข้อมูลความถูกต้องแม่นยำสูง สแกนพร้อมเพย์ ฿${price.toFixed(2)} เพื่อปลดล็อกชื่อฟอนต์และลิงก์ดาวน์โหลดทันที`,
+                description: `บริการตรวจสอบและเฉลยชื่อฟอนต์ที่ใช้ในภาพนี้ (${descDetail}) ข้อมูลความถูกต้องแม่นยำสูง สแกนพร้อมเพย์ ฿${price.toFixed(2)} เพื่อปลดล็อกชื่อฟอนต์และลิงก์ดาวน์โหลดทันที`,
                 isFontProduct: true,
                 fontContentType: {
                     isText: isText,
                     isNumber: isNumber
                 },
+                fontCount: allFontItems.length,
+                fontLabels: allFontItems.map(f => f.label),
                 hasFontLink: hasFontLink,
-                hasFontLinkText: hasFontLinkText,
-                hasFontLinkNumber: hasFontLinkNumber,
+                hasFontLinkText: hasFontLinkText || extraFonts.some(f => f.type === 'text' && f.hasLink),
+                hasFontLinkNumber: hasFontLinkNumber || extraFonts.some(f => f.type === 'number' && f.hasLink),
                 censoredFontName: '••••••••••••',
                 updatedAt: Date.now(),
                 createdAt: editId ? (products.find(x => x.id === editId)?.createdAt || Date.now()) : Date.now()
@@ -12919,7 +13133,7 @@ ${encodedToken}
                     isText: isText,
                     isNumber: isNumber
                 },
-                // Separate fields
+                // Separate fields (backward compatibility)
                 fontNameText: isText ? fontNameText : '',
                 downloadUrlText: isText ? downloadUrlText : '',
                 fontUrlText: isText ? downloadUrlText : '',
@@ -12928,6 +13142,9 @@ ${encodedToken}
                 downloadUrlNumber: isNumber ? downloadUrlNumber : '',
                 fontUrlNumber: isNumber ? downloadUrlNumber : '',
                 hasFontLinkNumber: hasFontLinkNumber,
+                // Multiple fonts arrays
+                allFonts: allFontItems,
+                extraFonts: extraFonts,
                 // Fallbacks
                 fontName: combinedFontName,
                 downloadUrl: primaryDownloadUrl,
@@ -13035,7 +13252,7 @@ ${encodedToken}
             const isPurchased = checkIsPurchased(p.id);
             const purchaseRec = getPurchasedRecords().find(x => String(x.productId) === String(p.id));
 
-            // Content tags: ข้อความ / ตัวเลข
+            // Content tags
             const isText = (p.fontContentType && typeof p.fontContentType.isText === 'boolean')
                 ? p.fontContentType.isText
                 : (purchaseRec?.fontContentType?.isText ?? true);
@@ -13044,68 +13261,83 @@ ${encodedToken}
                 : (purchaseRec?.fontContentType?.isNumber ?? false);
 
             let tagsHtml = '';
-            if (isText) {
-                tagsHtml += `<span class="font-content-tag text-tag">📝 ข้อความ</span>`;
-            }
-            if (isNumber) {
-                tagsHtml += `<span class="font-content-tag number-tag">🔢 ตัวเลข</span>`;
-            }
-            if (!tagsHtml) {
-                tagsHtml = `<span class="font-content-tag">🔤 ข้อความและตัวเลข</span>`;
+            if (Array.isArray(p.fontLabels) && p.fontLabels.length > 0) {
+                tagsHtml = p.fontLabels.map(lbl => {
+                    const isNum = lbl.includes('ตัวเลข');
+                    const isOth = (!isNum && !lbl.includes('ข้อความ'));
+                    const cls = isNum ? 'number-tag' : (isOth ? 'other-tag' : 'text-tag');
+                    const icon = isNum ? '🔢' : (isOth ? '🔤' : '📝');
+                    return `<span class="font-content-tag ${cls}">${icon} ${escapeHtml(lbl)}</span>`;
+                }).join(' ');
+            } else {
+                if (isText) {
+                    tagsHtml += `<span class="font-content-tag text-tag">📝 ข้อความ</span>`;
+                }
+                if (isNumber) {
+                    tagsHtml += `<span class="font-content-tag number-tag">🔢 ตัวเลข</span>`;
+                }
+                if (!tagsHtml) {
+                    tagsHtml = `<span class="font-content-tag">🔤 ข้อความและตัวเลข</span>`;
+                }
             }
 
             if (!isPurchased) {
                 // Locked / Censor blur state
-                let sectionsHtml = '';
+                let lockedItemsToRender = [];
+                if (Array.isArray(p.fontLabels) && p.fontLabels.length > 0) {
+                    lockedItemsToRender = p.fontLabels.map(lbl => ({
+                        label: lbl,
+                        type: lbl.includes('ตัวเลข') ? 'number' : (lbl.includes('ข้อความ') ? 'text' : 'other')
+                    }));
+                } else if (p.fontCount && p.fontCount > 1) {
+                    if (isText) lockedItemsToRender.push({ label: 'ฟอนต์ข้อความ (ตัวที่ 1)', type: 'text' });
+                    for (let k = 2; k <= (p.fontCount - (isNumber ? 1 : 0)); k++) {
+                        lockedItemsToRender.push({ label: `ฟอนต์ข้อความ (ตัวที่ ${k})`, type: 'text' });
+                    }
+                    if (isNumber) lockedItemsToRender.push({ label: 'ฟอนต์ตัวเลข', type: 'number' });
+                } else {
+                    if (isText) lockedItemsToRender.push({ label: 'ฟอนต์ข้อความ', type: 'text' });
+                    if (isNumber) lockedItemsToRender.push({ label: 'ฟอนต์ตัวเลข', type: 'number' });
+                    if (lockedItemsToRender.length === 0) lockedItemsToRender.push({ label: 'ข้อความและตัวเลข', type: 'text' });
+                }
 
-                if (isText) {
+                let sectionsHtml = '';
+                lockedItemsToRender.forEach((item, idx) => {
+                    const isNum = (item.type === 'number');
+                    const isOther = (item.type === 'other');
+                    const themeBg = isNum ? '#f0fdf4' : (isOther ? '#f0f9ff' : '#faf5ff');
+                    const themeBorder = isNum ? '#bbf7d0' : (isOther ? '#bae6fd' : '#e9d5ff');
+                    const themeColor = isNum ? '#166534' : (isOther ? '#0369a1' : '#5b21b6');
+                    const icon = isNum ? '🔢' : (isOther ? '🔤' : '📝');
+
                     sectionsHtml += `
-                        <div style="margin-top: 10px; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 10px 12px;">
-                            <div style="font-size: 0.78rem; font-weight: 700; color: #475569; margin-bottom: 3px;">🔤 ชื่อฟอนต์ข้อความ:</div>
+                        <div style="margin-top: 10px; background: ${themeBg}; border: 1px solid ${themeBorder}; border-radius: 8px; padding: 10px 12px;">
+                            <div style="font-size: 0.82rem; font-weight: 800; color: ${themeColor}; margin-bottom: 4px;">${icon} ${escapeHtml(item.label)}:</div>
+                            <div style="font-size: 0.78rem; font-weight: 700; color: #475569; margin-bottom: 3px;">🔤 ชื่อฟอนต์:</div>
                             <div class="censor-blur-container">
-                                <span class="censor-blur-text">KanitSecretFontNameText2026</span>
+                                <span class="censor-blur-text">SecretFontNameRandom2026_${idx}</span>
                                 <div class="censor-lock-overlay">
                                     <span>🔒 เข้ารหัสซ่อนชื่อฟอนต์</span>
                                 </div>
                             </div>
-                            <div style="font-size: 0.78rem; font-weight: 700; color: #475569; margin-top: 6px; margin-bottom: 3px;">🔗 ลิ้งค์เว็บแจกฟอนต์ข้อความ:</div>
+                            <div style="font-size: 0.78rem; font-weight: 700; color: #475569; margin-top: 6px; margin-bottom: 3px;">🔗 ลิ้งค์เว็บแจกฟอนต์:</div>
                             <div class="censor-blur-container">
-                                <span class="censor-blur-text">https://fonts.distribution.secret.url/text</span>
+                                <span class="censor-blur-text">https://fonts.distribution.secret.url/${idx}</span>
                                 <div class="censor-lock-overlay">
                                     <span>🔒 เข้ารหัสซ่อนลิงก์แจกฟอนต์</span>
                                 </div>
                             </div>
                         </div>
                     `;
-                }
+                });
 
-                if (isNumber) {
-                    sectionsHtml += `
-                        <div style="margin-top: 10px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 10px 12px;">
-                            <div style="font-size: 0.82rem; font-weight: 800; color: #166534; margin-bottom: 6px;">🔢 ฟอนต์ตัวเลข:</div>
-                            <div style="font-size: 0.78rem; font-weight: 700; color: #475569; margin-bottom: 3px;">🔢 ชื่อฟอนต์ตัวเลข:</div>
-                            <div class="censor-blur-container">
-                                <span class="censor-blur-text">BebasNeueSecretNumberFont2026</span>
-                                <div class="censor-lock-overlay">
-                                    <span>🔒 เข้ารหัสซ่อนชื่อฟอนต์ตัวเลข</span>
-                                </div>
-                            </div>
-                            <div style="font-size: 0.78rem; font-weight: 700; color: #475569; margin-top: 6px; margin-bottom: 3px;">🔗 ลิ้งค์เว็บแจกฟอนต์ตัวเลข:</div>
-                            <div class="censor-blur-container">
-                                <span class="censor-blur-text">https://fonts.distribution.secret.url/number</span>
-                                <div class="censor-lock-overlay">
-                                    <span>🔒 เข้ารหัสซ่อนลิงก์แจกฟอนต์</span>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
+                const totalCountText = (lockedItemsToRender.length > 1) ? ` (ทั้งหมด ${lockedItemsToRender.length} รายการ)` : '';
 
                 box.innerHTML = `
                     <div class="font-secret-card locked">
                         <div class="font-secret-header">
                             <div class="font-secret-badge">
-                                <span>🔒 ภาพตัวอย่างนี้ใช้ฟอนต์:</span>
+                                <span>🔒 ภาพตัวอย่างนี้ใช้ฟอนต์:${totalCountText}</span>
                             </div>
                             <div class="font-secret-pill-price">ค่าบริการ ฿${Number(p.price || 20).toFixed(2)}</div>
                         </div>
@@ -13118,7 +13350,7 @@ ${encodedToken}
                         ${sectionsHtml}
 
                         <div style="margin-top: 12px; font-size: 0.78rem; color: #6b21a8; line-height: 1.5; background: #faf5ff; border: 1px solid #e9d5ff; padding: 10px 14px; border-radius: 8px;">
-                            💡 <strong>คำแนะนำ:</strong> เมื่อชำระเงิน ฿${Number(p.price || 20).toFixed(2)} เรียบร้อยแล้ว ระบบจะปลดล็อก Censor Blur เฉลยชื่อฟอนต์ที่ใช้ในภาพนี้ พร้อมแสดงลิงก์ไปยังเว็บแจกฟอนต์ทันที
+                            💡 <strong>คำแนะนำ:</strong> เมื่อชำระเงิน ฿${Number(p.price || 20).toFixed(2)} เรียบร้อยแล้ว ระบบจะปลดล็อก Censor Blur เฉลยชื่อฟอนต์ครบทุกรายการ พร้อมแสดงลิงก์ไปยังเว็บแจกฟอนต์ทันที
                         </div>
                     </div>
                 `;
@@ -13130,9 +13362,11 @@ ${encodedToken}
                 let downloadUrlNumber = (purchaseRec?.downloadUrlNumber || purchaseRec?.fontUrlNumber || p.downloadUrlNumber || p.fontUrlNumber || '').trim();
                 let fallbackFontName = purchaseRec?.fontName || p.fontName;
                 let fallbackDownloadUrl = (purchaseRec?.downloadUrl || purchaseRec?.fontUrl || p.downloadUrl || p.fontUrl || '').trim();
+                let allFontsFromRec = purchaseRec?.allFonts || p.allFonts;
+                let extraFontsFromRec = purchaseRec?.extraFonts || p.extraFonts;
 
                 // If info is missing from local record, fetch from vault automatically
-                if ((isText && !fontNameText && !fallbackFontName) || (isNumber && !fontNameNumber && !fallbackFontName)) {
+                if (!allFontsFromRec && ((isText && !fontNameText && !fallbackFontName) || (isNumber && !fontNameNumber && !fallbackFontName))) {
                     fetch(`${VAULT_ENDPOINT}/${p.id}.json`).then(r => r.json()).then(v => {
                         if (v) {
                             fontNameText = v.fontNameText || v.fontName || fontNameText;
@@ -13147,14 +13381,16 @@ ${encodedToken}
                                 price: p.price || 20,
                                 category: 'คลังฟอนต์',
                                 isFontProduct: true,
-                                fontName: [fontNameText, fontNameNumber].filter(Boolean).join(' / ') || v.fontName,
+                                allFonts: v.allFonts || null,
+                                extraFonts: v.extraFonts || null,
+                                fontName: v.fontName || [fontNameText, fontNameNumber].filter(Boolean).join(' / ') || v.fontName,
                                 downloadUrl: downloadUrlText || downloadUrlNumber || v.downloadUrl,
                                 fontUrl: downloadUrlText || downloadUrlNumber || v.fontUrl,
                                 fontNameText: fontNameText,
                                 fontUrlText: downloadUrlText,
                                 fontNameNumber: fontNameNumber,
                                 fontUrlNumber: downloadUrlNumber,
-                                hasFontLink: Boolean(downloadUrlText || downloadUrlNumber),
+                                hasFontLink: Boolean(downloadUrlText || downloadUrlNumber || v.hasFontLink),
                                 fontContentType: v.fontContentType || p.fontContentType
                             });
                             renderDetailFontSecretBox(p);
@@ -13162,33 +13398,73 @@ ${encodedToken}
                     }).catch(e => { });
                 }
 
-                // If only single fontName was saved (legacy fallback)
-                if (isText && !fontNameText && fallbackFontName) {
-                    fontNameText = fallbackFontName;
-                    if (!downloadUrlText) downloadUrlText = fallbackDownloadUrl;
-                }
-                if (isNumber && !fontNameNumber && !isText && fallbackFontName) {
-                    fontNameNumber = fallbackFontName;
-                    if (!downloadUrlNumber) downloadUrlNumber = fallbackDownloadUrl;
+                // Prepare list of font items to render
+                let allFontItemsToRender = [];
+                if (Array.isArray(allFontsFromRec) && allFontsFromRec.length > 0) {
+                    allFontItemsToRender = allFontsFromRec;
+                } else {
+                    if (isText && (fontNameText || fallbackFontName)) {
+                        allFontItemsToRender.push({
+                            type: 'text',
+                            label: 'ฟอนต์ข้อความ',
+                            name: fontNameText || fallbackFontName,
+                            url: downloadUrlText || fallbackDownloadUrl
+                        });
+                    }
+                    if (isNumber && fontNameNumber) {
+                        allFontItemsToRender.push({
+                            type: 'number',
+                            label: 'ฟอนต์ตัวเลข',
+                            name: fontNameNumber,
+                            url: downloadUrlNumber
+                        });
+                    }
+                    if (Array.isArray(extraFontsFromRec) && extraFontsFromRec.length > 0) {
+                        extraFontsFromRec.forEach(ef => allFontItemsToRender.push(ef));
+                    }
                 }
 
                 let sectionsHtml = '';
 
-                // Unlocked Section: ข้อความ
-                if (isText) {
-                    const dispTextName = fontNameText || 'กำลังโหลดชื่อฟอนต์...';
-                    const hasLink = Boolean(downloadUrlText && (downloadUrlText.startsWith('http://') || downloadUrlText.startsWith('https://')));
+                // Master Copy Banner if multiple fonts
+                if (allFontItemsToRender.length > 1) {
+                    const allNamesJoined = allFontItemsToRender.map(f => f.name).filter(Boolean).join(' / ');
                     sectionsHtml += `
-                        <div style="margin-top: 12px; background: #faf5ff; border: 1px solid #ddd6fe; border-radius: 8px; padding: 12px;">
-                            <div style="font-size: 0.84rem; font-weight: 800; color: #5b21b6; margin-bottom: 6px;">
-                                📝 ข้อมูลเฉลยฟอนต์ข้อความ:
+                        <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center; background: #ede9fe; border: 1.5px solid #c4b5fd; border-radius: 8px; padding: 10px 14px; flex-wrap: wrap; gap: 8px;">
+                            <span style="font-size: 0.85rem; font-weight: 800; color: #5b21b6;">
+                                ✨ เฉลยฟอนต์ครบทั้ง ${allFontItemsToRender.length} รายการ
+                            </span>
+                            <button type="button" class="btn-tool-sm" onclick="copyFontNameToClipboard('${escapeHtml(allNamesJoined)}')"
+                                style="background: #7c3aed; color: #ffffff; border: none; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                📋 คัดลอกชื่อฟอนต์ทั้งหมด (${allFontItemsToRender.length} ตัว)
+                            </button>
+                        </div>
+                    `;
+                }
+
+                allFontItemsToRender.forEach((item, idx) => {
+                    const isNum = (item.type === 'number');
+                    const isOther = (item.type === 'other');
+                    const themeBg = isNum ? '#f0fdf4' : (isOther ? '#f0f9ff' : '#faf5ff');
+                    const themeBorder = isNum ? '#bbf7d0' : (isOther ? '#bae6fd' : '#ddd6fe');
+                    const themeColor = isNum ? '#166534' : (isOther ? '#0369a1' : '#5b21b6');
+                    const icon = isNum ? '🔢' : (isOther ? '🔤' : '📝');
+                    const labelTitle = item.label || (isNum ? `ฟอนต์ตัวเลข` : `ฟอนต์ข้อความ`);
+                    const dispName = item.name || 'กำลังโหลดชื่อฟอนต์...';
+                    const linkUrl = (item.url || item.downloadUrl || '').trim();
+                    const hasLink = Boolean(linkUrl && (linkUrl.startsWith('http://') || linkUrl.startsWith('https://')));
+
+                    sectionsHtml += `
+                        <div style="margin-top: 12px; background: ${themeBg}; border: 1px solid ${themeBorder}; border-radius: 8px; padding: 12px;">
+                            <div style="font-size: 0.84rem; font-weight: 800; color: ${themeColor}; margin-bottom: 6px;">
+                                ${icon} ข้อมูลเฉลย: ${escapeHtml(labelTitle)}
                             </div>
                             <div style="font-size: 0.8rem; font-weight: 700; color: #1e1b4b; margin-bottom: 4px;">
-                                🔤 ชื่อฟอนต์ข้อความ:
+                                🔤 ชื่อฟอนต์:
                             </div>
                             <div class="font-unveiled-name-row">
-                                <span class="font-unveiled-name">${escapeHtml(dispTextName)}</span>
-                                <button type="button" class="btn-copy-font" onclick="copyFontNameToClipboard('${escapeHtml(dispTextName)}')">
+                                <span class="font-unveiled-name">${escapeHtml(dispName)}</span>
+                                <button type="button" class="btn-copy-font" onclick="copyFontNameToClipboard('${escapeHtml(dispName)}')">
                                     📋 คัดลอกชื่อฟอนต์
                                 </button>
                             </div>
@@ -13198,10 +13474,10 @@ ${encodedToken}
                                 </div>
                                 ${hasLink ? `
                                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                        <a href="${escapeHtml(downloadUrlText)}" target="_blank" rel="noopener noreferrer" class="btn-font-link">
+                                        <a href="${escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer" class="btn-font-link">
                                             🌐 ไปยังเว็บแจกฟอนต์ / ดาวน์โหลดฟอนต์ ↗
                                         </a>
-                                        <span style="font-size: 0.76rem; color: #64748b; word-break: break-all;">${escapeHtml(downloadUrlText)}</span>
+                                        <span style="font-size: 0.76rem; color: #64748b; word-break: break-all;">${escapeHtml(linkUrl)}</span>
                                     </div>
                                 ` : `
                                     <div class="font-no-link-box">
@@ -13211,52 +13487,13 @@ ${encodedToken}
                             </div>
                         </div>
                     `;
-                }
-
-                // Unlocked Section: ตัวเลข
-                if (isNumber) {
-                    const dispNumName = fontNameNumber || 'กำลังโหลดชื่อฟอนต์...';
-                    const hasLink = Boolean(downloadUrlNumber && (downloadUrlNumber.startsWith('http://') || downloadUrlNumber.startsWith('https://')));
-                    sectionsHtml += `
-                        <div style="margin-top: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px;">
-                            <div style="font-size: 0.84rem; font-weight: 800; color: #166534; margin-bottom: 6px;">
-                                🔢 ข้อมูลเฉลยฟอนต์ตัวเลข:
-                            </div>
-                            <div style="font-size: 0.8rem; font-weight: 700; color: #14532d; margin-bottom: 4px;">
-                                🔢 ชื่อฟอนต์ตัวเลข:
-                            </div>
-                            <div class="font-unveiled-name-row">
-                                <span class="font-unveiled-name">${escapeHtml(dispNumName)}</span>
-                                <button type="button" class="btn-copy-font" onclick="copyFontNameToClipboard('${escapeHtml(dispNumName)}')">
-                                    📋 คัดลอกชื่อฟอนต์
-                                </button>
-                            </div>
-                            <div class="font-download-row" style="margin-top: 10px;">
-                                <div style="font-size: 0.8rem; font-weight: 700; color: #14532d; margin-bottom: 4px;">
-                                    🔗 ลิ้งค์ไปยังเว็บที่แจกฟอนต์ / แหล่งดาวน์โหลด:
-                                </div>
-                                ${hasLink ? `
-                                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                        <a href="${escapeHtml(downloadUrlNumber)}" target="_blank" rel="noopener noreferrer" class="btn-font-link">
-                                            🌐 ไปยังเว็บแจกฟอนต์ / ดาวน์โหลดฟอนต์ ↗
-                                        </a>
-                                        <span style="font-size: 0.76rem; color: #64748b; word-break: break-all;">${escapeHtml(downloadUrlNumber)}</span>
-                                    </div>
-                                ` : `
-                                    <div class="font-no-link-box">
-                                        ℹ️ บอกแต่ชื่อฟอนต์แต่ไม่มีลิ้งค์ดาวน์โหลด
-                                    </div>
-                                `}
-                            </div>
-                        </div>
-                    `;
-                }
+                });
 
                 box.innerHTML = `
                     <div class="font-secret-card unlocked font-unlocked-box">
                         <div class="font-secret-header">
                             <div class="font-secret-badge-unlocked">
-                                <span>🎉 ปลดล็อกข้อมูลฟอนต์เรียบร้อยแล้ว (ชำระแล้ว ฿${Number(p.price || 10).toFixed(2)})</span>
+                                <span>🎉 ปลดล็อกข้อมูลฟอนต์เรียบร้อยแล้ว (ชำระแล้ว ฿${Number(p.price || 20).toFixed(2)})</span>
                             </div>
                             <span style="font-size: 0.75rem; color: #15803d; font-weight: 700;">✓ สิทธิ์เข้าดูตลอดชีพ</span>
                         </div>
