@@ -3671,6 +3671,13 @@
             text-align: center;
         }
 
+        .input-customer-offer::placeholder {
+            color: #94a3b8;
+            font-weight: 800;
+            letter-spacing: 2px;
+            opacity: 0.8;
+        }
+
         .offer-unit-txt {
             font-size: 13px;
             font-weight: 700;
@@ -7915,7 +7922,7 @@
                         </div>
                         <div class="offer-input-box-wrap">
                             <span class="offer-currency-sign">฿</span>
-                            <input type="number" id="inputCustomerOfferPrice" class="input-customer-offer" min="100" step="10" placeholder="100" value="${offerVal}">
+                            <input type="text" inputmode="numeric" pattern="[0-9]*" id="inputCustomerOfferPrice" class="input-customer-offer" placeholder="XXX" value="${offerVal}">
                             <span class="offer-unit-txt">บาท</span>
                         </div>
 
@@ -7959,7 +7966,7 @@
                             <i class="fa-solid fa-paper-plane"></i> ยืนยันเสนอราคาจ้างทำงาน<span id="txtBtnOfferAmount">${btnAmountText}</span>
                         </button>
                         <div class="offer-footnote" id="offerFootnote" style="margin-top:10px;font-size:12px;line-height:1.4;">
-                            <span style="color:#4f46e5;font-weight:700;"><i class="fa-solid fa-circle-info"></i> กรุณาระบุและกดยืนยันเสนอราคาจ้างทำงานก่อน เพื่อเริ่มระบุจุดแก้ไขบนภาพ (ขั้นต่ำ 100 บาท)</span>
+                            <span style="color:#64748b;"><i class="fa-solid fa-circle-info"></i> กรุณาระบุและกดยืนยันเสนอราคาจ้างทำงานก่อน เพื่อเริ่มระบุจุดแก้ไขบนภาพ</span>
                         </div>
                     </div>
                 `;
@@ -8006,6 +8013,7 @@
                 });
 
                 inpPrice?.addEventListener('input', () => {
+                    inpPrice.value = inpPrice.value.replace(/[^0-9]/g, '');
                     const raw = inpPrice.value.trim();
                     const val = parseFloat(raw);
                     currentOfferInputVal = (!isNaN(val) && raw !== '') ? val : null;
