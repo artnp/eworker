@@ -2740,6 +2740,20 @@
             outline: 2px solid #ffffff !important;
         }
 
+        @keyframes offerCardAttentionPulse {
+            0%, 100% {
+                box-shadow: 0 4px 16px rgba(79, 70, 229, 0.15), 0 0 0 0 rgba(99, 102, 241, 0.6);
+            }
+            50% {
+                box-shadow: 0 6px 24px rgba(79, 70, 229, 0.25), 0 0 0 8px rgba(99, 102, 241, 0);
+            }
+        }
+
+        .customer-offer-card.attention-pulse {
+            animation: offerCardAttentionPulse 1.5s infinite ease-in-out !important;
+            border-color: #6366f1 !important;
+        }
+
         .btn-submit-all-quotes {
             position: relative;
             overflow: hidden;
@@ -4430,11 +4444,11 @@
 
     <!-- Interactive Workflow Stepper Bar (5 ขั้นตอนเข้าใจง่าย) -->
     <div class="workflow-stepper-bar" id="workflowStepperBar"
-        data-mobile-step="ขั้นตอนที่ 1/5: วงจุด &amp; เสนอราคาจ้าง">
+        data-mobile-step="ขั้นตอนที่ 1/5: เสนอราคา &amp; วงจุดแก้ไข">
         <div class="stepper-inner">
             <div class="stepper-item active" data-step="1">
                 <div class="step-dot">1</div>
-                <span class="step-label">1. วงจุด &amp; เสนอราคา</span>
+                <span class="step-label">1. เสนอราคา &amp; วงจุด</span>
             </div>
             <div class="stepper-line" data-line="1"></div>
             <div class="stepper-item" data-step="2">
@@ -4689,15 +4703,15 @@
 
                 <div id="annotationsCards">
                     <div class="empty-state">
-                        <div class="empty-state-icon-wrap">
-                            <i class="fa-solid fa-location-crosshairs"></i>
+                        <div class="empty-state-icon-wrap" style="background:#fef3c7;color:#d97706;">
+                            <i class="fa-solid fa-lock"></i>
                         </div>
-                        <div class="empty-state-title">ยังไม่มีจุดแก้ไข</div>
+                        <div class="empty-state-title" style="color:#92400e;">กรุณาเสนอราคาจ้างก่อน</div>
                         <div class="empty-state-desc">
-                            คลิกบนรูปภาพตรงจุดที่ต้องการแก้ไข<br>หรือกดปุ่มด้านล่างเพื่อเริ่มระบุจุด</div>
+                            ระบุราคาเสนอจ้างทำงานที่คุณต้องการในกล่องด้านบน<br>และกดยืนยันเสนอราคาเพื่อเริ่มระบุจุดแก้ไขบนภาพ</div>
                         <button class="empty-state-btn" type="button"
-                            onclick="document.getElementById('addMarkerBtn')?.click();">
-                            <i class="fa-solid fa-plus"></i> เพิ่มจุดแก้ไขแรก
+                            onclick="focusOfferPriceInput();" style="background:#4f46e5;color:#fff;border-color:#4338ca;">
+                            <i class="fa-solid fa-coins"></i> ไประบุราคาเสนอจ้าง
                         </button>
                     </div>
                 </div>
@@ -6391,8 +6405,51 @@
             isPanning = false;
         });
 
-        // ===== MARKERS =====
+        // ===== MARKERS & OFFER PRICE GATEWAY =====
+        function canCustomerAddMarkers() {
+            if (isAdmin) return true;
+            // ลูกค้าต้องเสนอราคาแล้ว (customerOffered / submittedForQuote) หรืออยู่ในสถานะที่ช่างตอบรับ/กำลังทำ/เสร็จแล้ว
+            if (currentSessionData.customerOffered ||
+                currentSessionData.submittedForQuote ||
+                currentSessionData.accepted ||
+                currentSessionData.jobStatus === 'offer_pending' ||
+                currentSessionData.jobStatus === 'processing' ||
+                currentSessionData.hasWatermark ||
+                currentSessionData.isPaid) {
+                return true;
+            }
+            // หากมีจุดแก้ไขอยู่แล้ว (เช่น โหลดงานเก่ากลับมาทำต่อ) ให้สามารถแก้ไขต่อได้
+            if (Object.keys(annotations).length > 0) {
+                return true;
+            }
+            return false;
+        }
+
+        function focusOfferPriceInput() {
+            const inp = document.getElementById('inputCustomerOfferPrice');
+            const card = document.querySelector('.customer-offer-card') || document.getElementById('totalJobCardContainer');
+            if (card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                card.classList.remove('attention-pulse');
+                void card.offsetWidth;
+                card.classList.add('attention-pulse');
+                setTimeout(() => card.classList.remove('attention-pulse'), 3000);
+            }
+            if (inp) {
+                setTimeout(() => {
+                    inp.focus();
+                    inp.select?.();
+                }, 300);
+            }
+        }
+
         function addMarker(clickX = null, clickY = null, width = 14, height = 8, text = '') {
+            if (!canCustomerAddMarkers()) {
+                showToast('⚠️ กรุณาระบุและกดยืนยัน "เสนอราคาจ้างทำงาน" ก่อนเริ่มเพิ่มจุดแก้ไขขอรับ', 'warning', 5000);
+                focusOfferPriceInput();
+                return;
+            }
+
             const markerId = 'marker_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             const number = markerCounter++;
 
@@ -6430,16 +6487,32 @@
         }
 
         addMarkerBtn.addEventListener('click', () => {
+            if (!canCustomerAddMarkers()) {
+                showToast('⚠️ กรุณาระบุและกดยืนยัน "เสนอราคาจ้างทำงาน" ก่อนเริ่มเพิ่มจุดแก้ไขขอรับ', 'warning', 5000);
+                focusOfferPriceInput();
+                return;
+            }
             addMarker();
         });
 
         addMarkerFloatBtn.addEventListener('click', () => {
+            if (!canCustomerAddMarkers()) {
+                showToast('⚠️ กรุณาระบุและกดยืนยัน "เสนอราคาจ้างทำงาน" ก่อนเริ่มเพิ่มจุดแก้ไขขอรับ', 'warning', 5000);
+                focusOfferPriceInput();
+                return;
+            }
             addMarker();
         });
 
         // Click on canvas to add marker (accurate placement, respects panning)
         mainImage.addEventListener('click', (e) => {
             if (!isDragging && !isResizing && !isClickSuppressed) {
+                if (!canCustomerAddMarkers()) {
+                    showToast('⚠️ กรุณาระบุและกดยืนยัน "เสนอราคาจ้างทำงาน" ก่อนเริ่มเพิ่มจุดแก้ไขขอรับ', 'warning', 5000);
+                    focusOfferPriceInput();
+                    isClickSuppressed = false;
+                    return;
+                }
                 const rect = mainImage.getBoundingClientRect();
                 const x = ((e.clientX - rect.left) / rect.width) * 100;
                 const y = ((e.clientY - rect.top) / rect.height) * 100;
@@ -6450,6 +6523,12 @@
 
         pdfCanvas.addEventListener('click', (e) => {
             if (!isDragging && !isResizing && !isClickSuppressed) {
+                if (!canCustomerAddMarkers()) {
+                    showToast('⚠️ กรุณาระบุและกดยืนยัน "เสนอราคาจ้างทำงาน" ก่อนเริ่มเพิ่มจุดแก้ไขขอรับ', 'warning', 5000);
+                    focusOfferPriceInput();
+                    isClickSuppressed = false;
+                    return;
+                }
                 const rect = pdfCanvas.getBoundingClientRect();
                 const x = ((e.clientX - rect.left) / rect.width) * 100;
                 const y = ((e.clientY - rect.top) / rect.height) * 100;
@@ -6471,18 +6550,7 @@
             const allMarkers = Object.values(annotations);
 
             if (allMarkers.length === 0) {
-                const emptyHtml = `
-                <div class="empty-state">
-                    <div class="empty-state-icon-wrap">
-                        <i class="fa-solid fa-location-crosshairs"></i>
-                    </div>
-                    <div class="empty-state-title">ยังไม่มีจุดแก้ไข</div>
-                    <div class="empty-state-desc">คลิกบนรูปภาพตรงจุดที่ต้องการแก้ไข<br>หรือกดปุ่มด้านล่างเพื่อเริ่มระบุจุด</div>
-                    <button class="empty-state-btn" type="button" onclick="document.getElementById('addMarkerBtn')?.click();">
-                        <i class="fa-solid fa-plus"></i> เพิ่มจุดแก้ไขแรก
-                    </button>
-                </div>
-                `;
+                const emptyHtml = getEmptyAnnotationsHtml();
                 if (annotationsCards) {
                     annotationsCards.innerHTML = emptyHtml;
                 } else if (annotationsList) {
@@ -7133,7 +7201,7 @@
             if (!stepper) return;
 
             let currentStep = 1;
-            let mobileText = 'ขั้นตอนที่ 1/5: วงจุด & เสนอราคาจ้าง';
+            let mobileText = 'ขั้นตอนที่ 1/5: เสนอราคา & วงจุดแก้ไข';
 
             if (currentSessionData.jobStatus === 'rejected') {
                 stepper.setAttribute('data-mobile-step', 'สถานะ: ปฏิเสธไม่รับงาน (เสี่ยงทางกฎหมาย)');
@@ -7170,9 +7238,13 @@
             } else {
                 currentStep = 1;
                 const count = Object.keys(annotations).length;
-                mobileText = count > 0
-                    ? `ขั้นตอนที่ 1/5: กำหนดจุดแล้ว (${count} จุด) - ระบุราคาและส่งข้อเสนอ`
-                    : 'ขั้นตอนที่ 1/5: คลิกบนภาพเพื่อกำหนดจุด & เสนอราคา';
+                if (!canCustomerAddMarkers()) {
+                    mobileText = 'ขั้นตอนที่ 1/5: เสนอราคาจ้างทำงาน (ระบุราคาเสนอจ้างก่อนเริ่มระบุจุด)';
+                } else {
+                    mobileText = count > 0
+                        ? `ขั้นตอนที่ 1/5: เสนอราคาแล้ว (฿${currentSessionData.price || currentSessionData.offerPrice || 100}) - กำหนดจุดแล้ว (${count} จุด)`
+                        : `ขั้นตอนที่ 1/5: เสนอราคาแล้ว (฿${currentSessionData.price || currentSessionData.offerPrice || 100}) - คลิกบนภาพเพื่อกำหนดจุด & เสนอราคา`;
+                }
             }
 
             stepper.setAttribute('data-mobile-step', mobileText);
@@ -7204,14 +7276,39 @@
             const tip = document.getElementById('canvasHelperTip');
             if (!tip) return;
             const count = Object.keys(annotations).length;
-            if (count > 0 || currentSessionData.submittedForQuote || currentSessionData.customerOffered || currentSessionData.accepted || currentSessionData.hasWatermark || currentSessionData.isPaid) {
+            if (count > 0 || currentSessionData.accepted || currentSessionData.jobStatus === 'processing' || currentSessionData.hasWatermark || currentSessionData.isPaid) {
                 tip.classList.add('hidden');
+                return;
+            }
+            tip.classList.remove('hidden');
+            if (!canCustomerAddMarkers()) {
+                tip.innerHTML = `<i class="fa-solid fa-lock" style="color:#f59e0b;"></i> <span>กรุณาเสนอราคาจ้างทำงานก่อน เพื่อเริ่มวงจุดแก้ไข</span>`;
+                tip.style.cursor = 'pointer';
+                tip.onclick = focusOfferPriceInput;
             } else {
-                tip.classList.remove('hidden');
+                tip.innerHTML = `<i class="fa-solid fa-arrow-pointer" style="color:#818cf8;"></i> <span>คลิกบนรูปภาพตรงจุดที่ต้องการแก้ไข เพื่อสร้างวงจุด</span>`;
+                tip.style.cursor = 'default';
+                tip.onclick = null;
             }
         }
 
         function getEmptyAnnotationsHtml() {
+            if (!isAdmin && !canCustomerAddMarkers()) {
+                return `
+                    <div class="empty-state">
+                        <div class="empty-state-icon-wrap" style="background:#fef3c7;color:#d97706;">
+                            <i class="fa-solid fa-lock"></i>
+                        </div>
+                        <div class="empty-state-title" style="color:#92400e;">กรุณาเสนอราคาจ้างก่อน</div>
+                        <div class="empty-state-desc">
+                            ระบุราคาเสนอจ้างทำงานที่คุณต้องการในกล่องด้านบน<br>และกดยืนยันเสนอราคาเพื่อเริ่มระบุจุดแก้ไขบนภาพ
+                        </div>
+                        <button class="empty-state-btn" type="button" onclick="focusOfferPriceInput();" style="background:#4f46e5;color:#fff;border-color:#4338ca;">
+                            <i class="fa-solid fa-coins"></i> ไประบุราคาเสนอจ้าง
+                        </button>
+                    </div>
+                `;
+            }
             return `
                 <div class="empty-state">
                     <div class="empty-state-icon-wrap">
@@ -7228,11 +7325,33 @@
 
         function updateMarkerAttentionState() {
             const count = Object.keys(annotations).length;
-            const isDraft = !isAdmin && !currentSessionData.customerOffered && !currentSessionData.submittedForQuote && !currentSessionData.accepted && currentSessionData.jobStatus !== 'offer_pending' && currentSessionData.jobStatus !== 'processing' && !currentSessionData.hasWatermark && !currentSessionData.isPaid;
             const floatBtn = document.getElementById('addMarkerFloatBtn');
             const headerBtn = document.getElementById('addMarkerBtn');
 
-            if (isDraft && count === 0) {
+            if (!isAdmin && !canCustomerAddMarkers()) {
+                floatBtn?.classList.remove('attention-pulse');
+                headerBtn?.classList.remove('attention-pulse');
+                if (floatBtn) {
+                    floatBtn.innerHTML = '<i class="fa-solid fa-lock"></i> เสนอราคาก่อน';
+                    floatBtn.style.opacity = '0.8';
+                }
+                if (headerBtn) {
+                    headerBtn.title = 'กรุณาเสนอราคาจ้างทำงานก่อน';
+                }
+                return;
+            }
+
+            if (floatBtn) {
+                floatBtn.innerHTML = '<i class="fa-solid fa-plus"></i> เพิ่มจุดแก้ไข';
+                floatBtn.style.opacity = '1';
+            }
+            if (headerBtn) {
+                headerBtn.title = '';
+            }
+
+            const isWaitingOrDraft = !isAdmin && !currentSessionData.accepted && currentSessionData.jobStatus !== 'processing' && !currentSessionData.hasWatermark && !currentSessionData.isPaid;
+
+            if (isWaitingOrDraft && count === 0) {
                 floatBtn?.classList.add('attention-pulse');
                 headerBtn?.classList.add('attention-pulse');
             } else {
@@ -7606,7 +7725,7 @@
                         <div class="admin-offer-review-card">
                             <div class="offer-card-top">
                                 <span class="offer-new-tag"><i class="fa-solid fa-bell"></i> ข้อเสนอจ้างทำงานใหม่</span>
-                                <span class="offer-markers-tag"><i class="fa-solid fa-location-crosshairs"></i> ${totalMarkers} จุดแก้ไข</span>
+                                <span class="offer-markers-tag"><i class="fa-solid fa-location-crosshairs"></i> ${totalMarkers === 0 ? 'ลูกค้ากำลังเริ่มระบุจุดแก้ไข' : `${totalMarkers} จุดแก้ไข`}</span>
                             </div>
                             <div style="margin:8px 0 12px;text-align:center;">
                                 <span style="background:#fff1f2;border:1px solid #fecdd3;color:#e11d48;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;">
@@ -7696,10 +7815,22 @@
                             <div class="customer-waiting-quote-panel">
                                 <div style="font-size:24px;color:#6366f1;margin-bottom:6px;"><i class="fa-solid fa-paper-plane fa-bounce"></i></div>
                                 <div class="waiting-quote-text" style="font-size:14.5px;font-weight:800;color:#1e293b;">
-                                    ส่งข้อเสนอจ้างทำงานแล้ว (฿${price}) • รอช่างพิจารณา...
+                                    เสนอราคาจ้างทำงานแล้ว (฿${price}) • รอช่างพิจารณา...
                                 </div>
                                 <div class="waiting-quote-sub" style="font-size:12px;color:#64748b;margin-top:4px;">
-                                    ช่างกำลังตรวจสอบจุดแก้ไข (${totalMarkers} จุด) และข้อเสนอราคาที่นายท่านกำหนด
+                                    ${totalMarkers === 0
+                                        ? '<span style="color:#059669;font-weight:700;"><i class="fa-solid fa-circle-check"></i> เสนอราคาสำเร็จแล้ว! สามารถคลิกบนภาพเพื่อเริ่มระบุจุดแก้ไขได้ทันที</span>'
+                                        : `ช่างกำลังตรวจสอบจุดแก้ไข (${totalMarkers} จุด) และข้อเสนอราคาที่นายท่านกำหนด`
+                                    }
+                                </div>
+
+                                <div style="background:#ecfdf5;border:1.5px solid #a7f3d0;border-radius:10px;padding:8px 12px;margin:8px auto;max-width:320px;text-align:center;">
+                                    <div style="font-weight:700;color:#065f46;font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;">
+                                        <i class="fa-solid fa-location-crosshairs"></i> ${totalMarkers === 0 ? 'เริ่มระบุจุดแก้ไขบนภาพได้ทันที' : `ระบุจุดแก้ไขแล้ว ${totalMarkers} จุด (คลิกบนภาพเพิ่มได้ตลอดเวลา)`}
+                                    </div>
+                                    <div style="font-size:11px;color:#047857;margin-top:2px;">
+                                        ${totalMarkers === 0 ? 'คลิกหรือแตะบนรูปภาพตรงจุดที่ต้องการแก้ไข เพื่อสร้างวงจุดและพิมพ์ข้อความ' : 'ช่างจะเห็นจุดแก้ไขและการพิมพ์ข้อความของท่านแบบเรียลไทม์'}
+                                    </div>
                                 </div>
 
                                 <div style="margin:12px auto;background:#f8fafc;border:1.5px solid #cbd5e1;padding:6px 14px;border-radius:20px;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:#475569;">
@@ -7782,16 +7913,16 @@
                             <i class="fa-solid fa-coins" style="color:#eab308;font-size:18px;"></i>
                             <span>เสนอราคาจ้างทำงานนี้</span>
                         </div>
-                        <div class="offer-input-box-wrap" style="${totalMarkers === 0 ? 'opacity:0.6;background:#f1f5f9;cursor:not-allowed;' : ''}">
+                        <div class="offer-input-box-wrap">
                             <span class="offer-currency-sign">฿</span>
-                            <input type="number" id="inputCustomerOfferPrice" class="input-customer-offer" min="1" step="10" placeholder="0" value="${offerVal}" ${totalMarkers === 0 ? 'disabled' : ''}>
+                            <input type="number" id="inputCustomerOfferPrice" class="input-customer-offer" min="100" step="10" placeholder="100" value="${offerVal}">
                             <span class="offer-unit-txt">บาท</span>
                         </div>
 
                         <!-- 🛡️ Customer Warranty & Indemnity Checkbox -->
                         <div class="customer-warranty-check-wrap" id="wrapCustomerLegalWarranty" style="margin: 12px 0 14px; text-align: left; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; transition: all 0.2s; cursor: pointer;">
                             <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; user-select: none;">
-                                <input type="checkbox" id="chkCustomerLegalWarranty" ${totalMarkers === 0 ? 'disabled' : ''} style="margin-top: 2px; accent-color: #4f46e5; width: 22px; height: 22px; min-width: 22px; min-height: 22px; cursor: pointer; flex-shrink: 0;">
+                                <input type="checkbox" id="chkCustomerLegalWarranty" style="margin-top: 2px; accent-color: #4f46e5; width: 22px; height: 22px; min-width: 22px; min-height: 22px; cursor: pointer; flex-shrink: 0;">
                                 <span style="font-size: 12px; color: #334155; line-height: 1.55;">
                                     <strong>ข้าพเจ้ารับรองว่าภาพนี้เป็นสิทธิ์ของข้าพเจ้า</strong> และจ้างทำเพื่อการศึกษา/งานกราฟิกส่วนบุคคล มิได้นำไปใช้ในการฉ้อโกง ปลอมแปลง หรือกระทำความผิดใดๆ หากนำไปใช้ผิดกฎหมาย ข้าพเจ้าขอรับผิดชอบแต่เพียงผู้เดียวทั้งสิ้น
                                 </span>
@@ -7807,7 +7938,7 @@
                                         ต้องการให้ส่งงานให้ในแชท Facebook หรือไม่?
                                     </span>
                                 </div>
-                                <input type="checkbox" id="chkCustomerFbDelivery" ${savedFbDelivery ? 'checked' : ''} ${totalMarkers === 0 ? 'disabled' : ''} style="width: 20px; height: 20px; accent-color: #0084ff; cursor: pointer;">
+                                <input type="checkbox" id="chkCustomerFbDelivery" ${savedFbDelivery ? 'checked' : ''} style="width: 20px; height: 20px; accent-color: #0084ff; cursor: pointer;">
                             </label>
                             
                             <div id="wrapFbDeliveryInput" style="margin-top: 10px; ${savedFbDelivery ? '' : 'display: none;'}">
@@ -7818,21 +7949,17 @@
                                     <input type="text" id="inputCustomerFbContact" 
                                            placeholder="พิมพ์ชื่อโปรไฟล์ Facebook หรือลิงก์โปรไฟล์ / m.me ของคุณ" 
                                            value="${escapeHtml(savedFbContact)}"
-                                           ${totalMarkers === 0 ? 'disabled' : ''}
                                            style="width: 100%; box-sizing: border-box; padding: 9px 12px 9px 36px; border: 1.5px solid #86efac; border-radius: 8px; font-size: 12.5px; outline: none; background: #ffffff; color: #1e293b;">
                                     <i class="fa-brands fa-facebook" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #0084ff; font-size: 15px;"></i>
                                 </div>
                             </div>
                         </div>
 
-                        <button class="btn-submit-all-quotes" id="btnSubmitCustomerOffer" ${totalMarkers === 0 ? 'disabled style="opacity:0.6;cursor:not-allowed;white-space:nowrap;"' : 'style="white-space:nowrap;"'}>
-                            <i class="fa-solid fa-paper-plane"></i> ส่งข้อเสนอจ้างทำงาน<span id="txtBtnOfferAmount">${btnAmountText}</span>
+                        <button class="btn-submit-all-quotes" id="btnSubmitCustomerOffer" style="white-space:nowrap;">
+                            <i class="fa-solid fa-paper-plane"></i> ยืนยันเสนอราคาจ้างทำงาน<span id="txtBtnOfferAmount">${btnAmountText}</span>
                         </button>
                         <div class="offer-footnote" id="offerFootnote" style="margin-top:10px;font-size:12px;line-height:1.4;">
-                            ${totalMarkers === 0
-                        ? '<span style="color:#d97706;font-weight:700;"><i class="fa-solid fa-circle-exclamation"></i> กรุณากดปุ่ม <b>"เพิ่มจุดแก้ไข"</b> บนภาพอย่างน้อย 1 จุดก่อนเสนอราคาจ้าง</span>'
-                        : '<span style="color:#64748b;"><i class="fa-solid fa-circle-info"></i> ระบุราคาจ้างตามความเหมาะสม ช่างจะพิจารณาข้อเสนอและเริ่มงานทันที</span>'
-                    }
+                            <span style="color:#4f46e5;font-weight:700;"><i class="fa-solid fa-circle-info"></i> กรุณาระบุและกดยืนยันเสนอราคาจ้างทำงานก่อน เพื่อเริ่มระบุจุดแก้ไขบนภาพ (ขั้นต่ำ 100 บาท)</span>
                         </div>
                     </div>
                 `;
@@ -7888,11 +8015,6 @@
                 });
 
                 btnSubmit?.addEventListener('click', () => {
-                    if (totalMarkers === 0) {
-                        showToast('กรุณากดปุ่ม "เพิ่มจุดแก้ไข" บนภาพก่อนส่งข้อเสนอจ้างขอรับ', 'warning');
-                        updateMarkerAttentionState();
-                        return;
-                    }
                     const val = parseFloat(inpPrice?.value) || 0;
                     if (val <= 0) {
                         showToast('กรุณากรอกยอดราคาเสนอจ้างทำงานก่อนขอรับ', 'warning');
@@ -7900,7 +8022,7 @@
                         return;
                     }
                     if (val < 100) {
-                        showToast('ช่างไม่รับข้อเสนอที่ต่ำกว่า 100 บาทขอรับ กรุณาปรับเพิ่มราคาเสนอจ้าง', 'warning');
+                        showToast('ช่างไม่รับข้อเสนอที่ต่ำกว่า 100 บาทขอรับ กรุณาปรับเพิ่มราคาเสนอจ้าง (ขั้นต่ำ 100 บาท)', 'warning');
                         inpPrice?.focus();
                         return;
                     }
@@ -8019,11 +8141,6 @@
         // ===== CUSTOMER & ADMIN OFFER ACTION HANDLERS =====
         async function submitCustomerOffer(amount, sendViaFbParam = null, fbContactParam = null) {
             if (!sessionId) return;
-            const markersCount = Object.keys(annotations).length;
-            if (markersCount === 0) {
-                showToast('กรุณามาร์คจุดที่ต้องการแก้ไขอย่างน้อย 1 จุด', 'warning');
-                return;
-            }
             const val = parseFloat(amount) || 0;
             if (val < 100) {
                 showToast('ยอดราคาเสนอจ้างขั้นต่ำเริ่มต้นที่ 100 บาทขอรับ (ไม่รับงานต่ำกว่า 100฿)', 'warning');
@@ -8086,8 +8203,10 @@
 
                 hideLoading();
                 playJobCompletedBeep();
-                showToast(`🚀 ส่งข้อเสนอราคา ฿${val} ให้ช่างเรียบร้อยแล้ว กำลังรอช่างพิจารณาข้อเสนอ`, 'success', 6000);
+                showToast(`🚀 เสนอราคาจ้าง ฿${val} เรียบร้อยแล้ว! ตอนนี้คุณสามารถคลิกบนภาพเพื่อเพิ่มจุดแก้ไขได้ทันที`, 'success', 8000);
                 renderTotalJobCard();
+                updateMarkerAttentionState();
+                updateCanvasTipVisibility();
             } catch (e) {
                 hideLoading();
                 showToast('เกิดข้อผิดพลาด: ' + e.message, 'danger');
