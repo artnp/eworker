@@ -7067,7 +7067,7 @@
             <div class="admin-form-header" style="padding: 16px 20px;">
                 <h3 id="admin-font-form-header-text"
                     style="color: #5b21b6; margin: 0; font-size: 1.15rem; font-weight: 800;">
-                    🔤 เพิ่มรายการในคลังฟอนต์ (โพสต์ขาย ฿10)
+                    🔤 เพิ่มรายการในคลังฟอนต์ (โพสต์ขาย ฿20)
                 </h3>
             </div>
 
@@ -7139,12 +7139,12 @@
                         </div>
                     </div>
 
-                    <!-- Price: 10 Baht -->
+                    <!-- Price: 20 Baht -->
                     <div class="form-group-clean" style="margin-bottom: 14px;">
                         <label class="form-label-clean" style="margin-bottom: 4px; font-weight: 700; color: #1e293b;">💰
                             ค่าบริการ (บาท THB) *</label>
                         <input type="number" step="0.5" min="1" id="admin-font-price" class="form-control-clean"
-                            value="10" required style="font-size: 1rem; font-weight: 700; color: #059669;">
+                            value="20" required style="font-size: 1rem; font-weight: 700; color: #059669;">
                     </div>
 
                     <!-- SEPARATE SECRET SECTION 1: ข้อมูลเฉลยฟอนต์ข้อความ -->
@@ -7201,7 +7201,7 @@
                                 onclick="closeAdminFontModal()">ยกเลิก</button>
                             <button type="submit" class="btn-download-fh"
                                 style="padding: 9px 24px; background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); border-color: #6d28d9; font-weight: 700;">
-                                💾 บันทึกและโพสต์ฟอนต์ (฿10)
+                                💾 บันทึกและโพสต์ฟอนต์ (฿20)
                             </button>
                         </div>
                     </div>
@@ -12741,7 +12741,7 @@ ${encodedToken}
                 checkText.checked = isText;
                 checkNum.checked = isNum;
 
-                priceInput.value = p.price || 10;
+                priceInput.value = p.price || 20;
                 fontNameTextInput.value = p.fontNameText || p.fontName || '';
                 fontUrlTextInput.value = p.downloadUrlText || p.fontUrlText || p.downloadUrl || p.fontUrl || '';
                 fontNameNumInput.value = p.fontNameNumber || '';
@@ -12783,12 +12783,12 @@ ${encodedToken}
                 updateAdminFontImagePreview('');
                 checkText.checked = true;
                 checkNum.checked = false;
-                priceInput.value = 10;
+                priceInput.value = 20;
                 fontNameTextInput.value = '';
                 fontUrlTextInput.value = '';
                 fontNameNumInput.value = '';
                 fontUrlNumInput.value = '';
-                if (headerText) headerText.innerHTML = '<span>🔤 เพิ่มรายการในคลังฟอนต์ (โพสต์ขาย ฿10)</span>';
+                if (headerText) headerText.innerHTML = '<span>🔤 เพิ่มรายการในคลังฟอนต์ (โพสต์ขาย ฿20)</span>';
                 if (btnDelete) btnDelete.style.display = 'none';
             }
 
@@ -12847,7 +12847,7 @@ ${encodedToken}
             const coverImage = (document.getElementById('admin-font-image')?.value || '').trim();
             const isText = document.getElementById('admin-font-check-text')?.checked ?? true;
             const isNumber = document.getElementById('admin-font-check-number')?.checked ?? false;
-            const price = parseFloat(document.getElementById('admin-font-price')?.value) || 10;
+            const price = parseFloat(document.getElementById('admin-font-price')?.value) || 20;
             const fontNameText = (document.getElementById('admin-font-name-text')?.value || '').trim();
             const downloadUrlText = (document.getElementById('admin-font-download-url-text')?.value || '').trim();
             const fontNameNumber = (document.getElementById('admin-font-name-number')?.value || '').trim();
@@ -13107,7 +13107,7 @@ ${encodedToken}
                             <div class="font-secret-badge">
                                 <span>🔒 ภาพตัวอย่างนี้ใช้ฟอนต์:</span>
                             </div>
-                            <div class="font-secret-pill-price">ค่าบริการ ฿${Number(p.price || 10).toFixed(2)}</div>
+                            <div class="font-secret-pill-price">ค่าบริการ ฿${Number(p.price || 20).toFixed(2)}</div>
                         </div>
 
                         <div class="font-content-tags">
@@ -13118,7 +13118,7 @@ ${encodedToken}
                         ${sectionsHtml}
 
                         <div style="margin-top: 12px; font-size: 0.78rem; color: #6b21a8; line-height: 1.5; background: #faf5ff; border: 1px solid #e9d5ff; padding: 10px 14px; border-radius: 8px;">
-                            💡 <strong>คำแนะนำ:</strong> เมื่อชำระเงิน ฿${Number(p.price || 10).toFixed(2)} เรียบร้อยแล้ว ระบบจะปลดล็อก Censor Blur เฉลยชื่อฟอนต์ที่ใช้ในภาพนี้ พร้อมแสดงลิงก์ไปยังเว็บแจกฟอนต์ทันที
+                            💡 <strong>คำแนะนำ:</strong> เมื่อชำระเงิน ฿${Number(p.price || 20).toFixed(2)} เรียบร้อยแล้ว ระบบจะปลดล็อก Censor Blur เฉลยชื่อฟอนต์ที่ใช้ในภาพนี้ พร้อมแสดงลิงก์ไปยังเว็บแจกฟอนต์ทันที
                         </div>
                     </div>
                 `;
@@ -13144,7 +13144,7 @@ ${encodedToken}
                                 ...(purchaseRec || {}),
                                 productId: p.id,
                                 productTitle: p.title,
-                                price: p.price || 10,
+                                price: p.price || 20,
                                 category: 'คลังฟอนต์',
                                 isFontProduct: true,
                                 fontName: [fontNameText, fontNameNumber].filter(Boolean).join(' / ') || v.fontName,
