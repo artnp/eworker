@@ -1750,6 +1750,29 @@ window.setupChatSlipPaymentWatcher = function (msgId, amount, msgTimestamp) {
     if (!currentRoom || !msgId) return;
     const chatLinkKey = `chat_${currentRoom}_${msgId}`;
     const cleanAmount = parseFloat(amount) || 0;
+    const workerBaseStrict = (typeof BEAM_WORKER_URL !== "undefined" ? BEAM_WORKER_URL : (window.BEAM_WORKER_URL || "https://eworker-beam-pay.moonverse69.workers.dev"));
+
+    // Pre-fetch Beam create-charge to ensure charge registration and get high-res base64 QR
+    fetch(`${workerBaseStrict}/create-charge`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            linkKey: chatLinkKey,
+            amount: cleanAmount
+        })
+    }).then(res => res.json()).then(data => {
+        if (data && data.qrImageBase64) {
+            const dataUrl = `data:image/png;base64,${data.qrImageBase64}`;
+            window.chatQrImages = window.chatQrImages || {};
+            window.chatQrImages[msgId] = dataUrl;
+            const imgEl = document.getElementById(`chatSlipQrImg_${msgId}`);
+            if (imgEl) imgEl.src = dataUrl;
+            const workImgEl = document.getElementById(`workSlipQrImg_${msgId}`);
+            if (workImgEl) workImgEl.src = dataUrl;
+        }
+    }).catch(err => {
+        console.warn('Beam create-charge init note:', err);
+    });
 
     try {
         const payReqRef = ref(database, `temp_files/payment_requests/${chatLinkKey}`);
@@ -2192,13 +2215,11 @@ function renderMessage(data, id) {
         window.watermarkedWorkFiles = window.watermarkedWorkFiles || {};
         window.watermarkedWorkFiles[id] = { originalUrl, previewUrl, fileName, isPdf };
 
-        // PromptPay QR Bill for this work (Beam Checkout Dynamic QR)
+        // BEAM Checkout Dynamic QR Bill for this work
         const chatLinkKey = `chat_${currentRoom}_${id}`;
         const workerBase = (typeof BEAM_WORKER_URL !== "undefined" ? BEAM_WORKER_URL : (window.BEAM_WORKER_URL || "https://eworker-beam-pay.moonverse69.workers.dev"));
         const beamQrUrl = `${workerBase}/qr-image?linkKey=${encodeURIComponent(chatLinkKey)}&amount=${amount}`;
         const qrUrl = beamQrUrl;
-        const qrPayload = generatePromptPayPayload('0988573074', amount);
-        const qrFb = 'https://quickchart.io/qr?size=300&margin=2&text=' + encodeURIComponent(qrPayload);
 
         const isAdmin = isAdminUser();
 
@@ -2253,15 +2274,15 @@ function renderMessage(data, id) {
                                 </div>
                             </div>
 
-                            <div class="qr-clean-card" onclick="downloadQRCode('${qrUrl}', '${amount}')" title="คลิกเพื่อบันทึกรูป QR Code">
+                            <div class="qr-clean-card" onclick="downloadQRCode('${qrUrl}', '${amount}', '${id}')" title="คลิกเพื่อบันทึกรูป QR Code">
                                 <div class="qr-clean-target">
-                                    <img src="${qrUrl}" onerror="if(!this._fb){this._fb=true;this.src='${qrFb}';}" class="qr-clean-img" alt="PromptPay QR Code">
+                                    <img id="workSlipQrImg_${id}" src="${qrUrl}" class="qr-clean-img" alt="BEAM Payment QR Code">
                                 </div>
                                 <div class="qr-bank-tag">
                                     <img src="../assets/promptpay_header_full.png"
                                         onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/100px-PromptPay-logo.png'; this.onerror=function(){this.style.display='none';};"
                                         alt="PromptPay" class="qr-promptpay-logo">
-                                    <span>สแกนผ่านทุกแอปธนาคาร</span>
+                                    <span>สแกนผ่านทุกแอปธนาคาร (Beam)</span>
                                 </div>
                                 <div class="qr-tap-hint">
                                     <span>📥 แตะ/คลิกรูปเพื่อบันทึก QR</span>
@@ -2517,15 +2538,13 @@ function renderMessage(data, id) {
                     const chatLinkKey = `chat_${currentRoom}_${id}`;
                     const workerBaseStrict = (typeof BEAM_WORKER_URL !== "undefined" ? BEAM_WORKER_URL : (window.BEAM_WORKER_URL || "https://eworker-beam-pay.moonverse69.workers.dev"));
                     const chatQrUrl = `${workerBaseStrict}/qr-image?linkKey=${encodeURIComponent(chatLinkKey)}&amount=${amount}`;
-                    const chatQrPayload = generatePromptPayPayload('0988573074', amount);
-                    const chatQrFb = 'https://quickchart.io/qr?size=300&margin=2&text=' + encodeURIComponent(chatQrPayload);
 
                     contentHTML += `
                         <div class="chat-slip-container" id="chatSlipWrap_${id}">
                             <div class="promptpay-slip-card" id="slipCard_${id}" data-amount="${amount}">
                                 <div class="chat-slip-header">
                                     <span class="slip-type-badge">
-                                        <span>⚡ PromptPay</span>
+                                        <span>⚡ BEAM Payment</span>
                                     </span>
                                     <div class="checkout-countdown-box" id="slipCountdown_${id}">
                                         <span>⏱️</span>
@@ -2534,15 +2553,15 @@ function renderMessage(data, id) {
                                     </div>
                                 </div>
 
-                                <div class="qr-clean-card" onclick="downloadQRCode('${chatQrUrl}', '${amount}')" title="คลิกเพื่อบันทึกรูป QR Code">
+                                <div class="qr-clean-card" onclick="downloadQRCode('${chatQrUrl}', '${amount}', '${id}')" title="คลิกเพื่อบันทึกรูป QR Code">
                                     <div class="qr-clean-target">
-                                        <img src="${chatQrUrl}" onerror="if(!this._fb){this._fb=true;this.src='${chatQrFb}';}" class="qr-clean-img" alt="PromptPay QR Code">
+                                        <img id="chatSlipQrImg_${id}" src="${chatQrUrl}" class="qr-clean-img" alt="BEAM Payment QR Code">
                                     </div>
                                     <div class="qr-bank-tag">
                                         <img src="../assets/promptpay_header_full.png"
                                             onerror="this.onerror=null; this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/PromptPay-logo.png/100px-PromptPay-logo.png'; this.onerror=function(){this.style.display='none';};"
                                             alt="PromptPay" class="qr-promptpay-logo">
-                                        <span>สแกนผ่านทุกแอปธนาคาร</span>
+                                        <span>สแกนผ่านทุกแอปธนาคาร (Beam)</span>
                                     </div>
                                     <div class="qr-tap-hint">
                                         <span>📥 แตะ/คลิกรูปเพื่อบันทึก QR</span>
@@ -2555,7 +2574,7 @@ function renderMessage(data, id) {
 
                                 <div class="polling-status-chip">
                                     <div class="clean-spinner"></div>
-                                    <span>ตรวจจับยอดเงินเข้าอัตโนมัติ (PromptPay)</span>
+                                    <span>ตรวจจับยอดเงินเข้าอัตโนมัติ (Beam Payment)</span>
                                 </div>
 
                                 <div class="admin-sim-wrap" style="margin-top: 6px; text-align: center;">
@@ -3628,10 +3647,9 @@ window.copyToClipboard = function (text, event) {
     });
 };
 
-// ===== Render Full Slip Image onto Canvas (matching shop/services design) =====
-async function generatePromptPaySlipCanvas(qrUrl, amount) {
+// ===== Render Full Slip Image onto Canvas (BEAM Payment) =====
+async function generatePromptPaySlipCanvas(qrUrl, amount, msgId) {
     const formattedAmount = (!isNaN(parseFloat(amount))) ? parseFloat(amount).toFixed(2) : amount;
-    const payload = typeof generatePromptPayPayload === 'function' ? generatePromptPayPayload('0988573074', amount) : '';
 
     const cvs = document.createElement('canvas');
     cvs.width = 540;
@@ -3657,36 +3675,30 @@ async function generatePromptPaySlipCanvas(qrUrl, amount) {
     ctx.textAlign = 'center';
     ctx.fillText('Thai QR Payment / พร้อมเพย์', cvs.width / 2, 58);
 
-    // 4. Generate Crisp QR Code
+    // 4. Load Crisp BEAM QR Code Image
     let qrSourceCanvas = null;
-    if (window.QRCode && payload) {
-        try {
-            const tempWrap = document.createElement('div');
-            new QRCode(tempWrap, {
-                text: payload,
-                width: 320,
-                height: 320,
-                colorDark: '#000000',
-                colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.M
-            });
-            qrSourceCanvas = tempWrap.querySelector('canvas');
-        } catch (_) { }
+    let qrImageSrc = qrUrl;
+    if (msgId && window.chatQrImages && window.chatQrImages[msgId]) {
+        qrImageSrc = window.chatQrImages[msgId];
+    } else {
+        const domImg = (msgId && (document.getElementById(`chatSlipQrImg_${msgId}`) || document.getElementById(`workSlipQrImg_${msgId}`)));
+        if (domImg && domImg.src) {
+            qrImageSrc = domImg.src;
+        }
     }
 
-    if (!qrSourceCanvas && qrUrl) {
+    if (qrImageSrc) {
         qrSourceCanvas = await new Promise((resolve) => {
             const img = new Image();
             img.crossOrigin = 'anonymous';
             img.onload = () => resolve(img);
             img.onerror = () => {
-                const fbImg = new Image();
-                fbImg.crossOrigin = 'anonymous';
-                fbImg.onload = () => resolve(fbImg);
-                fbImg.onerror = () => resolve(null);
-                fbImg.src = 'https://quickchart.io/qr?size=320&margin=2&text=' + encodeURIComponent(payload);
+                const imgFallback = new Image();
+                imgFallback.onload = () => resolve(imgFallback);
+                imgFallback.onerror = () => resolve(null);
+                imgFallback.src = qrImageSrc;
             };
-            img.src = qrUrl;
+            img.src = qrImageSrc;
         });
     }
 
@@ -3718,24 +3730,24 @@ async function generatePromptPaySlipCanvas(qrUrl, amount) {
 
     ctx.fillStyle = '#64748b';
     ctx.font = '15px "Kanit", "Prompt", -apple-system, sans-serif';
-    ctx.fillText('เปิดแอปธนาคาร > สแกน > เลือกรูปจากอัลบั้มรูปในมือถือ', cvs.width / 2, 565);
+    ctx.fillText('ระบบชำระเงินอัตโนมัติ Beam Payment • ตรวจจับยอดทันที', cvs.width / 2, 565);
 
     const now = new Date();
     const timeStr = now.toLocaleDateString('th-TH') + ' ' + now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
     ctx.fillStyle = '#94a3b8';
     ctx.font = '13px monospace';
-    ctx.fillText(`พร้อมเพย์: 098-857-3074 • ${timeStr}`, cvs.width / 2, 605);
+    ctx.fillText(`BEAM Payment • ${timeStr}`, cvs.width / 2, 605);
 
     return cvs;
 }
 
 // Function to download QR Code Slip image
-window.downloadQRCode = async function (url, amount) {
+window.downloadQRCode = async function (url, amount, msgId) {
     const formattedAmount = (!isNaN(parseFloat(amount))) ? parseFloat(amount).toFixed(2) : amount;
-    const fileName = `PromptPay_QR_${formattedAmount}baht_${Date.now()}.png`;
+    const fileName = `BEAM_PromptPay_QR_${formattedAmount}baht_${Date.now()}.png`;
 
     try {
-        const cvs = await generatePromptPaySlipCanvas(url, amount);
+        const cvs = await generatePromptPaySlipCanvas(url, amount, msgId);
 
         // Try Web Share API (Save Image to Gallery on iOS/Android mobile)
         if (navigator.share && navigator.canShare) {
@@ -3746,8 +3758,8 @@ window.downloadQRCode = async function (url, amount) {
                     if (navigator.canShare({ files: [file] })) {
                         await navigator.share({
                             files: [file],
-                            title: `รูป PromptPay QR ${formattedAmount} บาท`,
-                            text: `รูป QR Code สำหรับสแกนชำระเงิน ${formattedAmount} บาท`
+                            title: `รูป BEAM PromptPay QR ${formattedAmount} บาท`,
+                            text: `รูป QR Code สำหรับสแกนชำระเงิน ${formattedAmount} บาท (Beam Payment)`
                         });
                         return;
                     }
@@ -3761,7 +3773,8 @@ window.downloadQRCode = async function (url, amount) {
         window.forceDownload(dataUrl, fileName);
     } catch (err) {
         console.warn('Canvas slip generation failed, using forceDownload fallback...', err);
-        window.forceDownload(url, fileName);
+        const fallbackUrl = (msgId && window.chatQrImages && window.chatQrImages[msgId]) || url;
+        window.forceDownload(fallbackUrl, fileName);
     }
 };
 
