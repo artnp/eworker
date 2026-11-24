@@ -8383,7 +8383,11 @@
 
         async function loadBigDataReelsAsync() {
             try {
-                let res = await fetch('data/posted_reels.json?t=' + Date.now());
+                // 1. ดึงข้อมูลสดจาก Firebase RTDB (Real-time ทันที ไม่ต้องรอ GitHub commit/deploy)
+                let res = await fetch('https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/posted_reels.json?t=' + Date.now());
+                if (!res.ok) {
+                    res = await fetch('data/posted_reels.json?t=' + Date.now());
+                }
                 if (!res.ok) {
                     res = await fetch('Facebook_Bot/posted_reels.json?t=' + Date.now());
                 }
