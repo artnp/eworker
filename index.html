@@ -8383,7 +8383,10 @@
 
         async function loadBigDataReelsAsync() {
             try {
-                const res = await fetch('Facebook_Bot/posted_reels.json?t=' + Date.now());
+                let res = await fetch('data/posted_reels.json?t=' + Date.now());
+                if (!res.ok) {
+                    res = await fetch('Facebook_Bot/posted_reels.json?t=' + Date.now());
+                }
                 if (res.ok) {
                     const data = await res.json();
                     if (Array.isArray(data) && data.length > 0) {
