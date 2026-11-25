@@ -8240,7 +8240,6 @@
             } else {
                 // ฝั่งลูกค้า: กล่องกรอกยอดเสนอจ้างทำงานนี้ตามที่ผู้ใช้ต้องการ (ไม่บอกยอด 100 ล่วงหน้า ป้องกัน Anchoring)
                 const offerVal = (currentOfferInputVal !== null && currentOfferInputVal !== undefined && currentOfferInputVal !== '') ? currentOfferInputVal : '';
-                const btnAmountText = offerVal ? ` (฿${offerVal})` : '';
                 const checkedAttr = currentWarrantyChecked ? 'checked' : '';
 
                 container.innerHTML = `
@@ -8287,11 +8286,11 @@
                             </div>
                         </div>
 
-                        <div class="guide-step-callout" id="guideCallout4" style="background:linear-gradient(135deg,#059669,#10b981);">
+                        <div class="guide-step-callout" id="guideCallout4">
                             <i class="fa-solid fa-arrow-down"></i> ขั้นที่ 4: กดปุ่มนี้เพื่อส่งข้อเสนอ!
                         </div>
                         <button class="btn-submit-all-quotes guide-step-target" id="btnSubmitCustomerOffer" style="white-space:nowrap;">
-                            <i class="fa-solid fa-paper-plane"></i> ยืนยันเสนอราคาจ้างทำงาน<span id="txtBtnOfferAmount">${btnAmountText}</span>
+                            <i class="fa-solid fa-paper-plane"></i> ยืนยันเสนอจ้างงาน
                         </button>
                         <div class="offer-footnote" id="offerFootnote" style="margin-top:10px;font-size:12px;line-height:1.4;">
                             <span style="color:#64748b;"><i class="fa-solid fa-circle-info"></i> ทำตามขั้นตอน 1 → 2 → 3 → 4 ทีละจุด</span>
@@ -8301,7 +8300,6 @@
 
                 const inpPrice = document.getElementById('inputCustomerOfferPrice');
                 const btnSubmit = document.getElementById('btnSubmitCustomerOffer');
-                const txtBtn = document.getElementById('txtBtnOfferAmount');
                 const chkWarranty = document.getElementById('chkCustomerLegalWarranty');
                 const wrapWarranty = document.getElementById('wrapCustomerLegalWarranty');
 
@@ -8317,9 +8315,6 @@
                     const raw = inpPrice.value.trim();
                     const val = parseFloat(raw);
                     currentOfferInputVal = (!isNaN(val) && raw !== '') ? val : null;
-                    if (txtBtn) {
-                        txtBtn.textContent = currentOfferInputVal !== null ? ` (฿${currentOfferInputVal})` : '';
-                    }
                     // อย่าเพิ่งเลื่อนจอระหว่างลูกค้ากำลังพิมพ์ตัวเลข
                     syncCustomerGuideStepUI({ skipAutoScroll: true });
                 });
