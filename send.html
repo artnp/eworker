@@ -7568,6 +7568,7 @@
 
         let currentOfferInputVal = null;
         let currentWarrantyChecked = false;
+        let lastAutoScrolledStep = null;
 
         function getCustomerGuideStep() {
             const val = parseFloat(currentOfferInputVal);
@@ -7577,7 +7578,46 @@
             return 4;
         }
 
-        function syncCustomerGuideStepUI() {
+        function autoScrollToCustomerStep(step, force = false) {
+            if (isAdmin) return;
+            const isDraft = !currentSessionData.customerOffered &&
+                !currentSessionData.submittedForQuote &&
+                !currentSessionData.accepted &&
+                currentSessionData.jobStatus !== 'offer_pending' &&
+                currentSessionData.jobStatus !== 'processing' &&
+                !currentSessionData.hasWatermark &&
+                !currentSessionData.isPaid;
+            if (!isDraft) return;
+            if (!force && lastAutoScrolledStep === step) return;
+            lastAutoScrolledStep = step;
+
+            setTimeout(() => {
+                if (step === 1) {
+                    const el = document.getElementById('offerInputBoxWrap') || document.getElementById('guideCallout1');
+                    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else if (step === 2) {
+                    const el = document.getElementById('wrapCustomerLegalWarranty') || document.getElementById('guideCallout2');
+                    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else if (step === 3) {
+                    document.getElementById('guideStep3Banner')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    const canvasEl = document.getElementById('canvasContainer');
+                    if (canvasEl && window.innerWidth <= 768) {
+                        canvasEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    const tip = document.getElementById('canvasHelperTip');
+                    if (tip) {
+                        tip.classList.remove('attention-pulse');
+                        void tip.offsetWidth;
+                        tip.classList.add('attention-pulse');
+                    }
+                } else if (step === 4) {
+                    const btn = document.getElementById('btnSubmitCustomerOffer');
+                    btn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 140);
+        }
+
+        function syncCustomerGuideStepUI(options = {}) {
             const step = getCustomerGuideStep();
             const markerCount = Object.keys(annotations).length;
 
@@ -7653,6 +7693,10 @@
             }
             updateCanvasTipVisibility();
             updateMarkerAttentionState();
+
+            if (!options.skipAutoScroll) {
+                autoScrollToCustomerStep(step);
+            }
         }
 
         function renderTotalJobCard() {
@@ -8276,7 +8320,22 @@
                     if (txtBtn) {
                         txtBtn.textContent = currentOfferInputVal !== null ? ` (฿${currentOfferInputVal})` : '';
                     }
-                    syncCustomerGuideStepUI();
+                    // อย่าเพิ่งเลื่อนจอระหว่างลูกค้ากำลังพิมพ์ตัวเลข
+                    syncCustomerGuideStepUI({ skipAutoScroll: true });
+                });
+
+                const triggerStep2ScrollIfReady = () => {
+                    if (getCustomerGuideStep() === 2) {
+                        autoScrollToCustomerStep(2, true);
+                    }
+                };
+                inpPrice?.addEventListener('change', triggerStep2ScrollIfReady);
+                inpPrice?.addEventListener('blur', triggerStep2ScrollIfReady);
+                inpPrice?.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        inpPrice.blur();
+                        triggerStep2ScrollIfReady();
+                    }
                 });
 
                 btnSubmit?.addEventListener('click', () => {
