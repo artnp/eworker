@@ -2754,6 +2754,149 @@
             border-color: #6366f1 !important;
         }
 
+        /* ===== 4-STEP GUIDED CUSTOMER FLOW ===== */
+        .customer-guide-steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+            margin-bottom: 14px;
+            padding: 6px;
+            background: #f1f5f9;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .guide-pill {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            padding: 6px 2px;
+            border-radius: 8px;
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #94a3b8;
+            background: transparent;
+            transition: all 0.25s ease;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .guide-pill-num {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 800;
+            background: #e2e8f0;
+            color: #64748b;
+            transition: all 0.25s ease;
+        }
+
+        .guide-pill.is-done {
+            color: #059669;
+            background: #ecfdf5;
+        }
+
+        .guide-pill.is-done .guide-pill-num {
+            background: #10b981;
+            color: #ffffff;
+        }
+
+        .guide-pill.is-active {
+            color: #4338ca;
+            background: #eef2ff;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .guide-pill.is-active .guide-pill-num {
+            background: #4f46e5;
+            color: #ffffff;
+            animation: guideBadgePulse 1.3s infinite ease-in-out;
+        }
+
+        @keyframes guideBadgePulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.65);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 0 0 6px rgba(79, 70, 229, 0);
+                transform: scale(1.08);
+            }
+        }
+
+        @keyframes guideTargetGlow {
+            0%, 100% {
+                box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.75), 0 0 0 0 rgba(99, 102, 241, 0.45);
+            }
+            50% {
+                box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.95), 0 0 0 10px rgba(99, 102, 241, 0);
+            }
+        }
+
+        @keyframes guidePointerBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        .guide-step-target {
+            position: relative;
+            transition: opacity 0.25s ease, filter 0.25s ease, transform 0.25s ease;
+        }
+
+        .guide-step-active {
+            animation: guideTargetGlow 1.5s infinite ease-in-out !important;
+            border-color: #4f46e5 !important;
+            background-color: #ffffff !important;
+        }
+
+        .guide-step-waiting {
+            opacity: 0.55;
+            filter: grayscale(0.25);
+        }
+
+        .guide-step-callout {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 11.5px;
+            font-weight: 800;
+            color: #ffffff;
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            padding: 4px 10px;
+            border-radius: 999px;
+            margin: 0 auto 8px;
+            width: fit-content;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            animation: guidePointerBounce 1.1s infinite ease-in-out;
+        }
+
+        .guide-step-callout.is-visible {
+            display: inline-flex;
+        }
+
+        .guide-step3-banner {
+            display: none;
+            background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+            border: 2px solid #6366f1;
+            border-radius: 12px;
+            padding: 10px 12px;
+            margin-bottom: 12px;
+            text-align: center;
+            animation: guideTargetGlow 1.5s infinite ease-in-out;
+        }
+
+        .guide-step3-banner.is-visible {
+            display: block;
+        }
+
         .btn-submit-all-quotes {
             position: relative;
             overflow: hidden;
@@ -6413,10 +6556,16 @@
         });
 
         // ===== MARKERS & OFFER PRICE GATEWAY =====
+        function isOfferAndWarrantyReady() {
+            const val = parseFloat(currentOfferInputVal);
+            return !isNaN(val) && val >= 100 && !!currentWarrantyChecked;
+        }
+
         function canCustomerAddMarkers() {
             if (isAdmin) return true;
-            // ลูกค้าต้องเสนอราคาแล้ว (customerOffered / submittedForQuote) หรืออยู่ในสถานะที่ช่างตอบรับ/กำลังทำ/เสร็จแล้ว
-            if (currentSessionData.customerOffered ||
+            // ลูกค้าต้องเสนอราคา (>= 100) และกดตกลงรับรองสิทธิ์แล้ว (ขั้นตอน 1 & 2) หรือส่งข้อเสนอ/กำลังดำเนินการอยู่
+            if (isOfferAndWarrantyReady() ||
+                currentSessionData.customerOffered ||
                 currentSessionData.submittedForQuote ||
                 currentSessionData.accepted ||
                 currentSessionData.jobStatus === 'offer_pending' ||
@@ -6433,27 +6582,58 @@
         }
 
         function focusOfferPriceInput() {
-            const inp = document.getElementById('inputCustomerOfferPrice');
+            const step = getCustomerGuideStep();
             const card = document.querySelector('.customer-offer-card') || document.getElementById('totalJobCardContainer');
             if (card) {
                 card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                card.classList.remove('attention-pulse');
-                void card.offsetWidth;
-                card.classList.add('attention-pulse');
-                setTimeout(() => card.classList.remove('attention-pulse'), 3000);
             }
-            if (inp) {
-                setTimeout(() => {
-                    inp.focus();
-                    inp.select?.();
-                }, 300);
+            if (step === 1) {
+                const wrap = document.getElementById('offerInputBoxWrap');
+                const inp = document.getElementById('inputCustomerOfferPrice');
+                if (wrap) {
+                    wrap.classList.remove('guide-step-active');
+                    void wrap.offsetWidth;
+                    wrap.classList.add('guide-step-active');
+                }
+                if (inp) {
+                    setTimeout(() => {
+                        inp.focus();
+                        inp.select?.();
+                    }, 300);
+                }
+            } else if (step === 2) {
+                const wrap = document.getElementById('wrapCustomerLegalWarranty');
+                const chk = document.getElementById('chkCustomerLegalWarranty');
+                if (wrap) {
+                    wrap.classList.remove('guide-step-active');
+                    void wrap.offsetWidth;
+                    wrap.classList.add('guide-step-active');
+                }
+                if (chk) {
+                    setTimeout(() => chk.focus(), 300);
+                }
+            } else if (step === 3) {
+                const floatBtn = document.getElementById('addMarkerFloatBtn');
+                const headerBtn = document.getElementById('addMarkerBtn');
+                floatBtn?.classList.add('attention-pulse');
+                headerBtn?.classList.add('attention-pulse');
             }
         }
 
+        function guardCustomerCanAddMarkers() {
+            if (canCustomerAddMarkers()) return true;
+            const step = getCustomerGuideStep();
+            if (step === 1) {
+                showToast('⚠️ ขั้นตอนที่ 1: กรุณาระบุราคาเสนอจ้างทำงาน (ขั้นต่ำ 100 บาท) ก่อนขอรับ', 'warning', 5000);
+            } else {
+                showToast('⚠️ ขั้นตอนที่ 2: กรุณากดติ๊ก "ตกลงรับรองสิทธิ์ภาพ" ก่อนเริ่มเพิ่มจุดแก้ไขขอรับ', 'warning', 5000);
+            }
+            focusOfferPriceInput();
+            return false;
+        }
+
         function addMarker(clickX = null, clickY = null, width = 14, height = 8, text = '') {
-            if (!canCustomerAddMarkers()) {
-                showToast('⚠️ กรุณาระบุและกดยืนยัน "เสนอราคาจ้างทำงาน" ก่อนเริ่มเพิ่มจุดแก้ไขขอรับ', 'warning', 5000);
-                focusOfferPriceInput();
+            if (!guardCustomerCanAddMarkers()) {
                 return;
             }
 
@@ -6494,18 +6674,14 @@
         }
 
         addMarkerBtn.addEventListener('click', () => {
-            if (!canCustomerAddMarkers()) {
-                showToast('⚠️ กรุณาระบุและกดยืนยัน "เสนอราคาจ้างทำงาน" ก่อนเริ่มเพิ่มจุดแก้ไขขอรับ', 'warning', 5000);
-                focusOfferPriceInput();
+            if (!guardCustomerCanAddMarkers()) {
                 return;
             }
             addMarker();
         });
 
         addMarkerFloatBtn.addEventListener('click', () => {
-            if (!canCustomerAddMarkers()) {
-                showToast('⚠️ กรุณาระบุและกดยืนยัน "เสนอราคาจ้างทำงาน" ก่อนเริ่มเพิ่มจุดแก้ไขขอรับ', 'warning', 5000);
-                focusOfferPriceInput();
+            if (!guardCustomerCanAddMarkers()) {
                 return;
             }
             addMarker();
@@ -6514,9 +6690,7 @@
         // Click on canvas to add marker (accurate placement, respects panning)
         mainImage.addEventListener('click', (e) => {
             if (!isDragging && !isResizing && !isClickSuppressed) {
-                if (!canCustomerAddMarkers()) {
-                    showToast('⚠️ กรุณาระบุและกดยืนยัน "เสนอราคาจ้างทำงาน" ก่อนเริ่มเพิ่มจุดแก้ไขขอรับ', 'warning', 5000);
-                    focusOfferPriceInput();
+                if (!guardCustomerCanAddMarkers()) {
                     isClickSuppressed = false;
                     return;
                 }
@@ -6530,9 +6704,7 @@
 
         pdfCanvas.addEventListener('click', (e) => {
             if (!isDragging && !isResizing && !isClickSuppressed) {
-                if (!canCustomerAddMarkers()) {
-                    showToast('⚠️ กรุณาระบุและกดยืนยัน "เสนอราคาจ้างทำงาน" ก่อนเริ่มเพิ่มจุดแก้ไขขอรับ', 'warning', 5000);
-                    focusOfferPriceInput();
+                if (!guardCustomerCanAddMarkers()) {
                     isClickSuppressed = false;
                     return;
                 }
@@ -7288,12 +7460,15 @@
                 return;
             }
             tip.classList.remove('hidden');
+            const step = getCustomerGuideStep();
             if (!canCustomerAddMarkers()) {
-                tip.innerHTML = `<i class="fa-solid fa-lock" style="color:#f59e0b;"></i> <span>กรุณาเสนอราคาจ้างทำงานก่อน เพื่อเริ่มวงจุดแก้ไข</span>`;
+                tip.innerHTML = step === 1
+                    ? `<i class="fa-solid fa-coins" style="color:#f59e0b;"></i> <span>ขั้นตอนที่ 1/4: กรุณาระบุราคาเสนอจ้างด้านขวา</span>`
+                    : `<i class="fa-solid fa-square-check" style="color:#f59e0b;"></i> <span>ขั้นตอนที่ 2/4: กรุณากดติ๊กตกลงรับรองสิทธิ์ด้านขวา</span>`;
                 tip.style.cursor = 'pointer';
                 tip.onclick = focusOfferPriceInput;
             } else {
-                tip.innerHTML = `<i class="fa-solid fa-arrow-pointer" style="color:#818cf8;"></i> <span>คลิกบนรูปภาพตรงจุดที่ต้องการแก้ไข เพื่อสร้างวงจุด</span>`;
+                tip.innerHTML = `<i class="fa-solid fa-arrow-pointer" style="color:#818cf8;"></i> <span>ขั้นตอนที่ 3/4: คลิกบนรูปภาพตรงจุดที่ต้องการแก้ไข เพื่อสร้างวงจุด</span>`;
                 tip.style.cursor = 'default';
                 tip.onclick = null;
             }
@@ -7301,29 +7476,33 @@
 
         function getEmptyAnnotationsHtml() {
             if (!isAdmin && !canCustomerAddMarkers()) {
+                const step = getCustomerGuideStep();
+                const titleTxt = step === 1 ? 'ขั้นตอนที่ 1: เสนอราคาจ้างก่อน' : 'ขั้นตอนที่ 2: กดตกลงรับรองสิทธิ์';
+                const descTxt = step === 1
+                    ? 'ระบุราคาเสนอจ้างทำงานที่คุณต้องการในกล่องด้านบน (ขั้นต่ำ 100฿)'
+                    : 'กดติ๊กช่อง "ตกลงรับรองสิทธิ์ภาพ" ในกล่องด้านบนเพื่อปลดล็อคการเพิ่มจุด';
+                const btnTxt = step === 1 ? 'ไประบุราคาเสนอจ้าง' : 'ไปกดติ๊กตกลงรับรองสิทธิ์';
                 return `
                     <div class="empty-state">
                         <div class="empty-state-icon-wrap" style="background:#fef3c7;color:#d97706;">
                             <i class="fa-solid fa-lock"></i>
                         </div>
-                        <div class="empty-state-title" style="color:#92400e;">กรุณาเสนอราคาจ้างก่อน</div>
-                        <div class="empty-state-desc">
-                            ระบุราคาเสนอจ้างทำงานที่คุณต้องการในกล่องด้านบน<br>และกดยืนยันเสนอราคาเพื่อเริ่มระบุจุดแก้ไขบนภาพ
-                        </div>
+                        <div class="empty-state-title" style="color:#92400e;">${titleTxt}</div>
+                        <div class="empty-state-desc">${descTxt}</div>
                         <button class="empty-state-btn" type="button" onclick="focusOfferPriceInput();" style="background:#4f46e5;color:#fff;border-color:#4338ca;">
-                            <i class="fa-solid fa-coins"></i> ไประบุราคาเสนอจ้าง
+                            <i class="fa-solid fa-arrow-up"></i> ${btnTxt}
                         </button>
                     </div>
                 `;
             }
             return `
                 <div class="empty-state">
-                    <div class="empty-state-icon-wrap">
+                    <div class="empty-state-icon-wrap" style="animation: guidePointerBounce 1.1s infinite ease-in-out;">
                         <i class="fa-solid fa-location-crosshairs"></i>
                     </div>
-                    <div class="empty-state-title">ยังไม่มีจุดแก้ไข</div>
+                    <div class="empty-state-title">ขั้นตอนที่ 3: เพิ่มจุดแก้ไข</div>
                     <div class="empty-state-desc">คลิกบนรูปภาพตรงจุดที่ต้องการแก้ไข<br>หรือกดปุ่มด้านล่างเพื่อเริ่มระบุจุด</div>
-                    <button class="empty-state-btn" type="button" onclick="document.getElementById('addMarkerBtn')?.click();">
+                    <button class="empty-state-btn attention-pulse" type="button" onclick="document.getElementById('addMarkerBtn')?.click();">
                         <i class="fa-solid fa-plus"></i> เพิ่มจุดแก้ไขแรก
                     </button>
                 </div>
@@ -7338,12 +7517,15 @@
             if (!isAdmin && !canCustomerAddMarkers()) {
                 floatBtn?.classList.remove('attention-pulse');
                 headerBtn?.classList.remove('attention-pulse');
+                const step = getCustomerGuideStep();
                 if (floatBtn) {
-                    floatBtn.innerHTML = '<i class="fa-solid fa-lock"></i> เสนอราคาก่อน';
+                    floatBtn.innerHTML = step === 1
+                        ? '<i class="fa-solid fa-lock"></i> 1. เสนอราคาก่อน'
+                        : '<i class="fa-solid fa-lock"></i> 2. กดตกลงก่อน';
                     floatBtn.style.opacity = '0.8';
                 }
                 if (headerBtn) {
-                    headerBtn.title = 'กรุณาเสนอราคาจ้างทำงานก่อน';
+                    headerBtn.title = step === 1 ? 'กรุณาเสนอราคาจ้างทำงานก่อน' : 'กรุณากดตกลงรับรองสิทธิ์ก่อน';
                 }
                 return;
             }
@@ -7368,6 +7550,93 @@
         }
 
         let currentOfferInputVal = null;
+        let currentWarrantyChecked = false;
+
+        function getCustomerGuideStep() {
+            const val = parseFloat(currentOfferInputVal);
+            if (isNaN(val) || val < 100) return 1;
+            if (!currentWarrantyChecked) return 2;
+            if (Object.keys(annotations).length === 0) return 3;
+            return 4;
+        }
+
+        function syncCustomerGuideStepUI() {
+            const step = getCustomerGuideStep();
+            const markerCount = Object.keys(annotations).length;
+
+            // Update 4-step progress pills
+            for (let i = 1; i <= 4; i++) {
+                const pill = document.getElementById(`guidePill${i}`);
+                if (!pill) continue;
+                pill.classList.remove('is-done', 'is-active');
+                const numEl = pill.querySelector('.guide-pill-num');
+                if (i < step) {
+                    pill.classList.add('is-done');
+                    if (numEl) numEl.innerHTML = '<i class="fa-solid fa-check"></i>';
+                } else if (i === step) {
+                    pill.classList.add('is-active');
+                    if (numEl) numEl.textContent = String(i);
+                } else {
+                    if (numEl) numEl.textContent = String(i);
+                }
+            }
+
+            const boxWrap = document.getElementById('offerInputBoxWrap');
+            const callout1 = document.getElementById('guideCallout1');
+            const wrapWarranty = document.getElementById('wrapCustomerLegalWarranty');
+            const callout2 = document.getElementById('guideCallout2');
+            const banner3 = document.getElementById('guideStep3Banner');
+            const btnSubmit = document.getElementById('btnSubmitCustomerOffer');
+            const callout4 = document.getElementById('guideCallout4');
+            const footnote = document.getElementById('offerFootnote');
+
+            // Step 1 target
+            boxWrap?.classList.toggle('guide-step-active', step === 1);
+            callout1?.classList.toggle('is-visible', step === 1);
+
+            // Step 2 target
+            if (wrapWarranty) {
+                wrapWarranty.classList.toggle('guide-step-active', step === 2);
+                wrapWarranty.classList.toggle('guide-step-waiting', step < 2);
+                if (currentWarrantyChecked) {
+                    wrapWarranty.style.borderColor = '#10b981';
+                    wrapWarranty.style.background = '#ecfdf5';
+                } else if (step !== 2) {
+                    wrapWarranty.style.borderColor = '#cbd5e1';
+                    wrapWarranty.style.background = '#f8fafc';
+                }
+            }
+            callout2?.classList.toggle('is-visible', step === 2);
+
+            // Step 3 target
+            banner3?.classList.toggle('is-visible', step === 3);
+
+            // Step 4 target
+            if (btnSubmit) {
+                btnSubmit.classList.toggle('guide-step-waiting', step < 4);
+                btnSubmit.classList.toggle('guide-step-active', step === 4);
+            }
+            callout4?.classList.toggle('is-visible', step === 4);
+
+            if (footnote) {
+                const hints = {
+                    1: '<span style="color:#4f46e5;font-weight:700;"><i class="fa-solid fa-hand-point-up"></i> ขั้นตอนที่ 1/4: กรอกราคาที่ต้องการจ้าง (ขั้นต่ำ 100 บาท)</span>',
+                    2: '<span style="color:#4f46e5;font-weight:700;"><i class="fa-solid fa-square-check"></i> ขั้นตอนที่ 2/4: กดติ๊กตกลงรับรองสิทธิ์ภาพด้านบน</span>',
+                    3: '<span style="color:#4f46e5;font-weight:700;"><i class="fa-solid fa-location-crosshairs"></i> ขั้นตอนที่ 3/4: คลิกบนรูปภาพเพื่อวงจุดที่ต้องการแก้ไข</span>',
+                    4: `<span style="color:#059669;font-weight:700;"><i class="fa-solid fa-paper-plane"></i> ขั้นตอนที่ 4/4: ระบุครบ ${markerCount} จุดแล้ว กดปุ่มยืนยันเสนอราคาได้เลย!</span>`
+                };
+                footnote.innerHTML = hints[step];
+            }
+
+            // Refresh empty annotations card & canvas helper tip if no markers yet
+            if (markerCount === 0) {
+                const emptyHtml = getEmptyAnnotationsHtml();
+                if (annotationsCards) annotationsCards.innerHTML = emptyHtml;
+                else if (annotationsList) annotationsList.innerHTML = emptyHtml;
+            }
+            updateCanvasTipVisibility();
+            updateMarkerAttentionState();
+        }
 
         function renderTotalJobCard() {
             updateWorkflowStepper();
@@ -7911,34 +8180,60 @@
                 // ฝั่งลูกค้า: กล่องกรอกยอดเสนอจ้างทำงานนี้ตามที่ผู้ใช้ต้องการ (ไม่บอกยอด 100 ล่วงหน้า ป้องกัน Anchoring)
                 const offerVal = (currentOfferInputVal !== null && currentOfferInputVal !== undefined && currentOfferInputVal !== '') ? currentOfferInputVal : '';
                 const btnAmountText = offerVal ? ` (฿${offerVal})` : '';
+                const checkedAttr = currentWarrantyChecked ? 'checked' : '';
 
                 container.innerHTML = `
                     <div class="customer-offer-card">
+                        <div class="customer-guide-steps" aria-label="ขั้นตอนการส่งงาน">
+                            <div class="guide-pill" id="guidePill1"><span class="guide-pill-num">1</span><span>เสนอราคา</span></div>
+                            <div class="guide-pill" id="guidePill2"><span class="guide-pill-num">2</span><span>กดตกลง</span></div>
+                            <div class="guide-pill" id="guidePill3"><span class="guide-pill-num">3</span><span>เพิ่มจุดแก้</span></div>
+                            <div class="guide-pill" id="guidePill4"><span class="guide-pill-num">4</span><span>ยืนยันจ้าง</span></div>
+                        </div>
+
                         <div class="offer-input-header">
                             <i class="fa-solid fa-coins" style="color:#eab308;font-size:18px;"></i>
                             <span>เสนอราคาจ้างทำงานนี้</span>
                         </div>
-                        <div class="offer-input-box-wrap">
+                        <div class="guide-step-callout" id="guideCallout1">
+                            <i class="fa-solid fa-arrow-down"></i> ขั้นที่ 1: ใส่ราคา (ขั้นต่ำ 100฿)
+                        </div>
+                        <div class="offer-input-box-wrap guide-step-target" id="offerInputBoxWrap">
                             <span class="offer-currency-sign">฿</span>
                             <input type="text" inputmode="numeric" pattern="[0-9]*" id="inputCustomerOfferPrice" class="input-customer-offer" placeholder="XXX" value="${offerVal}">
                             <span class="offer-unit-txt">บาท</span>
                         </div>
 
                         <!-- 🛡️ Customer Warranty & Indemnity Checkbox -->
-                        <div class="customer-warranty-check-wrap" id="wrapCustomerLegalWarranty" style="margin: 12px 0 14px; text-align: left; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; transition: all 0.2s; cursor: pointer;">
+                        <div class="guide-step-callout" id="guideCallout2">
+                            <i class="fa-solid fa-arrow-down"></i> ขั้นที่ 2: กดติ๊กตกลงตรงนี้
+                        </div>
+                        <div class="customer-warranty-check-wrap guide-step-target" id="wrapCustomerLegalWarranty" style="margin: 8px 0 14px; text-align: left; background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; transition: all 0.2s; cursor: pointer;">
                             <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; user-select: none;">
-                                <input type="checkbox" id="chkCustomerLegalWarranty" style="margin-top: 2px; accent-color: #4f46e5; width: 22px; height: 22px; min-width: 22px; min-height: 22px; cursor: pointer; flex-shrink: 0;">
+                                <input type="checkbox" id="chkCustomerLegalWarranty" ${checkedAttr} style="margin-top: 2px; accent-color: #4f46e5; width: 22px; height: 22px; min-width: 22px; min-height: 22px; cursor: pointer; flex-shrink: 0;">
                                 <span style="font-size: 12px; color: #334155; line-height: 1.55;">
                                     <strong>ข้าพเจ้ารับรองว่าภาพนี้เป็นสิทธิ์ของข้าพเจ้า</strong> และจ้างทำเพื่อการศึกษา/งานกราฟิกส่วนบุคคล มิได้นำไปใช้ในการฉ้อโกง ปลอมแปลง หรือกระทำความผิดใดๆ หากนำไปใช้ผิดกฎหมาย ข้าพเจ้าขอรับผิดชอบแต่เพียงผู้เดียวทั้งสิ้น
                                 </span>
                             </label>
                         </div>
 
-                        <button class="btn-submit-all-quotes" id="btnSubmitCustomerOffer" style="white-space:nowrap;">
+                        <div class="guide-step3-banner" id="guideStep3Banner">
+                            <div style="font-size:13px;font-weight:800;color:#3730a3;margin-bottom:4px;">
+                                <i class="fa-solid fa-location-crosshairs"></i> ขั้นที่ 3: คลิกบนรูปภาพเพื่อเพิ่มจุดแก้
+                            </div>
+                            <div style="font-size:11.5px;color:#4338ca;line-height:1.4;">
+                                จิ้มตรงจุดที่ต้องการให้ช่างแก้บนภาพด้านซ้าย (หรือกดปุ่ม <strong>+ เพิ่มจุดแก้ไข</strong>)
+                            </div>
+                        </div>
+
+                        <div class="guide-step-callout" id="guideCallout4" style="background:linear-gradient(135deg,#059669,#10b981);">
+                            <i class="fa-solid fa-arrow-down"></i> ขั้นที่ 4: กดปุ่มนี้เพื่อส่งข้อเสนอ!
+                        </div>
+                        <button class="btn-submit-all-quotes guide-step-target" id="btnSubmitCustomerOffer" style="white-space:nowrap;">
                             <i class="fa-solid fa-paper-plane"></i> ยืนยันเสนอราคาจ้างทำงาน<span id="txtBtnOfferAmount">${btnAmountText}</span>
                         </button>
                         <div class="offer-footnote" id="offerFootnote" style="margin-top:10px;font-size:12px;line-height:1.4;">
-                            <span style="color:#64748b;"><i class="fa-solid fa-circle-info"></i> กรุณาระบุและกดยืนยันเสนอราคาจ้างทำงานก่อน เพื่อเริ่มระบุจุดแก้ไขบนภาพ</span>
+                            <span style="color:#64748b;"><i class="fa-solid fa-circle-info"></i> ทำตามขั้นตอน 1 → 2 → 3 → 4 ทีละจุด</span>
                         </div>
                     </div>
                 `;
@@ -7946,20 +8241,14 @@
                 const inpPrice = document.getElementById('inputCustomerOfferPrice');
                 const btnSubmit = document.getElementById('btnSubmitCustomerOffer');
                 const txtBtn = document.getElementById('txtBtnOfferAmount');
-                const footnote = document.getElementById('offerFootnote');
                 const chkWarranty = document.getElementById('chkCustomerLegalWarranty');
                 const wrapWarranty = document.getElementById('wrapCustomerLegalWarranty');
 
+                syncCustomerGuideStepUI();
+
                 chkWarranty?.addEventListener('change', () => {
-                    if (wrapWarranty) {
-                        if (chkWarranty.checked) {
-                            wrapWarranty.style.borderColor = '#6366f1';
-                            wrapWarranty.style.background = '#eef2ff';
-                        } else {
-                            wrapWarranty.style.borderColor = '#cbd5e1';
-                            wrapWarranty.style.background = '#f8fafc';
-                        }
-                    }
+                    currentWarrantyChecked = !!chkWarranty.checked;
+                    syncCustomerGuideStepUI();
                 });
 
                 inpPrice?.addEventListener('input', () => {
@@ -7970,36 +8259,39 @@
                     if (txtBtn) {
                         txtBtn.textContent = currentOfferInputVal !== null ? ` (฿${currentOfferInputVal})` : '';
                     }
+                    syncCustomerGuideStepUI();
                 });
 
                 btnSubmit?.addEventListener('click', () => {
                     const val = parseFloat(inpPrice?.value) || 0;
                     if (val <= 0) {
-                        showToast('กรุณากรอกยอดราคาเสนอจ้างทำงานก่อนขอรับ', 'warning');
+                        showToast('ขั้นตอนที่ 1: กรุณากรอกยอดราคาเสนอจ้างทำงานก่อนขอรับ', 'warning');
                         inpPrice?.focus();
                         return;
                     }
                     if (val < 100) {
-                        showToast('ช่างไม่รับข้อเสนอที่ต่ำกว่า 100 บาทขอรับ กรุณาปรับเพิ่มราคาเสนอจ้าง (ขั้นต่ำ 100 บาท)', 'warning');
+                        showToast('ขั้นตอนที่ 1: ช่างไม่รับข้อเสนอที่ต่ำกว่า 100 บาทขอรับ กรุณาปรับเพิ่มราคาเสนอจ้าง (ขั้นต่ำ 100 บาท)', 'warning');
                         inpPrice?.focus();
                         return;
                     }
                     if (!chkWarranty?.checked) {
-                        showToast('กรุณากดติ๊กรับรองว่าภาพเป็นสิทธิ์ของนายท่านและไม่ใช่การปลอมแปลงก่อนส่งข้อเสนอขอรับ', 'warning', 7000);
+                        showToast('ขั้นตอนที่ 2: กรุณากดติ๊กรับรองว่าภาพเป็นสิทธิ์ของนายท่านและไม่ใช่การปลอมแปลงก่อนขอรับ', 'warning', 7000);
                         if (wrapWarranty) {
                             wrapWarranty.style.borderColor = '#ef4444';
                             wrapWarranty.style.background = '#fef2f2';
-                            setTimeout(() => {
-                                wrapWarranty.style.borderColor = '#cbd5e1';
-                                wrapWarranty.style.background = '#f8fafc';
-                            }, 3000);
+                            setTimeout(() => syncCustomerGuideStepUI(), 2500);
                         }
                         chkWarranty?.focus();
                         return;
                     }
-                    const sendViaFb = chkFb ? chkFb.checked : true;
-                    const fbContact = inpFb ? inpFb.value.trim() : '';
-                    submitCustomerOffer(val, sendViaFb, fbContact);
+                    if (Object.keys(annotations).length === 0) {
+                        showToast('ขั้นตอนที่ 3: กรุณาคลิกบนภาพหรือกด "+ เพิ่มจุดแก้ไข" อย่างน้อย 1 จุดก่อนยืนยันขอรับ', 'warning', 6000);
+                        document.getElementById('addMarkerFloatBtn')?.classList.add('attention-pulse');
+                        document.getElementById('addMarkerBtn')?.classList.add('attention-pulse');
+                        document.getElementById('guideStep3Banner')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return;
+                    }
+                    submitCustomerOffer(val);
                 });
             }
             updateFloatingDownloadButton();
