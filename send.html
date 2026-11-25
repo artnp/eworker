@@ -2741,9 +2741,12 @@
         }
 
         @keyframes offerCardAttentionPulse {
-            0%, 100% {
+
+            0%,
+            100% {
                 box-shadow: 0 4px 16px rgba(79, 70, 229, 0.15), 0 0 0 0 rgba(99, 102, 241, 0.6);
             }
+
             50% {
                 box-shadow: 0 6px 24px rgba(79, 70, 229, 0.25), 0 0 0 8px rgba(99, 102, 241, 0);
             }
@@ -2821,10 +2824,13 @@
         }
 
         @keyframes guideBadgePulse {
-            0%, 100% {
+
+            0%,
+            100% {
                 box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.65);
                 transform: scale(1);
             }
+
             50% {
                 box-shadow: 0 0 0 6px rgba(79, 70, 229, 0);
                 transform: scale(1.08);
@@ -2832,17 +2838,27 @@
         }
 
         @keyframes guideTargetGlow {
-            0%, 100% {
+
+            0%,
+            100% {
                 box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.75), 0 0 0 0 rgba(99, 102, 241, 0.45);
             }
+
             50% {
                 box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.95), 0 0 0 10px rgba(99, 102, 241, 0);
             }
         }
 
         @keyframes guidePointerBounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-3px); }
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-3px);
+            }
         }
 
         .guide-step-target {
@@ -4858,9 +4874,10 @@
                         </div>
                         <div class="empty-state-title" style="color:#92400e;">กรุณาเสนอราคาจ้างก่อน</div>
                         <div class="empty-state-desc">
-                            ระบุราคาเสนอจ้างทำงานที่คุณต้องการในกล่องด้านบน<br>และกดยืนยันเสนอราคาเพื่อเริ่มระบุจุดแก้ไขบนภาพ</div>
-                        <button class="empty-state-btn" type="button"
-                            onclick="focusOfferPriceInput();" style="background:#4f46e5;color:#fff;border-color:#4338ca;">
+                            ระบุราคาเสนอจ้างทำงานที่คุณต้องการในกล่องด้านบน<br>และกดยืนยันเสนอราคาเพื่อเริ่มระบุจุดแก้ไขบนภาพ
+                        </div>
+                        <button class="empty-state-btn" type="button" onclick="focusOfferPriceInput();"
+                            style="background:#4f46e5;color:#fff;border-color:#4338ca;">
                             <i class="fa-solid fa-coins"></i> ไประบุราคาเสนอจ้าง
                         </button>
                     </div>
@@ -7941,9 +7958,9 @@
                                 </div>
                                 <div style="color:#475569;line-height:1.45;">
                                     ${currentSessionData.sendViaFacebook && currentSessionData.facebookContact
-                                        ? `ช่างจะส่งงานให้ทางแชท Facebook (<strong>${escapeHtml(currentSessionData.facebookContact)}</strong>) หรือเปิดดูบนหน้านี้ได้ตลอดเวลา ข้อมูลถูกบันทึกไว้ในเครื่องแล้ว ไม่ต้องกลัวหายแม้ปิดหน้าเว็บ`
-                                        : `คุณสามารถรอรับงานบนหน้านี้ได้เลย หรือหากเผลอปิดหน้าเว็บไป สามารถเปิดกลับมาดูความคืบหน้าได้ตลอดเวลา (ระบบจำข้อมูลไว้ให้อัตโนมัติ)`
-                                    }
+                        ? `ช่างจะส่งงานให้ทางแชท Facebook (<strong>${escapeHtml(currentSessionData.facebookContact)}</strong>) หรือเปิดดูบนหน้านี้ได้ตลอดเวลา ข้อมูลถูกบันทึกไว้ในเครื่องแล้ว ไม่ต้องกลัวหายแม้ปิดหน้าเว็บ`
+                        : `คุณสามารถรอรับงานบนหน้านี้ได้เลย หรือหากเผลอปิดหน้าเว็บไป สามารถเปิดกลับมาดูความคืบหน้าได้ตลอดเวลา (ระบบจำข้อมูลไว้ให้อัตโนมัติ)`
+                    }
                                 </div>
                             </div>
                         `}
@@ -8095,9 +8112,9 @@
                                 </div>
                                 <div class="waiting-quote-sub" style="font-size:12px;color:#64748b;margin-top:4px;">
                                     ${totalMarkers === 0
-                                        ? '<span style="color:#059669;font-weight:700;"><i class="fa-solid fa-circle-check"></i> เสนอราคาสำเร็จแล้ว! สามารถคลิกบนภาพเพื่อเริ่มระบุจุดแก้ไขได้ทันที</span>'
-                                        : `ช่างกำลังตรวจสอบจุดแก้ไข (${totalMarkers} จุด) และข้อเสนอราคาที่นายท่านกำหนด`
-                                    }
+                                ? '<span style="color:#059669;font-weight:700;"><i class="fa-solid fa-circle-check"></i> เสนอราคาสำเร็จแล้ว! สามารถคลิกบนภาพเพื่อเริ่มระบุจุดแก้ไขได้ทันที</span>'
+                                : `ช่างกำลังตรวจสอบจุดแก้ไข (${totalMarkers} จุด) และข้อเสนอราคาที่นายท่านกำหนด`
+                            }
                                 </div>
 
                                 <div style="background:#ecfdf5;border:1.5px solid #a7f3d0;border-radius:10px;padding:8px 12px;margin:8px auto;max-width:320px;text-align:center;">
@@ -8196,7 +8213,7 @@
                             <span>เสนอราคาจ้างทำงานนี้</span>
                         </div>
                         <div class="guide-step-callout" id="guideCallout1">
-                            <i class="fa-solid fa-arrow-down"></i> ขั้นที่ 1: ใส่ราคา (ขั้นต่ำ 100฿)
+                            <i class="fa-solid fa-arrow-down"></i> ขั้นที่ 1: ใส่ราคา
                         </div>
                         <div class="offer-input-box-wrap guide-step-target" id="offerInputBoxWrap">
                             <span class="offer-currency-sign">฿</span>
