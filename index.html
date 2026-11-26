@@ -7168,7 +7168,8 @@
                         </div>
 
                         <!-- เพิ่มรายการฟอนต์ข้อความตัวถัดไป -->
-                        <div id="admin-font-extra-text-container" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;"></div>
+                        <div id="admin-font-extra-text-container"
+                            style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;"></div>
                         <div style="margin-top: 10px; display: flex; justify-content: flex-end;">
                             <button type="button" class="btn-tool-sm" onclick="addAdminExtraFont('text')"
                                 style="background: #ede9fe; color: #6d28d9; border: 1px dashed #a78bfa; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
@@ -7198,7 +7199,8 @@
                         </div>
 
                         <!-- เพิ่มรายการฟอนต์ตัวเลขตัวถัดไป -->
-                        <div id="admin-font-extra-number-container" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;"></div>
+                        <div id="admin-font-extra-number-container"
+                            style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;"></div>
                         <div style="margin-top: 10px; display: flex; justify-content: flex-end;">
                             <button type="button" class="btn-tool-sm" onclick="addAdminExtraFont('number')"
                                 style="background: #dcfce7; color: #15803d; border: 1px dashed #86efac; font-weight: 700; padding: 6px 14px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
@@ -7219,7 +7221,8 @@
                                 ➕ เพิ่มฟอนต์อื่นๆ
                             </button>
                         </div>
-                        <div id="admin-font-extra-other-container" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;"></div>
+                        <div id="admin-font-extra-other-container"
+                            style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;"></div>
                     </div>
 
                     <!-- Action Buttons -->
@@ -8670,8 +8673,8 @@
                         </div>
                         <button type="button" class="donate-gen-btn" onclick="generateDonateQR()">⚡ อยากให้พัฒนาต่อ</button>
                     </div>
-
-                    <!-- ตัวเล่นวิดีโอ Shorts เต็มความสูง สะอาดตา ตรงกลางจอ ดูได้กว้างเต็มตา -->
+<p style="font-size: 12px; color: #666; text-align: center; margin: 0 auto; max-width: 800px;">    โปรเจคนี้มาจากการรวบรวมเก็บข้อมูลจากคลังวิดีโอทุกประเภททั้งออนไลน์-ออฟไลน์ น้อยคนมากที่จะสกัดเก็บรวบรวมข้อมูลแบบนี้ได้ => ตอนนี้พัฒนาในรูปแบบใช้ AI ช่วยพากย์ เนื่องจากโปรเจคนี้ใช้ทรัพยากรจำนวนมากในการผลิต จึงต้องการทุนสนับสนุนเพื่อโปรเจคอยู่รอดต่อไปได้เรื่อย ๆ ในอนาคต</p>
+    <!-- ตัวเล่นวิดีโอ Shorts เต็มความสูง สะอาดตา ตรงกลางจอ ดูได้กว้างเต็มตา -->
                     <div class="shorts-unified-player">
                         <div class="shorts-viewport" id="shorts-viewport">
                             <button type="button" class="shorts-nav-arrow up" id="shorts-arrow-up" onclick="scrollShortsSlide(-1)" title="คลิปก่อนหน้า (หรือกดลูกศรขึ้น)" style="display: none;">▲</button>
@@ -12625,14 +12628,14 @@ ${encodedToken}
         function addAdminExtraFont(type = 'text', data = null) {
             adminExtraFontCounter++;
             const rowId = `admin-extra-font-row-${adminExtraFontCounter}`;
-            
+
             let containerId = 'admin-font-extra-text-container';
             let defaultLabel = 'ฟอนต์ข้อความตัวที่ 2';
             let borderColor = '#ddd6fe';
             let bgColor = '#ffffff';
             let titleColor = '#5b21b6';
             let icon = '📝';
-            
+
             if (type === 'number') {
                 containerId = 'admin-font-extra-number-container';
                 defaultLabel = 'ฟอนต์ตัวเลขตัวที่ 2';
@@ -12647,7 +12650,7 @@ ${encodedToken}
                 bgColor = '#ffffff';
                 icon = '🔤';
             }
-            
+
             const container = document.getElementById(containerId);
             if (!container) return;
 
