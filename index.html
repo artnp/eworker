@@ -8364,14 +8364,8 @@
 
         async function loadBigDataReelsAsync() {
             try {
-                // 1. ดึงข้อมูลสดจาก Firebase RTDB (Real-time ทันที ไม่ต้องรอ GitHub commit/deploy)
-                let res = await fetch('https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/posted_reels.json?t=' + Date.now());
-                if (!res.ok) {
-                    res = await fetch('data/posted_reels.json?t=' + Date.now());
-                }
-                if (!res.ok) {
-                    res = await fetch('Facebook_Bot/posted_reels.json?t=' + Date.now());
-                }
+                // ดึงข้อมูลสดจาก Firebase RTDB (Real-time ทันที ไม่ใช้ไฟล์ data/ บน GitHub)
+                const res = await fetch('https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/posted_reels.json?t=' + Date.now());
                 if (res.ok) {
                     const data = await res.json();
                     if (Array.isArray(data) && data.length > 0) {
@@ -17872,7 +17866,7 @@ ${encodedToken}
         async function fetchApprovedGroupsData() {
             if (cachedFbApprovedGroupsData) return cachedFbApprovedGroupsData;
             try {
-                const res = await fetch('data/fb_approved_groups.json?t=' + Date.now());
+                const res = await fetch('https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/fb_approved_groups.json?t=' + Date.now());
                 if (res.ok) {
                     const json = await res.json();
                     if (json && Array.isArray(json.groups)) {
@@ -17991,59 +17985,6 @@ ${encodedToken}
                             </span>
                         </div>
                     </div>
-
-                    ${isPurchased ? `
-                        <div class="data-live-feed-card">
-                            <div class="data-live-feed-header">
-                                <div class="data-live-feed-title">
-                                    <span>🚀 ลิงก์ดึงข้อมูลสดอัตโนมัติ (Live Feed URLs)</span>
-                                    <span class="live-pill">⚡ อัปเดตสด 24 ชม.</span>
-                                </div>
-                                <p class="data-live-feed-desc">
-                                    คุณสามารถนำ URL ด้านล่างไปใส่ในบอทโพสต์ หรือ Google Sheets เพื่อรับรายชื่อกลุ่มใหม่แบบเรียลไทม์ โดยไม่ต้องกลับเข้ามาเปิดหน้าเว็บนี้อีกต่อไป
-                                </p>
-                            </div>
-
-                            <div class="data-feed-grid">
-                                <div class="data-feed-item">
-                                    <div class="feed-item-label">
-                                        <span class="feed-badge txt">บอทโพสต์ / Script</span>
-                                        <strong>🔗 Raw TXT Live URL (เฉพาะ URL บรรทัดละกลุ่ม)</strong>
-                                    </div>
-                                    <div class="feed-input-group">
-                                        <input type="text" readonly value="https://artnp.github.io/eworker/data/fb_groups.txt" id="modal-live-txt-url">
-                                        <button type="button" class="btn-copy-feed" onclick="copyFeedUrl('https://artnp.github.io/eworker/data/fb_groups.txt', 'Raw TXT Live URL')">📋 คัดลอกลิงก์</button>
-                                        <a href="https://artnp.github.io/eworker/data/fb_groups.txt" target="_blank" class="btn-open-feed" title="เปิดดูข้อมูลสด">🔗 เปิด</a>
-                                    </div>
-                                    <div class="feed-item-hint">💡 นำ URL นี้ไปใส่ในโค้ดบอทโพสต์ (Python, Node.js หรือ curl) เพื่อดึงกลุ่มสดทุกครั้งก่อนเริ่มงาน</div>
-                                </div>
-
-                                <div class="data-feed-item">
-                                    <div class="feed-item-label">
-                                        <span class="feed-badge sheets">Google Sheets</span>
-                                        <strong>📊 สูตรเชื่อมต่อ Google Sheets สดอัตโนมัติ (Live Sync)</strong>
-                                    </div>
-                                    <div class="feed-input-group">
-                                        <input type="text" readonly value='=IMPORTDATA("https://artnp.github.io/eworker/data/fb_groups.csv")' id="modal-live-sheets-formula">
-                                        <button type="button" class="btn-copy-feed" onclick="copyFeedUrl('=IMPORTDATA(\"https://artnp.github.io/eworker/data/fb_groups.csv\")', 'สูตร Google Sheets')">📋 คัดลอกสูตร</button>
-                                    </div>
-                                    <div class="feed-item-hint">💡 วางสูตรนี้ใน Google Sheets ช่อง A1 รายชื่อกลุ่มใหม่จะไหลเข้าตารางชีตของคุณอัตโนมัติ 24 ชม.</div>
-                                </div>
-
-                                <div class="data-feed-item" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                                    <div class="feed-links-row">
-                                        <button type="button" class="btn-chip-feed" onclick="copyFeedUrl('https://artnp.github.io/eworker/data/fb_groups.csv', 'Live CSV URL')">
-                                            📄 คัดลอก Live CSV URL
-                                        </button>
-                                        <button type="button" class="btn-chip-feed" onclick="copyFeedUrl('https://artnp.github.io/eworker/data/fb_approved_groups.json', 'Live JSON API')">
-                                            🔌 คัดลอก Live JSON API
-                                        </button>
-                                    </div>
-                                    <span style="font-size: 0.72rem; color: #166534; font-weight: 600;">✨ ซิงค์ตรงจากบอท Facebook อัตโนมัติ</span>
-                                </div>
-                            </div>
-                        </div>
-                    ` : ''}
 
                     ${isPurchased ? `
                         <div class="data-sheet-toolbar">
