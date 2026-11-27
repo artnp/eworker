@@ -7143,8 +7143,8 @@
                     <div class="form-group-clean" style="margin-bottom: 14px;">
                         <label class="form-label-clean" style="margin-bottom: 4px; font-weight: 700; color: #1e293b;">💰
                             ค่าบริการ (บาท THB) *</label>
-                        <input type="number" step="0.5" min="1" id="admin-font-price" class="form-control-clean"
-                            value="20" required style="font-size: 1rem; font-weight: 700; color: #059669;">
+                        <input type="number" step="0.5" min="20" max="20" id="admin-font-price" class="form-control-clean"
+                            value="20" required readonly style="font-size: 1rem; font-weight: 700; color: #059669; background: #f1f5f9; cursor: not-allowed;">
                     </div>
 
                     <!-- SEPARATE SECRET SECTION 1: ข้อมูลเฉลยฟอนต์ข้อความ -->
@@ -12758,7 +12758,12 @@ ${encodedToken}
                 checkText.checked = isText;
                 checkNum.checked = isNum;
 
-                priceInput.value = p.price || 10;
+                priceInput.value = p.price || 20;
+                priceInput.readOnly = false;
+                priceInput.min = '1';
+                priceInput.removeAttribute('max');
+                priceInput.style.background = '';
+                priceInput.style.cursor = '';
                 fontNameTextInput.value = p.fontNameText || p.fontName || '';
                 fontUrlTextInput.value = p.downloadUrlText || p.fontUrlText || p.downloadUrl || p.fontUrl || '';
                 fontNameNumInput.value = p.fontNameNumber || '';
@@ -12800,12 +12805,17 @@ ${encodedToken}
                 updateAdminFontImagePreview('');
                 checkText.checked = true;
                 checkNum.checked = false;
-                priceInput.value = 10;
+                priceInput.value = 20;
+                priceInput.readOnly = true;
+                priceInput.min = '20';
+                priceInput.max = '20';
+                priceInput.style.background = '#f1f5f9';
+                priceInput.style.cursor = 'not-allowed';
                 fontNameTextInput.value = '';
                 fontUrlTextInput.value = '';
                 fontNameNumInput.value = '';
                 fontUrlNumInput.value = '';
-                if (headerText) headerText.innerHTML = '<span>🔤 เพิ่มรายการในคลังฟอนต์ (โพสต์ขาย ฿10)</span>';
+                if (headerText) headerText.innerHTML = '<span>🔤 เพิ่มรายการในคลังฟอนต์ (โพสต์ขาย ฿20)</span>';
                 if (btnDelete) btnDelete.style.display = 'none';
             }
 
@@ -12864,7 +12874,7 @@ ${encodedToken}
             const coverImage = (document.getElementById('admin-font-image')?.value || '').trim();
             const isText = document.getElementById('admin-font-check-text')?.checked ?? true;
             const isNumber = document.getElementById('admin-font-check-number')?.checked ?? false;
-            const price = parseFloat(document.getElementById('admin-font-price')?.value) || 10;
+            const price = editId ? (parseFloat(document.getElementById('admin-font-price')?.value) || 20) : 20;
             const fontNameText = (document.getElementById('admin-font-name-text')?.value || '').trim();
             const downloadUrlText = (document.getElementById('admin-font-download-url-text')?.value || '').trim();
             const fontNameNumber = (document.getElementById('admin-font-name-number')?.value || '').trim();
