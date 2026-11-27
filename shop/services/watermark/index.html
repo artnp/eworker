@@ -141,9 +141,9 @@
 
         /* LEFT SIDEBAR */
         .sidebar-panel {
-            width: 350px;
-            min-width: 320px;
-            max-width: 360px;
+            width: 340px;
+            min-width: 310px;
+            max-width: 350px;
             height: 100%;
             background: #ffffff;
             border-right: 1px solid var(--border-color);
@@ -151,8 +151,8 @@
             flex-direction: column;
             overflow-y: auto;
             z-index: 20;
-            padding: 14px;
-            gap: 12px;
+            padding: 10px 12px;
+            gap: 8px;
             flex-shrink: 0;
         }
 
@@ -160,14 +160,14 @@
             background: #ffffff;
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
-            padding: 12px;
+            padding: 10px;
         }
 
         .card-header {
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             font-weight: 700;
             color: #334155;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -240,6 +240,154 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+
+        /* WATERMARK MODE TABS */
+        .wm-mode-tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            background: #f1f5f9;
+            padding: 3px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 10px;
+        }
+
+        .wm-mode-tab {
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            padding: 7px 8px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            font-family: inherit;
+            color: #64748b;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.15s ease;
+        }
+
+        .wm-mode-tab.active {
+            background: #ffffff;
+            color: var(--primary);
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+        }
+
+        /* TEXT WATERMARK CONTROLS */
+        .wm-text-input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-size: 0.84rem;
+            font-family: inherit;
+            color: var(--text-main);
+            outline: none;
+            transition: border-color 0.15s;
+            margin-bottom: 8px;
+        }
+
+        .wm-text-input:focus {
+            border-color: var(--primary);
+        }
+
+        .color-swatch-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .color-swatches {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .color-dot {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 0 1px #cbd5e1;
+            cursor: pointer;
+            transition: transform 0.15s;
+        }
+
+        .color-dot.active {
+            box-shadow: 0 0 0 2px var(--primary);
+            transform: scale(1.1);
+        }
+
+        .color-picker-native {
+            width: 24px;
+            height: 24px;
+            border: none;
+            padding: 0;
+            background: none;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        /* RED STRIKETHROUGH CHECKBOX & STYLES */
+        .strike-toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #b91c1c;
+            user-select: none;
+        }
+
+        .strike-toggle-label input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #dc2626;
+            cursor: pointer;
+        }
+
+        .strike-style-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin-top: 8px;
+        }
+
+        .btn-strike-style {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 6px 2px;
+            font-size: 0.66rem;
+            font-weight: 600;
+            font-family: inherit;
+            color: #475569;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            transition: all 0.15s ease;
+        }
+
+        .btn-strike-style:hover {
+            border-color: #fca5a5;
+            background: #fef2f2;
+        }
+
+        .btn-strike-style.active {
+            border-color: #dc2626;
+            background: #fef2f2;
+            color: #b91c1c;
         }
 
         /* POSITION PRESET BUTTONS */
@@ -784,33 +932,74 @@
     <!-- ===== MAIN WORKSPACE ===== -->
     <main class="workspace-container">
 
-        <!-- LEFT SIDEBAR: Upload & Controls -->
+        <!-- LEFT SIDEBAR: Controls -->
         <aside class="sidebar-panel">
+            <input type="file" id="docFileInput" accept="application/pdf,image/png,image/jpeg,image/webp" multiple style="display: none;">
 
-            <!-- 1. Upload Boxes (Documents/Images + Watermark PNG) -->
+            <!-- 1. Watermark Type (Text or PNG) -->
             <div class="panel-card">
                 <div class="card-header">
                     <span class="card-header-left">
-                        <i class="fa-solid fa-cloud-arrow-up" style="color: var(--primary);"></i>
-                        อัปโหลดไฟล์
+                        <i class="fa-solid fa-stamp" style="color: var(--primary);"></i>
+                        แบบลายน้ำ
                     </span>
-                    <span id="docCountBadge" style="font-size: 0.68rem; color: var(--text-muted);">0 รายการ</span>
                 </div>
 
-                <div class="dropzone-grid">
-                    <!-- Dropzone 1: Main Document / Images -->
-                    <div class="dropzone-item" id="dropzoneDoc" onclick="docFileInput.click()">
-                        <i class="fa-solid fa-file-pdf dropzone-icon" id="iconDoc"></i>
-                        <div class="dropzone-title" id="titleDoc">1. เอกสาร / รูปภาพ</div>
-                        <div class="dropzone-desc" id="descDoc">PDF หรือ หลายรูป</div>
-                    </div>
-                    <input type="file" id="docFileInput" accept="application/pdf,image/png,image/jpeg,image/webp" multiple style="display: none;">
+                <div class="wm-mode-tabs">
+                    <button type="button" class="wm-mode-tab active" id="tabModeText" onclick="setWatermarkMode('text')">
+                        <i class="fa-solid fa-font"></i> ข้อความ
+                    </button>
+                    <button type="button" class="wm-mode-tab" id="tabModePng" onclick="setWatermarkMode('png')">
+                        <i class="fa-regular fa-image"></i> รูปภาพ PNG
+                    </button>
+                </div>
 
-                    <!-- Dropzone 2: Watermark PNG -->
+                <!-- Text Mode Panel -->
+                <div id="panelModeText">
+                    <input type="text" class="wm-text-input" id="wmTextInput" value="สำเนาถูกต้อง" placeholder="พิมพ์ข้อความลายน้ำ..." oninput="onTextSettingsChange()">
+
+                    <div class="color-swatch-row">
+                        <span style="font-size: 0.74rem; font-weight: 600; color: #475569;">สีข้อความ</span>
+                        <div class="color-swatches">
+                            <button type="button" class="color-dot active" style="background: #dc2626;" onclick="setTextColor('#dc2626', this)" title="แดง"></button>
+                            <button type="button" class="color-dot" style="background: #0f172a;" onclick="setTextColor('#0f172a', this)" title="ดำ"></button>
+                            <button type="button" class="color-dot" style="background: #2563eb;" onclick="setTextColor('#2563eb', this)" title="น้ำเงิน"></button>
+                            <button type="button" class="color-dot" style="background: #64748b;" onclick="setTextColor('#64748b', this)" title="เทา"></button>
+                            <input type="color" class="color-picker-native" id="wmColorPicker" value="#dc2626" oninput="setTextColor(this.value, null)" title="เลือกสีเอง">
+                        </div>
+                    </div>
+
+                    <label class="strike-toggle-label">
+                        <input type="checkbox" id="chkRedStrike" onchange="onStrikeToggle()">
+                        <span>ขีดฆ่าแดงเอกสาร</span>
+                    </label>
+
+                    <div class="strike-style-grid" id="strikeStyleGrid" style="display: none;">
+                        <button type="button" class="btn-strike-style active" data-strike="double" onclick="setStrikeStyle('double')">
+                            <svg width="24" height="20" viewBox="0 0 24 20"><line x1="3" y1="17" x2="17" y2="3" stroke="#dc2626" stroke-width="2"/><line x1="7" y1="17" x2="21" y2="3" stroke="#dc2626" stroke-width="2"/></svg>
+                            <span>เส้นคู่</span>
+                        </button>
+                        <button type="button" class="btn-strike-style" data-strike="single" onclick="setStrikeStyle('single')">
+                            <svg width="24" height="20" viewBox="0 0 24 20"><line x1="4" y1="17" x2="20" y2="3" stroke="#dc2626" stroke-width="2.2"/></svg>
+                            <span>เส้นเดี่ยว</span>
+                        </button>
+                        <button type="button" class="btn-strike-style" data-strike="cross" onclick="setStrikeStyle('cross')">
+                            <svg width="24" height="20" viewBox="0 0 24 20"><line x1="4" y1="3" x2="20" y2="17" stroke="#dc2626" stroke-width="2"/><line x1="4" y1="17" x2="20" y2="3" stroke="#dc2626" stroke-width="2"/></svg>
+                            <span>กากบาท</span>
+                        </button>
+                        <button type="button" class="btn-strike-style" data-strike="text-wrap" onclick="setStrikeStyle('text-wrap')">
+                            <svg width="24" height="20" viewBox="0 0 24 20"><line x1="2" y1="5" x2="22" y2="5" stroke="#dc2626" stroke-width="2"/><line x1="2" y1="15" x2="22" y2="15" stroke="#dc2626" stroke-width="2"/></svg>
+                            <span>คร่อมคำ</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PNG Mode Panel -->
+                <div id="panelModePng" style="display: none;">
                     <div class="dropzone-item" id="dropzoneWatermark" onclick="watermarkFileInput.click()">
                         <i class="fa-solid fa-certificate dropzone-icon" id="iconWatermark"></i>
-                        <div class="dropzone-title" id="titleWatermark">2. ลายน้ำ PNG</div>
-                        <div class="dropzone-desc" id="descWatermark">โลโก้ / ตรายาง</div>
+                        <div class="dropzone-title" id="titleWatermark">อัปโหลดลายน้ำ PNG</div>
+                        <div class="dropzone-desc" id="descWatermark">โลโก้ / ตรายาง (พื้นหลังใส)</div>
                     </div>
                     <input type="file" id="watermarkFileInput" accept="image/png,image/webp,image/*" style="display: none;">
                 </div>
@@ -921,10 +1110,10 @@
                     <span style="font-size: 0.72rem; color: #64748b; margin-left: 6px;" id="currentFileName"></span>
                 </div>
                 <div class="stage-toolbar-group">
-                    <span class="stage-tip-badge">
-                        <i class="fa-regular fa-hand-pointer" style="color: var(--primary);"></i>
-                        <span>คลิกลากลายน้ำบนภาพได้อิสระ</span>
-                    </span>
+                    <button type="button" class="btn-outline-sm" onclick="docFileInput.click()" style="color: var(--primary); border-color: var(--primary-border); background: var(--primary-light);">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>อัปโหลดใหม่</span>
+                    </button>
                 </div>
             </div>
 
@@ -939,10 +1128,14 @@
                     <h3 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 4px;">
                         อัปโหลดเอกสารหรือรูปภาพ
                     </h3>
-                    <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.5;">
-                        ระบบจะวางลายน้ำ PNG ซ้ำในตำแหน่งเดียวกันทุกหน้าโดยอัตโนมัติ<br>
-                        ปลอดภัย ไฟล์ประมวลผลบนเครื่องของคุณ ไม่ถูกส่งออกภายนอก
+                    <p style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 14px;">
+                        รองรับ PDF หลายหน้า และรูปภาพจำนวนมาก<br>
+                        ปลอดภัย ไฟล์ประมวลผลบนเครื่องของคุณ
                     </p>
+                    <button type="button" class="btn-start-job" onclick="docFileInput.click()" style="padding: 10px 20px; font-size: 0.86rem;">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span>เลือกไฟล์ PDF / รูปภาพ</span>
+                    </button>
                 </div>
 
                 <!-- Canvas Wrapper -->
@@ -1073,6 +1266,11 @@
 
         // Watermark Transform Settings (Normalized 0.0 - 1.0)
         let wmSettings = {
+            mode: 'text',         // 'text' | 'png'
+            text: 'สำเนาถูกต้อง',
+            textColor: '#dc2626',
+            redStrike: false,
+            strikeStyle: 'double', // 'double' | 'single' | 'cross' | 'text-wrap'
             normX: 0.5,           // 0.0 (left) to 1.0 (right)
             normY: 0.5,           // 0.0 (top) to 1.0 (bottom)
             scalePercent: 30,     // 5% - 100% of page width
@@ -1081,13 +1279,64 @@
             isTile: false         // tile pattern mode
         };
 
+        const BASE_TEXT_FONT_PX = 100;
+        let cachedTextCanvas = null;
+        let cachedTextKey = '';
+
+        function hasActiveWatermark() {
+            if (wmSettings.mode === 'png') return !!watermarkImg;
+            return wmSettings.text.trim().length > 0 || wmSettings.redStrike;
+        }
+
+        function getTextWatermarkCanvas() {
+            const text = wmSettings.text.trim();
+            if (!text) return null;
+            const useWrapLines = wmSettings.redStrike && wmSettings.strikeStyle === 'text-wrap';
+            const key = `${text}|${wmSettings.textColor}|${useWrapLines}`;
+            if (cachedTextCanvas && cachedTextKey === key) return cachedTextCanvas;
+
+            const c = document.createElement('canvas');
+            const ctx = c.getContext('2d');
+            const font = `700 ${BASE_TEXT_FONT_PX}px "Prompt", "Outfit", sans-serif`;
+            ctx.font = font;
+            const metrics = ctx.measureText(text);
+            const padX = useWrapLines ? BASE_TEXT_FONT_PX * 0.7 : BASE_TEXT_FONT_PX * 0.25;
+            const padY = useWrapLines ? BASE_TEXT_FONT_PX * 0.45 : BASE_TEXT_FONT_PX * 0.25;
+
+            c.width = Math.max(10, Math.ceil(metrics.width + padX * 2));
+            c.height = Math.max(10, Math.ceil(BASE_TEXT_FONT_PX * 1.25 + padY * 2));
+
+            ctx.font = font;
+            ctx.fillStyle = wmSettings.textColor;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, c.width / 2, c.height / 2);
+
+            if (useWrapLines) {
+                ctx.strokeStyle = '#dc2626';
+                ctx.lineWidth = Math.max(4, BASE_TEXT_FONT_PX * 0.07);
+                ctx.lineCap = 'round';
+                const topY = padY * 0.55;
+                const botY = c.height - padY * 0.55;
+                ctx.beginPath();
+                ctx.moveTo(6, topY);
+                ctx.lineTo(c.width - 6, topY);
+                ctx.moveTo(6, botY);
+                ctx.lineTo(c.width - 6, botY);
+                ctx.stroke();
+            }
+
+            cachedTextCanvas = c;
+            cachedTextKey = key;
+            return c;
+        }
+
         // Dragging State on Canvas
         let isDragging = false;
 
         // DOM References
         const docFileInput = document.getElementById('docFileInput');
         const watermarkFileInput = document.getElementById('watermarkFileInput');
-        const dropzoneDoc = document.getElementById('dropzoneDoc');
         const dropzoneWatermark = document.getElementById('dropzoneWatermark');
         const emptyStageState = document.getElementById('emptyStageState');
         const canvasWrapper = document.getElementById('canvasWrapper');
@@ -1150,11 +1399,11 @@
             if (pdfFile) {
                 handleDocFiles([pdfFile]);
                 const remainingImages = imageFiles.filter(f => f !== pdfFile);
-                if (remainingImages.length > 0 && !watermarkImg) {
+                if (remainingImages.length > 0 && wmSettings.mode === 'png' && !watermarkImg) {
                     handleWatermarkFile(remainingImages[0]);
                 }
             } else if (imageFiles.length > 0) {
-                if (imageFiles.length === 1 && documentPages.length > 0 && !watermarkImg) {
+                if (imageFiles.length === 1 && wmSettings.mode === 'png' && documentPages.length > 0 && !watermarkImg) {
                     handleWatermarkFile(imageFiles[0]);
                 } else {
                     handleDocFiles(imageFiles);
@@ -1256,20 +1505,14 @@
         }
 
         function updateDocDropzoneUI() {
-            if (documentPages.length > 0) {
-                dropzoneDoc.classList.add('has-file');
-                const titleText = originalPdfBytes ? "เอกสาร PDF" : "รูปภาพ";
-                document.getElementById('titleDoc').textContent = titleText;
-                document.getElementById('descDoc').textContent = `${documentPages.length} หน้า/รูป`;
-                document.getElementById('docCountBadge').textContent = `${documentPages.length} หน้า`;
-            }
+            // Document info is displayed in the stage toolbar (#pageIndicator & #currentFileName)
         }
 
         function updateWatermarkDropzoneUI(fileName) {
             if (watermarkImg) {
                 dropzoneWatermark.classList.add('has-file');
-                document.getElementById('titleWatermark').textContent = "ลายน้ำพร้อม";
-                document.getElementById('descWatermark').textContent = fileName ? fileName.substring(0, 14) : "PNG โหลดแล้ว";
+                document.getElementById('titleWatermark').textContent = "ลายน้ำ PNG พร้อมแล้ว";
+                document.getElementById('descWatermark').textContent = fileName ? fileName.substring(0, 22) : "PNG โหลดแล้ว";
             }
         }
 
@@ -1301,24 +1544,93 @@
             ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
             ctx.drawImage(page.originalCanvas, 0, 0);
 
-            // 2. Draw watermark if loaded
-            if (watermarkImg) {
+            // 2. Draw watermark if active
+            if (hasActiveWatermark()) {
                 drawWatermarkOnCanvas(ctx, page.width, page.height);
             }
+        }
+
+        function getFullPageStrikeLines(targetW, targetH) {
+            if (wmSettings.mode !== 'text' || !wmSettings.redStrike || wmSettings.strikeStyle === 'text-wrap') {
+                return [];
+            }
+            const mX = targetW * 0.06;
+            const mY = targetH * 0.06;
+            const x1 = mX, y1 = targetH - mY;
+            const x2 = targetW - mX, y2 = mY;
+
+            if (wmSettings.strikeStyle === 'single') {
+                return [{ x1, y1, x2, y2 }];
+            }
+            if (wmSettings.strikeStyle === 'double') {
+                const dx = x2 - x1;
+                const dy = y2 - y1;
+                const len = Math.hypot(dx, dy) || 1;
+                const offset = Math.min(targetW, targetH) * 0.032;
+                const nx = (-dy / len) * offset;
+                const ny = (dx / len) * offset;
+                return [
+                    { x1: x1 + nx, y1: y1 + ny, x2: x2 + nx, y2: y2 + ny },
+                    { x1: x1 - nx, y1: y1 - ny, x2: x2 - nx, y2: y2 - ny }
+                ];
+            }
+            if (wmSettings.strikeStyle === 'cross') {
+                return [
+                    { x1: mX, y1: mY, x2: targetW - mX, y2: targetH - mY },
+                    { x1: mX, y1: targetH - mY, x2: targetW - mX, y2: mY }
+                ];
+            }
+            return [];
+        }
+
+        function getWatermarkDrawSpec(targetW) {
+            if (wmSettings.mode === 'png') {
+                if (!watermarkImg) return null;
+                const wmAspect = (watermarkImg.naturalHeight || watermarkImg.height) / (watermarkImg.naturalWidth || watermarkImg.width);
+                const wmWidth = targetW * (wmSettings.scalePercent / 100);
+                return { source: watermarkImg, wmWidth, wmHeight: wmWidth * wmAspect };
+            }
+            const textCanvas = getTextWatermarkCanvas();
+            if (!textCanvas) return null;
+            const targetFontSize = targetW * (wmSettings.scalePercent / 100) * 0.18;
+            const scaleFactor = targetFontSize / BASE_TEXT_FONT_PX;
+            return {
+                source: textCanvas,
+                wmWidth: textCanvas.width * scaleFactor,
+                wmHeight: textCanvas.height * scaleFactor
+            };
         }
 
         function drawWatermarkOnCanvas(ctx, targetW, targetH) {
             ctx.save();
             ctx.globalAlpha = wmSettings.opacityPercent / 100;
 
-            const wmAspect = (watermarkImg.naturalHeight || watermarkImg.height) / (watermarkImg.naturalWidth || watermarkImg.width);
-            const wmWidth = targetW * (wmSettings.scalePercent / 100);
-            const wmHeight = wmWidth * wmAspect;
+            // 1. Full-page red strikethrough lines (if enabled)
+            const strikeLines = getFullPageStrikeLines(targetW, targetH);
+            if (strikeLines.length > 0) {
+                ctx.strokeStyle = '#dc2626';
+                ctx.lineWidth = Math.max(2, Math.min(targetW, targetH) * 0.0055);
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                strikeLines.forEach(l => {
+                    ctx.moveTo(l.x1, l.y1);
+                    ctx.lineTo(l.x2, l.y2);
+                });
+                ctx.stroke();
+            }
+
+            // 2. Watermark graphic (PNG or rendered text)
+            const spec = getWatermarkDrawSpec(targetW);
+            if (!spec) {
+                ctx.restore();
+                return;
+            }
+            const { source, wmWidth, wmHeight } = spec;
 
             if (wmSettings.isTile) {
                 // TILE PATTERN MODE
-                const stepX = wmWidth * 1.6;
-                const stepY = wmHeight * 1.8;
+                const stepX = wmWidth * 1.5;
+                const stepY = Math.max(wmHeight * 2.0, targetH * 0.1);
                 const rad = (wmSettings.rotationDeg * Math.PI) / 180;
 
                 for (let y = -stepY; y < targetH + stepY * 2; y += stepY) {
@@ -1326,7 +1638,7 @@
                         ctx.save();
                         ctx.translate(x, y);
                         ctx.rotate(rad);
-                        ctx.drawImage(watermarkImg, -wmWidth / 2, -wmHeight / 2, wmWidth, wmHeight);
+                        ctx.drawImage(source, -wmWidth / 2, -wmHeight / 2, wmWidth, wmHeight);
                         ctx.restore();
                     }
                 }
@@ -1338,7 +1650,7 @@
 
                 ctx.translate(posX, posY);
                 ctx.rotate(rad);
-                ctx.drawImage(watermarkImg, -wmWidth / 2, -wmHeight / 2, wmWidth, wmHeight);
+                ctx.drawImage(source, -wmWidth / 2, -wmHeight / 2, wmWidth, wmHeight);
 
                 // Draw thin boundary frame during drag
                 if (isDragging) {
@@ -1364,7 +1676,7 @@
         }
 
         function onDragStart(e) {
-            if (!watermarkImg || wmSettings.isTile || documentPages.length === 0) return;
+            if (!hasActiveWatermark() || wmSettings.isTile || documentPages.length === 0) return;
             isDragging = true;
             canvasWrapper.classList.add('is-dragging');
             const pt = getCanvasPoint(e);
@@ -1402,6 +1714,43 @@
         /* ---------------------------------------------------------
            4. CONTROLS & PRESETS
            --------------------------------------------------------- */
+        function setWatermarkMode(mode) {
+            wmSettings.mode = mode;
+            document.getElementById('tabModeText').classList.toggle('active', mode === 'text');
+            document.getElementById('tabModePng').classList.toggle('active', mode === 'png');
+            document.getElementById('panelModeText').style.display = mode === 'text' ? 'block' : 'none';
+            document.getElementById('panelModePng').style.display = mode === 'png' ? 'block' : 'none';
+            renderCurrentPage();
+        }
+
+        function onTextSettingsChange() {
+            wmSettings.text = document.getElementById('wmTextInput').value;
+            renderCurrentPage();
+        }
+
+        function setTextColor(color, dotEl) {
+            wmSettings.textColor = color;
+            document.getElementById('wmColorPicker').value = color;
+            document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+            if (dotEl) dotEl.classList.add('active');
+            renderCurrentPage();
+        }
+
+        function onStrikeToggle() {
+            const checked = document.getElementById('chkRedStrike').checked;
+            wmSettings.redStrike = checked;
+            document.getElementById('strikeStyleGrid').style.display = checked ? 'grid' : 'none';
+            renderCurrentPage();
+        }
+
+        function setStrikeStyle(style) {
+            wmSettings.strikeStyle = style;
+            document.querySelectorAll('.btn-strike-style').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.strike === style);
+            });
+            renderCurrentPage();
+        }
+
         function onSettingsChange() {
             wmSettings.scalePercent = parseInt(document.getElementById('paramScale').value);
             wmSettings.opacityPercent = parseInt(document.getElementById('paramOpacity').value);
@@ -1506,8 +1855,8 @@
                 alert('กรุณาอัปโหลดเอกสารหรือรูปภาพก่อน');
                 return;
             }
-            if (!watermarkImg) {
-                alert('กรุณาอัปโหลดไฟล์ลายน้ำ PNG');
+            if (!hasActiveWatermark()) {
+                alert(wmSettings.mode === 'png' ? 'กรุณาอัปโหลดไฟล์ลายน้ำ PNG' : 'กรุณาพิมพ์ข้อความลายน้ำ');
                 return;
             }
             if (isPaid) {
@@ -1736,8 +2085,8 @@
            --------------------------------------------------------- */
         async function executeDownload(format) {
             closePaymentModal();
-            if (documentPages.length === 0 || !watermarkImg) {
-                alert("กรุณาอัปโหลดเอกสารและลายน้ำก่อนดาวน์โหลด");
+            if (documentPages.length === 0 || !hasActiveWatermark()) {
+                alert("กรุณาอัปโหลดเอกสารและตั้งค่าลายน้ำก่อนดาวน์โหลด");
                 return;
             }
 
@@ -1789,22 +2138,30 @@
         }
 
         async function exportWithPdfLib() {
-            const { PDFDocument, degrees } = PDFLib;
+            const { PDFDocument, degrees, rgb } = PDFLib;
             // Always clone originalPdfBytes when reading
             const pdfDoc = await PDFDocument.load(originalPdfBytes.slice(0));
 
-            // Clean watermark to standard RGBA PNG via offscreen canvas to avoid PNG chunk errors
-            const offCanvas = document.createElement('canvas');
-            offCanvas.width = watermarkImg.naturalWidth || watermarkImg.width;
-            offCanvas.height = watermarkImg.naturalHeight || watermarkImg.height;
-            const offCtx = offCanvas.getContext('2d');
-            offCtx.drawImage(watermarkImg, 0, 0);
-            const cleanBlob = await new Promise(res => offCanvas.toBlob(res, 'image/png'));
-            const cleanBytes = new Uint8Array(await cleanBlob.arrayBuffer());
-            const embeddedWm = await pdfDoc.embedPng(cleanBytes);
+            // Prepare embedded watermark PNG (either uploaded PNG or rendered text canvas)
+            let embeddedWm = null;
+            let wmSourceCanvas = null;
+            if (wmSettings.mode === 'png' && watermarkImg) {
+                const offCanvas = document.createElement('canvas');
+                offCanvas.width = watermarkImg.naturalWidth || watermarkImg.width;
+                offCanvas.height = watermarkImg.naturalHeight || watermarkImg.height;
+                offCanvas.getContext('2d').drawImage(watermarkImg, 0, 0);
+                wmSourceCanvas = offCanvas;
+            } else if (wmSettings.mode === 'text') {
+                wmSourceCanvas = getTextWatermarkCanvas();
+            }
+
+            if (wmSourceCanvas) {
+                const cleanBlob = await new Promise(res => wmSourceCanvas.toBlob(res, 'image/png'));
+                const cleanBytes = new Uint8Array(await cleanBlob.arrayBuffer());
+                embeddedWm = await pdfDoc.embedPng(cleanBytes);
+            }
 
             const pages = pdfDoc.getPages();
-            const wmAspect = embeddedWm.height / embeddedWm.width;
             const opacity = wmSettings.opacityPercent / 100;
 
             pages.forEach((page) => {
@@ -1823,8 +2180,20 @@
                     visH = rawW;
                 }
 
-                const wmWidth = visW * (wmSettings.scalePercent / 100);
-                const wmHeight = wmWidth * wmAspect;
+                let wmWidth = 0;
+                let wmHeight = 0;
+                if (embeddedWm) {
+                    if (wmSettings.mode === 'png') {
+                        const wmAspect = embeddedWm.height / embeddedWm.width;
+                        wmWidth = visW * (wmSettings.scalePercent / 100);
+                        wmHeight = wmWidth * wmAspect;
+                    } else {
+                        const targetFontSize = visW * (wmSettings.scalePercent / 100) * 0.18;
+                        const scaleFactor = targetFontSize / BASE_TEXT_FONT_PX;
+                        wmWidth = wmSourceCanvas.width * scaleFactor;
+                        wmHeight = wmSourceCanvas.height * scaleFactor;
+                    }
+                }
 
                 function getPdfCoordsAndAngle(visX, visY, visAngleDeg) {
                     let tx = 0;
@@ -1857,7 +2226,25 @@
                     };
                 }
 
+                // Draw full-page red strikethrough lines if enabled
+                const strikeLines = getFullPageStrikeLines(visW, visH);
+                if (strikeLines.length > 0) {
+                    const thickness = Math.max(1.5, Math.min(visW, visH) * 0.0055);
+                    strikeLines.forEach(l => {
+                        const p1 = getPdfCoordsAndAngle(l.x1, l.y1, 0);
+                        const p2 = getPdfCoordsAndAngle(l.x2, l.y2, 0);
+                        page.drawLine({
+                            start: { x: p1.targetX, y: p1.targetY },
+                            end: { x: p2.targetX, y: p2.targetY },
+                            thickness: thickness,
+                            color: rgb(0.863, 0.149, 0.149),
+                            opacity: opacity
+                        });
+                    });
+                }
+
                 function drawSingleWatermarkAt(visX, visY) {
+                    if (!embeddedWm) return;
                     const { targetX, targetY, pdfAngle } = getPdfCoordsAndAngle(visX, visY, wmSettings.rotationDeg);
                     const rad = (pdfAngle * Math.PI) / 180;
                     const cos = Math.cos(rad);
@@ -1878,18 +2265,20 @@
                     });
                 }
 
-                if (wmSettings.isTile) {
-                    const stepX = wmWidth * 1.6;
-                    const stepY = wmHeight * 1.8;
-                    for (let y = -stepY; y < visH + stepY * 2; y += stepY) {
-                        for (let x = -stepX; x < visW + stepX * 2; x += stepX) {
-                            drawSingleWatermarkAt(x, y);
+                if (embeddedWm) {
+                    if (wmSettings.isTile) {
+                        const stepX = wmWidth * 1.5;
+                        const stepY = Math.max(wmHeight * 2.0, visH * 0.1);
+                        for (let y = -stepY; y < visH + stepY * 2; y += stepY) {
+                            for (let x = -stepX; x < visW + stepX * 2; x += stepX) {
+                                drawSingleWatermarkAt(x, y);
+                            }
                         }
+                    } else {
+                        const visCenterX = wmSettings.normX * visW;
+                        const visCenterY = wmSettings.normY * visH;
+                        drawSingleWatermarkAt(visCenterX, visCenterY);
                     }
-                } else {
-                    const visCenterX = wmSettings.normX * visW;
-                    const visCenterY = wmSettings.normY * visH;
-                    drawSingleWatermarkAt(visCenterX, visCenterY);
                 }
             });
 
@@ -1937,7 +2326,7 @@
             c.height = page.height;
             const ctx = c.getContext('2d');
             ctx.drawImage(page.originalCanvas, 0, 0);
-            if (watermarkImg) {
+            if (hasActiveWatermark()) {
                 drawWatermarkOnCanvas(ctx, page.width, page.height);
             }
             return c;
@@ -1990,14 +2379,9 @@
             docFileInput.value = '';
             watermarkFileInput.value = '';
 
-            dropzoneDoc.classList.remove('has-file');
-            document.getElementById('titleDoc').textContent = "1. เอกสาร / รูปภาพ";
-            document.getElementById('descDoc').textContent = "PDF หรือ หลายรูป";
-            document.getElementById('docCountBadge').textContent = "0 รายการ";
-
             dropzoneWatermark.classList.remove('has-file');
-            document.getElementById('titleWatermark').textContent = "2. ลายน้ำ PNG";
-            document.getElementById('descWatermark').textContent = "โลโก้ / ตรายาง";
+            document.getElementById('titleWatermark').textContent = "อัปโหลดลายน้ำ PNG";
+            document.getElementById('descWatermark').textContent = "โลโก้ / ตรายาง (พื้นหลังใส)";
 
             emptyStageState.style.display = 'block';
             canvasWrapper.style.display = 'none';
