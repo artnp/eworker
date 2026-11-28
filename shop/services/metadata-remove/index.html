@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ล้างข้อมูลลับในไฟล์ภาพ (EXIF / GPS / AI) | eWorker Services</title>
+
+    <!-- Favicon & Web App Icons -->
+    <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon.svg"
+        onerror="this.onerror=null; this.href='../../../assets/images/favicon.svg';">
+    <link rel="icon" type="image/png" sizes="192x192" href="../../assets/images/favicon.png"
+        onerror="this.onerror=null; this.href='../../../assets/images/favicon.png';">
+    <link rel="shortcut icon" href="../../favicon.ico">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Prompt:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- CDNs: Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-light: #eff6ff;
+            --primary-border: #bfdbfe;
+            --accent: #10b981;
+            --bg-page: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --danger-bg: #fef2f2;
+            --danger-border: #fecaca;
+            --danger-text: #dc2626;
+            --success-bg: #f0fdf4;
+            --success-border: #bbf7d0;
+            --success-text: #15803d;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: 'Prompt', 'Outfit', sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ===== TOP HEADER NAVBAR ===== */
+        .top-navbar {
+            height: 56px;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 18px;
+            z-index: 50;
+            position: relative;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-title {
+            font-size: 1.02rem;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-badge {
+            font-size: 0.68rem;
+            font-weight: 600;
+            background: #ecfdf5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+            border-radius: 20px;
+            padding: 2px 8px;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-outline {
+            font-size: 0.8rem;
+            font-weight: 600;
+            font-family: inherit;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-outline:hover {
+            background: #f8fafc;
+            color: var(--text-main);
+            border-color: #cbd5e1;
+        }
+
+        /* ===== 2-COLUMN WORKSPACE ===== */
+        .workspace-container {
+            display: flex;
+            height: calc(100vh - 56px);
+            width: 100vw;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* LEFT SIDEBAR */
+        .sidebar-panel {
+            width: 330px;
+            min-width: 300px;
+            background: #ffffff;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            z-index: 20;
+            padding: 14px;
+            gap: 12px;
+        }
+
+        .sidebar-top {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .panel-section {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px;
+        }
+
+        .panel-section-title {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Dropzone */
+        .dropzone-box {
+            border: 2px dashed #93c5fd;
+            background: #f0f7ff;
+            border-radius: var(--radius-md);
+            padding: 18px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .dropzone-box:hover {
+            border-color: var(--primary);
+            background: #e0f2fe;
+        }
+
+        .dropzone-box i {
+            font-size: 1.9rem;
+            color: var(--primary);
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .dropzone-box .drop-title {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #1e3a8a;
+        }
+
+        .dropzone-box .drop-subtitle {
+            font-size: 0.72rem;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        /* Format Pills */
+        .pill-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .pill-btn {
+            font-family: inherit;
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 7px 6px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            background: #f8fafc;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .pill-btn.active {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Toggle Switch */
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .toggle-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+            flex-shrink: 0;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: #cbd5e1;
+            transition: 0.2s;
+            border-radius: 22px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.2s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--primary);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(18px);
+        }
+
+        /* Price Card */
+        .price-card {
+            background: #faf5ff;
+            border: 1px solid #e9d5ff;
+            border-radius: var(--radius-md);
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .price-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #6b21a8;
+        }
+
+        .price-value {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #7e22ce;
+        }
+
+        /* RIGHT STAGE */
+        .stage-area {
+            flex: 1;
+            height: 100%;
+            background: #f1f5f9;
+            background-image: radial-gradient(#cbd5e1 1.2px, transparent 1.2px);
+            background-size: 24px 24px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+        }
+
+        .empty-stage-state {
+            text-align: center;
+            max-width: 360px;
+            padding: 28px 22px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        }
+
+        .empty-stage-icon {
+            font-size: 2.6rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        /* Inspector Dashboard (Fits 100% without page scroll) */
+        .inspector-board {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            max-width: 920px;
+            height: 100%;
+            max-height: calc(100vh - 110px);
+            gap: 12px;
+        }
+
+        .inspector-board.active {
+            display: flex;
+        }
+
+        /* Top File Summary Bar */
+        .file-summary-bar {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+            flex-shrink: 0;
+        }
+
+        .file-preview-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .thumb-box {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            background: #f8fafc;
+            flex-shrink: 0;
+        }
+
+        .thumb-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .file-meta-text {
+            min-width: 0;
+        }
+
+        .file-name-title {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #0f172a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 280px;
+        }
+
+        .file-sub-meta {
+            font-size: 0.74rem;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .status-pill-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .status-chip {
+            font-size: 0.76rem;
+            font-weight: 700;
+            padding: 5px 10px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-chip.danger {
+            background: var(--danger-bg);
+            color: var(--danger-text);
+            border: 1px solid var(--danger-border);
+        }
+
+        .status-chip.success {
+            background: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid var(--success-border);
+        }
+
+        /* 2-Column Before / After Grid */
+        .compare-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .compare-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+            min-height: 0;
+        }
+
+        .compare-card.before-card {
+            border-top: 3px solid #ef4444;
+        }
+
+        .compare-card.after-card {
+            border-top: 3px solid #10b981;
+        }
+
+        .compare-header {
+            padding: 10px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .compare-title {
+            font-size: 0.86rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .compare-count {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        .compare-count.found {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .compare-count.clean {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .compare-body {
+            padding: 12px 14px;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 7px 10px;
+            border-radius: 8px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            font-size: 0.76rem;
+        }
+
+        .meta-item.warn {
+            background: #fff1f2;
+            border-color: #fecdd3;
+        }
+
+        .meta-item.ok {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+        .meta-key {
+            font-weight: 700;
+            color: #334155;
+            white-space: nowrap;
+        }
+
+        .meta-val {
+            color: #475569;
+            text-align: right;
+            word-break: break-word;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .meta-item.warn .meta-key,
+        .meta-item.warn .meta-val {
+            color: #991b1b;
+        }
+
+        .meta-item.ok .meta-key,
+        .meta-item.ok .meta-val {
+            color: #166534;
+        }
+
+        .verify-btn-sm {
+            font-family: inherit;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid #86efac;
+            background: #ecfdf5;
+            color: #059669;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.15s;
+        }
+
+        .verify-btn-sm:hover {
+            background: #d1fae5;
+        }
+
+        /* ===== FLOATING ACTION BUTTON ===== */
+        .floating-action-box {
+            position: fixed;
+            bottom: 20px;
+            right: 22px;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-start-job {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #4338ca 0%, #4f46e5 25%, #2563eb 50%, #0284c7 75%, #4338ca 100%);
+            background-size: 300% 300%;
+            color: #ffffff;
+            border: 1.5px solid rgba(255, 255, 255, 0.35);
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 0.94rem;
+            font-weight: 800;
+            font-family: inherit;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            box-shadow: 0 4px 18px rgba(79, 70, 229, 0.4);
+            animation: startBtnPulse 2.2s infinite ease-in-out, gradientShift 6s ease infinite;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            user-select: none;
+        }
+
+        .btn-start-job.is-success {
+            background: linear-gradient(135deg, #059669 0%, #10b981 25%, #16a34a 50%, #22c55e 75%, #059669 100%);
+            background-size: 300% 300%;
+            box-shadow: 0 4px 18px rgba(16, 185, 129, 0.4);
+            animation: successBtnPulse 2.2s infinite ease-in-out, gradientShift 6s ease infinite;
+        }
+
+        @keyframes startBtnPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 4px 16px rgba(79, 70, 229, 0.4), 0 0 0 0 rgba(99, 102, 241, 0.65);
+                transform: scale(1);
+            }
+
+            50% {
+                box-shadow: 0 8px 28px rgba(79, 70, 229, 0.6), 0 0 0 10px rgba(99, 102, 241, 0);
+                transform: scale(1.02);
+            }
+        }
+
+        @keyframes successBtnPulse {
+
+            0%,
+            100% {
+                box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4), 0 0 0 0 rgba(34, 197, 94, 0.65);
+                transform: scale(1);
+            }
+
+            50% {
+                box-shadow: 0 8px 28px rgba(16, 185, 129, 0.6), 0 0 0 10px rgba(34, 197, 94, 0);
+                transform: scale(1.02);
+            }
+        }
+
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .btn-start-job:hover {
+            transform: scale(1.04);
+        }
+
+        /* ===== RESPONSIVE MOBILE ===== */
+        @media (max-width: 860px) {
+            .workspace-container {
+                flex-direction: column-reverse;
+                height: calc(100vh - 56px);
+            }
+
+            .sidebar-panel {
+                width: 100%;
+                min-width: 100%;
+                height: 36vh;
+                border-right: none;
+                border-top: 1px solid var(--border-color);
+                padding: 10px;
+                overflow-y: auto;
+            }
+
+            .stage-area {
+                height: 64vh;
+                padding: 10px;
+            }
+
+            .inspector-board {
+                max-height: 100%;
+            }
+
+            .compare-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .floating-action-box {
+                bottom: 12px;
+                right: 12px;
+            }
+
+            .btn-start-job {
+                padding: 10px 18px;
+                font-size: 0.85rem;
+            }
+        }
+
+        /* ===== FULLPAGE DRAG OVERLAY ===== */
+        .page-drag-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 999999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .page-drag-overlay.active {
+            display: flex;
+        }
+
+        .page-drag-card {
+            background: #ffffff;
+            border: 2.5px dashed var(--primary);
+            border-radius: 20px;
+            padding: 32px 44px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+        }
+
+        /* ===== PROMPTPAY PAYMENT MODAL ===== */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal-backdrop.active {
+            display: flex;
+        }
+
+        .modal-card {
+            background: #ffffff;
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 380px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            position: relative;
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            background: #ef4444;
+            color: #ffffff;
+            border: 2.5px solid #ffffff;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+        }
+
+        .checkout-countdown-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #15803d;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .checkout-countdown-box.warning {
+            background: #fff7ed;
+            border-color: #fed7aa;
+            color: #c2410c;
+        }
+
+        .checkout-countdown-box.urgent {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #b91c1c;
+        }
+
+        .qr-clean-card {
+            background: #ffffff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 8px;
+            margin: 0 auto 6px auto;
+            width: 100%;
+            max-width: 240px;
+            cursor: pointer;
+        }
+
+        .polling-status-chip {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 5px 8px;
+            font-size: 0.7rem;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .clean-spinner {
+            width: 12px;
+            height: 12px;
+            border: 2px solid #cbd5e1;
+            border-top-color: #f59e0b;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .detail-bottom-promptpay-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: #15803d;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            padding: 2px 7px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Fullpage Drag & Drop Overlay -->
+    <div class="page-drag-overlay" id="pageDragOverlay">
+        <div class="page-drag-card">
+            <i class="fa-solid fa-shield-halved"
+                style="font-size: 3rem; color: var(--primary); margin-bottom: 10px; display: block;"></i>
+            <div style="font-size: 1.15rem; font-weight: 800; color: #0f172a;">วางรูปภาพเพื่อสแกนและล้างข้อมูลลับ</div>
+        </div>
+    </div>
+
+    <!-- ===== TOP NAVBAR (ไม่มีลิ้งค์กลับหน้าแรก) ===== -->
+    <header class="top-navbar">
+        <div class="nav-brand">
+            <span class="brand-title">
+                <i class="fa-solid fa-user-shield" style="color: var(--primary);"></i>
+                ล้างข้อมูลลับในไฟล์ภาพ (EXIF / GPS / AI / ตัดต่อมา)
+                <span class="brand-badge">⚡ ปลอดภัย 100%</span>
+            </span>
+        </div>
+
+        <div class="nav-actions">
+            <button type="button" class="btn-outline" onclick="fileInput.click()">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <span>ตรวจไฟล์อื่น</span>
+            </button>
+            <button type="button" class="btn-outline" onclick="resetWorkspace()">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span>รีเซ็ต</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ===== MAIN WORKSPACE ===== -->
+    <main class="workspace-container">
+
+        <!-- LEFT SIDEBAR -->
+        <aside class="sidebar-panel">
+            <div class="sidebar-top">
+                <!-- Upload -->
+                <div class="panel-section">
+                    <div class="panel-section-title">
+                        <i class="fa-solid fa-cloud-arrow-up" style="color: var(--primary);"></i>
+                        <span>อัปโหลดรูปภาพ</span>
+                    </div>
+
+                    <div class="dropzone-box" id="dropzoneBox" onclick="fileInput.click()">
+                        <i class="fa-regular fa-image"></i>
+                        <div class="drop-title">คลิก หรือ ลากรูปมาวาง</div>
+                        <div class="drop-subtitle">JPG, PNG, WEBP</div>
+                    </div>
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                </div>
+
+                <!-- Options -->
+                <div class="panel-section">
+                    <div class="panel-section-title">
+                        <i class="fa-solid fa-sliders" style="color: var(--primary);"></i>
+                        <span>ตั้งค่าไฟล์ผลลัพธ์</span>
+                    </div>
+
+                    <div class="pill-group" id="formatPills">
+                        <button type="button" class="pill-btn active" data-fmt="auto"
+                            onclick="setFormat('auto')">อัตโนมัติ</button>
+                        <button type="button" class="pill-btn" data-fmt="image/jpeg"
+                            onclick="setFormat('image/jpeg')">JPG</button>
+                        <button type="button" class="pill-btn" data-fmt="image/png"
+                            onclick="setFormat('image/png')">PNG</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Price -->
+            <div class="price-card">
+                <span class="price-label">✨ ค่าบริการต่อภาพ</span>
+                <span class="price-value">฿ 2.00</span>
+            </div>
+        </aside>
+
+        <!-- RIGHT STAGE -->
+        <section class="stage-area" id="stageArea">
+
+            <!-- Empty State -->
+            <div class="empty-stage-state" id="emptyStageState">
+                <div class="empty-stage-icon">
+                    <i class="fa-solid fa-broom"></i>
+                </div>
+                <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 4px;">วางรูปภาพเพื่อล้างข้อมูลลับ</h3>
+                <p style="font-size: 0.78rem; color: var(--text-muted);">
+                    ลบ EXIF, ชื่อโปรแกรม, พิกัด GPS พร้อมตรวจเช็คยืนยัน 0%
+                </p>
+            </div>
+
+            <!-- Inspector & Verification Dashboard -->
+            <div class="inspector-board" id="inspectorBoard">
+                <!-- Summary Bar -->
+                <div class="file-summary-bar">
+                    <div class="file-preview-info">
+                        <div class="thumb-box">
+                            <img id="thumbPreview" alt="preview">
+                        </div>
+                        <div class="file-meta-text">
+                            <div class="file-name-title" id="lblFileName">image.jpg</div>
+                            <div class="file-sub-meta" id="lblFileSpecs">0 × 0 px • 0 KB</div>
+                        </div>
+                    </div>
+                    <div class="status-pill-wrap">
+                        <span class="status-chip danger" id="badgeBeforeCount">พบข้อมูลลับ 0 จุด</span>
+                        <i class="fa-solid fa-arrow-right" style="color: #94a3b8; font-size: 0.75rem;"></i>
+                        <span class="status-chip success" id="badgeAfterCount">เหลือ 0 จุด ✅</span>
+                    </div>
+                </div>
+
+                <!-- Clean Already Card (แสดงเมื่อตรวจไม่พบข้อมูลลับ) -->
+                <div id="cleanAlreadyCard"
+                    style="display: none; background: #ffffff; border: 1px solid #bbf7d0; border-top: 4px solid #10b981; border-radius: 12px; padding: 22px; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05); flex-direction: column; gap: 14px;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div
+                            style="width: 44px; height: 44px; border-radius: 50%; background: #dcfce7; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 1.35rem; flex-shrink: 0;">
+                            <i class="fa-solid fa-shield-check"></i>
+                        </div>
+                        <div>
+                            <div style="font-size: 1.05rem; font-weight: 800; color: #15803d;">สบายใจได้!
+                                ไฟล์ของคุณสะอาดปลอดภัย</div>
+                            <div style="font-size: 0.78rem; color: #64748b;">ตรวจไม่พบข้อมูลลับใดๆ ในไฟล์นี้
+                                ไม่ต้องเสียค่าบริการ</div>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <div class="meta-item ok"><span class="meta-key">ข้อมูลกล้อง / EXIF</span><span
+                                class="meta-val">✅ ไม่พบ</span></div>
+                        <div class="meta-item ok"><span class="meta-key">โปรแกรมตัดต่อ / Photoshop</span><span
+                                class="meta-val">✅ ไม่พบร่องรอย</span></div>
+                        <div class="meta-item ok"><span class="meta-key">พิกัดสถานที่ GPS</span><span class="meta-val">✅
+                                ไม่พบ</span></div>
+                        <div class="meta-item ok"><span class="meta-key">ลายเซ็น AI / C2PA</span><span
+                                class="meta-val">✅ ไม่พบ</span></div>
+                    </div>
+                </div>
+
+                <!-- Before vs After Grid -->
+                <div class="compare-grid" id="compareGrid">
+                    <!-- BEFORE -->
+                    <div class="compare-card before-card">
+                        <div class="compare-header">
+                            <span class="compare-title" style="color: #b91c1c;">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                ข้อมูลลับที่พบ (ต้นฉบับ)
+                            </span>
+                            <span class="compare-count found" id="countBeforeBadge">0 รายการ</span>
+                        </div>
+                        <div class="compare-body" id="beforeList"></div>
+                    </div>
+
+                    <!-- AFTER + VERIFY -->
+                    <div class="compare-card after-card" id="afterCard">
+                        <div class="compare-header">
+                            <span class="compare-title" id="afterHeaderTitle" style="color: #64748b;">
+                                <i class="fa-solid fa-lock"></i>
+                                สถานะการทำลายหลักฐาน
+                            </span>
+                            <button type="button" class="verify-btn-sm" id="btnReVerify" style="display: none;"
+                                onclick="verifyCleanBuffer(true)">
+                                <i class="fa-solid fa-shield-check"></i>
+                                <span>เช็คซ้ำ</span>
+                            </button>
+                        </div>
+                        <div class="compare-body" id="afterList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Floating Action Button -->
+            <div class="floating-action-box" id="floatingActionBox" style="display: none;">
+                <button class="btn-start-job" id="btnMainAction" type="button" onclick="handleMainAction()">
+                    <i class="fa-solid fa-rocket"></i>
+                    <span id="btnActionText">ชำระ 2 บาทเพื่อทำลายหลักฐาน</span>
+                </button>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ===== PROMPTPAY PAYMENT MODAL ===== -->
+    <div class="modal-backdrop" id="paymentModal">
+        <div class="modal-card">
+            <button type="button" class="modal-close-btn" onclick="closePaymentModal()">✕</button>
+
+            <div id="paymentPendingView" style="width: 100%;">
+                <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">
+                    สแกน QR เพื่อชำระเงิน
+                </h3>
+                <p style="font-size: 0.78rem; color: #64748b; margin-bottom: 8px;">
+                    ปลดล็อคดาวน์โหลดภาพสะอาด 100%
+                </p>
+
+                <div
+                    style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; gap: 6px;">
+                    <span class="detail-bottom-promptpay-badge">⚡ PromptPay</span>
+                    <div class="checkout-countdown-box" id="detail-qr-countdown-box">
+                        <span>⏱️</span>
+                        <strong id="detail-qr-countdown">30:00</strong>
+                        <span>นาที</span>
+                    </div>
+                </div>
+
+                <div class="qr-clean-card" onclick="downloadDetailQRSlip()" title="คลิกเพื่อบันทึกรูป QR Code">
+                    <div id="detail-qr-image-target"
+                        style="display: flex; align-items: center; justify-content: center; width: 100%; min-height: 195px;">
+                    </div>
+                    <div
+                        style="font-size: 0.72rem; font-weight: 700; color: #0b1120; margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                        <img src="../../../assets/promptpay_header_full.png"
+                            onerror="this.onerror=null; this.style.display='none';"
+                            style="height: 14px; max-width: 65px; object-fit: contain;">
+                        <span>สแกนผ่านทุกแอปธนาคาร</span>
+                    </div>
+                    <div style="font-size: 0.66rem; color: #2563eb; font-weight: 600; margin-top: 2px;">
+                        📥 แตะ/คลิกรูปเพื่อบันทึก QR
+                    </div>
+                </div>
+
+                <div id="detail-qr-price-text"
+                    style="font-size: 1.5rem; font-weight: 800; color: #16a34a; margin: 2px 0 6px 0;">฿ 2.00</div>
+
+                <div class="polling-status-chip">
+                    <div class="clean-spinner"></div>
+                    <span>ตรวจจับยอดเงินเข้าอัตโนมัติ (PromptPay)</span>
+                </div>
+
+                <div id="wrap-dev-bypass" style="display: none; margin-top: 6px;">
+                    <button type="button" onclick="onPaymentSuccess()"
+                        style="font-size: 0.68rem; font-weight: 700; background: #eff6ff; color: #1d4ed8; border: 1px dashed #60a5fa; padding: 4px 10px; border-radius: 6px; cursor: pointer;">
+                        ⚡ Dev Bypass (เครื่องแอดมิน)
+                    </button>
+                </div>
+            </div>
+
+            <div id="paymentSuccessView" style="display: none;">
+                <div style="font-size: 2.8rem; margin-bottom: 6px;">🎉</div>
+                <h3 style="font-size: 1.2rem; font-weight: 800; color: #16a34a; margin-bottom: 4px;">
+                    ชำระเงินสำเร็จ!
+                </h3>
+                <p style="font-size: 0.82rem; color: #475569; margin-bottom: 14px;">
+                    พร้อมดาวน์โหลดภาพที่ล้างข้อมูลลับแล้ว
+                </p>
+
+                <button class="btn-start-job is-success" style="width: 100%;" onclick="executeDownload()">
+                    <i class="fa-solid fa-download"></i>
+                    <span>ดาวน์โหลดภาพสะอาด</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SERVICE_CONFIG = {
+            serviceName: "MetadataRemove",
+            servicePriceThb: 2.00,
+            beamWorkerUrl: "https://eworker-beam-pay.moonverse69.workers.dev",
+            firebaseBase: "https://chat-11059-default-rtdb.asia-southeast1.firebasedatabase.app/temp_files/payment_requests"
+        };
+
+        const fileInput = document.getElementById('fileInput');
+        const dropzoneBox = document.getElementById('dropzoneBox');
+        const emptyStageState = document.getElementById('emptyStageState');
+        const inspectorBoard = document.getElementById('inspectorBoard');
+        const floatingActionBox = document.getElementById('floatingActionBox');
+        const btnMainAction = document.getElementById('btnMainAction');
+        const btnActionText = document.getElementById('btnActionText');
+        const paymentModal = document.getElementById('paymentModal');
+
+        let rawImage = null;
+        let originalFile = null;
+        let outputFormat = 'auto';
+        let cleanBlob = null;
+        let cleanBuffer = null;
+        let isPaid = false;
+        let currentOrderId = null;
+        let pollingTimer = null;
+        let checkoutCountdownTimer = null;
+
+        /* ==========================================================================
+           [1] UPLOAD & DRAG/DROP
+           ========================================================================== */
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                loadFile(e.target.files[0]);
+            }
+            e.target.value = '';
+        });
+
+        let dragCounter = 0;
+        const pageDragOverlay = document.getElementById('pageDragOverlay');
+
+        window.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            dragCounter++;
+            if (e.dataTransfer && e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
+                pageDragOverlay.classList.add('active');
+            }
+        });
+
+        window.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dragCounter--;
+            if (dragCounter <= 0) {
+                dragCounter = 0;
+                pageDragOverlay.classList.remove('active');
+            }
+        });
+
+        window.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+        });
+
+        window.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragCounter = 0;
+            pageDragOverlay.classList.remove('active');
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+                loadFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        function setFormat(fmt) {
+            outputFormat = fmt;
+            document.querySelectorAll('#formatPills .pill-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.fmt === fmt);
+            });
+            if (rawImage) reprocessCleanImage();
+        }
+
+        function formatBytes(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1048576).toFixed(2) + ' MB';
+        }
+
+        async function loadFile(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('กรุณาเลือกไฟล์รูปภาพเท่านั้น');
+                return;
+            }
+
+            isPaid = false;
+            currentOrderId = null;
+            if (pollingTimer) clearInterval(pollingTimer);
+            btnMainAction.className = 'btn-start-job';
+            btnActionText.textContent = `ชำระ 2 บาทเพื่อทำลายหลักฐาน`;
+            document.getElementById('paymentPendingView').style.display = 'block';
+            document.getElementById('paymentSuccessView').style.display = 'none';
+
+            originalFile = file;
+            const origBuffer = await file.arrayBuffer();
+            const origReport = scanImageMetadata(origBuffer);
+
+            const dataUrl = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = async () => {
+                rawImage = img;
+                document.getElementById('thumbPreview').src = dataUrl;
+                document.getElementById('lblFileName').textContent = file.name;
+                document.getElementById('lblFileSpecs').textContent = `${img.width} × ${img.height} px • ต้นฉบับ ${formatBytes(file.size)}`;
+
+                renderBeforeReport(origReport);
+
+                emptyStageState.style.display = 'none';
+                inspectorBoard.classList.add('active');
+                floatingActionBox.style.display = origReport.length > 0 ? 'flex' : 'none';
+
+                await reprocessCleanImage(origReport.length === 0);
+            };
+            img.src = dataUrl;
+        }
+
+        /* ==========================================================================
+           [2] BINARY METADATA SCANNER (JPEG EXIF/XMP/IPTC/APP14/COM/C2PA, PNG, WEBP)
+           ========================================================================== */
+        function scanImageMetadata(buffer) {
+            const view = new DataView(buffer);
+            const bytes = new Uint8Array(buffer);
+            const findings = [];
+
+            const addFinding = (category, label, value) => {
+                findings.push({ category, label, value: String(value).slice(0, 140) });
+            };
+
+            // 1. JPEG (FF D8)
+            if (bytes.length > 4 && bytes[0] === 0xFF && bytes[1] === 0xD8) {
+                let offset = 2;
+                while (offset + 4 < bytes.length) {
+                    if (bytes[offset] !== 0xFF) break;
+                    const marker = bytes[offset + 1];
+                    if (marker === 0xDA || marker === 0xD9) break; // SOS or EOI
+                    if (marker === 0x00 || (marker >= 0xD0 && marker <= 0xD7)) {
+                        offset += 2;
+                        continue;
+                    }
+                    const segLen = view.getUint16(offset + 2, false);
+                    if (segLen < 2 || offset + 2 + segLen > bytes.length) break;
+
+                    const segStart = offset + 4;
+                    const segData = bytes.subarray(segStart, offset + 2 + segLen);
+
+                    if (marker === 0xE1) { // APP1: EXIF or XMP
+                        const head = asciiSlice(segData, 0, 6);
+                        if (head === 'Exif\0\0') {
+                            parseExifTiff(segData.subarray(6), addFinding);
+                        } else {
+                            const xmpStr = utf8Slice(segData, 0, Math.min(segData.length, 65536));
+                            if (xmpStr.includes('adobe.com/xap') || xmpStr.includes('adobe.com/xmp') || xmpStr.includes('<x:xmpmeta') || xmpStr.includes('rdf:RDF')) {
+                                extractXmpTags(xmpStr, addFinding);
+                            } else {
+                                addFinding('EXIF/APP1', 'APP1 Metadata', `${segLen} bytes`);
+                            }
+                        }
+                    } else if (marker === 0xE2) { // APP2: ICC / C2PA
+                        const head = asciiSlice(segData, 0, 11);
+                        if (head === 'ICC_PROFILE') {
+                            const iccText = asciiSlice(segData, 0, Math.min(segData.length, 2048));
+                            const isAdobeIcc = /Adobe/i.test(iccText);
+                            addFinding(isAdobeIcc ? 'SOFTWARE' : 'PROFILE', isAdobeIcc ? 'Adobe ICC Profile' : 'ICC Color Profile', `${segLen} bytes`);
+                        } else {
+                            addFinding('TAG', 'APP2 Segment', `${segLen} bytes`);
+                        }
+                    } else if (marker === 0xED) { // APP13: Photoshop 3.0 / IPTC
+                        const head = asciiSlice(segData, 0, 14);
+                        const isPs = head.includes('Photoshop');
+                        addFinding('SOFTWARE', isPs ? 'Adobe Photoshop (APP13 / 8BIM)' : 'IPTC / APP13 Metadata', `${segLen} bytes`);
+                    } else if (marker === 0xEE) { // APP14: Adobe Marker (Photoshop Save)
+                        const head = asciiSlice(segData, 0, 5);
+                        if (head === 'Adobe') {
+                            addFinding('SOFTWARE', 'Adobe / Photoshop Marker (APP14)', `Version/Flags (${segLen} bytes)`);
+                        }
+                    } else if (marker === 0xEB) { // APP11: JUMBF / C2PA AI Provenance
+                        addFinding('AI', 'JUMBF / C2PA Content Credentials', `${segLen} bytes`);
+                    } else if (marker === 0xEC) { // APP12
+                        addFinding('SOFTWARE', 'APP12 Picture Info', `${segLen} bytes`);
+                    } else if (marker === 0xFE) { // COM
+                        const comment = utf8Slice(segData, 0, segData.length).trim();
+                        addFinding('COMMENT', 'JPEG Comment', comment || `${segLen} bytes`);
+                    }
+
+                    offset += 2 + segLen;
+                }
+            }
+            // 2. PNG (89 50 4E 47 0D 0A 1A 0A)
+            else if (bytes.length > 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
+                let offset = 8;
+                while (offset + 8 <= bytes.length) {
+                    const len = view.getUint32(offset, false);
+                    const type = asciiSlice(bytes, offset + 4, 4);
+                    const dataStart = offset + 8;
+                    if (dataStart + len + 4 > bytes.length) break;
+                    const chunkData = bytes.subarray(dataStart, dataStart + len);
+
+                    if (type === 'tEXt' || type === 'iTXt' || type === 'zTXt') {
+                        const rawText = utf8Slice(chunkData, 0, Math.min(len, 65536));
+                        const nullIdx = rawText.indexOf('\0');
+                        const key = nullIdx > 0 ? rawText.slice(0, nullIdx) : type;
+                        const val = nullIdx > 0 ? rawText.slice(nullIdx + 1).replace(/\0/g, ' ').trim() : `${len} bytes`;
+
+                        if (key === 'XML:com.adobe.xmp' || val.includes('<x:xmpmeta') || val.includes('adobe.com/xap')) {
+                            extractXmpTags(val, addFinding);
+                        } else {
+                            const isAi = /prompt|workflow|parameters|midjourney|stable|comfy|c2pa/i.test(key + val);
+                            const isPs = /photoshop|adobe|imageready/i.test(key + val);
+                            addFinding(isAi ? 'AI' : 'SOFTWARE', isPs ? `Adobe Photoshop (${key})` : `PNG ${type}: ${key}`, val || `${len} bytes`);
+                        }
+                    } else if (type === 'iCCP') {
+                        const iccName = utf8Slice(chunkData, 0, Math.min(len, 80)).split('\0')[0];
+                        addFinding(/photoshop|adobe/i.test(iccName) ? 'SOFTWARE' : 'PROFILE', 'PNG ICC Profile (iCCP)', iccName || `${len} bytes`);
+                    } else if (type === 'eXIf') {
+                        parseExifTiff(chunkData, addFinding);
+                    } else if (type === 'tIME') {
+                        if (len >= 7) {
+                            const y = (chunkData[0] << 8) | chunkData[1];
+                            addFinding('EXIF', 'PNG Timestamp (tIME)', `${y}-${chunkData[2]}-${chunkData[3]} ${chunkData[4]}:${chunkData[5]}`);
+                        }
+                    } else if (type === 'caBX') {
+                        addFinding('AI', 'C2PA AI Provenance (caBX)', `${len} bytes`);
+                    }
+
+                    if (type === 'IEND') break;
+                    offset += 12 + len;
+                }
+            }
+            // 3. WEBP (RIFF....WEBP)
+            else if (bytes.length > 12 && asciiSlice(bytes, 0, 4) === 'RIFF' && asciiSlice(bytes, 8, 4) === 'WEBP') {
+                let offset = 12;
+                while (offset + 8 <= bytes.length) {
+                    const type = asciiSlice(bytes, offset, 4);
+                    const len = view.getUint32(offset + 4, true);
+                    const dataStart = offset + 8;
+                    if (dataStart + len > bytes.length) break;
+                    const chunkData = bytes.subarray(dataStart, dataStart + len);
+
+                    if (type === 'EXIF') {
+                        const exifBytes = asciiSlice(chunkData, 0, 6) === 'Exif\0\0' ? chunkData.subarray(6) : chunkData;
+                        parseExifTiff(exifBytes, addFinding);
+                    } else if (type === 'XMP ') {
+                        extractXmpTags(utf8Slice(chunkData, 0, chunkData.length), addFinding);
+                    }
+
+                    offset += 8 + len + (len % 2);
+                }
+            }
+
+            return findings;
+        }
+
+        function asciiSlice(bytes, start, len) {
+            let s = '';
+            for (let i = 0; i < len && start + i < bytes.length; i++) {
+                s += String.fromCharCode(bytes[start + i]);
+            }
+            return s;
+        }
+
+        function utf8Slice(bytes, start, len) {
+            try {
+                return new TextDecoder('utf-8', { fatal: false }).decode(bytes.subarray(start, start + len));
+            } catch {
+                return asciiSlice(bytes, start, len);
+            }
+        }
+
+        function parseExifTiff(tiff, addFinding) {
+            if (tiff.length < 8) return;
+            const le = tiff[0] === 0x49 && tiff[1] === 0x49;
+            const be = tiff[0] === 0x4D && tiff[1] === 0x4D;
+            if (!le && !be) {
+                addFinding('EXIF', 'EXIF Header', `${tiff.length} bytes`);
+                return;
+            }
+            const dv = new DataView(tiff.buffer, tiff.byteOffset, tiff.byteLength);
+            const firstIfdOffset = dv.getUint32(4, le);
+
+            const TAG_NAMES = {
+                0x010F: ['EXIF', 'กล้อง / ยี่ห้อ (Make)'],
+                0x0110: ['EXIF', 'รุ่นอุปกรณ์ (Model)'],
+                0x0131: ['SOFTWARE', 'โปรแกรมที่ใช้ทำ (Software)'],
+                0x0132: ['EXIF', 'วันเวลาแก้ไข (DateTime)'],
+                0x013B: ['EXIF', 'ผู้สร้าง (Artist)'],
+                0x8298: ['EXIF', 'ลิขสิทธิ์ (Copyright)'],
+                0x9003: ['EXIF', 'วันเวลาถ่าย (DateTimeOriginal)'],
+                0xA431: ['EXIF', 'Serial Number']
+            };
+
+            let foundAny = false;
+            const readString = (valOffset, count) => {
+                if (valOffset + count > tiff.length) return '';
+                return utf8Slice(tiff, valOffset, count).replace(/\0+$/, '').trim();
+            };
+
+            const parseIfd = (ifdOffset, isGps) => {
+                if (!ifdOffset || ifdOffset + 2 > tiff.length) return;
+                const count = dv.getUint16(ifdOffset, le);
+                for (let i = 0; i < count; i++) {
+                    const entry = ifdOffset + 2 + i * 12;
+                    if (entry + 12 > tiff.length) break;
+                    const tag = dv.getUint16(entry, le);
+                    const type = dv.getUint16(entry + 2, le);
+                    const cnt = dv.getUint32(entry + 4, le);
+                    const valOrOff = dv.getUint32(entry + 8, le);
+
+                    if (isGps) {
+                        if (tag === 0x0002 || tag === 0x0004) {
+                            foundAny = true;
+                            const label = tag === 0x0002 ? 'พิกัด GPS (Latitude)' : 'พิกัด GPS (Longitude)';
+                            if (valOrOff + 24 <= tiff.length) {
+                                const d = dv.getUint32(valOrOff, le) / (dv.getUint32(valOrOff + 4, le) || 1);
+                                const m = dv.getUint32(valOrOff + 8, le) / (dv.getUint32(valOrOff + 12, le) || 1);
+                                const s = dv.getUint32(valOrOff + 16, le) / (dv.getUint32(valOrOff + 20, le) || 1);
+                                addFinding('GPS', label, `${d.toFixed(0)}° ${m.toFixed(0)}' ${s.toFixed(2)}"`);
+                            } else {
+                                addFinding('GPS', label, 'พบข้อมูลพิกัด');
+                            }
+                        }
+                        continue;
+                    }
+
+                    if (tag === 0x8769) { // ExifIFDPointer
+                        parseIfd(valOrOff, false);
+                    } else if (tag === 0x8825) { // GPSInfoIFDPointer
+                        foundAny = true;
+                        addFinding('GPS', 'GPS IFD Block', 'พบชุดข้อมูลพิกัดสถานที่');
+                        parseIfd(valOrOff, true);
+                    } else if (TAG_NAMES[tag] && type === 2) {
+                        const str = cnt <= 4
+                            ? asciiSlice(tiff, entry + 8, cnt).replace(/\0+$/, '').trim()
+                            : readString(valOrOff, cnt);
+                        if (str) {
+                            foundAny = true;
+                            addFinding(TAG_NAMES[tag][0], TAG_NAMES[tag][1], str);
+                        }
+                    }
+                }
+            };
+
+            parseIfd(firstIfdOffset, false);
+            if (!foundAny) {
+                addFinding('EXIF', 'EXIF Binary Block', `${tiff.length} bytes`);
+            }
+        }
+
+        function extractXmpTags(xml, addFinding) {
+            const patterns = [
+                ['SOFTWARE', 'CreatorTool (โปรแกรม)', /<xmp:CreatorTool>([^<]+)<\/xmp:CreatorTool>/i],
+                ['SOFTWARE', 'CreatorTool (โปรแกรม)', /xmp:CreatorTool="([^"]+)"/i],
+                ['SOFTWARE', 'SoftwareAgent (โปรแกรม)', /<stEvt:softwareAgent>([^<]+)<\/stEvt:softwareAgent>/i],
+                ['SOFTWARE', 'SoftwareAgent (โปรแกรม)', /stEvt:softwareAgent="([^"]+)"/i],
+                ['SOFTWARE', 'TIFF Software', /<tiff:Software>([^<]+)<\/tiff:Software>/i],
+                ['SOFTWARE', 'TIFF Software', /tiff:Software="([^"]+)"/i],
+                ['SOFTWARE', 'Photoshop ICC Profile', /photoshop:ICCProfile="([^"]+)"/i],
+                ['SOFTWARE', 'Photoshop History', /<photoshop:History>([^<]+)<\/photoshop:History>/i],
+                ['AI', 'AI / DigitalSourceType', /DigitalSourceType[^>]*>([^<]+)</i],
+                ['EXIF', 'XMP CreateDate', /<xmp:CreateDate>([^<]+)<\/xmp:CreateDate>/i]
+            ];
+            let matched = false;
+            const seen = new Set();
+            patterns.forEach(([cat, label, rx]) => {
+                const m = xml.match(rx);
+                if (m && m[1]) {
+                    const val = m[1].trim();
+                    const key = `${label}:${val}`;
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        matched = true;
+                        addFinding(cat, label, val);
+                    }
+                }
+            });
+            if (/Adobe Photoshop|adobe:docid:photoshop|photoshop:DocumentAncestors/i.test(xml) && !Array.from(seen).some(k => /Photoshop/i.test(k))) {
+                matched = true;
+                addFinding('SOFTWARE', 'Adobe Photoshop (XMP)', 'พบร่องรอยการบันทึกจาก Photoshop');
+            }
+            if (!matched) {
+                addFinding('SOFTWARE', 'XMP Metadata Packet', `${xml.length} chars`);
+            }
+        }
+
+        /* ==========================================================================
+           [3] CLEAN RE-ENCODE & LIVE VERIFICATION
+           ========================================================================== */
+        async function reprocessCleanImage(skipVerify) {
+            if (!rawImage || !originalFile) return;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = rawImage.width;
+            canvas.height = rawImage.height;
+            const ctx = canvas.getContext('2d');
+
+            let targetMime = outputFormat;
+            if (targetMime === 'auto') {
+                targetMime = originalFile.type === 'image/png' ? 'image/png' : 'image/jpeg';
+            }
+
+            if (targetMime === 'image/jpeg') {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            ctx.drawImage(rawImage, 0, 0);
+
+            // Anti-AI micro-pixel perturbation (automatic)
+            try {
+                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const d = imgData.data;
+                const step = Math.max(4 * 17, Math.floor(d.length / 4000) * 4);
+                for (let i = 0; i < d.length; i += step) {
+                    if (d[i + 3] > 200) {
+                        d[i] = d[i] < 254 ? d[i] + 1 : d[i] - 1;
+                    }
+                }
+                ctx.putImageData(imgData, 0, 0);
+            } catch (e) { }
+
+            cleanBlob = await new Promise(resolve => canvas.toBlob(resolve, targetMime, 0.94));
+            cleanBuffer = await cleanBlob.arrayBuffer();
+
+            if (!skipVerify) verifyCleanBuffer(false);
+        }
+
+        function renderBeforeReport(findings) {
+            const listEl = document.getElementById('beforeList');
+            const countBadge = document.getElementById('countBeforeBadge');
+            const summaryBadge = document.getElementById('badgeBeforeCount');
+            const afterBadge = document.getElementById('badgeAfterCount');
+            const compareGrid = document.getElementById('compareGrid');
+            const cleanCard = document.getElementById('cleanAlreadyCard');
+
+            if (findings.length === 0) {
+                summaryBadge.className = 'status-chip success';
+                summaryBadge.textContent = 'ไม่พบข้อมูลลับ';
+                afterBadge.className = 'status-chip success';
+                afterBadge.textContent = 'สะอาดอยู่แล้ว ✅';
+                compareGrid.style.display = 'none';
+                cleanCard.style.display = 'flex';
+                return;
+            }
+
+            compareGrid.style.display = 'grid';
+            cleanCard.style.display = 'none';
+            countBadge.textContent = `${findings.length} รายการ`;
+            summaryBadge.textContent = `พบข้อมูลลับ ${findings.length} จุด`;
+            summaryBadge.className = 'status-chip danger';
+
+            const editorFindings = findings.filter(f => f.category === 'SOFTWARE');
+            const isEdited = editorFindings.length > 0;
+            const editorBanner = isEdited
+                ? `<div class="meta-item warn" style="background:#fef2f2; border:1.5px solid #ef4444;">
+                        <span class="meta-key">⚠️ ตรวจพบการตัดต่อภาพ</span>
+                        <span class="meta-val" style="font-weight:700;">ภาพนี้ผ่านการแก้ไข/ตัดต่อ (${escapeHtml(editorFindings[0].value)})</span>
+                   </div>`
+                : '';
+
+            listEl.innerHTML = editorBanner + findings.map(f => `
+                <div class="meta-item warn">
+                    <span class="meta-key">${escapeHtml(f.label)}</span>
+                    <span class="meta-val">${escapeHtml(f.value)}</span>
+                </div>
+            `).join('');
+        }
+
+        function verifyCleanBuffer(animate) {
+            if (!cleanBuffer) return;
+            const afterEl = document.getElementById('afterList');
+            const afterBadge = document.getElementById('badgeAfterCount');
+            const afterTitle = document.getElementById('afterHeaderTitle');
+            const btnReVerify = document.getElementById('btnReVerify');
+
+            if (!isPaid) {
+                afterBadge.textContent = '🔒 รอชำระเงินเพื่อทำลาย';
+                afterBadge.className = 'status-chip danger';
+                afterTitle.style.color = '#64748b';
+                afterTitle.innerHTML = '<i class="fa-solid fa-lock"></i> สถานะการทำลายหลักฐาน';
+                if (btnReVerify) btnReVerify.style.display = 'none';
+
+                afterEl.innerHTML = `
+                    <div class="meta-item" style="background:#f8fafc; border:1px dashed #cbd5e1; flex-direction:column; align-items:center; text-align:center; padding:14px 10px; gap:6px;">
+                        <i class="fa-solid fa-lock" style="font-size:1.4rem; color:#64748b;"></i>
+                        <div style="font-weight:700; color:#0f172a; font-size:0.84rem;">รอชำระเงิน 2 บาท เพื่อทำลายหลักฐาน</div>
+                        <div style="font-size:0.74rem; color:#64748b;">หลังชำระเงิน ระบบจะล้างข้อมูลลับทั้งหมดและตรวจยืนยัน 0% ให้ทันที</div>
+                    </div>
+                    <div class="meta-item"><span class="meta-key">EXIF กล้อง / อุปกรณ์</span><span class="meta-val">🔒 รอทำลาย</span></div>
+                    <div class="meta-item"><span class="meta-key">โปรแกรมตัดต่อ / Photoshop</span><span class="meta-val">🔒 รอทำลาย</span></div>
+                    <div class="meta-item"><span class="meta-key">พิกัดสถานที่ GPS</span><span class="meta-val">🔒 รอทำลาย</span></div>
+                    <div class="meta-item"><span class="meta-key">ลายเซ็น AI / C2PA</span><span class="meta-val">🔒 รอทำลาย</span></div>
+                `;
+                return;
+            }
+
+            afterTitle.style.color = '#15803d';
+            afterTitle.innerHTML = '<i class="fa-solid fa-circle-check"></i> ผลตรวจยืนยัน (หลังทำลาย)';
+            if (btnReVerify) btnReVerify.style.display = 'inline-flex';
+
+            if (animate) {
+                afterEl.innerHTML = `
+                    <div class="meta-item" style="justify-content:center; gap:8px;">
+                        <div class="clean-spinner"></div>
+                        <span>กำลังสแกนไบนารีไฟล์ผลลัพธ์...</span>
+                    </div>
+                `;
+            }
+
+            const runCheck = () => {
+                const remaining = scanImageMetadata(cleanBuffer);
+                const isClean = remaining.length === 0;
+
+                afterBadge.textContent = isClean ? 'เหลือ 0 จุด ✅' : `เหลือ ${remaining.length} จุด`;
+                afterBadge.className = isClean ? 'status-chip success' : 'status-chip danger';
+
+                const checks = [
+                    ['EXIF กล้อง / อุปกรณ์', remaining.filter(x => x.category === 'EXIF').length],
+                    ['โปรแกรมตัดต่อ / Photoshop', remaining.filter(x => x.category === 'SOFTWARE' || x.category === 'COMMENT').length],
+                    ['พิกัดสถานที่ GPS', remaining.filter(x => x.category === 'GPS').length],
+                    ['ลายเซ็น AI / C2PA', remaining.filter(x => x.category === 'AI').length]
+                ];
+
+                let html = checks.map(([label, cnt]) => `
+                    <div class="meta-item ${cnt === 0 ? 'ok' : 'warn'}">
+                        <span class="meta-key">${label}</span>
+                        <span class="meta-val">${cnt === 0 ? '✅ 0 (หายเกลี้ยง)' : `⚠️ พบ ${cnt}`}</span>
+                    </div>
+                `).join('');
+
+                html += `
+                    <div class="meta-item ok">
+                        <span class="meta-key">ขนาดไฟล์ใหม่</span>
+                        <span class="meta-val">${formatBytes(cleanBuffer.byteLength)} (${cleanBlob.type.replace('image/', '').toUpperCase()})</span>
+                    </div>
+                `;
+
+                afterEl.innerHTML = html;
+            };
+
+            if (animate) setTimeout(runCheck, 320);
+            else runCheck();
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        /* ==========================================================================
+           [4] PAYMENT & DOWNLOAD FLOW
+           ========================================================================== */
+        function handleMainAction() {
+            if (isPaid) executeDownload();
+            else openPaymentModal();
+        }
+
+        function checkDevMode() {
+            try {
+                const isDevEnvironment = (
+                    window.location.hostname === '127.0.0.1' ||
+                    window.location.hostname === 'localhost' ||
+                    window.location.protocol === 'file:'
+                );
+                const urlParams = new URLSearchParams(window.location.search);
+                if (isDevEnvironment && urlParams.get('dev') === 'eworker999') {
+                    localStorage.setItem('eworker_dev', 'true');
+                    urlParams.delete('dev');
+                    window.history.replaceState({}, '', window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : ''));
+                } else if (urlParams.get('dev') === 'off') {
+                    localStorage.removeItem('eworker_dev');
+                    urlParams.delete('dev');
+                    window.history.replaceState({}, '', window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : ''));
+                }
+                return isDevEnvironment && localStorage.getItem('eworker_dev') === 'true';
+            } catch (e) {
+                return false;
+            }
+        }
+        checkDevMode();
+
+        function openPaymentModal() {
+            currentOrderId = `${SERVICE_CONFIG.serviceName.toLowerCase()}_${Date.now()}`;
+            document.getElementById('paymentPendingView').style.display = 'block';
+            document.getElementById('paymentSuccessView').style.display = 'none';
+
+            if (checkDevMode()) {
+                document.getElementById('wrap-dev-bypass').style.display = 'block';
+            }
+
+            document.getElementById('detail-qr-price-text').textContent = `฿ ${SERVICE_CONFIG.servicePriceThb.toFixed(2)}`;
+            registerOrderInFirebase(currentOrderId);
+            paymentModal.classList.add('active');
+            requestBeamQR(currentOrderId, SERVICE_CONFIG.servicePriceThb);
+            startCheckoutCountdown(Date.now() + 30 * 60 * 1000);
+            startPaymentPolling(currentOrderId);
+        }
+
+        function closePaymentModal() {
+            paymentModal.classList.remove('active');
+            if (pollingTimer) clearInterval(pollingTimer);
+            if (checkoutCountdownTimer) clearInterval(checkoutCountdownTimer);
+        }
+
+        async function requestBeamQR(orderId, amount) {
+            const qrTarget = document.getElementById('detail-qr-image-target');
+            qrTarget.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:0.78rem;color:#64748b;min-height:195px;"><div class="clean-spinner" style="width:24px;height:24px;border-width:2.5px;"></div><span>กำลังสร้าง QR Code...</span></div>`;
+
+            try {
+                const res = await fetch(`${SERVICE_CONFIG.beamWorkerUrl}/create-charge`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ linkKey: orderId, amount: amount })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.qrImageBase64) {
+                        qrTarget.innerHTML = `<img src="data:image/png;base64,${data.qrImageBase64}" alt="PromptPay QR" style="width:195px;height:195px;object-fit:contain;border-radius:8px;display:block;">`;
+                        if (data.expiry) {
+                            const remainSec = Math.max(0, Math.floor((new Date(data.expiry).getTime() - Date.now()) / 1000));
+                            if (remainSec > 0) startCheckoutCountdown(Date.now() + remainSec * 1000);
+                        }
+                        return;
+                    }
+                }
+                throw new Error('Beam API failed');
+            } catch (err) {
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.src = `${SERVICE_CONFIG.beamWorkerUrl}/qr-image?linkKey=${encodeURIComponent(orderId)}&amount=${amount}`;
+                img.alt = "PromptPay QR";
+                img.style = "width:195px;height:195px;object-fit:contain;border-radius:8px;display:block;";
+                img.onload = () => { qrTarget.innerHTML = ''; qrTarget.appendChild(img); };
+                img.onerror = () => {
+                    qrTarget.innerHTML = `<div style="padding:16px;color:#b91c1c;font-size:0.75rem;">⚠️ สร้าง QR ไม่สำเร็จ <button type="button" onclick="openPaymentModal()" style="margin-top:6px;padding:4px 8px;">ลองใหม่</button></div>`;
+                };
+            }
+        }
+
+        function downloadDetailQRSlip() {
+            const img = document.querySelector('#detail-qr-image-target img');
+            if (!img || !img.src) return;
+            const link = document.createElement('a');
+            link.download = `PromptPay_QR_${SERVICE_CONFIG.serviceName}_${Date.now()}.png`;
+            link.href = img.src;
+            link.click();
+        }
+
+        function startCheckoutCountdown(expiresAt) {
+            if (checkoutCountdownTimer) clearInterval(checkoutCountdownTimer);
+            const box = document.getElementById('detail-qr-countdown-box');
+            const timerEl = document.getElementById('detail-qr-countdown');
+
+            const tick = () => {
+                const diffSec = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+                const m = String(Math.floor(diffSec / 60)).padStart(2, '0');
+                const s = String(diffSec % 60).padStart(2, '0');
+                timerEl.textContent = `${m}:${s}`;
+                if (diffSec <= 60) box.className = 'checkout-countdown-box urgent';
+                else if (diffSec <= 180) box.className = 'checkout-countdown-box warning';
+                else box.className = 'checkout-countdown-box';
+                if (diffSec <= 0) {
+                    clearInterval(checkoutCountdownTimer);
+                    if (pollingTimer) clearInterval(pollingTimer);
+                }
+            };
+            tick();
+            checkoutCountdownTimer = setInterval(tick, 1000);
+        }
+
+        async function registerOrderInFirebase(orderId) {
+            try {
+                await fetch(`${SERVICE_CONFIG.firebaseBase}/${orderId}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        orderId: orderId,
+                        service: SERVICE_CONFIG.serviceName,
+                        amount: SERVICE_CONFIG.servicePriceThb,
+                        status: 'pending',
+                        createdAt: Date.now()
+                    })
+                });
+            } catch (e) { }
+        }
+
+        function startPaymentPolling(orderId) {
+            if (pollingTimer) clearInterval(pollingTimer);
+            pollingTimer = setInterval(async () => {
+                try {
+                    const res = await fetch(`${SERVICE_CONFIG.firebaseBase}/${orderId}.json?t=${Date.now()}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && data.status === 'approved') onPaymentSuccess();
+                    }
+                } catch (e) { }
+            }, 1800);
+        }
+
+        function onPaymentSuccess() {
+            isPaid = true;
+            if (pollingTimer) clearInterval(pollingTimer);
+            if (typeof confetti === 'function') {
+                confetti({ particleCount: 70, spread: 70, origin: { y: 0.6 }, zIndex: 99999 });
+            }
+            document.getElementById('paymentPendingView').style.display = 'none';
+            document.getElementById('paymentSuccessView').style.display = 'block';
+            btnMainAction.className = 'btn-start-job is-success';
+            btnActionText.textContent = '📥 ดาวน์โหลดภาพสะอาด';
+            verifyCleanBuffer(true);
+        }
+
+        function executeDownload() {
+            if (!cleanBlob) return;
+            const ext = cleanBlob.type === 'image/png' ? 'png' : 'jpg';
+            const url = URL.createObjectURL(cleanBlob);
+            const link = document.createElement('a');
+            link.download = `clean_${Date.now()}.${ext}`;
+            link.href = url;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+            closePaymentModal();
+        }
+
+        function resetWorkspace() {
+            rawImage = null;
+            originalFile = null;
+            cleanBlob = null;
+            cleanBuffer = null;
+            isPaid = false;
+            currentOrderId = null;
+            if (pollingTimer) clearInterval(pollingTimer);
+            emptyStageState.style.display = 'block';
+            inspectorBoard.classList.remove('active');
+            floatingActionBox.style.display = 'none';
+            btnMainAction.className = 'btn-start-job';
+            btnActionText.textContent = `ชำระ 2 บาท (ทำลายหลักฐาน)`;
+        }
+    </script>
+</body>
+
+</html>
