@@ -1046,7 +1046,7 @@
             <div class="floating-action-box" id="floatingActionBox" style="display: none;">
                 <button class="btn-start-job" id="btnMainAction" type="button" onclick="handleMainAction()">
                     <i class="fa-solid fa-rocket"></i>
-                    <span id="btnActionText">ชำระ 2 บาทเพื่อทำลายหลักฐาน</span>
+                    <span id="btnActionText">ชำระ 2 บาท (ทำลายหลักฐาน)</span>
                 </button>
             </div>
 
@@ -1221,7 +1221,7 @@
             currentOrderId = null;
             if (pollingTimer) clearInterval(pollingTimer);
             btnMainAction.className = 'btn-start-job';
-            btnActionText.textContent = `ชำระ 2 บาทเพื่อทำลายหลักฐาน`;
+            btnActionText.textContent = `ชำระ 2 บาท (ทำลายหลักฐาน)`;
             document.getElementById('paymentPendingView').style.display = 'block';
             document.getElementById('paymentSuccessView').style.display = 'none';
 
