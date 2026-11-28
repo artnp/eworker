@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="55%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f1f5f9" />
+    </linearGradient>
+    <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000000" flood-opacity="0.35" />
+    </filter>
+    <filter id="glowGreen" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="10" flood-color="#10b981" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" rx="40" fill="url(#bgGrad)" />
+
+  <!-- Subtle Grid -->
+  <g opacity="0.07" stroke="#ffffff" stroke-width="1.5">
+    <line x1="80" y1="0" x2="80" y2="400" />
+    <line x1="160" y1="0" x2="160" y2="400" />
+    <line x1="240" y1="0" x2="240" y2="400" />
+    <line x1="320" y1="0" x2="320" y2="400" />
+    <line x1="0" y1="80" x2="400" y2="80" />
+    <line x1="0" y1="160" x2="400" y2="160" />
+    <line x1="0" y1="240" x2="400" y2="240" />
+    <line x1="0" y1="320" x2="400" y2="320" />
+  </g>
+
+  <!-- Main Image Card -->
+  <g filter="url(#cardShadow)">
+    <rect x="64" y="64" width="272" height="236" rx="18" fill="url(#cardGrad)" />
+    <!-- Photo Area -->
+    <rect x="82" y="82" width="236" height="128" rx="12" fill="#dbeafe" />
+    <circle cx="122" cy="120" r="16" fill="#60a5fa" />
+    <path d="M82 190 L146 134 L196 174 L242 126 L318 190 V198 A12 12 0 0 1 306 210 H94 A12 12 0 0 1 82 198 Z" fill="#3b82f6" opacity="0.85" />
+  </g>
+
+  <!-- Crossed-out Metadata Tags -->
+  <g>
+    <!-- EXIF Pill -->
+    <rect x="82" y="226" width="70" height="24" rx="12" fill="#fee2e2" stroke="#fca5a5" stroke-width="1.5" />
+    <text x="117" y="242" fill="#dc2626" font-family="'Outfit', sans-serif" font-size="11" font-weight="800" text-anchor="middle">EXIF</text>
+    <line x1="90" y1="238" x2="144" y2="238" stroke="#dc2626" stroke-width="2" />
+
+    <!-- GPS Pill -->
+    <rect x="162" y="226" width="70" height="24" rx="12" fill="#fee2e2" stroke="#fca5a5" stroke-width="1.5" />
+    <text x="197" y="242" fill="#dc2626" font-family="'Outfit', sans-serif" font-size="11" font-weight="800" text-anchor="middle">GPS</text>
+    <line x1="170" y1="238" x2="224" y2="238" stroke="#dc2626" stroke-width="2" />
+
+    <!-- AI Tag Pill -->
+    <rect x="242" y="226" width="76" height="24" rx="12" fill="#fee2e2" stroke="#fca5a5" stroke-width="1.5" />
+    <text x="280" y="242" fill="#dc2626" font-family="'Outfit', sans-serif" font-size="11" font-weight="800" text-anchor="middle">AI TAG</text>
+    <line x1="250" y1="238" x2="310" y2="238" stroke="#dc2626" stroke-width="2" />
+  </g>
+
+  <!-- Clean Verified Shield Badge -->
+  <g filter="url(#glowGreen)">
+    <path d="M294 152 L346 172 V212 C346 246 322 272 294 282 C266 272 242 246 242 212 V172 Z" fill="url(#shieldGrad)" stroke="#ffffff" stroke-width="4" />
+    <path d="M274 216 L288 230 L316 198" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+
+  <!-- Bottom Title Banner -->
+  <rect x="64" y="318" width="272" height="44" rx="12" fill="#0f172a" fill-opacity="0.85" stroke="#334155" stroke-width="1.5" />
+  <text x="200" y="346" fill="#ffffff" font-family="'Prompt', sans-serif" font-size="17" font-weight="800" text-anchor="middle">ล้างข้อมูลลับ EXIF / GPS / AI</text>
+</svg>
