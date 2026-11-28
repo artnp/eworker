@@ -7651,30 +7651,36 @@
         let _courseInlineCountdownTimer = null;
 
         async function initStore() {
-            if (isLocalAdmin) {
-                const btnAdmin = document.getElementById('btn-admin-manage');
-                if (btnAdmin) btnAdmin.style.display = 'inline-flex';
-                const btnAdminCourse = document.getElementById('btn-admin-course-manage');
-                if (btnAdminCourse) btnAdminCourse.style.display = 'inline-flex';
-                const btnAdminFont = document.getElementById('btn-admin-font-manage');
-                if (btnAdminFont) btnAdminFont.style.display = 'inline-flex';
-                initAdminRightSidebar();
-            }
+            try {
+                if (isLocalAdmin) {
+                    const btnAdmin = document.getElementById('btn-admin-manage');
+                    if (btnAdmin) btnAdmin.style.display = 'inline-flex';
+                    const btnAdminCourse = document.getElementById('btn-admin-course-manage');
+                    if (btnAdminCourse) btnAdminCourse.style.display = 'inline-flex';
+                    const btnAdminFont = document.getElementById('btn-admin-font-manage');
+                    if (btnAdminFont) btnAdminFont.style.display = 'inline-flex';
+                    if (typeof initAdminRightSidebar === 'function') initAdminRightSidebar();
+                }
+            } catch (e) { console.warn("initAdminRightSidebar warning:", e); }
 
-            setupGithubImageDropZone();
-            setupAdminFontDropAndPaste();
+            try { if (typeof setupGithubImageDropZone === 'function') setupGithubImageDropZone(); } catch (e) { console.warn(e); }
+            try { if (typeof setupAdminFontDropAndPaste === 'function') setupAdminFontDropAndPaste(); } catch (e) { console.warn(e); }
 
             // Setup drag-and-drop reordering for initial feature builder rows
-            if (typeof setupFeatureRowDragEvents === 'function') {
-                document.querySelectorAll('.admin-feature-input-row').forEach(setupFeatureRowDragEvents);
-            }
+            try {
+                if (typeof setupFeatureRowDragEvents === 'function') {
+                    document.querySelectorAll('.admin-feature-input-row').forEach(setupFeatureRowDragEvents);
+                }
+            } catch (e) { console.warn(e); }
 
             // Disable browser autocomplete and suggestion popups across all inputs
-            document.querySelectorAll('form, input, textarea').forEach(el => {
-                el.setAttribute('autocomplete', 'off');
-                el.setAttribute('autocorrect', 'off');
-                el.setAttribute('autocapitalize', 'off');
-            });
+            try {
+                document.querySelectorAll('form, input, textarea').forEach(el => {
+                    el.setAttribute('autocomplete', 'off');
+                    el.setAttribute('autocorrect', 'off');
+                    el.setAttribute('autocapitalize', 'off');
+                });
+            } catch (e) { }
 
             try {
                 await loadProducts();
@@ -7998,6 +8004,22 @@
                 installSteps: [],
                 isRecommended: false,
                 createdAt: 1762000000000
+            },
+            {
+                id: 'service-metadata-remove',
+                slug: 'metadata-remove',
+                title: 'ล้างข้อมูลลับในไฟล์ภาพ (EXIF / GPS / AI / โปรแกรมตัดต่อ)',                price: 2,
+                category: 'บริการออนไลน์',
+                isService: true,
+                serviceUrl: 'shop/services/metadata-remove/index.html',
+                payPerUse: true,
+                language: '',
+                coverImage: 'shop/images/metadata_remove_cover.svg',
+                description: 'ระบบล้างข้อมูลลับหลังบ้าน (EXIF, ชื่อโปรแกรมที่ใช้ทำ, พิกัด GPS) ออกเกลี้ยง ไม่ติด AI ตรวจจับ พร้อมระบบตรวจจับโปรแกรมตัดต่อ Photoshop และตรวจเช็คยืนยันว่าหายไปจริง 100%',
+                hasInstallGuide: false,
+                installSteps: [],
+                isRecommended: false,
+                createdAt: 1764310000000
             }
         ];
 
@@ -8028,13 +8050,33 @@
             return false;
         }
 
-        async function loadProducts() {
-            // Fetch global purchases asynchronously without blocking product catalog display
-            fetchGlobalPurchasedProductIds().then(() => {
-                if (products && products.length > 0) renderCatalog();
-            }).catch(() => { });
+        async function fetchWithTimeout(url, options = {}, timeoutMs = 4500) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                return await fetch(url, { ...options, signal: controller.signal });
+            } finally {
+                clearTimeout(timer);
+            }
+        }
 
-            // Fetch and set deleted items registry
+        function mergeWithBuiltinProducts(extraList) {
+            const merged = [...BUILTIN_SERVICES];
+            if (Array.isArray(extraList)) {
+                extraList.forEach(vp => {
+                    if (!vp || typeof vp !== 'object' || !vp.id || !vp.title) return;
+                    const idx = merged.findIndex(m => m.id === vp.id);
+                    if (idx >= 0) merged[idx] = { ...merged[idx], ...vp };
+                    else merged.push(vp);
+                });
+            }
+            return merged;
+        }
+
+        async function loadProducts() {
+            const PRODUCTS_CACHE_KEY = 'eworker_products_cache_v1';
+
+            // 1. Instant local render first (BUILTIN_SERVICES + localStorage cache) so catalog never shows 0
             const deletedSet = new Set();
             try {
                 const localDeleted = JSON.parse(localStorage.getItem('eworker_deleted_items') || '[]');
@@ -8042,50 +8084,62 @@
             } catch (e) { }
 
             try {
-                const delRes = await fetch(`${DELETED_ENDPOINT}.json?t=${Date.now()}`);
-                if (delRes.ok) {
-                    const delData = await delRes.json();
+                const cachedRaw = localStorage.getItem(PRODUCTS_CACHE_KEY);
+                const cachedList = cachedRaw ? JSON.parse(cachedRaw) : [];
+                products = mergeWithBuiltinProducts(Array.isArray(cachedList) ? cachedList : [])
+                    .filter(p => p && p.id && !deletedSet.has(p.id));
+            } catch (e) {
+                products = [...BUILTIN_SERVICES].filter(p => p && p.id && !deletedSet.has(p.id));
+            }
+
+            products.forEach(p => {
+                if ((p.category === 'ทักษะเรียนรู้' || p.isCourse) && (!p.coverImage || p.coverImage.includes('pdfmarker_cover.svg'))) {
+                    p.coverImage = 'shop/images/learning_course_cover.svg';
+                }
+            });
+            updateCategoryCounts();
+            renderCatalog();
+
+            // 2. Fetch global purchases asynchronously without blocking product catalog display
+            fetchGlobalPurchasedProductIds().then(() => {
+                if (products && products.length > 0) renderCatalog();
+            }).catch(() => { });
+
+            // 3. Fetch deleted registry & Firebase products in parallel with timeout
+            const [delResult, prodResult] = await Promise.allSettled([
+                fetchWithTimeout(`${DELETED_ENDPOINT}.json?t=${Date.now()}`, {}, 4500),
+                fetchWithTimeout(`${PRODUCTS_ENDPOINT}.json?t=${Date.now()}`, {}, 5000)
+            ]);
+
+            if (delResult.status === 'fulfilled' && delResult.value.ok) {
+                try {
+                    const delData = await delResult.value.json();
                     if (delData && typeof delData === 'object') {
                         Object.keys(delData).forEach(id => {
                             if (delData[id]) deletedSet.add(id);
                         });
                     }
-                }
-            } catch (e) { }
+                } catch (e) { }
+            }
 
-            try {
-                const res = await fetch(`${PRODUCTS_ENDPOINT}.json?t=${Date.now()}`);
-                if (res.ok) {
-                    const data = await res.json();
+            if (prodResult.status === 'fulfilled' && prodResult.value.ok) {
+                try {
+                    const data = await prodResult.value.json();
                     if (data && typeof data === 'object') {
                         const validProds = Object.values(data).filter(p => p && typeof p === 'object' && p.id && p.title);
-                        // Merge builtin services with Firebase products
-                        const merged = [...BUILTIN_SERVICES];
-                        validProds.forEach(vp => {
-                            const idx = merged.findIndex(m => m.id === vp.id);
-                            if (idx >= 0) {
-                                merged[idx] = { ...merged[idx], ...vp };
-                            } else {
-                                merged.push(vp);
-                            }
-                        });
-                        products = merged;
-                    } else {
-                        products = [...BUILTIN_SERVICES];
+                        if (validProds.length > 0) {
+                            products = mergeWithBuiltinProducts(validProds);
+                            try {
+                                localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify(validProds));
+                            } catch (e) { }
+                        }
                     }
-                } else {
-                    products = [...BUILTIN_SERVICES];
-                }
-            } catch (e) {
-                products = [...BUILTIN_SERVICES];
+                } catch (e) { }
             }
 
             // Exclude deleted products
             if (Array.isArray(products)) {
                 products = products.filter(p => p && p.id && !deletedSet.has(p.id));
-            }
-
-            if (Array.isArray(products)) {
                 products.forEach(p => {
                     if ((p.category === 'ทักษะเรียนรู้' || p.isCourse) && (!p.coverImage || p.coverImage.includes('pdfmarker_cover.svg'))) {
                         p.coverImage = 'shop/images/learning_course_cover.svg';
@@ -8093,10 +8147,13 @@
                 });
             }
 
-            // Sync dynamic group count for data products
+            // Sync dynamic group count for data products (non-blocking if slow)
             try {
                 if (typeof fetchApprovedGroupsData === 'function') {
-                    const fbData = await fetchApprovedGroupsData();
+                    const fbData = await Promise.race([
+                        fetchApprovedGroupsData(),
+                        new Promise(resolve => setTimeout(() => resolve(null), 3500))
+                    ]);
                     const fbCount = fbData ? (fbData.totalGroups || (Array.isArray(fbData.groups) ? fbData.groups.length : 0)) : 15;
                     if (fbCount && Array.isArray(products)) {
                         products.forEach(p => {
