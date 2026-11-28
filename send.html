@@ -6181,15 +6181,19 @@
                     console.log('📸 Loading image...');
 
                     const tryLoad = (src, attempt = 1) => {
-                        mainImage.onload = () => {
+                        const probe = new Image();
+                        probe.onload = () => {
                             console.log('✅ Image loaded successfully:', src);
-                            mainImage.style.display = 'block';
-                            pdfCanvas.style.display = 'none';
-                            fitToScreen();
-                            hideLoading();
-                            resolve();
+                            mainImage.onload = () => {
+                                mainImage.style.display = 'block';
+                                pdfCanvas.style.display = 'none';
+                                fitToScreen();
+                                hideLoading();
+                                resolve();
+                            };
+                            mainImage.src = src;
                         };
-                        mainImage.onerror = () => {
+                        probe.onerror = () => {
                             if (src.startsWith('blob:')) {
                                 hideLoading();
                                 reject(new Error('ไม่สามารถแสดงผลรูปภาพจากข้อมูลที่แปลงได้'));
@@ -6208,7 +6212,7 @@
                                 reject(new Error('ไม่สามารถดาวน์โหลดไฟล์มาแสดงผลได้'));
                             }
                         };
-                        mainImage.src = src;
+                        probe.src = src;
                     };
 
                     tryLoad(finalUrl, 1);
@@ -9118,14 +9122,15 @@
 
             if (targetUrl && targetUrl !== currentLoadedDisplayUrl && !window.__loadingNewImage) {
                 window.__loadingNewImage = true;
-                currentLoadedDisplayUrl = targetUrl;
-                fileUrl = targetUrl;
                 try {
                     await loadFile(targetUrl, fileType);
+                    currentLoadedDisplayUrl = targetUrl;
+                    fileUrl = targetUrl;
                     renderAllMarkers();
                     setTimeout(renderArrows, 100);
                 } catch (e) {
                     console.error('Error switching displayed image:', e);
+                    showToast('⚠️ โหลดภาพอัปเดตไม่สำเร็จ กำลังแสดงภาพเดิมไว้', 'warning', 4000);
                 } finally {
                     hideLoading();
                     window.__loadingNewImage = false;
